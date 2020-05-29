@@ -3,6 +3,9 @@ name = "poethepoet"
 version = "0.0.1"
 description = "A task runner that works well with poetry."
 authors = ["Nat Noordanus <n@natn.me>"]
+readme = "README.rst"
+repository =  "https://github.com/nat-n/poethepoet"
+homepage =  "https://github.com/nat-n/poethepoet"
 
 [tool.poetry.dependencies]
 python = "^3.6"
@@ -20,6 +23,7 @@ poe = "poethepoet.cli:main"
 
 [tool.poe.tasks]
 test = "pytest --cov=poethepoet"
+mypy = "mypy poethepoet --ignore-missing-imports"
 
 [build-system]
 requires = ["poetry>=0.12"]

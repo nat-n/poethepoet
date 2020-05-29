@@ -9,6 +9,7 @@ Features
 
 - Straight foward declaration of project tasks in your pyproject.toml (kind of like npm scripts)
 - Task are run in poetry's virtualenv by default
+- Short and sweet commands ``poe [options] task [task_args]``
 
 Installation
 ============
@@ -22,6 +23,8 @@ Usage
 
 Define tasks in your pyproject.toml
 -----------------------------------
+
+`See a real example <https://github.com/nat-n/poethepoet/blob/master/pyproject.toml>`_
 
 .. code-block:: toml
 
@@ -62,10 +65,11 @@ TODO
 ====
 
 * make the cli more friendly with colors and supportive helpful messages
-* support running tasks outside of poetry's virtualenv
+* support running tasks outside of poetry's virtualenv (or in another?)
 * the abiltiy to declare specific arguments for a task
 * test better
 * task aliases
+* more nuanced awareness of virtualenv
 
 Licence
 =======

@@ -1,17 +1,16 @@
-import argparse
 import os
 from pathlib import Path
 import toml
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Iterable, MutableMapping
 
 
-def _read_pyproject(path: str) -> Dict[str, Any]:
+def _read_pyproject(path: str) -> MutableMapping[str, Any]:
     with open(Path(path).resolve(), "r") as prproj:
         return toml.load(prproj)
 
 
-def load_tasks(path: str) -> Dict[str, str]:
+def load_tasks(path: str) -> MutableMapping[str, str]:
     # TODO: handle errors
     return _read_pyproject(path)["tool"]["poe"]["tasks"]
 
@@ -23,16 +22,15 @@ def validate_tasks(tasks: Dict[str, str]) -> Dict[str, str]:
     pass
 
 
-def get_parser():
-    # TODO: support passing options to poe before the task name
+def is_poetry_active():
+    # TODO: work out how to make this work inside poetry run commands
+    return bool(os.environ.get("POETRY_ACTIVE"))
 
-    parser = argparse.ArgumentParser(
-        description="Poe the Poet - A task runner that works well with poetry."
-    )
-    task_parser = parser.add_subparsers(title="task", dest="task")
-    task_parser.add_parser("", description="task")
 
-    print(parser.parse_args())
+def get_command(script: str, extra_args: Iterable[str], poetry_active: bool):
+    if poetry_active:
+        return f"{script} {' '.join(extra_args)}"
+    return f"poetry run {script} {' '.join(extra_args)}"
 
 
 def main():
@@ -50,6 +48,10 @@ def main():
     selected_task = sys.argv[1]
     script = tasks[selected_task]
 
-    print("poe:", tasks[selected_task])
+    cmd = get_command(script, sys.argv[2:], is_poetry_active())
 
-    os.system(script + " " + " ".join(sys.argv[2:]))
+    # TODO: support option for qiete mode
+    print("poe:", script)
+
+    # TODO: maybe not the most appropriate way to shell out
+    os.system(cmd)
