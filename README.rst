@@ -78,7 +78,8 @@ parent directory of the toml file can be accessed as `$POE_ROOT` within the comm
 line and process.
 
 Poe can also be configured to set the working directory to the project root for all
-commands by setting :toml:`tool.poe.run_in_project_root = true` withing the pyproject.toml.
+commands by setting :toml:`tool.poe.run_in_project_root = true` withing the
+pyproject.toml.
 
 Contributing
 ============
