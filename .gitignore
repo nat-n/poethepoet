@@ -71,5 +71,5 @@ dmypy.json
 # macOS
 .DS_Store
 
-# Random
+# Misc
 /TODO.md
