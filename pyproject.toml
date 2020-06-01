@@ -28,9 +28,7 @@ poe = "poethepoet.cli:main"
 run_in_project_root = false
 
 [tool.poe.tasks]
-test = "pytest --cov=poethepoet ${POE_ROOT}/tests"
-mypy = "mypy $POE_ROOT/poethepoet --ignore-missing-imports"
-lint = "pylint $POE_ROOT/poethepoet"
+# Dev actions
 format = "black $POE_ROOT"
 clean = """
   # multiline commands including comments work too!
@@ -40,6 +38,12 @@ clean = """
          $POE_ROOT/dist
          $POE_ROOT/**/__pycache__
 """
+# Code quality checks
+test = "pytest --cov=poethepoet ${POE_ROOT}/tests"
+types = "mypy $POE_ROOT/poethepoet --ignore-missing-imports"
+lint = "pylint $POE_ROOT/poethepoet"
+style = "black $POE_ROOT --check --diff"
+
 
 [build-system]
 requires = ["poetry>=0.12"]
