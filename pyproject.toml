@@ -4,6 +4,7 @@ version = "0.0.3"
 description = "A task runner that works well with poetry."
 authors = ["Nat Noordanus <n@natn.me>"]
 readme = "README.rst"
+license = "MIT"
 repository =  "https://github.com/nat-n/poethepoet"
 homepage =  "https://github.com/nat-n/poethepoet"
 
@@ -32,10 +33,12 @@ mypy = "mypy $POE_ROOT/poethepoet --ignore-missing-imports"
 lint = "pylint $POE_ROOT/poethepoet"
 format = "black $POE_ROOT"
 clean = """
-  rm -rf '$POE_ROOT/**/__pycache__'
-         $POE_ROOT/.coverage
+  # multiline commands including comments work too!
+  rm -rf $POE_ROOT/.coverage
          $POE_ROOT/.mypy_cache
          $POE_ROOT/.pytest_cache
+         $POE_ROOT/dist
+         $POE_ROOT/**/__pycache__
 """
 
 [build-system]
