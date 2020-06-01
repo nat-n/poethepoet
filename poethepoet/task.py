@@ -86,7 +86,7 @@ class PoeTask:
             cursor = match.end()
         resolved_parts.append(self.content[cursor:])
         # Parse shell command tokens
-        cmd_tokens = shlex.split("".join(resolved_parts))
+        cmd_tokens = shlex.split("".join(resolved_parts), comments=True)
         # Resolve any glob pattern paths
         expanded_cmd_tokens = []
         for cmd_token in cmd_tokens:

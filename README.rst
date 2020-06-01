@@ -27,8 +27,8 @@ Installation
 
   pip install poethepoet
 
-Usage
-=====
+Basic Usage
+===========
 
 Define tasks in your pyproject.toml
 -----------------------------------
@@ -38,7 +38,7 @@ Define tasks in your pyproject.toml
 .. code-block:: toml
 
   [tool.poe.tasks]
-  test = pytest --cov=poethepoet
+  test = "pytest --cov=poethepoet"
 
 Run tasks with the poe cli
 --------------------------
@@ -53,7 +53,7 @@ Additional argument are passed to the task so
 
   poe test -v tests/favorite_test.py
 
-results in
+results in the following be run inside poetry's virtualenv
 
 .. code-block:: bash
 
@@ -63,8 +63,19 @@ You can also run it like so if you fancy
 
 .. code-block:: bash
 
-  python -m poethepoet
+  python -m poethepoet [options] task [task_args]
 
+Or install it as a dev dependency with poetry and run it like
+
+.. code-block:: bash
+
+  poetry add --dev poethepoet
+  poetry run poe [options] task [task_args]
+
+Though it that case you might like to do :bash:`alias poe='poetry run poe'`.
+
+Advanced usage
+==============
 
 Run poe from anywhere
 ---------------------
@@ -78,8 +89,12 @@ parent directory of the toml file can be accessed as `$POE_ROOT` within the comm
 line and process.
 
 Poe can also be configured to set the working directory to the project root for all
-commands by setting :toml:`tool.poe.run_in_project_root = true` withing the
-pyproject.toml.
+commands by including the following setting within the pyproject.toml.
+
+.. code-block:: toml
+
+  [tool.poe]
+  run_in_project_root = true
 
 Contributing
 ============
@@ -91,10 +106,11 @@ TODO
 
 * make the cli more friendly with colors and supportive helpful messages
 * support running tasks outside of poetry's virtualenv (or in another?)
-* support declaring specific arguments for a task
+* support "script" tasks defined as references to python functions
 * test better
 * task composition/aliases
 * validate tool.poe config in toml
+* maybe support declaring specific arguments for a task
 * maybe try work well without poetry too
 
 Licence
