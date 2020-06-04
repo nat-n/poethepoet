@@ -12,6 +12,7 @@ homepage =  "https://github.com/nat-n/poethepoet"
 python = "^3.6"
 toml = "^0.10.1"
 poetry = "^1.0.5"
+pastel = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
@@ -24,25 +25,22 @@ pytest-cov = "^2.9.0"
 [tool.poetry.scripts]
 poe = "poethepoet.cli:main"
 
-[tool.poe]
-run_in_project_root = false
-
 [tool.poe.tasks]
 # Dev actions
-format = "black $POE_ROOT"
+format = "black ."
 clean = """
   # multiline commands including comments work too!
-  rm -rf $POE_ROOT/.coverage
-         $POE_ROOT/.mypy_cache
-         $POE_ROOT/.pytest_cache
-         $POE_ROOT/dist
-         $POE_ROOT/**/__pycache__
+  rm -rf .coverage
+         .mypy_cache
+         .pytest_cache
+         dist
+         ./**/__pycache__
 """
 # Code quality checks
-test = "pytest --cov=poethepoet ${POE_ROOT}/tests"
-types = "mypy $POE_ROOT/poethepoet --ignore-missing-imports"
-lint = "pylint $POE_ROOT/poethepoet"
-style = "black $POE_ROOT --check --diff"
+test = "pytest --cov=poethepoet tests"
+types = "mypy poethepoet --ignore-missing-imports"
+lint = "pylint poethepoet"
+style = "black . --check --diff"
 
 
 [build-system]

@@ -23,6 +23,14 @@ Features
 Installation
 ============
 
+Into your project (so it works inside poetry shell):
+
+.. code-block:: bash
+
+  poetry add --dev poethepoet
+
+And into your default python environment (so it works outside of poetry shell)
+
 .. code-block:: bash
 
   pip install poethepoet
@@ -84,17 +92,17 @@ By default poe will detect when you're inside a project with a pyproject.toml in
 root. However if you want to run it from elsewhere that is supported too by using the
 `--root` option to specify an alternate location for the toml file.
 
-By default poe doesn't set the current workind directory to run tasks, however the
-parent directory of the toml file can be accessed as `$POE_ROOT` within the command
-line and process.
-
-Poe can also be configured to set the working directory to the project root for all
-commands by including the following setting within the pyproject.toml.
+By default poe will set the working directory to run tasks. If you want tasks to inherit
+the working directory from the environment that you disable this by setting the
+following in your pyproject.toml.
 
 .. code-block:: toml
 
   [tool.poe]
-  run_in_project_root = true
+  run_in_project_root = false
+
+In all cases the path to project root (where the pyproject.toml resides) is be available
+as `$POE_ROOT` within the command line and process.
 
 Contributing
 ============
@@ -104,12 +112,10 @@ Sure, why not?
 TODO
 ====
 
-* make the cli more friendly with colors and supportive helpful messages
 * support running tasks outside of poetry's virtualenv (or in another?)
 * support "script" tasks defined as references to python functions
 * test better
 * task composition/aliases
-* validate tool.poe config in toml
 * maybe support declaring specific arguments for a task
 * maybe try work well without poetry too
 

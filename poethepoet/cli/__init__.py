@@ -1,23 +1,44 @@
 import io
 import os
 from pathlib import Path
+import pastel
 import toml
 import sys
 from typing import Any, Dict, Iterable, MutableMapping, Optional
-from .args import get_argparser, get_root_arg
+from .ui import format_help, get_argparser, get_minimal_args
+from .util import PoeException
 from ..task import PoeTask, TaskDef
 
 TOML_NAME = "pyproject.toml"
 
 
-def _read_pyproject(path: str) -> MutableMapping[str, Any]:
-    with open(Path(path).resolve(), "r") as prproj:
-        return toml.load(prproj)
+def _read_pyproject(path: Path) -> MutableMapping[str, Any]:
+    try:
+        with open(path.resolve(), "r") as prproj:
+            return toml.load(prproj)
+    except toml.TomlDecodeError as error:
+        raise PoeException(f"Couldn't parse toml file at {path}", error) from error
+    except Exception as error:
+        raise PoeException(f"Couldn't open file at {path}") from error
 
 
-def load_tasks(path: str) -> MutableMapping[str, str]:
-    # TODO: handle errors: permissions etc, or no poe section
-    return _read_pyproject(path)["tool"]["poe"]
+def validate_poe_config(config: MutableMapping[str, Any]):
+    supported_keys = {"run_in_project_root", "tasks"}
+    unsupported_keys = set(config) - supported_keys
+    if unsupported_keys:
+        raise PoeException(f"Unsupported keys in poe config: {unsupported_keys!r}")
+    if not isinstance(config.get("run_in_project_root", True), bool):
+        raise PoeException(
+            "Unsupported value for option `run_in_project_root` "
+            f"{config['run_in_project_root']!r}"
+        )
+
+
+def load_poe_config(path: Path) -> MutableMapping[str, Any]:
+    try:
+        return _read_pyproject(path)["tool"]["poe"]
+    except KeyError as error:
+        raise PoeException("No poe configuration found in file at pyproject.toml")
 
 
 def find_pyproject_toml(target_dir: Optional[str] = None) -> Path:
@@ -52,47 +73,73 @@ def find_pyproject_toml(target_dir: Optional[str] = None) -> Path:
     return maybe_result
 
 
-def validate_task_defs(
-    task_defs: Dict[str, TaskDef], output: Optional[io.TextIOBase]
-) -> bool:
-    # Validate tasks from toml file
-    has_errors = False
+def validate_task_defs(task_defs: Dict[str, TaskDef]) -> Dict[str, str]:
+    """Validate tasks from toml file"""
+    result = {}
     for task_name, task_def in task_defs.items():
         error = PoeTask.validate_def(task_name, task_def)
         if error is not None:
-            has_errors = True
-            if output is not None:
-                output.write(f"Poe config error: {error}\n")  # TODO: use ansi style
-    return has_errors
+            result[task_name] = error
+    return result
 
 
-def main():
-    # TODO: print help if no toml or an invalid toml is found
-    # TODO: print help and list tasks if no task specified
-    # TODO: print help and list issues if tasks are invalid
+def main() -> int:
+    minimal_args = get_minimal_args()
+    # Configure whether we're going to use colors
+    pastel.with_colors(minimal_args.ansi)
 
-    project_root_arg = get_root_arg()
-    pyproject_path = find_pyproject_toml(project_root_arg)
+    try:
+        pyproject_path = find_pyproject_toml(minimal_args.project_root)
+        poe_config = load_poe_config(pyproject_path)
+        validate_poe_config(poe_config)
+    except PoeException as error:
+        if minimal_args.help:
+            print(format_help(get_argparser()))
+            return 0
+        print(format_help(get_argparser(), error=error))
+        return 1
+
     project_dir = pyproject_path.parent
-    poe_config = load_tasks(pyproject_path)
-    task_defs = poe_config["tasks"]
+    task_defs: Dict[str, TaskDef] = poe_config.get("tasks", {})
     parser = get_argparser(task_defs.keys())
     args = parser.parse_args()
 
-    if validate_task_defs(task_defs, sys.stderr):
-        raise SystemExit(1)
+    if args.help:
+        print(format_help(parser, tasks=task_defs))
+        return 0
 
-    if args.task is None:
-        parser.error("No task given!")
+    invalid_tasks = validate_task_defs(task_defs)
+    if invalid_tasks:
+        print(
+            format_help(
+                parser,
+                tasks=task_defs,
+                error=PoeException(next(iter(invalid_tasks.values()))),
+            )
+        )
+        return 1
 
-    task = PoeTask.from_def(args.task, task_defs[args.task])
+    if not args.task:
+        print(format_help(parser, tasks=task_defs, info="No task specified."))
+        return 1
+
+    take_name, *take_args = args.task
+
+    if args.task[0] not in task_defs:
+        print(
+            format_help(
+                parser,
+                tasks=task_defs,
+                error=PoeException(f"Unrecognised task {args.task[0]!r}"),
+            )
+        )
+        return 1
+
+    task = PoeTask.from_def(args.task, task_defs[take_name])
     task.run(
-        args.task_args,
+        take_args,
         env=dict(os.environ, POE_ROOT=str(project_dir)),
         project_dir=project_dir,
-        set_cwd=poe_config.get("run_in_project_root", False),
+        set_cwd=poe_config.get("run_in_project_root", True),
     )
-
-
-class PoeException(Exception):
-    pass
+    return 0

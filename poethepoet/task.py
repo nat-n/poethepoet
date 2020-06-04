@@ -127,7 +127,7 @@ class PoeTask:
         elif not _TASK_NAME_PATTERN.match(task_name):
             issue = (
                 f"Invalid task name: {task_name!r}. Task names characters must be "
-                "alphanumeric, underscore or dash."
+                "alphanumeric, colon, underscore or dash."
             )
         elif not isinstance(task_def, str):
             issue = f"Invalid task: {task_name!r}. Task content must be a string."
