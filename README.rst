@@ -107,16 +107,16 @@ as `$POE_ROOT` within the command line and process.
 Contributing
 ============
 
-Sure, why not?
+Don't delay, create an issue today!
 
 TODO
 ====
 
-* support running tasks outside of poetry's virtualenv (or in another?)
 * support "script" tasks defined as references to python functions
-* test better
 * task composition/aliases
-* maybe support declaring specific arguments for a task
+* support declaring specific arguments for a task
+* support documenting tasks
+* support running tasks outside of poetry's virtualenv (or in another?)
 * maybe try work well without poetry too
 
 Licence

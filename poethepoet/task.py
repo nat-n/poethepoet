@@ -7,6 +7,7 @@ import shlex
 import subprocess
 import sys
 from typing import Any, Dict, Iterable, Optional, Union
+from .ui import PoeUi
 
 TaskDef = Union[str, Dict[str, Any]]
 
@@ -20,10 +21,11 @@ class PoeTask:
     name: str
     content: str
 
-    def __init__(self, type: "PoeTask.Type", name: str, content: str):
+    def __init__(self, type: "PoeTask.Type", name: str, content: str, ui: PoeUi):
         self.type = type
         self.name = name
         self.content = content
+        self._ui = ui
 
     def run(
         self,
@@ -39,73 +41,89 @@ class PoeTask:
         poetry_active = bool(os.environ.get("POETRY_ACTIVE"))
         if env is None:
             env = dict(os.environ)
+        env["POE_ROOT"] = str(project_dir)
 
         if set_cwd:
             previous_wd = os.getcwd()
             os.chdir(project_dir)
 
-        if self.type == self.Type.COMMAND:
-            cmd = self._resolve_command(extra_args, env)
+        try:
+            if self.type == self.Type.COMMAND:
+                cmd = self._resolve_command(extra_args, env)
 
-            # TODO: Respect quiet mode
-            print("Poe =>", " ".join(cmd))
+                # TODO: Respect quiet mode
+                self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(cmd)}")
 
-            if poetry_active:
-                # Execute like EnvManager does, but without special path resolution
-                if is_windows:
-                    exe = subprocess.Popen(cmd, env=env)
-                    exe.communicate()
-                    return exe.returncode
+                if poetry_active:
+                    if is_windows:
+                        exe = subprocess.Popen(cmd, env=env)
+                        exe.communicate()
+                        return exe.returncode
+                    else:
+                        _stop_coverage()
+                        # Never return...
+                        return os.execvpe(cmd[0], cmd, env)
                 else:
-                    # Never return...
-                    return os.execvpe(cmd[0], cmd, env)
-            else:
-                # Use the internals of poetry run directly to execute the command
-                poetry_env = self._get_poetry_env(project_dir)
-                poetry_env.execute(*cmd)
+                    # Use the internals of poetry run directly to execute the command
+                    poetry_env = self._get_poetry_env(project_dir)
+                    _stop_coverage()
+                    return poetry_env.execute(*cmd, env=env)
 
-        elif self.type == self.Type.SCRIPT:
-            # TODO: support calling python functions
-            raise NotImplementedError
-
-        if set_cwd:
-            os.chdir(previous_wd)
+            elif self.type == self.Type.SCRIPT:
+                # TODO: support calling python functions
+                raise NotImplementedError
+        finally:
+            if set_cwd:
+                os.chdir(previous_wd)
 
     def _resolve_command(self, extra_args: Iterable[str], env: Dict[str, str]):
         assert self.type == self.Type.COMMAND
-        # Template in ${environmental} $variables from env as if we were in a shell
+        # Parse shell command tokens
+        cmd_tokens = shlex.split(
+            self._resolve_envvars(self.content, env), comments=True
+        )
+        extra_args = [self._resolve_envvars(token, env) for token in extra_args]
+        # Resolve any glob pattern paths
+        result = []
+        for cmd_token in (*cmd_tokens, *extra_args):
+            if _GLOBCHARS_PATTERN.match(cmd_token):
+                # looks like a glob path so resolve it
+                result.extend(glob(cmd_token, recursive=True))
+            else:
+                result.append(cmd_token)
+        # Finally add the extra_args from the invoking command and we're done
+        return result
+
+    @staticmethod
+    def _resolve_envvars(content: str, env: Dict[str, str]) -> str:
+        """
+        Template in ${environmental} $variables from env as if we were in a shell
+        """
         cursor = 0
         resolved_parts = []
-        for match in _SHELL_VAR_PATTERN.finditer(self.content):
+        for match in _SHELL_VAR_PATTERN.finditer(content):
             matched = match.group()
             var_name = matched[2:-1] if matched[1] == "{" else matched[1:]
             var_value = env.get(var_name)
-            resolved_parts.append(self.content[cursor : match.start()])
+            resolved_parts.append(content[cursor : match.start()])
             if var_value is not None:
                 resolved_parts.append(var_value)
             cursor = match.end()
-        resolved_parts.append(self.content[cursor:])
-        # Parse shell command tokens
-        cmd_tokens = shlex.split("".join(resolved_parts), comments=True)
-        # Resolve any glob pattern paths
-        expanded_cmd_tokens = []
-        for cmd_token in cmd_tokens:
-            if _GLOBCHARS_PATTERN.match(cmd_token):
-                # looks like a glob path so resolve it
-                expanded_cmd_tokens.extend(glob(cmd_token, recursive=True))
-            else:
-                expanded_cmd_tokens.append(cmd_token)
-        # Finally add the extra_args from the invoking command and we're done
-        return (*expanded_cmd_tokens, *extra_args)
+        resolved_parts.append(content[cursor:])
+        return "".join(resolved_parts)
 
     @classmethod
-    def from_def(cls, task_name: str, task_def: TaskDef) -> "PoeTask":
+    def from_def(cls, task_name: str, task_def: TaskDef, ui: PoeUi) -> "PoeTask":
         if isinstance(task_def, str):
-            return cls(name=task_name, type=cls.Type.COMMAND, content=task_def)
+            return cls(name=task_name, type=cls.Type.COMMAND, content=task_def, ui=ui)
         elif "cmd" in task_def:
-            return cls(name=task_name, type=cls.Type.COMMAND, content=task_def["cmd"])
+            return cls(
+                name=task_name, type=cls.Type.COMMAND, content=task_def["cmd"], ui=ui,
+            )
         elif "script" in task_def:
-            return cls(name=task_name, type=cls.Type.SCRIPT, content=task_def["script"])
+            return cls(
+                name=task_name, type=cls.Type.SCRIPT, content=task_def["script"], ui=ui,
+            )
         # Something is wrong with this task_def
         raise cls.Error(cls.validate_def(task_name, task_def))
 
@@ -145,6 +163,7 @@ class PoeTask:
         from poetry.utils.env import EnvManager
 
         poetry = Factory().create_poetry(project_dir)
+        # TODO: unify ConsoleIO with ui.output
         return EnvManager(poetry).create_venv(ConsoleIO())
 
     class Type(Enum):
@@ -153,3 +172,13 @@ class PoeTask:
 
     class Error(Exception):
         pass
+
+
+def _stop_coverage():
+    if "coverage" in sys.modules:
+        # If Coverage is running then it ends here
+        from coverage import Coverage
+
+        cov = Coverage.current()
+        cov.stop()
+        cov.save()

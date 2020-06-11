@@ -13,6 +13,7 @@ python = "^3.6"
 toml = "^0.10.1"
 poetry = "^1.0.5"
 pastel = "^0.2.0"
+dataclasses = { version = "^0.7", python = ">=3.6, <3.7" }
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
@@ -21,9 +22,10 @@ mypy = "^0.770"
 pylint = "^2.5.2"
 pytest = "^5.2"
 pytest-cov = "^2.9.0"
+tox = "^3.15.2"
 
 [tool.poetry.scripts]
-poe = "poethepoet.cli:main"
+poe = "poethepoet:main"
 
 [tool.poe.tasks]
 # Dev actions
@@ -37,11 +39,25 @@ clean = """
          ./**/__pycache__
 """
 # Code quality checks
-test = "pytest --cov=poethepoet tests"
+test = "pytest --cov=poethepoet"
 types = "mypy poethepoet --ignore-missing-imports"
 lint = "pylint poethepoet"
 style = "black . --check --diff"
 
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = true
+envlist = py36, py37, py38
+[testenv]
+whitelist_externals = poetry
+commands =
+    poetry install -v
+    poe test
+"""
+
+[tool.coverage.report]
+omit=["**/site-packages/**"]
 
 [build-system]
 requires = ["poetry>=0.12"]
