@@ -26,6 +26,10 @@ class PoeThePoet:
     def __call__(self, cli_args: Sequence[str]) -> int:
         self.ui.parse_args(cli_args)
 
+        if self.ui["version"]:
+            self.ui.print_version()
+            return 0
+
         try:
             self.config.load(self.ui["project_root"])
             self.config.validate()

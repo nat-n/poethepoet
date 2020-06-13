@@ -10,10 +10,10 @@ def test_call_echo_task(run_poe_subproc, dummy_project_path):
         == f"Poe => echo POE_ROOT:{dummy_project_path} task_args: foo {dummy_project_path} !\n"
     )
     assert (
-        result.stdout.decode()
+        result.stdout
         == f"POE_ROOT:{dummy_project_path} task_args: foo {dummy_project_path} !\n"
     )
-    assert result.stderr == b""
+    assert result.stderr == ""
 
 
 def test_setting_envvar_in_task(run_poe_subproc, dummy_project_path):
@@ -21,5 +21,5 @@ def test_setting_envvar_in_task(run_poe_subproc, dummy_project_path):
     # never see it
     result = run_poe_subproc("show_env")
     assert result.capture == f"Poe => env\n"
-    assert f"POE_ROOT={dummy_project_path}" in result.stdout.decode()
-    assert result.stderr == b""
+    assert f"POE_ROOT={dummy_project_path}" in result.stdout
+    assert result.stderr == ""

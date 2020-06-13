@@ -1,3 +1,6 @@
+from poethepoet import __version__
+
+
 def test_call_no_args(run_poe):
     result = run_poe()
 
@@ -28,3 +31,17 @@ def test_call_unknown_task(run_poe):
     assert (
         "Error: Unrecognised task 'not_a_task'" in result.capture
     ), "Output should include error message"
+
+
+def test_version_option(run_poe):
+    result = run_poe("--version")
+    assert result.code == 0, "Expected zero result"
+    assert result.capture == f"Poe the poet - version: {__version__}\n"
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+    result = run_poe("--version", "-q")
+    assert result.code == 0, "Expected zero result"
+    assert result.capture == f"{__version__}\n"
+    assert result.stdout == ""
+    assert result.stderr == ""

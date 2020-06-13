@@ -59,6 +59,14 @@ class PoeUi:
             help="Show this help page and exit",
         )
 
+        self.parser.add_argument(
+            "--version",
+            dest="version",
+            action="store_true",
+            default=False,
+            help="Print the version and exit",
+        )
+
         verbosity_group = self.parser.add_mutually_exclusive_group()
         verbosity_group.add_argument(
             "-v",
@@ -176,3 +184,11 @@ class PoeUi:
         if verbosity >= self["verbosity"]:
             self.output.write(self._color.colorize(message) + end)
             self.output.flush()
+
+    def print_version(self):
+        if self["verbosity"] >= 0:
+            result = f"Poe the poet - version: <em>{__version__}</em>\n"
+        else:
+            result = f"{__version__}\n"
+
+        self.output.write(self._color.colorize(result))

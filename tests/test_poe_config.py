@@ -20,7 +20,7 @@ def test_setting_run_in_project_root_option(
         "--root", dummy_project_path, "pwd", cwd=poe_project_path, config=config
     )
     assert result.capture == f"Poe => pwd\n"
-    assert result.stdout.decode() == f"{dummy_project_path}\n"
+    assert result.stdout == f"{dummy_project_path}\n"
 
     # Disable default behavoir of running in project root
     config["run_in_project_root"] = False
@@ -28,4 +28,4 @@ def test_setting_run_in_project_root_option(
         "--root", dummy_project_path, "pwd", cwd=poe_project_path, config=config
     )
     assert result.capture == f"Poe => pwd\n"
-    assert result.stdout.decode() == f"{somewhere_else}\n"
+    assert result.stdout == f"{somewhere_else}\n"

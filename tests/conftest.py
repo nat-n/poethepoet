@@ -95,8 +95,8 @@ def run_poe_subproc(dummy_project_path, tmpfile_name):
         result = PoeRunResult(
             code=poeproc.returncode,
             capture=captured_output,
-            stdout=task_out,
-            stderr=task_err,
+            stdout=task_out.decode(),
+            stderr=task_err.decode(),
         )
         print(result)
         return result
