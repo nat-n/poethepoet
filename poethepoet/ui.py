@@ -124,49 +124,56 @@ class PoeUi:
         error: Optional[PoeException] = None,
     ):
         # TODO: See if this can be done nicely with a custom HelpFormatter
-        # TODO: support reduced verbosity
 
-        result: List[Union[str, Sequence[str]]] = [
-            (
-                "Poe the Poet - A task runner that works well with poetry.",
-                f"version <em>{__version__}</em>",
+        # Ignore verbosity mode if help flag is set
+        verbosity = 0 if self["help"] else self["verbosity"]
+
+        result: List[Union[str, Sequence[str]]] = []
+        if verbosity >= 0:
+            result.append(
+                (
+                    "Poe the Poet - A task runner that works well with poetry.",
+                    f"version <em>{__version__}</em>",
+                )
             )
-        ]
+
         if info:
             result.append(f"{f'<em2>Result: {info}</em2>'}")
+
         if error:
             # TODO: send this to stderr instead?
             result.append([f"<error>Error: {error.msg} </error>"])
             if error.cause:
                 result[-1].append(f"<error> From: {error.cause} </error>")  # type: ignore
 
-        # Use argparse for usage summary
-        result.append(
-            (
-                "<h2>USAGE</h2>",
-                "  <u>poe</u> [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]",
+        if verbosity >= 0:
+            # Use argparse for usage summary
+            result.append(
+                (
+                    "<h2>USAGE</h2>",
+                    "  <u>poe</u> [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]",
+                )
             )
-        )
 
-        # Use argparse for optional args
-        formatter = self.parser.formatter_class(prog=self.parser.prog)
-        action_group = self.parser._action_groups[1]
-        formatter.start_section(action_group.title)
-        formatter.add_arguments(action_group._group_actions)
-        formatter.end_section()
-        result.append(
-            ("<h2>GLOBAL OPTIONS</h2>", *formatter.format_help().split("\n")[1:])
-        )
+            # Use argparse for optional args
+            formatter = self.parser.formatter_class(prog=self.parser.prog)
+            action_group = self.parser._action_groups[1]
+            formatter.start_section(action_group.title)
+            formatter.add_arguments(action_group._group_actions)
+            formatter.end_section()
+            result.append(
+                ("<h2>GLOBAL OPTIONS</h2>", *formatter.format_help().split("\n")[1:])
+            )
 
-        if tasks:
-            tasks_section = ["<h2>CONFIGURED TASKS</h2>"]
-            for task in tasks:
-                if task.startswith("_"):
-                    continue
-                tasks_section.append(f"  <em>{task}<em>")
-            result.append(tasks_section)
-        else:
-            result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
+            if tasks:
+                tasks_section = ["<h2>CONFIGURED TASKS</h2>"]
+                for task in tasks:
+                    if task.startswith("_"):
+                        continue
+                    tasks_section.append(f"  <em>{task}</em>")
+                result.append(tasks_section)
+            else:
+                result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
 
         self.output.write(
             self._color.colorize(
@@ -176,12 +183,13 @@ class PoeUi:
                     else "\n".join(section).strip("\n")
                     for section in result
                 )
-                + "\n"
+                + f"\n"
+                + ("\n" if verbosity >= 0 else "")
             )
         )
 
     def print_msg(self, message: str, verbosity=0, end="\n"):
-        if verbosity >= self["verbosity"]:
+        if verbosity <= self["verbosity"]:
             self.output.write(self._color.colorize(message) + end)
             self.output.flush()
 
@@ -190,5 +198,4 @@ class PoeUi:
             result = f"Poe the poet - version: <em>{__version__}</em>\n"
         else:
             result = f"{__version__}\n"
-
         self.output.write(self._color.colorize(result))
