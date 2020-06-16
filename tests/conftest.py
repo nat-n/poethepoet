@@ -42,7 +42,7 @@ PoeRunResult = namedtuple("PoeRunResult", ("code", "capture", "stdout", "stderr"
 def run_poe_subproc(dummy_project_path, tmpfile_name):
     coverage_setup = (
         "from coverage import Coverage;"
-        f"Coverage(data_file='{PROJECT_ROOT.joinpath('.coverage')}').start();"
+        fr'Coverage(data_file=\"{PROJECT_ROOT.joinpath(".coverage")}\").start();'
     )
     shell_cmd_template = (
         'python -c "'
@@ -50,7 +50,7 @@ def run_poe_subproc(dummy_project_path, tmpfile_name):
         "import toml;"
         "from poethepoet import PoeThePoet;"
         "from pathlib import Path;"
-        "poe = PoeThePoet(cwd='{cwd}', config={config}, output={output});"
+        r"poe = PoeThePoet(cwd=\"{cwd}\", config={config}, output={output});"
         "poe([{run_args}]);"
         '"'
     )
@@ -73,7 +73,7 @@ def run_poe_subproc(dummy_project_path, tmpfile_name):
                 coverage_setup=(coverage_setup if coverage else ""),
                 cwd=cwd,
                 config=config_arg,
-                run_args=",".join(f"'{arg}'" for arg in run_args),
+                run_args=",".join(f'\\"{arg}\\"' for arg in run_args),
                 output=fr"open(\"{tmpfile_name}\", \"w\")",
             )
 

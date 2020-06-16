@@ -19,6 +19,7 @@ def test_setting_run_in_project_root_option(
     result = run_poe_subproc(
         "--root", dummy_project_path, "pwd", cwd=poe_project_path, config=config
     )
+    print(result)
     assert result.capture == f"Poe => pwd\n"
     assert result.stdout == f"{dummy_project_path}\n"
 
