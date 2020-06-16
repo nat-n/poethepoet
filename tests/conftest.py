@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from collections import namedtuple
 from io import StringIO
 import os
 from pathlib import Path
@@ -35,12 +35,7 @@ def tmpfile_name():
         yield Path(tmpfile.name)
 
 
-@dataclass
-class PoeRunResult:
-    code: int
-    capture: str
-    stdout: bytes
-    stderr: bytes
+PoeRunResult = namedtuple("PoeRunResult", ("code", "capture", "stdout", "stderr"))
 
 
 @pytest.fixture(scope="function")
@@ -98,7 +93,7 @@ def run_poe_subproc(dummy_project_path, tmpfile_name):
             stdout=task_out.decode(),
             stderr=task_err.decode(),
         )
-        print(result)
+        print(result)  # when a test fails this is usually useful to debug
         return result
 
     return run_poe_subproc

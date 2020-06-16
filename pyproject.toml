@@ -10,10 +10,9 @@ homepage =  "https://github.com/nat-n/poethepoet"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-toml = "^0.10.1"
-poetry = "^1.0.5"
 pastel = "^0.2.0"
-dataclasses = { version = "^0.7", python = ">=3.6, <3.7" }
+poetry = "^1.0.5"
+toml = "^0.10.1"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
