@@ -72,6 +72,7 @@ class PoeThePoet:
             take_args,
             project_dir=self.config.project_dir,
             set_cwd=self.config.run_in_project_root,
+            dry=self.ui["dry_run"],
         )
 
     def print_help(

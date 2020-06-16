@@ -89,6 +89,15 @@ class PoeUi:
         )
 
         self.parser.add_argument(
+            "-d",
+            "--dry-run",
+            dest="dry_run",
+            action="store_true",
+            default=False,
+            help="Print the task contents but don't actaully run it",
+        )
+
+        self.parser.add_argument(
             "--root",
             dest="project_root",
             metavar="PATH",

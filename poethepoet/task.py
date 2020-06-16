@@ -42,6 +42,7 @@ class PoeTask:
         project_dir: Path,
         env: Optional[Dict[str, str]] = None,
         set_cwd: bool = False,
+        dry: bool = False,
     ):
         """
         Run this task
@@ -61,8 +62,10 @@ class PoeTask:
                 cmd = self._resolve_command(extra_args, env)
 
                 # TODO: Respect quiet mode
-                self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(cmd)}")
-
+                self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(cmd)}", -dry)
+                if dry:
+                    # Don't actually run anything...
+                    return
                 if poetry_active:
                     if is_windows:
                         exe = subprocess.Popen(cmd, env=env)
