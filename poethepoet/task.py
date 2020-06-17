@@ -78,6 +78,12 @@ class PoeTask:
                 else:
                     # Use the internals of poetry run directly to execute the command
                     poetry_env = self._get_poetry_env(project_dir)
+                    # Ensure the virtualenv site packages are available
+                    #  + not 100% sure this is correct
+                    env["PYTHONPATH"] = poetry_env.site_packages
+                    env["PATH"] = os.pathsep.join(
+                        [str(poetry_env._bin_dir), env["PATH"]]
+                    )
                     _stop_coverage()
                     return poetry_env.execute(*cmd, env=env)
 
