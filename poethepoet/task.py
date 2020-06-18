@@ -6,7 +6,16 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Union,
+)
 from .ui import PoeUi
 
 TaskDef = Union[str, Dict[str, Any]]
@@ -40,15 +49,13 @@ class PoeTask:
         self,
         extra_args: Iterable[str],
         project_dir: Path,
-        env: Optional[Dict[str, str]] = None,
+        env: Optional[MutableMapping[str, str]] = None,
         set_cwd: bool = False,
         dry: bool = False,
     ):
         """
         Run this task
         """
-        is_windows = sys.platform == "win32"
-        poetry_active = bool(os.environ.get("POETRY_ACTIVE"))
         if env is None:
             env = dict(os.environ)
         env["POE_ROOT"] = str(project_dir)
@@ -59,42 +66,30 @@ class PoeTask:
 
         try:
             if self.type == self.Type.COMMAND:
-                cmd = self._resolve_command(extra_args, env)
-
-                # TODO: Respect quiet mode
-                self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(cmd)}", -dry)
-                if dry:
-                    # Don't actually run anything...
-                    return
-                if poetry_active:
-                    if is_windows:
-                        exe = subprocess.Popen(cmd, env=env)
-                        exe.communicate()
-                        return exe.returncode
-                    else:
-                        _stop_coverage()
-                        # Never return...
-                        return os.execvpe(cmd[0], cmd, env)
-                else:
-                    # Use the internals of poetry run directly to execute the command
-                    poetry_env = self._get_poetry_env(project_dir)
-                    # Ensure the virtualenv site packages are available
-                    #  + not 100% sure this is correct
-                    env["PYTHONPATH"] = poetry_env.site_packages
-                    env["PATH"] = os.pathsep.join(
-                        [str(poetry_env._bin_dir), env["PATH"]]
-                    )
-                    _stop_coverage()
-                    return poetry_env.execute(*cmd, env=env)
-
+                self._run_cmd(list(extra_args), project_dir, env, dry)
             elif self.type == self.Type.SCRIPT:
-                # TODO: support calling python functions
-                raise NotImplementedError
+                self._run_script(list(extra_args), project_dir, env, dry)
         finally:
             if set_cwd:
                 os.chdir(previous_wd)
 
-    def _resolve_command(self, extra_args: Iterable[str], env: Dict[str, str]):
+    def _run_cmd(
+        self,
+        extra_args: Iterable[str],
+        project_dir: Path,
+        env: MutableMapping[str, str],
+        dry: bool = False,
+    ):
+        cmd = self._resolve_command(extra_args, env)
+        self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(cmd)}", -dry)
+        if dry:
+            # Don't actually run anything...
+            return
+        self._execute(project_dir, cmd, env)
+
+    def _resolve_command(
+        self, extra_args: Iterable[str], env: MutableMapping[str, str]
+    ):
         assert self.type == self.Type.COMMAND
         # Parse shell command tokens
         cmd_tokens = shlex.split(
@@ -113,7 +108,7 @@ class PoeTask:
         return result
 
     @staticmethod
-    def _resolve_envvars(content: str, env: Dict[str, str]) -> str:
+    def _resolve_envvars(content: str, env: MutableMapping[str, str]) -> str:
         """
         Template in ${environmental} $variables from env as if we were in a shell
 
@@ -146,6 +141,64 @@ class PoeTask:
                     resolved_parts.append(matched[0:1] + matched[2:])
         resolved_parts.append(content[cursor:])
         return "".join(resolved_parts)
+
+    def _execute(
+        self, project_dir: Path, cmd: Sequence[str], env: MutableMapping[str, str]
+    ):
+        if bool(os.environ.get("POETRY_ACTIVE")):
+            # Inside poetry shell
+            if sys.platform == "win32":
+                # On windows
+                exe = subprocess.Popen(cmd, env=env)
+                exe.communicate()
+                return exe.returncode
+            else:
+                _stop_coverage()
+                # Never return...
+                return os.execvpe(cmd[0], tuple(cmd), env)
+        else:
+            # Use the internals of poetry run directly to execute the command
+            poetry_env = self._get_poetry_env(project_dir)
+            # Ensure the virtualenv site packages are available
+            #  + not 100% sure this is correct
+            env["PYTHONPATH"] = poetry_env.site_packages
+            env["PATH"] = os.pathsep.join([str(poetry_env._bin_dir), env["PATH"]])
+            _stop_coverage()
+            return poetry_env.execute(*cmd, env=env)
+
+    def _run_script(
+        self,
+        extra_args: Iterable[str],
+        project_dir: Path,
+        env: MutableMapping[str, str],
+        dry: bool = False,
+    ):
+        from poetry.factory import Factory
+        from poetry.masonry.utils.module import Module
+
+        poetry = Factory().create_poetry(project_dir)
+        package = poetry.package
+        poetry_module = Module(
+            package.name, poetry.file.parent.as_posix(), package.packages
+        )
+        src_in_sys_path = (  # poetry run does this so we do too
+            "sys.path.append('src'); " if poetry_module.is_in_src() else ""
+        )
+        target_module, target_callable = self.content.split(":")
+        argv = [self.name, *(self._resolve_envvars(token, env) for token in extra_args)]
+        cmd = (
+            "python",
+            "-c",
+            "import sys; "
+            "from importlib import import_module; "
+            f"sys.argv = {argv!r}; {src_in_sys_path}"
+            f"import_module('{target_module}').{target_callable}()",
+        )
+        self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(argv)}", -dry)
+        if dry:
+            # Don't actually run anything...
+            return
+        self._execute(project_dir, cmd, env)
 
     @classmethod
     def from_def(cls, task_name: str, task_def: TaskDef, ui: PoeUi) -> "PoeTask":
@@ -182,8 +235,20 @@ class PoeTask:
                 f"Invalid task name: {task_name!r}. Task names characters must be "
                 "alphanumeric, colon, underscore or dash."
             )
-        elif not isinstance(task_def, str):
-            issue = f"Invalid task: {task_name!r}. Task content must be a string."
+        elif isinstance(task_def, dict):
+            if "cmd" in task_def:
+                if not isinstance(task_def["cmd"], str):
+                    issue = f"Invalid task: {task_name!r}. cmd value should be a string"
+            elif "script" in task_def:
+                if not isinstance(task_def["script"], str):
+                    issue = (
+                        f"Invalid task: {task_name!r}. script value should be a string"
+                    )
+            else:
+                issue = (
+                    f"Invalid task: {task_name!r}. Task content must be a string, or "
+                    "object with a cmd key"
+                )
         else:
             return None
 

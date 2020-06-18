@@ -54,3 +54,16 @@ def test_passing_envvar_str_to_task(
     )
     # assert result.stdout == f"POE_ROOT:{dummy_project_path} task_args: {output_var} !\n"
     assert result.stderr == ""
+
+
+def test_script_task(run_poe_subproc, dummy_project_path):
+    # The $ has to be escaped or it'll be evaluated by the outer shell and poe will
+    # never see it
+    print([f"{dummy_project_path}"])
+    result = run_poe_subproc("greet", "nat,", r"welcome to \${POE_ROOT}")
+    assert result.capture == f"Poe => greet nat, welcome to {dummy_project_path}\n"
+    assert (
+        result.stdout
+        == "hello nat, welcome to /Users/nat/Projects/poethepoet/tests/fixtures/dummy_project\n"
+    )
+    assert result.stderr == ""

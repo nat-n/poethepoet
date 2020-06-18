@@ -41,7 +41,9 @@ clean = """
 test = "pytest --cov=poethepoet"
 types = "mypy poethepoet --ignore-missing-imports"
 lint = "pylint poethepoet"
-style = "black . --check --diff"
+style = { cmd = "black . --check --diff" }
+# poeception
+poe = { script = "poethepoet:main" }
 
 [tool.tox]
 legacy_tox_ini = """

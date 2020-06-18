@@ -16,9 +16,10 @@ Features
 - Straight foward declaration of project tasks in your pyproject.toml (kind of like npm
   scripts)
 - Task are run in poetry's virtualenv by default
+- Tasks can be shell command or references to python functions (like tool.poetry.scripts)
 - Short and sweet commands with extra arguments passed to the task
   :bash:`poe [options] task [task_args]`
-- tasks can reference environmental variables as if they were evaluated by a shell
+- Tasks can reference environmental variables as if they were evaluated by a shell
 
 Installation
 ============
@@ -46,7 +47,8 @@ Define tasks in your pyproject.toml
 .. code-block:: toml
 
   [tool.poe.tasks]
-  test = "pytest --cov=poethepoet"
+  test = "pytest --cov=poethepoet"                   # shell command based task
+  greet = { script = "my_package.my_script:main" }   # python script based task
 
 Run tasks with the poe cli
 --------------------------
@@ -112,7 +114,6 @@ Don't delay, create an issue today!
 TODO
 ====
 
-* support "script" tasks defined as references to python functions
 * task composition/aliases
 * support declaring specific arguments for a task
 * support documenting tasks

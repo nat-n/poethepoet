@@ -4,10 +4,15 @@ version = "0.1.0"
 description = "dummy-project"
 authors = ["Nat Noordanus <n@natn.me>"]
 
+packages = [
+  { include = "dummy_package" }
+]
+
 [tool.poe.tasks]
 echo = "echo POE_ROOT:$POE_ROOT task_args:"
 show_env = "env"
 pwd = "pwd"
+greet = { script = "dummy_package:main" }
 
 [build-system]
 requires = ["poetry>=0.12"]
