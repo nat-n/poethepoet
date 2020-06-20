@@ -29,6 +29,8 @@ jobs:
         run: poetry run poe lint
       - name: Check types
         run: poetry run poe types
+      - name: Check rst syntax
+        run: poetry run poe check-docs
 
   run-tests:
     runs-on: ubuntu-latest

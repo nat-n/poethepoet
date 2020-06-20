@@ -23,6 +23,7 @@ pylint = "^2.5.2"
 pytest = "^5.2"
 pytest-cov = "^2.9.0"
 tox = "^3.15.2"
+rstcheck = "^3.3.1"
 
 [tool.poetry.scripts]
 poe = "poethepoet:main"
@@ -43,7 +44,8 @@ clean = """
 test = "pytest --cov=poethepoet"
 types = "mypy poethepoet --ignore-missing-imports"
 lint = "pylint poethepoet"
-style = { cmd = "black . --check --diff" }
+style = "black . --check --diff"
+check-docs = "rstcheck README.rst"
 # poeception
 poe = { script = "poethepoet:main" }
 
