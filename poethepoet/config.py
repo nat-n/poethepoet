@@ -10,6 +10,9 @@ class PoeConfig:
 
     TOML_NAME = "pyproject.toml"
 
+    # Options allowed directly under tool.poe in pyproject.toml
+    __options__ = {"default_task_type": str, "run_in_project_root": bool}
+
     def __init__(
         self,
         cwd: Optional[Union[Path, str]] = None,
@@ -26,6 +29,10 @@ class PoeConfig:
     @property
     def run_in_project_root(self) -> bool:
         return self._table.get("run_in_project_root", True)
+
+    @property
+    def default_task_type(self) -> str:
+        return self._table.get("default_task_type", "cmd")
 
     @property
     def project_dir(self) -> str:
@@ -47,15 +54,23 @@ class PoeConfig:
 
     def validate(self):
         # Validate keys
-        supported_keys = {"run_in_project_root", "tasks"}
+        supported_keys = {"tasks", *self.__options__}
         unsupported_keys = set(self._table) - supported_keys
         if unsupported_keys:
             raise PoeException(f"Unsupported keys in poe config: {unsupported_keys!r}")
-        # Validate run_in_project_root value
-        if not isinstance(self._table.get("run_in_project_root", True), bool):
+        # Validate types of option values
+        for key, option_type in self.__options__.items():
+            if key in self._table and not isinstance(self._table[key], option_type):
+                raise PoeException(
+                    f"Unsupported value for option {key!r}, expected type to be "
+                    f"{option_type.__name__}."
+                )
+        # Validate default_task_type value
+        if not PoeTask.is_task_type(self.default_task_type):
+            # TODO: maybe revisit this if/when not all task types have str content!
             raise PoeException(
-                "Unsupported value for option `run_in_project_root` "
-                f"{self._table['run_in_project_root']!r}"
+                "Unsupported value for option `default_task_type` "
+                f"{self.default_task_type!r}"
             )
         # Validate tasks
         for task_name, task_def in self.tasks.items():
@@ -67,8 +82,8 @@ class PoeConfig:
     def find_pyproject_toml(self, target_dir: Optional[str] = None) -> Path:
         """
         Resolve a path to a pyproject.toml using one of two strategies:
-          1. If target_dir is provided then only look there, (accept path to .toml file or
-             to a directory dir).
+          1. If target_dir is provided then only look there, (accept path to .toml file
+             or to a directory dir).
           2. Otherwise look for the pyproject.toml is the current working directory,
              following by all parent directories in ascending order.
 
@@ -89,8 +104,8 @@ class PoeConfig:
         while not maybe_result.exists():
             if maybe_result.parent == Path("/"):
                 raise PoeException(
-                    "Poe could not find a pyproject.toml file in /Users/nat/Projects or its"
-                    " parents"
+                    f"Poe could not find a pyproject.toml file in {self.cwd} or"
+                    " its parents"
                 )
             maybe_result = maybe_result.parents[1].joinpath(self.TOML_NAME).resolve()
         return maybe_result

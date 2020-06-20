@@ -34,8 +34,9 @@ clean = """
   rm -rf .coverage
          .mypy_cache
          .pytest_cache
-         dist
          ./**/__pycache__
+         dist
+         htmlcov
 """
 # Code quality checks
 test = "pytest --cov=poethepoet"

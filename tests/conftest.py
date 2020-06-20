@@ -29,6 +29,11 @@ def dummy_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "dummy_project")
 
 
+@pytest.fixture
+def scripts_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "scripts_project")
+
+
 @pytest.fixture(scope="function")
 def tmpfile_name():
     with NamedTemporaryFile() as tmpfile:

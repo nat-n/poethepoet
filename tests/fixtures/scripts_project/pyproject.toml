@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "scripts-project"
+version = "0.1.0"
+description = "scripts-project"
+authors = ["Nat Noordanus <n@natn.me>"]
+
+packages = [
+  { include = "scripts_pkg" }
+]
+
+[tool.poe]
+default_task_type = "script"
+
+[tool.poe.tasks]
+greet = "scripts_pkg:main"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

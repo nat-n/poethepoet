@@ -62,7 +62,10 @@ class PoeThePoet:
             return False
 
         self.task = PoeTask.from_def(
-            task_name, self.config.tasks[task_name], ui=self.ui
+            task_name,
+            self.config.tasks[task_name],
+            ui=self.ui,
+            default_type=self.config.default_task_type,
         )
         return True
 

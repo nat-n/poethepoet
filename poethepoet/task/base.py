@@ -1,22 +1,19 @@
-from enum import Enum
-from glob import glob
 import os
 from pathlib import Path
 import re
-import shlex
 import subprocess
 import sys
 from typing import (
     Any,
     Dict,
     Iterable,
-    Mapping,
     MutableMapping,
     Optional,
     Sequence,
+    Type,
     Union,
 )
-from .ui import PoeUi
+from ..ui import PoeUi
 
 TaskDef = Union[str, Dict[str, Any]]
 
@@ -31,19 +28,57 @@ _SHELL_VAR_PATTERN = re.compile(
     r"\${([\w\d_]+)}"  # ${VAR}
     r")"
 )
-_GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 
 
-class PoeTask:
-    type: "PoeTask.Type"
+class MetaPoeTask(type):
+    """
+    This metaclass makes all decendents of PoeTask (task types) register themselves on
+    declaration and validates that they include the expected class attributes.
+    """
+
+    def __init__(cls, *args):
+        newclass = super().__init__(*args)
+        if cls.__name__ == "PoeTask":
+            return
+        assert isinstance(getattr(cls, "__key__", None), str)
+        assert isinstance(getattr(cls, "__options__", None), dict)
+        PoeTask._PoeTask__task_types[cls.__key__] = cls
+
+
+class PoeTask(metaclass=MetaPoeTask):
     name: str
     content: str
+    options: Dict[str, Any]
 
-    def __init__(self, type: "PoeTask.Type", name: str, content: str, ui: PoeUi):
-        self.type = type
+    __options__: Dict[str, Type]
+    __task_types: Dict[str, Type["PoeTask"]] = {}
+
+    def __init__(self, name: str, content: str, options: Dict[str, Any], ui: PoeUi):
         self.name = name
-        self.content = content
+        self.content = content.strip()
+        self.options = options
         self._ui = ui
+
+    @classmethod
+    def from_def(
+        cls, task_name: str, task_def: TaskDef, ui: PoeUi, default_type: str
+    ) -> "PoeTask":
+        if isinstance(task_def, str):
+            return cls.__task_types[default_type](
+                name=task_name, content=task_def, options={}, ui=ui
+            )
+
+        task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
+        if len(task_type_keys) == 1:
+            task_type_key = next(iter(task_type_keys))
+            options = dict(task_def)
+            content = options.pop(task_type_key)
+            return cls.__task_types[task_type_key](
+                name=task_name, content=content, options=options, ui=ui,
+            )
+
+        # Something is wrong with this task_def
+        raise cls.Error(cls.validate_def(task_name, task_def))
 
     def run(
         self,
@@ -65,47 +100,10 @@ class PoeTask:
             os.chdir(project_dir)
 
         try:
-            if self.type == self.Type.COMMAND:
-                self._run_cmd(list(extra_args), project_dir, env, dry)
-            elif self.type == self.Type.SCRIPT:
-                self._run_script(list(extra_args), project_dir, env, dry)
+            self._handle_run(list(extra_args), project_dir, env, dry)
         finally:
             if set_cwd:
                 os.chdir(previous_wd)
-
-    def _run_cmd(
-        self,
-        extra_args: Iterable[str],
-        project_dir: Path,
-        env: MutableMapping[str, str],
-        dry: bool = False,
-    ):
-        cmd = self._resolve_command(extra_args, env)
-        self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(cmd)}", -dry)
-        if dry:
-            # Don't actually run anything...
-            return
-        self._execute(project_dir, cmd, env)
-
-    def _resolve_command(
-        self, extra_args: Iterable[str], env: MutableMapping[str, str]
-    ):
-        assert self.type == self.Type.COMMAND
-        # Parse shell command tokens
-        cmd_tokens = shlex.split(
-            self._resolve_envvars(self.content, env), comments=True
-        )
-        extra_args = [self._resolve_envvars(token, env) for token in extra_args]
-        # Resolve any glob pattern paths
-        result = []
-        for cmd_token in (*cmd_tokens, *extra_args):
-            if _GLOBCHARS_PATTERN.match(cmd_token):
-                # looks like a glob path so resolve it
-                result.extend(glob(cmd_token, recursive=True))
-            else:
-                result.append(cmd_token)
-        # Finally add the extra_args from the invoking command and we're done
-        return result
 
     @staticmethod
     def _resolve_envvars(content: str, env: MutableMapping[str, str]) -> str:
@@ -163,57 +161,10 @@ class PoeTask:
             #  + not 100% sure this is correct
             env["PYTHONPATH"] = poetry_env.site_packages
             env["PATH"] = os.pathsep.join([str(poetry_env._bin_dir), env["PATH"]])
+            if "PYTHONHOME" in env:
+                del env["PYTHONHOME"]
             _stop_coverage()
             return poetry_env.execute(*cmd, env=env)
-
-    def _run_script(
-        self,
-        extra_args: Iterable[str],
-        project_dir: Path,
-        env: MutableMapping[str, str],
-        dry: bool = False,
-    ):
-        from poetry.factory import Factory
-        from poetry.masonry.utils.module import Module
-
-        poetry = Factory().create_poetry(project_dir)
-        package = poetry.package
-        poetry_module = Module(
-            package.name, poetry.file.parent.as_posix(), package.packages
-        )
-        src_in_sys_path = (  # poetry run does this so we do too
-            "sys.path.append('src'); " if poetry_module.is_in_src() else ""
-        )
-        target_module, target_callable = self.content.split(":")
-        argv = [self.name, *(self._resolve_envvars(token, env) for token in extra_args)]
-        cmd = (
-            "python",
-            "-c",
-            "import sys; "
-            "from importlib import import_module; "
-            f"sys.argv = {argv!r}; {src_in_sys_path}"
-            f"import_module('{target_module}').{target_callable}()",
-        )
-        self._ui.print_msg(f"<hl>Poe =></hl> {' '.join(argv)}", -dry)
-        if dry:
-            # Don't actually run anything...
-            return
-        self._execute(project_dir, cmd, env)
-
-    @classmethod
-    def from_def(cls, task_name: str, task_def: TaskDef, ui: PoeUi) -> "PoeTask":
-        if isinstance(task_def, str):
-            return cls(name=task_name, type=cls.Type.COMMAND, content=task_def, ui=ui)
-        elif "cmd" in task_def:
-            return cls(
-                name=task_name, type=cls.Type.COMMAND, content=task_def["cmd"], ui=ui,
-            )
-        elif "script" in task_def:
-            return cls(
-                name=task_name, type=cls.Type.SCRIPT, content=task_def["script"], ui=ui,
-            )
-        # Something is wrong with this task_def
-        raise cls.Error(cls.validate_def(task_name, task_def))
 
     @classmethod
     def validate_def(
@@ -236,18 +187,36 @@ class PoeTask:
                 "alphanumeric, colon, underscore or dash."
             )
         elif isinstance(task_def, dict):
-            if "cmd" in task_def:
-                if not isinstance(task_def["cmd"], str):
-                    issue = f"Invalid task: {task_name!r}. cmd value should be a string"
-            elif "script" in task_def:
-                if not isinstance(task_def["script"], str):
+            task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
+            if len(task_type_keys) == 1:
+                task_type_key = next(iter(task_type_keys))
+                task_type = cls.__task_types[task_type_key]
+                if not isinstance(task_def[task_type_key], str):
                     issue = (
-                        f"Invalid task: {task_name!r}. script value should be a string"
+                        f"Invalid task: {task_name!r}. {task_type} value must be a "
+                        "string"
                     )
+                else:
+                    for key in set(task_def) - {task_type_key}:
+                        if key not in task_type.__options__:
+                            issue = (
+                                f"Invalid task: {task_name!r}. Unrecognised option "
+                                f"{key!r} for task of type: {task_type_key}."
+                            )
+                            break
+                        elif not isinstance(task_def[key], task_type.__options__[key]):
+                            issue = (
+                                f"Invalid task: {task_name!r}. Option {key!r} should "
+                                f"have a value of type {task_type.__options__[key]!r}"
+                            )
+                            break
+                    else:
+                        if hasattr(task_type, "_validate_task_def"):
+                            issue = task_type._validate_task_def(task_def)
             else:
                 issue = (
-                    f"Invalid task: {task_name!r}. Task content must be a string, or "
-                    "object with a cmd key"
+                    f"Invalid task: {task_name!r}. Task definition must include exactly"
+                    f" one task key from {set(cls.__task_types)!r}"
                 )
         else:
             return None
@@ -255,6 +224,10 @@ class PoeTask:
         if raize:
             raise cls.Error(issue)
         return issue
+
+    @classmethod
+    def is_task_type(cls, task_def_key: str) -> bool:
+        return task_def_key in cls.__task_types
 
     @staticmethod
     def _get_poetry_env(project_dir: Path):
@@ -266,9 +239,31 @@ class PoeTask:
         # TODO: unify ConsoleIO with ui.output
         return EnvManager(poetry).create_venv(ConsoleIO())
 
-    class Type(Enum):
-        COMMAND = "a shell command"
-        SCRIPT = "a python function invocation"
+    def _handle_run(
+        self,
+        extra_args: Iterable[str],
+        project_dir: Path,
+        env: MutableMapping[str, str],
+        dry: bool = False,
+    ):
+        raise NotImplementedError
+
+    @classmethod
+    def _validate_task_def(cls, task_def: TaskDef) -> Optional[str]:
+        """
+        To be overriden by subclasses to check the given task definition for validity
+        specific to that task type and return a message describing the first encountered
+        issue if any.
+        """
+        issue = None
+        return issue
+
+    def _print_action(self, action: Any, dry: bool):
+        """
+        Print the action taken by a task just before executing it.
+        """
+        min_verbosity = -1 if dry else 0
+        self._ui.print_msg(f"<hl>Poe =></hl> {action}", min_verbosity)
 
     class Error(Exception):
         pass
