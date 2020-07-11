@@ -51,7 +51,7 @@ class PoeTask(metaclass=MetaPoeTask):
     options: Dict[str, Any]
 
     __options__: Dict[str, Type]
-    __base_options: Dict[str, Type] = {"help": str}
+    __base_options: Dict[str, Type] = {"help": str, "env": dict}
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
     def __init__(self, name: str, content: str, options: Dict[str, Any], ui: PoeUi):
@@ -95,6 +95,8 @@ class PoeTask(metaclass=MetaPoeTask):
         if env is None:
             env = dict(os.environ)
         env["POE_ROOT"] = str(project_dir)
+        if self.options.get("env"):
+            env = dict(env, **self.options["env"])
 
         if set_cwd:
             previous_wd = os.getcwd()

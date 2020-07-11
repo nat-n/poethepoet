@@ -9,8 +9,9 @@ packages = [
 ]
 
 [tool.poe.tasks]
-echo.cmd = "echo POE_ROOT:$POE_ROOT task_args:"
+echo.cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD} task_args:"
 echo.help = "It says what you say"
+echo.env.BEST_PASSWORD = "Password1"
 show_env = "env"
 pwd = "pwd"
 greet = { script = "dummy_package:main" }

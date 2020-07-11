@@ -17,11 +17,13 @@ Features
 
 ✅ Task are run in poetry's virtualenv by default
 
-✅ Tasks can be shell commands or references to python functions (like tool.poetry.scripts)
+✅ Tasks can be commands (with or without a shell) or references to python functions (like tool.poetry.scripts)
 
 ✅ Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`
 
-✅ Tasks can reference environmental variables as if they were evaluated by a shell
+✅ Tasks can specify and reference environmental variables as if they were evaluated by a shell
+
+✅ Tasks are self documenting, with optional help messages (just run poe without arguments)
 
 Installation
 ============
@@ -135,7 +137,7 @@ scripts (shell).
     pfwd = { "shell" = "ssh -N -L 0.0.0.0:8080:$STAGING:8080 $STAGING & ssh -N -L 0.0.0.0:5432:$STAGINGDB:5432 $STAGINGDB &" }
     pfwdstop = { "shell" = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")" }
 
-Extra task configuration
+Task level configuration
 ========================
 
 Task help text
@@ -147,6 +149,19 @@ You can specifiy help text to be shown alongside the task name in the list of av
 
     [tool.poe.tasks]
     style = {cmd = "black . --check --diff", help = "Check code style"}
+
+Environmental variables
+-----------------------
+
+You can specify arbitrary environmental variables to be set for a task by providing the env key like so:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+    serve.script = "myapp:run"
+    serve.env = { PORT = 9001 }
+
+Notice this exame uses deep keys which can be more convenient but aren't as well supported by some toml implementations.
 
 Project-wide configuration options
 ==================================
@@ -205,13 +220,15 @@ TODO
 
 ☐ support declaring specific arguments for a task
 
-☐ support documenting tasks
-
 ☐ command line completion
 
 ☐ support running tasks outside of poetry's virtualenv (or in another?)
 
 ☐ maybe try work well without poetry too
+
+☐ maybe support alternative toml formats (e.g. table arrays)
+
+☐ maybe support third party task types
 
 Licence
 =======
