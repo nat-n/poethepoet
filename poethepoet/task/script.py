@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict, Iterable, MutableMapping, Optional, Type
+import sys
 from .base import PoeTask, TaskDef
 
 
@@ -32,7 +33,7 @@ class ScriptTask(PoeTask):
         target_module, target_callable = self.content.split(":")
         argv = [self.name, *(self._resolve_envvars(token, env) for token in extra_args)]
         cmd = (
-            "python",
+            sys.executable,
             "-c",
             "import sys; "
             "from importlib import import_module; "
