@@ -1,5 +1,4 @@
 from glob import glob
-import os
 from pathlib import Path
 import re
 import shlex
@@ -24,8 +23,6 @@ class CmdTask(PoeTask):
         env: MutableMapping[str, str],
         dry: bool = False,
     ):
-        if self.options.get("shell", False):
-            self._run_shell(extra_args, project_dir, env, dry)
         cmd = self._resolve_args(extra_args, env)
         self._print_action(" ".join(cmd), dry)
         if dry:
@@ -49,22 +46,6 @@ class CmdTask(PoeTask):
                 result.append(cmd_token)
         # Finally add the extra_args from the invoking command and we're done
         return result
-
-    def _run_shell(
-        self,
-        extra_args: Iterable[str],
-        project_dir: Path,
-        env: MutableMapping[str, str],
-        dry: bool = False,
-    ):
-        # TODO: look into making this more windows friendly
-        shell = os.environ.get("SHELL", "/bin/bash")
-        cmd = (shell, "-c", self.content)
-        self._print_action(self.content, dry)
-        if dry:
-            # Don't actually run anything...
-            return
-        self._execute(project_dir, cmd, env)
 
     @classmethod
     def _validate_task_def(cls, task_def: TaskDef) -> Optional[str]:
