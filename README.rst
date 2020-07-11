@@ -135,6 +135,18 @@ scripts (shell).
     pfwd = { "shell" = "ssh -N -L 0.0.0.0:8080:$STAGING:8080 $STAGING & ssh -N -L 0.0.0.0:5432:$STAGINGDB:5432 $STAGINGDB &" }
     pfwdstop = { "shell" = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")" }
 
+Extra task configuration
+========================
+
+Task help text
+--------------
+
+You can specifiy help text to be shown alongside the task name in the list of available tasks (such as when executing poe with no arguments), by adding a help key like so:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+    style = {cmd = "black . --check --diff", help = "Check code style"}
 
 Project-wide configuration options
 ==================================

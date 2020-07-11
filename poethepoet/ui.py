@@ -2,7 +2,7 @@ import argparse
 import os
 from pastel import Pastel
 import sys
-from typing import IO, Iterable, List, Optional, Sequence, Union
+from typing import IO, List, Mapping, Optional, Sequence, Union
 from .exceptions import PoeException
 from .__version__ import __version__
 
@@ -128,7 +128,7 @@ class PoeUi:
 
     def print_help(
         self,
-        tasks: Iterable[str] = tuple(),
+        tasks: Optional[Mapping[str, str]] = None,
         info: Optional[str] = None,
         error: Optional[PoeException] = None,
     ):
@@ -175,11 +175,15 @@ class PoeUi:
             )
 
             if tasks:
+                max_task_len = max(len(task) for task in tasks)
+                col_width = max(13, min(30, max_task_len))
                 tasks_section = ["<h2>CONFIGURED TASKS</h2>"]
-                for task in tasks:
+                for task, help_text in tasks.items():
                     if task.startswith("_"):
                         continue
-                    tasks_section.append(f"  <em>{task}</em>")
+                    tasks_section.append(
+                        f"  <em>{self._padr(task, col_width)}</em>  {help_text}"
+                    )
                 result.append(tasks_section)
             else:
                 result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
@@ -196,6 +200,12 @@ class PoeUi:
                 + ("\n" if verbosity >= 0 else "")
             )
         )
+
+    @staticmethod
+    def _padr(text: str, width: int):
+        if len(text) >= width:
+            return text
+        return text + " " * (width - len(text))
 
     def print_msg(self, message: str, verbosity=0, end="\n"):
         if verbosity <= self["verbosity"]:

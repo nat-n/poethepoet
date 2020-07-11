@@ -85,4 +85,8 @@ class PoeThePoet:
     ):
         if isinstance(error, str):
             error == PoeException(error)
-        self.ui.print_help(tasks=self.config.tasks, info=info, error=error)  # type: ignore
+        tasks_help = {
+            task: (content.get("help", "") if isinstance(content, dict) else "")
+            for task, content in self.config.tasks.items()
+        }
+        self.ui.print_help(tasks=tasks_help, info=info, error=error)  # type: ignore

@@ -51,6 +51,7 @@ class PoeTask(metaclass=MetaPoeTask):
     options: Dict[str, Any]
 
     __options__: Dict[str, Type]
+    __base_options: Dict[str, Type] = {"help": str}
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
     def __init__(self, name: str, content: str, options: Dict[str, Any], ui: PoeUi):
@@ -198,16 +199,19 @@ class PoeTask(metaclass=MetaPoeTask):
                     )
                 else:
                     for key in set(task_def) - {task_type_key}:
-                        if key not in task_type.__options__:
+                        expected_type = cls.__base_options.get(
+                            key, task_type.__options__.get(key)
+                        )
+                        if expected_type is None:
                             issue = (
                                 f"Invalid task: {task_name!r}. Unrecognised option "
                                 f"{key!r} for task of type: {task_type_key}."
                             )
                             break
-                        elif not isinstance(task_def[key], task_type.__options__[key]):
+                        elif not isinstance(task_def[key], expected_type):
                             issue = (
                                 f"Invalid task: {task_name!r}. Option {key!r} should "
-                                f"have a value of type {task_type.__options__[key]!r}"
+                                f"have a value of type {expected_type!r}"
                             )
                             break
                     else:

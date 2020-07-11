@@ -30,7 +30,7 @@ poe = "poethepoet:main"
 
 [tool.poe.tasks]
 # Dev actions
-format = "black ."
+format = { cmd = "black .", help = "Run black on the code base" }
 clean = """
   # multiline commands including comments work too!
   rm -rf .coverage
@@ -47,7 +47,7 @@ lint = "pylint poethepoet"
 style = "black . --check --diff"
 check-docs = "rstcheck README.rst"
 # poeception
-poe = { script = "poethepoet:main" }
+poe = { script = "poethepoet:main", help = "Execute poe programmatically as a poe task" }
 
 [tool.tox]
 legacy_tox_ini = """

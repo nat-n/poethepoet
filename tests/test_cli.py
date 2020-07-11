@@ -22,7 +22,9 @@ def test_call_with_root(run_poe, dummy_project_path):
     assert (
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
-    assert "CONFIGURED TASKS\n  echo" in result.capture, "echo task should be in help"
+    assert (
+        "CONFIGURED TASKS\n  echo           It says what you say" in result.capture
+    ), "echo task should be in help"
 
 
 def test_call_unknown_task(run_poe):
