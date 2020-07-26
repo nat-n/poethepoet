@@ -33,12 +33,13 @@ jobs:
         run: poetry run poe check-docs
 
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}-latest
 
     name: Run tests
 
     strategy:
       matrix:
+        os: [Ubuntu, MacOS, Windows]
         python-version: [ '3.6', '3.7' , '3.8' ]
 
     steps:
