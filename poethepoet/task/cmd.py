@@ -22,18 +22,20 @@ class CmdTask(PoeTask):
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-    ):
+    ) -> int:
         cmd = self._resolve_args(extra_args, env)
         self._print_action(" ".join(cmd), dry)
         if dry:
             # Don't actually run anything...
-            return
-        self._execute(project_dir, cmd, env)
+            return 0
+        return self._execute(project_dir, cmd, env)
 
     def _resolve_args(self, extra_args: Iterable[str], env: MutableMapping[str, str]):
         # Parse shell command tokens
         cmd_tokens = shlex.split(
-            self._resolve_envvars(self.content, env), comments=True
+            self._resolve_envvars(self.content, env),
+            comments=True,
+            posix=not self._is_windows,
         )
         extra_args = [self._resolve_envvars(token, env) for token in extra_args]
         # Resolve any glob pattern paths

@@ -1,10 +1,10 @@
 import pytest
 
 
-def test_call_echo_task(run_poe_subproc, dummy_project_path):
+def test_call_echo_task(run_poe_subproc, dummy_project_path, esc_prefix):
     # The $ has to be escaped or it'll be evaluated by the outer shell and poe will
     # never see it
-    result = run_poe_subproc("echo", "foo", r"\${POE_ROOT} !")
+    result = run_poe_subproc("echo", "foo", esc_prefix + r"${POE_ROOT} !")
     assert (
         result.capture
         == f"Poe => echo POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
@@ -41,8 +41,11 @@ def test_setting_envvar_in_task(run_poe_subproc, dummy_project_path):
     ),
 )
 def test_passing_envvar_str_to_task(
-    input_var, output_var, run_poe_subproc, dummy_project_path
+    input_var, output_var, run_poe_subproc, dummy_project_path, is_windows
 ):
+    if is_windows:
+        # the escapes doesn't work the same on windows so remove the extras
+        input_var = input_var.replace(r"\$", "$").replace(r"\\", "\\")
     # A further (outer shell escaped) escape can be added to indicate to POE that the $
     # is escaped
     # For the sake of sanity poe leaves the remaining backslashes alone
@@ -66,10 +69,12 @@ def test_shell_task(run_poe_subproc, dummy_project_path):
     assert result.stderr == ""
 
 
-def test_script_task(run_poe_subproc, dummy_project_path):
+def test_script_task(run_poe_subproc, dummy_project_path, esc_prefix):
     # The $ has to be escaped or it'll be evaluated by the outer shell and poe will
     # never see it
-    result = run_poe_subproc("greet", "nat,", r"welcome to \${POE_ROOT}")
+    result = run_poe_subproc(
+        "greet", "nat,", r"welcome to " + esc_prefix + "${POE_ROOT}"
+    )
     assert result.capture == f"Poe => greet nat, welcome to {dummy_project_path}\n"
     assert result.stdout == f"hello nat, welcome to {dummy_project_path}\n"
     assert result.stderr == ""

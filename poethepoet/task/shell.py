@@ -1,7 +1,11 @@
 import os
 from pathlib import Path
 import re
+import shutil
+import subprocess
+import sys
 from typing import Dict, Iterable, MutableMapping, Optional, Type
+from ..exceptions import PoeException
 from .base import PoeTask, TaskDef
 
 _GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
@@ -22,14 +26,47 @@ class ShellTask(PoeTask):
         env: MutableMapping[str, str],
         dry: bool = False,
     ):
-        # TODO: look into making this more windows friendly
-        shell = os.environ.get("SHELL", "/bin/bash")
-        cmd = (shell, "-c", self.content)
+        if sys.platform == "win32":
+            shell = self._find_posix_shell_on_windows()
+        else:
+            # Prefer to use configured shell, otherwise look for bash
+            shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
+
+        cmd = (*shell, "-c", self.content)
         self._print_action(self.content, dry)
         if dry:
             # Don't actually run anything...
-            return
-        self._execute(project_dir, cmd, env)
+            return 0
+        return self._execute(project_dir, cmd, env)
+
+    @staticmethod
+    def _find_posix_shell_on_windows():
+        # Try locate a shell from the environment
+        shell_from_env = shutil.which(os.environ.get("SHELL", "bash"))
+        if shell_from_env:
+            return [shell_from_env]
+
+        # Try locate a bash from the environment
+        bash_from_env = shutil.which("bash")
+        if bash_from_env:
+            return [bash_from_env]
+
+        # Or check specifically for git bash
+        bash_from_git = shutil.which("C:\\Program Files\\Git\\bin\\bash.exe")
+        if bash_from_git:
+            return [bash_from_git]
+
+        # or use bash from wsl if it's available
+        wsl = shutil.which("wsl")
+        if wsl and subprocess.run(["wsl", "bash"], capture_output=True).returncode > 0:
+            return [wsl, "bash"]
+
+        # Fail: if there is a bash out there, we don't know how to get to it
+        # > We don't know how to access wsl bash from python installed from python.org
+        raise PoeException(
+            "Couldn't locate bash executable to run shell task. Installing WSL should "
+            "fix this."
+        )
 
     @classmethod
     def _validate_task_def(cls, task_def: TaskDef) -> Optional[str]:

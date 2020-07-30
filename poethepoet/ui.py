@@ -188,17 +188,13 @@ class PoeUi:
             else:
                 result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
 
-        self.output.write(
-            self._color.colorize(
-                "\n\n".join(
-                    section
-                    if isinstance(section, str)
-                    else "\n".join(section).strip("\n")
-                    for section in result
-                )
-                + f"\n"
-                + ("\n" if verbosity >= 0 else "")
+        self._print(
+            "\n\n".join(
+                section if isinstance(section, str) else "\n".join(section).strip("\n")
+                for section in result
             )
+            + f"\n"
+            + ("\n" if verbosity >= 0 else "")
         )
 
     @staticmethod
@@ -209,12 +205,14 @@ class PoeUi:
 
     def print_msg(self, message: str, verbosity=0, end="\n"):
         if verbosity <= self["verbosity"]:
-            self.output.write(self._color.colorize(message) + end)
-            self.output.flush()
+            self._print(message, end=end)
 
     def print_version(self):
         if self["verbosity"] >= 0:
             result = f"Poe the poet - version: <em>{__version__}</em>\n"
         else:
             result = f"{__version__}\n"
-        self.output.write(self._color.colorize(result))
+        self._print(result)
+
+    def _print(self, message: str, *, end: str = "\n"):
+        print(self._color.colorize(message), end=end, file=self.output, flush=True)

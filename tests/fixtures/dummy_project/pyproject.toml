@@ -13,9 +13,9 @@ echo.cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD} task_args:"
 echo.help = "It says what you say"
 echo.env.BEST_PASSWORD = "Password1"
 show_env = "env"
-pwd = "pwd"
 greet = { script = "dummy_package:main" }
 count = { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
+shell_env.shell = "env"
 
 [build-system]
 requires = ["poetry>=0.12"]

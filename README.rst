@@ -171,16 +171,8 @@ Run poe from anywhere
 
 By default poe will detect when you're inside a project with a pyproject.toml in the
 root. However if you want to run it from elsewhere that is supported too by using the
-`--root` option to specify an alternate location for the toml file.
-
-By default poe will set the working directory to run tasks. If you want tasks to inherit
-the working directory from the environment that you disable this by setting the
-following in your pyproject.toml.
-
-.. code-block:: toml
-
-  [tool.poe]
-  run_in_project_root = false
+`--root` option to specify an alternate location for the toml file. The task will run
+with with the given location as the current working directory.
 
 In all cases the path to project root (where the pyproject.toml resides) is be available
 as `$POE_ROOT` within the command line and process.

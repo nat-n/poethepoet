@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 from typing import (
@@ -59,6 +60,7 @@ class PoeTask(metaclass=MetaPoeTask):
         self.content = content.strip()
         self.options = options
         self._ui = ui
+        self._is_windows = sys.platform == "win32"
 
     @classmethod
     def from_def(
@@ -86,9 +88,9 @@ class PoeTask(metaclass=MetaPoeTask):
         extra_args: Iterable[str],
         project_dir: Path,
         env: Optional[MutableMapping[str, str]] = None,
-        set_cwd: bool = False,
+        set_cwd: bool = True,
         dry: bool = False,
-    ):
+    ) -> int:
         """
         Run this task
         """
@@ -103,7 +105,7 @@ class PoeTask(metaclass=MetaPoeTask):
             os.chdir(project_dir)
 
         try:
-            self._handle_run(list(extra_args), project_dir, env, dry)
+            return self._handle_run(list(extra_args), project_dir, env, dry)
         finally:
             if set_cwd:
                 os.chdir(previous_wd)
@@ -144,11 +146,11 @@ class PoeTask(metaclass=MetaPoeTask):
         return "".join(resolved_parts)
 
     def _execute(
-        self, project_dir: Path, cmd: Sequence[str], env: MutableMapping[str, str]
+        self, project_dir: Path, cmd: Sequence[str], env: MutableMapping[str, str],
     ):
         if bool(os.environ.get("POETRY_ACTIVE")):
             # Inside poetry shell
-            if sys.platform == "win32":
+            if self._is_windows:
                 # On windows
                 exe = subprocess.Popen(cmd, env=env)
                 exe.communicate()
@@ -158,15 +160,19 @@ class PoeTask(metaclass=MetaPoeTask):
                 # Never return...
                 return os.execvpe(cmd[0], tuple(cmd), env)
         else:
-            # Use the internals of poetry run directly to execute the command
-            poetry_env = self._get_poetry_env(project_dir)
-            # Ensure the virtualenv site packages are available
-            env["PYTHONPATH"] = str(poetry_env.site_packages)
-            env["PATH"] = os.pathsep.join([str(poetry_env._bin_dir), env["PATH"]])
-            if "PYTHONHOME" in env:
-                del env["PYTHONHOME"]
-            _stop_coverage()
-            return poetry_env.execute(*cmd, env=env)
+            return self._execute_via_poetry_run(project_dir, cmd, env)
+
+    def _execute_via_poetry_run(
+        self, project_dir: Path, cmd: Sequence[str], env: MutableMapping[str, str],
+    ):
+        """
+        Execute the task via the `poetry run` CLI
+        """
+        poetry_cmd = shutil.which("poetry") or "poetry"
+        _stop_coverage()  # TODO: exclude the subprocess more gracefully
+        exe = subprocess.Popen((poetry_cmd, "run", *cmd), env=env)
+        exe.communicate()
+        return exe.returncode
 
     @classmethod
     def validate_def(
@@ -234,23 +240,13 @@ class PoeTask(metaclass=MetaPoeTask):
     def is_task_type(cls, task_def_key: str) -> bool:
         return task_def_key in cls.__task_types
 
-    @staticmethod
-    def _get_poetry_env(project_dir: Path):
-        from clikit.io import ConsoleIO
-        from poetry.factory import Factory
-        from poetry.utils.env import EnvManager
-
-        poetry = Factory().create_poetry(project_dir)
-        # TODO: unify ConsoleIO with ui.output
-        return EnvManager(poetry).create_venv(ConsoleIO())
-
     def _handle_run(
         self,
         extra_args: Iterable[str],
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-    ):
+    ) -> int:
         raise NotImplementedError
 
     @classmethod
@@ -263,7 +259,7 @@ class PoeTask(metaclass=MetaPoeTask):
         issue = None
         return issue
 
-    def _print_action(self, action: Any, dry: bool):
+    def _print_action(self, action: str, dry: bool):
         """
         Print the action taken by a task just before executing it.
         """

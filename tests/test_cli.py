@@ -38,13 +38,13 @@ def test_call_unknown_task(run_poe):
 def test_version_option(run_poe):
     result = run_poe("--version")
     assert result.code == 0, "Expected zero result"
-    assert result.capture == f"Poe the poet - version: {__version__}\n"
+    assert result.capture.strip() == f"Poe the poet - version: {__version__}"
     assert result.stdout == ""
     assert result.stderr == ""
 
     result = run_poe("--version", "-q")
     assert result.code == 0, "Expected zero result"
-    assert result.capture == f"{__version__}\n"
+    assert result.capture.strip() == f"{__version__}"
     assert result.stdout == ""
     assert result.stderr == ""
 

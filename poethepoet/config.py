@@ -11,7 +11,7 @@ class PoeConfig:
     TOML_NAME = "pyproject.toml"
 
     # Options allowed directly under tool.poe in pyproject.toml
-    __options__ = {"default_task_type": str, "run_in_project_root": bool}
+    __options__ = {"default_task_type": str}
 
     def __init__(
         self,
@@ -20,15 +20,11 @@ class PoeConfig:
     ):
         self.cwd = Path(".").resolve() if cwd is None else Path(cwd)
         self._table = {} if table is None else table
-        self._target_dir: Optional[Path] = None
+        self._project_dir: Optional[Path] = None
 
     @property
     def tasks(self) -> Mapping[str, Any]:
         return self._table.get("tasks", {})
-
-    @property
-    def run_in_project_root(self) -> bool:
-        return self._table.get("run_in_project_root", True)
 
     @property
     def default_task_type(self) -> str:
@@ -36,13 +32,11 @@ class PoeConfig:
 
     @property
     def project_dir(self) -> str:
-        return str(self._target_dir or self.cwd)
+        return str(self._project_dir or self.cwd)
 
-    def load(self, target_dir: Optional[str] = None, force: bool = False):
-        if self._table and not force:
-            if target_dir and not self._target_dir:
-                self._target_dir = Path(target_dir)
-            return
+    def load(self, target_dir: Optional[str] = None):
+        if self._table:
+            raise PoeException("Cannot load poetry config more than once!")
         config_path = self.find_pyproject_toml(target_dir)
         try:
             self._table = self._read_pyproject(config_path)["tool"]["poe"]
@@ -50,7 +44,7 @@ class PoeConfig:
             raise PoeException(
                 f"No poe configuration found in file at {self.TOML_NAME}"
             )
-        self._target_dir = config_path.parent
+        self._project_dir = config_path.parent
 
     def validate(self):
         # Validate keys

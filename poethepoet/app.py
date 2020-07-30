@@ -47,8 +47,7 @@ class PoeThePoet:
         if not self.resolve_task():
             return 1
 
-        self.run_task()
-        return 0
+        return self.run_task() or 0
 
     def resolve_task(self) -> bool:
         task = self.ui["task"]
@@ -69,14 +68,18 @@ class PoeThePoet:
         )
         return True
 
-    def run_task(self):
+    def run_task(self) -> Optional[int]:
         _, *take_args = self.ui["task"]
-        self.task.run(
-            take_args,
-            project_dir=self.config.project_dir,
-            set_cwd=self.config.run_in_project_root,
-            dry=self.ui["dry_run"],
-        )
+        try:
+            assert self.task
+            return self.task.run(
+                take_args,
+                project_dir=Path(self.config.project_dir),
+                dry=self.ui["dry_run"],
+            )
+        except PoeException as error:
+            self.print_help(error=error)
+            return 1
 
     def print_help(
         self,

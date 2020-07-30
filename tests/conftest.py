@@ -5,12 +5,18 @@ from pathlib import Path
 from poethepoet import PoeThePoet
 import pytest
 from subprocess import PIPE, Popen
-from tempfile import NamedTemporaryFile
+import sys
+from tempfile import TemporaryDirectory
 import toml
 from typing import Any, List, Mapping, Optional
 
-PROJECT_ROOT = Path(__file__).joinpath("../..").resolve()
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TOML = PROJECT_ROOT.joinpath("pyproject.toml")
+
+
+@pytest.fixture
+def is_windows():
+    return sys.platform == "win32"
 
 
 @pytest.fixture
@@ -35,19 +41,21 @@ def scripts_project_path():
 
 
 @pytest.fixture(scope="function")
-def tmpfile_name():
-    with NamedTemporaryFile() as tmpfile:
-        yield Path(tmpfile.name)
+def temp_file(tmp_path):
+    # not using NamedTemporaryFile here because it doesn't work on windows
+    tmpfilepath = tmp_path / "tmp_test_file"
+    tmpfilepath.touch()
+    yield tmpfilepath
 
 
 PoeRunResult = namedtuple("PoeRunResult", ("code", "capture", "stdout", "stderr"))
 
 
 @pytest.fixture(scope="function")
-def run_poe_subproc(dummy_project_path, tmpfile_name):
+def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
     coverage_setup = (
         "from coverage import Coverage;"
-        fr'Coverage(data_file=\"{PROJECT_ROOT.joinpath(".coverage")}\").start();'
+        fr'Coverage(data_file=r\"{PROJECT_ROOT.joinpath(".coverage")}\").start();'
     )
     shell_cmd_template = (
         'python -c "'
@@ -55,7 +63,7 @@ def run_poe_subproc(dummy_project_path, tmpfile_name):
         "import toml;"
         "from poethepoet import PoeThePoet;"
         "from pathlib import Path;"
-        r"poe = PoeThePoet(cwd=\"{cwd}\", config={config}, output={output});"
+        r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
         "poe([{run_args}]);"
         '"'
     )
@@ -64,39 +72,40 @@ def run_poe_subproc(dummy_project_path, tmpfile_name):
         *run_args: str,
         cwd: str = dummy_project_path,
         config: Optional[Mapping[str, Any]] = None,
-        coverage: bool = True,
+        coverage: bool = not is_windows,
     ) -> str:
-        with NamedTemporaryFile("w+") as config_tmpfile:
-            if config is not None:
-                toml.dump(config, config_tmpfile)
-                config_tmpfile.seek(0)
-                config_arg = fr"toml.load(open(\"{config_tmpfile.name}\", \"r\"))"
-            else:
-                config_arg = "None"
+        if config is not None:
+            config_path = tmp_path.joinpath("tmp_test_config_file")
+            with config_path.open("w+") as config_file:
+                toml.dump(config, config_file)
+                config_file.seek(0)
+            config_arg = fr"toml.load(open(r\"{config_path}\", \"r\"))"
+        else:
+            config_arg = "None"
 
-            shell_cmd = shell_cmd_template.format(
-                coverage_setup=(coverage_setup if coverage else ""),
-                cwd=cwd,
-                config=config_arg,
-                run_args=",".join(f'\\"{arg}\\"' for arg in run_args),
-                output=fr"open(\"{tmpfile_name}\", \"w\")",
-            )
+        shell_cmd = shell_cmd_template.format(
+            coverage_setup=(coverage_setup if coverage else ""),
+            cwd=cwd,
+            config=config_arg,
+            run_args=",".join(f'r\\"{arg}\\"' for arg in run_args),
+            output=fr"open(r\"{temp_file}\", \"w\")",
+        )
 
-            env = dict(os.environ)
-            if coverage:
-                env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
+        env = dict(os.environ)
+        if coverage:
+            env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
 
-            poeproc = Popen(shell_cmd, shell=True, stdout=PIPE, stderr=PIPE, env=env)
-            task_out, task_err = poeproc.communicate()
+        poeproc = Popen(shell_cmd, shell=True, stdout=PIPE, stderr=PIPE, env=env)
+        task_out, task_err = poeproc.communicate()
 
-        with open(tmpfile_name, "rb") as output_file:
-            captured_output = output_file.read().decode()
+        with temp_file.open("rb") as output_file:
+            captured_output = output_file.read().decode().replace("\r\n", "\n")
 
         result = PoeRunResult(
             code=poeproc.returncode,
             capture=captured_output,
-            stdout=task_out.decode(),
-            stderr=task_err.decode(),
+            stdout=task_out.decode().replace("\r\n", "\n"),
+            stderr=task_err.decode().replace("\r\n", "\n"),
         )
         print(result)  # when a test fails this is usually useful to debug
         return result
@@ -105,12 +114,11 @@ def run_poe_subproc(dummy_project_path, tmpfile_name):
 
 
 @pytest.fixture(scope="function")
-def run_poe(capsys, tmpfile_name, dummy_project_path):
+def run_poe(capsys, dummy_project_path):
     def run_poe(
         *run_args: str,
         cwd: str = dummy_project_path,
         config: Optional[Mapping[str, Any]] = None,
-        capture=tmpfile_name,
     ) -> str:
         output_capture = StringIO()
         poe = PoeThePoet(cwd=cwd, config=config, output=output_capture)
@@ -119,3 +127,13 @@ def run_poe(capsys, tmpfile_name, dummy_project_path):
         return PoeRunResult(result, output_capture.read(), *capsys.readouterr())
 
     return run_poe
+
+
+@pytest.fixture
+def esc_prefix(is_windows):
+    """
+    When executing on windows it's not necessary to escape the $ for variables
+    """
+    if is_windows:
+        return ""
+    return "\\"

@@ -57,7 +57,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Run tests
-        run: poetry run poe test -m "not skip_in_ci"
+        run: poetry run pytest
 
   build-release:
     runs-on: ubuntu-latest
