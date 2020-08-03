@@ -1,5 +1,5 @@
 from pathlib import Path
-import toml
+import tomlkit
 from typing import Any, Mapping, Optional, Union
 from .exceptions import PoeException
 from .task import PoeTask
@@ -107,9 +107,9 @@ class PoeConfig:
     @staticmethod
     def _read_pyproject(path: Path) -> Mapping[str, Any]:
         try:
-            with open(path.resolve(), "r") as prproj:
-                return toml.load(prproj)
-        except toml.TomlDecodeError as error:
+            with path.open() as pyproj:
+                return tomlkit.parse(pyproj.read())
+        except tomlkit.exceptions.TOMLKitError as error:
             raise PoeException(f"Couldn't parse toml file at {path}", error) from error
         except Exception as error:
             raise PoeException(f"Couldn't open file at {path}") from error

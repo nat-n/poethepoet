@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 import tempfile
-import toml
 
 
 def test_setting_default_task_type(run_poe_subproc, scripts_project_path, esc_prefix):

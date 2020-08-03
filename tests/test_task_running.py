@@ -99,3 +99,19 @@ def test_ref_task(run_poe_subproc, dummy_project_path, esc_prefix):
         == f"POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
     )
     assert result.stderr == ""
+
+
+def test_multiline_non_default_type_task(
+    run_poe_subproc, dummy_project_path, esc_prefix
+):
+    # This should be exactly the same as calling the echo task directly
+    result = run_poe_subproc("sing")
+    assert (
+        result.capture
+        == f'Poe => echo "this is the story";\necho "all about how" &&\necho "my life got flipped, turned upside down" ||\necho "bam bam baaam bam"\n'
+    )
+    assert (
+        result.stdout
+        == f"this is the story\nall about how\nmy life got flipped, turned upside down\n"
+    )
+    assert result.stderr == ""

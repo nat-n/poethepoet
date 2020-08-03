@@ -20,6 +20,13 @@ greet = { script = "dummy_package:main" }
 count = { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
 also_echo = { ref = "echo" }
 
+sing.help = "busts some rhymes"
+sing.shell = """
+echo "this is the story";
+echo "all about how" &&
+echo "my life got flipped, turned upside down" ||
+echo "bam bam baaam bam"
+"""
 
 [build-system]
 requires = ["poetry>=0.12"]

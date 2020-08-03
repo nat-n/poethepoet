@@ -28,14 +28,12 @@ class PoeUi:
 
     def _init_colors(self):
         self._color = Pastel(guess_ansi_support(self.output))
-        self._color.add_style("u", "default", options="underline")
         self._color.add_style("hl", "light_gray")
         self._color.add_style("em", "cyan")
         self._color.add_style("em2", "cyan", options="italic")
-        self._color.add_style("dem", "black", options="dark")
         self._color.add_style("h2", "default", options="bold")
         self._color.add_style("h2-dim", "default", options="dark")
-        self._color.add_style("stripe", bg="blue")
+        self._color.add_style("action", "light_blue")
         self._color.add_style("error", "light_red", options="bold")
 
     def __getitem__(self, key: str):

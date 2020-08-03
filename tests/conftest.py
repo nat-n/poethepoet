@@ -7,7 +7,7 @@ import pytest
 from subprocess import PIPE, Popen
 import sys
 from tempfile import TemporaryDirectory
-import toml
+import tomlkit
 from typing import Any, List, Mapping, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -22,7 +22,7 @@ def is_windows():
 @pytest.fixture
 def pyproject():
     with PROJECT_TOML.open("r") as toml_file:
-        return toml.load(toml_file)
+        return tomlkit.parse(toml_file.read())
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
     shell_cmd_template = (
         'python -c "'
         "{coverage_setup}"
-        "import toml;"
+        "import tomlkit;"
         "from poethepoet import PoeThePoet;"
         "from pathlib import Path;"
         r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
@@ -79,7 +79,7 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
             with config_path.open("w+") as config_file:
                 toml.dump(config, config_file)
                 config_file.seek(0)
-            config_arg = fr"toml.load(open(r\"{config_path}\", \"r\"))"
+            config_arg = fr"tomlkit.parse(open(r\"{config_path}\", \"r\").read())"
         else:
             config_arg = "None"
 
