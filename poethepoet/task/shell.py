@@ -26,6 +26,8 @@ class ShellTask(PoeTask):
         env: MutableMapping[str, str],
         dry: bool = False,
     ):
+        if any(arg.strip() for arg in extra_args):
+            raise PoeException(f"Shell task {self.name!r} does not accept arguments")
         if sys.platform == "win32":
             shell = self._find_posix_shell_on_windows()
         else:
