@@ -68,7 +68,7 @@ class PoeConfig:
             )
         # Validate tasks
         for task_name, task_def in self.tasks.items():
-            error = PoeTask.validate_def(task_name, task_def)
+            error = PoeTask.validate_def(task_name, task_def, self)
             if error is None:
                 continue
             raise PoeException(error)

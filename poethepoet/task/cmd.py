@@ -2,8 +2,11 @@ from glob import glob
 from pathlib import Path
 import re
 import shlex
-from typing import Dict, Iterable, MutableMapping, Optional, Type
+from typing import Dict, Iterable, MutableMapping, Optional, Type, TYPE_CHECKING
 from .base import PoeTask, TaskDef
+
+if TYPE_CHECKING:
+    from ..config import PoeConfig
 
 _GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 
@@ -50,7 +53,9 @@ class CmdTask(PoeTask):
         return result
 
     @classmethod
-    def _validate_task_def(cls, task_def: TaskDef) -> Optional[str]:
+    def _validate_task_def(
+        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
+    ) -> Optional[str]:
         """
         Check the given task definition for validity specific to this task type and
         return a message describing the first encountered issue if any.

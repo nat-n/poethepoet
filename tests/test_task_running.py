@@ -85,3 +85,17 @@ def test_script_task(run_poe_subproc, dummy_project_path, esc_prefix):
     assert result.capture == f"Poe => greet nat, welcome to {dummy_project_path}\n"
     assert result.stdout == f"hello nat, welcome to {dummy_project_path}\n"
     assert result.stderr == ""
+
+
+def test_ref_task(run_poe_subproc, dummy_project_path, esc_prefix):
+    # This should be exactly the same as calling the echo task directly
+    result = run_poe_subproc("also_echo", "foo", esc_prefix + r"${POE_ROOT} !")
+    assert (
+        result.capture
+        == f"Poe => echo POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
+    )
+    assert (
+        result.stdout
+        == f"POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
+    )
+    assert result.stderr == ""

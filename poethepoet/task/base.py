@@ -12,9 +12,14 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TYPE_CHECKING,
     Union,
 )
 from ..ui import PoeUi
+
+if TYPE_CHECKING:
+    from ..config import PoeConfig
+
 
 TaskDef = Union[str, Dict[str, Any]]
 
@@ -55,20 +60,29 @@ class PoeTask(metaclass=MetaPoeTask):
     __base_options: Dict[str, Type] = {"help": str, "env": dict}
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
-    def __init__(self, name: str, content: str, options: Dict[str, Any], ui: PoeUi):
+    def __init__(
+        self,
+        name: str,
+        content: str,
+        options: Dict[str, Any],
+        ui: PoeUi,
+        config: "PoeConfig",
+    ):
         self.name = name
         self.content = content.strip()
         self.options = options
         self._ui = ui
+        self._config = config
         self._is_windows = sys.platform == "win32"
 
     @classmethod
-    def from_def(
-        cls, task_name: str, task_def: TaskDef, ui: PoeUi, default_type: str
-    ) -> "PoeTask":
+    def from_def(cls, task_name: str, config: "PoeConfig", ui: PoeUi) -> "PoeTask":
+        task_def = config.tasks.get(task_name)
+        if not task_def:
+            raise Exception(f"Cannot instantiate unknown task {task_name!r}")
         if isinstance(task_def, str):
-            return cls.__task_types[default_type](
-                name=task_name, content=task_def, options={}, ui=ui
+            return cls.__task_types[config.default_task_type](
+                name=task_name, content=task_def, options={}, ui=ui, config=config
             )
 
         task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
@@ -77,11 +91,11 @@ class PoeTask(metaclass=MetaPoeTask):
             options = dict(task_def)
             content = options.pop(task_type_key)
             return cls.__task_types[task_type_key](
-                name=task_name, content=content, options=options, ui=ui,
+                name=task_name, content=content, options=options, ui=ui, config=config
             )
 
         # Something is wrong with this task_def
-        raise cls.Error(cls.validate_def(task_name, task_def))
+        raise cls.Error(cls.validate_def(task_name, task_def, config))
 
     def run(
         self,
@@ -176,7 +190,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
     @classmethod
     def validate_def(
-        cls, task_name: str, task_def: TaskDef, raize=False
+        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
     ) -> Optional[str]:
         """
         Check the given task name and definition for validity and return a message
@@ -223,7 +237,9 @@ class PoeTask(metaclass=MetaPoeTask):
                             break
                     else:
                         if hasattr(task_type, "_validate_task_def"):
-                            issue = task_type._validate_task_def(task_def)
+                            issue = task_type._validate_task_def(
+                                task_name, task_def, config
+                            )
             else:
                 issue = (
                     f"Invalid task: {task_name!r}. Task definition must include exactly"
@@ -232,8 +248,6 @@ class PoeTask(metaclass=MetaPoeTask):
         else:
             return None
 
-        if raize:
-            raise cls.Error(issue)
         return issue
 
     @classmethod
@@ -250,7 +264,9 @@ class PoeTask(metaclass=MetaPoeTask):
         raise NotImplementedError
 
     @classmethod
-    def _validate_task_def(cls, task_def: TaskDef) -> Optional[str]:
+    def _validate_task_def(
+        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
+    ) -> Optional[str]:
         """
         To be overriden by subclasses to check the given task definition for validity
         specific to that task type and return a message describing the first encountered

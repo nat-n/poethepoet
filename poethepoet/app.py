@@ -60,12 +60,7 @@ class PoeThePoet:
             self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"),)
             return False
 
-        self.task = PoeTask.from_def(
-            task_name,
-            self.config.tasks[task_name],
-            ui=self.ui,
-            default_type=self.config.default_task_type,
-        )
+        self.task = PoeTask.from_def(task_name, self.config, ui=self.ui)
         return True
 
     def run_task(self) -> Optional[int]:
