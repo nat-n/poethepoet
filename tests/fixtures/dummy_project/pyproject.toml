@@ -20,6 +20,7 @@ greet = { script = "dummy_package:main" }
 count = { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
 also_echo = { ref = "echo" }
 
+# Dotted key syntax for tasks with multiple keys specified
 sing.help = "busts some rhymes"
 sing.shell = """
 echo "this is the story";
@@ -27,6 +28,15 @@ echo "all about how" &&
 echo "my life got flipped, turned upside down" ||
 echo "bam bam baaam bam"
 """
+
+part1 = "echo 'Hello'"
+_part2.cmd = "echo '${SUBJECT}!'"
+_part2.env = { SUBJECT = "World" }
+_part3.cmd = "echo '${SMILEY}!'"
+composite_task.sequence = ["part1", "_part2", "_part3"]
+composite_task.env = { SMILEY = ":)" }
+
+also_composite_task = ["composite_task"]
 
 [build-system]
 requires = ["poetry>=0.12"]

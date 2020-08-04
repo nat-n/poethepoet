@@ -10,9 +10,13 @@ packages = [
 
 [tool.poe]
 default_task_type = "script"
+default_array_item_task_type = "cmd"
 
 [tool.poe.tasks]
 greet = "scripts_pkg:main"
+
+# Interpret subtasks as cmd instead of ref
+composite_task = ["echo Hello", "echo World!"]
 
 [build-system]
 requires = ["poetry>=0.12"]

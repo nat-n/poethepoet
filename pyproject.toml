@@ -44,6 +44,8 @@ types = "mypy poethepoet --ignore-missing-imports"
 lint = "pylint poethepoet"
 style = "black . --check --diff"
 check-docs = "rstcheck README.rst"
+# Run all checks on the code base
+check = ["check-docs", "style", "types", "lint", "test"]
 # poeception
 poe = { script = "poethepoet:main", help = "Execute poe programmatically as a poe task" }
 

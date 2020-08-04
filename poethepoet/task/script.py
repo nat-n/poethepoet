@@ -1,6 +1,6 @@
 from pathlib import Path
-from typing import Dict, Iterable, MutableMapping, Optional, Type, TYPE_CHECKING
-from .base import PoeTask, TaskDef
+from typing import Any, Dict, Generator, Iterable, MutableMapping, Type, TYPE_CHECKING
+from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -11,6 +11,8 @@ class ScriptTask(PoeTask):
     A task consisting of a reference to a python script
     """
 
+    content: str
+
     __key__ = "script"
     __options__: Dict[str, Type] = {}
 
@@ -20,7 +22,8 @@ class ScriptTask(PoeTask):
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-    ):
+        subproc_only: bool = False,
+    ) -> Generator[Dict[str, Any], int, int]:
         # TODO: check whether the project really does use src layout, and don't do
         #       sys.path.append('src') if it doesn't
         target_module, target_callable = self.content.split(":")
@@ -34,18 +37,5 @@ class ScriptTask(PoeTask):
             f"import_module('{target_module}').{target_callable}()",
         )
         self._print_action(" ".join(argv), dry)
-        if dry:
-            # Don't actually run anything...
-            return 0
-        return self._execute(project_dir, cmd, env)
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
-    ) -> Optional[str]:
-        """
-        Check the given task definition for validity specific to this task type and
-        return a message describing the first encountered issue if any.
-        """
-        issue = None
-        return issue
+        yield {"cmd": cmd}
+        return 0

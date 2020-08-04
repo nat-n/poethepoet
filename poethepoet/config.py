@@ -11,7 +11,11 @@ class PoeConfig:
     TOML_NAME = "pyproject.toml"
 
     # Options allowed directly under tool.poe in pyproject.toml
-    __options__ = {"default_task_type": str}
+    __options__ = {
+        "default_task_type": str,
+        "default_array_task_type": str,
+        "default_array_item_task_type": str,
+    }
 
     def __init__(
         self,
@@ -29,6 +33,14 @@ class PoeConfig:
     @property
     def default_task_type(self) -> str:
         return self._table.get("default_task_type", "cmd")
+
+    @property
+    def default_array_task_type(self) -> str:
+        return self._table.get("default_array_task_type", "sequence")
+
+    @property
+    def default_array_item_task_type(self) -> str:
+        return self._table.get("default_array_item_task_type", "ref")
 
     @property
     def project_dir(self) -> str:
@@ -60,11 +72,22 @@ class PoeConfig:
                     f"{option_type.__name__}."
                 )
         # Validate default_task_type value
-        if not PoeTask.is_task_type(self.default_task_type):
-            # TODO: maybe revisit this if/when not all task types have str content!
+        if not PoeTask.is_task_type(self.default_task_type, content_type=str):
             raise PoeException(
                 "Unsupported value for option `default_task_type` "
                 f"{self.default_task_type!r}"
+            )
+        # Validate default_array_task_type value
+        if not PoeTask.is_task_type(self.default_array_task_type, content_type=list):
+            raise PoeException(
+                "Unsupported value for option `default_array_task_type` "
+                f"{self.default_array_task_type!r}"
+            )
+        # Validate default_array_item_task_type value
+        if not PoeTask.is_task_type(self.default_array_item_task_type):
+            raise PoeException(
+                "Unsupported value for option `default_array_item_task_type` "
+                f"{self.default_array_item_task_type!r}"
             )
         # Validate tasks
         for task_name, task_def in self.tasks.items():

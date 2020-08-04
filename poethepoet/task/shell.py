@@ -4,9 +4,9 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Dict, Iterable, MutableMapping, Optional, Type, TYPE_CHECKING
+from typing import Any, Dict, Generator, Iterable, MutableMapping, Type, TYPE_CHECKING
 from ..exceptions import PoeException
-from .base import PoeTask, TaskDef
+from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -19,6 +19,8 @@ class ShellTask(PoeTask):
     A task consisting of a reference to a shell command
     """
 
+    content: str
+
     __key__ = "shell"
     __options__: Dict[str, Type] = {}
 
@@ -28,7 +30,8 @@ class ShellTask(PoeTask):
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-    ):
+        subproc_only: bool = False,
+    ) -> Generator[Dict[str, Any], int, int]:
         if any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
         if sys.platform == "win32":
@@ -39,10 +42,8 @@ class ShellTask(PoeTask):
 
         cmd = (*shell, "-c", self.content)
         self._print_action(self.content, dry)
-        if dry:
-            # Don't actually run anything...
-            return 0
-        return self._execute(project_dir, cmd, env)
+        yield {"cmd": cmd}
+        return 0
 
     @staticmethod
     def _find_posix_shell_on_windows():
@@ -72,14 +73,3 @@ class ShellTask(PoeTask):
             "Couldn't locate bash executable to run shell task. Installing WSL should "
             "fix this."
         )
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
-    ) -> Optional[str]:
-        """
-        Check the given task definition for validity specific to this task type and
-        return a message describing the first encountered issue if any.
-        """
-        issue = None
-        return issue

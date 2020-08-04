@@ -4,7 +4,7 @@ from typing import Any, IO, MutableMapping, Optional, Sequence, Union
 from .config import PoeConfig
 from .task import PoeTask
 from .ui import PoeUi
-from .exceptions import PoeException
+from .exceptions import ExecutionError, PoeException
 
 
 class PoeThePoet:
@@ -60,7 +60,7 @@ class PoeThePoet:
             self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"),)
             return False
 
-        self.task = PoeTask.from_def(task_name, self.config, ui=self.ui)
+        self.task = PoeTask.from_config(task_name, config=self.config, ui=self.ui)
         return True
 
     def run_task(self) -> Optional[int]:
@@ -74,6 +74,9 @@ class PoeThePoet:
             )
         except PoeException as error:
             self.print_help(error=error)
+            return 1
+        except ExecutionError as error:
+            self.ui.print_error(error=error)
             return 1
 
     def print_help(

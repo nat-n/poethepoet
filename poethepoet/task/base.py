@@ -7,7 +7,9 @@ import sys
 from typing import (
     Any,
     Dict,
+    Generator,
     Iterable,
+    List,
     MutableMapping,
     Optional,
     Sequence,
@@ -15,13 +17,13 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
-from ..ui import PoeUi
 
 if TYPE_CHECKING:
+    from ..ui import PoeUi
     from ..config import PoeConfig
 
 
-TaskDef = Union[str, Dict[str, Any]]
+TaskDef = Union[str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
 
 _TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")
 _SHELL_VAR_PATTERN = re.compile(
@@ -51,40 +53,66 @@ class MetaPoeTask(type):
         PoeTask._PoeTask__task_types[cls.__key__] = cls
 
 
+TaskContent = Union[str, List[Union[str, Dict[str, Any]]]]
+
+
 class PoeTask(metaclass=MetaPoeTask):
     name: str
-    content: str
+    content: TaskContent
     options: Dict[str, Any]
 
-    __options__: Dict[str, Type]
+    __options__: Dict[str, Type] = {}
+    __content_type__: Type = str
     __base_options: Dict[str, Type] = {"help": str, "env": dict}
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
     def __init__(
         self,
         name: str,
-        content: str,
+        content: TaskContent,
         options: Dict[str, Any],
-        ui: PoeUi,
+        ui: "PoeUi",
         config: "PoeConfig",
     ):
         self.name = name
-        self.content = content.strip()
+        self.content = content.strip() if isinstance(content, str) else content
         self.options = options
         self._ui = ui
         self._config = config
         self._is_windows = sys.platform == "win32"
 
     @classmethod
-    def from_def(cls, task_name: str, config: "PoeConfig", ui: PoeUi) -> "PoeTask":
+    def from_config(cls, task_name: str, config: "PoeConfig", ui: "PoeUi") -> "PoeTask":
         task_def = config.tasks.get(task_name)
         if not task_def:
             raise Exception(f"Cannot instantiate unknown task {task_name!r}")
-        if isinstance(task_def, str):
-            return cls.__task_types[config.default_task_type](
-                name=task_name, content=task_def, options={}, ui=ui, config=config
-            )
+        return cls.from_def(task_def, task_name, config, ui)
 
+    @classmethod
+    def from_def(
+        cls,
+        task_def: TaskDef,
+        task_name: str,
+        config: "PoeConfig",
+        ui: "PoeUi",
+        array_item: bool = False,
+    ) -> "PoeTask":
+        if array_item:
+            if isinstance(task_def, str):
+                return cls.__task_types[config.default_array_item_task_type](
+                    name=task_name, content=task_def, options={}, ui=ui, config=config
+                )
+        else:
+            if isinstance(task_def, str):
+                return cls.__task_types[config.default_task_type](
+                    name=task_name, content=task_def, options={}, ui=ui, config=config
+                )
+            if isinstance(task_def, list):
+                return cls.__task_types[config.default_array_task_type](
+                    name=task_name, content=task_def, options={}, ui=ui, config=config
+                )
+
+        assert isinstance(task_def, dict)
         task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
         if len(task_type_keys) == 1:
             task_type_key = next(iter(task_type_keys))
@@ -104,6 +132,7 @@ class PoeTask(metaclass=MetaPoeTask):
         env: Optional[MutableMapping[str, str]] = None,
         set_cwd: bool = True,
         dry: bool = False,
+        subproc_only: bool = False,
     ) -> int:
         """
         Run this task
@@ -119,10 +148,44 @@ class PoeTask(metaclass=MetaPoeTask):
             os.chdir(project_dir)
 
         try:
-            return self._handle_run(list(extra_args), project_dir, env, dry)
+            run_handler = self._handle_run(
+                list(extra_args), project_dir, env, dry, subproc_only
+            )
+            for execute_args in run_handler:
+                if dry:
+                    # Don't actually execute anything
+                    continue
+                    # All default values except the command are known up front
+                exec_result = self._execute(
+                    **dict(
+                        {
+                            "project_dir": project_dir,
+                            "env": env,
+                            "subproc_only": subproc_only,
+                        },
+                        **execute_args,
+                    )
+                )
+                run_handler.send(exec_result)
+
+        except StopIteration:
+            # Not sure why the StopIteration from the _handle_run generator sometimes
+            # ends up here
+            pass
         finally:
             if set_cwd:
                 os.chdir(previous_wd)
+        return 0
+
+    def _handle_run(
+        self,
+        extra_args: Iterable[str],
+        project_dir: Path,
+        env: MutableMapping[str, str],
+        dry: bool = False,
+        subproc_only: bool = False,
+    ) -> Generator[Dict[str, Any], int, int]:
+        raise NotImplementedError
 
     @staticmethod
     def _resolve_envvars(content: str, env: MutableMapping[str, str]) -> str:
@@ -160,11 +223,15 @@ class PoeTask(metaclass=MetaPoeTask):
         return "".join(resolved_parts)
 
     def _execute(
-        self, project_dir: Path, cmd: Sequence[str], env: MutableMapping[str, str],
+        self,
+        project_dir: Path,
+        cmd: Sequence[str],
+        env: MutableMapping[str, str],
+        subproc_only: bool = False,
     ):
         if bool(os.environ.get("POETRY_ACTIVE")):
             # Inside poetry shell
-            if self._is_windows:
+            if self._is_windows or subproc_only:
                 # On windows
                 exe = subprocess.Popen(cmd, env=env)
                 exe.communicate()
@@ -212,11 +279,12 @@ class PoeTask(metaclass=MetaPoeTask):
             task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
             if len(task_type_keys) == 1:
                 task_type_key = next(iter(task_type_keys))
+                task_content = task_def[task_type_key]
                 task_type = cls.__task_types[task_type_key]
-                if not isinstance(task_def[task_type_key], str):
+                if not isinstance(task_content, task_type.__content_type__):
                     issue = (
                         f"Invalid task: {task_name!r}. {task_type} value must be a "
-                        "string"
+                        f"{task_type.__content_type__}"
                     )
                 else:
                     for key in set(task_def) - {task_type_key}:
@@ -251,21 +319,22 @@ class PoeTask(metaclass=MetaPoeTask):
         return issue
 
     @classmethod
-    def is_task_type(cls, task_def_key: str) -> bool:
-        return task_def_key in cls.__task_types
-
-    def _handle_run(
-        self,
-        extra_args: Iterable[str],
-        project_dir: Path,
-        env: MutableMapping[str, str],
-        dry: bool = False,
-    ) -> int:
-        raise NotImplementedError
+    def is_task_type(
+        cls, task_def_key: str, content_type: Optional[Type] = None
+    ) -> bool:
+        """
+        Checks whether the given key identified a known task type.
+        Optionally also check whether the given content_type matches the type of content
+        for this tasks type.
+        """
+        return task_def_key in cls.__task_types and (
+            content_type is None
+            or cls.__task_types[task_def_key].__content_type__ is content_type
+        )
 
     @classmethod
     def _validate_task_def(
-        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
+        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
     ) -> Optional[str]:
         """
         To be overriden by subclasses to check the given task definition for validity
@@ -292,5 +361,6 @@ def _stop_coverage():
         from coverage import Coverage
 
         cov = Coverage.current()
-        cov.stop()
-        cov.save()
+        if cov:
+            cov.stop()
+            cov.save()

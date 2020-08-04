@@ -13,3 +13,10 @@ def test_setting_default_task_type(run_poe_subproc, scripts_project_path, esc_pr
     assert result.capture == f"Poe => greet nat, welcome to {scripts_project_path}\n"
     assert result.stdout == f"hello nat, welcome to {scripts_project_path}\n"
     assert result.stderr == ""
+
+
+def test_setting_default_array_item_task_type(run_poe_subproc, scripts_project_path):
+    result = run_poe_subproc("composite_task", cwd=scripts_project_path,)
+    assert result.capture == f"Poe => echo Hello\nPoe => echo World!\n"
+    assert result.stdout == f"Hello\nWorld!\n"
+    assert result.stderr == ""

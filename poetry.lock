@@ -16,11 +16,17 @@ version = "2.4.2"
 
 [package.dependencies]
 lazy-object-proxy = ">=1.4.0,<1.5.0"
-typed-ast = {version = ">=1.4.0,<1.5", markers = "implementation_name == \"cpython\" and python_version < \"3.8\""}
+six = ">=1.12,<2.0"
+wrapt = ">=1.11,<2.0"
+
+[package.dependencies.typed-ast]
+python = "<3.8"
+version = ">=1.4.0,<1.5"
 
 [[package]]
 category = "dev"
 description = "Atomic file writes."
+marker = "sys_platform == \"win32\""
 name = "atomicwrites"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
@@ -118,6 +124,7 @@ version = "7.1.2"
 [[package]]
 category = "dev"
 description = "Cross-platform colored terminal text."
+marker = "sys_platform == \"win32\" or platform_system == \"Windows\""
 name = "colorama"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
@@ -189,6 +196,7 @@ version = "2.9"
 [[package]]
 category = "dev"
 description = "Read metadata from Python packages"
+marker = "python_version < \"3.8\""
 name = "importlib-metadata"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
@@ -204,14 +212,20 @@ testing = ["packaging", "pep517", "importlib-resources (>=1.3)"]
 [[package]]
 category = "dev"
 description = "Read resources from Python packages"
+marker = "python_version < \"3.7\""
 name = "importlib-resources"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 version = "2.0.1"
 
 [package.dependencies]
-importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
-zipp = {version = ">=0.4", markers = "python_version < \"3.8\""}
+[package.dependencies.importlib-metadata]
+python = "<3.8"
+version = "*"
+
+[package.dependencies.zipp]
+python = "<3.8"
+version = ">=0.4"
 
 [package.extras]
 docs = ["sphinx", "rst.linker", "jaraco.packaging"]
@@ -315,7 +329,9 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "0.13.1"
 
 [package.dependencies]
-importlib-metadata = {version = ">=0.12", markers = "python_version < \"3.8\""}
+[package.dependencies.importlib-metadata]
+python = "<3.8"
+version = ">=0.12"
 
 [package.extras]
 dev = ["pre-commit", "tox"]
@@ -346,10 +362,10 @@ version = "2.5.3"
 
 [package.dependencies]
 astroid = ">=2.4.0,<=2.5"
+colorama = "*"
 isort = ">=4.2.5,<5"
 mccabe = ">=0.6,<0.7"
 toml = ">=0.7.1"
-colorama = {version = "*", markers = "sys_platform == \"win32\""}
 
 [[package]]
 category = "dev"
@@ -368,15 +384,18 @@ python-versions = ">=3.5"
 version = "5.4.3"
 
 [package.dependencies]
+atomicwrites = ">=1.0"
 attrs = ">=17.4.0"
+colorama = "*"
 more-itertools = ">=4.0.0"
 packaging = "*"
 pluggy = ">=0.12,<1.0"
 py = ">=1.5.0"
 wcwidth = "*"
-atomicwrites = {version = ">=1.0", markers = "sys_platform == \"win32\""}
-colorama = {version = "*", markers = "sys_platform == \"win32\""}
-importlib-metadata = {version = ">=0.12", markers = "python_version < \"3.8\""}
+
+[package.dependencies.importlib-metadata]
+python = "<3.8"
+version = ">=0.12"
 
 [package.extras]
 checkqa-mypy = ["mypy (v0.761)"]
@@ -467,6 +486,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 version = "3.15.2"
 
 [package.dependencies]
+colorama = ">=0.4.1"
 filelock = ">=3.0.0"
 packaging = ">=14"
 pluggy = ">=0.12.0"
@@ -474,8 +494,10 @@ py = ">=1.4.17"
 six = ">=1.14.0"
 toml = ">=0.9.4"
 virtualenv = ">=16.0.0,<20.0.0 || >20.0.0,<20.0.1 || >20.0.1,<20.0.2 || >20.0.2,<20.0.3 || >20.0.3,<20.0.4 || >20.0.4,<20.0.5 || >20.0.5,<20.0.6 || >20.0.6,<20.0.7 || >20.0.7"
-colorama = {version = ">=0.4.1", markers = "platform_system == \"Windows\""}
-importlib-metadata = {version = ">=0.12,<2", markers = "python_version < \"3.8\""}
+
+[package.dependencies.importlib-metadata]
+python = "<3.8"
+version = ">=0.12,<2"
 
 [package.extras]
 docs = ["sphinx (>=2.0.0)", "towncrier (>=18.5.0)", "pygments-github-lexers (>=0.0.5)", "sphinxcontrib-autoprogram (>=0.1.5)"]
@@ -523,8 +545,14 @@ appdirs = ">=1.4.3,<2"
 distlib = ">=0.3.0,<1"
 filelock = ">=3.0.0,<4"
 six = ">=1.9.0,<2"
-importlib-metadata = {version = ">=0.12,<2", markers = "python_version < \"3.8\""}
-importlib-resources = {version = ">=1.0", markers = "python_version < \"3.7\""}
+
+[package.dependencies.importlib-metadata]
+python = "<3.8"
+version = ">=0.12,<2"
+
+[package.dependencies.importlib-resources]
+python = "<3.7"
+version = ">=1.0"
 
 [package.extras]
 docs = ["sphinx (>=3)", "sphinx-argparse (>=0.2.5)", "sphinx-rtd-theme (>=0.4.3)", "towncrier (>=19.9.0rc1)", "proselint (>=0.10.2)"]
@@ -540,7 +568,16 @@ version = "0.2.4"
 
 [[package]]
 category = "dev"
+description = "Module for decorators, wrappers and monkey patching."
+name = "wrapt"
+optional = false
+python-versions = "*"
+version = "1.12.1"
+
+[[package]]
+category = "dev"
 description = "Backport of pathlib-compatible object wrapper for zip files"
+marker = "python_version < \"3.8\""
 name = "zipp"
 optional = false
 python-versions = ">=3.6"
@@ -552,7 +589,7 @@ testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
 content-hash = "c25b47211fef960322c275fd7d31afa0b554811af250806dab8644e661a7686e"
-lock-version = "1.1"
+lock-version = "1.0"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -860,6 +897,9 @@ virtualenv = [
 wcwidth = [
     {file = "wcwidth-0.2.4-py2.py3-none-any.whl", hash = "sha256:79375666b9954d4a1a10739315816324c3e73110af9d0e102d906fdb0aec009f"},
     {file = "wcwidth-0.2.4.tar.gz", hash = "sha256:8c6b5b6ee1360b842645f336d9e5d68c55817c26d3050f46b235ef2bc650e48f"},
+]
+wrapt = [
+    {file = "wrapt-1.12.1.tar.gz", hash = "sha256:b62ffa81fb85f4332a4f609cab4ac40709470da05643a082ec1eb88e6d9b97d7"},
 ]
 zipp = [
     {file = "zipp-3.1.0-py3-none-any.whl", hash = "sha256:aa36550ff0c0b7ef7fa639055d797116ee891440eac1a56f378e2d3179e0320b"},

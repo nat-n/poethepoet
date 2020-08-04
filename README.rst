@@ -25,6 +25,8 @@ Features
 
 ✅ Tasks are self documenting, with optional help messages (just run poe without arguments)
 
+✅ Tasks can be defined as a sequence of other tasks
+
 Installation
 ============
 
@@ -92,8 +94,8 @@ Though it that case you might like to do :bash:`alias poe='poetry run poe'`.
 Types of task
 =============
 
-There are three types of task: simple commands (cmd), python scripts (script), and shell
-scripts (shell).
+There are four types of task: simple commands (cmd), python scripts (script), shell
+scripts (shell), and composite tasks (sequence).
 
 - **Command tasks** contain a single command that will be executed without a shell.
   This covers most basic use cases for example:
@@ -136,6 +138,29 @@ scripts (shell).
     [tool.poe.tasks]
     pfwd = { "shell" = "ssh -N -L 0.0.0.0:8080:$STAGING:8080 $STAGING & ssh -N -L 0.0.0.0:5432:$STAGINGDB:5432 $STAGINGDB &" }
     pfwdstop = { "shell" = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")" }
+
+- **Composite tasks** are defined as a sequence of other tasks as an array.
+
+  By default the contents of the array as interpreted as references to other tasks (actually a ref task type), though this behavoir can be altered by setting the global `default_array_item_task_type` option to the name of another task type such as _cmd_.
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+
+    test = "pytest --cov=src"
+    build = "poetry build"
+    _publish = "poetry publish"
+    release = ["test", "build", "_publish"]
+
+  Note that tasks with names prefixed with `_` are not included in the documentation or directly executable, but can be useful for cases where a task is only needed for a sequence.
+
+  A failure (non-zero result) will result in the rest of the tasks in the sequence not being executed, unless the `ignore_fail` option is set on the task like so:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+    attempts.sequence = ["task1", "task2", "task3"]
+    attempts.ignore_fail = true
 
 Task level configuration
 ========================
@@ -208,19 +233,21 @@ There's plenty to do, come say hi in the issues! 👋
 TODO
 ====
 
-☐ task composition/aliases
+☐ command line completion
 
 ☐ support declaring specific arguments for a task
 
-☐ command line completion
+☐ support conditional execution (a bit like make targets)
+
+☐ support verbose mode for documentation that shows task definitions
 
 ☐ support running tasks outside of poetry's virtualenv (or in another?)
 
-☐ maybe try work well without poetry too
+☐ try work well without poetry too
 
-☐ maybe support alternative toml formats (e.g. table arrays)
+☐ maybe support plumbum based tasks
 
-☐ maybe support third party task types
+☐ maybe support third party task types as plugins
 
 Licence
 =======

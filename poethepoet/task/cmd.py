@@ -2,8 +2,8 @@ from glob import glob
 from pathlib import Path
 import re
 import shlex
-from typing import Dict, Iterable, MutableMapping, Optional, Type, TYPE_CHECKING
-from .base import PoeTask, TaskDef
+from typing import Any, Dict, Generator, Iterable, MutableMapping, Type, TYPE_CHECKING
+from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -16,6 +16,8 @@ class CmdTask(PoeTask):
     A task consisting of a reference to a shell command
     """
 
+    content: str
+
     __key__ = "cmd"
     __options__: Dict[str, Type] = {}
 
@@ -25,13 +27,12 @@ class CmdTask(PoeTask):
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-    ) -> int:
+        subproc_only: bool = False,
+    ) -> Generator[Dict[str, Any], int, int]:
         cmd = self._resolve_args(extra_args, env)
         self._print_action(" ".join(cmd), dry)
-        if dry:
-            # Don't actually run anything...
-            return 0
-        return self._execute(project_dir, cmd, env)
+        task_result = yield {"cmd": cmd}
+        return 0
 
     def _resolve_args(self, extra_args: Iterable[str], env: MutableMapping[str, str]):
         # Parse shell command tokens
@@ -51,14 +52,3 @@ class CmdTask(PoeTask):
                 result.append(cmd_token)
         # Finally add the extra_args from the invoking command and we're done
         return result
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
-    ) -> Optional[str]:
-        """
-        Check the given task definition for validity specific to this task type and
-        return a message describing the first encountered issue if any.
-        """
-        issue = None
-        return issue
