@@ -2,11 +2,9 @@ from pathlib import Path
 from typing import (
     Any,
     Dict,
-    Generator,
     Iterable,
     List,
     MutableMapping,
-    Optional,
     Type,
     TYPE_CHECKING,
     Union,
@@ -15,8 +13,9 @@ from .base import PoeTask, TaskContent
 from ..exceptions import ExecutionError, PoeException
 
 if TYPE_CHECKING:
-    from ..ui import PoeUi
     from ..config import PoeConfig
+    from ..executor import PoeExecutor
+    from ..ui import PoeUi
 
 
 class SequenceTask(PoeTask):
@@ -52,36 +51,20 @@ class SequenceTask(PoeTask):
 
     def _handle_run(
         self,
+        executor: "PoeExecutor",
         extra_args: Iterable[str],
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-        subproc_only: bool = False,
-    ) -> Generator[Dict[str, Any], int, int]:
+    ) -> int:
         if any(arg.strip() for arg in extra_args):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
         for subtask in self.subtasks:
             task_result = subtask.run(
-                extra_args=tuple(),
-                project_dir=project_dir,
-                env=env,
-                dry=dry,
-                subproc_only=True,
+                extra_args=tuple(), project_dir=project_dir, env=env, dry=dry,
             )
             if task_result and not self.options.get("ignore_fail"):
                 raise ExecutionError(
                     f"Sequence aborted after failed subtask {subtask.name!r}"
                 )
         return 0
-        yield  # pylint: disable=unreachable
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        """
-        Check the given task definition for validity specific to this task type and
-        return a message describing the first encountered issue if any.
-        """
-        issue = None
-        return issue

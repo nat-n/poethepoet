@@ -2,11 +2,18 @@ from glob import glob
 from pathlib import Path
 import re
 import shlex
-from typing import Any, Dict, Generator, Iterable, MutableMapping, Type, TYPE_CHECKING
+from typing import (
+    Dict,
+    Iterable,
+    MutableMapping,
+    Type,
+    TYPE_CHECKING,
+)
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
+    from ..executor import PoeExecutor
 
 _GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 
@@ -23,16 +30,15 @@ class CmdTask(PoeTask):
 
     def _handle_run(
         self,
+        executor: "PoeExecutor",
         extra_args: Iterable[str],
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-        subproc_only: bool = False,
-    ) -> Generator[Dict[str, Any], int, int]:
+    ) -> int:
         cmd = self._resolve_args(extra_args, env)
         self._print_action(" ".join(cmd), dry)
-        task_result = yield {"cmd": cmd}
-        return 0
+        return executor.execute(cmd)
 
     def _resolve_args(self, extra_args: Iterable[str], env: MutableMapping[str, str]):
         # Parse shell command tokens

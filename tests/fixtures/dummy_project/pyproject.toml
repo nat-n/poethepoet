@@ -24,16 +24,21 @@ also_echo = { ref = "echo" }
 sing.help = "busts some rhymes"
 sing.shell = """
 echo "this is the story";
-echo "all about how" &&
-echo "my life got flipped, turned upside down" ||
+echo "all about how" &&      # the last line won't run
+echo "my life got flipped;
+  turned upside down" ||
 echo "bam bam baaam bam"
 """
 
 part1 = "echo 'Hello'"
 _part2.cmd = "echo '${SUBJECT}!'"
 _part2.env = { SUBJECT = "World" }
-_part3.cmd = "echo '${SMILEY}!'"
-composite_task.sequence = ["part1", "_part2", "_part3"]
+composite_task.sequence = [
+  ["part1", "_part2"],
+  # wrapping in arrays means we can have different types of task in the sequence
+  [{cmd = "echo '${SMILEY}!'"}]
+]
+# env var is inherited by subtask
 composite_task.env = { SMILEY = ":)" }
 
 also_composite_task = ["composite_task"]

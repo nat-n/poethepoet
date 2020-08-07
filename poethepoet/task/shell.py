@@ -3,13 +3,13 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
-import sys
-from typing import Any, Dict, Generator, Iterable, MutableMapping, Type, TYPE_CHECKING
+from typing import Dict, Iterable, MutableMapping, Type, TYPE_CHECKING
 from ..exceptions import PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
+    from ..executor import PoeExecutor
 
 _GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 
@@ -26,24 +26,23 @@ class ShellTask(PoeTask):
 
     def _handle_run(
         self,
+        executor: "PoeExecutor",
         extra_args: Iterable[str],
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-        subproc_only: bool = False,
-    ) -> Generator[Dict[str, Any], int, int]:
+    ) -> int:
         if any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
-        if sys.platform == "win32":
+
+        if self._is_windows:
             shell = self._find_posix_shell_on_windows()
         else:
             # Prefer to use configured shell, otherwise look for bash
             shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
 
-        cmd = (*shell, "-c", self.content)
         self._print_action(self.content, dry)
-        yield {"cmd": cmd}
-        return 0
+        return executor.execute(shell, input=self.content.encode())
 
     @staticmethod
     def _find_posix_shell_on_windows():

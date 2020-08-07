@@ -1,26 +1,24 @@
 import os
 from pathlib import Path
 import re
-import shutil
-import subprocess
 import sys
 from typing import (
     Any,
     Dict,
-    Generator,
     Iterable,
     List,
     MutableMapping,
     Optional,
-    Sequence,
     Type,
     TYPE_CHECKING,
     Union,
 )
+from ..executor import PoetryExecutor
 
 if TYPE_CHECKING:
-    from ..ui import PoeUi
+    from ..executor import PoeExecutor
     from ..config import PoeConfig
+    from ..ui import PoeUi
 
 
 TaskDef = Union[str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
@@ -107,10 +105,10 @@ class PoeTask(metaclass=MetaPoeTask):
                 return cls.__task_types[config.default_task_type](
                     name=task_name, content=task_def, options={}, ui=ui, config=config
                 )
-            if isinstance(task_def, list):
-                return cls.__task_types[config.default_array_task_type](
-                    name=task_name, content=task_def, options={}, ui=ui, config=config
-                )
+        if isinstance(task_def, list):
+            return cls.__task_types[config.default_array_task_type](
+                name=task_name, content=task_def, options={}, ui=ui, config=config
+            )
 
         assert isinstance(task_def, dict)
         task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
@@ -132,7 +130,6 @@ class PoeTask(metaclass=MetaPoeTask):
         env: Optional[MutableMapping[str, str]] = None,
         set_cwd: bool = True,
         dry: bool = False,
-        subproc_only: bool = False,
     ) -> int:
         """
         Run this task
@@ -142,49 +139,22 @@ class PoeTask(metaclass=MetaPoeTask):
         env["POE_ROOT"] = str(project_dir)
         if self.options.get("env"):
             env = dict(env, **self.options["env"])
-
-        if set_cwd:
-            previous_wd = os.getcwd()
-            os.chdir(project_dir)
-
-        try:
-            run_handler = self._handle_run(
-                list(extra_args), project_dir, env, dry, subproc_only
-            )
-            for execute_args in run_handler:
-                if dry:
-                    # Don't actually execute anything
-                    continue
-                    # All default values except the command are known up front
-                exec_result = self._execute(
-                    **dict(
-                        {
-                            "project_dir": project_dir,
-                            "env": env,
-                            "subproc_only": subproc_only,
-                        },
-                        **execute_args,
-                    )
-                )
-                run_handler.send(exec_result)
-
-        except StopIteration:
-            # Not sure why the StopIteration from the _handle_run generator sometimes
-            # ends up here
-            pass
-        finally:
-            if set_cwd:
-                os.chdir(previous_wd)
-        return 0
+        executor = PoetryExecutor(
+            env=env, working_dir=project_dir if set_cwd else None, dry=dry
+        )
+        return self._handle_run(executor, list(extra_args), project_dir, env, dry)
 
     def _handle_run(
         self,
+        executor: "PoeExecutor",
         extra_args: Iterable[str],
         project_dir: Path,
         env: MutableMapping[str, str],
         dry: bool = False,
-        subproc_only: bool = False,
-    ) -> Generator[Dict[str, Any], int, int]:
+    ) -> int:
+        """
+        _handle_run must be implemented by a subclass and return a single executor result.
+        """
         raise NotImplementedError
 
     @staticmethod
@@ -221,39 +191,6 @@ class PoeTask(metaclass=MetaPoeTask):
                     resolved_parts.append(matched[0:1] + matched[2:])
         resolved_parts.append(content[cursor:])
         return "".join(resolved_parts)
-
-    def _execute(
-        self,
-        project_dir: Path,
-        cmd: Sequence[str],
-        env: MutableMapping[str, str],
-        subproc_only: bool = False,
-    ):
-        if bool(os.environ.get("POETRY_ACTIVE")):
-            # Inside poetry shell
-            if self._is_windows or subproc_only:
-                # On windows
-                exe = subprocess.Popen(cmd, env=env)
-                exe.communicate()
-                return exe.returncode
-            else:
-                _stop_coverage()
-                # Never return...
-                return os.execvpe(cmd[0], tuple(cmd), env)
-        else:
-            return self._execute_via_poetry_run(project_dir, cmd, env)
-
-    def _execute_via_poetry_run(
-        self, project_dir: Path, cmd: Sequence[str], env: MutableMapping[str, str],
-    ):
-        """
-        Execute the task via the `poetry run` CLI
-        """
-        poetry_cmd = shutil.which("poetry") or "poetry"
-        _stop_coverage()  # TODO: exclude the subprocess more gracefully
-        exe = subprocess.Popen((poetry_cmd, "run", *cmd), env=env)
-        exe.communicate()
-        return exe.returncode
 
     @classmethod
     def validate_def(
@@ -353,14 +290,3 @@ class PoeTask(metaclass=MetaPoeTask):
 
     class Error(Exception):
         pass
-
-
-def _stop_coverage():
-    if "coverage" in sys.modules:
-        # If Coverage is running then it ends here
-        from coverage import Coverage
-
-        cov = Coverage.current()
-        if cov:
-            cov.stop()
-            cov.save()

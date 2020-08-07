@@ -108,25 +108,49 @@ def test_multiline_non_default_type_task(
     result = run_poe_subproc("sing")
     assert (
         result.capture
-        == f'Poe => echo "this is the story";\necho "all about how" &&\necho "my life got flipped, turned upside down" ||\necho "bam bam baaam bam"\n'
+        == f'Poe => echo "this is the story";\necho "all about how" &&      # the last line won\'t run\necho "my life got flipped;\n  turned upside down" ||\necho "bam bam baaam bam"\n'
     )
     assert (
         result.stdout
-        == f"this is the story\nall about how\nmy life got flipped, turned upside down\n"
+        == f"this is the story\nall about how\nmy life got flipped;\n  turned upside down\n"
     )
     assert result.stderr == ""
 
 
-def test_sequence_task(run_poe_subproc, dummy_project_path, esc_prefix):
+def test_sequence_task(run_poe_subproc, dummy_project_path, esc_prefix, is_windows):
     result = run_poe_subproc("composite_task")
-    assert result.capture == f"Poe => echo Hello\nPoe => echo World!\nPoe => echo :)!\n"
-    assert result.stdout == f"Hello\nWorld!\n:)!\n"
+    if is_windows:
+        # On windows shlex works in non-POSIX mode which results in  quotes
+        assert (
+            result.capture
+            == f"Poe => echo 'Hello'\nPoe => echo 'World!'\nPoe => echo ':)!'\n"
+        )
+        assert result.stdout == f"'Hello'\n'World!'\n':)!'\n"
+    else:
+        assert (
+            result.capture
+            == f"Poe => echo Hello\nPoe => echo World!\nPoe => echo :)!\n"
+        )
+        assert result.stdout == f"Hello\nWorld!\n:)!\n"
     assert result.stderr == ""
 
 
-def test_another_sequence_task(run_poe_subproc, dummy_project_path, esc_prefix):
+def test_another_sequence_task(
+    run_poe_subproc, dummy_project_path, esc_prefix, is_windows
+):
     # This should be exactly the same as calling the composite_task task directly
     result = run_poe_subproc("also_composite_task")
-    assert result.capture == f"Poe => echo Hello\nPoe => echo World!\nPoe => echo :)!\n"
-    assert result.stdout == f"Hello\nWorld!\n:)!\n"
+    if is_windows:
+        # On windows shlex works in non-POSIX mode which results in  quotes
+        assert (
+            result.capture
+            == f"Poe => echo 'Hello'\nPoe => echo 'World!'\nPoe => echo ':)!'\n"
+        )
+        assert result.stdout == f"'Hello'\n'World!'\n':)!'\n"
+    else:
+        assert (
+            result.capture
+            == f"Poe => echo Hello\nPoe => echo World!\nPoe => echo :)!\n"
+        )
+        assert result.stdout == f"Hello\nWorld!\n:)!\n"
     assert result.stderr == ""
