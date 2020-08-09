@@ -87,6 +87,21 @@ def test_script_task(run_poe_subproc, dummy_project_path, esc_prefix):
     assert result.stderr == ""
 
 
+def test_script_task_with_hard_coded_args(
+    run_poe_subproc, dummy_project_path, esc_prefix
+):
+    # The $ has to be escaped or it'll be evaluated by the outer shell and poe will
+    # never see it
+    result = run_poe_subproc(
+        "greet-shouty", "nat,", r"welcome to " + esc_prefix + "${POE_ROOT}"
+    )
+    assert (
+        result.capture == f"Poe => greet-shouty nat, welcome to {dummy_project_path}\n"
+    )
+    assert result.stdout == f"hello nat, welcome to {dummy_project_path}\n".upper()
+    assert result.stderr == ""
+
+
 def test_ref_task(run_poe_subproc, dummy_project_path, esc_prefix):
     # This should be exactly the same as calling the echo task directly
     result = run_poe_subproc("also_echo", "foo", esc_prefix + r"${POE_ROOT} !")
@@ -106,13 +121,17 @@ def test_multiline_non_default_type_task(
 ):
     # This should be exactly the same as calling the echo task directly
     result = run_poe_subproc("sing")
-    assert (
-        result.capture
-        == f'Poe => echo "this is the story";\necho "all about how" &&      # the last line won\'t run\necho "my life got flipped;\n  turned upside down" ||\necho "bam bam baaam bam"\n'
+    assert result.capture == (
+        f'Poe => echo "this is the story";\n'
+        'echo "all about how" &&      # the last line won\'t run\n'
+        'echo "my life got flipped;\n'
+        '  turned upside down" ||\necho "bam bam baaam bam"\n'
     )
-    assert (
-        result.stdout
-        == f"this is the story\nall about how\nmy life got flipped;\n  turned upside down\n"
+    assert result.stdout == (
+        f"this is the story\n"
+        "all about how\n"
+        "my life got flipped;\n"
+        "  turned upside down\n"
     )
     assert result.stderr == ""
 

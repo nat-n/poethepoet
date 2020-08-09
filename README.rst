@@ -122,9 +122,13 @@ scripts (shell), and composite tasks (sequence).
 
     [tool.poe.tasks]
     fetch-assets = { "script" = "my_package.assets:fetch" }
+    fetch-images = { "script" = "my_package.assets:fetch(only='images')" }
 
-  If extra arguments are passed to task, then they will be available to the called python
-  function via `sys.argv`.
+  As in the second example, is it possible to hard code literal arguments to the target
+  callable.
+
+  If extra arguments are passed to task on the command line, then they will be available
+  to the called python function via `sys.argv`.
 
 - **Shell tasks** are similar to simple command tasks except that they are executed
   inside a new shell, and can consist of multiple seperate commands, command

@@ -17,6 +17,7 @@ env = { BEST_PASSWORD = "Password1" }
 [tool.poe.tasks]
 show_env = "env"
 greet = { script = "dummy_package:main" }
+greet-shouty = { script = "dummy_package:main(upper=True)" }
 count = { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
 also_echo = { ref = "echo" }
 
