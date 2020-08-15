@@ -36,6 +36,17 @@ def test_call_unknown_task(run_poe):
     ), "Output should include error message"
 
 
+def test_call_hidden_task(run_poe):
+    result = run_poe("_part2")
+    assert result.code == 1, "Expected non-zero result"
+    assert (
+        "Error: Tasks prefixed with `_` cannot be executed directly" in result.capture
+    ), "Output should include error message"
+    assert (
+        "Poe => " not in result.capture
+    ), "Output should not look like a successful execution"
+
+
 def test_version_option(run_poe):
     result = run_poe("--version")
     assert result.code == 0, "Expected zero result"

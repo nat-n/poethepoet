@@ -60,6 +60,14 @@ class PoeThePoet:
             self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"),)
             return False
 
+        if task_name.startswith("_"):
+            self.print_help(
+                error=PoeException(
+                    f"Tasks prefixed with `_` cannot be invoked directly"
+                ),
+            )
+            return False
+
         self.task = PoeTask.from_config(task_name, config=self.config, ui=self.ui)
         return True
 
