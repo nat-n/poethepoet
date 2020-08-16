@@ -27,6 +27,8 @@ Features
 
 ✅ Tasks can be defined as a sequence of other tasks
 
+✅ Shell completion of global options and task names (just for zsh so far)
+
 Installation
 ============
 
@@ -41,6 +43,18 @@ And into your default python environment (so it works outside of poetry shell)
 .. code-block:: bash
 
   pip install poethepoet
+
+Enable tab completion for zsh
+-----------------------------
+
+Assuming you have oh-my-zsh installed (or have otherwise enabled completions) you can use poe to generate a zsh completion script to install somewhere in your `$fpath`.
+
+For example, if you use oh-my-zsh then you can enable tab completion for poe global options and task names like so:
+
+```zsh
+mkdir -p $HOME/.oh-my-zsh/completions
+poe _zsh_completion > $HOME/.oh-my-zsh/completions/_poe
+```
 
 Basic Usage
 ===========
@@ -237,7 +251,7 @@ There's plenty to do, come say hi in the issues! 👋
 TODO
 ====
 
-☐ command line completion
+☐ command line completion for bash & fish
 
 ☐ support declaring specific arguments for a task
 
