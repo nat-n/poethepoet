@@ -63,7 +63,7 @@ class PoeThePoet:
         if task_name.startswith("_"):
             self.print_help(
                 error=PoeException(
-                    f"Tasks prefixed with `_` cannot be invoked directly"
+                    "Tasks prefixed with `_` cannot be executed directly"
                 ),
             )
             return False

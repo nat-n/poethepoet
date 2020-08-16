@@ -41,15 +41,15 @@ class PoeUi:
         """Provide easy access to arguments"""
         return getattr(self.args, key, None)
 
-    def parse_args(self, cli_args: Sequence[str]):
-        self.parser = argparse.ArgumentParser(
+    def build_parser(self):
+        parser = argparse.ArgumentParser(
             prog="poe",
             description="Poe the Poet: A task runner that works well with poetry.",
             add_help=False,
             allow_abbrev=False,
         )
 
-        self.parser.add_argument(
+        parser.add_argument(
             "-h",
             "--help",
             dest="help",
@@ -58,7 +58,7 @@ class PoeUi:
             help="Show this help page and exit",
         )
 
-        self.parser.add_argument(
+        parser.add_argument(
             "--version",
             dest="version",
             action="store_true",
@@ -66,7 +66,7 @@ class PoeUi:
             help="Print the version and exit",
         )
 
-        verbosity_group = self.parser.add_mutually_exclusive_group()
+        verbosity_group = parser.add_mutually_exclusive_group()
         verbosity_group.add_argument(
             "-v",
             "--verbose",
@@ -87,7 +87,7 @@ class PoeUi:
             help="Less console spam",
         )
 
-        self.parser.add_argument(
+        parser.add_argument(
             "-d",
             "--dry-run",
             dest="dry_run",
@@ -96,7 +96,7 @@ class PoeUi:
             help="Print the task contents but don't actaully run it",
         )
 
-        self.parser.add_argument(
+        parser.add_argument(
             "--root",
             dest="project_root",
             metavar="PATH",
@@ -105,7 +105,7 @@ class PoeUi:
             help="Specify where to find the pyproject.toml",
         )
 
-        ansi_group = self.parser.add_mutually_exclusive_group()
+        ansi_group = parser.add_mutually_exclusive_group()
         ansi_group.add_argument(
             "--ansi",
             dest="ansi",
@@ -121,7 +121,12 @@ class PoeUi:
             help="Force disable ANSI output",
         )
 
-        self.parser.add_argument("task", default=tuple(), nargs=argparse.REMAINDER)
+        parser.add_argument("task", default=tuple(), nargs=argparse.REMAINDER)
+
+        return parser
+
+    def parse_args(self, cli_args: Sequence[str]):
+        self.parser = self.build_parser()
         self.args = self.parser.parse_args(cli_args)
         self._color.with_colors(self.args.ansi)
 

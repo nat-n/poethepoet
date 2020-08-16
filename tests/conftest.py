@@ -2,7 +2,7 @@ from collections import namedtuple
 from io import StringIO
 import os
 from pathlib import Path
-from poethepoet import PoeThePoet
+from poethepoet.app import PoeThePoet
 import pytest
 from subprocess import PIPE, Popen
 import sys
@@ -61,7 +61,7 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
         'python -c "'
         "{coverage_setup}"
         "import tomlkit;"
-        "from poethepoet import PoeThePoet;"
+        "from poethepoet.app import PoeThePoet;"
         "from pathlib import Path;"
         r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
         "poe([{run_args}]);"
@@ -137,3 +137,22 @@ def esc_prefix(is_windows):
     if is_windows:
         return ""
     return "\\"
+
+
+@pytest.fixture(scope="function")
+def run_poe_main(capsys, dummy_project_path):
+    def run_poe_main(
+        *cli_args: str,
+        cwd: str = dummy_project_path,
+        config: Optional[Mapping[str, Any]] = None,
+    ) -> str:
+        from poethepoet import main
+
+        prev_cwd = os.getcwd()
+        os.chdir(cwd)
+        sys.argv = ("poe", *cli_args)
+        result = main()
+        os.chdir(prev_cwd)
+        return PoeRunResult(result, "", *capsys.readouterr())
+
+    return run_poe_main

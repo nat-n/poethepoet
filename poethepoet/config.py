@@ -2,7 +2,6 @@ from pathlib import Path
 import tomlkit
 from typing import Any, Mapping, Optional, Union
 from .exceptions import PoeException
-from .task import PoeTask
 
 
 class PoeConfig:
@@ -59,6 +58,8 @@ class PoeConfig:
         self._project_dir = config_path.parent
 
     def validate(self):
+        from .task import PoeTask
+
         # Validate keys
         supported_keys = {"tasks", *self.__options__}
         unsupported_keys = set(self._table) - supported_keys
