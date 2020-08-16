@@ -47,14 +47,16 @@ And into your default python environment (so it works outside of poetry shell)
 Enable tab completion for zsh
 -----------------------------
 
-Assuming you have oh-my-zsh installed (or have otherwise enabled completions) you can use poe to generate a zsh completion script to install somewhere in your `$fpath`.
+Assuming you have `Oh My Zsh <https://github.com/ohmyzsh/ohmyzsh>`_ installed (or have otherwise enabled completions) you can use poe to generate a zsh completion script to install somewhere in your `$fpath`.
 
-For example, if you use oh-my-zsh then you can enable tab completion for poe global options and task names like so:
+For example, if you use Oh My Zsh then you can enable tab completion for poe global options and task names just by installing the generated function into the completions dir:
 
-```zsh
-mkdir -p $HOME/.oh-my-zsh/completions
-poe _zsh_completion > $HOME/.oh-my-zsh/completions/_poe
-```
+.. code-block:: bash
+
+  mkdir -p $HOME/.oh-my-zsh/completions
+  poe _zsh_completion > $HOME/.oh-my-zsh/completions/_poe
+
+Note that you'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to `compinit` to the end of your zshrc file.
 
 Basic Usage
 ===========
