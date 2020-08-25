@@ -13,7 +13,7 @@ A task runner that works well with poetry.
 Features
 ========
 
-✅ Straight foward declaration of project tasks in your pyproject.toml (kind of like npm scripts)
+✅ Straight forward declaration of project tasks in your pyproject.toml (kind of like npm scripts)
 
 ✅ Task are run in poetry's virtualenv by default
 
@@ -21,7 +21,7 @@ Features
 
 ✅ Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`
 
-✅ Tasks can specify and reference environmental variables as if they were evaluated by a shell
+✅ Tasks can specify and reference environment variables as if they were evaluated by a shell
 
 ✅ Tasks are self documenting, with optional help messages (just run poe without arguments)
 
@@ -80,13 +80,13 @@ Run tasks with the poe cli
 
   poe test
 
-Additional argument are passed to the task so
+Additional arguments are passed to the task so
 
 .. code-block:: bash
 
   poe test -v tests/favorite_test.py
 
-results in the following be run inside poetry's virtualenv
+results in the following being run inside poetry's virtualenv
 
 .. code-block:: bash
 
@@ -129,7 +129,7 @@ scripts (shell), and composite tasks (sequence).
            ./**/__pycache__
     """
     lint = { "cmd": "pylint poethepoet" }  # Inline tables with a cmd key work too
-    greet = "echo Hello $USER"  # Environmental variables work, even though there's no shell!
+    greet = "echo Hello $USER"  # Environment variables work, even though there's no shell!
 
 - **Script tasks** contain a reference to a python callable to import and execute, for
   example:
@@ -147,8 +147,8 @@ scripts (shell), and composite tasks (sequence).
   to the called python function via `sys.argv`.
 
 - **Shell tasks** are similar to simple command tasks except that they are executed
-  inside a new shell, and can consist of multiple seperate commands, command
-  substitution, pipes, background processes, etc
+  inside a new shell, and can consist of multiple separate commands, command
+  substitution, pipes, background processes, etc.
 
   An example use case for this might be opening some ssh tunnels in the background with
   one task and closing them with another like so:
@@ -161,7 +161,7 @@ scripts (shell), and composite tasks (sequence).
 
 - **Composite tasks** are defined as a sequence of other tasks as an array.
 
-  By default the contents of the array as interpreted as references to other tasks (actually a ref task type), though this behavoir can be altered by setting the global `default_array_item_task_type` option to the name of another task type such as _cmd_.
+  By default the contents of the array is interpreted as references to other tasks (actually a ref task type), though this behavior can be altered by setting the global `default_array_item_task_type` option to the name of another task type such as _cmd_.
 
   .. code-block:: toml
 
@@ -195,10 +195,10 @@ You can specifiy help text to be shown alongside the task name in the list of av
     [tool.poe.tasks]
     style = {cmd = "black . --check --diff", help = "Check code style"}
 
-Environmental variables
------------------------
+Environment variables
+---------------------
 
-You can specify arbitrary environmental variables to be set for a task by providing the env key like so:
+You can specify arbitrary environment variables to be set for a task by providing the env key like so:
 
   .. code-block:: toml
 
@@ -206,7 +206,7 @@ You can specify arbitrary environmental variables to be set for a task by provid
     serve.script = "myapp:run"
     serve.env = { PORT = 9001 }
 
-Notice this exame uses deep keys which can be more convenient but aren't as well supported by some toml implementations.
+Notice this example uses deep keys which can be more convenient but aren't as well supported by some toml implementations.
 
 Project-wide configuration options
 ==================================
@@ -217,9 +217,9 @@ Run poe from anywhere
 By default poe will detect when you're inside a project with a pyproject.toml in the
 root. However if you want to run it from elsewhere that is supported too by using the
 `--root` option to specify an alternate location for the toml file. The task will run
-with with the given location as the current working directory.
+with the given location as the current working directory.
 
-In all cases the path to project root (where the pyproject.toml resides) is be available
+In all cases the path to project root (where the pyproject.toml resides) will be available
 as `$POE_ROOT` within the command line and process.
 
 Change the default task type
@@ -233,7 +233,7 @@ require the more verbose table syntax to specify. For example:
   my_cmd_task = "cmd args"
   my_script_task = { "script" = "my_package.my_module:run" }
 
-This behavoir can be reversed by setting the `default_task_type` option in your
+This behavior can be reversed by setting the `default_task_type` option in your
 pyproject.toml like so:
 
 .. code-block:: toml
@@ -263,7 +263,7 @@ TODO
 
 ☐ support running tasks outside of poetry's virtualenv (or in another?)
 
-☐ try work well without poetry too
+☐ try to work well without poetry too
 
 ☐ maybe support plumbum based tasks
 
