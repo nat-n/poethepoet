@@ -9,11 +9,13 @@ from typing import (
     List,
     MutableMapping,
     Optional,
+    Tuple,
     Type,
     TYPE_CHECKING,
     Union,
 )
 from ..executor import PoetryExecutor
+from ..exceptions import PoeException
 
 if TYPE_CHECKING:
     from ..executor import PoeExecutor
@@ -83,7 +85,7 @@ class PoeTask(metaclass=MetaPoeTask):
     def from_config(cls, task_name: str, config: "PoeConfig", ui: "PoeUi") -> "PoeTask":
         task_def = config.tasks.get(task_name)
         if not task_def:
-            raise Exception(f"Cannot instantiate unknown task {task_name!r}")
+            raise PoeException(f"Cannot instantiate unknown task {task_name!r}")
         return cls.from_def(task_def, task_name, config, ui)
 
     @classmethod
@@ -93,11 +95,16 @@ class PoeTask(metaclass=MetaPoeTask):
         task_name: str,
         config: "PoeConfig",
         ui: "PoeUi",
-        array_item: bool = False,
+        array_item: Union[bool, str] = False,
     ) -> "PoeTask":
         if array_item:
             if isinstance(task_def, str):
-                return cls.__task_types[config.default_array_item_task_type](
+                task_type = (
+                    array_item
+                    if isinstance(array_item, str)
+                    else config.default_array_item_task_type
+                )
+                return cls.__task_types[task_type](
                     name=task_name, content=task_def, options={}, ui=ui, config=config
                 )
         else:
@@ -268,6 +275,16 @@ class PoeTask(metaclass=MetaPoeTask):
             content_type is None
             or cls.__task_types[task_def_key].__content_type__ is content_type
         )
+
+    @classmethod
+    def get_task_types(cls, content_type: Optional[Type] = None) -> Tuple[str, ...]:
+        if content_type:
+            return tuple(
+                task_type
+                for task_type, task_cls in cls.__task_types.items()
+                if task_cls.__content_type__ is content_type
+            )
+        return tuple(task_type for task_type in cls.__task_types.keys())
 
     @classmethod
     def _validate_task_def(

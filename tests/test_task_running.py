@@ -173,3 +173,16 @@ def test_another_sequence_task(
         )
         assert result.stdout == f"Hello\nWorld!\n:)!\n"
     assert result.stderr == ""
+
+
+def test_a_script_sequence_task(
+    run_poe_subproc, dummy_project_path, esc_prefix, is_windows
+):
+    # This should be exactly the same as calling the composite_task task directly
+    result = run_poe_subproc("greet-multiple")
+    assert (
+        result.capture
+        == f"Poe => dummy_package:main('Tom')\nPoe => dummy_package:main('Jerry')\n"
+    )
+    assert result.stdout == f"hello Tom\nhello Jerry\n"
+    assert result.stderr == ""

@@ -44,6 +44,9 @@ composite_task.env = { SMILEY = ":)" }
 
 also_composite_task = ["composite_task"]
 
+greet-multiple.sequence = ["dummy_package:main('Tom')", "dummy_package:main('Jerry')"]
+greet-multiple.default_item_type = "script"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

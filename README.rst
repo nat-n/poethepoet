@@ -13,21 +13,21 @@ A task runner that works well with poetry.
 Features
 ========
 
-✅ Straight forward declaration of project tasks in your pyproject.toml (kind of like npm scripts)
+✅  Straight forward declaration of project tasks in your pyproject.toml (kind of like npm scripts)
 
-✅ Task are run in poetry's virtualenv by default
+✅  Task are run in poetry's virtualenv by default
 
-✅ Tasks can be commands (with or without a shell) or references to python functions (like tool.poetry.scripts)
+✅  Tasks can be commands (with or without a shell) or references to python functions (like tool.poetry.scripts)
 
-✅ Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`
+✅  Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`
 
-✅ Tasks can specify and reference environment variables as if they were evaluated by a shell
+✅  Tasks can specify and reference environment variables as if they were evaluated by a shell
 
-✅ Tasks are self documenting, with optional help messages (just run poe without arguments)
+✅  Tasks are self documenting, with optional help messages (just run poe without arguments)
 
-✅ Tasks can be defined as a sequence of other tasks
+✅  Tasks can be defined as a sequence of other tasks
 
-✅ Shell completion of global options and task names (just for zsh so far)
+✅  Shell completion of global options and task names (just for zsh so far)
 
 Installation
 ============
@@ -161,7 +161,9 @@ scripts (shell), and composite tasks (sequence).
 
 - **Composite tasks** are defined as a sequence of other tasks as an array.
 
-  By default the contents of the array is interpreted as references to other tasks (actually a ref task type), though this behavior can be altered by setting the global `default_array_item_task_type` option to the name of another task type such as _cmd_.
+  By default the contents of the array are interpreted as references to other tasks (actually a ref task type), though this behaviour can be altered by setting the global `default_array_item_task_type` option to the name of another task type such as _cmd_, or by setting the `default_item_type` option locally on the sequence task.
+
+  **An example task with references**
 
   .. code-block:: toml
 
@@ -173,6 +175,27 @@ scripts (shell), and composite tasks (sequence).
     release = ["test", "build", "_publish"]
 
   Note that tasks with names prefixed with `_` are not included in the documentation or directly executable, but can be useful for cases where a task is only needed for a sequence.
+
+  **An example task with inline tasks expressed via inline tables**
+
+  .. code-block:: toml
+
+    release = [
+      { cmd = "pytest --cov=src" },
+      { script = "devtasks:build" },
+      { ref = "_publish" },
+    ]
+
+  **An example task with inline script subtasks using default_item_type**
+
+  .. code-block:: toml
+
+    release.sequence = [
+      "devtasks:run_tests(all=True)",
+      "devtasks:build",
+      "devtasks:publish",
+    ]
+    release.default_item_type = "script"
 
   A failure (non-zero result) will result in the rest of the tasks in the sequence not being executed, unless the `ignore_fail` option is set on the task like so:
 
@@ -233,7 +256,7 @@ require the more verbose table syntax to specify. For example:
   my_cmd_task = "cmd args"
   my_script_task = { "script" = "my_package.my_module:run" }
 
-This behavior can be reversed by setting the `default_task_type` option in your
+This behaviour can be reversed by setting the `default_task_type` option in your
 pyproject.toml like so:
 
 .. code-block:: toml
