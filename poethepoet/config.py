@@ -1,6 +1,6 @@
 from pathlib import Path
 import tomlkit
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Union
 from .exceptions import PoeException
 
 
@@ -14,6 +14,7 @@ class PoeConfig:
         "default_task_type": str,
         "default_array_task_type": str,
         "default_array_item_task_type": str,
+        "env": dict,
     }
 
     def __init__(
@@ -40,6 +41,10 @@ class PoeConfig:
     @property
     def default_array_item_task_type(self) -> str:
         return self._table.get("default_array_item_task_type", "ref")
+
+    @property
+    def global_env(self) -> Dict[str, str]:
+        return self._table.get("env", {})
 
     @property
     def project_dir(self) -> str:
@@ -90,6 +95,14 @@ class PoeConfig:
                 "Unsupported value for option `default_array_item_task_type` "
                 f"{self.default_array_item_task_type!r}"
             )
+        # Validate env value
+        env = self.global_env
+        if env:
+            for key, value in env.items():
+                if not isinstance(value, str):
+                    raise PoeException(
+                        f"Value of {key!r} in option `env` should be a string, but found {type(value)!r}"
+                    )
         # Validate tasks
         for task_name, task_def in self.tasks.items():
             error = PoeTask.validate_def(task_name, task_def, self)

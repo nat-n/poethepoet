@@ -1,3 +1,4 @@
+import os
 import sys
 
 
@@ -10,3 +11,8 @@ def main(*args, greeting="hello", upper=False):
         )
     else:
         print(greeting, *args, *sys.argv[1:])
+
+
+def print_var(*var_names):
+    for var in var_names:
+        print(os.environ.get(var))

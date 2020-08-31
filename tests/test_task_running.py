@@ -7,11 +7,11 @@ def test_call_echo_task(run_poe_subproc, dummy_project_path, esc_prefix):
     result = run_poe_subproc("echo", "foo", esc_prefix + r"${POE_ROOT} !")
     assert (
         result.capture
-        == f"Poe => echo POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
+        == f"Poe => echo POE_ROOT:{dummy_project_path} Password1, task_args: foo {dummy_project_path} !\n"
     )
     assert (
         result.stdout
-        == f"POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
+        == f"POE_ROOT:{dummy_project_path} Password1, task_args: foo {dummy_project_path} !\n"
     )
     assert result.stderr == ""
 
@@ -53,7 +53,7 @@ def test_passing_envvar_str_to_task(
     output_var_ = output_var.replace("dummy_project_path", str(dummy_project_path))
     assert (
         result.capture
-        == f"Poe => echo POE_ROOT:{dummy_project_path} Password1 task_args: {output_var_} !\n"
+        == f"Poe => echo POE_ROOT:{dummy_project_path} Password1, task_args: {output_var_} !\n"
     )
     # assert result.stdout == f"POE_ROOT:{dummy_project_path} task_args: {output_var} !\n"
     assert result.stderr == ""
@@ -107,11 +107,11 @@ def test_ref_task(run_poe_subproc, dummy_project_path, esc_prefix):
     result = run_poe_subproc("also_echo", "foo", esc_prefix + r"${POE_ROOT} !")
     assert (
         result.capture
-        == f"Poe => echo POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
+        == f"Poe => echo POE_ROOT:{dummy_project_path} Password1, task_args: foo {dummy_project_path} !\n"
     )
     assert (
         result.stdout
-        == f"POE_ROOT:{dummy_project_path} Password1 task_args: foo {dummy_project_path} !\n"
+        == f"POE_ROOT:{dummy_project_path} Password1, task_args: foo {dummy_project_path} !\n"
     )
     assert result.stderr == ""
 

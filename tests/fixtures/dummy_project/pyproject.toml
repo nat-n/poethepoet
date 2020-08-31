@@ -8,9 +8,13 @@ packages = [
   { include = "dummy_package" }
 ]
 
+[tool.poe]
+env.PLANET = "EARTH"
+env.DEST = "MARS"
+
 # Alternate sub-table syntax for task with lots of config
 [tool.poe.tasks.echo]
-cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD} task_args:"
+cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
 help = "It says what you say"
 env = { BEST_PASSWORD = "Password1" }
 
@@ -46,6 +50,11 @@ also_composite_task = ["composite_task"]
 
 greet-multiple.sequence = ["dummy_package:main('Tom')", "dummy_package:main('Jerry')"]
 greet-multiple.default_item_type = "script"
+
+travel = [
+  { cmd = "echo 'from $PLANET to'" },
+  { script = "dummy_package:print_var('DEST')" }
+]
 
 [build-system]
 requires = ["poetry>=0.12"]

@@ -144,6 +144,7 @@ class PoeTask(metaclass=MetaPoeTask):
         if env is None:
             env = dict(os.environ)
         env["POE_ROOT"] = str(project_dir)
+        env = dict(env, **self._config.global_env)
         if self.options.get("env"):
             env = dict(env, **self.options["env"])
         executor = PoetryExecutor(

@@ -234,6 +234,16 @@ Notice this example uses deep keys which can be more convenient but aren't as we
 Project-wide configuration options
 ==================================
 
+Global environment variables
+----------------------------
+
+You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying `tool.poe.env` like so
+
+.. code-block:: toml
+[tool.poe.env]
+VAR1 = "FOO"
+VAR2 = "BAR"
+
 Run poe from anywhere
 ---------------------
 
