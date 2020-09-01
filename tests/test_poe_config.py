@@ -22,8 +22,12 @@ def test_setting_default_array_item_task_type(run_poe_subproc, scripts_project_p
     assert result.stderr == ""
 
 
-def test_setting_global_env_vars(run_poe_subproc):
+def test_setting_global_env_vars(run_poe_subproc, is_windows):
     result = run_poe_subproc("travel")
-    assert result.capture == f"Poe => echo from EARTH to\nPoe => travel[1]\n"
-    assert result.stdout == f"from EARTH to\nMARS\n"
+    if is_windows:
+        assert result.capture == f"Poe => echo 'from EARTH to'\nPoe => travel[1]\n"
+        assert result.stdout == f"'from EARTH to'\nMARS\n"
+    else:
+        assert result.capture == f"Poe => echo from EARTH to\nPoe => travel[1]\n"
+        assert result.stdout == f"from EARTH to\nMARS\n"
     assert result.stderr == ""
