@@ -6,6 +6,10 @@ A task runner that works well with poetry.
 
 .. role:: bash(code)
    :language: bash
+.. role:: fish(code)
+   :language: fish
+.. role:: zsh(code)
+   :language: zsh
 
 .. role:: toml(code)
    :language: toml
@@ -27,7 +31,7 @@ Features
 
 ✅  Tasks can be defined as a sequence of other tasks
 
-✅  Shell completion of global options and task names (just for zsh so far)
+✅  Shell completion of task names (and global options too for zsh)
 
 Installation
 ============
@@ -44,19 +48,51 @@ And into your default python environment (so it works outside of poetry shell)
 
   pip install poethepoet
 
-Enable tab completion for zsh
------------------------------
+Enable tab completion for your shell
+------------------------------------
 
-Assuming you have `Oh My Zsh <https://github.com/ohmyzsh/ohmyzsh>`_ installed (or have otherwise enabled completions) you can use poe to generate a zsh completion script to install somewhere in your `$fpath`.
+Poe comes with tab completion scripts for bash, zsh, and fish to save you keystrokes. How to install them will depend on your shell setup.
 
-For example, if you use Oh My Zsh then you can enable tab completion for poe global options and task names just by installing the generated function into the completions dir:
+Zsh
+~~~
+
+.. code-block:: zsh
+
+  # oh-my-zsh
+  mkdir -p ~/.oh-my-zsh/completions
+  poe _zsh_completion > ~/.oh-my-zsh/completions/_poe
+
+  # without oh-my-zsh
+  mkdir -p ~/.zfunc/
+  poe _zsh_completion > ~/.zfunc/_poetry
+
+Note that you'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to `compinit` to the end of your zshrc file.
+
+Bash
+~~~~
 
 .. code-block:: bash
 
-  mkdir -p $HOME/.oh-my-zsh/completions
-  poe _zsh_completion > $HOME/.oh-my-zsh/completions/_poe
+  # System bash
+  poe _bash_completion > /etc/bash_completion.d/poe.bash-completion
 
-Note that you'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to `compinit` to the end of your zshrc file.
+  # Homebrew bash
+  poe _bash_completion > $(brew --prefix)/etc/bash_completion.d/poe.bash-completion
+
+
+How to ensure installed bash completions are enabled may vary depending on your system.
+
+Fish
+~~~~
+
+.. code-block:: fish
+
+  # Fish
+  poe _fish_completion > ~/.config/fish/completions/poe.fish
+
+  # Homebrew fish
+  poe _fish_completion > (brew --prefix)/share/fish/vendor_completions.d/poe.fish
+
 
 Basic Usage
 ===========
@@ -287,21 +323,19 @@ There's plenty to do, come say hi in the issues! 👋
 TODO
 ====
 
-☐ command line completion for bash & fish
-
 ☐ support declaring specific arguments for a task
 
 ☐ support conditional execution (a bit like make targets)
 
 ☐ support verbose mode for documentation that shows task definitions
 
-☐ support running tasks outside of poetry's virtualenv (or in another?)
+☐ support different task executors such as specifying a non-poetry venv, or working with pipenv,
 
-☐ try to work well without poetry too
+☐ support third party task or executor types as plugins
+
+☐ maybe provide poe as a poetry plugin
 
 ☐ maybe support plumbum based tasks
-
-☐ maybe support third party task types as plugins
 
 Licence
 =======

@@ -209,14 +209,13 @@ class PoeTask(metaclass=MetaPoeTask):
         describing the first encountered issue if any.
         If raize is True then the issue is raised as an exception.
         """
-        issue = None
         if not (task_name[0].isalpha() or task_name[0] == "_"):
-            issue = (
+            return (
                 f"Invalid task name: {task_name!r}. Task names must start with a letter"
                 " or underscore."
             )
         elif not _TASK_NAME_PATTERN.match(task_name):
-            issue = (
+            return (
                 f"Invalid task name: {task_name!r}. Task names characters must be "
                 "alphanumeric, colon, underscore or dash."
             )
@@ -227,7 +226,7 @@ class PoeTask(metaclass=MetaPoeTask):
                 task_content = task_def[task_type_key]
                 task_type = cls.__task_types[task_type_key]
                 if not isinstance(task_content, task_type.__content_type__):
-                    issue = (
+                    return (
                         f"Invalid task: {task_name!r}. {task_type} value must be a "
                         f"{task_type.__content_type__}"
                     )
@@ -237,31 +236,33 @@ class PoeTask(metaclass=MetaPoeTask):
                             key, task_type.__options__.get(key)
                         )
                         if expected_type is None:
-                            issue = (
+                            return (
                                 f"Invalid task: {task_name!r}. Unrecognised option "
                                 f"{key!r} for task of type: {task_type_key}."
                             )
-                            break
                         elif not isinstance(task_def[key], expected_type):
-                            issue = (
+                            return (
                                 f"Invalid task: {task_name!r}. Option {key!r} should "
                                 f"have a value of type {expected_type!r}"
                             )
-                            break
                     else:
                         if hasattr(task_type, "_validate_task_def"):
-                            issue = task_type._validate_task_def(
+                            task_type_issue = task_type._validate_task_def(
                                 task_name, task_def, config
                             )
+                            if task_type_issue:
+                                return task_type_issue
+                if "\n" in task_def.get("help", ""):
+                    return (
+                        f"Invalid task: {task_name!r}. Help messages cannot contain "
+                        "line breaks"
+                    )
             else:
-                issue = (
+                return (
                     f"Invalid task: {task_name!r}. Task definition must include exactly"
                     f" one task key from {set(cls.__task_types)!r}"
                 )
-        else:
-            return None
-
-        return issue
+        return None
 
     @classmethod
     def is_task_type(
