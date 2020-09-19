@@ -11,7 +11,7 @@ homepage =  "https://github.com/nat-n/poethepoet"
 [tool.poetry.dependencies]
 python = "^3.6"
 pastel = "^0.2.0"
-tomlkit = "^0.7.0"
+tomlkit = ">=0.6.0,<1.0.0"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
