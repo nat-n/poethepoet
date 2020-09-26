@@ -1,10 +1,13 @@
+import os
 from pathlib import Path
 import sys
 from typing import Any, IO, MutableMapping, Optional, Sequence, Union
 from .config import PoeConfig
+from .context import RunContext
+from .executor import PoetryExecutor
+from .exceptions import ExecutionError, PoeException
 from .task import PoeTask
 from .ui import PoeUi
-from .exceptions import ExecutionError, PoeException
 
 
 class PoeThePoet:
@@ -72,13 +75,17 @@ class PoeThePoet:
         return True
 
     def run_task(self) -> Optional[int]:
-        _, *take_args = self.ui["task"]
+        _, *extra_args = self.ui["task"]
         try:
             assert self.task
             return self.task.run(
-                take_args,
-                project_dir=Path(self.config.project_dir),
-                dry=self.ui["dry_run"],
+                context=RunContext(
+                    project_dir=Path(self.config.project_dir),
+                    executor_cls=PoetryExecutor,
+                    env=os.environ,
+                    dry=self.ui["dry_run"],
+                ),
+                extra_args=extra_args,
             )
         except PoeException as error:
             self.print_help(error=error)

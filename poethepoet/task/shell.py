@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
@@ -9,7 +8,7 @@ from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
-    from ..executor import PoeExecutor
+    from ..context import RunContext
 
 _GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 
@@ -26,11 +25,9 @@ class ShellTask(PoeTask):
 
     def _handle_run(
         self,
-        executor: "PoeExecutor",
+        context: "RunContext",
         extra_args: Iterable[str],
-        project_dir: Path,
         env: MutableMapping[str, str],
-        dry: bool = False,
     ) -> int:
         if any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
@@ -41,8 +38,8 @@ class ShellTask(PoeTask):
             # Prefer to use configured shell, otherwise look for bash
             shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
 
-        self._print_action(self.content, dry)
-        return executor.execute(shell, input=self.content.encode())
+        self._print_action(self.content, context.dry)
+        return context.get_executor(env).execute(shell, input=self.content.encode())
 
     @staticmethod
     def _find_posix_shell_on_windows():

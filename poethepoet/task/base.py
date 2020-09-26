@@ -1,5 +1,3 @@
-import os
-from pathlib import Path
 import re
 import sys
 from typing import (
@@ -14,11 +12,10 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
-from ..executor import PoetryExecutor
 from ..exceptions import PoeException
 
 if TYPE_CHECKING:
-    from ..executor import PoeExecutor
+    from ..context import RunContext
     from ..config import PoeConfig
     from ..ui import PoeUi
 
@@ -132,33 +129,23 @@ class PoeTask(metaclass=MetaPoeTask):
 
     def run(
         self,
+        context: "RunContext",
         extra_args: Iterable[str],
-        project_dir: Path,
         env: Optional[MutableMapping[str, str]] = None,
-        set_cwd: bool = True,
-        dry: bool = False,
     ) -> int:
         """
         Run this task
         """
-        if env is None:
-            env = dict(os.environ)
-        env["POE_ROOT"] = str(project_dir)
-        env = dict(env, **self._config.global_env)
+        env = dict(env or {}, **self._config.global_env)
         if self.options.get("env"):
             env = dict(env, **self.options["env"])
-        executor = PoetryExecutor(
-            env=env, working_dir=project_dir if set_cwd else None, dry=dry
-        )
-        return self._handle_run(executor, list(extra_args), project_dir, env, dry)
+        return self._handle_run(context, extra_args, env)
 
     def _handle_run(
         self,
-        executor: "PoeExecutor",
+        context: "RunContext",
         extra_args: Iterable[str],
-        project_dir: Path,
         env: MutableMapping[str, str],
-        dry: bool = False,
     ) -> int:
         """
         _handle_run must be implemented by a subclass and return a single executor result.
@@ -166,7 +153,9 @@ class PoeTask(metaclass=MetaPoeTask):
         raise NotImplementedError
 
     @staticmethod
-    def _resolve_envvars(content: str, env: MutableMapping[str, str]) -> str:
+    def _resolve_envvars(
+        content: str, context: "RunContext", env: MutableMapping[str, str]
+    ) -> str:
         """
         Template in ${environmental} $variables from env as if we were in a shell
 
@@ -175,6 +164,7 @@ class PoeTask(metaclass=MetaPoeTask):
         intentionally very limited implementation of escaping semantics for the sake of
         usability.
         """
+        env = context.get_env(env)
         cursor = 0
         resolved_parts = []
         for match in _SHELL_VAR_PATTERN.finditer(content):

@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import (
     Any,
     Dict,
@@ -12,7 +11,7 @@ from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
-    from ..executor import PoeExecutor
+    from ..context import RunContext
 
 
 class RefTask(PoeTask):
@@ -29,19 +28,15 @@ class RefTask(PoeTask):
 
     def _handle_run(
         self,
-        executor: "PoeExecutor",
+        context: "RunContext",
         extra_args: Iterable[str],
-        project_dir: Path,
         env: MutableMapping[str, str],
-        dry: bool = False,
     ) -> int:
         """
         Lookup and delegate to the referenced task
         """
         task = self.from_config(self.content, self._config, ui=self._ui)
-        return task.run(
-            extra_args=extra_args, project_dir=project_dir, env=env, dry=dry,
-        )
+        return task.run(context=context, extra_args=extra_args, env=env,)
 
     @classmethod
     def _validate_task_def(

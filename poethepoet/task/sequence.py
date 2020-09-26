@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import (
     Any,
     Dict,
@@ -15,6 +14,7 @@ from ..exceptions import ExecutionError, PoeException
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
+    from ..context import RunContext
     from ..executor import PoeExecutor
     from ..ui import PoeUi
 
@@ -52,18 +52,14 @@ class SequenceTask(PoeTask):
 
     def _handle_run(
         self,
-        executor: "PoeExecutor",
+        context: "RunContext",
         extra_args: Iterable[str],
-        project_dir: Path,
         env: MutableMapping[str, str],
-        dry: bool = False,
     ) -> int:
         if any(arg.strip() for arg in extra_args):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
         for subtask in self.subtasks:
-            task_result = subtask.run(
-                extra_args=tuple(), project_dir=project_dir, env=env, dry=dry,
-            )
+            task_result = subtask.run(context=context, extra_args=tuple(), env=env,)
             if task_result and not self.options.get("ignore_fail"):
                 raise ExecutionError(
                     f"Sequence aborted after failed subtask {subtask.name!r}"

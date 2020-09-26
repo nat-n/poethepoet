@@ -1,5 +1,4 @@
 from glob import glob
-from pathlib import Path
 import re
 import shlex
 from typing import (
@@ -13,7 +12,7 @@ from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
-    from ..executor import PoeExecutor
+    from ..context import RunContext
 
 _GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 
@@ -30,24 +29,29 @@ class CmdTask(PoeTask):
 
     def _handle_run(
         self,
-        executor: "PoeExecutor",
+        context: "RunContext",
         extra_args: Iterable[str],
-        project_dir: Path,
         env: MutableMapping[str, str],
-        dry: bool = False,
     ) -> int:
-        cmd = self._resolve_args(extra_args, env)
-        self._print_action(" ".join(cmd), dry)
-        return executor.execute(cmd)
+        cmd = self._resolve_args(context, extra_args, env)
+        self._print_action(" ".join(cmd), context.dry)
+        return context.get_executor(env).execute(cmd)
 
-    def _resolve_args(self, extra_args: Iterable[str], env: MutableMapping[str, str]):
+    def _resolve_args(
+        self,
+        context: "RunContext",
+        extra_args: Iterable[str],
+        env: MutableMapping[str, str],
+    ):
         # Parse shell command tokens
         cmd_tokens = shlex.split(
-            self._resolve_envvars(self.content, env),
+            self._resolve_envvars(self.content, context, env),
             comments=True,
             posix=not self._is_windows,
         )
-        extra_args = [self._resolve_envvars(token, env) for token in extra_args]
+        extra_args = [
+            self._resolve_envvars(token, context, env) for token in extra_args
+        ]
         # Resolve any glob pattern paths
         result = []
         for cmd_token in (*cmd_tokens, *extra_args):
