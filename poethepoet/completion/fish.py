@@ -14,7 +14,7 @@ def get_fish_completion_script() -> str:
         (
             "function __list_poe_tasks",
             "    set prev_args (commandline -pco)",
-            '    set tasks (poe _describe_tasks | string split " ")',
+            '    set tasks (poe _list_tasks | string split " ")',
             "    set arg (commandline -ct)",
             "    for task in $tasks",
             '        if test "$task" != poe && contains $task $prev_args',

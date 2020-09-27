@@ -6,8 +6,8 @@ def main():
 
     if len(sys.argv) == 2 and sys.argv[1].startswith("_"):
         first_arg = sys.argv[1]
-        if first_arg == "_describe_tasks":
-            _describe_tasks()
+        if first_arg in ("_list_tasks", "_describe_tasks"):
+            _list_tasks()
             return
         if first_arg == "_zsh_completion":
             from .completion.zsh import get_zsh_completion_script
@@ -34,9 +34,9 @@ def main():
         raise SystemExit(result)
 
 
-def _describe_tasks():
+def _list_tasks():
     """
-    A special task accessible via `poe _describe_tasks` for use in shell completion
+    A special task accessible via `poe _list_tasks` for use in shell completion
 
     Note this code path should include minimal imports to avoid slowing down the shell
     """

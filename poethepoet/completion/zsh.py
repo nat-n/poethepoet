@@ -76,7 +76,7 @@ def get_zsh_completion_script() -> str:
             "#compdef _poe poe\n",
             "function _poe {",
             '    local ALL_EXLC=("-h" "--help" "--version")',
-            "    local TASKS=($(poe _describe_tasks))",
+            "    local TASKS=($(poe _list_tasks))",
             "",
             " \\\n        ".join(args_lines),
             "",

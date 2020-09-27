@@ -12,7 +12,7 @@ def get_bash_completion_script() -> str:
             "_poe_complete() {",
             "    local cur",
             '    cur="${COMP_WORDS[COMP_CWORD]}"',
-            '    COMPREPLY=( $(compgen -W "$(poe _describe_tasks)" -- ${cur}) )',
+            '    COMPREPLY=( $(compgen -W "$(poe _list_tasks)" -- ${cur}) )',
             "    return 0",
             "}",
             "complete -o default -F _poe_complete poe",
