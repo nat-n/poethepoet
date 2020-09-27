@@ -38,10 +38,11 @@ class PoeExecutor:
         *,
         input: Optional[bytes] = None,
         env: Optional[MutableMapping[str, str]] = None,
+        shell: bool = False
     ) -> int:
         if self.dry:
             return 0
-        popen_kwargs: MutableMapping[str, Any] = {}
+        popen_kwargs: MutableMapping[str, Any] = {"shell": shell}
         popen_kwargs["env"] = self.env if env is None else env
         if input is not None:
             popen_kwargs["stdin"] = PIPE

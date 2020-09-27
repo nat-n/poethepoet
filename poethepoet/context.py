@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import (
+    Any,
     Dict,
     MutableMapping,
     Optional,
@@ -17,6 +18,8 @@ class RunContext:
     env: Dict[str, str]
     dry: bool
     poe_active: Optional[str]
+    multistage: bool = False
+    exec_cache: Dict[str, Any]
 
     def __init__(
         self,
@@ -31,6 +34,7 @@ class RunContext:
         self.env = {**env, "POE_ROOT": str(project_dir)}
         self.dry = dry
         self.poe_active = poe_active
+        self.exec_cache = {}
 
     def get_env(self, env: MutableMapping[str, str]) -> Dict[str, str]:
         return {**self.env, **env}

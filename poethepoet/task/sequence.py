@@ -58,6 +58,11 @@ class SequenceTask(PoeTask):
     ) -> int:
         if any(arg.strip() for arg in extra_args):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
+
+        if len(self.subtasks) > 1:
+            # Indicate on the global context that there are multiple stages
+            context.multistage = True
+
         for subtask in self.subtasks:
             task_result = subtask.run(context=context, extra_args=tuple(), env=env)
             if task_result and not self.options.get("ignore_fail"):
