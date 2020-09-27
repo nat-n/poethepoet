@@ -4,6 +4,7 @@ from typing import Any, MutableMapping, Optional, Sequence, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
+    from ..context import RunContext
 
 
 class PoeExecutor:
@@ -18,10 +19,12 @@ class PoeExecutor:
 
     def __init__(
         self,
+        context: "RunContext",
         env: MutableMapping[str, str],
         working_dir: Optional["Path"] = None,
         dry: bool = False,
     ):
+        self.context = context
         self.working_dir = working_dir
         self.env = env
         self.dry = dry
@@ -33,8 +36,8 @@ class PoeExecutor:
         self,
         cmd: Sequence[str],
         *,
-        env: Optional[MutableMapping[str, str]] = None,
         input: Optional[bytes] = None,
+        env: Optional[MutableMapping[str, str]] = None,
     ) -> int:
         if self.dry:
             return 0

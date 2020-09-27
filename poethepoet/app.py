@@ -84,6 +84,7 @@ class PoeThePoet:
                     executor_cls=PoetryExecutor,
                     env=os.environ,
                     dry=self.ui["dry_run"],
+                    poe_active=os.environ.get("POE_ACTIVE"),
                 ),
                 extra_args=extra_args,
             )

@@ -59,7 +59,7 @@ class SequenceTask(PoeTask):
         if any(arg.strip() for arg in extra_args):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
         for subtask in self.subtasks:
-            task_result = subtask.run(context=context, extra_args=tuple(), env=env,)
+            task_result = subtask.run(context=context, extra_args=tuple(), env=env)
             if task_result and not self.options.get("ignore_fail"):
                 raise ExecutionError(
                     f"Sequence aborted after failed subtask {subtask.name!r}"
