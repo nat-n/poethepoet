@@ -35,7 +35,7 @@ class CmdTask(PoeTask):
     ) -> int:
         cmd = self._resolve_args(context, extra_args, env)
         self._print_action(" ".join(cmd), context.dry)
-        return context.get_executor(env).execute(cmd)
+        return context.get_executor(env, self.options.get("executor")).execute(cmd)
 
     def _resolve_args(
         self,

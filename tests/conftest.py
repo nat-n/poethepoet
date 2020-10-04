@@ -1,14 +1,19 @@
 from collections import namedtuple
+from contextlib import contextmanager
 from io import StringIO
 import os
 from pathlib import Path
 from poethepoet.app import PoeThePoet
+from poethepoet.virtualenv import Virtualenv
 import pytest
+import shutil
 from subprocess import PIPE, Popen
 import sys
 from tempfile import TemporaryDirectory
 import tomlkit
 from typing import Any, List, Mapping, Optional
+import venv
+import virtualenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TOML = PROJECT_ROOT.joinpath("pyproject.toml")
@@ -33,6 +38,16 @@ def poe_project_path():
 @pytest.fixture
 def dummy_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "dummy_project")
+
+
+@pytest.fixture
+def venv_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "venv_project")
+
+
+@pytest.fixture
+def simple_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "simple_project")
 
 
 @pytest.fixture
@@ -156,3 +171,87 @@ def run_poe_main(capsys, dummy_project_path):
         return PoeRunResult(result, "", *capsys.readouterr())
 
     return run_poe_main
+
+
+@pytest.fixture
+def install_into_virtualenv():
+    def install_into_virtualenv(location: Path, contents: List[str]):
+        venv = Virtualenv(location)
+        Popen(
+            (venv.resolve_executable("pip"), "install", *contents),
+            env=venv.get_env_vars(os.environ),
+            stdout=PIPE,
+            stderr=PIPE,
+        ).wait()
+
+    return install_into_virtualenv
+
+
+@pytest.fixture
+def use_venv(install_into_virtualenv):
+    @contextmanager
+    def use_venv(
+        location: Path,
+        contents: Optional[List[str]] = None,
+        require_empty: bool = False,
+    ):
+        did_exist = location.is_dir()
+        assert not require_empty or not did_exist, (
+            f"Test requires no directory already exists at {location}, "
+            "maybe try delete it and run again"
+        )
+
+        # create new venv
+        venv.EnvBuilder(symlinks=True, with_pip=True,).create(str(location))
+
+        if contents:
+            install_into_virtualenv(location, contents)
+
+        yield
+        # Only cleanup if we actually created it to avoid this fixture being a bit dangerous
+        if not did_exist:
+            shutil.rmtree(location)
+
+    return use_venv
+
+
+@pytest.fixture
+def use_virtualenv(install_into_virtualenv):
+    @contextmanager
+    def use_virtualenv(
+        location: Path,
+        contents: Optional[List[str]] = None,
+        require_empty: bool = False,
+    ):
+        did_exist = location.is_dir()
+        assert not require_empty or not did_exist, (
+            f"Test requires no directory already exists at {location}, "
+            "maybe try delete it and run again"
+        )
+
+        # create new virtualenv
+        virtualenv.cli_run([str(location)])
+
+        if contents:
+            install_into_virtualenv(location, contents)
+
+        yield
+        # Only cleanup if we actually created it to avoid this fixture being a bit dangerous
+        if not did_exist:
+            shutil.rmtree(location)
+
+    return use_virtualenv
+
+
+@pytest.fixture
+def with_virtualenv_and_venv(use_venv, use_virtualenv):
+    def with_virtualenv_and_venv(
+        location: Path, contents: Optional[List[str]] = None,
+    ):
+        with use_venv(location, contents, require_empty=True):
+            yield
+
+        with use_virtualenv(location, contents, require_empty=True):
+            yield
+
+    return with_virtualenv_and_venv

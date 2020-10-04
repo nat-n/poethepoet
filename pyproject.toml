@@ -37,6 +37,8 @@ clean = """
          ./**/__pycache__
          dist
          htmlcov
+         ./tests/fixtures/simple_project/venv
+         ./tests/fixtures/venv_project/myvenv
 """
 # Code quality checks
 test = "pytest --cov=poethepoet"

@@ -1,0 +1,9 @@
+[tool.poe.executor]
+type = "virtualenv"
+location = "myvenv"
+
+[tool.poe.tasks]
+server-version = "flask --version"
+flask-version.script = "scripts:flask_version"
+server-version2.script = "scripts:flask_exec_version" # find flask executable from subproc
+show_env = "env"

@@ -57,7 +57,7 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Run tests
-        run: poetry run pytest
+        run: poetry run pytest -v
 
   build-release:
     runs-on: ubuntu-latest

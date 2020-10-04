@@ -4,7 +4,6 @@ import sys
 from typing import Any, IO, MutableMapping, Optional, Sequence, Union
 from .config import PoeConfig
 from .context import RunContext
-from .executor import PoetryExecutor
 from .exceptions import ExecutionError, PoeException
 from .task import PoeTask
 from .ui import PoeUi
@@ -80,8 +79,7 @@ class PoeThePoet:
             assert self.task
             return self.task.run(
                 context=RunContext(
-                    project_dir=Path(self.config.project_dir),
-                    executor_cls=PoetryExecutor,
+                    config=self.config,
                     env=os.environ,
                     dry=self.ui["dry_run"],
                     poe_active=os.environ.get("POE_ACTIVE"),

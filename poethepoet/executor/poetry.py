@@ -4,7 +4,7 @@ from pathlib import Path
 from shlex import quote
 import shutil
 import sys
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence, Type
 from .base import PoeExecutor
 
 
@@ -14,12 +14,18 @@ class PoetryExecutor(PoeExecutor):
     environment
     """
 
+    __key__ = "poetry"
+    __options__: Dict[str, Type] = {}
+
     def execute(self, cmd: Sequence[str], input: Optional[bytes] = None) -> int:
         """
         Execute the given cmd as a subprocess inside the poetry managed dev environment
         """
 
-        if bool(os.environ.get("POETRY_ACTIVE")) or self.context.poe_active == "poetry":
+        if (
+            bool(os.environ.get("POETRY_ACTIVE"))
+            or self.context.poe_active == PoetryExecutor.__key__
+        ):
             # We're already inside a poetry shell or a recursive poe call so we can
             # execute the command unaltered
             return self._execute_cmd(cmd, input)
@@ -42,7 +48,7 @@ class PoetryExecutor(PoeExecutor):
                 return self._execute_cmd(
                     " ".join(
                         (
-                            "source",
+                            ".",
                             quote(activate_script),
                             "&&",
                             *(quote(token) for token in cmd),
@@ -58,7 +64,10 @@ class PoetryExecutor(PoeExecutor):
         self, cmd: Sequence[str], input: Optional[bytes] = None, shell: bool = False
     ) -> int:
         return self._exec_via_subproc(
-            cmd, input=input, env=dict(self.env, POE_ACTIVE="poetry"), shell=shell
+            cmd,
+            input=input,
+            env=dict(self.env, POE_ACTIVE=PoetryExecutor.__key__),
+            shell=shell,
         )
 
     def _get_activate_script(self, poetry_env: Optional[str] = None) -> Optional[str]:

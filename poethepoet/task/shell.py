@@ -39,7 +39,9 @@ class ShellTask(PoeTask):
             shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
 
         self._print_action(self.content, context.dry)
-        return context.get_executor(env).execute(shell, input=self.content.encode())
+        return context.get_executor(env, self.options.get("executor")).execute(
+            shell, input=self.content.encode()
+        )
 
     @staticmethod
     def _find_posix_shell_on_windows():

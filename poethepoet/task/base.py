@@ -60,7 +60,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
     __options__: Dict[str, Type] = {}
     __content_type__: Type = str
-    __base_options: Dict[str, Type] = {"help": str, "env": dict}
+    __base_options: Dict[str, Type] = {"env": dict, "executor": dict, "help": str}
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
     def __init__(

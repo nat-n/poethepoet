@@ -1,33 +1,102 @@
 from subprocess import Popen, PIPE
 import sys
-from typing import Any, MutableMapping, Optional, Sequence, TYPE_CHECKING
+from typing import Any, Dict, MutableMapping, Optional, Sequence, Type, TYPE_CHECKING
+from ..exceptions import PoeException
+from ..virtualenv import Virtualenv
 
 if TYPE_CHECKING:
     from pathlib import Path
     from ..context import RunContext
 
+# TODO: maybe invert the control so the executor is given a task to run
 
-class PoeExecutor:
+
+class MetaPoeExecutor(type):
+    """
+    This metaclass makes all decendents of PoeExecutor (task types) register themselves
+    on declaration and validates that they include the expected class attributes.
+    """
+
+    def __init__(cls, *args):
+        newclass = super().__init__(*args)
+        if cls.__name__ == "PoeExecutor":
+            return
+        assert isinstance(getattr(cls, "__key__", None), str)
+        assert isinstance(getattr(cls, "__options__", None), dict)
+        PoeExecutor._PoeExecutor__executor_types[cls.__key__] = cls
+
+
+class PoeExecutor(metaclass=MetaPoeExecutor):
     """
     A base class for poe task executors
     """
 
     working_dir: Optional["Path"]
 
-    # TODO: maybe recieve a reference to the PoeConfig
-    #   Also maybe invert the control so the executor is given a task to run
+    __executor_types: Dict[str, Type["PoeExecutor"]] = {}
 
     def __init__(
         self,
         context: "RunContext",
+        options: MutableMapping[str, str],
         env: MutableMapping[str, str],
         working_dir: Optional["Path"] = None,
         dry: bool = False,
     ):
         self.context = context
+        self.options = options
         self.working_dir = working_dir
         self.env = env
         self.dry = dry
+
+    @classmethod
+    def get(
+        cls,
+        context: "RunContext",
+        env: MutableMapping[str, str],
+        working_dir: Optional["Path"] = None,
+        dry: bool = False,
+        executor_config: Optional[Dict[str, str]] = None,
+    ) -> "PoeExecutor":
+        """"""
+        # use task specific executor config or fallback to global
+        options = executor_config or context.config.executor
+        return cls._resolve_implementation(context, executor_config)(
+            context, options, env, working_dir, dry
+        )
+
+    @classmethod
+    def _resolve_implementation(
+        cls, context: "RunContext", executor_config: Optional[Dict[str, str]]
+    ):
+        """
+        Resolve to an executor class, either as specified in the available config or
+        by making some reasonable assumptions based on visible features of the
+        environment
+        """
+        if executor_config:
+            if executor_config["type"] not in cls.__executor_types:
+                raise PoeException(
+                    f"Cannot instantiate unknown executor {executor_config['type']!r}"
+                )
+            return cls.__executor_types[executor_config["type"]]
+        elif context.config.executor["type"] == "auto":
+            if "poetry" in context.config.project["tool"]:
+                # Looks like this is a poetry project!
+                return cls.__executor_types["poetry"]
+
+            if Virtualenv.detect(context.project_dir):
+                # Looks like there's a local virtualenv
+                return cls.__executor_types["virtualenv"]
+            # Fallback to not using any particular environment
+            return cls.__executor_types["simple"]
+        else:
+            if context.config.executor["type"] not in cls.__executor_types:
+                raise PoeException(
+                    f"Cannot instantiate unknown executor"
+                    + repr(context.config.executor["type"])
+                )
+            return cls.__executor_types[context.config.executor["type"]]
 
     def execute(self, cmd: Sequence[str], input: Optional[bytes] = None,) -> int:
         raise NotImplementedError
@@ -38,7 +107,7 @@ class PoeExecutor:
         *,
         input: Optional[bytes] = None,
         env: Optional[MutableMapping[str, str]] = None,
-        shell: bool = False
+        shell: bool = False,
     ) -> int:
         if self.dry:
             return 0
@@ -54,8 +123,28 @@ class PoeExecutor:
 
         proc = Popen(cmd, **popen_kwargs)
         proc.communicate(input)
-
         return proc.returncode
+
+    @classmethod
+    def validate_config(cls, config: Dict[str, Any]) -> Optional[str]:
+        executor_type = config["type"]
+        if executor_type == "auto":
+            extra_options = set(config.keys()) - {"type"}
+            if extra_options:
+                return f"Unexpected keys for executor config: {extra_options!r}"
+        elif executor_type not in cls.__executor_types:
+            return f"Unknown executor type: {executor_type!r}"
+        else:
+            return cls.__executor_types[executor_type].validate_executor_config(config)
+        return None
+
+    @classmethod
+    def validate_executor_config(cls, config: Dict[str, Any]) -> Optional[str]:
+        """To be overridden by subclasses if they accept options"""
+        extra_options = set(config.keys()) - {"type"}
+        if extra_options:
+            return f"Unexpected keys for executor config: {extra_options!r}"
+        return None
 
 
 def _stop_coverage():

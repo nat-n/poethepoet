@@ -15,6 +15,7 @@ class PoeConfig:
         "default_array_task_type": str,
         "default_array_item_task_type": str,
         "env": dict,
+        "executor": dict,
     }
 
     def __init__(
@@ -23,39 +24,48 @@ class PoeConfig:
         table: Optional[Mapping[str, Any]] = None,
     ):
         self.cwd = Path(".").resolve() if cwd is None else Path(cwd)
-        self._table = {} if table is None else table
+        self._poe = {} if table is None else table
         self._project_dir: Optional[Path] = None
 
     @property
+    def executor(self) -> Mapping[str, Any]:
+        return self._poe.get("executor", {"type": "auto"})
+
+    @property
     def tasks(self) -> Mapping[str, Any]:
-        return self._table.get("tasks", {})
+        return self._poe.get("tasks", {})
 
     @property
     def default_task_type(self) -> str:
-        return self._table.get("default_task_type", "cmd")
+        return self._poe.get("default_task_type", "cmd")
 
     @property
     def default_array_task_type(self) -> str:
-        return self._table.get("default_array_task_type", "sequence")
+        return self._poe.get("default_array_task_type", "sequence")
 
     @property
     def default_array_item_task_type(self) -> str:
-        return self._table.get("default_array_item_task_type", "ref")
+        return self._poe.get("default_array_item_task_type", "ref")
 
     @property
     def global_env(self) -> Dict[str, str]:
-        return self._table.get("env", {})
+        return self._poe.get("env", {})
+
+    @property
+    def project(self) -> Any:
+        return self._project
 
     @property
     def project_dir(self) -> str:
         return str(self._project_dir or self.cwd)
 
     def load(self, target_dir: Optional[str] = None):
-        if self._table:
+        if self._poe:
             raise PoeException("Cannot load poetry config more than once!")
         config_path = self.find_pyproject_toml(target_dir)
         try:
-            self._table = self._read_pyproject(config_path)["tool"]["poe"]
+            self._project = self._read_pyproject(config_path)
+            self._poe = self._project["tool"]["poe"]
         except KeyError as error:
             raise PoeException(
                 f"No poe configuration found in file at {self.TOML_NAME}"
@@ -64,19 +74,24 @@ class PoeConfig:
 
     def validate(self):
         from .task import PoeTask
+        from .executor import PoeExecutor
 
         # Validate keys
         supported_keys = {"tasks", *self.__options__}
-        unsupported_keys = set(self._table) - supported_keys
+        unsupported_keys = set(self._poe) - supported_keys
         if unsupported_keys:
             raise PoeException(f"Unsupported keys in poe config: {unsupported_keys!r}")
         # Validate types of option values
         for key, option_type in self.__options__.items():
-            if key in self._table and not isinstance(self._table[key], option_type):
+            if key in self._poe and not isinstance(self._poe[key], option_type):
                 raise PoeException(
                     f"Unsupported value for option {key!r}, expected type to be "
                     f"{option_type.__name__}."
                 )
+        # Validate executor config
+        error = PoeExecutor.validate_config(self.executor)
+        if error:
+            raise PoeException(error)
         # Validate default_task_type value
         if not PoeTask.is_task_type(self.default_task_type, content_type=str):
             raise PoeException(

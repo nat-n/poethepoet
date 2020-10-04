@@ -52,7 +52,7 @@ class ScriptTask(PoeTask):
             f"import_module('{target_module}').{target_call}",
         )
         self._print_action(" ".join(argv), context.dry)
-        return context.get_executor(env).execute(cmd)
+        return context.get_executor(env, self.options.get("executor")).execute(cmd)
 
     @classmethod
     def _parse_content(cls, call_ref: str) -> Union[Tuple[str, str], Tuple[None, None]]:

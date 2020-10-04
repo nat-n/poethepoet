@@ -339,6 +339,8 @@ TODO
 
 ☐ support verbose mode for documentation that shows task definitions
 
+☐ Create documentation website
+
 ☐ support different task executors such as specifying a non-poetry venv, or working with pipenv,
 
 ☐ support third party task or executor types as plugins
