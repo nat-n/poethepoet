@@ -21,6 +21,8 @@ Features
 
 ✅  Task are run in poetry's virtualenv by default
 
+✅  Tab completion of task names (and global options too for zsh)
+
 ✅  Tasks can be commands (with or without a shell) or references to python functions (like tool.poetry.scripts)
 
 ✅  Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`
@@ -31,22 +33,21 @@ Features
 
 ✅  Tasks can be defined as a sequence of other tasks
 
-✅  Shell completion of task names (and global options too for zsh)
-
 Installation
 ============
 
-Into your project (so it works inside poetry shell):
+Into your default python environment (so it works everywhere)
+
+.. code-block:: bash
+
+  pip install poethepoet
+
+Or into your project (so it works inside poetry shell):
 
 .. code-block:: bash
 
   poetry add --dev poethepoet
 
-And into your default python environment (so it works outside of poetry shell)
-
-.. code-block:: bash
-
-  pip install poethepoet
 
 Enable tab completion for your shell
 ------------------------------------
@@ -331,11 +332,13 @@ TODO
 
 ☐ support different task executors such as specifying a non-poetry venv, or working with pipenv,
 
-☐ support third party task or executor types as plugins
+☐ support extending poe with custom task or executor types as plugins
 
-☐ maybe provide poe as a poetry plugin
+☐ add adapter to use poe as a poetry plugin
 
-☐ maybe support plumbum based tasks
+☐ maybe support plumbum based tasks (for better cross-platform shell scripting)
+
+☐ maybe factor tasks and executors out into a separate library so they can be integrated into other projects
 
 Licence
 =======
