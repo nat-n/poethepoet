@@ -159,7 +159,7 @@ class PoeConfig:
     @staticmethod
     def _read_pyproject(path: Path) -> Mapping[str, Any]:
         try:
-            with path.open() as pyproj:
+            with path.open(encoding="utf-8") as pyproj:
                 return tomlkit.parse(pyproj.read())
         except tomlkit.exceptions.TOMLKitError as error:
             raise PoeException(f"Couldn't parse toml file at {path}", error) from error
