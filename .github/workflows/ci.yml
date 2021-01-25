@@ -14,21 +14,31 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.6
-      - uses: Gr1N/setup-poetry@v2
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+
+      - name: Install poetry
+        shell: bash
+        run: |
+          python -m pip install poetry
+          echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+
       - name: Install dependencies
         run: poetry install
+
       - name: Check code formatting
         run: poetry run poe style
+
       - name: Run linter
         run: poetry run poe lint
+
       - name: Check types
         run: poetry run poe types
+
       - name: Check rst syntax
         run: poetry run poe check-docs
 
@@ -47,15 +57,22 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: Gr1N/setup-poetry@v2
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+
+      - name: Install poetry
+        shell: bash
+        run: |
+          python -m pip install poetry
+          echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+
       - name: Install dependencies
         run: poetry install
+
       - name: Run tests
         run: poetry run pytest -v
 
@@ -67,9 +84,16 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
-      - uses: Gr1N/setup-poetry@v2
+
+      - name: Install poetry
+        shell: bash
+        run: |
+          python -m pip install poetry
+          echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+
       - name: Build package
         run: poetry build
+
       - name: Publish package to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         run: poetry publish -n
