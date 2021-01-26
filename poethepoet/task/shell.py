@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import subprocess
 from typing import Dict, Iterable, MutableMapping, Type, TYPE_CHECKING
@@ -9,8 +8,6 @@ from .base import PoeTask
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
-
-_GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 
 
 class ShellTask(PoeTask):
