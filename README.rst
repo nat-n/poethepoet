@@ -21,6 +21,8 @@ Features
 
 ✅  Task are run in poetry's virtualenv by default
 
+✅  Shell completion of task names (and global options too for zsh)
+
 ✅  Tasks can be commands (with or without a shell) or references to python functions (like tool.poetry.scripts)
 
 ✅  Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`
@@ -31,7 +33,8 @@ Features
 
 ✅  Tasks can be defined as a sequence of other tasks
 
-✅  Shell completion of task names (and global options too for zsh)
+✅  Can also be configured to execute tasks with any virtualenv (not just poetry)
+
 
 Installation
 ============
@@ -339,13 +342,11 @@ TODO
 
 ☐ support verbose mode for documentation that shows task definitions
 
-☐ Create documentation website
+☐ create documentation website
 
-☐ support different task executors such as specifying a non-poetry venv, or working with pipenv,
+☐ support third party task or executor types (e.g. pipenv) as plugins
 
-☐ support third party task or executor types as plugins
-
-☐ maybe provide poe as a poetry plugin
+☐ provide poe as a poetry plugin
 
 ☐ maybe support plumbum based tasks
 
