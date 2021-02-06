@@ -1,5 +1,6 @@
 from subprocess import Popen, PIPE
 import sys
+import signal
 from typing import Any, Dict, MutableMapping, Optional, Sequence, Type, TYPE_CHECKING
 from ..exceptions import PoeException
 from ..virtualenv import Virtualenv
@@ -122,7 +123,19 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         _stop_coverage()
 
         proc = Popen(cmd, **popen_kwargs)
+
+        # signal pass through
+        def handle_signal(signum, _frame):
+            proc.send_signal(signum)
+
+        old_signal_handler = signal.signal(signal.SIGINT, handle_signal)
+
+        # send data to the subprocess and wait for it to finish
         proc.communicate(input)
+
+        # restore signal handler
+        signal.signal(signal.SIGINT, old_signal_handler)
+
         return proc.returncode
 
     @classmethod
