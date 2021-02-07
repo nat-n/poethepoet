@@ -14,7 +14,7 @@ class VirtualenvExecutor(PoeExecutor):
 
     def execute(self, cmd: Sequence[str], input: Optional[bytes] = None) -> int:
         """
-        Execute the given cmd as a subprocess inside the poetry managed dev environment
+        Execute the given cmd as a subprocess inside the configured virtualenv
         """
         venv = self._resolve_virtualenv()
         return self._exec_via_subproc(
