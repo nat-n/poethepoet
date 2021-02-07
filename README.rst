@@ -10,9 +10,10 @@ A task runner that works well with poetry.
    :language: fish
 .. role:: zsh(code)
    :language: zsh
-
 .. role:: toml(code)
    :language: toml
+.. role:: python(code)
+   :language: python
 
 Features
 ========
@@ -69,7 +70,7 @@ Zsh
   mkdir -p ~/.zfunc/
   poe _zsh_completion > ~/.zfunc/_poetry
 
-Note that you'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to `compinit` to the end of your zshrc file.
+Note that you'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to :bash:`compinit` to the end of your zshrc file.
 
 Bash
 ~~~~
@@ -110,7 +111,7 @@ Define tasks in your pyproject.toml
   [tool.poe.tasks]
   test       = "pytest --cov=poethepoet"                                # simple command based task
   mksandwich = { script = "my_package.sandwich:build" }                 # python script based task
-  tunnel     = { shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &" }  # shell script based task
+  tunnel     = { shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &" }  # (posix) shell script based task
 
 Run tasks with the poe cli
 --------------------------
@@ -183,7 +184,7 @@ scripts (shell), and composite tasks (sequence).
   callable.
 
   If extra arguments are passed to task on the command line, then they will be available
-  to the called python function via `sys.argv`.
+  to the called python function via :python:`sys.argv`.
 
 - **Shell tasks** are similar to simple command tasks except that they are executed
   inside a new shell, and can consist of multiple separate commands, command
@@ -200,7 +201,7 @@ scripts (shell), and composite tasks (sequence).
 
 - **Composite tasks** are defined as a sequence of other tasks as an array.
 
-  By default the contents of the array are interpreted as references to other tasks (actually a ref task type), though this behaviour can be altered by setting the global `default_array_item_task_type` option to the name of another task type such as _cmd_, or by setting the `default_item_type` option locally on the sequence task.
+  By default the contents of the array are interpreted as references to other tasks (actually a ref task type), though this behaviour can be altered by setting the global :toml:`default_array_item_task_type` option to the name of another task type such as _cmd_, or by setting the :toml:`default_item_type` option locally on the sequence task.
 
   **An example task with references**
 
@@ -213,7 +214,7 @@ scripts (shell), and composite tasks (sequence).
     _publish = "poetry publish"
     release = ["test", "build", "_publish"]
 
-  Note that tasks with names prefixed with `_` are not included in the documentation or directly executable, but can be useful for cases where a task is only needed for a sequence.
+  Note that tasks with names prefixed with :code:`_` are not included in the documentation or directly executable, but can be useful for cases where a task is only needed for a sequence.
 
   **An example task with inline tasks expressed via inline tables**
 
@@ -236,7 +237,7 @@ scripts (shell), and composite tasks (sequence).
     ]
     release.default_item_type = "script"
 
-  A failure (non-zero result) will result in the rest of the tasks in the sequence not being executed, unless the `ignore_fail` option is set on the task like so:
+  A failure (non-zero result) will result in the rest of the tasks in the sequence not being executed, unless the :toml:`ignore_fail` option is set on the task like so:
 
   .. code-block:: toml
 
@@ -276,7 +277,7 @@ Project-wide configuration options
 Global environment variables
 ----------------------------
 
-You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying `tool.poe.env` like so
+You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying :toml:`tool.poe.env` like so
 
 .. code-block:: toml
 
@@ -289,11 +290,11 @@ Run poe from anywhere
 
 By default poe will detect when you're inside a project with a pyproject.toml in the
 root. However if you want to run it from elsewhere that is supported too by using the
-`--root` option to specify an alternate location for the toml file. The task will run
+:bash:`--root` option to specify an alternate location for the toml file. The task will run
 with the given location as the current working directory.
 
 In all cases the path to project root (where the pyproject.toml resides) will be available
-as `$POE_ROOT` within the command line and process.
+as :bash:`$POE_ROOT` within the command line and process.
 
 Change the default task type
 ----------------------------
@@ -306,7 +307,7 @@ require the more verbose table syntax to specify. For example:
   my_cmd_task = "cmd args"
   my_script_task = { "script" = "my_package.my_module:run" }
 
-This behaviour can be reversed by setting the `default_task_type` option in your
+This behaviour can be reversed by setting the :toml:`default_task_type` option in your
 pyproject.toml like so:
 
 .. code-block:: toml
@@ -318,35 +319,56 @@ pyproject.toml like so:
   my_cmd_task = { "cmd" = "cmd args" }
   my_script_task = "my_package.my_module:run"
 
+
+Change the executor type
+------------------------
+
+You can configure poe to use a specific executor by setting :toml:`tool.poe.executor.type`. Valid valued include:
+
+  - auto: to automatically use the most appropriate of the following executors in order
+  - poetry: to run tasks in the poetry managed environment
+  - virtualenv: to run tasks in the indicated virtualenv (or else "./.venv" if present)
+  - simple: to run tasks without doing any specific environment setup
+
+For example the following configuration will cause poe to ignore the poetry environment (if present), and instead use the virtualenv at the given location relative to the parent directory.
+
+.. code-block:: toml
+
+  [tool.poe.executor]
+  type = "virtualenv"
+  location = "myvenv"
+
+
+See below for more details.
+
+Usage without poetry
+====================
+
+Poe the Poet was originally intended for use alongside poetry. But it works just as
+well with any other kind of virtualenv, or no environment management at all. This behaviour is configurable via the :toml:`tool.poe.executor` global option (see above).
+
+By default poe will run tasks in the poetry managed environment, if the pyproject.toml contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to use from :bash:`./.venv` or :bash:`./venv` relative to the pyproject.toml file. Otherwise it falls back to running tasks without any special environment management.
+
 Contributing
 ============
 
 There's plenty to do, come say hi in the issues! 👋
 
 
-Or as  `@JosXa suggested`__, if you benefit from Poe the Poet and want to support further development you can
-
-.. image:: https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png
-   :target: https://www.buymeacoffee.com/natn
-
-.. _issues9: https://github.com/nat-n/poethepoet/issues/9
-__ issues9_
-
-
 TODO
 ====
 
-☐ support declaring specific arguments for a task
+☐ support declaring specific arguments for a task `#6 <https://github.com/nat-n/poethepoet/issues/6>`_
 
-☐ support conditional execution (a bit like make targets)
+☐ support conditional execution (a bit like make targets) `#12 <https://github.com/nat-n/poethepoet/issues/12>`_
 
 ☐ support verbose mode for documentation that shows task definitions
 
-☐ create documentation website
+☐ create documentation website `#11 <https://github.com/nat-n/poethepoet/issues/11>`_
 
-☐ support third party task or executor types (e.g. pipenv) as plugins
+☐ support third party task or executor types (e.g. pipenv) as plugins `#13 <https://github.com/nat-n/poethepoet/issues/13>`_
 
-☐ provide poe as a poetry plugin
+☐ provide poe as a poetry plugin `#14 <https://github.com/nat-n/poethepoet/issues/14>`_
 
 ☐ maybe support plumbum based tasks
 
