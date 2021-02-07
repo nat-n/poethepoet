@@ -1,6 +1,6 @@
+import signal
 from subprocess import Popen, PIPE
 import sys
-import signal
 from typing import Any, Dict, MutableMapping, Optional, Sequence, Type, TYPE_CHECKING
 from ..exceptions import PoeException
 from ..virtualenv import Virtualenv
