@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
 import sys
-from typing import Any, IO, MutableMapping, Optional, Sequence, Union
+from typing import Any, Dict, IO, MutableMapping, Optional, Sequence, Tuple, Union
 from .config import PoeConfig
 from .context import RunContext
 from .exceptions import ExecutionError, PoeException
 from .task import PoeTask
+from .task.args import PoeTaskArgs
 from .ui import PoeUi
 
 
@@ -100,8 +101,15 @@ class PoeThePoet:
     ):
         if isinstance(error, str):
             error == PoeException(error)
-        tasks_help = {
-            task: (content.get("help", "") if isinstance(content, dict) else "")
-            for task, content in self.config.tasks.items()
+        tasks_help: Dict[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str]]]] = {
+            task_name: (
+                (
+                    content.get("help", ""),
+                    PoeTaskArgs.get_help_content(content.get("args")),
+                )
+                if isinstance(content, dict)
+                else ("", tuple())
+            )
+            for task_name, content in self.config.tasks.items()
         }
         self.ui.print_help(tasks=tasks_help, info=info, error=error)  # type: ignore

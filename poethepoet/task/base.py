@@ -3,15 +3,16 @@ import sys
 from typing import (
     Any,
     Dict,
-    Iterable,
     List,
     MutableMapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TYPE_CHECKING,
     Union,
 )
+from .args import PoeTaskArgs
 from ..exceptions import PoeException
 
 if TYPE_CHECKING:
@@ -60,7 +61,12 @@ class PoeTask(metaclass=MetaPoeTask):
 
     __options__: Dict[str, Type] = {}
     __content_type__: Type = str
-    __base_options: Dict[str, Type] = {"env": dict, "executor": dict, "help": str}
+    __base_options: Dict[str, Union[Type, Tuple[Type, ...]]] = {
+        "args": (dict, list),
+        "env": dict,
+        "executor": dict,
+        "help": str,
+    }
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
     def __init__(
@@ -130,7 +136,7 @@ class PoeTask(metaclass=MetaPoeTask):
     def run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: Optional[MutableMapping[str, str]] = None,
     ) -> int:
         """
@@ -141,10 +147,16 @@ class PoeTask(metaclass=MetaPoeTask):
             env = dict(env, **self.options["env"])
         return self._handle_run(context, extra_args, env)
 
+    def parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
+        args_def = self.options.get("args")
+        if args_def:
+            return PoeTaskArgs(args_def).parse(extra_args)
+        return None
+
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
         """
@@ -211,47 +223,51 @@ class PoeTask(metaclass=MetaPoeTask):
             )
         elif isinstance(task_def, dict):
             task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
-            if len(task_type_keys) == 1:
-                task_type_key = next(iter(task_type_keys))
-                task_content = task_def[task_type_key]
-                task_type = cls.__task_types[task_type_key]
-                if not isinstance(task_content, task_type.__content_type__):
-                    return (
-                        f"Invalid task: {task_name!r}. {task_type} value must be a "
-                        f"{task_type.__content_type__}"
-                    )
-                else:
-                    for key in set(task_def) - {task_type_key}:
-                        expected_type = cls.__base_options.get(
-                            key, task_type.__options__.get(key)
-                        )
-                        if expected_type is None:
-                            return (
-                                f"Invalid task: {task_name!r}. Unrecognised option "
-                                f"{key!r} for task of type: {task_type_key}."
-                            )
-                        elif not isinstance(task_def[key], expected_type):
-                            return (
-                                f"Invalid task: {task_name!r}. Option {key!r} should "
-                                f"have a value of type {expected_type!r}"
-                            )
-                    else:
-                        if hasattr(task_type, "_validate_task_def"):
-                            task_type_issue = task_type._validate_task_def(
-                                task_name, task_def, config
-                            )
-                            if task_type_issue:
-                                return task_type_issue
-                if "\n" in task_def.get("help", ""):
-                    return (
-                        f"Invalid task: {task_name!r}. Help messages cannot contain "
-                        "line breaks"
-                    )
-            else:
+            if len(task_type_keys) != 1:
                 return (
                     f"Invalid task: {task_name!r}. Task definition must include exactly"
                     f" one task key from {set(cls.__task_types)!r}"
                 )
+            task_type_key = next(iter(task_type_keys))
+            task_content = task_def[task_type_key]
+            task_type = cls.__task_types[task_type_key]
+            if not isinstance(task_content, task_type.__content_type__):
+                return (
+                    f"Invalid task: {task_name!r}. {task_type} value must be a "
+                    f"{task_type.__content_type__}"
+                )
+            else:
+                for key in set(task_def) - {task_type_key}:
+                    expected_type = cls.__base_options.get(
+                        key, task_type.__options__.get(key)
+                    )
+                    if expected_type is None:
+                        return (
+                            f"Invalid task: {task_name!r}. Unrecognised option "
+                            f"{key!r} for task of type: {task_type_key}."
+                        )
+                    elif not isinstance(task_def[key], expected_type):
+                        return (
+                            f"Invalid task: {task_name!r}. Option {key!r} should "
+                            f"have a value of type {expected_type!r}"
+                        )
+                else:
+                    if hasattr(task_type, "_validate_task_def"):
+                        task_type_issue = task_type._validate_task_def(
+                            task_name, task_def, config
+                        )
+                        if task_type_issue:
+                            return task_type_issue
+
+            if "\n" in task_def.get("help", ""):
+                return (
+                    f"Invalid task: {task_name!r}. Help messages cannot contain "
+                    "line breaks"
+                )
+
+            if "args" in task_def:
+                return PoeTaskArgs.validate_def(task_name, task_def["args"])
+
         return None
 
     @classmethod

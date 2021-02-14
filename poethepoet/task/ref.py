@@ -1,9 +1,9 @@
 from typing import (
     Any,
     Dict,
-    Iterable,
     MutableMapping,
     Optional,
+    Sequence,
     Type,
     TYPE_CHECKING,
 )
@@ -29,7 +29,7 @@ class RefTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
         """

@@ -2,7 +2,7 @@ import argparse
 import os
 from pastel import Pastel
 import sys
-from typing import IO, List, Mapping, Optional, Sequence, Union
+from typing import IO, List, Mapping, Optional, Sequence, Tuple, Union
 from .exceptions import PoeException
 from .__version__ import __version__
 
@@ -32,6 +32,7 @@ class PoeUi:
         self._color.add_style("hl", "light_gray")
         self._color.add_style("em", "cyan")
         self._color.add_style("em2", "cyan", options="italic")
+        self._color.add_style("em3", "blue")
         self._color.add_style("h2", "default", options="bold")
         self._color.add_style("h2-dim", "default", options="dark")
         self._color.add_style("action", "light_blue")
@@ -41,7 +42,7 @@ class PoeUi:
         """Provide easy access to arguments"""
         return getattr(self.args, key, None)
 
-    def build_parser(self):
+    def build_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             prog="poe",
             description="Poe the Poet: A task runner that works well with poetry.",
@@ -132,7 +133,7 @@ class PoeUi:
 
     def print_help(
         self,
-        tasks: Optional[Mapping[str, str]] = None,
+        tasks: Optional[Mapping[str, Tuple[str, Sequence[Tuple[str, str]]]]] = None,
         info: Optional[str] = None,
         error: Optional[PoeException] = None,
     ):
@@ -179,15 +180,27 @@ class PoeUi:
             )
 
             if tasks:
-                max_task_len = max(len(task) for task in tasks)
+                max_task_len = max(
+                    max(
+                        len(task),
+                        max([len(", ".join(opts)) for (opts, _) in args] or (0,)) + 2,
+                    )
+                    for task, (_, args) in tasks.items()
+                )
                 col_width = max(13, min(30, max_task_len))
                 tasks_section = ["<h2>CONFIGURED TASKS</h2>"]
-                for task, help_text in tasks.items():
+                for task, (help_text, args_help) in tasks.items():
                     if task.startswith("_"):
                         continue
                     tasks_section.append(
                         f"  <em>{self._padr(task, col_width)}</em>  {help_text}"
                     )
+                    for (options, arg_help_text) in args_help:
+                        tasks_section.append(
+                            "    "
+                            f"<em3>{self._padr(', '.join(options), col_width - 2)}</em3>"
+                            f"  {arg_help_text}"
+                        )
                 result.append(tasks_section)
             else:
                 result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")

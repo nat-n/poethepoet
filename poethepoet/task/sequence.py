@@ -1,10 +1,10 @@
 from typing import (
     Any,
     Dict,
-    Iterable,
     List,
     MutableMapping,
     Optional,
+    Sequence,
     Type,
     TYPE_CHECKING,
     Union,
@@ -53,7 +53,7 @@ class SequenceTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
         if any(arg.strip() for arg in extra_args):

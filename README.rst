@@ -271,6 +271,68 @@ You can specify arbitrary environment variables to be set for a task by providin
 
 Notice this example uses deep keys which can be more convenient but aren't as well supported by some toml implementations.
 
+Declaring CLI options (experimental)
+------------------------------------
+
+By default extra CLI arguments are appended to the end of a cmd task, or exposed as
+sys.argv in a script task. Alternatively it is possible to define CLI options that a
+task should accept, which will be documented in the help for that task, and exposed to
+the task in a way the makes the most sense for that task type.
+
+Arguments for cmd and shell tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For cmd and shell tasks the values are exposed to the task as environment variables. For example given the following configuration:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.passby]
+  shell = """
+  echo "hello $planet";
+  echo "goodbye $planet";
+  """
+  help = "Pass by a planet!"
+    [tool.poe.tasks.passby.args.planet] # the key of the arg is used as the name of the variable that the given value will be exposed as
+    help = "Name of the planet to pass"
+    default = "earth"
+    required = false                    # by default all args are optional and default to ""
+    options = ["-p", "--planet"]        # options are passed to ArgumentParser.add_argument as *args, if not given the the name value, i.e. [f"--{name}"]
+
+the resulting task can be run like:
+
+.. code-block:: bash
+
+  poe passby --planet mars
+
+Arguments for script tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Arguments can be defined for script tasks in the same way, but how they are exposed to
+the underlying python function depends on how the script is defined.
+
+In the following example, since not parenthesis are included for the referenced function,
+all provided args will be passed to the function as kwargs:
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  build = { script = "project.util:build", args = ["dest", "version"]
+
+Here the build method will be passed the two argument values (if provided) from the
+command lines as kwargs.
+
+Note that in this example, args are given as a list of strings. This abbreviated
+form is equivalent to just providing a name for each argument and keeping the default
+values for all other configuration (including empty string for the help message).
+
+If there's a need to take control of how values are passed to the function, then this
+is also possible as demonstrated in the following example:
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  build = { script = "project.util:build(dest, build_version=version)", args = ["dest", "version"]
+
 Project-wide configuration options
 ==================================
 
@@ -357,8 +419,6 @@ There's plenty to do, come say hi in the issues! 👋
 
 TODO
 ====
-
-☐ support declaring specific arguments for a task `#6 <https://github.com/nat-n/poethepoet/issues/6>`_
 
 ☐ support conditional execution (a bit like make targets) `#12 <https://github.com/nat-n/poethepoet/issues/12>`_
 
