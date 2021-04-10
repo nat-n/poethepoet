@@ -42,7 +42,7 @@ class CmdTask(PoeTask):
         else:
             cmd = (*self._resolve_args(context, env), *extra_args)
         self._print_action(" ".join(cmd), context.dry)
-        return context.get_executor(env, self.options.get("executor")).execute(cmd)
+        return context.get_executor(self.invocation, env, self.options).execute(cmd)
 
     def _add_named_args_to_env(
         self, extra_args: Sequence[str], env: MutableMapping[str, str]

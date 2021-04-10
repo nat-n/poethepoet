@@ -59,7 +59,7 @@ class ScriptTask(PoeTask):
             f"import_module('{target_module}').{target_callable}({call_params or ''})",
         )
         self._print_action(" ".join(argv), context.dry)
-        return context.get_executor(env, self.options.get("executor")).execute(cmd)
+        return context.get_executor(self.invocation, env, self.options).execute(cmd)
 
     @classmethod
     def _parse_content(

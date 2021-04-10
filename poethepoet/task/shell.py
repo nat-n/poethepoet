@@ -38,7 +38,7 @@ class ShellTask(PoeTask):
             shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
 
         self._print_action(self.content, context.dry)
-        return context.get_executor(env, self.options.get("executor")).execute(
+        return context.get_executor(self.invocation, env, self.options).execute(
             shell, input=self.content.encode()
         )
 

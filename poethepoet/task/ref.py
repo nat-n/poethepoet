@@ -35,7 +35,9 @@ class RefTask(PoeTask):
         """
         Lookup and delegate to the referenced task
         """
-        task = self.from_config(self.content, self._config, ui=self._ui)
+        task = self.from_config(
+            self.content, self._config, ui=self._ui, invocation=(self.content,)
+        )
         return task.run(context=context, extra_args=extra_args, env=env,)
 
     @classmethod
