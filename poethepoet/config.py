@@ -55,7 +55,9 @@ class PoeConfig:
     @property
     def envfile(self) -> Dict[str, str]:
         if self._poe.get("envfile"):
-            return {name: contents for line in Path(self._poe["envfile"]).resolve().read_text().splitlines() for name, contents in line.split("=", 1)}
+            envfile_path = Path(self._poe["envfile"]).resolve()
+            if envfile_path.exists() and envfile_path.is_file():
+                return {name: contents for line in envfile_path.read_text().splitlines() for name, contents in line.split("=", 1)}
         return {}
 
     @property
@@ -127,7 +129,7 @@ class PoeConfig:
                     )
         env = self.envfile
         if env:
-            for key, value in env.items():
+            for key, value in env.items():   # TODO: Validate it some other way. Give a warning instead?
                 if not isinstance(value, str):
                     raise PoeException(
                         f"Value of {key!r} in option `env` should be a string, but found {type(value)!r}"
