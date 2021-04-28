@@ -15,7 +15,7 @@ class PoeConfig:
         "default_array_task_type": str,
         "default_array_item_task_type": str,
         "env": dict,
-        "envfile": str,
+        "envfile": dict,
         "executor": dict,
     }
 
@@ -53,9 +53,11 @@ class PoeConfig:
         return self._poe.get("env", {})
 
     @property
-    def envfile(self) -> str:
-        return self._poe.get("envfile", "")
-    
+    def envfile(self) -> Dict[str, str]:
+        if self._poe.get("envfile"):
+            return {name: contents for line in Path(self._poe["envfile"]).resolve().read_text().splitlines() for name, contents in line.split("=", 1)}
+        return {}
+
     @property
     def project(self) -> Any:
         return self._project
@@ -117,6 +119,13 @@ class PoeConfig:
             )
         # Validate env value
         env = self.global_env
+        if env:
+            for key, value in env.items():
+                if not isinstance(value, str):
+                    raise PoeException(
+                        f"Value of {key!r} in option `env` should be a string, but found {type(value)!r}"
+                    )
+        env = self.envfile
         if env:
             for key, value in env.items():
                 if not isinstance(value, str):
