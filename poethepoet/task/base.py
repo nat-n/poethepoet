@@ -136,7 +136,8 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         Run this task
         """
-        env = dict(env or {}, **self._config.global_env, **self._config.envfile)
+        env = dict(env or {}, **self._config.global_env)
+        env.update(self._config.envfile)
         if self.options.get("env"):
             env = dict(env, **self.options["env"])
         return self._handle_run(context, extra_args, env)
