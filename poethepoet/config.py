@@ -56,7 +56,7 @@ class PoeConfig:
     def envfile(self) -> Dict[str, str]:
         if self._poe.get("envfile"):
             envfile_path = Path(self._poe["envfile"]).resolve()
-            if envfile_path.exists() and envfile_path.is_file():
+            if envfile_path.is_file():
                 return {name: contents for line in envfile_path.read_text().splitlines() for name, contents in line.split("=", 1)}
         return {}
 
