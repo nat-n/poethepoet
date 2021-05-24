@@ -407,14 +407,16 @@ Usage without poetry
 ====================
 
 Poe the Poet was originally intended for use alongside poetry. But it works just as
-well with any other kind of virtualenv, or no environment management at all. This behaviour is configurable via the :toml:`tool.poe.executor` global option (see above).
+well with any other kind of virtualenv, or standalone. This behaviour is configurable via the :toml:`tool.poe.executor` global option (see above).
 
 By default poe will run tasks in the poetry managed environment, if the pyproject.toml contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to use from :bash:`./.venv` or :bash:`./venv` relative to the pyproject.toml file. Otherwise it falls back to running tasks without any special environment management.
 
 Contributing
 ============
 
-There's plenty to do, come say hi in the issues! 👋
+There's plenty to do, come say hi in `the issues <https://github.com/nat-n/poethepoet/issues>`_! 👋
+
+Also check out the `CONTRIBUTING.MD <https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.md>`_ 🤓
 
 
 TODO
