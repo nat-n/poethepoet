@@ -1,0 +1,14 @@
+[tool.poe]
+envfile = "credentials.env"
+
+[tool.poe.tasks.deploy-dev]
+cmd = """
+echo "deploying to ${USER}:${PASSWORD}@${HOST}${PATH_SUFFIX}"
+"""
+
+
+[tool.poe.tasks.deploy-prod]
+cmd = """
+echo "deploying to ${USER}:${PASSWORD}@${HOST}${PATH_SUFFIX}"
+"""
+envfile = "prod.env"
