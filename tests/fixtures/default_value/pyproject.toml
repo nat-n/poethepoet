@@ -1,0 +1,13 @@
+[tool.poe.env]
+ONE = "!one!"
+TWO = "nope"
+THREE = "!three!"
+FOUR.default = "!four!"
+FIVE.default = "nope"
+SIX.default = "!six!"
+
+[tool.poe.tasks.test]
+cmd = "echo $ONE $TWO $THREE $FOUR $FIVE $SIX"
+env.TWO = "!two!"
+env.FIVE = "!five!"
+env.SIX.default = "nope"

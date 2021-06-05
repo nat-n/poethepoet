@@ -269,9 +269,16 @@ You can specify arbitrary environment variables to be set for a task by providin
 
     [tool.poe.tasks]
     serve.script = "myapp:run"
-    serve.env = { PORT = 9001 }
+    serve.env = { PORT = "9001" }
 
 Notice this example uses deep keys which can be more convenient but aren't as well supported by some toml implementations.
+
+The above example can be modified to only set the `PORT` variable if it is not already set by replacing the last line with the following:
+
+  .. code-block:: toml
+
+    serve.env.PORT.default "9001"
+
 
 You can also specify an env file (with bashlike syntax) to load per task like so:
 
@@ -362,6 +369,13 @@ You can configure environment variables to be set for all poe tasks in the pypro
   [tool.poe.env]
   VAR1 = "FOO"
   VAR2 = "BAR"
+
+As for the task level option, you can indicated that a variable should only be set if not already set like so:
+
+.. code-block:: toml
+
+  [tool.poe.env]
+  VAR1.default = "FOO"
 
 You can also specify an env file (with bashlike syntax) to load for all tasks like so:
 

@@ -1,8 +1,9 @@
+import os
 from pathlib import Path
 import sys
 
 
-def test_global_envfile(run_poe_subproc, poe_project_path, is_windows):
+def test_global_envfile_and_default(run_poe_subproc, poe_project_path, is_windows):
     project_path = poe_project_path.joinpath("tests", "fixtures", "envfile")
     result = run_poe_subproc("deploy-dev", cwd=project_path)
     if is_windows:
@@ -20,7 +21,7 @@ def test_global_envfile(run_poe_subproc, poe_project_path, is_windows):
         assert result.stderr == ""
 
 
-def test_task_envfile(run_poe_subproc, poe_project_path, is_windows):
+def test_task_envfile_and_default(run_poe_subproc, poe_project_path, is_windows):
     project_path = poe_project_path.joinpath("tests", "fixtures", "envfile")
     result = run_poe_subproc("deploy-prod", cwd=project_path)
     if is_windows:

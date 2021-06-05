@@ -48,7 +48,7 @@ class ScriptTask(PoeTask):
 
         argv = [
             self.name,
-            *(self._resolve_envvars(token, context, env) for token in extra_args),
+            *(self._resolve_envvars(token, env) for token in extra_args),
         ]
         cmd = (
             "python",  # TODO: pre-locate python from the target env?

@@ -60,7 +60,7 @@ class CmdTask(PoeTask):
             cmd_tokens = (
                 (compat_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for compat_token in shlex.split(
-                    self._resolve_envvars(self.content, context, env),
+                    self._resolve_envvars(self.content, env),
                     posix=False,
                     comments=True,
                 )
@@ -70,12 +70,12 @@ class CmdTask(PoeTask):
                 (posix_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for (posix_token, compat_token) in zip(
                     shlex.split(
-                        self._resolve_envvars(self.content, context, env),
+                        self._resolve_envvars(self.content, env),
                         posix=True,
                         comments=True,
                     ),
                     shlex.split(
-                        self._resolve_envvars(self.content, context, env),
+                        self._resolve_envvars(self.content, env),
                         posix=False,
                         comments=True,
                     ),

@@ -204,27 +204,41 @@ class PoeTask(metaclass=MetaPoeTask):
     def _build_env(
         self, env: Optional[MutableMapping[str, str]], context: "RunContext",
     ):
-        env = dict(env or {})
+        env = context.get_env(env or {})
 
         # Get env vars from envfile referenced in global options
         if self._config.global_envfile is not None:
             env.update(context.get_env_file(self._config.global_envfile))
 
         # Get env vars from global options
-        env.update(self._config.global_env)
+        self._update_env(env, self._config.global_env)
 
         # Get env vars from envfile referenced in task options
         if self.options.get("envfile"):
             env.update(context.get_env_file(self.options["envfile"]))
 
         # Get env vars from task options
-        if self.options.get("env"):
-            env.update(self.options["env"])
+        self._update_env(env, self.options.get("env", {}))
 
         # Get env vars from dependencies
         env.update(self.get_dep_values(context))
 
         return env
+
+    @staticmethod
+    def _update_env(
+        env: Dict[str, str], extra_vars: Dict[str, Union[str, Dict[str, str]]]
+    ):
+        """
+        Update the given env with the given extra_vars. If a value in extra_vars is
+        indicated as `default` then only copy it over if that key is not already set on
+        env.
+        """
+        for key, value in extra_vars.items():
+            if isinstance(value, str):
+                env[key] = value
+            elif key not in env:
+                env[key] = value["default"]
 
     def parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
         args_def = self.options.get("args")
@@ -284,9 +298,7 @@ class PoeTask(metaclass=MetaPoeTask):
         )
 
     @staticmethod
-    def _resolve_envvars(
-        content: str, context: "RunContext", env: MutableMapping[str, str]
-    ) -> str:
+    def _resolve_envvars(content: str, env: MutableMapping[str, str]) -> str:
         """
         Template in ${environmental} $variables from env as if we were in a shell
 
@@ -295,7 +307,6 @@ class PoeTask(metaclass=MetaPoeTask):
         intentionally very limited implementation of escaping semantics for the sake of
         usability.
         """
-        env = context.get_env(env)
         cursor = 0
         resolved_parts = []
         for match in _SHELL_VAR_PATTERN.finditer(content):
