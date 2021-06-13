@@ -62,7 +62,7 @@ class RunContext:
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
-            env=self.get_env(env),
+            env=env,
             working_dir=self.project_dir,
             dry=self.dry,
             executor_config=task_options.get("executor"),

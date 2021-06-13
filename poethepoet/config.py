@@ -1,5 +1,5 @@
 from pathlib import Path
-import tomlkit
+import tomli
 from typing import Any, Dict, Mapping, Optional, Union
 from .exceptions import PoeException
 
@@ -49,7 +49,7 @@ class PoeConfig:
         return self._poe.get("default_array_item_task_type", "ref")
 
     @property
-    def global_env(self) -> Dict[str, str]:
+    def global_env(self) -> Dict[str, Union[str, Dict[str, str]]]:
         return self._poe.get("env", {})
 
     @property
@@ -116,13 +116,18 @@ class PoeConfig:
                 f"{self.default_array_item_task_type!r}"
             )
         # Validate env value
-        env = self.global_env
-        if env:
-            for key, value in env.items():
-                if not isinstance(value, str):
+        for key, value in self.global_env.items():
+            if isinstance(value, dict):
+                if tuple(value.keys()) != ("default",) or not isinstance(
+                    value["default"], str
+                ):
                     raise PoeException(
-                        f"Value of {key!r} in option `env` should be a string, but found {type(value)!r}"
+                        f"Invalid declaration at {key!r} in option `env`: {value!r}"
                     )
+            elif not isinstance(value, str):
+                raise PoeException(
+                    f"Value of {key!r} in option `env` should be a string, but found {type(value)!r}"
+                )
         # Validate tasks
         for task_name, task_def in self.tasks.items():
             error = PoeTask.validate_def(task_name, task_def, self)
@@ -165,8 +170,8 @@ class PoeConfig:
     def _read_pyproject(path: Path) -> Mapping[str, Any]:
         try:
             with path.open(encoding="utf-8") as pyproj:
-                return tomlkit.parse(pyproj.read())
-        except tomlkit.exceptions.TOMLKitError as error:
+                return tomli.load(pyproj)
+        except tomli.TOMLDecodeError as error:
             raise PoeException(f"Couldn't parse toml file at {path}", error) from error
         except Exception as error:
             raise PoeException(f"Couldn't open file at {path}") from error
