@@ -70,6 +70,7 @@ class PoeTask(metaclass=MetaPoeTask):
         "capture_stdout": (str),
         "deps": list,
         "env": dict,
+        "envfile": str,
         "executor": dict,
         "help": str,
         "uses": dict,
@@ -198,9 +199,23 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         Run this task
         """
+        return self._handle_run(context, extra_args, self._build_env(env, context))
 
-        # Get env vars from glboal options
-        env = dict(env or {}, **self._config.global_env)
+    def _build_env(
+        self, env: Optional[MutableMapping[str, str]], context: "RunContext",
+    ):
+        env = dict(env or {})
+
+        # Get env vars from envfile referenced in global options
+        if self._config.global_envfile is not None:
+            env.update(context.get_env_file(self._config.global_envfile))
+
+        # Get env vars from global options
+        env.update(self._config.global_env)
+
+        # Get env vars from envfile referenced in task options
+        if self.options.get("envfile"):
+            env.update(context.get_env_file(self.options["envfile"]))
 
         # Get env vars from task options
         if self.options.get("env"):
@@ -209,7 +224,7 @@ class PoeTask(metaclass=MetaPoeTask):
         # Get env vars from dependencies
         env.update(self.get_dep_values(context))
 
-        return self._handle_run(context, extra_args, env)
+        return env
 
     def parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
         args_def = self.options.get("args")

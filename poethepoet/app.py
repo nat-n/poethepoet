@@ -86,6 +86,7 @@ class PoeThePoet:
         if context is None:
             context = RunContext(
                 config=self.config,
+                ui=self.ui,
                 env=os.environ,
                 dry=self.ui["dry_run"],
                 poe_active=os.environ.get("POE_ACTIVE"),
@@ -107,6 +108,7 @@ class PoeThePoet:
 
         context = RunContext(
             config=self.config,
+            ui=self.ui,
             env=os.environ,
             dry=self.ui["dry_run"],
             poe_active=os.environ.get("POE_ACTIVE"),

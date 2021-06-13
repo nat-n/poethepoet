@@ -15,6 +15,7 @@ class PoeConfig:
         "default_array_task_type": str,
         "default_array_item_task_type": str,
         "env": dict,
+        "envfile": str,
         "executor": dict,
     }
 
@@ -50,6 +51,10 @@ class PoeConfig:
     @property
     def global_env(self) -> Dict[str, str]:
         return self._poe.get("env", {})
+
+    @property
+    def global_envfile(self) -> Optional[str]:
+        return self._poe.get("envfile")
 
     @property
     def project(self) -> Any:

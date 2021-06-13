@@ -34,7 +34,9 @@ Features
 
 ✅  Tasks can be defined as a sequence of other tasks
 
-✅  Can also be configured to execute tasks with any virtualenv (not just poetry)
+✅  Works with .env files
+
+✅  Can also be configured to execute tasks with any virtualenv or none (not just poetry)
 
 
 Installation
@@ -271,6 +273,20 @@ You can specify arbitrary environment variables to be set for a task by providin
 
 Notice this example uses deep keys which can be more convenient but aren't as well supported by some toml implementations.
 
+You can also specify an env file (with bashlike syntax) to load per task like so:
+
+  .. code-block:: bash
+
+    # .env
+    STAGE=dev
+    PASSWORD='!@#$%^&*('
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+    serve.script = "myapp:run"
+    serve.envfile = ".env"
+
 Declaring CLI options (experimental)
 ------------------------------------
 
@@ -346,6 +362,19 @@ You can configure environment variables to be set for all poe tasks in the pypro
   [tool.poe.env]
   VAR1 = "FOO"
   VAR2 = "BAR"
+
+You can also specify an env file (with bashlike syntax) to load for all tasks like so:
+
+  .. code-block:: bash
+
+    # .env
+    STAGE=dev
+    PASSWORD='!@#$%^&*('
+
+  .. code-block:: toml
+
+    [tool.poe]
+    envfile = ".env"
 
 Run poe from anywhere
 ---------------------
