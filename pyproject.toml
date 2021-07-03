@@ -12,7 +12,7 @@ homepage    = "https://github.com/nat-n/poethepoet"
 python = "^3.6.2"
 pastel = "^0.2.1"
 tomli  = "^1.2.2"
-poetry = "^1.1.7"
+poetry = {version = "^1.1.7", allow-prereleases = true}
 
 [tool.poetry.dev-dependencies]
 black      = "^21.10b0"
@@ -77,7 +77,7 @@ poe = "poethepoet:main"
   script = "poethepoet:main"
 
 
-[tool.poetry.plugins."poetry.plugin"]
+[tool.poetry.plugins."poetry.application.plugin"]
 poethepoet = "poethepoet.plugin:PoePlugin"
 
 [tool.tox]
