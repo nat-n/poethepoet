@@ -12,6 +12,7 @@ homepage    = "https://github.com/nat-n/poethepoet"
 python = "^3.6.2"
 pastel = "^0.2.1"
 tomli  = "^1.2.2"
+poetry = "^1.1.7"
 
 [tool.poetry.dev-dependencies]
 black      = "^21.10b0"
@@ -75,6 +76,9 @@ poe = "poethepoet:main"
   help   = "Execute poe from this repo (useful for testing)"
   script = "poethepoet:main"
 
+
+[tool.poetry.plugins."poetry.plugin"]
+poethepoet = "poethepoet.plugin:PoePlugin"
 
 [tool.tox]
 legacy_tox_ini = """
