@@ -11,6 +11,10 @@ try:
     from poetry.console import application as app
     from poetry.plugins.application_plugin import ApplicationPlugin
 except ModuleNotFoundError:
+    # Hacky defaults to
+    # tell whether poetry is installed or not,
+    # please mypy,
+    # and please Poetry's plugin system (simulate the ApplicationPlugin object)
     app = type("application", (), {"Application": None})  # pylint: disable=C0103
     ApplicationPlugin = type(
         "ApplicationPlugin",
@@ -27,17 +31,19 @@ def get_poe_task_names() -> Iterator[str]:
         for name in tomlkit.loads(
             Path(config.PoeConfig().find_pyproject_toml()).read_text()
         )["tool"]["poe"]["tasks"].keys()
+        # Make sure it doesn't override default poetry commands
         if name not in app.COMMANDS
     )
 
 
 def run_poe_task(name: str, io) -> int:
-    io.fileno = sys.stdin.fileno
+    io.fileno = sys.stdin.fileno  # Monkey patches io because subprocess needs it
     stdin = io
     io.fileno = sys.stdout.fileno
     stdout = io
     io.error_output.fileno = sys.stdout.fileno
     stderr = io.error_output
+
     return subprocess.run(
         [shutil.which("poe"), name],
         stdin=stdin,
@@ -55,7 +61,8 @@ class PoePlugin(ApplicationPlugin):
             )
             sys.exit(1)
         io = application.create_io()
-        for task_name in get_poe_task_names():  # Assume this function exists somewhere
+        # Create seperate commands per task
+        for task_name in get_poe_task_names():
             application.command_loader.register_factory(
                 task_name,
                 type(
@@ -65,7 +72,5 @@ class PoePlugin(ApplicationPlugin):
                         "name": task_name,
                         "handle": lambda inner_self: run_poe_task(inner_self.name, io),
                     },
-                    # Also assume `run_poe_task` accepts task name as an argument, runs that poe task
-                    # and returns the return code of the poe task
                 ),
             )
