@@ -11,7 +11,7 @@ try:
     from poetry.console import application as app
     from poetry.plugins.application_plugin import ApplicationPlugin
 except ModuleNotFoundError:
-    app = type("application", (), {"Application": None})
+    app = type("application", (), {"Application": None})  # pylint: disable=C0103
     ApplicationPlugin = type(
         "ApplicationPlugin",
         (),
@@ -31,8 +31,20 @@ def get_poe_task_names() -> Iterator[str]:
     )
 
 
-def run_poe_task(name: str) -> int:
-    return subprocess.call([shutil.which("poe"), name])
+def run_poe_task(name: str, io) -> int:
+    io.fileno = sys.stdin.fileno
+    stdin = io
+    io.fileno = sys.stdout.fileno
+    stdout = io
+    io.error_output.fileno = sys.stdout.fileno
+    stderr = io.error_output
+    return subprocess.run(
+        [shutil.which("poe"), name],
+        stdin=stdin,
+        stdout=stdout,
+        stderr=stderr,
+        check=False,
+    ).returncode
 
 
 class PoePlugin(ApplicationPlugin):
@@ -42,6 +54,7 @@ class PoePlugin(ApplicationPlugin):
                 "Poetry not found. Did you install this plugin via `poetry plugin add poethepoet[poetry_plugin]`?"
             )
             sys.exit(1)
+        io = application.create_io()
         for task_name in get_poe_task_names():  # Assume this function exists somewhere
             application.command_loader.register_factory(
                 task_name,
@@ -50,7 +63,7 @@ class PoePlugin(ApplicationPlugin):
                     (Command,),
                     {
                         "name": task_name,
-                        "handle": lambda inner_self: run_poe_task(inner_self.name),
+                        "handle": lambda inner_self: run_poe_task(inner_self.name, io),
                     },
                     # Also assume `run_poe_task` accepts task name as an argument, runs that poe task
                     # and returns the return code of the poe task
