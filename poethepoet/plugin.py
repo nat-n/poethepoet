@@ -1,12 +1,22 @@
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Iterator
 
 import tomlkit
-from cleo.commands.command import Command
-from poetry.console import application as app
-from poetry.plugins.application_plugin import ApplicationPlugin
+
+try:
+    from cleo.commands.command import Command
+    from poetry.console import application as app
+    from poetry.plugins.application_plugin import ApplicationPlugin
+except ModuleNotFoundError:
+    app = type("application", (), {"Application": None})
+    ApplicationPlugin = type(
+        "ApplicationPlugin",
+        (),
+        {"PLUGIN_API_VERION": "1.0.0", "type": "application.plugin"},
+    )
 
 from . import config
 
@@ -27,6 +37,11 @@ def run_poe_task(name: str) -> int:
 
 class PoePlugin(ApplicationPlugin):
     def activate(self, application: app.Application) -> None:
+        if app.Application is None:
+            print(
+                "Poetry not found. Did you install this plugin via `poetry plugin add poethepoet[poetry_plugin]`?"
+            )
+            sys.exit(1)
         for task_name in get_poe_task_names():  # Assume this function exists somewhere
             application.command_loader.register_factory(
                 task_name,

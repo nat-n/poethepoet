@@ -12,7 +12,10 @@ homepage    = "https://github.com/nat-n/poethepoet"
 python = "^3.6.2"
 pastel = "^0.2.1"
 tomli  = "^1.2.2"
-poetry = {version = "^1.1.7", allow-prereleases = true}
+poetry = {version = "^1.1.7", allow-prereleases = true, optional = true}
+
+[tool.poetry.extras]
+poetry_plugin = ["poetry"]
 
 [tool.poetry.dev-dependencies]
 black      = "^21.10b0"
