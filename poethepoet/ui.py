@@ -129,7 +129,12 @@ class PoeUi:
     def parse_args(self, cli_args: Sequence[str]):
         self.parser = self.build_parser()
         self.args = self.parser.parse_args(cli_args)
+        self.verbosity: int = self["verbosity"] or 0
         self._color.with_colors(self.args.ansi)
+
+    def set_default_verbosity(self, default_verbosity: int):
+        if not self.verbosity:
+            self.verbosity = default_verbosity
 
     def print_help(
         self,
@@ -140,7 +145,7 @@ class PoeUi:
         # TODO: See if this can be done nicely with a custom HelpFormatter
 
         # Ignore verbosity mode if help flag is set
-        verbosity = 0 if self["help"] else self["verbosity"]
+        verbosity = 0 if self["help"] else self.verbosity
 
         result: List[Union[str, Sequence[str]]] = []
         if verbosity >= 0:
@@ -221,7 +226,7 @@ class PoeUi:
         return text + " " * (width - len(text))
 
     def print_msg(self, message: str, verbosity=0, end="\n"):
-        if verbosity <= self["verbosity"]:
+        if verbosity <= self.verbosity:
             self._print(message, end=end)
 
     def print_error(self, error: Exception):
@@ -230,7 +235,7 @@ class PoeUi:
             self._print(f"<error> From: {error.cause} </error>")  # type: ignore
 
     def print_version(self):
-        if self["verbosity"] >= 0:
+        if self.verbosity >= 0:
             result = f"Poe the poet - version: <em>{__version__}</em>\n"
         else:
             result = f"{__version__}\n"

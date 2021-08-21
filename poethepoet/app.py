@@ -44,6 +44,8 @@ class PoeThePoet:
             self.print_help(error=error)
             return 1
 
+        self.ui.set_default_verbosity(self.config.verbosity)
+
         if self.ui["help"]:
             self.print_help()
             return 0
