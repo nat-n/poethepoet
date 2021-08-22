@@ -55,6 +55,11 @@ def scripts_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "scripts_project")
 
 
+@pytest.fixture
+def verbosity_default_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "verbosity_default")
+
+
 @pytest.fixture(scope="function")
 def temp_file(tmp_path):
     # not using NamedTemporaryFile here because it doesn't work on windows

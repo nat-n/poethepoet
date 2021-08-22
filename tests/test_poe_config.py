@@ -31,3 +31,17 @@ def test_setting_global_env_vars(run_poe_subproc, is_windows):
         assert result.capture == f"Poe => echo from EARTH to\nPoe => travel[1]\n"
         assert result.stdout == f"from EARTH to\nMARS\n"
     assert result.stderr == ""
+
+
+def test_setting_default_verbosity(run_poe_subproc, verbosity_default_project_path):
+    result = run_poe_subproc("test", cwd=verbosity_default_project_path,)
+    assert result.capture == ""
+    assert result.stdout == "Hello there!\n"
+    assert result.stderr == ""
+
+
+def test_override_default_verbosity(run_poe_subproc, verbosity_default_project_path):
+    result = run_poe_subproc("-v", "test", cwd=verbosity_default_project_path,)
+    assert result.capture == "Poe => echo Hello there!\n"
+    assert result.stdout == "Hello there!\n"
+    assert result.stderr == ""
