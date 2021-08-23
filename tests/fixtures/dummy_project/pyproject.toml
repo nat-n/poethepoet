@@ -18,11 +18,30 @@ cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
 help = "It says what you say"
 env = { BEST_PASSWORD = "Password1" }
 
+[tool.poe.tasks.greet-rekeyed]
+script = "dummy_package:args(greeting, user,optional=opt, upper=upper, fvar, ivar)"
+  [tool.poe.tasks.greet-rekeyed.args.greeting]
+    type = 'string'
+  [tool.poe.tasks.greet-rekeyed.args.opt]
+  [tool.poe.tasks.greet-rekeyed.args.user]
+    type = 'string'
+  [tool.poe.tasks.greet-rekeyed.args.upper]
+    type = 'boolean'
+  [tool.poe.tasks.greet-rekeyed.args.ivar]
+    type = 'integer'
+  [tool.poe.tasks.greet-rekeyed.args.fvar]
+    type = 'float'
+    help ='A float'
+
+
 [tool.poe.tasks]
 show_env = "env"
 greet = { script = "dummy_package:main" }
 greet-shouty = { script = "dummy_package:main(upper=True)" }
-count = { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
+greet-keyed = { script ="dummy_package:args(greeting, user, optional, upper, default=default_value)", args = ["greeting", "user", "optional", "upper"]}
+
+
+count =  { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
 also_echo = { ref = "echo" }
 
 # Dotted key syntax for tasks with multiple keys specified

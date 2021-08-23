@@ -23,6 +23,14 @@ arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "name": str,
     "options": (list, tuple),
     "required": bool,
+    "type": str,
+}
+
+arg_type_lookup: Dict[Any, Type] = {
+    "string": str,
+    "float": float,
+    "integer": int,
+    "boolean": bool,
 }
 
 
@@ -74,6 +82,23 @@ class PoeTaskArgs:
         return [(arg["options"], arg.get("help", "")) for arg in args]
 
     @classmethod
+    def _validate_types(
+        cls, params: ArgParams, arg_name: str, task_name: str
+    ) -> Optional[str]:
+        try:
+            # Personally I prefer the EAFP style ( https://docs.python.org/3.5/glossary.html#term-eafp ) but this might not fit with the code base at large
+            arg_type = arg_type_lookup.get(params["type"])
+        except KeyError:
+            return None
+        if arg_type == None:
+
+            return (
+                f"{params['type']!r} is not a valid type for -> arg {arg_name!r} of task {task_name!r}."
+                f"Choose one of {sorted(str_type for str_type in arg_type_lookup.keys())}"
+            )
+        return None
+
+    @classmethod
     def validate_def(cls, task_name: str, args_def: ArgsDef) -> Optional[str]:
         arg_names: Set[str] = set()
         if isinstance(args_def, list):
@@ -104,6 +129,9 @@ class PoeTaskArgs:
                 error = cls._validate_params(params, arg_name, task_name)
                 if error:
                     return error
+                error = cls._validate_types(params, arg_name, task_name)
+                if error:
+                    return error
         return None
 
     @classmethod
@@ -131,7 +159,9 @@ class PoeTaskArgs:
             return f"Arg name {name!r} of task {task_name!r} should be a string"
         if not name.isidentifier():
             return (
-                f"Arg name {name!r} of task {task_name!r} is not a valid " "identifier"
+                f"Arg name {name!r} of task {task_name!r} is not a valid  'identifier'"
+                f"see the following documentation for details"
+                f"https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
             )
         if name in arg_names:
             return f"Duplicate arg name {name!r} for task {task_name!r}"
@@ -143,10 +173,12 @@ class PoeTaskArgs:
         for arg in self._args:
             parser.add_argument(
                 *arg["options"],
-                default=arg.get("default", ""),
+                default=arg.get("default"),
                 dest=arg["name"],
                 required=arg.get("required", False),
                 help=arg.get("help", ""),
+                # pylint: disable=W0123
+                type=arg_type_lookup.get(arg.get("type"), str),
             )
         return parser
 

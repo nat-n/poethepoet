@@ -1,3 +1,4 @@
+from collections import ChainMap
 import re
 from typing import (
     Any,
@@ -44,7 +45,7 @@ class ScriptTask(PoeTask):
             if call_params is None:
                 call_params = f"**({named_args!r})"
             else:
-                call_params = self._resolve_args(call_params, named_args)
+                call_params = f"**({self._resolve_args(call_params, named_args)})"
 
         argv = [
             self.name,
@@ -102,10 +103,22 @@ class ScriptTask(PoeTask):
         def resolve_param(param: str):
             if "=" in param:
                 keyword, value = (token.strip() for token in param.split(r"=", 1))
-                return f"{keyword}={named_args.get(value, value)!r}"
+                return {keyword: named_args.get(value, value)}
             else:
-                return named_args.get(param, param)
+                return {param: named_args.get(param, param)}
 
-        return ", ".join(
-            resolve_param(param.strip()) for param in call_params.strip().split(",")
-        )
+        # I only want to filter out the empty strings that can come from the parser of named_args without having to modify named args
+        # test_script_task_omit_kwarg is an example of why this is necessary -- without removing the '' we have inconsistant behavior
+        # even if the arg isn't passed to poe it will be otherwise created here with an '' value
+        return {
+            k: v
+            for k, v in dict(
+                ChainMap(
+                    *[
+                        resolve_param(param.strip())
+                        for param in call_params.strip().split(",")
+                    ]
+                )
+            ).items()
+            if v is not None
+        }

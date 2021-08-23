@@ -67,6 +67,91 @@ def test_script_task_with_hard_coded_args(
     assert result.stderr == ""
 
 
+def test_script_task_with_args(run_poe_subproc):
+    result = run_poe_subproc("greet-keyed", "--greeting=hello", "--user=nat")
+    assert result.capture == f"Poe => greet-keyed --greeting=hello --user=nat\n"
+    assert result.stdout == "hello nat default_value Optional\n"
+    assert result.stderr == ""
+
+
+def test_script_task_with_args_optional(run_poe_subproc, dummy_project_path):
+    result = run_poe_subproc(
+        "greet-keyed",
+        "--greeting=hello",
+        "--user=nat",
+        f"--optional=welcome to {dummy_project_path}",
+    )
+    assert (
+        result.capture
+        == f"Poe => greet-keyed --greeting=hello --user=nat --optional=welcome to {dummy_project_path}\n"
+    )
+    assert result.stdout == f"hello nat default_value welcome to {dummy_project_path}\n"
+    assert result.stderr == ""
+
+
+def test_script_task_omit_kwarg(run_poe_subproc, dummy_project_path):
+    result = run_poe_subproc(
+        "greet-keyed", "--greeting=hello", f"--optional=welcome to {dummy_project_path}"
+    )
+    assert (
+        result.capture
+        == f"Poe => greet-keyed --greeting=hello --optional=welcome to {dummy_project_path}\n"
+    )
+    assert (
+        result.stdout == f"hello user default_value welcome to {dummy_project_path}\n"
+    )
+    assert result.stderr == ""
+
+
+def test_script_task_renamed(run_poe_subproc, dummy_project_path):
+    result = run_poe_subproc(
+        "greet-rekeyed",
+        "--greeting=hello",
+        "--user=nat",
+        f"--opt=welcome to {dummy_project_path}",
+    )
+    assert (
+        result.capture
+        == f"Poe => greet-rekeyed --greeting=hello --user=nat --opt=welcome to {dummy_project_path}\n"
+    )
+    assert result.stdout == f"hello nat default welcome to {dummy_project_path}\n"
+    assert result.stderr == ""
+
+
+def test_script_task_renamed_upper(run_poe_subproc, dummy_project_path):
+    result = run_poe_subproc(
+        "greet-rekeyed",
+        "--greeting=hello",
+        "--user=nat",
+        f"--opt=welcome to {dummy_project_path}",
+        "--upper=True",
+    )
+    assert (
+        result.capture
+        == f"Poe => greet-rekeyed --greeting=hello --user=nat --opt=welcome to {dummy_project_path} --upper=True\n"
+    )
+    assert result.stdout == f"HELLO NAT DEFAULT welcome to {dummy_project_path}\n"
+    assert result.stderr == ""
+
+
+def test_script_task_bad_type(run_poe_subproc, poe_project_path):
+    project_path = poe_project_path.joinpath("tests", "fixtures", "malformed_project")
+    result = run_poe_subproc("bad-type", "--greeting=hello", cwd=project_path)
+    assert (
+        "Error: 'datetime' is not a valid type for -> arg 'greeting' of task 'bad-type'.Choose one of ['boolean', 'float', 'integer', 'string']"
+        in result.capture
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_script_task_renamed_omit(run_poe_subproc):
+    result = run_poe_subproc("greet-rekeyed", "--greeting=hello", "--fvar=0.001")
+    assert result.capture == f"Poe => greet-rekeyed --greeting=hello --fvar=0.001\n"
+    assert result.stdout == f"hello user default 0.001 Optional\n"
+    assert result.stderr == ""
+
+
 def test_ref_task(run_poe_subproc, dummy_project_path, esc_prefix):
     # This should be exactly the same as calling the echo task directly
     result = run_poe_subproc("also_echo", "foo", "!")

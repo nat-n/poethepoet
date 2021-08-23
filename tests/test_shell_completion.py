@@ -3,7 +3,7 @@ def test_describe_tasks(run_poe_main):
     # expect an ordered listing of non-hidden tasks defined in the dummy_project
     assert (
         result.stdout
-        == "echo show_env greet greet-shouty count also_echo sing part1 composite_task also_composite_task greet-multiple travel\n"
+        == "echo greet-rekeyed show_env greet greet-shouty greet-keyed count also_echo sing part1 composite_task also_composite_task greet-multiple travel\n"
     )
     assert result.stderr == ""
 
@@ -13,7 +13,7 @@ def test_list_tasks(run_poe_main):
     # expect an ordered listing of non-hidden tasks defined in the dummy_project
     assert (
         result.stdout
-        == "echo show_env greet greet-shouty count also_echo sing part1 composite_task also_composite_task greet-multiple travel\n"
+        == "echo greet-rekeyed show_env greet greet-shouty greet-keyed count also_echo sing part1 composite_task also_composite_task greet-multiple travel\n"
     )
     assert result.stderr == ""
 

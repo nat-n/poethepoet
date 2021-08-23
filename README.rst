@@ -356,6 +356,40 @@ is also possible as demonstrated in the following example:
   [tool.poe.tasks]
   build = { script = "project.util:build(dest, build_version=version)", args = ["dest", "version"]
 
+For tasks that require specific types/defaults/help to be applied to arguments they can be constructed from subtables
+omission of variable type declaration will result in a string type.
+
+.. code-block:: toml 
+  
+  [tool.poe.tasks.A]  
+  script = "project.util:build(s_var, f_var, i_var, x_var), args=["s_var, f_var, i_var,x_var]
+  [tool.poe.tasks.A.args.s_var]
+  type = 'str'
+  help = "A string"
+  default = "Default String Value"
+  [tool.poe.tasks.A.args.f_var]
+  type = 'float'
+  [tool.poe.tasks.A.args.i_var]
+  type ='int'
+  default=100
+  [tool.poe.tasks.A.args.x_var]   # Theres no need to define any specific values if not desired
+
+Boolean flags can also be defined like above with omission being taken as False.
+Any keyword argument omitted will be removed from the generated kwargs dict
+
+Example:
+
+    .. code-block:: bash
+
+      poe A --s_var='String' --x_var=1234
+
+Result:
+
+    .. code-block:: python
+
+        def A(**kwargs):
+            print(kwargs) # kwargs = { "s_var":"String", "i_var":100, "x_var":"1234" }
+
 Project-wide configuration options
 ==================================
 
