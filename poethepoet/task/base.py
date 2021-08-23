@@ -6,10 +6,9 @@ from typing import (
     Dict,
     Iterator,
     List,
-    MutableMapping,
+    Mapping,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
     TYPE_CHECKING,
@@ -18,6 +17,7 @@ from typing import (
 from .args import PoeTaskArgs
 from ..exceptions import PoeException
 from ..helpers import is_valid_env_var
+from ..helpers.env import resolve_envvars
 
 if TYPE_CHECKING:
     from ..context import RunContext
@@ -28,16 +28,6 @@ if TYPE_CHECKING:
 TaskDef = Union[str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
 
 _TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")
-_SHELL_VAR_PATTERN = re.compile(
-    # Matches shell variable patterns, distinguishing escaped examples (to be ignored)
-    # There may be a more direct way to doing this
-    r"(?:"
-    r"(?:[^\\]|^)(?:\\(?:\\{2})*)\$([\w\d_]+)|"  # $VAR preceded by an odd num of \
-    r"(?:[^\\]|^)(?:\\(?:\\{2})*)\$\{([\w\d_]+)\}|"  # ${VAR} preceded by an odd num of \
-    r"\$([\w\d_]+)|"  # $VAR
-    r"\${([\w\d_]+)}"  # ${VAR}
-    r")"
-)
 
 
 class MetaPoeTask(type):
@@ -77,6 +67,10 @@ class PoeTask(metaclass=MetaPoeTask):
     }
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
+    __upstream_invocations: Optional[
+        Dict[str, Union[List[Tuple[str, ...]], Dict[str, Tuple[str, ...]]]]
+    ] = None
+
     def __init__(
         self,
         name: str,
@@ -97,6 +91,7 @@ class PoeTask(metaclass=MetaPoeTask):
         self._config = config
         self._is_windows = sys.platform == "win32"
         self.invocation = invocation
+        self.named_args = self._parse_named_args(invocation[1:])
 
     @classmethod
     def from_config(
@@ -190,67 +185,54 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return None
 
-    def run(
-        self,
-        context: "RunContext",
-        extra_args: Sequence[str] = tuple(),
-        env: Optional[MutableMapping[str, str]] = None,
-    ) -> int:
-        """
-        Run this task
-        """
-        return self._handle_run(context, extra_args, self._build_env(env, context))
-
-    def _build_env(
-        self, env: Optional[MutableMapping[str, str]], context: "RunContext"
-    ):
-        env = context.get_env(env or {})
-
-        # Get env vars from envfile referenced in global options
-        if self._config.global_envfile is not None:
-            env.update(context.get_env_file(self._config.global_envfile))
-
-        # Get env vars from global options
-        self._update_env(env, self._config.global_env)
-
-        # Get env vars from envfile referenced in task options
-        if self.options.get("envfile"):
-            env.update(context.get_env_file(self.options["envfile"]))
-
-        # Get env vars from task options
-        self._update_env(env, self.options.get("env", {}))
-
-        # Get env vars from dependencies
-        env.update(self.get_dep_values(context))
-
-        return env
-
-    @staticmethod
-    def _update_env(
-        env: Dict[str, str], extra_vars: Dict[str, Union[str, Dict[str, str]]]
-    ):
-        """
-        Update the given env with the given extra_vars. If a value in extra_vars is
-        indicated as `default` then only copy it over if that key is not already set on
-        env.
-        """
-        for key, value in extra_vars.items():
-            if isinstance(value, str):
-                env[key] = value
-            elif key not in env:
-                env[key] = value["default"]
-
-    def parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
+    def _parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
         args_def = self.options.get("args")
         if args_def:
             return PoeTaskArgs(args_def, self.name).parse(extra_args)
         return None
 
-    def _handle_run(
+    def add_named_args_to_env(
+        self, env: Mapping[str, str]
+    ) -> Tuple[Mapping[str, str], bool]:
+        if self.named_args is None:
+            return env, False
+        return (
+            dict(
+                env,
+                **(
+                    {
+                        key: str(value)
+                        for key, value in self.named_args.items()
+                        if value is not None
+                    }
+                ),
+            ),
+            bool(self.named_args),
+        )
+
+    def run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
-        env: MutableMapping[str, str],
+        extra_args: Sequence[str] = tuple(),
+        env: Optional[Mapping[str, str]] = None,
+    ) -> int:
+        """
+        Run this task
+        """
+        upstream_invocations = self._get_upstream_invocations(context)
+        return self._handle_run(
+            context,
+            extra_args,
+            context.get_env(
+                env,
+                self.options.get("envfile"),
+                self.options.get("env"),
+                upstream_invocations["uses"],
+            ),
+        )
+
+    def _handle_run(
+        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
     ) -> int:
         """
         _handle_run must be implemented by a subclass and return a single executor
@@ -258,37 +240,45 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         raise NotImplementedError
 
-    def iter_upstream_tasks(self) -> Iterator[Tuple[str, "PoeTask"]]:
-        for task_ref in self.options.get("deps", tuple()):
-            yield ("", self._instantiate_dep(task_ref, capture_stdout=False))
-        for key, task_ref in self.options.get("uses", {}).items():
-            yield (key, self._instantiate_dep(task_ref, capture_stdout=True))
+    def iter_upstream_tasks(
+        self, context: "RunContext"
+    ) -> Iterator[Tuple[str, "PoeTask"]]:
+        invocations = self._get_upstream_invocations(context)
+        for invocation in invocations["deps"]:
+            yield ("", self._instantiate_dep(invocation, capture_stdout=False))
+        for key, invocation in invocations["uses"].items():
+            yield (key, self._instantiate_dep(invocation, capture_stdout=True))
 
-    def get_upstream_invocations(self) -> Set[Tuple[str, ...]]:
+    def _get_upstream_invocations(self, context: "RunContext"):
         """
-        Get identifiers (i.e. invocation tuples) for all upstream tasks
+        NB. this memoization assumes the context (and contained env vars) will be the
+        same in all instances for the lifetime of this object. Whilst this should be OK
+        for all corrent usecases is it strictly speaking something that this object
+        should not know enough to safely assume. So we probably want to revisit this.
         """
-        result = set()
-        for task_ref in self.options.get("deps", {}):
-            result.add(tuple(shlex.split(task_ref)))
-        for task_ref in self.options.get("uses", {}).values():
-            result.add(tuple(shlex.split(task_ref)))
-        return result
+        if self.__upstream_invocations is None:
+            env: Mapping
+            env = context.get_env(
+                {}, self.options.get("envfile"), self.options.get("env")
+            )
+            env, _ = self.add_named_args_to_env(env)
 
-    def get_dep_values(self, context: "RunContext") -> Dict[str, str]:
-        """
-        Get env vars from upstream tasks declared via the uses option
-        """
-        return {
-            var: context.captured_stdout[tuple(shlex.split(dep))]
-            for var, dep in self.options.get("uses", {}).items()
-        }
+            self.__upstream_invocations = {
+                "deps": [
+                    tuple(shlex.split(resolve_envvars(task_ref, env)))
+                    for task_ref in self.options.get("deps", tuple())
+                ],
+                "uses": {
+                    key: tuple(shlex.split(resolve_envvars(task_ref, env)))
+                    for key, task_ref in self.options.get("uses", {}).items()
+                },
+            }
 
-    def has_deps(self) -> bool:
-        return bool(self.options.get("deps", False) or self.options.get("uses", False))
+        return self.__upstream_invocations
 
-    def _instantiate_dep(self, task_ref: str, capture_stdout: bool) -> "PoeTask":
-        invocation = tuple(shlex.split(task_ref))
+    def _instantiate_dep(
+        self, invocation: Tuple[str, ...], capture_stdout: bool
+    ) -> "PoeTask":
         return self.from_config(
             invocation[0],
             config=self._config,
@@ -297,40 +287,8 @@ class PoeTask(metaclass=MetaPoeTask):
             capture_stdout=capture_stdout,
         )
 
-    @staticmethod
-    def _resolve_envvars(content: str, env: MutableMapping[str, str]) -> str:
-        """
-        Template in ${environmental} $variables from env as if we were in a shell
-
-        Supports escaping of the $ if preceded by an odd number of backslashes, in which
-        case the backslash immediately precending the $ is removed. This is an
-        intentionally very limited implementation of escaping semantics for the sake of
-        usability.
-        """
-        cursor = 0
-        resolved_parts = []
-        for match in _SHELL_VAR_PATTERN.finditer(content):
-            groups = match.groups()
-            # the first two groups match escaped varnames so should be ignored
-            var_name = groups[2] or groups[3]
-            escaped_var_name = groups[0] or groups[1]
-            if var_name:
-                var_value = env.get(var_name)
-                resolved_parts.append(content[cursor : match.start()])
-                cursor = match.end()
-                if var_value is not None:
-                    resolved_parts.append(var_value)
-            elif escaped_var_name:
-                # Remove the effective escape char
-                resolved_parts.append(content[cursor : match.start()])
-                cursor = match.end()
-                matched = match.string[match.start() : match.end()]
-                if matched[0] == "\\":
-                    resolved_parts.append(matched[1:])
-                else:
-                    resolved_parts.append(matched[0:1] + matched[2:])
-        resolved_parts.append(content[cursor:])
-        return "".join(resolved_parts)
+    def has_deps(self) -> bool:
+        return bool(self.options.get("deps", False) or self.options.get("uses", False))
 
     @classmethod
     def validate_def(

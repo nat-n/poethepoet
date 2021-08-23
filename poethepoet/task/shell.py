@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-from typing import Dict, MutableMapping, Sequence, Type, Tuple, TYPE_CHECKING, Union
+from typing import Dict, Mapping, Sequence, Tuple, Type, TYPE_CHECKING, Union
 from ..exceptions import PoeException
 from .base import PoeTask
 
@@ -21,12 +21,9 @@ class ShellTask(PoeTask):
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
-        self,
-        context: "RunContext",
-        extra_args: Sequence[str],
-        env: MutableMapping[str, str],
+        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
     ) -> int:
-        env, has_named_args = self._add_named_args_to_env(extra_args, env)
+        env, has_named_args = self.add_named_args_to_env(env)
 
         if not has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
@@ -40,26 +37,6 @@ class ShellTask(PoeTask):
         self._print_action(self.content, context.dry)
         return context.get_executor(self.invocation, env, self.options).execute(
             shell, input=self.content.encode()
-        )
-
-    def _add_named_args_to_env(
-        self, extra_args: Sequence[str], env: MutableMapping[str, str]
-    ):
-        named_args = self.parse_named_args(extra_args)
-        if named_args is None:
-            return env, False
-        return (
-            dict(
-                env,
-                **(
-                    {
-                        key: str(value)
-                        for key, value in named_args.items()
-                        if value is not None
-                    }
-                ),
-            ),
-            bool(named_args),
         )
 
     @staticmethod

@@ -180,13 +180,16 @@ scripts (shell), and composite tasks (sequence).
 
     [tool.poe.tasks]
     fetch-assets = { "script" = "my_package.assets:fetch" }
-    fetch-images = { "script" = "my_package.assets:fetch(only='images')" }
+    fetch-images = { "script" = "my_package.assets:fetch(only='images', log=environ['LOG_PATH'])" }
 
   As in the second example, is it possible to hard code literal arguments to the target
-  callable.
+  callable. In fact a subset of python syntax, operators, and globals can be used inline
+  to define the arguments to the function using normal python syntax, including environ
+  (from the os package) to access environment variables that are available to the task.
 
-  If extra arguments are passed to task on the command line, then they will be available
-  to the called python function via :python:`sys.argv`.
+  If extra arguments are passed to task on the command line (and no CLI args are
+  declared), then they will be available within the called python function via
+  :python:`sys.argv`.
 
 - **Shell tasks** are similar to simple command tasks except that they are executed
   inside a new shell, and can consist of multiple separate commands, command
@@ -216,7 +219,9 @@ scripts (shell), and composite tasks (sequence).
     _publish = "poetry publish"
     release = ["test", "build", "_publish"]
 
-  Note that tasks with names prefixed with :code:`_` are not included in the documentation or directly executable, but can be useful for cases where a task is only needed for a sequence.
+  Note that tasks with names prefixed with :code:`_` are not included in the
+  documentation or directly executable, but can be useful for cases where a task is only
+  needed for referencing from another task.
 
   **An example task with inline tasks expressed via inline tables**
 
@@ -227,6 +232,21 @@ scripts (shell), and composite tasks (sequence).
       { script = "devtasks:build" },
       { ref = "_publish" },
     ]
+
+  **An example task with inline tasks expressed via an array of tables**
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+
+      [[tool.poe.tasks.release]]
+      cmd = "pytest --cov=src"
+
+      [[tool.poe.tasks.release]]
+      script = "devtasks:build"
+
+      [[tool.poe.tasks.release]]
+      ref = "_publish"
 
   **An example task with inline script subtasks using default_item_type**
 
@@ -261,7 +281,7 @@ Task level configuration
 Task help text
 --------------
 
-You can specifiy help text to be shown alongside the task name in the list of available tasks (such as when executing poe with no arguments), by adding a help key like so:
+You can specify help text to be shown alongside the task name in the list of available tasks (such as when executing poe with no arguments), by adding a help key like so:
 
 .. code-block:: toml
 
@@ -302,18 +322,153 @@ You can also specify an env file (with bashlike syntax) to load per task like so
     serve.script = "myapp:run"
     serve.envfile = ".env"
 
-Declaring CLI options (experimental)
-------------------------------------
+Declaring CLI arguments
+-----------------------
 
-By default extra CLI arguments are appended to the end of a cmd task, or exposed as
-sys.argv in a script task. Alternatively it is possible to define CLI options that a
-task should accept, which will be documented in the help for that task, and exposed to
-the task in a way the makes the most sense for that task type.
+By default extra arguments passed to the poe CLI following the task name are appended to
+the end of a cmd task, or exposed as sys.argv in a script task. Alternatively it is
+possible to define named arguments that a task should accept, which will be documented in
+the help for that task, and exposed to the task in a way the makes the most sense for
+that task type.
+
+In general named arguments can take one of the following three forms:
+
+- **positional arguments** which are provided directly following the name of the task like
+   :bash:`poe task-name arg-value`
+- **option arguments** which are provided like
+   :bash:`poe task-name --option-name arg-value`
+- **flags** which are either provided or not, but don't accept a value like
+   :bash:`poe task-name --flag`
+
+The value for the named argument is then accessible by name within the task content,
+though exactly how will depend on the type of the task as detailed below.
+
+
+Configuration syntax
+~~~~~~~~~~~~~~~~~~~~
+
+Named arguments are configured by declaring the args task option as either an array or a
+subtable.
+
+
+Array configuration syntax
+""""""""""""""""""""""""""
+
+The array form may contain string items which are interpreted as an option argument with
+the given name.
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd = "myapp:run"
+    args = ["host", "port"]
+
+
+This example can be invoked as
+
+
+.. code-block:: bash
+
+    poe serve --host 0.0.0.0 --port 8001
+
+Items in the array can also be inline tables to allow for more configuration to be
+provided to the task like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd = "myapp:run"
+    args = [{ name = "host", default = "localhost" }, { name = "port", default = "9000" }]
+
+You can also use the toml syntax for an array of tables like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd = "myapp:run"
+    help = "Run the application server"
+
+      [[tool.poe.tasks.serve.args]]
+      name = "host"
+      options = ["-h", "--host"]
+      help = "The host on which to expose the service"
+      default = "localhost"
+
+      [[tool.poe.tasks.serve.args]]
+      name = "port"
+      options = ["-p", "--port"]
+      help = "The port on which to expose the service"
+      default = "8000"
+
+
+Table configuration syntax
+""""""""""""""""""""""""""
+
+You can also provide the args option as a table like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd = "myapp:run"
+    help = "Run the application server"
+
+      [tool.poe.tasks.serve.args.host]
+      options = ["-h", "--host"]
+      help = "The host on which to expose the service"
+      default = "localhost"
+
+      [tool.poe.tasks.serve.args.port]
+      options = ["-p", "--port"]
+      help = "The port on which to expose the service"
+      default = "8000"
+
+When using this form the *name* option is no longer applicable becuase the key for the
+argument within the args table is taken as the name.
+
+
+Task argument options
+~~~~~~~~~~~~~~~~~~~~~
+
+Named arguments support the following configuration options:
+
+- :type default: Union[str, int, float, bool]
+   The value to use if the argument is not provided. This option has no effect if the
+   required option is set to true.
+
+- :type help: str
+   A short description of the argument to include in the documentation of the task.
+
+- :type name: str
+   The name of the task. Only applicable when *args* is an array.
+
+- :type options: List[str]
+   A list of options to accept for this argument, similar to
+   `argsparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_.
+   If not provided then the name of the argument is used. You can use this option to
+   expose a different name to the CLI vs the name that is used inside the task, or to
+   long form of the CLI option, e.g. ["-h", "--help"].
+
+- :type positional: bool
+   If set to true then the argument becomes a position argument instead of an option
+   argument. Note that positional arguments may not have type *bool*.
+
+- :type required: bool
+   If true then not providing the argument will result in an error. Arguments are not
+   required be default.
+
+- :type type: str
+   The type that the provided value will be cast to. The set of acceptable options is
+   {"string", "float", "integer", "boolean"}. If not provided then the default behaviour
+   is to keep values as strings. Setting the type to "bool" makes the resulting argument
+   a flag that if provided will set the value to the boolean opposite of the default
+   value – i.e. *true* if no default value is given, or false if :toml:`default = true`.
+
 
 Arguments for cmd and shell tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For cmd and shell tasks the values are exposed to the task as environment variables. For example given the following configuration:
+For cmd and shell tasks the values are exposed to the task as environment variables. For
+example given the following configuration:
 
 .. code-block:: toml
 
@@ -323,13 +478,14 @@ For cmd and shell tasks the values are exposed to the task as environment variab
   echo "goodbye $planet";
   """
   help = "Pass by a planet!"
-    [tool.poe.tasks.passby.args.planet] # the key of the arg is used as the name of the variable that the given value will be exposed as
+
+    [[tool.poe.tasks.passby.args]
+    name = "planet"
     help = "Name of the planet to pass"
     default = "earth"
-    required = false                    # by default all args are optional and default to ""
-    options = ["-p", "--planet"]        # options are passed to ArgumentParser.add_argument as *args, if not given the the name value, i.e. [f"--{name}"]
+    options = ["-p", "--planet"]
 
-the resulting task can be run like:
+The resulting task can be run like:
 
 .. code-block:: bash
 
@@ -341,7 +497,7 @@ Arguments for script tasks
 Arguments can be defined for script tasks in the same way, but how they are exposed to
 the underlying python function depends on how the script is defined.
 
-In the following example, since not parenthesis are included for the referenced function,
+In the following example, since no parenthesis are included for the referenced function,
 all provided args will be passed to the function as kwargs:
 
 .. code-block:: toml
@@ -349,20 +505,32 @@ all provided args will be passed to the function as kwargs:
   [tool.poe.tasks]
   build = { script = "project.util:build", args = ["dest", "version"]
 
-Here the build method will be passed the two argument values (if provided) from the
-command lines as kwargs.
-
-Note that in this example, args are given as a list of strings. This abbreviated
-form is equivalent to just providing a name for each argument and keeping the default
-values for all other configuration (including empty string for the help message).
-
-If there's a need to take control of how values are passed to the function, then this
-is also possible as demonstrated in the following example:
+You can also control exactly how values are passed to the python function as
+demonstrated in the following example:
 
 .. code-block:: toml
 
   [tool.poe.tasks]
-  build = { script = "project.util:build(dest, build_version=version)", args = ["dest", "version"]
+  build = { script = "project.util:build(dest, build_version=version, verbose=True)", args = ["dest", "version"]
+
+Arguments for sequence tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Arguments can be passed to the tasks referenced from a sequence task as in the following
+example.
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  build = { script = "util:build_app", args = [{ name = "target", positional = true }] }
+
+  [tool.poe.tasks.check]
+  sequence = ["build ${target}", { script = "util:run_tests(environ['target'])" }]
+  args = ["target"]
+
+This works by setting the argument values as environment variables on the subtasks,
+which can be read at runtime, but also referenced in the task definition as
+demonstrated in the above example for a *ref* task and *script* task.
 
 For tasks that require specific types/defaults/help to be applied to arguments they can be constructed from sub-tables;
 omission of variable type declaration will result in a string type.
@@ -509,14 +677,17 @@ pyproject.toml like so:
 Change the executor type
 ------------------------
 
-You can configure poe to use a specific executor by setting :toml:`tool.poe.executor.type`. Valid valued include:
+You can configure poe to use a specific executor by setting
+:toml:`tool.poe.executor.type`. Valid valued include:
 
   - auto: to automatically use the most appropriate of the following executors in order
   - poetry: to run tasks in the poetry managed environment
   - virtualenv: to run tasks in the indicated virtualenv (or else "./.venv" if present)
   - simple: to run tasks without doing any specific environment setup
 
-For example the following configuration will cause poe to ignore the poetry environment (if present), and instead use the virtualenv at the given location relative to the parent directory.
+For example the following configuration will cause poe to ignore the poetry environment
+(if present), and instead use the virtualenv at the given location relative to the
+parent directory.
 
 .. code-block:: toml
 
@@ -535,28 +706,57 @@ well with any other kind of virtualenv, or standalone. This behaviour is configu
 
 By default poe will run tasks in the poetry managed environment, if the pyproject.toml contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to use from :bash:`./.venv` or :bash:`./venv` relative to the pyproject.toml file. Otherwise it falls back to running tasks without any special environment management.
 
+
+Composing tasks into graphs (Experimental)
+==========================================
+
+You can define tasks that depend on other tasks, and optionally capture and reuse the output of those tasks, thus defining and execution graph of tasks. This is done by uses the *deps* task option, or if you want to capture the output of the upstream task to pass it to the present task the *uses* option, as demonstrated below.
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  _website_bucket_name.shell = """
+    aws cloudformation describe-stacks \
+      --stack-name $AWS_SAM_STACK_NAME \
+      --query "Stacks[0].Outputs[?(@.OutputKey == 'FrontendS3Bucket')].OutputValue" \
+    | jq -cr 'select(0)[0]'
+  """
+
+  [tool.poe.tasks.build-backend]
+  help = "Build the backend"
+  sequence = [
+    {cmd = "poetry export -f requirements.txt --output src/requirements.txt"},
+    {cmd = "sam build"},
+  ]
+
+  [tool.poe.tasks.build-frontend]
+  help = "Build the frontend"
+  cmd = "npm --prefix client run build"
+
+    [tool.poe.tasks.shipit]
+    help = "Build and deploy the app"
+    sequence = [
+      "sam deploy --config-env $SAM_ENV_NAME",
+      "aws s3 sync --delete ./client/build s3://${BUCKET_NAME}"
+    ]
+    default_item_type = "cmd"
+    deps = ["build-frontend", "build-backend"]
+    uses = { BUCKET_NAME = "_website_bucket_name" }
+
+In this example the *shipit* task depends on the *build-frontend* *build-backend*, which
+means that these tasks get executed before the *shipit* task. It also declares that it
+uses the output of the hidden *_website_bucket_name* task, which means that this also
+gets executed, but its output it captured and then made available to the *shipit* task
+as the environment variable BUCKET_NAME.
+
+This feature is experimental. Feedback is requested. Some details of the implementation or API may be altered in future versions.
+
 Contributing
 ============
 
 There's plenty to do, come say hi in `the issues <https://github.com/nat-n/poethepoet/issues>`_! 👋
 
 Also check out the `CONTRIBUTING.MD <https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.md>`_ 🤓
-
-
-TODO
-====
-
-☐ support conditional execution (a bit like make targets) `#12 <https://github.com/nat-n/poethepoet/issues/12>`_
-
-☐ support verbose mode for documentation that shows task definitions
-
-☐ create documentation website `#11 <https://github.com/nat-n/poethepoet/issues/11>`_
-
-☐ support third party task or executor types (e.g. pipenv) as plugins `#13 <https://github.com/nat-n/poethepoet/issues/13>`_
-
-☐ provide poe as a poetry plugin `#14 <https://github.com/nat-n/poethepoet/issues/14>`_
-
-☐ maybe support plumbum based tasks
 
 Licence
 =======

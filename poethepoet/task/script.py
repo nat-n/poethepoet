@@ -2,7 +2,7 @@ import ast
 from typing import (
     Any,
     Dict,
-    MutableMapping,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -12,6 +12,7 @@ from typing import (
 )
 from .base import PoeTask
 from ..exceptions import ScriptParseError
+from ..helpers.env import resolve_envvars
 from ..helpers.python import (
     resolve_function_call,
     parse_and_validate,
@@ -34,26 +35,23 @@ class ScriptTask(PoeTask):
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
-        self,
-        context: "RunContext",
-        extra_args: Sequence[str],
-        env: MutableMapping[str, str],
+        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
     ) -> int:
         # TODO: check whether the project really does use src layout, and don't do
         #       sys.path.append('src') if it doesn't
-        named_args = self.parse_named_args(extra_args)
-        target_module, function_call = self.parse_script_content(named_args)
+        target_module, function_call = self.parse_script_content(self.named_args)
         argv = [
             self.name,
-            *(self._resolve_envvars(token, env) for token in extra_args),
+            *(resolve_envvars(token, env) for token in extra_args),
         ]
         cmd = (
             "python",
             "-c",
             "import sys; "
+            "from os import environ; "
             "from importlib import import_module; "
             f"sys.argv = {argv!r}; sys.path.append('src');"
-            f"\n{self.format_args_class(named_args)}"
+            f"\n{self.format_args_class(self.named_args)}"
             f"import_module('{target_module}').{function_call}",
         )
 

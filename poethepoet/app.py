@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import sys
-from typing import Any, Dict, IO, MutableMapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, IO, Mapping, Optional, Sequence, Tuple, Union
 from .config import PoeConfig
 from .context import RunContext
 from .exceptions import ExecutionError, PoeException
@@ -20,7 +20,7 @@ class PoeThePoet:
     def __init__(
         self,
         cwd: Path,
-        config: Optional[MutableMapping[str, Any]] = None,
+        config: Optional[Mapping[str, Any]] = None,
         output: IO = sys.stdout,
     ):
         self.cwd = cwd
@@ -50,7 +50,7 @@ class PoeThePoet:
             self.print_help()
             return 0
 
-        if not self.resolve_task(" ".join(cli_args)):
+        if not self.resolve_task():
             return 1
 
         assert self.task
@@ -59,8 +59,8 @@ class PoeThePoet:
         else:
             return self.run_task() or 0
 
-    def resolve_task(self, invocation: Sequence[str]) -> bool:
-        task = self.ui["task"]
+    def resolve_task(self) -> bool:
+        task = tuple(self.ui["task"])
         if not task:
             self.print_help(info="No task specified.")
             return False
@@ -79,7 +79,7 @@ class PoeThePoet:
             return False
 
         self.task = PoeTask.from_config(
-            task_name, config=self.config, ui=self.ui, invocation=tuple(invocation)
+            task_name, config=self.config, ui=self.ui, invocation=task
         )
         return True
 
@@ -103,11 +103,8 @@ class PoeThePoet:
             self.ui.print_error(error=error)
             return 1
 
-    def run_task_graph(self, context: Optional[RunContext] = None) -> Optional[int]:
+    def run_task_graph(self) -> Optional[int]:
         assert self.task
-        graph = TaskExecutionGraph(self.task, self.config)
-        plan = graph.get_execution_plan()
-
         context = RunContext(
             config=self.config,
             ui=self.ui,
@@ -115,6 +112,8 @@ class PoeThePoet:
             dry=self.ui["dry_run"],
             poe_active=os.environ.get("POE_ACTIVE"),
         )
+        graph = TaskExecutionGraph(self.task, context)
+        plan = graph.get_execution_plan()
 
         for stage in plan:
             for task in stage:

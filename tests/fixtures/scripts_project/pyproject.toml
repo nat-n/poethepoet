@@ -42,7 +42,7 @@ greet = "pkg:greet"
   args = ["greeting", "user", "optional", "upper"]
 
   [tool.poe.tasks.greet-full-args]
-  script = "pkg:greet(greeting, user, upper=upper, fvar=user_height, ivar=age)"
+  script = "pkg:greet(greeting, user, upper=(not upper), fvar=user_height, ivar=age)"
 
     [tool.poe.tasks.greet-full-args.args.greeting]
     options = ["--greeting", "-g"]
@@ -50,9 +50,10 @@ greet = "pkg:greet"
     default = "hi"
 
     [tool.poe.tasks.greet-full-args.args.user]
-    # defaults to string if no type  given
+    # defaults to string if no type given
 
     [tool.poe.tasks.greet-full-args.args.upper]
+    default = true
     type = "boolean"
 
     [tool.poe.tasks.greet-full-args.args.age]
@@ -76,6 +77,26 @@ greet = "pkg:greet"
     [tool.poe.tasks.greet-strict.args.name]
     required = true
     help = "and this one is required"
+
+  [tool.poe.tasks.greet-positional]
+  script = "pkg:greet(greeting, user=username, upper=uppercase)"
+
+    [[tool.poe.tasks.greet-positional.args]]
+    name = "greeting"
+    positional = true
+    default = "yo"
+    help = "this one is required"
+
+    [[tool.poe.tasks.greet-positional.args]]
+    name = "username"
+    positional = "user"
+    required = true
+    help = "and this one is required"
+
+    [[tool.poe.tasks.greet-positional.args]]
+    name = "uppercase"
+    options = ["--upper"]
+    type = "boolean"
 
 
 [build-system]
