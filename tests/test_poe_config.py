@@ -33,15 +33,34 @@ def test_setting_global_env_vars(run_poe_subproc, is_windows):
     assert result.stderr == ""
 
 
-def test_setting_default_verbosity(run_poe_subproc, verbosity_default_project_path):
-    result = run_poe_subproc("test", cwd=verbosity_default_project_path,)
+def test_setting_default_verbosity(run_poe_subproc, low_verbosity_project_path):
+    result = run_poe_subproc("test", cwd=low_verbosity_project_path,)
     assert result.capture == ""
     assert result.stdout == "Hello there!\n"
     assert result.stderr == ""
 
 
-def test_override_default_verbosity(run_poe_subproc, verbosity_default_project_path):
-    result = run_poe_subproc("-v", "test", cwd=verbosity_default_project_path,)
+def test_override_default_verbosity(run_poe_subproc, low_verbosity_project_path):
+    result = run_poe_subproc("-v", "-v", "test", cwd=low_verbosity_project_path,)
     assert result.capture == "Poe => echo Hello there!\n"
     assert result.stdout == "Hello there!\n"
     assert result.stderr == ""
+
+
+def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_path):
+    result = run_poe_subproc("-q", "test", cwd=high_verbosity_project_path,)
+    assert result.capture == "Poe => echo Hello there!\n"
+    assert result.stdout == "Hello there!\n"
+    assert result.stderr == ""
+
+
+def test_decrease_verbosity(run_poe_subproc, dummy_project_path, is_windows):
+    result = run_poe_subproc("-q", "part1", cwd=dummy_project_path,)
+    assert result.capture == ""
+    assert result.stderr == ""
+    if is_windows:
+        # On Windows, "echo 'Hello'" results in "'Hello'".
+        assert result.stdout == "'Hello'\n"
+    else:
+        # On UNIX, "echo 'Hello'" results in just "Hello".
+        assert result.stdout == "Hello\n"
