@@ -41,7 +41,7 @@ def test_setting_default_verbosity(run_poe_subproc, low_verbosity_project_path):
 
 
 def test_override_default_verbosity(run_poe_subproc, low_verbosity_project_path):
-    result = run_poe_subproc("-vv", "test", cwd=low_verbosity_project_path,)
+    result = run_poe_subproc("-v", "-v", "test", cwd=low_verbosity_project_path,)
     assert result.capture == "Poe => echo Hello there!\n"
     assert result.stdout == "Hello there!\n"
     assert result.stderr == ""
