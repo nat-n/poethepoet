@@ -54,8 +54,13 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
     assert result.stderr == ""
 
 
-def test_decrease_verbosity(run_poe_subproc, dummy_project_path):
+def test_decrease_verbosity(run_poe_subproc, dummy_project_path, is_windows):
     result = run_poe_subproc("-q", "part1", cwd=dummy_project_path,)
     assert result.capture == ""
-    assert result.stdout == "Hello\n"
     assert result.stderr == ""
+    if is_windows:
+        # On Windows, "echo 'Hello'" results in "'Hello'".
+        assert result.stdout == "'Hello'\n"
+    else:
+        # On UNIX, "echo 'Hello'" results in just "Hello".
+        assert result.stdout == "Hello\n"
