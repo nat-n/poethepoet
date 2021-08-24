@@ -67,25 +67,22 @@ class PoeUi:
             help="Print the version and exit",
         )
 
-        verbosity_group = parser.add_mutually_exclusive_group()
-        verbosity_group.add_argument(
+        parser.add_argument(
             "-v",
             "--verbose",
-            dest="verbosity",
-            action="store_const",
-            metavar="verbose_mode",
+            dest="increase_verbosity",
+            action="count",
             default=0,
-            const=1,
-            help="More console spam",
+            help="Increase command output (repeatable)",
         )
-        verbosity_group.add_argument(
+
+        parser.add_argument(
             "-q",
             "--quiet",
-            dest="verbosity",
-            action="store_const",
-            metavar="quiet_mode",
-            const=-1,
-            help="Less console spam",
+            dest="decrease_verbosity",
+            action="count",
+            default=0,
+            help="Decrease command output (repeatable)",
         )
 
         parser.add_argument(
@@ -129,12 +126,11 @@ class PoeUi:
     def parse_args(self, cli_args: Sequence[str]):
         self.parser = self.build_parser()
         self.args = self.parser.parse_args(cli_args)
-        self.verbosity: int = self["verbosity"] or 0
+        self.verbosity: int = self["increase_verbosity"] - self["decrease_verbosity"]
         self._color.with_colors(self.args.ansi)
 
     def set_default_verbosity(self, default_verbosity: int):
-        if not self.verbosity:
-            self.verbosity = default_verbosity
+        self.verbosity += default_verbosity
 
     def print_help(
         self,

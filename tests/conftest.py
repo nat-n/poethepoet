@@ -56,8 +56,13 @@ def scripts_project_path():
 
 
 @pytest.fixture
-def verbosity_default_project_path():
-    return PROJECT_ROOT.joinpath("tests", "fixtures", "verbosity_default")
+def low_verbosity_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "low_verbosity")
+
+
+@pytest.fixture
+def high_verbosity_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "high_verbosity")
 
 
 @pytest.fixture(scope="function")
