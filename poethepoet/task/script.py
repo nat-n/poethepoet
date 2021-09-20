@@ -1,4 +1,3 @@
-from collections import ChainMap
 import re
 from typing import (
     Any,
@@ -111,14 +110,8 @@ class ScriptTask(PoeTask):
         # test_script_task_omit_kwarg is an example of why this is necessary -- without removing the '' we have inconsistant behavior
         # even if the arg isn't passed to poe it will be otherwise created here with an '' value
         return {
-            k: v
-            for k, v in dict(
-                ChainMap(
-                    *[
-                        resolve_param(param.strip())
-                        for param in call_params.strip().split(",")
-                    ]
-                )
-            ).items()
-            if v is not None
+            key: value
+            for param in call_params.split(",")
+            for key, value in resolve_param(param.strip()).items()
+            if value is not None
         }

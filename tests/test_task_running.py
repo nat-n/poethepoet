@@ -52,6 +52,13 @@ def test_script_task(run_poe_subproc, dummy_project_path, esc_prefix):
     assert result.stderr == ""
 
 
+def test_automatic_kwargs(run_poe_subproc):
+    result = run_poe_subproc("greet-automatic")
+    assert result.capture == "Poe => greet-automatic\n"
+    assert result.stdout == "greetings user default Optional\n"
+    assert result.stderr == ""
+
+
 def test_script_task_with_hard_coded_args(
     run_poe_subproc, dummy_project_path, esc_prefix
 ):
@@ -124,11 +131,11 @@ def test_script_task_renamed_upper(run_poe_subproc, dummy_project_path):
         "--greeting=hello",
         "--user=nat",
         f"--opt=welcome to {dummy_project_path}",
-        "--upper=True",
+        "--upper=Any-Value",
     )
     assert (
         result.capture
-        == f"Poe => greet-rekeyed --greeting=hello --user=nat --opt=welcome to {dummy_project_path} --upper=True\n"
+        == f"Poe => greet-rekeyed --greeting=hello --user=nat --opt=welcome to {dummy_project_path} --upper=Any-Value\n"
     )
     assert result.stdout == f"HELLO NAT DEFAULT welcome to {dummy_project_path}\n"
     assert result.stderr == ""
@@ -138,7 +145,7 @@ def test_script_task_bad_type(run_poe_subproc, poe_project_path):
     project_path = poe_project_path.joinpath("tests", "fixtures", "malformed_project")
     result = run_poe_subproc("bad-type", "--greeting=hello", cwd=project_path)
     assert (
-        "Error: 'datetime' is not a valid type for -> arg 'greeting' of task 'bad-type'.Choose one of ['boolean', 'float', 'integer', 'string']"
+        "Error: 'datetime' is not a valid type for -> arg 'greeting' of task 'bad-type'.Choose one of ['float', 'integer', 'string']"
         in result.capture
     )
     assert result.stdout == ""

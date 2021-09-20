@@ -26,12 +26,8 @@ arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "type": str,
 }
 
-arg_type_lookup: Dict[Any, Type] = {
-    "string": str,
-    "float": float,
-    "integer": int,
-    "boolean": bool,
-}
+# Needs to be Any to match what Argparse has defined
+arg_type_lookup: Dict[Any, Type] = {"string": str, "float": float, "integer": int}
 
 
 class PoeTaskArgs:
@@ -82,16 +78,10 @@ class PoeTaskArgs:
         return [(arg["options"], arg.get("help", "")) for arg in args]
 
     @classmethod
-    def _validate_types(
+    def _validate_type(
         cls, params: ArgParams, arg_name: str, task_name: str
     ) -> Optional[str]:
-        try:
-            # Personally I prefer the EAFP style ( https://docs.python.org/3.5/glossary.html#term-eafp ) but this might not fit with the code base at large
-            arg_type = arg_type_lookup.get(params["type"])
-        except KeyError:
-            return None
-        if arg_type == None:
-
+        if "type" in params and params["type"] not in arg_type_lookup:
             return (
                 f"{params['type']!r} is not a valid type for -> arg {arg_name!r} of task {task_name!r}."
                 f"Choose one of {sorted(str_type for str_type in arg_type_lookup.keys())}"
@@ -129,7 +119,7 @@ class PoeTaskArgs:
                 error = cls._validate_params(params, arg_name, task_name)
                 if error:
                     return error
-                error = cls._validate_types(params, arg_name, task_name)
+                error = cls._validate_type(params, arg_name, task_name)
                 if error:
                     return error
         return None
@@ -177,7 +167,6 @@ class PoeTaskArgs:
                 dest=arg["name"],
                 required=arg.get("required", False),
                 help=arg.get("help", ""),
-                # pylint: disable=W0123
                 type=arg_type_lookup.get(arg.get("type"), str),
             )
         return parser
