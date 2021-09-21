@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 from .base import PoeTask
+from ..helpers.python import format_args_class, parse_script_content
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -38,26 +39,24 @@ class ScriptTask(PoeTask):
     ) -> int:
         # TODO: check whether the project really does use src layout, and don't do
         #       sys.path.append('src') if it doesn't
-        target_module, target_callable, call_params = self._parse_content(self.content)
         named_args = self.parse_named_args(extra_args)
-        if named_args is not None:
-            if call_params is None:
-                call_params = f"**({named_args!r})"
-            else:
-                call_params = f"**({self._resolve_args(call_params, named_args)})"
-
+        target_module, function_call = parse_script_content(self.content, named_args)
         argv = [
             self.name,
             *(self._resolve_envvars(token, env) for token in extra_args),
         ]
         cmd = (
-            "python",  # TODO: pre-locate python from the target env?
+            "python",
             "-c",
             "import sys; "
             "from importlib import import_module; "
             f"sys.argv = {argv!r}; sys.path.append('src');"
-            f"import_module('{target_module}').{target_callable}({call_params or ''})",
+            f"\n{format_args_class(named_args)}"
+            f"import_module('{target_module}').{function_call}",
         )
+
+        print("cmd", cmd)  # TODO: remove
+
         self._print_action(" ".join(argv), context.dry)
         return context.get_executor(self.invocation, env, self.options).execute(cmd)
 

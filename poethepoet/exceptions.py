@@ -9,6 +9,10 @@ class CyclicDependencyError(PoeException):
     pass
 
 
+class ScriptParseError(PoeException):
+    pass
+
+
 class ExecutionError(RuntimeError):
     def __init__(self, msg, *args):
         self.msg = msg
