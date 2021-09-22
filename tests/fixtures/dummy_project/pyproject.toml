@@ -12,13 +12,11 @@ packages = [
 env.PLANET = "EARTH"
 env.DEST = "MARS"
 
-# Alternate sub-table syntax for task with lots of config
+
 [tool.poe.tasks.echo]
 cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
 help = "It says what you say"
 env = { BEST_PASSWORD = "Password1" }
-
-
 
 
 [tool.poe.tasks]
@@ -59,6 +57,7 @@ travel = [
   { cmd = "echo 'from $PLANET to'" },
   { script = "dummy_package:print_var('DEST')" }
 ]
+
 
 
 [build-system]

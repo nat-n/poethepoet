@@ -26,8 +26,12 @@ arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "type": str,
 }
 
-# Needs to be Any to match what Argparse has defined
-arg_type_lookup: Dict[Any, Type] = {"string": str, "float": float, "integer": int}
+arg_types: Dict[str, Type] = {
+    "string": str,
+    "float": float,
+    "integer": int,
+    "boolean": bool,
+}
 
 
 class PoeTaskArgs:
@@ -81,10 +85,10 @@ class PoeTaskArgs:
     def _validate_type(
         cls, params: ArgParams, arg_name: str, task_name: str
     ) -> Optional[str]:
-        if "type" in params and params["type"] not in arg_type_lookup:
+        if "type" in params and params["type"] not in arg_types:
             return (
                 f"{params['type']!r} is not a valid type for -> arg {arg_name!r} of task {task_name!r}."
-                f"Choose one of {sorted(str_type for str_type in arg_type_lookup.keys())}"
+                f"Choose one of {sorted(str_type for str_type in arg_types.keys())}"
             )
         return None
 
@@ -161,14 +165,25 @@ class PoeTaskArgs:
     def build_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
         for arg in self._args:
-            parser.add_argument(
-                *arg["options"],
-                default=arg.get("default"),
-                dest=arg["name"],
-                required=arg.get("required", False),
-                help=arg.get("help", ""),
-                type=arg_type_lookup.get(arg.get("type"), str),
-            )
+            if arg.get("type") == "boolean":
+                # boolean types are implemented as flags
+                parser.add_argument(
+                    *arg["options"],
+                    action="store_true",
+                    default=arg.get("default"),
+                    dest=arg["name"],
+                    required=arg.get("required", False),
+                    help=arg.get("help", ""),
+                )
+            else:
+                parser.add_argument(
+                    *arg["options"],
+                    default=arg.get("default"),
+                    dest=arg["name"],
+                    required=arg.get("required", False),
+                    type=arg_types.get(str(arg.get("type")), str),
+                    help=arg.get("help", ""),
+                )
         return parser
 
     def parse(self, extra_args: Sequence[str]):

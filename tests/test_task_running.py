@@ -49,13 +49,6 @@ def test_script_task(run_poe_subproc, dummy_project_path, esc_prefix):
     assert result.stderr == ""
 
 
-def test_automatic_kwargs(run_poe_subproc):
-    result = run_poe_subproc("greet-automatic")
-    assert result.capture == "Poe => greet-automatic\n"
-    assert result.stdout == "greetings user default Optional\n"
-    assert result.stderr == ""
-
-
 def test_script_task_with_hard_coded_args(
     run_poe_subproc, dummy_project_path, esc_prefix
 ):

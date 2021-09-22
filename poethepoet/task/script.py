@@ -55,8 +55,6 @@ class ScriptTask(PoeTask):
             f"import_module('{target_module}').{function_call}",
         )
 
-        print("cmd", cmd)  # TODO: remove
-
         self._print_action(" ".join(argv), context.dry)
         return context.get_executor(self.invocation, env, self.options).execute(cmd)
 

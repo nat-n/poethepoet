@@ -1,6 +1,6 @@
 import ast
 from itertools import chain
-from typing import Any, Container, Dict, List, Optional, Tuple, Union
+from typing import Any, Container, Dict, Iterator, List, Optional, Tuple, Union
 from ..exceptions import ScriptParseError
 
 _BUILTINS_WHITELIST = [
@@ -94,28 +94,18 @@ def parse_script_content(
     return target_module, resolve_function_call(target_ref, set(args or tuple()))
 
 
-def resolve_function_call(expression: str, arguments: Container[str]):
+def resolve_function_call(source: str, arguments: Container[str]):
     """
     Validate function call and substitute references to arguments with their namespaced
     counterparts (e.g. `my_arg` => `args.my_arg`).
     """
 
-    try:
-        module = ast.parse(expression)
-    except SyntaxError as error:
-        raise ScriptParseError(f"Invalid script content: {expression}") from error
-
-    assert len(module.body) == 1
-
-    call_node = module.body[0].value
-    assert isinstance(call_node, ast.Call)
-
-    _validate_func(call_node.func, expression)
+    call_node = _parse_and_validate(source)
 
     substitutions: List[Substitution] = []
 
     # Collect all the variables
-    name_nodes = chain(
+    name_nodes: Iterator[ast.Name] = chain(
         (
             node
             for arg in call_node.args
@@ -135,40 +125,53 @@ def resolve_function_call(expression: str, arguments: Container[str]):
             continue
         if node.id in arguments:
             substitutions.append(
-                ((node.col_offset, node.end_col_offset), ARGS_PREFIX + node.id)
+                ((node.col_offset, node.end_col_offset or -0), ARGS_PREFIX + node.id)
             )
         else:
             raise ScriptParseError(
-                f"Invalid variable reference in script: {_get_node_text(node, expression)}"
+                f"Invalid variable reference in script: {ast.get_source_segment(source, node)}"
             )
 
     # Prefix references to arguments with ARGS_PREFIX
-    return apply_substitutions(expression, substitutions)
+    return apply_substitutions(source, substitutions)
 
 
 # TODO: unit test this
 
 
-def _validate_func(func_node: ast.AST, expression: str):
+def _parse_and_validate(source: str):
     """
-    Validate function ref is just Attribute and Name Nodes
+    Parse the given source into an ast, validate that is consists of a single function
+    call, and return the Call node.
     """
-    value = func_node
+
+    try:
+        module = ast.parse(source)
+    except SyntaxError as error:
+        raise ScriptParseError(f"Invalid script content: {source}") from error
+
+    if len(module.body) != 1:
+        raise ScriptParseError(
+            f"Expected a single python expression, instead got: {source}"
+        )
+
+    first_statement = module.body[0]
+    if not isinstance(first_statement, ast.Expr):
+        raise ScriptParseError(f"Expected a function call, instead got: {source}")
+
+    call_node = first_statement.value
+    if not isinstance(call_node, ast.Call):
+        raise ScriptParseError(f"Expected a function call, instead got: {source}")
+
+    value = call_node.func
     while isinstance(value, ast.Attribute):
         value = value.value
     if not isinstance(value, ast.Name):
         raise ScriptParseError(
-            f"Invalid function reference: {_get_node_text(func_node, expression)}"
+            f"Invalid function reference: {ast.get_source_segment(source, value)}"
         )
 
-
-# TODO: unit test this
-
-
-def _get_node_text(func_node: ast.AST, expression: str):
-    lines = expression.splitlines()[func_node.lineno - 1 : func_node.end_lineno]
-    inv_end_col_offset = len(lines[-1]) - func_node.end_col_offset
-    return "\n".join(lines)[func_node.col_offset : -inv_end_col_offset]
+    return call_node
 
 
 # TODO: unit test this
@@ -179,13 +182,13 @@ def apply_substitutions(content: str, subs: List[Substitution]):
     Returns a copy of input with all of the substitutions applied
     """
     cursor = 0
-    fragments = []
+    segments: List[str] = []
 
     for ((start, end), replacement) in sorted(subs, key=lambda x: x[0][0]):
         in_between = content[cursor:start]
-        fragments.extend((in_between, replacement))
+        segments.extend((in_between, replacement))
         cursor += len(in_between) + (end - start)
 
-    fragments.append(content[cursor:])
+    segments.append(content[cursor:])
 
-    return "".join(fragments)
+    return "".join(segments)
