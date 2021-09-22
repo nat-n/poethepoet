@@ -41,6 +41,11 @@ def dummy_project_path():
 
 
 @pytest.fixture
+def named_args_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "named_args_project")
+
+
+@pytest.fixture
 def venv_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "venv_project")
 
@@ -203,7 +208,10 @@ def use_venv(install_into_virtualenv):
         )
 
         # create new venv
-        venv.EnvBuilder(symlinks=True, with_pip=True,).create(str(location))
+        venv.EnvBuilder(
+            symlinks=True,
+            with_pip=True,
+        ).create(str(location))
 
         if contents:
             install_into_virtualenv(location, contents)
@@ -247,7 +255,8 @@ def use_virtualenv(install_into_virtualenv):
 @pytest.fixture
 def with_virtualenv_and_venv(use_venv, use_virtualenv):
     def with_virtualenv_and_venv(
-        location: Path, contents: Optional[List[str]] = None,
+        location: Path,
+        contents: Optional[List[str]] = None,
     ):
         with use_venv(location, contents, require_empty=True):
             yield

@@ -1,0 +1,27 @@
+[tool.poe.tasks]
+greet-automatic.script = "pkg:greet"
+
+[tool.poe.tasks.greet-keyed]
+script ="pkg:greet(greeting, user, default='default_value', optional=optional, upper=upper)"
+args = ["greeting", "user", "optional", "upper"]
+
+[tool.poe.tasks.greet-rekeyed]
+script = "pkg:greet(greeting, user, optional=opt, upper=upper, fvar=fvar, ivar=ivar)"
+
+  [tool.poe.tasks.greet-rekeyed.args.greeting]
+  type = 'string'
+
+  [tool.poe.tasks.greet-rekeyed.args.opt]
+
+  [tool.poe.tasks.greet-rekeyed.args.user]
+  type = 'string'
+
+  [tool.poe.tasks.greet-rekeyed.args.upper]
+  type = 'string' # For the time being any Flags are represented as Strings
+
+  [tool.poe.tasks.greet-rekeyed.args.ivar]
+  type = 'integer'
+
+  [tool.poe.tasks.greet-rekeyed.args.fvar]
+  type = 'float'
+  help ='A float'
