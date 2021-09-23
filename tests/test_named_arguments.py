@@ -1,9 +1,25 @@
+"""
+STILL TO TEST:
+- default arguments (declared as a option in the yaml)
+- boolean flag arguments, provided or nots
+- required args, provided or not
+- specifying a the dest option
+"""
+
+
+def test_automatic_kwargs(run_poe_subproc, named_args_project_path):
+    result = run_poe_subproc("greet", cwd=named_args_project_path)
+    assert result.capture == "Poe => greet\n"
+    assert result.stdout == "I'm sorry Dave\n"
+    assert result.stderr == ""
+
+
 def test_script_task_with_args(run_poe_subproc, named_args_project_path):
     result = run_poe_subproc(
         "greet-keyed", "--greeting=hello", "--user=nat", cwd=named_args_project_path
     )
     assert result.capture == f"Poe => greet-keyed --greeting=hello --user=nat\n"
-    assert result.stdout == "hello nat default_value Optional\n"
+    assert result.stdout == "hello nat default_value None\n"
     assert result.stderr == ""
 
 
@@ -93,5 +109,5 @@ def test_script_task_renamed_omit(run_poe_subproc, named_args_project_path):
         "greet-rekeyed", "--greeting=hello", "--fvar=0.001", cwd=named_args_project_path
     )
     assert result.capture == f"Poe => greet-rekeyed --greeting=hello --fvar=0.001\n"
-    assert result.stdout == f"hello user default 0.001 Optional\n"
+    assert result.stdout == f"hello user default 0.001 None\n"
     assert result.stderr == ""
