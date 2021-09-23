@@ -1,11 +1,8 @@
 """
 STILL TO TEST:
-- default arguments (declared as a option in the yaml)
-- boolean flag arguments, provided or nots
-- required args, provided or not
 - specifying a the dest option
 - automatic documentation of named args
-    - when wrong args given
+- specifying alternate options (e.g. --help, -h)
 - shell tasks with named arguments
 - cmd tasks with named arguments
 """
@@ -53,7 +50,7 @@ def test_script_task_default_arg(run_poe_subproc, named_args_project_path):
     result = run_poe_subproc("greet-full-args", cwd=named_args_project_path)
     assert result.capture == f"Poe => greet-full-args\n"
     # hi is the default value for --greeting
-    assert result.stdout == f"hi None None None\n"
+    assert result.stdout == "hi None None None\n"
     assert result.stderr == ""
 
 
@@ -73,8 +70,59 @@ def test_script_task_include_boolean_flag_and_numeric_args(
         "Poe => greet-full-args --greeting=hello --user=nat --upper --age=42 "
         "--height=1.23\n"
     )
-    assert result.stdout == f"HELLO NAT 1.23 42\n"
+    assert result.stdout == "HELLO NAT 1.23 42\n"
     assert result.stderr == ""
+
+
+def test_wrong_args_passed(run_poe_subproc, named_args_project_path):
+    base_error = (
+        "usage: poe greet-full-args [--greeting GREETING] [--user USER] [--upper]\n"
+        "                           [--age AGE] [--height HEIGHT]\n"
+        "poe greet-full-args: error:"
+    )
+
+    result = run_poe_subproc(
+        "greet-full-args", "--age=lol", cwd=named_args_project_path,
+    )
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert result.stderr == (f"{base_error} argument --age: invalid int value: 'lol'\n")
+
+    result = run_poe_subproc("greet-full-args", "--age", cwd=named_args_project_path,)
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert result.stderr == (f"{base_error} argument --age: expected one argument\n")
+
+    result = run_poe_subproc(
+        "greet-full-args", "--age 3 2 1", cwd=named_args_project_path,
+    )
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert result.stderr == (f"{base_error} unrecognized arguments: --age 3 2 1\n")
+
+    result = run_poe_subproc(
+        "greet-full-args", "--potatoe", cwd=named_args_project_path,
+    )
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert result.stderr == (f"{base_error} unrecognized arguments: --potatoe\n")
+
+
+def test_required_args(run_poe_subproc, named_args_project_path):
+    result = run_poe_subproc(
+        "greet-strict", "--greeting=yo", "--name", "dude", cwd=named_args_project_path,
+    )
+    assert result.capture == "Poe => greet-strict --greeting=yo --name dude\n"
+    assert result.stdout == "yo dude\n"
+    assert result.stderr == ""
+
+    result = run_poe_subproc("greet-strict", cwd=named_args_project_path,)
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert result.stderr == (
+        "usage: poe greet-strict --greeting GREETING --name NAME\npoe greet-strict: "
+        "error: the following arguments are required: --greeting, --name\n"
+    )
 
 
 def test_script_task_bad_type(run_poe_subproc, poe_project_path):

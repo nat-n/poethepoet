@@ -37,8 +37,9 @@ arg_types: Dict[str, Type] = {
 class PoeTaskArgs:
     _args: Tuple[ArgParams, ...]
 
-    def __init__(self, args_def: ArgsDef):
+    def __init__(self, args_def: ArgsDef, task_name: str):
         self._args = self._normalize_args_def(args_def)
+        self._task_name = task_name
 
     @staticmethod
     def _normalize_args_def(args_def: ArgsDef):
@@ -165,7 +166,9 @@ class PoeTaskArgs:
         return None
 
     def build_parser(self) -> argparse.ArgumentParser:
-        parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+        parser = argparse.ArgumentParser(
+            prog=f"poe {self._task_name}", add_help=False, allow_abbrev=False
+        )
         for arg in self._args:
             if arg.get("type") == "boolean":
                 # boolean types are implemented as flags

@@ -24,4 +24,13 @@ script = "pkg:greet(greeting, user, upper=upper, fvar=height, ivar=age)"
 
   [tool.poe.tasks.greet-full-args.args.height]
   type = "float"
-  help = "The user's height in meter"
+  help = "The user's height in meters"
+
+
+[tool.poe.tasks.greet-strict]
+script = "pkg:greet(greeting, user=name)"
+  [tool.poe.tasks.greet-strict.args.greeting]
+  default = "doesn't matter"
+  required = true
+  [tool.poe.tasks.greet-strict.args.name]
+  required = true
