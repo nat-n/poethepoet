@@ -87,8 +87,10 @@ class PoeTaskArgs:
     ) -> Optional[str]:
         if "type" in params and params["type"] not in arg_types:
             return (
-                f"{params['type']!r} is not a valid type for -> arg {arg_name!r} of task {task_name!r}."
-                f"Choose one of {sorted(str_type for str_type in arg_types.keys())}"
+                f"{params['type']!r} is not a valid type for arg {arg_name!r} of task {task_name!r}. "
+                "Choose one of {"
+                f'{" ".join(sorted(str_type for str_type in arg_types.keys()))}'
+                "}"
             )
         return None
 

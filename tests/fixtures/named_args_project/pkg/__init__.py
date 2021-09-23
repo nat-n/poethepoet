@@ -14,7 +14,11 @@ def greet(
                     *(val for val in kwargs.values() if isinstance(val, str)),
                 )
             ),
-            *(val for val in kwargs.values() if not isinstance(val, str))
+            *(
+                val
+                for val in kwargs.values()
+                if val is not None and not isinstance(val, str)
+            )
         )
     else:
         print(greeting, user, *kwargs.values())
