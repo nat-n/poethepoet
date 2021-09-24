@@ -1,5 +1,7 @@
 import ast
 from itertools import chain
+import re
+import sys
 from typing import Any, Container, Dict, Iterator, List, Optional, Tuple, Union
 from ..exceptions import ScriptParseError
 
@@ -125,20 +127,24 @@ def resolve_function_call(source: str, arguments: Container[str]):
             continue
         if node.id in arguments:
             substitutions.append(
-                ((node.col_offset, node.end_col_offset or -0), ARGS_PREFIX + node.id)
+                (
+                    (
+                        node.col_offset,
+                        node.col_offset + len(_get_name_source_segment(source, node)),
+                    ),
+                    ARGS_PREFIX + node.id,
+                )
             )
         else:
             raise ScriptParseError(
-                f"Invalid variable reference in script: {ast.get_source_segment(source, node)}"
+                f"Invalid variable reference in script: {_get_name_source_segment(source, node)}"
             )
 
     # Prefix references to arguments with ARGS_PREFIX
-    return apply_substitutions(source, substitutions)
+    return _apply_substitutions(source, substitutions)
 
 
 # TODO: unit test this
-
-
 def _parse_and_validate(source: str):
     """
     Parse the given source into an ast, validate that is consists of a single function
@@ -163,21 +169,17 @@ def _parse_and_validate(source: str):
     if not isinstance(call_node, ast.Call):
         raise ScriptParseError(f"Expected a function call, instead got: {source}")
 
-    value = call_node.func
-    while isinstance(value, ast.Attribute):
-        value = value.value
-    if not isinstance(value, ast.Name):
-        raise ScriptParseError(
-            f"Invalid function reference: {ast.get_source_segment(source, value)}"
-        )
+    node = call_node.func
+    while isinstance(node, ast.Attribute):
+        node = node.value
+    if not isinstance(node, ast.Name):
+        raise ScriptParseError(f"Invalid function reference in: {source}")
 
     return call_node
 
 
 # TODO: unit test this
-
-
-def apply_substitutions(content: str, subs: List[Substitution]):
+def _apply_substitutions(content: str, subs: List[Substitution]):
     """
     Returns a copy of input with all of the substitutions applied
     """
@@ -192,3 +194,38 @@ def apply_substitutions(content: str, subs: List[Substitution]):
     segments.append(content[cursor:])
 
     return "".join(segments)
+
+
+# This pattern matches the sequence of chars from the begining of the string that are
+# *probably* a valid identifier
+IDENTIFIER_PATTERN = r"[^\s\!-\/\:-\@\[-\^\{-\~`]+"
+
+
+def _get_name_source_segment(source: str, node: ast.Name):
+    """
+    Before python 3.8 the ast module didn't allow for easily identifying the source
+    segment of a node, so this function provides this functionality specifically for
+    name nodes as needed here.
+
+    The fallback logic is specialised for name nodes which cannot span multiple lines
+    and must be valid identifiers. It is expected to be correct in all cases, and
+    performant in common cases.
+    """
+    if sys.version_info.minor >= 8:
+        return ast.get_source_segment(source, node)  # type: ignore
+
+    partial_result = (
+        re.split(r"(?:\r\n|\r|\n)", source)[node.lineno - 1]
+        .encode()[node.col_offset :]
+        .decode()
+    )
+
+    # The name probably extends to the first ascii char outside of [a-zA-Z\d_]
+    # regex will always match with valid arguments to this function
+    partial_result = re.match(IDENTIFIER_PATTERN, partial_result).group()  # type: ignore
+
+    # This bit is a nasty hack, but probably always gets skipped
+    while not partial_result.isidentifier() and partial_result:
+        partial_result = partial_result[:-1]
+
+    return partial_result
