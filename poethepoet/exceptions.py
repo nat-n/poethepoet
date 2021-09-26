@@ -5,6 +5,10 @@ class PoeException(RuntimeError):
         self.args = (msg, *args)
 
 
+class CyclicDependencyError(PoeException):
+    pass
+
+
 class ExecutionError(RuntimeError):
     def __init__(self, msg, *args):
         self.msg = msg

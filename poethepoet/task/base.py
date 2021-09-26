@@ -1,18 +1,23 @@
 import re
+import shlex
 import sys
 from typing import (
     Any,
     Dict,
-    Iterable,
+    Iterator,
     List,
     MutableMapping,
     Optional,
+    Sequence,
+    Set,
     Tuple,
     Type,
     TYPE_CHECKING,
     Union,
 )
+from .args import PoeTaskArgs
 from ..exceptions import PoeException
+from ..helpers import is_valid_env_var
 
 if TYPE_CHECKING:
     from ..context import RunContext
@@ -60,7 +65,16 @@ class PoeTask(metaclass=MetaPoeTask):
 
     __options__: Dict[str, Type] = {}
     __content_type__: Type = str
-    __base_options: Dict[str, Type] = {"env": dict, "executor": dict, "help": str}
+    __base_options: Dict[str, Union[Type, Tuple[Type, ...]]] = {
+        "args": (dict, list),
+        "capture_stdout": (str),
+        "deps": list,
+        "env": dict,
+        "envfile": str,
+        "executor": dict,
+        "help": str,
+        "uses": dict,
+    }
     __task_types: Dict[str, Type["PoeTask"]] = {}
 
     def __init__(
@@ -70,20 +84,40 @@ class PoeTask(metaclass=MetaPoeTask):
         options: Dict[str, Any],
         ui: "PoeUi",
         config: "PoeConfig",
+        invocation: Tuple[str, ...],
+        capture_stdout: bool = False,
     ):
         self.name = name
         self.content = content.strip() if isinstance(content, str) else content
-        self.options = options
+        if capture_stdout:
+            self.options = dict(options, capture_stdout=True)
+        else:
+            self.options = options
         self._ui = ui
         self._config = config
         self._is_windows = sys.platform == "win32"
+        self.invocation = invocation
 
     @classmethod
-    def from_config(cls, task_name: str, config: "PoeConfig", ui: "PoeUi") -> "PoeTask":
+    def from_config(
+        cls,
+        task_name: str,
+        config: "PoeConfig",
+        ui: "PoeUi",
+        invocation: Tuple[str, ...],
+        capture_stdout: Optional[bool] = None,
+    ) -> "PoeTask":
         task_def = config.tasks.get(task_name)
         if not task_def:
             raise PoeException(f"Cannot instantiate unknown task {task_name!r}")
-        return cls.from_def(task_def, task_name, config, ui)
+        return cls.from_def(
+            task_def,
+            task_name,
+            config,
+            ui,
+            invocation=invocation,
+            capture_stdout=capture_stdout,
+        )
 
     @classmethod
     def from_def(
@@ -92,70 +126,179 @@ class PoeTask(metaclass=MetaPoeTask):
         task_name: str,
         config: "PoeConfig",
         ui: "PoeUi",
+        invocation: Tuple[str, ...],
         array_item: Union[bool, str] = False,
+        capture_stdout: Optional[bool] = None,
     ) -> "PoeTask":
-        if array_item:
-            if isinstance(task_def, str):
-                task_type = (
+        task_type = cls.resolve_task_type(task_def, config, array_item)
+        if task_type is None:
+            # Something is wrong with this task_def
+            raise cls.Error(cls.validate_def(task_name, task_def, config))
+
+        options: Dict[str, Any] = {}
+        if capture_stdout is not None:
+            # Override config because we want to specifically capture the stdout of this
+            # task for internal use
+            options["capture_stdout"] = capture_stdout
+
+        if isinstance(task_def, (str, list)):
+            return cls.__task_types[task_type](
+                name=task_name,
+                content=task_def,
+                options=options,
+                ui=ui,
+                config=config,
+                invocation=invocation,
+            )
+
+        assert isinstance(task_def, dict)
+        options = dict(task_def, **options)
+        content = options.pop(task_type)
+        return cls.__task_types[task_type](
+            name=task_name,
+            content=content,
+            options=options,
+            ui=ui,
+            config=config,
+            invocation=invocation,
+        )
+
+    @classmethod
+    def resolve_task_type(
+        cls,
+        task_def: TaskDef,
+        config: "PoeConfig",
+        array_item: Union[bool, str] = False,
+    ) -> Optional[str]:
+        if isinstance(task_def, str):
+            if array_item:
+                return (
                     array_item
                     if isinstance(array_item, str)
                     else config.default_array_item_task_type
                 )
-                return cls.__task_types[task_type](
-                    name=task_name, content=task_def, options={}, ui=ui, config=config
-                )
-        else:
-            if isinstance(task_def, str):
-                return cls.__task_types[config.default_task_type](
-                    name=task_name, content=task_def, options={}, ui=ui, config=config
-                )
-        if isinstance(task_def, list):
-            return cls.__task_types[config.default_array_task_type](
-                name=task_name, content=task_def, options={}, ui=ui, config=config
-            )
+            else:
+                return config.default_task_type
 
-        assert isinstance(task_def, dict)
-        task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
-        if len(task_type_keys) == 1:
-            task_type_key = next(iter(task_type_keys))
-            options = dict(task_def)
-            content = options.pop(task_type_key)
-            return cls.__task_types[task_type_key](
-                name=task_name, content=content, options=options, ui=ui, config=config
-            )
+        elif isinstance(task_def, list):
+            return config.default_array_task_type
 
-        # Something is wrong with this task_def
-        raise cls.Error(cls.validate_def(task_name, task_def, config))
+        elif isinstance(task_def, dict):
+            task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
+            if len(task_type_keys) == 1:
+                return next(iter(task_type_keys))
+
+        return None
 
     def run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str] = tuple(),
         env: Optional[MutableMapping[str, str]] = None,
     ) -> int:
         """
         Run this task
         """
-        env = dict(env or {}, **self._config.global_env)
-        if self.options.get("env"):
-            env = dict(env, **self.options["env"])
-        return self._handle_run(context, extra_args, env)
+        return self._handle_run(context, extra_args, self._build_env(env, context))
+
+    def _build_env(
+        self, env: Optional[MutableMapping[str, str]], context: "RunContext",
+    ):
+        env = context.get_env(env or {})
+
+        # Get env vars from envfile referenced in global options
+        if self._config.global_envfile is not None:
+            env.update(context.get_env_file(self._config.global_envfile))
+
+        # Get env vars from global options
+        self._update_env(env, self._config.global_env)
+
+        # Get env vars from envfile referenced in task options
+        if self.options.get("envfile"):
+            env.update(context.get_env_file(self.options["envfile"]))
+
+        # Get env vars from task options
+        self._update_env(env, self.options.get("env", {}))
+
+        # Get env vars from dependencies
+        env.update(self.get_dep_values(context))
+
+        return env
+
+    @staticmethod
+    def _update_env(
+        env: Dict[str, str], extra_vars: Dict[str, Union[str, Dict[str, str]]]
+    ):
+        """
+        Update the given env with the given extra_vars. If a value in extra_vars is
+        indicated as `default` then only copy it over if that key is not already set on
+        env.
+        """
+        for key, value in extra_vars.items():
+            if isinstance(value, str):
+                env[key] = value
+            elif key not in env:
+                env[key] = value["default"]
+
+    def parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
+        args_def = self.options.get("args")
+        if args_def:
+            return PoeTaskArgs(args_def).parse(extra_args)
+        return None
 
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
         """
-        _handle_run must be implemented by a subclass and return a single executor result.
+        _handle_run must be implemented by a subclass and return a single executor
+        result.
         """
         raise NotImplementedError
 
+    def iter_upstream_tasks(self) -> Iterator[Tuple[str, "PoeTask"]]:
+        for task_ref in self.options.get("deps", tuple()):
+            yield ("", self._instantiate_dep(task_ref, capture_stdout=False))
+        for key, task_ref in self.options.get("uses", {}).items():
+            yield (key, self._instantiate_dep(task_ref, capture_stdout=True))
+
+    def get_upstream_invocations(self) -> Set[Tuple[str, ...]]:
+        """
+        Get identifiers (i.e. invocation tuples) for all upstream tasks
+        """
+        result = set()
+        for task_ref in self.options.get("deps", {}):
+            result.add(tuple(shlex.split(task_ref)))
+        for task_ref in self.options.get("uses", {}).values():
+            result.add(tuple(shlex.split(task_ref)))
+        return result
+
+    def get_dep_values(self, context: "RunContext") -> Dict[str, str]:
+        """
+        Get env vars from upstream tasks declared via the uses option
+        """
+        return {
+            var: context.captured_stdout[tuple(shlex.split(dep))]
+            for var, dep in self.options.get("uses", {}).items()
+        }
+
+    def has_deps(self) -> bool:
+        return bool(self.options.get("deps", False) or self.options.get("uses", False))
+
+    def _instantiate_dep(self, task_ref: str, capture_stdout: bool) -> "PoeTask":
+        invocation = tuple(shlex.split(task_ref))
+        return self.from_config(
+            invocation[0],
+            config=self._config,
+            ui=self._ui,
+            invocation=invocation,
+            capture_stdout=capture_stdout,
+        )
+
     @staticmethod
-    def _resolve_envvars(
-        content: str, context: "RunContext", env: MutableMapping[str, str]
-    ) -> str:
+    def _resolve_envvars(content: str, env: MutableMapping[str, str]) -> str:
         """
         Template in ${environmental} $variables from env as if we were in a shell
 
@@ -164,7 +307,6 @@ class PoeTask(metaclass=MetaPoeTask):
         intentionally very limited implementation of escaping semantics for the sake of
         usability.
         """
-        env = context.get_env(env)
         cursor = 0
         resolved_parts = []
         for match in _SHELL_VAR_PATTERN.finditer(content):
@@ -197,7 +339,6 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         Check the given task name and definition for validity and return a message
         describing the first encountered issue if any.
-        If raize is True then the issue is raised as an exception.
         """
         if not (task_name[0].isalpha() or task_name[0] == "_"):
             return (
@@ -211,47 +352,76 @@ class PoeTask(metaclass=MetaPoeTask):
             )
         elif isinstance(task_def, dict):
             task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
-            if len(task_type_keys) == 1:
-                task_type_key = next(iter(task_type_keys))
-                task_content = task_def[task_type_key]
-                task_type = cls.__task_types[task_type_key]
-                if not isinstance(task_content, task_type.__content_type__):
-                    return (
-                        f"Invalid task: {task_name!r}. {task_type} value must be a "
-                        f"{task_type.__content_type__}"
-                    )
-                else:
-                    for key in set(task_def) - {task_type_key}:
-                        expected_type = cls.__base_options.get(
-                            key, task_type.__options__.get(key)
-                        )
-                        if expected_type is None:
-                            return (
-                                f"Invalid task: {task_name!r}. Unrecognised option "
-                                f"{key!r} for task of type: {task_type_key}."
-                            )
-                        elif not isinstance(task_def[key], expected_type):
-                            return (
-                                f"Invalid task: {task_name!r}. Option {key!r} should "
-                                f"have a value of type {expected_type!r}"
-                            )
-                    else:
-                        if hasattr(task_type, "_validate_task_def"):
-                            task_type_issue = task_type._validate_task_def(
-                                task_name, task_def, config
-                            )
-                            if task_type_issue:
-                                return task_type_issue
-                if "\n" in task_def.get("help", ""):
-                    return (
-                        f"Invalid task: {task_name!r}. Help messages cannot contain "
-                        "line breaks"
-                    )
-            else:
+            if len(task_type_keys) != 1:
                 return (
                     f"Invalid task: {task_name!r}. Task definition must include exactly"
                     f" one task key from {set(cls.__task_types)!r}"
                 )
+            task_type_key = next(iter(task_type_keys))
+            task_content = task_def[task_type_key]
+            task_type = cls.__task_types[task_type_key]
+            if not isinstance(task_content, task_type.__content_type__):
+                return (
+                    f"Invalid task: {task_name!r}. {task_type} value must be a "
+                    f"{task_type.__content_type__}"
+                )
+            else:
+                for key in set(task_def) - {task_type_key}:
+                    expected_type = cls.__base_options.get(
+                        key, task_type.__options__.get(key)
+                    )
+                    if expected_type is None:
+                        return (
+                            f"Invalid task: {task_name!r}. Unrecognised option "
+                            f"{key!r} for task of type: {task_type_key}."
+                        )
+                    elif not isinstance(task_def[key], expected_type):
+                        return (
+                            f"Invalid task: {task_name!r}. Option {key!r} should "
+                            f"have a value of type {expected_type!r}"
+                        )
+                else:
+                    if hasattr(task_type, "_validate_task_def"):
+                        task_type_issue = task_type._validate_task_def(
+                            task_name, task_def, config
+                        )
+                        if task_type_issue:
+                            return task_type_issue
+
+            if "args" in task_def:
+                return PoeTaskArgs.validate_def(task_name, task_def["args"])
+
+            if "\n" in task_def.get("help", ""):
+                return (
+                    f"Invalid task: {task_name!r}. Help messages cannot contain "
+                    "line breaks"
+                )
+
+            all_task_names = set(config.tasks)
+
+            if "deps" in task_def:
+                for dep in task_def["deps"]:
+                    dep_task_name = dep.split(" ", 1)[0]
+                    if dep_task_name not in all_task_names:
+                        return (
+                            f"Invalid task: {task_name!r}. deps options contains "
+                            f"reference to unknown task: {dep_task_name!r}"
+                        )
+
+            if "uses" in task_def:
+                for key, dep in task_def["uses"].items():
+                    if not is_valid_env_var(key):
+                        return (
+                            f"Invalid task: {task_name!r} uses options contains invalid"
+                            f" key: {key!r}"
+                        )
+                    dep_task_name = dep.split(" ", 1)[0]
+                    if dep_task_name not in all_task_names:
+                        return (
+                            f"Invalid task: {task_name!r}. uses options contains "
+                            f"reference to unknown task: {dep_task_name!r}"
+                        )
+
         return None
 
     @classmethod
@@ -259,7 +429,7 @@ class PoeTask(metaclass=MetaPoeTask):
         cls, task_def_key: str, content_type: Optional[Type] = None
     ) -> bool:
         """
-        Checks whether the given key identified a known task type.
+        Checks whether the given key identifies a known task type.
         Optionally also check whether the given content_type matches the type of content
         for this tasks type.
         """

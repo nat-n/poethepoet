@@ -10,8 +10,8 @@ import shutil
 from subprocess import PIPE, Popen
 import sys
 from tempfile import TemporaryDirectory
-import tomlkit
-from typing import Any, List, Mapping, Optional
+import tomli
+from typing import Any, Dict, List, Mapping, Optional
 import venv
 import virtualenv
 
@@ -27,7 +27,7 @@ def is_windows():
 @pytest.fixture
 def pyproject():
     with PROJECT_TOML.open("r") as toml_file:
-        return tomlkit.parse(toml_file.read())
+        return tomli.load(toml_file)
 
 
 @pytest.fixture
@@ -55,6 +55,16 @@ def scripts_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "scripts_project")
 
 
+@pytest.fixture
+def low_verbosity_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "low_verbosity")
+
+
+@pytest.fixture
+def high_verbosity_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "high_verbosity")
+
+
 @pytest.fixture(scope="function")
 def temp_file(tmp_path):
     # not using NamedTemporaryFile here because it doesn't work on windows
@@ -75,7 +85,7 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
     shell_cmd_template = (
         'python -c "'
         "{coverage_setup}"
-        "import tomlkit;"
+        "import tomli;"
         "from poethepoet.app import PoeThePoet;"
         "from pathlib import Path;"
         r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
@@ -88,13 +98,14 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
         cwd: str = dummy_project_path,
         config: Optional[Mapping[str, Any]] = None,
         coverage: bool = not is_windows,
+        env: Dict[str, str] = None,
     ) -> str:
         if config is not None:
             config_path = tmp_path.joinpath("tmp_test_config_file")
             with config_path.open("w+") as config_file:
                 toml.dump(config, config_file)
                 config_file.seek(0)
-            config_arg = fr"tomlkit.parse(open(r\"{config_path}\", \"r\").read())"
+            config_arg = fr"tomli.load(open(r\"{config_path}\", \"r\"))"
         else:
             config_arg = "None"
 
@@ -106,7 +117,7 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
             output=fr"open(r\"{temp_file}\", \"w\")",
         )
 
-        env = dict(os.environ)
+        env = dict(os.environ, **(env or {}))
         if coverage:
             env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
 

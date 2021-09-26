@@ -1,7 +1,17 @@
 import signal
 from subprocess import Popen, PIPE
 import sys
-from typing import Any, Dict, MutableMapping, Optional, Sequence, Type, TYPE_CHECKING
+from typing import (
+    Any,
+    Dict,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)
 from ..exceptions import PoeException
 from ..virtualenv import Virtualenv
 
@@ -9,7 +19,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from ..context import RunContext
 
-# TODO: maybe invert the control so the executor is given a task to run
+# TODO: maybe invert the control so the executor is given a task to run?
 
 
 class MetaPoeExecutor(type):
@@ -38,32 +48,38 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
     def __init__(
         self,
+        invocation: Tuple[str, ...],
         context: "RunContext",
         options: MutableMapping[str, str],
         env: MutableMapping[str, str],
         working_dir: Optional["Path"] = None,
         dry: bool = False,
+        capture_stdout: Union[str, bool] = False,
     ):
+        self.invocation = invocation
         self.context = context
         self.options = options
         self.working_dir = working_dir
         self.env = env
         self.dry = dry
+        self.capture_stdout = capture_stdout
 
     @classmethod
     def get(
         cls,
+        invocation: Tuple[str, ...],
         context: "RunContext",
         env: MutableMapping[str, str],
         working_dir: Optional["Path"] = None,
         dry: bool = False,
         executor_config: Optional[Dict[str, str]] = None,
+        capture_stdout: Union[str, bool] = False,
     ) -> "PoeExecutor":
         """"""
         # use task specific executor config or fallback to global
         options = executor_config or context.config.executor
         return cls._resolve_implementation(context, executor_config)(
-            context, options, env, working_dir, dry
+            invocation, context, options, env, working_dir, dry, capture_stdout
         )
 
     @classmethod
@@ -75,13 +91,14 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         by making some reasonable assumptions based on visible features of the
         environment
         """
+        config_executor_type = context.executor_type
         if executor_config:
             if executor_config["type"] not in cls.__executor_types:
                 raise PoeException(
                     f"Cannot instantiate unknown executor {executor_config['type']!r}"
                 )
             return cls.__executor_types[executor_config["type"]]
-        elif context.config.executor["type"] == "auto":
+        elif config_executor_type == "auto":
             if "poetry" in context.config.project["tool"]:
                 # Looks like this is a poetry project!
                 return cls.__executor_types["poetry"]
@@ -92,12 +109,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             # Fallback to not using any particular environment
             return cls.__executor_types["simple"]
         else:
-            if context.config.executor["type"] not in cls.__executor_types:
+            if config_executor_type not in cls.__executor_types:
                 raise PoeException(
-                    f"Cannot instantiate unknown executor"
-                    + repr(context.config.executor["type"])
+                    f"Cannot instantiate unknown executor" + repr(config_executor_type)
                 )
-            return cls.__executor_types[context.config.executor["type"]]
+            return cls.__executor_types[config_executor_type]
 
     def execute(self, cmd: Sequence[str], input: Optional[bytes] = None,) -> int:
         raise NotImplementedError
@@ -116,6 +132,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         popen_kwargs["env"] = self.env if env is None else env
         if input is not None:
             popen_kwargs["stdin"] = PIPE
+        if self.capture_stdout:
+            if isinstance(self.capture_stdout, str):
+                popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
+            else:
+                popen_kwargs["stdout"] = PIPE
         if self.working_dir is not None:
             popen_kwargs["cwd"] = self.working_dir
 
@@ -131,7 +152,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         old_signal_handler = signal.signal(signal.SIGINT, handle_signal)
 
         # send data to the subprocess and wait for it to finish
-        proc.communicate(input)
+        (captured_stdout, _) = proc.communicate(input)
+
+        if self.capture_stdout == True:
+            self.context.captured_stdout[self.invocation] = captured_stdout.decode()
 
         # restore signal handler
         signal.signal(signal.SIGINT, old_signal_handler)

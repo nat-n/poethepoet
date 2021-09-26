@@ -1,10 +1,11 @@
 from typing import (
     Any,
     Dict,
-    Iterable,
     List,
     MutableMapping,
     Optional,
+    Sequence,
+    Tuple,
     Type,
     TYPE_CHECKING,
     Union,
@@ -37,23 +38,29 @@ class SequenceTask(PoeTask):
         options: Dict[str, Any],
         ui: "PoeUi",
         config: "PoeConfig",
+        invocation: Tuple[str, ...],
+        capture_stdout: bool = False,
     ):
-        super().__init__(name, content, options, ui, config)
+        assert capture_stdout == False
+        super().__init__(name, content, options, ui, config, invocation)
+
         self.subtasks = [
             self.from_def(
                 task_def=item,
-                task_name=item if isinstance(item, str) else f"{name}[{index}]",
+                task_name=task_name,
                 config=config,
+                invocation=(task_name,),
                 ui=ui,
                 array_item=self.options.get("default_item_type", True),
             )
             for index, item in enumerate(self.content)
+            for task_name in (item if isinstance(item, str) else f"{name}[{index}]",)
         ]
 
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
         if any(arg.strip() for arg in extra_args):

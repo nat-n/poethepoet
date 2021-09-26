@@ -3,8 +3,8 @@ import re
 import shlex
 from typing import (
     Dict,
-    Iterable,
     MutableMapping,
+    Sequence,
     Type,
     TYPE_CHECKING,
 )
@@ -31,12 +31,26 @@ class CmdTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
-        cmd = (*self._resolve_args(context, env), *extra_args)
+        env, has_named_args = self._add_named_args_to_env(extra_args, env)
+        if has_named_args:
+            # If named arguments are defined then it doesn't make sense to pass extra
+            # args to the command, because they've already been parsed
+            cmd = self._resolve_args(context, env)
+        else:
+            cmd = (*self._resolve_args(context, env), *extra_args)
         self._print_action(" ".join(cmd), context.dry)
-        return context.get_executor(env, self.options.get("executor")).execute(cmd)
+        return context.get_executor(self.invocation, env, self.options).execute(cmd)
+
+    def _add_named_args_to_env(
+        self, extra_args: Sequence[str], env: MutableMapping[str, str]
+    ):
+        named_args = self.parse_named_args(extra_args)
+        if named_args is None:
+            return env, False
+        return dict(env, **named_args), bool(named_args)
 
     def _resolve_args(
         self, context: "RunContext", env: MutableMapping[str, str],
@@ -46,7 +60,7 @@ class CmdTask(PoeTask):
             cmd_tokens = (
                 (compat_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for compat_token in shlex.split(
-                    self._resolve_envvars(self.content, context, env),
+                    self._resolve_envvars(self.content, env),
                     posix=False,
                     comments=True,
                 )
@@ -56,12 +70,12 @@ class CmdTask(PoeTask):
                 (posix_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for (posix_token, compat_token) in zip(
                     shlex.split(
-                        self._resolve_envvars(self.content, context, env),
+                        self._resolve_envvars(self.content, env),
                         posix=True,
                         comments=True,
                     ),
                     shlex.split(
-                        self._resolve_envvars(self.content, context, env),
+                        self._resolve_envvars(self.content, env),
                         posix=False,
                         comments=True,
                     ),

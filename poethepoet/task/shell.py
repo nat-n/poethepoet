@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-from typing import Dict, Iterable, MutableMapping, Type, TYPE_CHECKING
+from typing import Dict, MutableMapping, Sequence, Type, TYPE_CHECKING
 from ..exceptions import PoeException
 from .base import PoeTask
 
@@ -23,10 +23,12 @@ class ShellTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
-        if any(arg.strip() for arg in extra_args):
+        env, has_named_args = self._add_named_args_to_env(extra_args, env)
+
+        if not has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
 
         if self._is_windows:
@@ -36,9 +38,17 @@ class ShellTask(PoeTask):
             shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
 
         self._print_action(self.content, context.dry)
-        return context.get_executor(env, self.options.get("executor")).execute(
+        return context.get_executor(self.invocation, env, self.options).execute(
             shell, input=self.content.encode()
         )
+
+    def _add_named_args_to_env(
+        self, extra_args: Sequence[str], env: MutableMapping[str, str]
+    ):
+        named_args = self.parse_named_args(extra_args)
+        if named_args is None:
+            return env, False
+        return dict(env, **named_args), bool(named_args)
 
     @staticmethod
     def _find_posix_shell_on_windows():

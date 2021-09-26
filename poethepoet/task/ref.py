@@ -1,9 +1,9 @@
 from typing import (
     Any,
     Dict,
-    Iterable,
     MutableMapping,
     Optional,
+    Sequence,
     Type,
     TYPE_CHECKING,
 )
@@ -29,13 +29,15 @@ class RefTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
+        extra_args: Sequence[str],
         env: MutableMapping[str, str],
     ) -> int:
         """
         Lookup and delegate to the referenced task
         """
-        task = self.from_config(self.content, self._config, ui=self._ui)
+        task = self.from_config(
+            self.content, self._config, ui=self._ui, invocation=(self.content,)
+        )
         return task.run(context=context, extra_args=extra_args, env=env,)
 
     @classmethod

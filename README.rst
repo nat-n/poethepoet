@@ -34,7 +34,9 @@ Features
 
 ✅  Tasks can be defined as a sequence of other tasks
 
-✅  Can also be configured to execute tasks with any virtualenv (not just poetry)
+✅  Works with .env files
+
+✅  Can also be configured to execute tasks with any virtualenv or none (not just poetry)
 
 
 Installation
@@ -267,9 +269,92 @@ You can specify arbitrary environment variables to be set for a task by providin
 
     [tool.poe.tasks]
     serve.script = "myapp:run"
-    serve.env = { PORT = 9001 }
+    serve.env = { PORT = "9001" }
 
 Notice this example uses deep keys which can be more convenient but aren't as well supported by some toml implementations.
+
+The above example can be modified to only set the `PORT` variable if it is not already set by replacing the last line with the following:
+
+  .. code-block:: toml
+
+    serve.env.PORT.default "9001"
+
+
+You can also specify an env file (with bashlike syntax) to load per task like so:
+
+  .. code-block:: bash
+
+    # .env
+    STAGE=dev
+    PASSWORD='!@#$%^&*('
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+    serve.script = "myapp:run"
+    serve.envfile = ".env"
+
+Declaring CLI options (experimental)
+------------------------------------
+
+By default extra CLI arguments are appended to the end of a cmd task, or exposed as
+sys.argv in a script task. Alternatively it is possible to define CLI options that a
+task should accept, which will be documented in the help for that task, and exposed to
+the task in a way the makes the most sense for that task type.
+
+Arguments for cmd and shell tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For cmd and shell tasks the values are exposed to the task as environment variables. For example given the following configuration:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.passby]
+  shell = """
+  echo "hello $planet";
+  echo "goodbye $planet";
+  """
+  help = "Pass by a planet!"
+    [tool.poe.tasks.passby.args.planet] # the key of the arg is used as the name of the variable that the given value will be exposed as
+    help = "Name of the planet to pass"
+    default = "earth"
+    required = false                    # by default all args are optional and default to ""
+    options = ["-p", "--planet"]        # options are passed to ArgumentParser.add_argument as *args, if not given the the name value, i.e. [f"--{name}"]
+
+the resulting task can be run like:
+
+.. code-block:: bash
+
+  poe passby --planet mars
+
+Arguments for script tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Arguments can be defined for script tasks in the same way, but how they are exposed to
+the underlying python function depends on how the script is defined.
+
+In the following example, since not parenthesis are included for the referenced function,
+all provided args will be passed to the function as kwargs:
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  build = { script = "project.util:build", args = ["dest", "version"]
+
+Here the build method will be passed the two argument values (if provided) from the
+command lines as kwargs.
+
+Note that in this example, args are given as a list of strings. This abbreviated
+form is equivalent to just providing a name for each argument and keeping the default
+values for all other configuration (including empty string for the help message).
+
+If there's a need to take control of how values are passed to the function, then this
+is also possible as demonstrated in the following example:
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  build = { script = "project.util:build(dest, build_version=version)", args = ["dest", "version"]
 
 Project-wide configuration options
 ==================================
@@ -284,6 +369,49 @@ You can configure environment variables to be set for all poe tasks in the pypro
   [tool.poe.env]
   VAR1 = "FOO"
   VAR2 = "BAR"
+
+As for the task level option, you can indicated that a variable should only be set if not already set like so:
+
+.. code-block:: toml
+
+  [tool.poe.env]
+  VAR1.default = "FOO"
+
+You can also specify an env file (with bashlike syntax) to load for all tasks like so:
+
+  .. code-block:: bash
+
+    # .env
+    STAGE=dev
+    PASSWORD='!@#$%^&*('
+
+  .. code-block:: toml
+
+    [tool.poe]
+    envfile = ".env"
+
+Default command verbosity
+-------------------------
+
+You can alter the verbosity level for poe commands by passing :bash:`--quiet` /
+:bash:`-q` (which decreases verbosity) or :bash:`--verbose` / :bash:`-v` (which
+increases verbosity) on the CLI.
+
+If you want to change the default verbosity level for all commands, you can use
+the :toml:`tool.poe.verbose` option in pyproject.toml like so:
+
+.. code-block:: toml
+
+  [tool.poe]
+  verbosity = -1
+
+:toml:`-1` is the quietest and :toml:`1` is the most verbose. :toml:`0` is the
+default.
+
+Note that the command line arguments are incremental: :bash:`-q` subtracts one
+from the default verbosity, and :bash:`-v` adds one. So setting the default
+verbosity to :toml:`-1` and passing :bash:`-v -v` on the command line is
+equivalent to setting the verbosity to :toml:`0` and just passing :bash:`-v`.
 
 Run poe from anywhere
 ---------------------
@@ -359,8 +487,6 @@ Also check out the `CONTRIBUTING.MD <https://github.com/nat-n/poethepoet/blob/ma
 
 TODO
 ====
-
-☐ support declaring specific arguments for a task `#6 <https://github.com/nat-n/poethepoet/issues/6>`_
 
 ☐ support conditional execution (a bit like make targets) `#12 <https://github.com/nat-n/poethepoet/issues/12>`_
 
