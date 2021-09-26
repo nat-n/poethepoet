@@ -1,11 +1,16 @@
+"""
+Helper functions for parsing python code, as required by ScriptTask
+"""
+
 import ast
 from itertools import chain
 import re
 import sys
-from typing import Any, Container, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Container, Iterator, List, Tuple
 from ..exceptions import ScriptParseError
 
-_BUILTINS_WHITELIST = [
+
+_BUILTINS_WHITELIST = {
     "abs",
     "all",
     "any",
@@ -56,53 +61,21 @@ _BUILTINS_WHITELIST = [
     "tuple",
     "type",
     "zip",
-]
-
-ARGS_PREFIX = "args."
+}
 
 
 Substitution = Tuple[Tuple[int, int], str]
 
 
-def format_args_class(args: Optional[Dict[str, Any]]) -> str:
-    if args is None:
-        return ""
-    return (
-        "class args:\n"
-        + "\n".join(f"    {name} = {value!r}" for name, value in args.items())
-        + "\n"
-    )
-
-
-def parse_script_content(
-    content: str, args: Optional[Dict[str, Any]]
-) -> Union[Tuple[str, str], Tuple[None, None]]:
-    """
-    Returns the module to load, and the function call to execute.
-
-    Will raise an exception if the function call contains invalid syntax or references
-    variables that are not in scope.
-    """
-    try:
-        target_module, target_ref = content.split(":", 1)
-    except ValueError:
-        return None, None
-
-    if target_ref.isidentifier():
-        if args:
-            return target_module, f"{target_ref}(**({args}))"
-        return target_module, f"{target_ref}()"
-
-    return target_module, resolve_function_call(target_ref, set(args or tuple()))
-
-
-def resolve_function_call(source: str, arguments: Container[str]):
+def resolve_function_call(
+    source: str, arguments: Container[str], args_prefix: str = "args."
+):
     """
     Validate function call and substitute references to arguments with their namespaced
     counterparts (e.g. `my_arg` => `args.my_arg`).
     """
 
-    call_node = _parse_and_validate(source)
+    call_node = parse_and_validate(source)
 
     substitutions: List[Substitution] = []
 
@@ -132,20 +105,20 @@ def resolve_function_call(source: str, arguments: Container[str]):
                         node.col_offset,
                         node.col_offset + len(_get_name_source_segment(source, node)),
                     ),
-                    ARGS_PREFIX + node.id,
+                    args_prefix + node.id,
                 )
             )
         else:
             raise ScriptParseError(
-                f"Invalid variable reference in script: {_get_name_source_segment(source, node)}"
+                "Invalid variable reference in script: "
+                + _get_name_source_segment(source, node)
             )
 
-    # Prefix references to arguments with ARGS_PREFIX
+    # Prefix references to arguments with args_prefix
     return _apply_substitutions(source, substitutions)
 
 
-# TODO: unit test this
-def _parse_and_validate(source: str):
+def parse_and_validate(source: str):
     """
     Parse the given source into an ast, validate that is consists of a single function
     call, and return the Call node.
@@ -178,10 +151,10 @@ def _parse_and_validate(source: str):
     return call_node
 
 
-# TODO: unit test this
 def _apply_substitutions(content: str, subs: List[Substitution]):
     """
-    Returns a copy of input with all of the substitutions applied
+    Returns a copy of content with all of the substitutions applied.
+    Uses a single pass for efficiency.
     """
     cursor = 0
     segments: List[str] = []
