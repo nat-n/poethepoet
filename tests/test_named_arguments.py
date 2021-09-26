@@ -8,32 +8,30 @@ STILL TO TEST:
 """
 
 
-def test_automatic_kwargs(run_poe_subproc, named_args_project_path):
-    result = run_poe_subproc("greet", cwd=named_args_project_path)
+def test_automatic_kwargs(run_poe_subproc):
+    result = run_poe_subproc("greet", project="named_args")
     assert result.capture == "Poe => greet\n"
     assert result.stdout == "I'm sorry Dave\n"
     assert result.stderr == ""
 
 
-def test_script_task_with_args(run_poe_subproc, named_args_project_path):
+def test_script_task_with_args(run_poe_subproc):
     result = run_poe_subproc(
-        "greet-passed-args",
-        "--greeting=hello",
-        "--user=nat",
-        cwd=named_args_project_path,
+        "greet-passed-args", "--greeting=hello", "--user=nat", project="named_args",
     )
     assert result.capture == f"Poe => greet-passed-args --greeting=hello --user=nat\n"
     assert result.stdout == "hello nat default_value None\n"
     assert result.stderr == ""
 
 
-def test_script_task_with_args_optional(run_poe_subproc, named_args_project_path):
+def test_script_task_with_args_optional(run_poe_subproc, projects):
+    named_args_project_path = projects["named_args"]
     result = run_poe_subproc(
         "greet-passed-args",
         "--greeting=hello",
         "--user=nat",
         f"--optional=welcome to {named_args_project_path}",
-        cwd=named_args_project_path,
+        project="named_args",
     )
     assert result.capture == (
         f"Poe => greet-passed-args --greeting=hello --user=nat --optional=welcome "
@@ -46,17 +44,15 @@ def test_script_task_with_args_optional(run_poe_subproc, named_args_project_path
     assert result.stderr == ""
 
 
-def test_script_task_default_arg(run_poe_subproc, named_args_project_path):
-    result = run_poe_subproc("greet-full-args", cwd=named_args_project_path)
+def test_script_task_default_arg(run_poe_subproc):
+    result = run_poe_subproc("greet-full-args", project="named_args")
     assert result.capture == f"Poe => greet-full-args\n"
     # hi is the default value for --greeting
     assert result.stdout == "hi None None None\n"
     assert result.stderr == ""
 
 
-def test_script_task_include_boolean_flag_and_numeric_args(
-    run_poe_subproc, named_args_project_path
-):
+def test_script_task_include_boolean_flag_and_numeric_args(run_poe_subproc):
     result = run_poe_subproc(
         "greet-full-args",
         "--greeting=hello",
@@ -64,7 +60,7 @@ def test_script_task_include_boolean_flag_and_numeric_args(
         "--upper",
         "--age=42",
         "--height=1.23",
-        cwd=named_args_project_path,
+        project="named_args",
     )
     assert result.capture == (
         "Poe => greet-full-args --greeting=hello --user=nat --upper --age=42 "
@@ -74,49 +70,43 @@ def test_script_task_include_boolean_flag_and_numeric_args(
     assert result.stderr == ""
 
 
-def test_wrong_args_passed(run_poe_subproc, named_args_project_path):
+def test_wrong_args_passed(run_poe_subproc):
     base_error = (
         "usage: poe greet-full-args [--greeting GREETING] [--user USER] [--upper]\n"
         "                           [--age AGE] [--height HEIGHT]\n"
         "poe greet-full-args: error:"
     )
 
-    result = run_poe_subproc(
-        "greet-full-args", "--age=lol", cwd=named_args_project_path,
-    )
+    result = run_poe_subproc("greet-full-args", "--age=lol", project="named_args")
     assert result.capture == ""
     assert result.stdout == ""
     assert result.stderr == (f"{base_error} argument --age: invalid int value: 'lol'\n")
 
-    result = run_poe_subproc("greet-full-args", "--age", cwd=named_args_project_path,)
+    result = run_poe_subproc("greet-full-args", "--age", project="named_args")
     assert result.capture == ""
     assert result.stdout == ""
     assert result.stderr == (f"{base_error} argument --age: expected one argument\n")
 
-    result = run_poe_subproc(
-        "greet-full-args", "--age 3 2 1", cwd=named_args_project_path,
-    )
+    result = run_poe_subproc("greet-full-args", "--age 3 2 1", project="named_args")
     assert result.capture == ""
     assert result.stdout == ""
     assert result.stderr == (f"{base_error} unrecognized arguments: --age 3 2 1\n")
 
-    result = run_poe_subproc(
-        "greet-full-args", "--potatoe", cwd=named_args_project_path,
-    )
+    result = run_poe_subproc("greet-full-args", "--potatoe", project="named_args")
     assert result.capture == ""
     assert result.stdout == ""
     assert result.stderr == (f"{base_error} unrecognized arguments: --potatoe\n")
 
 
-def test_required_args(run_poe_subproc, named_args_project_path):
+def test_required_args(run_poe_subproc):
     result = run_poe_subproc(
-        "greet-strict", "--greeting=yo", "--name", "dude", cwd=named_args_project_path,
+        "greet-strict", "--greeting=yo", "--name", "dude", project="named_args"
     )
     assert result.capture == "Poe => greet-strict --greeting=yo --name dude\n"
     assert result.stdout == "yo dude\n"
     assert result.stderr == ""
 
-    result = run_poe_subproc("greet-strict", cwd=named_args_project_path,)
+    result = run_poe_subproc("greet-strict", project="named_args")
     assert result.capture == ""
     assert result.stdout == ""
     assert result.stderr == (

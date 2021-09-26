@@ -29,8 +29,10 @@ script = "pkg:greet(greeting, user, upper=upper, fvar=height, ivar=age)"
 
 [tool.poe.tasks.greet-strict]
 script = "pkg:greet(greeting, user=name)"
+
   [tool.poe.tasks.greet-strict.args.greeting]
   default = "doesn't matter"
   required = true
+
   [tool.poe.tasks.greet-strict.args.name]
   required = true
