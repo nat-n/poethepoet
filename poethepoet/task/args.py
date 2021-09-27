@@ -79,8 +79,10 @@ class PoeTaskArgs:
     ) -> List[Tuple[Tuple[str, ...], str]]:
         if args_def is None:
             return []
-        args = cls._normalize_args_def(args_def)
-        return [(arg["options"], arg.get("help", "")) for arg in args]
+        return [
+            (arg["options"], arg.get("help", ""))
+            for arg in cls._normalize_args_def(args_def)
+        ]
 
     @classmethod
     def _validate_type(
@@ -88,8 +90,9 @@ class PoeTaskArgs:
     ) -> Optional[str]:
         if "type" in params and params["type"] not in arg_types:
             return (
-                f"{params['type']!r} is not a valid type for arg {arg_name!r} of task {task_name!r}. "
-                "Choose one of {"
+                f"{params['type']!r} is not a valid type for arg {arg_name!r} of task "
+                f"{task_name!r}. Choose one of "
+                "{"
                 f'{" ".join(sorted(str_type for str_type in arg_types.keys()))}'
                 "}"
             )

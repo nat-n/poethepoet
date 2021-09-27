@@ -4,10 +4,14 @@ import tempfile
 
 
 def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
+    # Also tests passing of extra_args to sys.argv
     result = run_poe_subproc(
-        "greet", "nat,", r"welcome to " + esc_prefix + "${POE_ROOT}", project="scripts",
+        "echo-args",
+        "nat,",
+        r"welcome to " + esc_prefix + "${POE_ROOT}",
+        project="scripts",
     )
-    assert result.capture == f"Poe => greet nat, welcome to {projects['scripts']}\n"
+    assert result.capture == f"Poe => echo-args nat, welcome to {projects['scripts']}\n"
     assert result.stdout == f"hello nat, welcome to {projects['scripts']}\n"
     assert result.stderr == ""
 

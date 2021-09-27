@@ -97,7 +97,7 @@ class ScriptTask(PoeTask):
 
     @staticmethod
     def format_args_class(
-        named_args: Optional[Dict[str, Any]], classname: str = "args"
+        named_args: Optional[Dict[str, Any]], classname: str = "__args"
     ) -> str:
         """
         Generates source for a python class with the entries of the given dictionary

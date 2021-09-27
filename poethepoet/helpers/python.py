@@ -68,7 +68,7 @@ Substitution = Tuple[Tuple[int, int], str]
 
 
 def resolve_function_call(
-    source: str, arguments: Container[str], args_prefix: str = "args."
+    source: str, arguments: Container[str], args_prefix: str = "__args."
 ):
     """
     Validate function call and substitute references to arguments with their namespaced
@@ -100,13 +100,7 @@ def resolve_function_call(
             continue
         if node.id in arguments:
             substitutions.append(
-                (
-                    (
-                        node.col_offset,
-                        node.col_offset + len(_get_name_source_segment(source, node)),
-                    ),
-                    args_prefix + node.id,
-                )
+                (_get_name_node_abs_range(source, node), args_prefix + node.id)
             )
         else:
             raise ScriptParseError(
@@ -172,6 +166,27 @@ def _apply_substitutions(content: str, subs: List[Substitution]):
 # This pattern matches the sequence of chars from the begining of the string that are
 # *probably* a valid identifier
 IDENTIFIER_PATTERN = r"[^\s\!-\/\:-\@\[-\^\{-\~`]+"
+
+
+def _get_name_node_abs_range(source: str, node: ast.Name):
+    """
+    Find the absolute start and end offsets of the given name node in the source.
+    """
+
+    source_lines = re.findall(r".*?(?:\r\n|\r|\n)", source + "\n")
+    prev_lines_offset = sum(len(line) for line in source_lines[: node.lineno - 1])
+    own_line_offset = len(
+        source_lines[node.lineno - 1].encode()[: node.col_offset].decode()
+    )
+    total_start_chars_offset = prev_lines_offset + own_line_offset
+
+    name_content = re.match(  # type: ignore
+        IDENTIFIER_PATTERN, source[total_start_chars_offset:]
+    ).group()
+    while not name_content.isidentifier() and name_content:
+        name_content = name_content[:-1]
+
+    return (total_start_chars_offset, total_start_chars_offset + len(name_content))
 
 
 def _get_name_source_segment(source: str, node: ast.Name):
