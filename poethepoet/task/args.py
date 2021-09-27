@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 ArgParams = Dict[str, Any]
 ArgsDef = Union[List[str], List[ArgParams], Dict[str, ArgParams]]
+
 arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "default": (str, int, float, bool),
     "help": str,
@@ -25,7 +26,6 @@ arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "required": bool,
     "type": str,
 }
-
 arg_types: Dict[str, Type] = {
     "string": str,
     "float": float,
