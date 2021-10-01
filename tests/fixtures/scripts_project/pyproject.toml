@@ -5,7 +5,7 @@ description = "scripts-project"
 authors = ["Nat Noordanus <n@natn.me>"]
 
 packages = [
-  { include = "scripts_pkg" }
+  { include = "pkg" }
 ]
 
 [tool.poe]
@@ -13,10 +13,65 @@ default_task_type = "script"
 default_array_item_task_type = "cmd"
 
 [tool.poe.tasks]
-greet = "scripts_pkg:main"
-
 # Interpret subtasks as cmd instead of ref
 composite_task = ["echo Hello", "echo World!"]
+
+# test_setting_default_task_type
+echo-args = "pkg:echo_args"
+
+static-args-test = """
+  pkg:describe_args(
+    'pat a cake', 1, 1.2, False, True,
+    ..., hex(99), chr(55), next(zip(['first'], ({'second': "lol"}).items())), bool(1),
+    **({"spread": set((1,2,3,2,1))}),
+    thing="stuff", data1=b'stuff', data2=bytes((66,67,68)), eight=(int('8'), 8.0, 8),
+  )
+"""
+
+call_attrs = "pkg:Scripts.Deep.fun(0)"
+
+greet = "pkg:greet"
+
+  [tool.poe.tasks.greet-passed-args]
+  # weird formatting is intentional
+  script = """
+    pkg:greet(
+      greeting, user,
+      dêƒäült='👋', optional=optional,
+      upper=upper)"""
+  args = ["greeting", "user", "optional", "upper"]
+
+  [tool.poe.tasks.greet-full-args]
+  script = "pkg:greet(greeting, user, upper=upper, fvar=height, ivar=age)"
+
+    [tool.poe.tasks.greet-full-args.args.greeting]
+    options = ["--greeting", "-g"]
+    type = "string"
+    default = "hi"
+
+    [tool.poe.tasks.greet-full-args.args.user]
+    # defaults to string if no type  given
+
+    [tool.poe.tasks.greet-full-args.args.upper]
+    type = "boolean"
+
+    [tool.poe.tasks.greet-full-args.args.age]
+    type = "integer"
+
+    [tool.poe.tasks.greet-full-args.args.height]
+    type = "float"
+    help = "The user's height in meters"
+
+  [tool.poe.tasks.greet-strict]
+  script = "pkg:greet(greeting, user=name)"
+
+    [tool.poe.tasks.greet-strict.args.greeting]
+    default = "doesn't matter"
+    required = true
+
+    [tool.poe.tasks.greet-strict.args.name]
+    required = true
+
 
 [build-system]
 requires = ["poetry>=0.12"]

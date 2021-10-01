@@ -6,6 +6,7 @@ from pathlib import Path
 from poethepoet.app import PoeThePoet
 from poethepoet.virtualenv import Virtualenv
 import pytest
+import re
 import shutil
 from subprocess import PIPE, Popen
 import sys
@@ -31,33 +32,20 @@ def pyproject():
 
 
 @pytest.fixture
+def projects():
+    """
+    General purpose provider of paths to test projects with the conventional layout
+    """
+    base_path = PROJECT_ROOT / "tests" / "fixtures"
+    return {
+        re.match(r"^([_\w]+)_project", path.name).groups()[0]: path.resolve()
+        for path in base_path.glob("*_project")
+    }
+
+
+@pytest.fixture
 def poe_project_path():
     return PROJECT_ROOT
-
-
-@pytest.fixture
-def dummy_project_path():
-    return PROJECT_ROOT.joinpath("tests", "fixtures", "dummy_project")
-
-
-@pytest.fixture
-def named_args_project_path():
-    return PROJECT_ROOT.joinpath("tests", "fixtures", "named_args_project")
-
-
-@pytest.fixture
-def venv_project_path():
-    return PROJECT_ROOT.joinpath("tests", "fixtures", "venv_project")
-
-
-@pytest.fixture
-def simple_project_path():
-    return PROJECT_ROOT.joinpath("tests", "fixtures", "simple_project")
-
-
-@pytest.fixture
-def scripts_project_path():
-    return PROJECT_ROOT.joinpath("tests", "fixtures", "scripts_project")
 
 
 @pytest.fixture(scope="function")
@@ -68,11 +56,23 @@ def temp_file(tmp_path):
     yield tmpfilepath
 
 
-PoeRunResult = namedtuple("PoeRunResult", ("code", "capture", "stdout", "stderr"))
+class PoeRunResult(
+    namedtuple("PoeRunResult", ("code", "path", "capture", "stdout", "stderr"))
+):
+    def __str__(self):
+        return (
+            "PoeRunResult(\n"
+            f"  code={self.code!r},\n"
+            f"  path={self.path},\n"
+            f"  capture=`{self.capture}`,\n"
+            f"  stdout=`{self.stdout}`,\n"
+            f"  stderr=`{self.stderr}`,\n"
+            ")"
+        )
 
 
 @pytest.fixture(scope="function")
-def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
+def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     coverage_setup = (
         "from coverage import Coverage;"
         fr'Coverage(data_file=r\"{PROJECT_ROOT.joinpath(".coverage")}\").start();'
@@ -90,11 +90,13 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
 
     def run_poe_subproc(
         *run_args: str,
-        cwd: str = dummy_project_path,
+        cwd: str = projects["example"],
         config: Optional[Mapping[str, Any]] = None,
         coverage: bool = not is_windows,
         env: Dict[str, str] = None,
-    ) -> str:
+        project: Optional[str] = None,
+    ) -> PoeRunResult:
+        cwd = projects.get(project, cwd)
         if config is not None:
             config_path = tmp_path.joinpath("tmp_test_config_file")
             with config_path.open("w+") as config_file:
@@ -124,6 +126,7 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
 
         result = PoeRunResult(
             code=poeproc.returncode,
+            path=cwd,
             capture=captured_output,
             stdout=task_out.decode().replace("\r\n", "\n"),
             stderr=task_err.decode().replace("\r\n", "\n"),
@@ -135,17 +138,19 @@ def run_poe_subproc(dummy_project_path, temp_file, tmp_path, is_windows):
 
 
 @pytest.fixture(scope="function")
-def run_poe(capsys, dummy_project_path):
+def run_poe(capsys, projects):
     def run_poe(
         *run_args: str,
-        cwd: str = dummy_project_path,
+        cwd: str = projects["example"],
         config: Optional[Mapping[str, Any]] = None,
-    ) -> str:
+        project: Optional[str] = None,
+    ) -> PoeRunResult:
+        cwd = projects.get(project, cwd)
         output_capture = StringIO()
         poe = PoeThePoet(cwd=cwd, config=config, output=output_capture)
         result = poe(run_args)
         output_capture.seek(0)
-        return PoeRunResult(result, output_capture.read(), *capsys.readouterr())
+        return PoeRunResult(result, cwd, output_capture.read(), *capsys.readouterr())
 
     return run_poe
 
@@ -161,12 +166,14 @@ def esc_prefix(is_windows):
 
 
 @pytest.fixture(scope="function")
-def run_poe_main(capsys, dummy_project_path):
+def run_poe_main(capsys, projects):
     def run_poe_main(
         *cli_args: str,
-        cwd: str = dummy_project_path,
+        cwd: str = projects["example"],
         config: Optional[Mapping[str, Any]] = None,
-    ) -> str:
+        project: Optional[str] = None,
+    ) -> PoeRunResult:
+        cwd = projects.get(project, cwd)
         from poethepoet import main
 
         prev_cwd = os.getcwd()
@@ -174,7 +181,7 @@ def run_poe_main(capsys, dummy_project_path):
         sys.argv = ("poe", *cli_args)
         result = main()
         os.chdir(prev_cwd)
-        return PoeRunResult(result, "", *capsys.readouterr())
+        return PoeRunResult(result, cwd, "", *capsys.readouterr())
 
     return run_poe_main
 
