@@ -37,10 +37,19 @@ def projects():
     General purpose provider of paths to test projects with the conventional layout
     """
     base_path = PROJECT_ROOT / "tests" / "fixtures"
-    return {
+    projects = {
         re.match(r"^([_\w]+)_project", path.name).groups()[0]: path.resolve()
         for path in base_path.glob("*_project")
     }
+    projects.update(
+        {
+            f"{project_key}/"
+            + re.match(r"^([_\w]+).toml$", path.name).groups()[0]: path
+            for project_key, project_path in projects.items()
+            for path in project_path.glob("*.toml")
+        }
+    )
+    return projects
 
 
 @pytest.fixture

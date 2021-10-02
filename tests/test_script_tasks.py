@@ -37,10 +37,7 @@ def test_automatic_kwargs_from_args(run_poe_subproc):
 
 def test_script_task_with_cli_args(run_poe_subproc):
     result = run_poe_subproc(
-        "greet-passed-args",
-        "--greeting=hello",
-        "--user=nat",
-        project="scripts",
+        "greet-passed-args", "--greeting=hello", "--user=nat", project="scripts",
     )
     assert result.capture == f"Poe => greet-passed-args --greeting=hello --user=nat\n"
     assert result.stdout == "hello nat 👋 None\n"
@@ -154,9 +151,12 @@ def test_required_args(run_poe_subproc):
     )
 
 
-def test_script_task_bad_type(run_poe_subproc, poe_project_path):
-    project_path = poe_project_path.joinpath("tests", "fixtures", "malformed_project")
-    result = run_poe_subproc("bad-type", "--greeting=hello", cwd=project_path)
+def test_script_task_bad_type(
+    run_poe_subproc, projects,
+):
+    result = run_poe_subproc(
+        f'--root={projects["scripts/bad_type"]}', "bad-type", "--greeting=hello",
+    )
     assert (
         "Error: 'datetime' is not a valid type for arg 'greeting' of task 'bad-type'. "
         "Choose one of {boolean float integer string} \n" in result.capture
