@@ -17,6 +17,7 @@ class PoeConfig:
         "env": dict,
         "envfile": str,
         "executor": dict,
+        "verbosity": int,
     }
 
     def __init__(
@@ -55,6 +56,10 @@ class PoeConfig:
     @property
     def global_envfile(self) -> Optional[str]:
         return self._poe.get("envfile")
+
+    @property
+    def verbosity(self) -> int:
+        return self._poe.get("verbosity", 0)
 
     @property
     def project(self) -> Any:
@@ -134,6 +139,11 @@ class PoeConfig:
             if error is None:
                 continue
             raise PoeException(error)
+        # Validate default verbosity.
+        if self.verbosity < -1 or self.verbosity > 1:
+            raise PoeException(
+                f"Invalid value for option `verbosity`: {self.verbosity!r}. Should be between -1 and 1."
+            )
 
     def find_pyproject_toml(self, target_dir: Optional[str] = None) -> Path:
         """

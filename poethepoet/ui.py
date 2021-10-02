@@ -67,25 +67,22 @@ class PoeUi:
             help="Print the version and exit",
         )
 
-        verbosity_group = parser.add_mutually_exclusive_group()
-        verbosity_group.add_argument(
+        parser.add_argument(
             "-v",
             "--verbose",
-            dest="verbosity",
-            action="store_const",
-            metavar="verbose_mode",
+            dest="increase_verbosity",
+            action="count",
             default=0,
-            const=1,
-            help="More console spam",
+            help="Increase command output (repeatable)",
         )
-        verbosity_group.add_argument(
+
+        parser.add_argument(
             "-q",
             "--quiet",
-            dest="verbosity",
-            action="store_const",
-            metavar="quiet_mode",
-            const=-1,
-            help="Less console spam",
+            dest="decrease_verbosity",
+            action="count",
+            default=0,
+            help="Decrease command output (repeatable)",
         )
 
         parser.add_argument(
@@ -129,7 +126,11 @@ class PoeUi:
     def parse_args(self, cli_args: Sequence[str]):
         self.parser = self.build_parser()
         self.args = self.parser.parse_args(cli_args)
+        self.verbosity: int = self["increase_verbosity"] - self["decrease_verbosity"]
         self._color.with_colors(self.args.ansi)
+
+    def set_default_verbosity(self, default_verbosity: int):
+        self.verbosity += default_verbosity
 
     def print_help(
         self,
@@ -140,7 +141,7 @@ class PoeUi:
         # TODO: See if this can be done nicely with a custom HelpFormatter
 
         # Ignore verbosity mode if help flag is set
-        verbosity = 0 if self["help"] else self["verbosity"]
+        verbosity = 0 if self["help"] else self.verbosity
 
         result: List[Union[str, Sequence[str]]] = []
         if verbosity >= 0:
@@ -221,7 +222,7 @@ class PoeUi:
         return text + " " * (width - len(text))
 
     def print_msg(self, message: str, verbosity=0, end="\n"):
-        if verbosity <= self["verbosity"]:
+        if verbosity <= self.verbosity:
             self._print(message, end=end)
 
     def print_error(self, error: Exception):
@@ -230,7 +231,7 @@ class PoeUi:
             self._print(f"<error> From: {error.cause} </error>")  # type: ignore
 
     def print_version(self):
-        if self["verbosity"] >= 0:
+        if self.verbosity >= 0:
             result = f"Poe the poet - version: <em>{__version__}</em>\n"
         else:
             result = f"{__version__}\n"

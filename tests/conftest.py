@@ -48,6 +48,16 @@ def poe_project_path():
     return PROJECT_ROOT
 
 
+@pytest.fixture
+def low_verbosity_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "low_verbosity")
+
+
+@pytest.fixture
+def high_verbosity_project_path():
+    return PROJECT_ROOT.joinpath("tests", "fixtures", "high_verbosity")
+
+
 @pytest.fixture(scope="function")
 def temp_file(tmp_path):
     # not using NamedTemporaryFile here because it doesn't work on windows

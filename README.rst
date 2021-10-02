@@ -440,6 +440,29 @@ You can also specify an env file (with bashlike syntax) to load for all tasks li
     [tool.poe]
     envfile = ".env"
 
+Default command verbosity
+-------------------------
+
+You can alter the verbosity level for poe commands by passing :bash:`--quiet` /
+:bash:`-q` (which decreases verbosity) or :bash:`--verbose` / :bash:`-v` (which
+increases verbosity) on the CLI.
+
+If you want to change the default verbosity level for all commands, you can use
+the :toml:`tool.poe.verbose` option in pyproject.toml like so:
+
+.. code-block:: toml
+
+  [tool.poe]
+  verbosity = -1
+
+:toml:`-1` is the quietest and :toml:`1` is the most verbose. :toml:`0` is the
+default.
+
+Note that the command line arguments are incremental: :bash:`-q` subtracts one
+from the default verbosity, and :bash:`-v` adds one. So setting the default
+verbosity to :toml:`-1` and passing :bash:`-v -v` on the command line is
+equivalent to setting the verbosity to :toml:`0` and just passing :bash:`-v`.
+
 Run poe from anywhere
 ---------------------
 
