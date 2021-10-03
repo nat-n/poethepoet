@@ -115,7 +115,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
             return cls.__executor_types[config_executor_type]
 
-    def execute(self, cmd: Sequence[str], input: Optional[bytes] = None,) -> int:
+    def execute(self, cmd: Sequence[str], input: Optional[bytes] = None) -> int:
         raise NotImplementedError
 
     def _exec_via_subproc(

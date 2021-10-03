@@ -202,7 +202,7 @@ class PoeTask(metaclass=MetaPoeTask):
         return self._handle_run(context, extra_args, self._build_env(env, context))
 
     def _build_env(
-        self, env: Optional[MutableMapping[str, str]], context: "RunContext",
+        self, env: Optional[MutableMapping[str, str]], context: "RunContext"
     ):
         env = context.get_env(env or {})
 
