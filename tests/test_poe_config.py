@@ -55,8 +55,8 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
     assert result.stderr == ""
 
 
-def test_decrease_verbosity(run_poe_subproc, dummy_project_path, is_windows):
-    result = run_poe_subproc("-q", "part1", cwd=dummy_project_path,)
+def test_decrease_verbosity(run_poe_subproc, projects, is_windows):
+    result = run_poe_subproc("-q", "part1", cwd=projects["example"],)
     assert result.capture == ""
     assert result.stderr == ""
     if is_windows:

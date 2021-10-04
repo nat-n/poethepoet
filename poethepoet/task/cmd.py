@@ -50,16 +50,19 @@ class CmdTask(PoeTask):
         named_args = self.parse_named_args(extra_args)
         if named_args is None:
             return env, False
-        return dict(
-            env,
-            **(
-                {
-                    key: str(value)
-                    for key, value in named_args.items()
-                    if value is not None
-                }
-            )
-        ), bool(named_args)
+        return (
+            dict(
+                env,
+                **(
+                    {
+                        key: str(value)
+                        for key, value in named_args.items()
+                        if value is not None
+                    }
+                )
+            ),
+            bool(named_args),
+        )
 
     def _resolve_args(self, context: "RunContext", env: MutableMapping[str, str]):
         # Parse shell command tokens and check if they're quoted

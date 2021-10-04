@@ -1,3 +1,6 @@
+import difflib
+
+
 def test_script_task_with_hard_coded_args(run_poe_subproc, projects, esc_prefix):
     result = run_poe_subproc("static-args-test", project="scripts")
     assert result.capture == f"Poe => static-args-test\n"
@@ -35,16 +38,28 @@ def test_automatic_kwargs_from_args(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_script_task_with_cli_args(run_poe_subproc):
+def test_script_task_with_cli_args(run_poe_subproc, is_windows):
+
     result = run_poe_subproc(
         "greet-passed-args", "--greeting=hello", "--user=nat", project="scripts",
     )
-    assert result.capture == f"Poe => greet-passed-args --greeting=hello --user=nat\n"
-    assert result.stdout == "hello nat 👋 None\n"
+    assert (
+        result.capture == f"Poe => greet-passed-args --greeting=hello --user=nat\n"
+    ), [
+        li
+        for li in difflib.ndiff(
+            result.capture, f"Poe => greet-passed-args --greeting=hello --user=nat\n"
+        )
+        if li[0] != " "
+    ]
+    if is_windows:
+        assert result.stdout == "hello nat \\U0001f44b None\n"
+    else:
+        assert result.stdout == "hello nat 👋 None\n"
     assert result.stderr == ""
 
 
-def test_script_task_with_args_optional(run_poe_subproc, projects):
+def test_script_task_with_args_optional(run_poe_subproc, projects, is_windows):
     named_args_project_path = projects["scripts"]
     result = run_poe_subproc(
         "greet-passed-args",
@@ -57,7 +72,15 @@ def test_script_task_with_args_optional(run_poe_subproc, projects):
         f"Poe => greet-passed-args --greeting=hello --user=nat --optional=welcome "
         f"to {named_args_project_path}\n"
     )
-    assert result.stdout == f"hello nat 👋 welcome to {named_args_project_path}\n"
+
+    if is_windows:
+        assert (
+            result.stdout
+            == f"hello nat \\U0001f44b welcome to {named_args_project_path}\n"
+        )
+    else:
+        assert result.stdout == f"hello nat 👋 welcome to {named_args_project_path}\n"
+
     assert result.stderr == ""
 
 

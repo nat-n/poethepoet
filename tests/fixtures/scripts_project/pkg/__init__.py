@@ -2,6 +2,15 @@ import sys
 from typing import Any, Optional
 
 
+def uprint(*objects, sep=" ", end="\n", file=sys.stdout):
+    enc = file.encoding
+    if enc == "UTF-8":
+        print(*objects, sep=sep, end=end, file=file)
+    else:
+        f = lambda obj: str(obj).encode(enc, errors="backslashreplace").decode(enc)
+        print(*map(f, objects), sep=sep, end=end, file=file)
+
+
 def echo_args():
     print("hello", *sys.argv[1:])
 
@@ -17,7 +26,7 @@ def greet(
     greeting: str = "I'm sorry", user: str = "Dave", upper: bool = False, **kwargs
 ):
     if upper:
-        print(
+        uprint(
             *(
                 str(subpart).upper()
                 for subpart in (
@@ -33,7 +42,7 @@ def greet(
             ),
         )
     else:
-        print(greeting, user, *kwargs.values())
+        uprint(greeting, user, *kwargs.values())
 
 
 class Scripts:
