@@ -1,14 +1,4 @@
-"""
-STILL TO TEST:
-- specifying a value for the dest in the args of the task def
-- automatic documentation of named args
-- specifying alternate options (e.g. --help, -h)
-"""
-
-
 def test_script_task_with_hard_coded_args(run_poe_subproc, projects, esc_prefix):
-    # The $ has to be escaped or it'll be evaluated by the outer shell and poe will
-    # never see it
     result = run_poe_subproc("static-args-test", project="scripts")
     assert result.capture == f"Poe => static-args-test\n"
     assert result.stdout == (
@@ -97,22 +87,41 @@ def test_script_task_include_boolean_flag_and_numeric_args(run_poe_subproc):
     assert result.stderr == ""
 
 
+def test_script_task_with_short_args(run_poe_subproc):
+    result = run_poe_subproc(
+        "greet-full-args",
+        "-g=Ciao",
+        "--user=toni",
+        "-a",
+        "109",
+        "-h=1.09",
+        project="scripts",
+    )
+    assert result.capture == (
+        "Poe => greet-full-args -g=Ciao --user=toni -a 109 -h=1.09\n"
+    )
+    assert result.stdout == "Ciao toni 1.09 109\n"
+    assert result.stderr == ""
+
+
 def test_wrong_args_passed(run_poe_subproc):
     base_error = (
         "usage: poe greet-full-args [--greeting GREETING] [--user USER] [--upper]\n"
-        "                           [--age AGE] [--height HEIGHT]\n"
+        "                           [--age AGE] [--height USER_HEIGHT]\n"
         "poe greet-full-args: error:"
     )
 
     result = run_poe_subproc("greet-full-args", "--age=lol", project="scripts")
     assert result.capture == ""
     assert result.stdout == ""
-    assert result.stderr == (f"{base_error} argument --age: invalid int value: 'lol'\n")
+    assert result.stderr == (
+        f"{base_error} argument --age/-a: invalid int value: 'lol'\n"
+    )
 
     result = run_poe_subproc("greet-full-args", "--age", project="scripts")
     assert result.capture == ""
     assert result.stdout == ""
-    assert result.stderr == (f"{base_error} argument --age: expected one argument\n")
+    assert result.stderr == (f"{base_error} argument --age/-a: expected one argument\n")
 
     result = run_poe_subproc("greet-full-args", "--age 3 2 1", project="scripts")
     assert result.capture == ""
@@ -142,9 +151,12 @@ def test_required_args(run_poe_subproc):
     )
 
 
-def test_script_task_bad_type(run_poe_subproc, poe_project_path):
-    project_path = poe_project_path.joinpath("tests", "fixtures", "malformed_project")
-    result = run_poe_subproc("bad-type", "--greeting=hello", cwd=project_path)
+def test_script_task_bad_type(
+    run_poe_subproc, projects,
+):
+    result = run_poe_subproc(
+        f'--root={projects["scripts/bad_type"]}', "bad-type", "--greeting=hello",
+    )
     assert (
         "Error: 'datetime' is not a valid type for arg 'greeting' of task 'bad-type'. "
         "Choose one of {boolean float integer string} \n" in result.capture

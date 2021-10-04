@@ -48,7 +48,16 @@ class ShellTask(PoeTask):
         named_args = self.parse_named_args(extra_args)
         if named_args is None:
             return env, False
-        return dict(env, **named_args), bool(named_args)
+        return dict(
+            env,
+            **(
+                {
+                    key: str(value)
+                    for key, value in named_args.items()
+                    if value is not None
+                }
+            ),
+        ), bool(named_args)
 
     @staticmethod
     def _find_posix_shell_on_windows():

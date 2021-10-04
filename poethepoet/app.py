@@ -67,7 +67,7 @@ class PoeThePoet:
 
         task_name = task[0]
         if task_name not in self.config.tasks:
-            self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"),)
+            self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"))
             return False
 
         if task_name.startswith("_"):

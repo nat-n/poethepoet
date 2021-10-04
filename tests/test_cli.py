@@ -66,3 +66,35 @@ def test_dry_run(run_poe_subproc):
     assert result.capture == f"Poe => env\n"
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_documentation_of_task_named_args(run_poe):
+    result = run_poe(project="scripts")
+    assert result.capture.startswith(
+        "Poe the Poet - A task runner that works well with poetry."
+    ), "Output should start with poe header line"
+    assert (
+        "\nResult: No task specified.\n" in result.capture
+    ), "Output should include status message"
+    assert (
+        "CONFIGURED TASKS\n"
+        "  composite_task     \n"
+        "  echo-args          \n"
+        "  static-args-test   \n"
+        "  call_attrs         \n"
+        "  greet              \n"
+        "  greet-passed-args  \n"
+        "    --greeting       \n"
+        "    --user           \n"
+        "    --optional       \n"
+        "    --upper          \n"
+        "  greet-full-args    \n"
+        "    --greeting, -g   \n"
+        "    --user           \n"
+        "    --upper          \n"
+        "    --age, -a        \n"
+        "    --height, -h     The user's height in meters\n"
+        "  greet-strict       All arguments are required\n"
+        "    --greeting       this one is required\n"
+        "    --name           and this one is required\n"
+    ) in result.capture
