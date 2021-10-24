@@ -63,7 +63,7 @@ class PoeTask(metaclass=MetaPoeTask):
     content: TaskContent
     options: Dict[str, Any]
 
-    __options__: Dict[str, Type] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
     __content_type__: Type = str
     __base_options: Dict[str, Union[Type, Tuple[Type, ...]]] = {
         "args": (dict, list),

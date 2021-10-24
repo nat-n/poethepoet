@@ -28,7 +28,7 @@ class ScriptTask(PoeTask):
     content: str
 
     __key__ = "script"
-    __options__: Dict[str, Type] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
         self,
