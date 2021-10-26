@@ -239,13 +239,21 @@ scripts (shell), and composite tasks (sequence).
     ]
     release.default_item_type = "script"
 
-  A failure (non-zero result) will result in the rest of the tasks in the sequence not being executed, unless the :toml:`ignore_fail` option is set on the task like so:
+  A failure (non-zero result) will result in the rest of the tasks in the sequence not being executed, unless the :toml:`ignore_fail` option is set on the task to :toml:`true` or :toml:`return_zero` like so:
 
   .. code-block:: toml
 
     [tool.poe.tasks]
     attempts.sequence = ["task1", "task2", "task3"]
-    attempts.ignore_fail = true
+    attempts.ignore_fail = "return_zero"
+
+  If you want to run all the subtasks in the sequence but return non-zero result in the end of the sequnce if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` value like so:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks]
+    attempts.sequence = ["task1", "task2", "task3"]
+    attempts.ignore_fail = "return_non_zero"
 
 Task level configuration
 ========================

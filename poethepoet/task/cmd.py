@@ -6,7 +6,9 @@ from typing import (
     MutableMapping,
     Sequence,
     Type,
+    Tuple,
     TYPE_CHECKING,
+    Union,
 )
 from .base import PoeTask
 
@@ -26,7 +28,7 @@ class CmdTask(PoeTask):
     content: str
 
     __key__ = "cmd"
-    __options__: Dict[str, Type] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
         self,

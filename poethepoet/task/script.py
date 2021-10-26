@@ -30,7 +30,7 @@ class ScriptTask(PoeTask):
     _callnode: ast.Call
 
     __key__ = "script"
-    __options__: Dict[str, Type] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
         self,

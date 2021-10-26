@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-from typing import Dict, MutableMapping, Sequence, Type, TYPE_CHECKING
+from typing import Dict, MutableMapping, Sequence, Type, Tuple, TYPE_CHECKING, Union
 from ..exceptions import PoeException
 from .base import PoeTask
 
@@ -18,7 +18,7 @@ class ShellTask(PoeTask):
     content: str
 
     __key__ = "shell"
-    __options__: Dict[str, Type] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
         self,
