@@ -8,6 +8,7 @@ from typing import (
     Tuple,
     Type,
     TYPE_CHECKING,
+    Union,
 )
 from .base import PoeTask
 from ..exceptions import ScriptParseError

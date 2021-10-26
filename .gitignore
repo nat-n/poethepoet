@@ -76,3 +76,4 @@ dmypy.json
 # Misc
 /TODO.md
 Dockerfile
+.vscode/
