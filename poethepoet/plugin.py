@@ -7,6 +7,7 @@ from typing import Iterator
 import tomlkit
 
 try:
+    # pylint: disable=import-error
     from cleo.commands.command import Command
     from poetry.console import application as app
     from poetry.plugins.application_plugin import ApplicationPlugin
