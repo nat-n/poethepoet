@@ -53,7 +53,7 @@ check-docs = "rstcheck README.rst"
 # Run all checks on the code base
 check = ["check-docs", "style", "types", "lint", "test"]
 # poeception
-poe = { script = "poethepoet:main", help = "Execute poe programmatically as a poe task" }
+poe = { script = "poethepoet:main", help = "Execute poe from this repo (useful for testing)" }
 
 [tool.poetry.plugins."poetry.application.plugin"]
 poethepoet = "poethepoet.plugin:PoePlugin"

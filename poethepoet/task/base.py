@@ -202,7 +202,7 @@ class PoeTask(metaclass=MetaPoeTask):
         return self._handle_run(context, extra_args, self._build_env(env, context))
 
     def _build_env(
-        self, env: Optional[MutableMapping[str, str]], context: "RunContext",
+        self, env: Optional[MutableMapping[str, str]], context: "RunContext"
     ):
         env = context.get_env(env or {})
 
@@ -243,7 +243,7 @@ class PoeTask(metaclass=MetaPoeTask):
     def parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
         args_def = self.options.get("args")
         if args_def:
-            return PoeTaskArgs(args_def).parse(extra_args)
+            return PoeTaskArgs(args_def, self.name).parse(extra_args)
         return None
 
     def _handle_run(
