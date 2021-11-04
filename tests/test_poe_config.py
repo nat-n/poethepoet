@@ -3,20 +3,21 @@ from pathlib import Path
 import tempfile
 
 
-def test_setting_default_task_type(run_poe_subproc, scripts_project_path, esc_prefix):
+def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
+    # Also tests passing of extra_args to sys.argv
     result = run_poe_subproc(
-        "greet",
+        "echo-args",
         "nat,",
         r"welcome to " + esc_prefix + "${POE_ROOT}",
-        cwd=scripts_project_path,
+        project="scripts",
     )
-    assert result.capture == f"Poe => greet nat, welcome to {scripts_project_path}\n"
-    assert result.stdout == f"hello nat, welcome to {scripts_project_path}\n"
+    assert result.capture == f"Poe => echo-args nat, welcome to {projects['scripts']}\n"
+    assert result.stdout == f"hello nat, welcome to {projects['scripts']}\n"
     assert result.stderr == ""
 
 
-def test_setting_default_array_item_task_type(run_poe_subproc, scripts_project_path):
-    result = run_poe_subproc("composite_task", cwd=scripts_project_path,)
+def test_setting_default_array_item_task_type(run_poe_subproc):
+    result = run_poe_subproc("composite_task", project="scripts")
     assert result.capture == f"Poe => echo Hello\nPoe => echo World!\n"
     assert result.stdout == f"Hello\nWorld!\n"
     assert result.stderr == ""
@@ -54,8 +55,8 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
     assert result.stderr == ""
 
 
-def test_decrease_verbosity(run_poe_subproc, dummy_project_path, is_windows):
-    result = run_poe_subproc("-q", "part1", cwd=dummy_project_path,)
+def test_decrease_verbosity(run_poe_subproc, projects, is_windows):
+    result = run_poe_subproc("-q", "part1", cwd=projects["example"],)
     assert result.capture == ""
     assert result.stderr == ""
     if is_windows:

@@ -263,7 +263,7 @@ Task help text
 
 You can specifiy help text to be shown alongside the task name in the list of available tasks (such as when executing poe with no arguments), by adding a help key like so:
 
-  .. code-block:: toml
+.. code-block:: toml
 
     [tool.poe.tasks]
     style = {cmd = "black . --check --diff", help = "Check code style"}
@@ -273,7 +273,7 @@ Environment variables
 
 You can specify arbitrary environment variables to be set for a task by providing the env key like so:
 
-  .. code-block:: toml
+.. code-block:: toml
 
     [tool.poe.tasks]
     serve.script = "myapp:run"
@@ -283,20 +283,20 @@ Notice this example uses deep keys which can be more convenient but aren't as we
 
 The above example can be modified to only set the `PORT` variable if it is not already set by replacing the last line with the following:
 
-  .. code-block:: toml
+.. code-block:: toml
 
     serve.env.PORT.default "9001"
 
 
 You can also specify an env file (with bashlike syntax) to load per task like so:
 
-  .. code-block:: bash
+.. code-block:: bash
 
     # .env
     STAGE=dev
     PASSWORD='!@#$%^&*('
 
-  .. code-block:: toml
+.. code-block:: toml
 
     [tool.poe.tasks]
     serve.script = "myapp:run"
@@ -364,6 +364,56 @@ is also possible as demonstrated in the following example:
   [tool.poe.tasks]
   build = { script = "project.util:build(dest, build_version=version)", args = ["dest", "version"]
 
+For tasks that require specific types/defaults/help to be applied to arguments they can be constructed from sub-tables;
+omission of variable type declaration will result in a string type.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.user]
+  script = "project.util:create_user(role, height, age, name, enabled), args=["role", "name", "age", "name", "enabled"]
+
+    [tool.poe.tasks.user.args.role]
+    type = 'str'
+    default = 'Client'
+
+    [tool.poe.tasks.user.args.height]
+    type = 'float'
+
+    [tool.poe.tasks.user.args.age]
+    type ='int'
+    default=-1
+
+    [tool.poe.tasks.A.args.name]   # Theres no need to define any specific values if not desired
+
+    [tool.poe.tasks.user.args.enabled]
+    help = 'Enable or disable a user'
+
+Flags can be passed as normal options. If your underlying script utilizes the flag in such a fashion:
+
+.. code-block:: python
+
+    def create_user(role, height, age, name, enabled):
+        if enabled:
+            user = enabled
+        else:
+            user = disabled
+
+It is important to keep in mind that the flag is not a boolean but a string so any value passed for enabled will be
+evaluated by this script as True.
+
+Example:
+
+.. code-block:: bash
+
+  poe user --name='Jane Doe' --height=1.75
+
+Result:
+
+.. code-block:: python
+
+    def A(**kwargs):
+        print(kwargs) # kwargs = { "name":"Jane Doe", "age":-1, "height":1.75, "role": "Client" }
+
 Project-wide configuration options
 ==================================
 
@@ -387,13 +437,13 @@ As for the task level option, you can indicated that a variable should only be s
 
 You can also specify an env file (with bashlike syntax) to load for all tasks like so:
 
-  .. code-block:: bash
+.. code-block:: bash
 
     # .env
     STAGE=dev
     PASSWORD='!@#$%^&*('
 
-  .. code-block:: toml
+.. code-block:: toml
 
     [tool.poe]
     envfile = ".env"
