@@ -232,7 +232,10 @@ class PoeTask(metaclass=MetaPoeTask):
         )
 
     def _handle_run(
-        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
+        self,
+        context: "RunContext",
+        extra_args: Sequence[str],
+        env: Mapping[str, str],
     ) -> int:
         """
         _handle_run must be implemented by a subclass and return a single executor

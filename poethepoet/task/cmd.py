@@ -32,7 +32,10 @@ class CmdTask(PoeTask):
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
-        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
+        self,
+        context: "RunContext",
+        extra_args: Sequence[str],
+        env: Mapping[str, str],
     ) -> int:
         env, has_named_args = self.add_named_args_to_env(env)
         if has_named_args:
@@ -50,7 +53,9 @@ class CmdTask(PoeTask):
             cmd_tokens = (
                 (compat_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for compat_token in shlex.split(
-                    resolve_envvars(self.content, env), posix=False, comments=True,
+                    resolve_envvars(self.content, env),
+                    posix=False,
+                    comments=True,
                 )
             )
         else:
@@ -58,10 +63,14 @@ class CmdTask(PoeTask):
                 (posix_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for (posix_token, compat_token) in zip(
                     shlex.split(
-                        resolve_envvars(self.content, env), posix=True, comments=True,
+                        resolve_envvars(self.content, env),
+                        posix=True,
+                        comments=True,
                     ),
                     shlex.split(
-                        resolve_envvars(self.content, env), posix=False, comments=True,
+                        resolve_envvars(self.content, env),
+                        posix=False,
+                        comments=True,
                     ),
                 )
             )

@@ -78,7 +78,8 @@ def parse_env_file(content: str):
                 if var_name_match:
                     cursor += var_name_match.span()[1]
                     raise ParserException(
-                        f"Expected assignment operator", cursor,
+                        f"Expected assignment operator",
+                        cursor,
                     )
 
                 raise ParserException(f"Expected variable assignment", cursor)

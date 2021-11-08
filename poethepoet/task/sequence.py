@@ -61,7 +61,10 @@ class SequenceTask(PoeTask):
         ]
 
     def _handle_run(
-        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
+        self,
+        context: "RunContext",
+        extra_args: Sequence[str],
+        env: Mapping[str, str],
     ) -> int:
         env, has_named_args = self.add_named_args_to_env(env)
 

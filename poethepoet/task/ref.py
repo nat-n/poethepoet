@@ -29,7 +29,10 @@ class RefTask(PoeTask):
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
-        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
+        self,
+        context: "RunContext",
+        extra_args: Sequence[str],
+        env: Mapping[str, str],
     ) -> int:
         """
         Lookup and delegate to the referenced task

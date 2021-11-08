@@ -49,7 +49,9 @@ class TaskExecutionGraph:
     uncaptured_tasks: Dict[Tuple[str, ...], TaskExecutionNode]
 
     def __init__(
-        self, sink_task: PoeTask, context: RunContext,
+        self,
+        sink_task: PoeTask,
+        context: RunContext,
     ):
         self._context = context
         self.sink = TaskExecutionNode(sink_task, [], tuple())

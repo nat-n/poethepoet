@@ -55,7 +55,12 @@ class PoeTaskArgs:
                 if isinstance(item, str):
                     result.append({"name": item, "options": (f"--{item}",)})
                 else:
-                    result.append(dict(item, options=cls._get_arg_options_list(item),))
+                    result.append(
+                        dict(
+                            item,
+                            options=cls._get_arg_options_list(item),
+                        )
+                    )
         else:
             for name, params in args_def.items():
                 result.append(
@@ -199,7 +204,8 @@ class PoeTaskArgs:
         )
         for arg in self._args:
             parser.add_argument(
-                *arg["options"], **self._get_argument_params(arg),
+                *arg["options"],
+                **self._get_argument_params(arg),
             )
         return parser
 
