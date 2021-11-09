@@ -426,7 +426,10 @@ class PoeTask(metaclass=MetaPoeTask):
         Print the action taken by a task just before executing it.
         """
         min_verbosity = -1 if dry else 0
-        self._ui.print_msg(f"<hl>Poe =></hl> <action>{action}</action>", min_verbosity)
+        arrow = "<=" if self.options.get("capture_stdout") else "=>"
+        self._ui.print_msg(
+            f"<hl>Poe {arrow}</hl> <action>{action}</action>", min_verbosity
+        )
 
     class Error(Exception):
         pass
