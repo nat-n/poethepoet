@@ -39,7 +39,6 @@ def test_automatic_kwargs_from_args(run_poe_subproc):
 
 
 def test_script_task_with_cli_args(run_poe_subproc, is_windows):
-
     result = run_poe_subproc(
         "greet-passed-args",
         "--greeting=hello",
@@ -186,6 +185,21 @@ def test_script_task_bad_type(run_poe_subproc, projects):
     assert (
         "Error: 'datetime' is not a valid type for arg 'greeting' of task 'bad-type'. "
         "Choose one of {boolean float integer string} \n" in result.capture
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_script_task_bad_content(run_poe_subproc, projects):
+    result = run_poe_subproc(
+        f'--root={projects["scripts/bad_type"]}',
+        "bad-content",
+        "--greeting=hello",
+    )
+    assert (
+        "Error: Task 'bad-type' contains invalid callable reference "
+        "'dummy_package:main[greeting]' "
+        "(expected something like `module:callable` or `module:callable()`)"
     )
     assert result.stdout == ""
     assert result.stderr == ""
