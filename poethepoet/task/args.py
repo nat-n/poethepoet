@@ -135,7 +135,7 @@ class PoeTaskArgs:
     ) -> Optional[str]:
         if not isinstance(name, str):
             return f"Arg name {name!r} of task {task_name!r} should be a string"
-        if not name.isidentifier():
+        if not name.replace("-", "_").isidentifier():
             return (
                 f"Arg name {name!r} of task {task_name!r} is not a valid  'identifier'"
                 f"see the following documentation for details"
@@ -241,4 +241,5 @@ class PoeTaskArgs:
             if isinstance(arg.get("positional"), str):
                 parsed_args[arg["name"]] = parsed_args[arg["positional"]]
                 del parsed_args[arg["positional"]]
-        return parsed_args
+        # args named with dash case are converted to snake case before being exposed
+        return {name.replace("-", "_"): value for name, value in parsed_args.items()}
