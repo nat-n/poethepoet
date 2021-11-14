@@ -2,7 +2,7 @@ import argparse
 import os
 from pastel import Pastel
 import sys
-from typing import IO, List, Mapping, Optional, Sequence, Union
+from typing import IO, List, Mapping, Optional, Sequence, Tuple, Union
 from .exceptions import PoeException
 from .__version__ import __version__
 
@@ -32,6 +32,7 @@ class PoeUi:
         self._color.add_style("hl", "light_gray")
         self._color.add_style("em", "cyan")
         self._color.add_style("em2", "cyan", options="italic")
+        self._color.add_style("em3", "blue")
         self._color.add_style("h2", "default", options="bold")
         self._color.add_style("h2-dim", "default", options="dark")
         self._color.add_style("action", "light_blue")
@@ -41,7 +42,7 @@ class PoeUi:
         """Provide easy access to arguments"""
         return getattr(self.args, key, None)
 
-    def build_parser(self):
+    def build_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             prog="poe",
             description="Poe the Poet: A task runner that works well with poetry.",
@@ -66,25 +67,22 @@ class PoeUi:
             help="Print the version and exit",
         )
 
-        verbosity_group = parser.add_mutually_exclusive_group()
-        verbosity_group.add_argument(
+        parser.add_argument(
             "-v",
             "--verbose",
-            dest="verbosity",
-            action="store_const",
-            metavar="verbose_mode",
+            dest="increase_verbosity",
+            action="count",
             default=0,
-            const=1,
-            help="More console spam",
+            help="Increase command output (repeatable)",
         )
-        verbosity_group.add_argument(
+
+        parser.add_argument(
             "-q",
             "--quiet",
-            dest="verbosity",
-            action="store_const",
-            metavar="quiet_mode",
-            const=-1,
-            help="Less console spam",
+            dest="decrease_verbosity",
+            action="count",
+            default=0,
+            help="Decrease command output (repeatable)",
         )
 
         parser.add_argument(
@@ -128,18 +126,22 @@ class PoeUi:
     def parse_args(self, cli_args: Sequence[str]):
         self.parser = self.build_parser()
         self.args = self.parser.parse_args(cli_args)
+        self.verbosity: int = self["increase_verbosity"] - self["decrease_verbosity"]
         self._color.with_colors(self.args.ansi)
+
+    def set_default_verbosity(self, default_verbosity: int):
+        self.verbosity += default_verbosity
 
     def print_help(
         self,
-        tasks: Optional[Mapping[str, str]] = None,
+        tasks: Optional[Mapping[str, Tuple[str, Sequence[Tuple[str, str]]]]] = None,
         info: Optional[str] = None,
         error: Optional[PoeException] = None,
     ):
         # TODO: See if this can be done nicely with a custom HelpFormatter
 
         # Ignore verbosity mode if help flag is set
-        verbosity = 0 if self["help"] else self["verbosity"]
+        verbosity = 0 if self["help"] else self.verbosity
 
         result: List[Union[str, Sequence[str]]] = []
         if verbosity >= 0:
@@ -179,15 +181,27 @@ class PoeUi:
             )
 
             if tasks:
-                max_task_len = max(len(task) for task in tasks)
+                max_task_len = max(
+                    max(
+                        len(task),
+                        max([len(", ".join(opts)) for (opts, _) in args] or (0,)) + 2,
+                    )
+                    for task, (_, args) in tasks.items()
+                )
                 col_width = max(13, min(30, max_task_len))
                 tasks_section = ["<h2>CONFIGURED TASKS</h2>"]
-                for task, help_text in tasks.items():
+                for task, (help_text, args_help) in tasks.items():
                     if task.startswith("_"):
                         continue
                     tasks_section.append(
                         f"  <em>{self._padr(task, col_width)}</em>  {help_text}"
                     )
+                    for (options, arg_help_text) in args_help:
+                        tasks_section.append(
+                            "    "
+                            f"<em3>{self._padr(', '.join(options), col_width - 2)}</em3>"
+                            f"  {arg_help_text}"
+                        )
                 result.append(tasks_section)
             else:
                 result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
@@ -208,7 +222,7 @@ class PoeUi:
         return text + " " * (width - len(text))
 
     def print_msg(self, message: str, verbosity=0, end="\n"):
-        if verbosity <= self["verbosity"]:
+        if verbosity <= self.verbosity:
             self._print(message, end=end)
 
     def print_error(self, error: Exception):
@@ -217,7 +231,7 @@ class PoeUi:
             self._print(f"<error> From: {error.cause} </error>")  # type: ignore
 
     def print_version(self):
-        if self["verbosity"] >= 0:
+        if self.verbosity >= 0:
             result = f"Poe the poet - version: <em>{__version__}</em>\n"
         else:
             result = f"{__version__}\n"

@@ -93,5 +93,5 @@ We like to keep a clean history, so squash-rebase merges are preferred for the _
 ### How to create release
 
 1. Create a branch off of _development_ like **release/1.0.0** and add a commit to bump the version in `pyproject.toml` and `__version__.py`.
-2. Merge it into both _main_ and _release_
+2. Merge it into both _main_ and _development_
 3. Create a GitHub release from the head of main, following the existing convention for naming and release notes format, and the GitHub CI will do the rest.

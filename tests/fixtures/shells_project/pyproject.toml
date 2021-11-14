@@ -1,0 +1,17 @@
+tool.poe.default_task_type = "shell"
+
+[tool.poe.tasks]
+
+count = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')"
+
+sing = """
+echo "this is the story";
+echo "all about how" &&      # the last line won't run
+echo "my life got flipped;
+  turned upside down" ||
+echo "bam bam baaam bam"
+"""
+
+[tool.poe.tasks.greet]
+shell = "echo $formal_greeting $subject"
+args = ["formal-greeting", "subject"]

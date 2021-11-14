@@ -1,55 +1,80 @@
 [tool.poetry]
-name = "poethepoet"
-version = "0.10.0"
+name        = "poethepoet"
+version     = "0.11.0"
 description = "A task runner that works well with poetry."
-authors = ["Nat Noordanus <n@natn.me>"]
-readme = "README.rst"
-license = "MIT"
-repository =  "https://github.com/nat-n/poethepoet"
-homepage =  "https://github.com/nat-n/poethepoet"
+authors     = ["Nat Noordanus <n@natn.me>"]
+readme      = "README.rst"
+license     = "MIT"
+repository  = "https://github.com/nat-n/poethepoet"
+homepage    = "https://github.com/nat-n/poethepoet"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-pastel = "^0.2.0"
-tomlkit = ">=0.6.0,<1.0.0"
+python = "^3.6.2"
+pastel = "^0.2.1"
+tomli  = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
-black = "^19.10b0"
-bpython = "^0.19"
-mypy = "^0.770"
-pylint = "^2.5.2"
-pytest = "^5.2"
-pytest-cov = "^2.9.0"
-tox = "^3.15.2"
-rstcheck = "^3.3.1"
+black      = "^21.10b0"
+bpython    = "^0.22.1"
+mypy       = "^0.910"
+pylint     = "^2.11.1"
+pytest     = "^6.2.5"
+pytest-cov = "^3.0.0"
+rstcheck   = "^3.3.1"
+tox        = "^3.24.4"
 
 [tool.poetry.scripts]
 poe = "poethepoet:main"
 
+
 [tool.poe.tasks]
-# Dev actions
-format = { cmd = "black .", help = "Run black on the code base" }
-clean = """
-  # multiline commands including comments work too!
-  rm -rf .coverage
-         .mypy_cache
-         .pytest_cache
-         ./**/__pycache__
-         dist
-         htmlcov
-         ./tests/fixtures/simple_project/venv
-         ./tests/fixtures/venv_project/myvenv
-"""
-# Code quality checks
-test = "pytest --cov=poethepoet"
-types = "mypy poethepoet --ignore-missing-imports"
-lint = "pylint poethepoet"
-style = "black . --check --diff"
-check-docs = "rstcheck README.rst"
-# Run all checks on the code base
-check = ["check-docs", "style", "types", "lint", "test"]
-# poeception
-poe = { script = "poethepoet:main", help = "Execute poe programmatically as a poe task" }
+
+  [tool.poe.tasks.format]
+  help = "Run black on the code base"
+  cmd  = "black ."
+
+  [tool.poe.tasks.clean]
+  help = "Remove generated files"
+  cmd  = """
+    # multiline commands including comments work too!
+    rm -rf .coverage
+           .mypy_cache
+           .pytest_cache
+           ./**/__pycache__
+           dist
+           htmlcov
+           ./tests/fixtures/simple_project/venv
+           ./tests/fixtures/venv_project/myvenv
+  """
+
+  [tool.poe.tasks.test]
+  help = "Run unit and feature tests"
+  cmd  = "pytest --cov=poethepoet"
+
+  [tool.poe.tasks.types]
+  help = "Run the type checker"
+  cmd  = "mypy poethepoet --ignore-missing-imports"
+
+  [tool.poe.tasks.lint]
+  help = "Run the linter"
+  cmd  = "pylint poethepoet"
+
+  [tool.poe.tasks.style]
+  help = "Validate code style"
+  cmd  = "black . --check --diff"
+
+  [tool.poe.tasks.check-docs]
+  help = "Validate rst syntax in the docs"
+  cmd  = "rstcheck README.rst"
+
+  [tool.poe.tasks.check]
+  help     = "Run all checks on the code base"
+  sequence = ["check-docs", "style", "types", "lint", "test"]
+
+  [tool.poe.tasks.poe]
+  help   = "Execute poe from this repo (useful for testing)"
+  script = "poethepoet:main"
+
 
 [tool.tox]
 legacy_tox_ini = """
@@ -63,9 +88,11 @@ commands =
     poe test
 """
 
+
 [tool.coverage.report]
-omit=["**/site-packages/**"]
+omit = ["**/site-packages/**"]
+
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires      = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

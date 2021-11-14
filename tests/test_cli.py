@@ -13,8 +13,8 @@ def test_call_no_args(run_poe):
     assert "CONFIGURED TASKS\n  echo" in result.capture, "echo task should be in help"
 
 
-def test_call_with_root(run_poe, dummy_project_path):
-    result = run_poe("--root", str(dummy_project_path), cwd=".")
+def test_call_with_root(run_poe, projects):
+    result = run_poe("--root", str(projects["example"]), cwd=".")
     assert result.code == 1, "Expected non-zero result"
     assert result.capture.startswith(
         "Poe the Poet - A task runner that works well with poetry."
@@ -61,8 +61,40 @@ def test_version_option(run_poe):
     assert result.stderr == ""
 
 
-def test_dry_run(run_poe_subproc, dummy_project_path):
+def test_dry_run(run_poe_subproc):
     result = run_poe_subproc("-d", "show_env")
     assert result.capture == f"Poe => env\n"
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_documentation_of_task_named_args(run_poe):
+    result = run_poe(project="scripts")
+    assert result.capture.startswith(
+        "Poe the Poet - A task runner that works well with poetry."
+    ), "Output should start with poe header line"
+    assert (
+        "\nResult: No task specified.\n" in result.capture
+    ), "Output should include status message"
+    assert (
+        "CONFIGURED TASKS\n"
+        "  composite_task     \n"
+        "  echo-args          \n"
+        "  static-args-test   \n"
+        "  call_attrs         \n"
+        "  greet              \n"
+        "  greet-passed-args  \n"
+        "    --greeting       \n"
+        "    --user           \n"
+        "    --optional       \n"
+        "    --upper          \n"
+        "  greet-full-args    \n"
+        "    --greeting, -g   \n"
+        "    --user           \n"
+        "    --upper          \n"
+        "    --age, -a        \n"
+        "    --height, -h     The user's height in meters\n"
+        "  greet-strict       All arguments are required\n"
+        "    --greeting       this one is required\n"
+        "    --name           and this one is required\n"
+    ) in result.capture

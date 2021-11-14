@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-from typing import Dict, Iterable, MutableMapping, Type, TYPE_CHECKING
+from typing import Dict, Mapping, Sequence, Tuple, Type, TYPE_CHECKING, Union
 from ..exceptions import PoeException
 from .base import PoeTask
 
@@ -18,15 +18,17 @@ class ShellTask(PoeTask):
     content: str
 
     __key__ = "shell"
-    __options__: Dict[str, Type] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Iterable[str],
-        env: MutableMapping[str, str],
+        extra_args: Sequence[str],
+        env: Mapping[str, str],
     ) -> int:
-        if any(arg.strip() for arg in extra_args):
+        env, has_named_args = self.add_named_args_to_env(env)
+
+        if not has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
 
         if self._is_windows:
@@ -36,7 +38,7 @@ class ShellTask(PoeTask):
             shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
 
         self._print_action(self.content, context.dry)
-        return context.get_executor(env, self.options.get("executor")).execute(
+        return context.get_executor(self.invocation, env, self.options).execute(
             shell, input=self.content.encode()
         )
 

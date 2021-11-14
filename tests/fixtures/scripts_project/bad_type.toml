@@ -1,0 +1,3 @@
+[tool.poe.tasks.bad-type]
+script = "dummy_package:main(greeting)"
+args = { greeting = {type = "datetime"} }
