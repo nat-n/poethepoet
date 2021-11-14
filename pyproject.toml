@@ -1,31 +1,31 @@
 [tool.poetry]
-name = "poethepoet"
-version = "0.11.0b6"
+name        = "poethepoet"
+version     = "0.11.0b6"
 description = "A task runner that works well with poetry."
-authors = ["Nat Noordanus <n@natn.me>"]
-readme = "README.rst"
-license = "MIT"
-repository =  "https://github.com/nat-n/poethepoet"
-homepage =  "https://github.com/nat-n/poethepoet"
+authors     = ["Nat Noordanus <n@natn.me>"]
+readme      = "README.rst"
+license     = "MIT"
+repository  = "https://github.com/nat-n/poethepoet"
+homepage    = "https://github.com/nat-n/poethepoet"
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
 pastel = "^0.2.1"
-tomli = "^1.2.2"
-
+tomli  = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
-black = "^21.10b0"
-bpython = "^0.22.1"
-mypy = "^0.910"
-pylint = "^2.11.1"
-pytest = "^6.2.5"
+black      = "^21.10b0"
+bpython    = "^0.22.1"
+mypy       = "^0.910"
+pylint     = "^2.11.1"
+pytest     = "^6.2.5"
 pytest-cov = "^3.0.0"
-rstcheck = "^3.3.1"
-tox = "^3.24.4"
+rstcheck   = "^3.3.1"
+tox        = "^3.24.4"
 
 [tool.poetry.scripts]
 poe = "poethepoet:main"
+
 
 [tool.poe.tasks]
 
@@ -35,7 +35,7 @@ poe = "poethepoet:main"
 
   [tool.poe.tasks.clean]
   help = "Remove generated files"
-  cmd = """
+  cmd  = """
     # multiline commands including comments work too!
     rm -rf .coverage
            .mypy_cache
@@ -94,5 +94,5 @@ omit = ["**/site-packages/**"]
 
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires      = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
