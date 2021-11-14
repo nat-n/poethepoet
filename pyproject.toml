@@ -1,6 +1,6 @@
 [tool.poetry]
 name        = "poethepoet"
-version     = "0.11.0b6"
+version     = "0.11.0"
 description = "A task runner that works well with poetry."
 authors     = ["Nat Noordanus <n@natn.me>"]
 readme      = "README.rst"
