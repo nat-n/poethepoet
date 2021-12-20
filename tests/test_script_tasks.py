@@ -192,7 +192,7 @@ def test_script_task_bad_type(run_poe_subproc, projects):
 
 def test_script_task_bad_content(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'--root={projects["scripts/bad_type"]}',
+        f'--root={projects["scripts/bad_content"]}',
         "bad-content",
         "--greeting=hello",
     )
@@ -200,7 +200,7 @@ def test_script_task_bad_content(run_poe_subproc, projects):
         "Error: Task 'bad-type' contains invalid callable reference "
         "'dummy_package:main[greeting]' "
         "(expected something like `module:callable` or `module:callable()`)"
-    )
+    ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
 

@@ -27,7 +27,7 @@ def is_windows():
 
 @pytest.fixture
 def pyproject():
-    with PROJECT_TOML.open("r") as toml_file:
+    with PROJECT_TOML.open("rb") as toml_file:
         return tomli.load(toml_file)
 
 
@@ -121,7 +121,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
             with config_path.open("w+") as config_file:
                 toml.dump(config, config_file)
                 config_file.seek(0)
-            config_arg = fr"tomli.load(open(r\"{config_path}\", \"r\"))"
+            config_arg = fr"tomli.load(open(r\"{config_path}\", \"rb\"))"
         else:
             config_arg = "None"
 

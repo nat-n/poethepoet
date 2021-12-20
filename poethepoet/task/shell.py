@@ -2,7 +2,6 @@ from shutil import which
 import sys
 from typing import (
     Any,
-    cast,
     Dict,
     Mapping,
     Optional,
@@ -18,9 +17,6 @@ from .base import PoeTask
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
-
-KNOWN_INTERPRETERS = ("posix", "sh", "bash", "zsh", "fish", "pwsh", "python")
-DEFAULT_INTERPRETER = "posix"
 
 
 class ShellTask(PoeTask):
@@ -44,9 +40,9 @@ class ShellTask(PoeTask):
         if not has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
 
-        interpreter = self.locate_interpreter()
+        interpreter = self.resolve_interpreter()
         if not interpreter:
-            config_value = self.options.get("interpreter", "bash")
+            config_value = self._get_interpreter_config()
             message = f"Couldn't locate interpreter executable for {config_value!r} to run shell task. "
             if self._is_windows and config_value in ("posix", "bash"):
                 message += "Installing Git Bash or using WSL should fix this."
@@ -59,23 +55,28 @@ class ShellTask(PoeTask):
             [interpreter], input=self.content.encode()
         )
 
-    def locate_interpreter(self, interpreter: Optional[str] = None) -> Optional[str]:
-        result = None
-        if interpreter is None:
-            interpreter = self.options.get("interpreter", DEFAULT_INTERPRETER)
+    def _get_interpreter_config(self) -> Tuple[str, ...]:
+        result: Union[str, Tuple[str, ...]] = self.options.get(
+            "interpreter", self._config.shell_interpreter
+        )
+        if isinstance(result, str):
+            return (result,)
+        return tuple(result)
 
-        if isinstance(interpreter, list):
-            for item in cast(list, interpreter):
-                result = self.locate_interpreter(item)
-                if result is not None:
-                    break
+    def resolve_interpreter(self) -> Optional[str]:
+        for item in self._get_interpreter_config():
+            return self._locate_interpreter(item)
+        return None
+
+    def _locate_interpreter(self, interpreter: str) -> Optional[str]:
+        result = None
 
         if interpreter == "posix":
             # look for any known posix shell
             result = (
-                self.locate_interpreter("sh")
-                or self.locate_interpreter("bash")
-                or self.locate_interpreter("zsh")
+                self._locate_interpreter("sh")
+                or self._locate_interpreter("bash")
+                or self._locate_interpreter("zsh")
             )
 
         elif interpreter == "sh":
@@ -113,10 +114,12 @@ class ShellTask(PoeTask):
         cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
     ) -> Optional[str]:
         interpreter = task_def.get("interpreter")
-        if isinstance(interpreter, str) and interpreter not in KNOWN_INTERPRETERS:
+        valid_interpreters = config.KNOWN_SHELL_INTERPRETERS
+
+        if isinstance(interpreter, str) and interpreter not in valid_interpreters:
             return (
                 "Unsupported value for option `interpreter` for task "
-                f"{task_name!r}. Expected one of {KNOWN_INTERPRETERS}"
+                f"{task_name!r}. Expected one of {valid_interpreters}"
             )
 
         if isinstance(interpreter, list):
@@ -126,10 +129,10 @@ class ShellTask(PoeTask):
                     f"{task_name!r}. Expected at least one item in list."
                 )
             for item in interpreter:
-                if item not in KNOWN_INTERPRETERS:
+                if item not in valid_interpreters:
                     return (
                         "Unsupported item {item!r} in option `interpreter` for task "
-                        f"{task_name!r}. Expected one of {KNOWN_INTERPRETERS}"
+                        f"{task_name!r}. Expected one of {valid_interpreters}"
                     )
 
         return None

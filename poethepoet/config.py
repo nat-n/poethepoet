@@ -1,6 +1,6 @@
 from pathlib import Path
 import tomli
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 from .exceptions import PoeException
 
 
@@ -8,6 +8,7 @@ class PoeConfig:
     _table: Mapping[str, Any]
 
     TOML_NAME = "pyproject.toml"
+    KNOWN_SHELL_INTERPRETERS = ("posix", "sh", "bash", "zsh", "fish", "pwsh", "python")
 
     # Options allowed directly under tool.poe in pyproject.toml
     __options__ = {
@@ -17,6 +18,7 @@ class PoeConfig:
         "env": dict,
         "envfile": str,
         "executor": dict,
+        "shell_interpreter": (str, list),
         "verbosity": int,
     }
 
@@ -56,6 +58,13 @@ class PoeConfig:
     @property
     def global_envfile(self) -> Optional[str]:
         return self._poe.get("envfile")
+
+    @property
+    def shell_interpreter(self) -> Tuple[str, ...]:
+        raw_value = self._poe.get("shell_interpreter", "posix")
+        if isinstance(raw_value, list):
+            return tuple(raw_value)
+        return (raw_value,)
 
     @property
     def verbosity(self) -> int:
@@ -140,6 +149,14 @@ class PoeConfig:
             if error is None:
                 continue
             raise PoeException(error)
+
+        # validate shell_interpreter type
+        for interpreter in self.shell_interpreter:
+            if interpreter not in self.KNOWN_SHELL_INTERPRETERS:
+                return (
+                    f"Unsupported value {interpreter!r} for option `shell_interpreter`."
+                )
+
         # Validate default verbosity.
         if self.verbosity < -1 or self.verbosity > 1:
             raise PoeException(
