@@ -1,3 +1,7 @@
+import pytest
+import shutil
+
+
 def test_shell_task(run_poe_subproc):
     result = run_poe_subproc("count", project="shells")
     assert (
@@ -39,4 +43,33 @@ def test_shell_task_with_dash_case_arg(run_poe_subproc):
     )
     assert result.capture == (f"Poe => echo $formal_greeting $subject\n")
     assert result.stdout == "hey you\n"
+    assert result.stderr == ""
+
+
+def test_interpreter_sh(run_poe_subproc):
+    result = run_poe_subproc("echo_sh", project="shells")
+    assert result.capture == (f"Poe => echo $0\n")
+    # assert result.stdout == ... hard to know what this should be!
+    assert result.stderr == ""
+
+
+def test_interpreter_bash(run_poe_subproc):
+    result = run_poe_subproc("echo_bash", project="shells")
+    assert result.capture == (f"Poe => echo $0\n")
+    assert "bash" in result.stdout
+    assert result.stderr == ""
+
+
+@pytest.mark.skipif(not shutil.which("powershell"), reason="No powershell available")
+def test_interpreter_pwsh(run_poe_subproc, is_windows):
+    result = run_poe_subproc("echo_pwsh", project="shells")
+    assert result.capture == (f"Poe => echo $0\n")
+    assert "pwsh" in result.stdout
+    assert result.stderr == ""
+
+
+def test_interpreter_python(run_poe_subproc):
+    result = run_poe_subproc("echo_python", project="shells")
+    assert result.capture == (f"Poe => import sys\nprint(sys.version_info)\n")
+    assert result.stdout.startswith("sys.version_info(major=3,")
     assert result.stderr == ""
