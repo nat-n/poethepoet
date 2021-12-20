@@ -1,13 +1,26 @@
-import os
-import shutil
-import subprocess
-from typing import Dict, Mapping, Sequence, Tuple, Type, TYPE_CHECKING, Union
+from shutil import which
+import sys
+from typing import (
+    Any,
+    cast,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TYPE_CHECKING,
+    Union,
+)
 from ..exceptions import PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
+
+KNOWN_INTERPRETERS = ("posix", "sh", "bash", "zsh", "fish", "pwsh", "python")
+DEFAULT_INTERPRETER = "posix"
 
 
 class ShellTask(PoeTask):
@@ -18,7 +31,7 @@ class ShellTask(PoeTask):
     content: str
 
     __key__ = "shell"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {"interpreter": (str, list)}
 
     def _handle_run(
         self,
@@ -31,42 +44,92 @@ class ShellTask(PoeTask):
         if not has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
 
-        if self._is_windows:
-            shell = self._find_posix_shell_on_windows()
-        else:
-            # Prefer to use configured shell, otherwise look for bash
-            shell = [os.environ.get("SHELL", shutil.which("bash") or "/bin/bash")]
+        interpreter = self.locate_interpreter()
+        if not interpreter:
+            config_value = self.options.get("interpreter", "bash")
+            message = f"Couldn't locate interpreter executable for {config_value!r} to run shell task. "
+            if self._is_windows and config_value in ("posix", "bash"):
+                message += "Installing Git Bash or using WSL should fix this."
+            else:
+                message += "Some dependencies may be missing from your system."
+            raise PoeException(message)
 
         self._print_action(self.content, context.dry)
         return context.get_executor(self.invocation, env, self.options).execute(
-            shell, input=self.content.encode()
+            [interpreter], input=self.content.encode()
         )
 
-    @staticmethod
-    def _find_posix_shell_on_windows():
-        # Try locate a shell from the environment
-        shell_from_env = shutil.which(os.environ.get("SHELL", "bash"))
-        if shell_from_env:
-            return [shell_from_env]
+    def locate_interpreter(self, interpreter: Optional[str] = None) -> Optional[str]:
+        result = None
+        if interpreter is None:
+            interpreter = self.options.get("interpreter", DEFAULT_INTERPRETER)
 
-        # Try locate a bash from the environment
-        bash_from_env = shutil.which("bash")
-        if bash_from_env:
-            return [bash_from_env]
+        if isinstance(interpreter, list):
+            for item in cast(list, interpreter):
+                result = self.locate_interpreter(item)
+                if result is not None:
+                    break
 
-        # Or check specifically for git bash
-        bash_from_git = shutil.which("C:\\Program Files\\Git\\bin\\bash.exe")
-        if bash_from_git:
-            return [bash_from_git]
+        if interpreter == "posix":
+            # look for any known posix shell
+            result = (
+                self.locate_interpreter("sh")
+                or self.locate_interpreter("bash")
+                or self.locate_interpreter("zsh")
+            )
 
-        # or use bash from wsl if it's available
-        wsl = shutil.which("wsl")
-        if wsl and subprocess.run(["wsl", "bash"], capture_output=True).returncode > 0:
-            return [wsl, "bash"]
+        elif interpreter == "sh":
+            result = which("sh") or which("/bin/sh")
 
-        # Fail: if there is a bash out there, we don't know how to get to it
-        # > We don't know how to access wsl bash from python installed from python.org
-        raise PoeException(
-            "Couldn't locate bash executable to run shell task. Installing WSL should "
-            "fix this."
-        )
+        elif interpreter == "bash":
+            result = which("bash") or which("/bin/bash")
+
+            # Specifically look for git bash on windows
+            if result is None and self._is_windows:
+                result = which("C:\\Program Files\\Git\\bin\\bash.exe")
+
+        elif interpreter == "zsh":
+            result = which("zsh") or which("/bin/zsh")
+
+        elif interpreter == "fish":
+            result = which("fish") or which("/bin/fish")
+
+        elif interpreter == "pwsh":
+            result = which("pwsh") or which("powershell")
+
+            # Specifically look in a known location on windows
+            if result is None and self._is_windows:
+                result = which(
+                    "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.EXE"
+                )
+
+        elif interpreter == "python":
+            result = which("python") or which("python3") or sys.executable
+
+        return result
+
+    @classmethod
+    def _validate_task_def(
+        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
+    ) -> Optional[str]:
+        interpreter = task_def.get("interpreter")
+        if isinstance(interpreter, str) and interpreter not in KNOWN_INTERPRETERS:
+            return (
+                "Unsupported value for option `interpreter` for task "
+                f"{task_name!r}. Expected one of {KNOWN_INTERPRETERS}"
+            )
+
+        if isinstance(interpreter, list):
+            if len(interpreter) == 0:
+                return (
+                    "Unsupported value for option `interpreter` for task "
+                    f"{task_name!r}. Expected at least one item in list."
+                )
+            for item in interpreter:
+                if item not in KNOWN_INTERPRETERS:
+                    return (
+                        "Unsupported item {item!r} in option `interpreter` for task "
+                        f"{task_name!r}. Expected one of {KNOWN_INTERPRETERS}"
+                    )
+
+        return None
