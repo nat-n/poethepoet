@@ -31,8 +31,7 @@ env = { test_var =  "roflcopter"}
 
 [tool.poe.tasks.echo_pwsh]
 interpreter = "pwsh"
-shell = "echo $0 $test_var"
-env = { test_var =  "roflcopter"}
+shell = "echo 'I wonder how one would make powershell inherit env vars?'"
 
 
 [tool.poe.tasks.echo_python]

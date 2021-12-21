@@ -213,6 +213,9 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
 
   Is also possible to specify an alternative interpreter (or hierarchy of interpreters) to be invoked to execute shell taks content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:
 
+  .. warning::
+    A current limitation of the powershell integration is that the resulting shell does not inherit environment variables from poe. Therefore environment variables (including task arguments) configured by poe won't work as expected!
+
   .. code-block:: toml
 
     [tool.poe.tasks.install-poetry]

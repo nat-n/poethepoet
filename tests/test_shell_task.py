@@ -61,12 +61,17 @@ def test_interpreter_bash(run_poe_subproc):
     assert result.stderr == ""
 
 
-@pytest.mark.skipif(not shutil.which("powershell"), reason="No powershell available")
+@pytest.mark.skipif(
+    not (shutil.which("powershell") or shutil.which("pwsh")),
+    reason="No powershell available",
+)
 def test_interpreter_pwsh(run_poe_subproc, is_windows):
     result = run_poe_subproc("echo_pwsh", project="shells")
-    assert result.capture == (f"Poe => echo $0 $test_var\n")
+    assert result.capture == (
+        f"Poe => echo 'I wonder how one would make powershell inherit env vars?'\n"
+    )
     assert "PowerShell" in result.stdout
-    assert "roflcopter" in result.stdout
+    assert "I wonder how one would make powershell inherit env vars?" in result.stdout
     assert result.stderr == ""
 
 
