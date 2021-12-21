@@ -1,3 +1,4 @@
+from os import environ
 from shutil import which
 import sys
 from typing import (
@@ -71,7 +72,12 @@ class ShellTask(PoeTask):
     def _locate_interpreter(self, interpreter: str) -> Optional[str]:
         result = None
 
-        if interpreter == "posix":
+        # Try use $SHELL from the environment as a hint
+        shell_var = environ.get("SHELL", "")
+        if shell_var.endswith(f"/{interpreter}") and which(shell_var) == shell_var:
+            result = shell_var
+
+        elif interpreter == "posix":
             # look for any known posix shell
             result = (
                 self._locate_interpreter("sh")

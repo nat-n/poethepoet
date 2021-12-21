@@ -19,22 +19,26 @@ args = ["formal-greeting", "subject"]
 
 [tool.poe.tasks.echo_sh]
 interpreter = ["sh"]
-shell = "echo $0"
+shell = "echo $0 $test_var"
+env = { test_var =  "roflcopter"}
 
 
 [tool.poe.tasks.echo_bash]
 interpreter = "bash"
-shell = "echo $0"
+shell = "echo $0 $test_var"
+env = { test_var =  "roflcopter"}
 
 
 [tool.poe.tasks.echo_pwsh]
 interpreter = "pwsh"
-shell = "echo $0"
+shell = "echo $0 $test_var"
+env = { test_var =  "roflcopter"}
 
 
 [tool.poe.tasks.echo_python]
 interpreter = "python"
 shell = """
-import sys
-print(sys.version_info)
+import sys, os
+print(sys.version_info, os.environ.get("test_var"))
 """
+env = { test_var =  "roflcopter"}
