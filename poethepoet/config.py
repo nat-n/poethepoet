@@ -14,7 +14,6 @@ class PoeConfig:
         "bash",
         "zsh",
         "fish",
-        "pwsh7",  # powershell >= 7
         "pwsh",  # powershell >= 6
         "powershell",  # any version of powershell
         "python",

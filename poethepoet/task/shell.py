@@ -1,7 +1,5 @@
-import json
 from os import environ
 from shutil import which
-from subprocess import Popen, PIPE
 import sys
 from typing import (
     Any,
@@ -76,7 +74,7 @@ class ShellTask(PoeTask):
             executable = self._locate_interpreter(item)
             if executable is None:
                 return None
-            if item in ("pwsh7", "pwsh", "powershell"):
+            if item in ("pwsh", "powershell"):
                 return [executable, "-NoLogo", "-Command", "-"]
             return [executable]
         return None
@@ -114,27 +112,20 @@ class ShellTask(PoeTask):
         elif interpreter == "fish":
             result = which("fish") or which("/bin/fish")
 
-        elif interpreter in ("pwsh7", "pwsh", "powershell"):
+        elif interpreter in ("pwsh", "powershell"):
             # Look for the pwsh executable and verify the version matches
-            pwsh = which("pwsh")
-            if pwsh:
-                pwsh_version = self._get_powershell_version(pwsh)
-                if pwsh_version >= 7 or (pwsh_version == 6 and interpreter == "pwsh"):
-                    result = pwsh
+            result = (
+                which("pwsh")
+                or which(f"{prog_files}\\PowerShell\\7\\pwsh.exe")
+                or which(f"{prog_files}\\PowerShell\\6\\pwsh.exe")
+            )
 
-            if result is None:
-                result = which(f"{prog_files}\\PowerShell\\7\\pwsh.exe")
-
-            if result is None:
-                if interpreter == "pwsh":
-                    result = which(f"{prog_files}\\PowerShell\\6\\pwsh.exe")
-
-                elif interpreter == "powershell" and self._is_windows:
-                    # Look for older versions of powershell
-                    result = which("powershell") or which(
-                        environ.get("WINDIR", "C:\\Windows")
-                        + "\\System32\\WindowsPowerShell\\v1.0\\powershell.EXE"
-                    )
+            if result is None and interpreter == "powershell" and self._is_windows:
+                # Look for older versions of powershell
+                result = which("powershell") or which(
+                    environ.get("WINDIR", "C:\\Windows")
+                    + "\\System32\\WindowsPowerShell\\v1.0\\powershell.EXE"
+                )
 
         elif interpreter == "python":
             result = which("python") or which("python3") or sys.executable
@@ -168,15 +159,3 @@ class ShellTask(PoeTask):
                     )
 
         return None
-
-    def _get_powershell_version(self, executable: str):
-        subproc = Popen(
-            [executable, "-NoLogo", "-Command", "-"],
-            stdin=PIPE,
-            stdout=PIPE,
-        )
-        stdout = subproc.communicate(b"$PSVersionTable | ConvertTo-Json")[0].decode()
-        # Junk before or after the json content
-        i0 = stdout.find("{")
-        i1 = stdout.rfind("}")
-        return json.loads(stdout[i0 : i1 + 1])["PSVersion"]["Major"]

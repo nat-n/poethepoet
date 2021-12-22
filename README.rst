@@ -251,8 +251,6 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
       Uses whatever version of zsh can be found.
   fish
       Uses whatever version of fish can be found.
-  pwsh7
-      Uses powershell version 7 or higher.
   pwsh
       Uses powershell version 6 or higher.
   powershell
