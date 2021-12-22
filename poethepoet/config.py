@@ -8,7 +8,17 @@ class PoeConfig:
     _table: Mapping[str, Any]
 
     TOML_NAME = "pyproject.toml"
-    KNOWN_SHELL_INTERPRETERS = ("posix", "sh", "bash", "zsh", "fish", "pwsh", "python")
+    KNOWN_SHELL_INTERPRETERS = (
+        "posix",
+        "sh",
+        "bash",
+        "zsh",
+        "fish",
+        "pwsh7",  # powershell >= 7
+        "pwsh",  # powershell >= 6
+        "powershell",  # any version of powershell
+        "python",
+    )
 
     # Options allowed directly under tool.poe in pyproject.toml
     __options__ = {

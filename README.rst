@@ -211,10 +211,7 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
 
   **Using different types of shell/interpreter**
 
-  Is also possible to specify an alternative interpreter (or hierarchy of interpreters) to be invoked to execute shell taks content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:
-
-  .. warning::
-    A current limitation of the powershell integration is that the resulting shell does not inherit environment variables from poe. Therefore environment variables (including task arguments) configured by poe won't work as expected!
+  It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:
 
   .. code-block:: toml
 
@@ -228,19 +225,38 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
 
   .. code-block:: toml
 
-    interpreter = ["posix", pwsh"]
+    interpreter = ["posix", "pwsh"]
 
   It is also possible to specify python code as the shell task code as in the following example. However it is recommended to use a *script* task rather than writing complex code inline within your pyproject.toml.
 
   .. code-block:: toml
 
-    [tool.poe.tasks.install-poetry]
+    [tool.poe.tasks.time]
     shell = """
-    print("hello!")
+    from datetime import datetime
+
+    print(datetime.now())
     """
     interpreter = "python"
 
-  The full set of valid interpreter identifiers is :code:`{"posix", "sh", "bash", "zsh", "fish", "pwsh", "python"}`. The default value is :code:`"posix"` which is actually an alias for :code:`["sh", "bash", "zsh"]`, meaning that it will attempt to use sh, then bash, then zsh.
+  The following interpreter values may be used:
+
+  posix
+      This is the default behavoir, equivalent to ["sh", "bash", "zsh"], meaning that poe will try to find sh, and fallback to bash, then zsh.
+  sh
+      Use the basic posix shell. This is often an alias for bash or dash depending on the operating system.
+  bash
+      Uses whatever version of bash can be found. This is usually the most portable option.
+  zsh
+      Uses whatever version of zsh can be found.
+  fish
+      Uses whatever version of fish can be found.
+  pwsh7
+      Uses powershell version 7 or higher.
+  pwsh
+      Uses powershell version 6 or higher.
+  powershell
+      Uses the newest version of powershell that can be found.
 
   The default value can be changed with the global *shell_interpreter* option as described below.
 

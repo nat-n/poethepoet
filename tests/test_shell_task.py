@@ -67,11 +67,8 @@ def test_interpreter_bash(run_poe_subproc):
 )
 def test_interpreter_pwsh(run_poe_subproc, is_windows):
     result = run_poe_subproc("echo_pwsh", project="shells")
-    assert result.capture == (
-        f"Poe => echo 'I wonder how one would make powershell inherit env vars?'\n"
-    )
-    assert "PowerShell" in result.stdout
-    assert "I wonder how one would make powershell inherit env vars?" in result.stdout
+    assert result.capture == (f"Poe => echo $ENV:test_var\n")
+    assert "roflcopter" in result.stdout
     assert result.stderr == ""
 
 
@@ -92,7 +89,8 @@ def test_bad_interpreter_config(run_poe_subproc, projects):
     )
     assert (
         "Error: Unsupported value for option `interpreter` for task 'bad-interpreter'."
-        " Expected one of ('posix', 'sh', 'bash', 'zsh', 'fish', 'pwsh', 'python')"
+        " Expected one of ("
+        "'posix', 'sh', 'bash', 'zsh', 'fish', 'pwsh7', 'pwsh', 'powershell', 'python')"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
