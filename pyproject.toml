@@ -16,6 +16,7 @@ poetry = {version = "^1.0", allow-prereleases = true, optional = true}
 
 [tool.poetry.extras]
 poetry_plugin = ["poetry"]
+
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
 bpython = "^0.19"
