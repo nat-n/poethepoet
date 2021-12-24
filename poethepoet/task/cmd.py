@@ -3,7 +3,7 @@ import re
 import shlex
 from typing import (
     Dict,
-    MutableMapping,
+    Mapping,
     Sequence,
     Type,
     Tuple,
@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 from .base import PoeTask
+from ..helpers.env import resolve_envvars
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -31,12 +32,9 @@ class CmdTask(PoeTask):
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
 
     def _handle_run(
-        self,
-        context: "RunContext",
-        extra_args: Sequence[str],
-        env: MutableMapping[str, str],
+        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
     ) -> int:
-        env, has_named_args = self._add_named_args_to_env(extra_args, env)
+        env, has_named_args = self.add_named_args_to_env(env)
         if has_named_args:
             # If named arguments are defined then it doesn't make sense to pass extra
             # args to the command, because they've already been parsed
@@ -46,35 +44,13 @@ class CmdTask(PoeTask):
         self._print_action(" ".join(cmd), context.dry)
         return context.get_executor(self.invocation, env, self.options).execute(cmd)
 
-    def _add_named_args_to_env(
-        self, extra_args: Sequence[str], env: MutableMapping[str, str]
-    ):
-        named_args = self.parse_named_args(extra_args)
-        if named_args is None:
-            return env, False
-        return (
-            dict(
-                env,
-                **(
-                    {
-                        key: str(value)
-                        for key, value in named_args.items()
-                        if value is not None
-                    }
-                )
-            ),
-            bool(named_args),
-        )
-
-    def _resolve_args(self, context: "RunContext", env: MutableMapping[str, str]):
+    def _resolve_args(self, context: "RunContext", env: Mapping[str, str]):
         # Parse shell command tokens and check if they're quoted
         if self._is_windows:
             cmd_tokens = (
                 (compat_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for compat_token in shlex.split(
-                    self._resolve_envvars(self.content, env),
-                    posix=False,
-                    comments=True,
+                    resolve_envvars(self.content, env), posix=False, comments=True,
                 )
             )
         else:
@@ -82,14 +58,10 @@ class CmdTask(PoeTask):
                 (posix_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
                 for (posix_token, compat_token) in zip(
                     shlex.split(
-                        self._resolve_envvars(self.content, env),
-                        posix=True,
-                        comments=True,
+                        resolve_envvars(self.content, env), posix=True, comments=True,
                     ),
                     shlex.split(
-                        self._resolve_envvars(self.content, env),
-                        posix=False,
-                        comments=True,
+                        resolve_envvars(self.content, env), posix=False, comments=True,
                     ),
                 )
             )

@@ -2,7 +2,7 @@ from typing import (
     Any,
     Dict,
     List,
-    MutableMapping,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -61,12 +61,11 @@ class SequenceTask(PoeTask):
         ]
 
     def _handle_run(
-        self,
-        context: "RunContext",
-        extra_args: Sequence[str],
-        env: MutableMapping[str, str],
+        self, context: "RunContext", extra_args: Sequence[str], env: Mapping[str, str],
     ) -> int:
-        if any(arg.strip() for arg in extra_args):
+        env, has_named_args = self.add_named_args_to_env(env)
+
+        if not has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
 
         if len(self.subtasks) > 1:

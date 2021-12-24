@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import sys
-from typing import Dict, MutableMapping
+from typing import Dict, Mapping
 
 
 class Virtualenv:
@@ -74,7 +74,7 @@ class Virtualenv:
             )
         )
 
-    def get_env_vars(self, base_env: MutableMapping[str, str]) -> Dict[str, str]:
+    def get_env_vars(self, base_env: Mapping[str, str]) -> Dict[str, str]:
         path_delim = ";" if self._is_windows else ":"
         result = dict(
             base_env,

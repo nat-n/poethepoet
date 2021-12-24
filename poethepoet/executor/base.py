@@ -4,6 +4,7 @@ import sys
 from typing import (
     Any,
     Dict,
+    Mapping,
     MutableMapping,
     Optional,
     Sequence,
@@ -50,8 +51,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self,
         invocation: Tuple[str, ...],
         context: "RunContext",
-        options: MutableMapping[str, str],
-        env: MutableMapping[str, str],
+        options: Mapping[str, str],
+        env: Mapping[str, str],
         working_dir: Optional["Path"] = None,
         dry: bool = False,
         capture_stdout: Union[str, bool] = False,
@@ -69,10 +70,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         cls,
         invocation: Tuple[str, ...],
         context: "RunContext",
-        env: MutableMapping[str, str],
+        env: Mapping[str, str],
         working_dir: Optional["Path"] = None,
         dry: bool = False,
-        executor_config: Optional[Dict[str, str]] = None,
+        executor_config: Optional[Mapping[str, str]] = None,
         capture_stdout: Union[str, bool] = False,
     ) -> "PoeExecutor":
         """"""
@@ -84,7 +85,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
     @classmethod
     def _resolve_implementation(
-        cls, context: "RunContext", executor_config: Optional[Dict[str, str]]
+        cls, context: "RunContext", executor_config: Optional[Mapping[str, str]]
     ):
         """
         Resolve to an executor class, either as specified in the available config or
@@ -123,7 +124,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         cmd: Sequence[str],
         *,
         input: Optional[bytes] = None,
-        env: Optional[MutableMapping[str, str]] = None,
+        env: Optional[Mapping[str, str]] = None,
         shell: bool = False,
     ) -> int:
         if self.dry:

@@ -131,7 +131,8 @@ class PoeConfig:
                     )
             elif not isinstance(value, str):
                 raise PoeException(
-                    f"Value of {key!r} in option `env` should be a string, but found {type(value)!r}"
+                    f"Value of {key!r} in option `env` should be a string, but found "
+                    f"{type(value)!r}"
                 )
         # Validate tasks
         for task_name, task_def in self.tasks.items():
@@ -142,7 +143,8 @@ class PoeConfig:
         # Validate default verbosity.
         if self.verbosity < -1 or self.verbosity > 1:
             raise PoeException(
-                f"Invalid value for option `verbosity`: {self.verbosity!r}. Should be between -1 and 1."
+                f"Invalid value for option `verbosity`: {self.verbosity!r}. "
+                "Should be between -1 and 1."
             )
 
     def find_pyproject_toml(self, target_dir: Optional[str] = None) -> Path:
@@ -179,7 +181,7 @@ class PoeConfig:
     @staticmethod
     def _read_pyproject(path: Path) -> Mapping[str, Any]:
         try:
-            with path.open(encoding="utf-8") as pyproj:
+            with path.open("rb") as pyproj:
                 return tomli.load(pyproj)
         except tomli.TOMLDecodeError as error:
             raise PoeException(f"Couldn't parse toml file at {path}", error) from error

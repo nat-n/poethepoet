@@ -1,0 +1,25 @@
+[tool.poe.tasks]
+
+part1 = "echo 'Hello'"
+_part2.cmd = "echo '${SUBJECT}!'"
+_part2.env = { SUBJECT = "World" }
+composite_task.sequence = [
+  ["part1", "_part2"],
+  # wrapping in arrays means we can have different types of task in the sequence
+  [{cmd = "echo '${SMILEY}!'"}]
+]
+# env var is inherited by subtask
+composite_task.env = { SMILEY = ":)" }
+
+also_composite_task = [["composite_task"]] # sequence in a sequence
+
+greet-multiple.sequence = ["my_package:main(environ.get('cat'))", "my_package:main(environ['mouse'])"]
+greet-multiple.default_item_type = "script"
+greet-multiple.env = { cat = "Tom" }
+greet-multiple.args = ["mouse"]
+
+
+travel = [
+  { cmd = "echo 'from $PLANET to'" },
+  { script = "my_package:print_var('DEST')" }
+]

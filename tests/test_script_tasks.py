@@ -174,9 +174,7 @@ def test_required_args(run_poe_subproc):
     )
 
 
-def test_script_task_bad_type(
-    run_poe_subproc, projects,
-):
+def test_script_task_bad_type(run_poe_subproc, projects):
     result = run_poe_subproc(
         f'--root={projects["scripts/bad_type"]}', "bad-type", "--greeting=hello",
     )
@@ -185,4 +183,53 @@ def test_script_task_bad_type(
         "Choose one of {boolean float integer string} \n" in result.capture
     )
     assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_script_with_positional_args(run_poe_subproc):
+    result = run_poe_subproc("greet-positional", "help!", "Santa", project="scripts")
+    assert result.capture == "Poe => greet-positional help! Santa\n"
+    assert result.stdout == "help! Santa\n"
+    assert result.stderr == ""
+
+    # Ommission of optional positional arg
+    result = run_poe_subproc("greet-positional", "Santa", project="scripts")
+    assert result.capture == "Poe => greet-positional Santa\n"
+    assert result.stdout == "yo Santa\n"
+    assert result.stderr == ""
+
+    # Ommission of required positional arg
+    result = run_poe_subproc("greet-positional", project="scripts")
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert result.stderr == (
+        "usage: poe greet-positional [--upper] [greeting] user\n"
+        "poe greet-positional: error: the following arguments are required: user\n"
+    )
+
+    # Too many positional args
+    result = run_poe_subproc(
+        "greet-positional", "plop", "plop", "plop", project="scripts"
+    )
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert result.stderr == (
+        "usage: poe greet-positional [--upper] [greeting] user\n"
+        "poe greet-positional: error: unrecognized arguments: plop\n"
+    )
+
+
+def test_script_with_positional_args_and_options(run_poe_subproc):
+    result = run_poe_subproc(
+        "greet-positional", "help!", "Santa", "--upper", project="scripts"
+    )
+    assert result.capture == "Poe => greet-positional help! Santa --upper\n"
+    assert result.stdout == "HELP! SANTA\n"
+    assert result.stderr == ""
+
+    result = run_poe_subproc(
+        "greet-positional", "--upper", "help!", "Santa", project="scripts"
+    )
+    assert result.capture == "Poe => greet-positional --upper help! Santa\n"
+    assert result.stdout == "HELP! SANTA\n"
     assert result.stderr == ""

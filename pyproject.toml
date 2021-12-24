@@ -23,7 +23,7 @@ bpython = "^0.19"
 mypy = "^0.770"
 pylint = "^2.5.2"
 pytest = "^5.2"
-pytest-cov = "^2.9.0"
+pytest-cov = "^3.0.0"
 tox = "^3.15.2"
 rstcheck = "^3.3.1"
 
@@ -71,7 +71,7 @@ commands =
 """
 
 [tool.coverage.report]
-omit=["**/site-packages/**"]
+omit = ["**/site-packages/**"]
 
 [build-system]
 requires = ["poetry>=0.12"]

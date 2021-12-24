@@ -23,6 +23,7 @@ arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "help": str,
     "name": str,
     "options": (list, tuple),
+    "positional": (bool, str),
     "required": bool,
     "type": str,
 }
@@ -41,8 +42,8 @@ class PoeTaskArgs:
         self._args = self._normalize_args_def(args_def)
         self._task_name = task_name
 
-    @staticmethod
-    def _normalize_args_def(args_def: ArgsDef):
+    @classmethod
+    def _normalize_args_def(cls, args_def: ArgsDef) -> Tuple[ArgParams, ...]:
         """
         args_def can be defined as a dictionary of ArgParams, or a list of strings, or
         ArgParams. Here we normalize it to a list of ArgParams, assuming that it has
@@ -54,24 +55,27 @@ class PoeTaskArgs:
                 if isinstance(item, str):
                     result.append({"name": item, "options": (f"--{item}",)})
                 else:
-                    result.append(
-                        dict(
-                            item,
-                            options=tuple(
-                                item.get("options", (f"--{item.get('name')}",))
-                            ),
-                        )
-                    )
+                    result.append(dict(item, options=cls._get_arg_options_list(item),))
         else:
             for name, params in args_def.items():
                 result.append(
                     dict(
                         params,
                         name=name,
-                        options=tuple(params.get("options", (f"--{name}",))),
+                        options=cls._get_arg_options_list(params, name),
                     )
                 )
-        return result
+        return tuple(result)
+
+    @staticmethod
+    def _get_arg_options_list(arg: ArgParams, name: Optional[str] = None):
+        position = arg.get("positional", False)
+        name = name or arg["name"]
+        if position:
+            if isinstance(position, str):
+                return [position]
+            return [name]
+        return tuple(arg.get("options", (f"--{name}",)))
 
     @classmethod
     def get_help_content(
@@ -83,20 +87,6 @@ class PoeTaskArgs:
             (arg["options"], arg.get("help", ""))
             for arg in cls._normalize_args_def(args_def)
         ]
-
-    @classmethod
-    def _validate_type(
-        cls, params: ArgParams, arg_name: str, task_name: str
-    ) -> Optional[str]:
-        if "type" in params and params["type"] not in arg_types:
-            return (
-                f"{params['type']!r} is not a valid type for arg {arg_name!r} of task "
-                f"{task_name!r}. Choose one of "
-                "{"
-                f'{" ".join(sorted(str_type for str_type in arg_types.keys()))}'
-                "}"
-            )
-        return None
 
     @classmethod
     def validate_def(cls, task_name: str, args_def: ArgsDef) -> Optional[str]:
@@ -135,23 +125,6 @@ class PoeTaskArgs:
         return None
 
     @classmethod
-    def _validate_params(
-        cls, params: ArgParams, arg_name: str, task_name: str
-    ) -> Optional[str]:
-        for param, value in params.items():
-            if param not in arg_param_schema:
-                return (
-                    f"Invalid option {param!r} for arg {arg_name!r} of task "
-                    f"{task_name!r}"
-                )
-            if not isinstance(value, arg_param_schema[param]):
-                return (
-                    f"Invalid value for option {param!r} of arg {arg_name!r} of"
-                    f" task {task_name!r}"
-                )
-        return None
-
-    @classmethod
     def _validate_name(
         cls, name: Any, task_name: str, arg_names: Set[str]
     ) -> Optional[str]:
@@ -168,31 +141,98 @@ class PoeTaskArgs:
         arg_names.add(name)
         return None
 
+    @classmethod
+    def _validate_params(
+        cls, params: ArgParams, arg_name: str, task_name: str
+    ) -> Optional[str]:
+        for param, value in params.items():
+            if param not in arg_param_schema:
+                return (
+                    f"Invalid option {param!r} for arg {arg_name!r} of task "
+                    f"{task_name!r}"
+                )
+            if not isinstance(value, arg_param_schema[param]):
+                return (
+                    f"Invalid value for option {param!r} of arg {arg_name!r} of"
+                    f" task {task_name!r}"
+                )
+
+        positional = params.get("positional", False)
+        if positional:
+            if params.get("type") == "boolean":
+                return (
+                    f"Positional argument {arg_name!r} of task {task_name!r} may not"
+                    "have type 'boolean'"
+                )
+            if params.get("options") is not None:
+                return (
+                    f"Positional argument {arg_name!r} of task {task_name!r} may not"
+                    "have options defined"
+                )
+            if isinstance(positional, str) and not positional.isidentifier():
+                return (
+                    f"positional name  {positional!r} for arg {arg_name!r} of task "
+                    f"{task_name!r} is not a valid  'identifier' see the following "
+                    "documentation for details"
+                    "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
+                )
+
+        return None
+
+    @classmethod
+    def _validate_type(
+        cls, params: ArgParams, arg_name: str, task_name: str
+    ) -> Optional[str]:
+        if "type" in params and params["type"] not in arg_types:
+            return (
+                f"{params['type']!r} is not a valid type for arg {arg_name!r} of task "
+                f"{task_name!r}. Choose one of "
+                "{"
+                f'{" ".join(sorted(str_type for str_type in arg_types.keys()))}'
+                "}"
+            )
+        return None
+
     def build_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             prog=f"poe {self._task_name}", add_help=False, allow_abbrev=False
         )
         for arg in self._args:
-            if arg.get("type") == "boolean":
-                # boolean types are implemented as flags
-                parser.add_argument(
-                    *arg["options"],
-                    action="store_true",
-                    default=arg.get("default"),
-                    dest=arg["name"],
-                    required=arg.get("required", False),
-                    help=arg.get("help", ""),
-                )
-            else:
-                parser.add_argument(
-                    *arg["options"],
-                    default=arg.get("default"),
-                    dest=arg["name"],
-                    required=arg.get("required", False),
-                    type=arg_types.get(str(arg.get("type")), str),
-                    help=arg.get("help", ""),
-                )
+            parser.add_argument(
+                *arg["options"], **self._get_argument_params(arg),
+            )
         return parser
 
+    def _get_argument_params(self, arg: ArgParams):
+        default = arg.get("default")
+        result = {
+            "default": default,
+            "help": arg.get("help", ""),
+        }
+
+        required = arg.get("required", False)
+        arg_type = str(arg.get("type"))
+
+        if arg.get("positional", False):
+            if not required:
+                result["nargs"] = "?"
+        else:
+            result["dest"] = arg["name"]
+            result["required"] = required
+
+        if arg_type == "boolean":
+            result["action"] = "store_false" if default else "store_true"
+        else:
+            result["type"] = arg_types.get(arg_type, str)
+
+        return result
+
     def parse(self, extra_args: Sequence[str]):
-        return vars(self.build_parser().parse_args(extra_args))
+        parsed_args = vars(self.build_parser().parse_args(extra_args))
+        # Ensure positional args are still exposed by name even if the were parsed with
+        # alternate identifiers
+        for arg in self._args:
+            if isinstance(arg.get("positional"), str):
+                parsed_args[arg["name"]] = parsed_args[arg["positional"]]
+                del parsed_args[arg["positional"]]
+        return parsed_args
