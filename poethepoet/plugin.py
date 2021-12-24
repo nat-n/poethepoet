@@ -1,77 +1,98 @@
-import shutil
-import subprocess
-import sys
+# pylint: disable=import-error
+
+from cleo.commands.command import Command
 from pathlib import Path
-from typing import Iterator
+from poetry.console.application import Application, COMMANDS
+from poetry.plugins.application_plugin import ApplicationPlugin
+import sys
+from typing import Any, Dict
 
-import tomlkit
-
-try:
-    # pylint: disable=import-error
-    from cleo.commands.command import Command
-    from poetry.console import application as app
-    from poetry.plugins.application_plugin import ApplicationPlugin
-except ModuleNotFoundError:
-    # Hacky defaults to
-    # tell whether poetry is installed or not,
-    # please mypy,
-    # and please Poetry's plugin system (simulate the ApplicationPlugin object)
-    app = type("application", (), {"Application": None})  # pylint: disable=C0103
-    ApplicationPlugin = type(
-        "ApplicationPlugin",
-        (),
-        {"PLUGIN_API_VERION": "1.0.0", "type": "application.plugin"},
-    )
-
-from . import config
+from .exceptions import PoePluginException
 
 
-def get_poe_task_names() -> Iterator[str]:
-    return (
-        name
-        for name in tomlkit.loads(
-            Path(config.PoeConfig().find_pyproject_toml()).read_text()
-        )["tool"]["poe"]["tasks"].keys()
-        # Make sure it doesn't override default poetry commands
-        if name not in app.COMMANDS
-    )
+class PoeCommand(Command):
+    prefix: str
+
+    def __init__(self):
+        super().__init__()
+        # bypass cleo's option parsing
+        self._ignore_validation_errors = True
+
+    def handle(self):
+        from .app import PoeThePoet
+
+        # Get args to pass to poe
+        tokenized_input = self.io.input._tokens
+        task_name = tokenized_input[0][len(self.prefix) :].strip()
+        task_args = tokenized_input[1:]
+
+        app = PoeThePoet(cwd=Path(".").resolve(), output=sys.stdout)
+        task_status = app(cli_args=(task_name, *task_args))
+        if task_status:
+            raise SystemExit(task_status)
 
 
-def run_poe_task(name: str, io) -> int:
-    io.fileno = sys.stdin.fileno  # Monkey patches io because subprocess needs it
-    stdin = io
-    io.fileno = sys.stdout.fileno
-    stdout = io
-    io.error_output.fileno = sys.stdout.fileno
-    stderr = io.error_output
+class PoetryPlugin(ApplicationPlugin):
+    def activate(self, application: Application) -> None:
+        poe_config = self.get_config(application)
+        command_prefix = poe_config.get("poetry_command", "poe")
+        self._validate_command_prefix(command_prefix)
 
-    return subprocess.run(
-        [shutil.which("poe"), name],
-        stdin=stdin,
-        stdout=stdout,
-        stderr=stderr,
-        check=False,
-    ).returncode
-
-
-class PoePlugin(ApplicationPlugin):
-    def activate(self, application: app.Application) -> None:
-        if app.Application is None:
-            print(
-                "Poetry not found. Did you install this plugin via `poetry plugin add poethepoet[poetry_plugin]`?"
+        if command_prefix in COMMANDS:
+            raise PoePluginException(
+                f"The configured command prefix {command_prefix!r} conflicts with a "
+                "poetry command. Please configure a different command prefix."
             )
-            sys.exit(1)
-        io = application.create_io()
-        # Create seperate commands per task
-        for task_name in get_poe_task_names():
-            application.command_loader.register_factory(
-                task_name,
-                type(
-                    task_name.replace("-", "_").capitalize() + "Command",
-                    (Command,),
-                    {
-                        "name": task_name,
-                        "handle": lambda inner_self: run_poe_task(inner_self.name, io),
-                    },
-                ),
+
+        if command_prefix == "":
+            for task_name, task in poe_config.get("tasks", {}).items():
+                if task_name in COMMANDS:
+                    raise PoePluginException(
+                        f"Poe task {task_name!r} conflicts with a poetry command. "
+                        "Please rename the task or the configure a command prefix."
+                    )
+                self.register_command(application, task_name, task)
+        else:
+            for task_name, task in poe_config.get("tasks", {}).items():
+                self.register_command(
+                    application, task_name, task, f"{command_prefix} "
+                )
+
+    def _validate_command_prefix(self, command_prefix: str):
+        if command_prefix and not command_prefix.isalnum():
+            raise PoePluginException(
+                "Provided value in pyproject.toml for tool.poe.poetry_command "
+                f"{command_prefix!r} is invalid. Only alphanumeric values are allowed."
             )
+
+    def register_command(
+        self, application: Application, task_name: str, task: Any, prefix: str = ""
+    ):
+        command_name = prefix + task_name
+        task_help = task.get("help", "") if isinstance(task, dict) else ""
+        application.command_loader.register_factory(
+            command_name,
+            type(
+                task_name.replace("-", "").capitalize() + "Command",
+                (PoeCommand,),
+                {"name": command_name, "description": task_help, "prefix": prefix},
+            ),
+        )
+
+    @classmethod
+    def get_config(cls, application: Application) -> Dict[str, Any]:
+        try:
+            pyproject = application.poetry.pyproject.data
+
+        # pylint: disable=bare-except
+        except:
+            # Fallback to loading the config again in case of future failure of the
+            # above undocumented API
+            import tomlkit
+            from .config import PoeConfig
+
+            pyproject = tomlkit.loads(
+                Path(PoeConfig().find_pyproject_toml()).read_text()
+            )
+
+        return pyproject.get("tool", {}).get("poe", {})

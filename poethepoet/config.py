@@ -27,6 +27,7 @@ class PoeConfig:
         "env": dict,
         "envfile": str,
         "executor": dict,
+        "poetry_command": str,
         "shell_interpreter": (str, list),
         "verbosity": int,
     }
