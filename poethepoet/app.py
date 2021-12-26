@@ -22,10 +22,12 @@ class PoeThePoet:
         cwd: Path,
         config: Optional[Mapping[str, Any]] = None,
         output: IO = sys.stdout,
+        poetry_env_path: Optional[str] = None,
     ):
         self.cwd = cwd
         self.config = PoeConfig(cwd=cwd, table=config)
         self.ui = PoeUi(output=output)
+        self.poetry_env_path = poetry_env_path
 
     def __call__(self, cli_args: Sequence[str]) -> int:
         self.ui.parse_args(cli_args)
@@ -86,13 +88,7 @@ class PoeThePoet:
     def run_task(self, context: Optional[RunContext] = None) -> Optional[int]:
         _, *extra_args = self.ui["task"]
         if context is None:
-            context = RunContext(
-                config=self.config,
-                ui=self.ui,
-                env=os.environ,
-                dry=self.ui["dry_run"],
-                poe_active=os.environ.get("POE_ACTIVE"),
-            )
+            context = self.get_run_context()
         try:
             assert self.task
             return self.task.run(context=context, extra_args=extra_args)
@@ -105,13 +101,7 @@ class PoeThePoet:
 
     def run_task_graph(self) -> Optional[int]:
         assert self.task
-        context = RunContext(
-            config=self.config,
-            ui=self.ui,
-            env=os.environ,
-            dry=self.ui["dry_run"],
-            poe_active=os.environ.get("POE_ACTIVE"),
-        )
+        context = self.get_run_context(multistage=True)
         graph = TaskExecutionGraph(self.task, context)
         plan = graph.get_execution_plan()
 
@@ -136,6 +126,20 @@ class PoeThePoet:
                     self.ui.print_error(error=error)
                     return 1
         return 0
+
+    def get_run_context(self, multistage: bool = False) -> RunContext:
+        result = RunContext(
+            config=self.config,
+            ui=self.ui,
+            env=os.environ,
+            dry=self.ui["dry_run"],
+            poe_active=os.environ.get("POE_ACTIVE"),
+            multistage=multistage,
+        )
+        if self.poetry_env_path:
+            # This allows the PoetryExecutor to use the venv from poetry directly
+            result.exec_cache["poetry_virtualenv"] = self.poetry_env_path
+        return result
 
     def print_help(
         self,

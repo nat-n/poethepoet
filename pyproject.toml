@@ -33,6 +33,7 @@ poe = "poethepoet:main"
 [tool.poetry.plugins."poetry.application.plugin"]
 poethepoet = "poethepoet.plugin:PoetryPlugin"
 
+
 [tool.poe.tasks]
 
   [tool.poe.tasks.format]
