@@ -4,7 +4,6 @@ from cleo.commands.command import Command
 from pathlib import Path
 from poetry.console.application import Application, COMMANDS
 from poetry.plugins.application_plugin import ApplicationPlugin
-import sys
 from typing import Any, Dict, List
 
 from .exceptions import PoePluginException
@@ -40,9 +39,14 @@ class PoeCommand(Command):
 
         cwd = Path(".").resolve()
         config = PoeConfig(cwd=cwd)
-        config._baseline_verbosity = (
-            2 if self.io.is_very_verbose() else (1 if self.io.is_verbose() else 0)
-        )
+
+        if self.io.output.is_quiet():
+            config._baseline_verbosity = -1
+        elif self.io.is_very_verbose():
+            config._baseline_verbosity = 2
+        elif self.io.is_verbose():
+            config._baseline_verbosity = 1
+
         app = PoeThePoet(
             cwd=cwd,
             config=config,
@@ -77,13 +81,18 @@ class PoetryPlugin(ApplicationPlugin):
                     )
                 self._register_command(application, task_name, task)
         else:
-            self._register_command(application, "", {}, command_prefix)
+            self._register_command(
+                application,
+                "",
+                {"help": "A task runner that works well with poetry"},
+                command_prefix,
+            )
             for task_name, task in poe_tasks.items():
                 self._register_command(
                     application, task_name, task, f"{command_prefix} "
                 )
 
-        self._hack_cleo_application(application, command_prefix, list(poe_tasks.keys()))
+        self._monkey_patch_cleo(command_prefix, list(poe_tasks.keys()))
 
     @classmethod
     def _get_config(cls, application: Application) -> Dict[str, Any]:
@@ -124,9 +133,7 @@ class PoetryPlugin(ApplicationPlugin):
             ),
         )
 
-    def _hack_cleo_application(
-        self, application: Application, prefix: str, task_names: List[str]
-    ):
+    def _monkey_patch_cleo(self, prefix: str, task_names: List[str]):
         """
         Cleo is quite opinionated about CLI structure and loose about how options are
         used, and so doesn't currently support invidual commands having their own way of

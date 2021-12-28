@@ -14,9 +14,6 @@ pastel = "^0.2.1"
 tomli  = "^1.2.2"
 poetry = {version = "^1.0", allow-prereleases = true, optional = true}
 
-[tool.poetry.extras]
-poetry_plugin = ["poetry"]
-
 [tool.poetry.dev-dependencies]
 black      = "^21.10b0"
 bpython    = "^0.22.1"
@@ -26,6 +23,9 @@ pytest     = "^6.2.5"
 pytest-cov = "^3.0.0"
 rstcheck   = "^3.3.1"
 tox        = "^3.24.4"
+
+[tool.poetry.extras]
+poetry_plugin = ["poetry"]
 
 [tool.poetry.scripts]
 poe = "poethepoet:main"
@@ -52,11 +52,16 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
            htmlcov
            ./tests/fixtures/simple_project/venv
            ./tests/fixtures/venv_project/myvenv
+           ./tests/temp
   """
 
   [tool.poe.tasks.test]
   help = "Run unit and feature tests"
   cmd  = "pytest --cov=poethepoet"
+
+  [tool.poe.tasks.test-quick]
+  help = "Run unit and feature tests, excluding slow ones"
+  cmd  = "pytest --cov=poethepoet -m \"not slow\""
 
   [tool.poe.tasks.types]
   help = "Run the type checker"
@@ -98,6 +103,12 @@ commands =
 
 [tool.coverage.report]
 omit = ["**/site-packages/**"]
+
+
+[tool.pytest.ini_options]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
 
 
 [build-system]
