@@ -20,6 +20,7 @@ class PoeCommand(Command):
 
     def handle(self):
         from .app import PoeThePoet
+        from .config import PoeConfig
 
         # Get args to pass to poe
         tokenized_input = self.io.input._tokens[:]
@@ -37,10 +38,19 @@ class PoeCommand(Command):
         except:
             poetry_env_path = None
 
+        cwd = Path(".").resolve()
+        config = PoeConfig(cwd=cwd)
+        config._baseline_verbosity = (
+            2 if self.io.is_very_verbose() else (1 if self.io.is_verbose() else 0)
+        )
         app = PoeThePoet(
-            cwd=Path(".").resolve(), output=sys.stdout, poetry_env_path=poetry_env_path
+            cwd=cwd,
+            config=config,
+            output=self.io.output.stream,
+            poetry_env_path=poetry_env_path,
         )
         task_status = app(cli_args=cli_args)
+
         if task_status:
             raise SystemExit(task_status)
 

@@ -32,6 +32,11 @@ class PoeConfig:
         "verbosity": int,
     }
 
+    """
+    This can be overridden, for example to align with poetry
+    """
+    _baseline_verbosity: int = 0
+
     def __init__(
         self,
         cwd: Optional[Union[Path, str]] = None,
@@ -78,7 +83,7 @@ class PoeConfig:
 
     @property
     def verbosity(self) -> int:
-        return self._poe.get("verbosity", 0)
+        return self._poe.get("verbosity", self._baseline_verbosity)
 
     @property
     def project(self) -> Any:
@@ -168,10 +173,10 @@ class PoeConfig:
                 )
 
         # Validate default verbosity.
-        if self.verbosity < -1 or self.verbosity > 1:
+        if self.verbosity < -1 or self.verbosity > 2:
             raise PoeException(
                 f"Invalid value for option `verbosity`: {self.verbosity!r}. "
-                "Should be between -1 and 1."
+                "Should be between -1 and 2."
             )
 
     def find_pyproject_toml(self, target_dir: Optional[str] = None) -> Path:

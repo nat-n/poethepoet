@@ -20,12 +20,16 @@ class PoeThePoet:
     def __init__(
         self,
         cwd: Path,
-        config: Optional[Mapping[str, Any]] = None,
+        config: Optional[Union[Mapping[str, Any], PoeConfig]] = None,
         output: IO = sys.stdout,
         poetry_env_path: Optional[str] = None,
     ):
         self.cwd = cwd
-        self.config = PoeConfig(cwd=cwd, table=config)
+        self.config = (
+            config
+            if isinstance(config, PoeConfig)
+            else PoeConfig(cwd=cwd, table=config)
+        )
         self.ui = PoeUi(output=output)
         self.poetry_env_path = poetry_env_path
 
