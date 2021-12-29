@@ -26,9 +26,11 @@ Features
 
 |•| Shell completion of task names (and global options too for zsh)
 
+|•| Can be used standalone or as a poetry plugin
+
 |•| Tasks can be commands (with or without a shell) or references to python functions (like tool.poetry.scripts)
 
-|•| Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`
+|•| Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`, or you can define arguments explicitly.
 
 |•| Tasks can specify and reference environment variables as if they were evaluated by a shell
 
@@ -42,17 +44,26 @@ Features
 Installation
 ============
 
-Into your project (so it works inside poetry shell):
+1.
+  Install the CLI into any python environment
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  poetry add --dev poethepoet
+    pip install poethepoet
 
-And into any python environment (so it works outside of poetry shell)
+2.
+  Or into your project (so it works inside poetry shell):
 
-.. code-block:: bash
+  .. code-block:: bash
 
-  pip install poethepoet
+    poetry add --dev poethepoet
+
+3.
+  Or into poetry as a plugin (requires poetry >= 1.2)
+
+  .. code-block:: bash
+
+    poetry plugin add poethepoet[poetry_plugin]
 
 Enable tab completion for your shell
 ------------------------------------
@@ -143,14 +154,21 @@ You can also run it like so if you fancy
 
   python -m poethepoet [options] task [task_args]
 
-Or install it as a dev dependency with poetry and run it like
+Or use it as aa poetry plugin like (for poetry >= 1.2)
+
+.. code-block:: bash
+
+  poetry plugin add poethepoet[poetry_plugin]
+  poetry poe [options] task [task_args]
+
+Or just install it as a dev dependency with poetry and run it like
 
 .. code-block:: bash
 
   poetry add --dev poethepoet
   poetry run poe [options] task [task_args]
 
-Though it that case you might like to do :bash:`alias poe='poetry run poe'`.
+Though in that case you might like to define :bash:`alias poe='poetry run poe'`.
 
 Types of task
 =============
@@ -737,12 +755,85 @@ Normally shell tasks are executed using a posix shell by default (see section fo
     fib 89 1 1
   """
 
+Usage as a poetry plugin
+========================
+
+Depending on how you manage your python environments you may also wish to use Poe the
+Poet in the form of a poetry plugin. This requires installing `poethepoet[poetry_plugin]`
+either into the same environment as poetry or into poetry itself.
+`See the poetry docs <https://python-poetry.org/docs/master/plugins/#using-plugins>`_
+for more details.
+
+Due to how the poetry CLI works (using `cleo <https://github.com/sdispater/cleo>`_ — a
+featureful but highly opinionated  CLI framework) there exist a few minor limitations
+when used in this way.
+
+1.
+  Normally the poe CLI allows tasks to accept any arguments, either by defining the
+  expected options or by passing any command line tokens following the task name to the
+  task at runtime. This is not supported by cleo. The plugin implements a workaround
+  that mostly works, but still if the `--no-plugins` option is provided *anywhere* in
+  the command line then the poe plugin will never be invoked.
+
+2.
+  Poetry comes with its own
+  `command line completion <https://python-poetry.org/docs/#enable-tab-completion-for-bash-fish-or-zsh>`_,
+  but poe's command line completion won't work.
+
+3.
+  If you declare named arguments for your poe tasks then these are included in the
+  documentation when poe is invoked without any arguments. However the inline
+  documentation for poetry commands contains only the task names and help text.
+
+Therefore it is recommended to use the poe CLI tool directly if you don't mind having
+it installed onto your path.
+
+Configuring the plugin
+----------------------
+
+By default the poetry plugin will register *poe* as a command prefix so tasks can be
+invoked like:
+
+.. code-block:: sh
+
+  poetry poe [task_name] [task_args]
+
+And the poe documentation can be viewed via:
+
+.. code-block:: bash
+
+  poetry poe
+
+It is also possible to modify this behavoir, to either have a different command prefix
+or none at all by setting the :toml:`poetry_command` global option in your
+pyproject.toml like so:
+
+.. code-block:: toml
+
+  [tool.poe]
+  poetry_command = ""
+
+In this case poe tasks will be registered as top level commands on poetry and can be
+invoked simply as:
+
+.. code-block:: sh
+
+  poetry [task_name]
+
+.. warning::
+    Whatever :toml:`tool.poe.poetry_command` is set to must not already exist as a
+    poetry command!
+
+    Additionally if setting it to the emtpy string then care must be taken to avoid
+    defining any poe tasks that conflict with any other built in or plugin provided
+    poetry command.
 
 Usage without poetry
 ====================
 
 Poe the Poet was originally intended for use alongside poetry. But it works just as
-well with any other kind of virtualenv, or standalone. This behaviour is configurable
+well with any other kind of virtualenv, or simply as a general purpose way to define
+handy tasks for use within a certain directory structure! This behaviour is configurable
 via the :toml:`tool.poe.executor` global option (see above).
 
 By default poe will run tasks in the poetry managed environment, if the pyproject.toml
@@ -805,7 +896,6 @@ Supported python versions
 
 Poe the Poet officially supports python >3.6.2, and is tested with python 3.6 to 3.9 on
 macOS, linux and windows.
-
 
 Contributing
 ============
