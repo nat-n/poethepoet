@@ -207,6 +207,57 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
     pfwd = { "shell" = "ssh -N -L 0.0.0.0:8080:$STAGING:8080 $STAGING & ssh -N -L 0.0.0.0:5432:$STAGINGDB:5432 $STAGINGDB &" }
     pfwdstop = { "shell" = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")" }
 
+  By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the system and uses that. When running on windows, this might not always be possible. If bash is not found on the path on windows then poe will explicitly look for `Git bash <https://gitforwindows.org>`_ at the usual location.
+
+  **Using different types of shell/interpreter**
+
+  It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks.install-poetry]
+    shell = """
+    (Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python -
+    """
+    interpreter = "pwsh"
+
+  If your task content is restricted to syntax that is valid for both posix shells and powershell then you can maximise increase the likelihood of it working on any system by specifying the interpreter as:
+
+  .. code-block:: toml
+
+    interpreter = ["posix", "pwsh"]
+
+  It is also possible to specify python code as the shell task code as in the following example. However it is recommended to use a *script* task rather than writing complex code inline within your pyproject.toml.
+
+  .. code-block:: toml
+
+    [tool.poe.tasks.time]
+    shell = """
+    from datetime import datetime
+
+    print(datetime.now())
+    """
+    interpreter = "python"
+
+  The following interpreter values may be used:
+
+  posix
+      This is the default behavoir, equivalent to ["sh", "bash", "zsh"], meaning that poe will try to find sh, and fallback to bash, then zsh.
+  sh
+      Use the basic posix shell. This is often an alias for bash or dash depending on the operating system.
+  bash
+      Uses whatever version of bash can be found. This is usually the most portable option.
+  zsh
+      Uses whatever version of zsh can be found.
+  fish
+      Uses whatever version of fish can be found.
+  pwsh
+      Uses powershell version 6 or higher.
+  powershell
+      Uses the newest version of powershell that can be found.
+
+  The default value can be changed with the global *shell_interpreter* option as described below.
+
 - **Composite tasks** are defined as a sequence of other tasks as an array.
 
   By default the contents of the array are interpreted as references to other tasks
@@ -663,6 +714,29 @@ parent directory.
   location = "myvenv"
 
 See below for more details.
+
+Change the default shell interpreter
+------------------------------------
+
+Normally shell tasks are executed using a posix shell by default (see section for shell tasks above). This default can be overridden to something else by setting the *shell_interpreter* global option. In the following example we configure all shell tasks to use *fish* by default.
+
+.. code-block:: toml
+
+  tool.poe.shell_interpreter = "fish"
+
+  [tool.poe.tasks.fibonacci]
+  help = "Output the fibonacci sequence up to 89"
+  shell = """
+    function fib --argument-names max n0 n1
+      if test $max -ge $n0
+        echo $n0
+        fib $max $n1 (math $n0 + $n1)
+      end
+    end
+
+    fib 89 1 1
+  """
+
 
 Usage without poetry
 ====================

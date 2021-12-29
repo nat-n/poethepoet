@@ -1,0 +1,8 @@
+
+tool.poe.shell_interpreter = ["python"]
+
+[tool.poe.tasks.echo_python]
+shell = """
+import sys
+print(sys.version_info)
+"""

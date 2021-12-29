@@ -1,0 +1,8 @@
+[tool.poe.tasks.bad-interpreter]
+interpreter = "gosh"
+shell = """
+import "fmt"
+func main() {
+  fmt.Println("hello")
+}
+"""
