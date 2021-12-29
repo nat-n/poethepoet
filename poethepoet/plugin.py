@@ -17,17 +17,22 @@ class PoeCommand(Command):
         # bypass cleo's option parsing
         self._ignore_validation_errors = True
 
+    def _get_argv(self):
+        """
+        Get args to pass to poe
+
+        Discard any tokens prefixed with "-" preceding the task name.
+        """
+        tokenized_input = self.io.input._tokens[:]
+        task_name_index = _index_of_first_non_option(tokenized_input)
+        tokenized_input = tokenized_input[task_name_index:]
+        task_name = tokenized_input[0][len(self.prefix) :].strip()
+        task_args = tokenized_input[1:]
+        return (task_name, *task_args) if task_name else task_args
+
     def handle(self):
         from .app import PoeThePoet
         from .config import PoeConfig
-
-        # Get args to pass to poe
-        tokenized_input = self.io.input._tokens[:]
-        if tokenized_input[0] == "--":
-            tokenized_input = tokenized_input[1:]
-        task_name = tokenized_input[0][len(self.prefix) :].strip()
-        task_args = tokenized_input[1:]
-        cli_args = (task_name, *task_args) if task_name else task_args
 
         try:
             from poetry.utils.env import EnvManager
@@ -53,7 +58,7 @@ class PoeCommand(Command):
             output=self.io.output.stream,
             poetry_env_path=poetry_env_path,
         )
-        task_status = app(cli_args=cli_args)
+        task_status = app(cli_args=self._get_argv())
 
         if task_status:
             raise SystemExit(task_status)
@@ -162,12 +167,27 @@ class PoetryPlugin(ApplicationPlugin):
             # from this plugin by injecting a '--' token at the start of the list of
             # command line tokens
             tokens = io.input._tokens
+            task_name_index = _index_of_first_non_option(tokens)
             poe_commands = (prefix,) if prefix else task_names
-            if tokens and tokens[0] in poe_commands:
+            if (
+                0 <= task_name_index < len(tokens)
+                and tokens[task_name_index] in poe_commands
+            ):
                 # update tokens list in place
-                tokens.insert(0, "--")
+                tokens.insert(task_name_index, "--")
 
             continue_run(self, io)
 
         # Apply the patch
         cleo.application.Application._run = _run
+
+
+def _index_of_first_non_option(tokens: List[str]):
+    """
+    Find the index of the first token that doesn't start with `-`
+    Returns len(tokens) if none is found.
+    """
+    return next(
+        (index for index, token in enumerate(tokens) if token[0] != "-"),
+        len(tokens),
+    )
