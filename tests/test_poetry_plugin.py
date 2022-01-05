@@ -63,3 +63,11 @@ def test_running_tasks_without_poe_command_prefix(
         "Poe => echo --lol=:D --version --help\n--lol=:D --version --help\n"
     )
     assert result.stderr == ""
+
+
+@pytest.mark.slow
+def test_running_poetry_command_with_hooks(run_poetry, projects, setup_poetry_project):
+    result = run_poetry(["env", "info"], cwd=projects["poetry_plugin"])
+    assert "THIS IS YOUR ENV!" in result.stdout
+    assert "THAT WAS YOUR ENV!" in result.stdout
+    assert result.stderr == ""

@@ -1,6 +1,10 @@
 # pylint: disable=import-error
 
 from cleo.commands.command import Command
+from cleo.events.console_command_event import ConsoleCommandEvent
+from cleo.events.event_dispatcher import EventDispatcher
+from cleo.events.console_events import COMMAND, TERMINATE
+from cleo.io.io import IO
 from pathlib import Path
 from poetry.console.application import Application, COMMANDS
 from poetry.plugins.application_plugin import ApplicationPlugin
@@ -31,13 +35,21 @@ class PoeCommand(Command):
         return (task_name, *task_args) if task_name else task_args
 
     def handle(self):
+        poe = self.get_poe(self.application, self.io)
+        task_status = poe(cli_args=self._get_argv())
+
+        if task_status:
+            raise SystemExit(task_status)
+
+    @classmethod
+    def get_poe(cls, application: Application, io: IO):
         from .app import PoeThePoet
         from .config import PoeConfig
 
         try:
             from poetry.utils.env import EnvManager
 
-            poetry_env_path = EnvManager(self.application.poetry).get().path
+            poetry_env_path = EnvManager(application.poetry).get().path
         # pylint: disable=bare-except
         except:
             poetry_env_path = None
@@ -45,23 +57,19 @@ class PoeCommand(Command):
         cwd = Path(".").resolve()
         config = PoeConfig(cwd=cwd)
 
-        if self.io.output.is_quiet():
+        if io.output.is_quiet():
             config._baseline_verbosity = -1
-        elif self.io.is_very_verbose():
+        elif io.is_very_verbose():
             config._baseline_verbosity = 2
-        elif self.io.is_verbose():
+        elif io.is_verbose():
             config._baseline_verbosity = 1
 
-        app = PoeThePoet(
+        return PoeThePoet(
             cwd=cwd,
             config=config,
-            output=self.io.output.stream,
+            output=io.output.stream,
             poetry_env_path=poetry_env_path,
         )
-        task_status = app(cli_args=self._get_argv())
-
-        if task_status:
-            raise SystemExit(task_status)
 
 
 class PoetryPlugin(ApplicationPlugin):
@@ -98,6 +106,10 @@ class PoetryPlugin(ApplicationPlugin):
                 )
 
         self._monkey_patch_cleo(command_prefix, list(poe_tasks.keys()))
+
+        self._register_command_event_handler(
+            application, poe_config.get("poetry_hooks", {})
+        )
 
     @classmethod
     def _get_config(cls, application: Application) -> Dict[str, Any]:
@@ -137,6 +149,59 @@ class PoetryPlugin(ApplicationPlugin):
                 {"name": command_name, "description": task_help, "prefix": prefix},
             ),
         )
+
+    def _register_command_event_handler(
+        self, application: Application, hooks: Dict[str, str]
+    ):
+        if not hooks:
+            return
+
+        pre_hooks = {}
+        post_hooks = {}
+        for key, task_ref in hooks.items():
+            prefix, command = key.split("_", 1)
+            command = command.replace("_", " ")
+            if prefix == "pre":
+                pre_hooks[command] = task_ref
+            if prefix == "post":
+                post_hooks[command] = task_ref
+
+        if pre_hooks:
+            application.event_dispatcher.add_listener(
+                COMMAND,
+                self._get_command_event_handler(pre_hooks, application),
+            )
+        if post_hooks:
+            application.event_dispatcher.add_listener(
+                TERMINATE,
+                self._get_command_event_handler(post_hooks, application),
+            )
+
+    def _get_command_event_handler(
+        self, hooks: Dict[str, str], application: Application
+    ):
+        def command_event_handler(
+            event: ConsoleCommandEvent,
+            event_name: str,
+            dispatcher: EventDispatcher,
+        ) -> None:
+            task = hooks.get(event.command.name)
+            if not task:
+                return
+
+            import shlex
+
+            task_status = PoeCommand.get_poe(application, event.io)(
+                cli_args=shlex.split(task)
+            )
+
+            if task_status:
+                event.io.write_line(
+                    "<error>Cancelling command due to failed hook task</error>"
+                )
+                raise SystemExit(task_status)
+
+        return command_event_handler
 
     def _monkey_patch_cleo(self, prefix: str, task_names: List[str]):
         """

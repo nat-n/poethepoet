@@ -52,7 +52,7 @@ def projects():
             f"{project_key}/"
             + re.match(
                 fr".*?/{project_key}_project/([_\w\/]+?)(:?\/pyproject)?.toml$",
-                str(path),
+                path.as_posix()
             ).groups()[0]: path
             for project_key, project_path in projects.items()
             for path in project_path.glob("**/*.toml")
@@ -323,7 +323,13 @@ def try_rm_dir(location: Path):
         # No idea why, but maybe this will help
         print("Retrying venv cleanup")
         time.sleep(1)
-        shutil.rmtree(location)
+        try:
+            shutil.rmtree(location)
+        except:
+            print(
+                "Cleanup failed. You might need to run poe clean before tests can be "
+                "run again."
+            )
 
 
 @pytest.fixture(scope="session")

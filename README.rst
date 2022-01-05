@@ -735,7 +735,10 @@ See below for more details.
 Change the default shell interpreter
 ------------------------------------
 
-Normally shell tasks are executed using a posix shell by default (see section for shell tasks above). This default can be overridden to something else by setting the *shell_interpreter* global option. In the following example we configure all shell tasks to use *fish* by default.
+Normally shell tasks are executed using a posix shell by default (see section for shell
+tasks above). This default can be overridden to something else by setting the
+*shell_interpreter* global option. In the following example we configure all shell tasks
+to use *fish* by default.
 
 .. code-block:: toml
 
@@ -757,7 +760,12 @@ Normally shell tasks are executed using a posix shell by default (see section fo
 Load tasks from another file
 ============================
 
-There are some scenarios where one might wish to define tasks outside of pyproject.toml. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, or simply have a lot of tasks and don't want the pyproject.toml to get too large. This can be achieved by creating a toml or json file within your project directory structure including the same structure for tasks as used in pyproject.toml
+There are some scenarios where one might wish to define tasks outside of pyproject.toml.
+For example, if you want to share tasks between projects via git modules, generate tasks
+definitions dynamically, or simply have a lot of tasks and don't want the pyproject.toml
+to get too large. This can be achieved by creating a toml or json file within your
+project directory structure including the same structure for tasks as used in
+pyproject.toml
 
 For example:
 
@@ -862,6 +870,46 @@ invoked simply as:
     Additionally if setting it to the emtpy string then care must be taken to avoid
     defining any poe tasks that conflict with any other built in or plugin provided
     poetry command.
+
+Hooking into poetry commands
+----------------------------
+
+It is also possible to configure a task to be run before or after a specific poetry
+command by declaring the poetry_hooks global option like so:
+
+.. code-block:: toml
+
+  [tool.poe.poetry_hooks]
+  pre_build  = "prep-assets --verbosity=5"
+  post_build = "archive-build"
+
+  [tool.poe.tasks.prep-assets]
+  script = "scripts:prepare_assets"
+  help   = "Optimise static assets for inclusion in the build"
+
+  [tool.poe.tasks.archive-build]
+  script = "scripts:archive_build"
+  help   = "Upload the latest build version to archive server"
+
+In this example the :code:`prep-assets` task will be run as the first step in calling
+:bash:`poetry build` with an argument passed as if the task were being called via the
+poe CLI. We've also configured the :code:`archive-build` task to be run after every
+successful build.
+
+If a task fails when running as a hook, then the poetry command will exit with an error.
+If it is a *pre* hook then this will cause the actual poetry command not to execute.
+This behaviour may be useful for running checks before :bash:`poetry publish`
+
+Hooks can be disabled for a single invocation by passing the :bash:`--no-plugins` option
+to poetry.
+
+Namespaced commands like :bash:`poetry env info` can be specified with underscores like so:
+
+.. code-block:: toml
+
+  [tool.poe.poetry_hooks]
+  post_env_info = "info"
+
 
 Usage without poetry
 ====================

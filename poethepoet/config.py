@@ -32,6 +32,7 @@ class PoeConfig:
         "executor": dict,
         "include": (str, list),
         "poetry_command": str,
+        "poetry_hooks": dict,
         "shell_interpreter": (str, list),
         "verbosity": int,
     }
