@@ -1,4 +1,5 @@
 from pathlib import Path
+import pytest
 import sys
 
 PY_V = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -19,6 +20,7 @@ def test_virtualenv_executor_fails_without_venv_dir(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
+@pytest.mark.slow
 def test_virtualenv_executor_activates_venv(
     run_poe_subproc, with_virtualenv_and_venv, projects
 ):
@@ -30,6 +32,7 @@ def test_virtualenv_executor_activates_venv(
         assert result.stderr == ""
 
 
+@pytest.mark.slow
 def test_virtualenv_executor_provides_access_to_venv_content(
     run_poe_subproc, with_virtualenv_and_venv, projects
 ):
@@ -53,6 +56,7 @@ def test_virtualenv_executor_provides_access_to_venv_content(
         assert result.stderr == ""
 
 
+@pytest.mark.slow
 def test_detect_venv(
     projects,
     run_poe_subproc,

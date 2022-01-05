@@ -39,6 +39,7 @@ class RunContext:
         env: Mapping[str, str],
         dry: bool,
         poe_active: Optional[str],
+        multistage: bool = False,
     ):
         self.config = config
         self.ui = ui

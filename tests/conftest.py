@@ -21,18 +21,23 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TOML = PROJECT_ROOT.joinpath("pyproject.toml")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def is_windows():
     return sys.platform == "win32"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def pyproject():
     with PROJECT_TOML.open("rb") as toml_file:
         return tomli.load(toml_file)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def poe_project_path():
+    return PROJECT_ROOT
+
+
+@pytest.fixture(scope="session")
 def projects():
     """
     General purpose provider of paths to test projects with the conventional layout
@@ -45,25 +50,23 @@ def projects():
     projects.update(
         {
             f"{project_key}/"
-            + re.match(r"^([_\w]+).toml$", path.name).groups()[0]: path
+            + re.match(
+                fr".*?/{project_key}_project/([_\w\/]+?)(:?\/pyproject)?.toml$",
+                str(path),
+            ).groups()[0]: path
             for project_key, project_path in projects.items()
-            for path in project_path.glob("*.toml")
+            for path in project_path.glob("**/*.toml")
         }
     )
     return projects
 
 
-@pytest.fixture
-def poe_project_path():
-    return PROJECT_ROOT
-
-
-@pytest.fixture
+@pytest.fixture(scope="session")
 def low_verbosity_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "low_verbosity")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def high_verbosity_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "high_verbosity")
 
@@ -175,16 +178,6 @@ def run_poe(capsys, projects):
     return run_poe
 
 
-@pytest.fixture
-def esc_prefix(is_windows):
-    """
-    When executing on windows it's not necessary to escape the $ for variables
-    """
-    if is_windows:
-        return ""
-    return "\\"
-
-
 @pytest.fixture(scope="function")
 def run_poe_main(capsys, projects):
     def run_poe_main(
@@ -206,7 +199,50 @@ def run_poe_main(capsys, projects):
     return run_poe_main
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def run_poetry(use_virtualenv, poe_project_path):
+    venv_location = poe_project_path / "tests" / "temp" / "poetry_venv"
+
+    def run_poetry(args: List[str], cwd: str, env: Optional[Dict[str, str]] = None):
+        venv = Virtualenv(venv_location)
+        poetry_proc = Popen(
+            (venv.resolve_executable("poetry"), *args),
+            env=venv.get_env_vars({**os.environ, **(env or {})}),
+            stdout=PIPE,
+            stderr=PIPE,
+            cwd=cwd,
+        )
+        poetry_out, poetry_err = poetry_proc.communicate()
+
+        result = PoeRunResult(
+            code=poetry_proc.returncode,
+            path=cwd,
+            capture="",
+            stdout=poetry_out.decode().replace("\r\n", "\n"),
+            stderr=poetry_err.decode().replace("\r\n", "\n"),
+        )
+        print(result)  # when a test fails this is usually useful to debug
+        return result
+
+    with use_virtualenv(
+        venv_location,
+        [".[poetry_plugin]", "poetry==1.2.0a2", "--pre"],
+        require_empty=True,
+    ):
+        yield run_poetry
+
+
+@pytest.fixture(scope="session")
+def esc_prefix(is_windows):
+    """
+    When executing on windows it's not necessary to escape the $ for variables
+    """
+    if is_windows:
+        return ""
+    return "\\"
+
+
+@pytest.fixture(scope="session")
 def install_into_virtualenv():
     def install_into_virtualenv(location: Path, contents: List[str]):
         venv = Virtualenv(location)
@@ -220,7 +256,7 @@ def install_into_virtualenv():
     return install_into_virtualenv
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def use_venv(install_into_virtualenv):
     @contextmanager
     def use_venv(
@@ -251,7 +287,7 @@ def use_venv(install_into_virtualenv):
     return use_venv
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def use_virtualenv(install_into_virtualenv):
     @contextmanager
     def use_virtualenv(
@@ -290,7 +326,7 @@ def try_rm_dir(location: Path):
         shutil.rmtree(location)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def with_virtualenv_and_venv(use_venv, use_virtualenv):
     def with_virtualenv_and_venv(
         location: Path,

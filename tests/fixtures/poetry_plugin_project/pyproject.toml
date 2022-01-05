@@ -1,0 +1,19 @@
+[tool.poetry]
+name        = "poethepoet_plugin"
+version     = "0.1.0"
+description = "A project that uses poetry as a plugin."
+authors     = ["Nat Noordanus <n@natn.me>"]
+
+[tool.poetry.dependencies]
+python = "^3.6.2"
+
+[tool.poetry.dev-dependencies]
+flask      = "1.0.0"
+
+[tool.poe.tasks]
+echo = { cmd = "echo", help = "It's like echo"}
+flask-version = "flask --version"
+
+[build-system]
+requires      = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

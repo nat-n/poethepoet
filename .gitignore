@@ -1,4 +1,5 @@
 notes/
+tests/temp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

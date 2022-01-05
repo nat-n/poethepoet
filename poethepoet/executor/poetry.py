@@ -22,26 +22,23 @@ class PoetryExecutor(PoeExecutor):
         Execute the given cmd as a subprocess inside the poetry managed dev environment
         """
 
+        # If this run involves multiple executions then it's worth trying to
+        # avoid repetative (and expensive) calls to `poetry run` if we can
+        poetry_env = self._get_poetry_virtualenv(force=self.context.multistage)
+
         if (
             bool(os.environ.get("POETRY_ACTIVE"))
             or self.context.poe_active == PoetryExecutor.__key__
+            or sys.prefix == poetry_env
         ):
-            # We're already inside a poetry shell or a recursive poe call so we can
-            # execute the command unaltered
+            # The target venv is already active so we can execute the command unaltered
             return self._execute_cmd(cmd, input)
 
-        if self.context.multistage:
-            # This run involves multiple executions so it's worth trying to avoid
-            # repetative (and expensive) calls to `poetry run` if we can
-            poetry_env = self._get_poetry_virtualenv()
-
-            if sys.prefix == poetry_env:
-                # Poetry venv is already in use, no need to activate it
-                return self._execute_cmd(cmd, input)
-
+        if poetry_env:
             # Execute the task in the virtualenv from poetry
             return self._execute_cmd(cmd, input, venv=Virtualenv(Path(poetry_env)))
 
+        # Run this task with `poetry run`
         return self._execute_cmd((self._poetry_cmd(), "run", *cmd), input)
 
     def _execute_cmd(
@@ -68,19 +65,19 @@ class PoetryExecutor(PoeExecutor):
             shell=shell,
         )
 
-    def _get_poetry_virtualenv(self):
+    def _get_poetry_virtualenv(self, force: bool = True):
         """
         Ask poetry where it put the virtualenv for this project.
         This is a relatively expensive operation so uses the context.exec_cache
         """
-        if "poetry_virtualenv" not in self.context.exec_cache:
+        if force and "poetry_virtualenv" not in self.context.exec_cache:
             self.context.exec_cache["poetry_virtualenv"] = (
                 Popen((self._poetry_cmd(), "env", "info", "-p"), stdout=PIPE)
                 .communicate()[0]
                 .decode()
                 .strip()
             )
-        return self.context.exec_cache["poetry_virtualenv"]
+        return self.context.exec_cache.get("poetry_virtualenv")
 
     def _poetry_cmd(self):
         return shutil.which("poetry") or "poetry"
