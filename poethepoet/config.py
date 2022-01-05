@@ -1,6 +1,7 @@
+import json
 from pathlib import Path
 import tomli
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 from .exceptions import PoeException
 
 
@@ -19,7 +20,9 @@ class PoeConfig:
         "python",
     )
 
-    # Options allowed directly under tool.poe in pyproject.toml
+    """
+    Options allowed directly under tool.poe in pyproject.toml
+    """
     __options__ = {
         "default_task_type": str,
         "default_array_task_type": str,
@@ -27,6 +30,7 @@ class PoeConfig:
         "env": dict,
         "envfile": str,
         "executor": dict,
+        "include": (str, list),
         "poetry_command": str,
         "shell_interpreter": (str, list),
         "verbosity": int,
@@ -43,7 +47,7 @@ class PoeConfig:
         table: Optional[Mapping[str, Any]] = None,
     ):
         self.cwd = Path(".").resolve() if cwd is None else Path(cwd)
-        self._poe = {} if table is None else table
+        self._poe = {} if table is None else dict(table)
         self._project_dir: Optional[Path] = None
 
     @property
@@ -105,6 +109,7 @@ class PoeConfig:
                 f"No poe configuration found in file at {self.TOML_NAME}"
             )
         self._project_dir = config_path.parent
+        self._load_includes(self._project_dir)
 
     def validate(self):
         from .task import PoeTask
@@ -115,6 +120,7 @@ class PoeConfig:
         unsupported_keys = set(self._poe) - supported_keys
         if unsupported_keys:
             raise PoeException(f"Unsupported keys in poe config: {unsupported_keys!r}")
+
         # Validate types of option values
         for key, option_type in self.__options__.items():
             if key in self._poe and not isinstance(self._poe[key], option_type):
@@ -122,28 +128,33 @@ class PoeConfig:
                     f"Unsupported value for option {key!r}, expected type to be "
                     f"{option_type.__name__}."
                 )
+
         # Validate executor config
         error = PoeExecutor.validate_config(self.executor)
         if error:
             raise PoeException(error)
+
         # Validate default_task_type value
         if not PoeTask.is_task_type(self.default_task_type, content_type=str):
             raise PoeException(
                 "Unsupported value for option `default_task_type` "
                 f"{self.default_task_type!r}"
             )
+
         # Validate default_array_task_type value
         if not PoeTask.is_task_type(self.default_array_task_type, content_type=list):
             raise PoeException(
                 "Unsupported value for option `default_array_task_type` "
                 f"{self.default_array_task_type!r}"
             )
+
         # Validate default_array_item_task_type value
         if not PoeTask.is_task_type(self.default_array_item_task_type):
             raise PoeException(
                 "Unsupported value for option `default_array_item_task_type` "
                 f"{self.default_array_item_task_type!r}"
             )
+
         # Validate env value
         for key, value in self.global_env.items():
             if isinstance(value, dict):
@@ -158,6 +169,7 @@ class PoeConfig:
                     f"Value of {key!r} in option `env` should be a string, but found "
                     f"{type(value)!r}"
                 )
+
         # Validate tasks
         for task_name, task_def in self.tasks.items():
             error = PoeTask.validate_def(task_name, task_def, self)
@@ -165,7 +177,7 @@ class PoeConfig:
                 continue
             raise PoeException(error)
 
-        # validate shell_interpreter type
+        # Validate shell_interpreter type
         for interpreter in self.shell_interpreter:
             if interpreter not in self.KNOWN_SHELL_INTERPRETERS:
                 return (
@@ -210,11 +222,74 @@ class PoeConfig:
             maybe_result = maybe_result.parents[1].joinpath(self.TOML_NAME).resolve()
         return maybe_result
 
+    def _load_includes(self, project_dir: Path):
+        includes: Union[str, Sequence[str]] = self._poe.get("include", tuple())
+        if isinstance(includes, str):
+            includes = (includes,)
+
+        for path_str in includes:
+            if not isinstance(path_str, str):
+                raise PoeException(f"Invalid include value {path_str!r}")
+
+            include_path = project_dir.joinpath(path_str).resolve()
+
+            if not str(include_path).startswith(str(project_dir)):
+                raise PoeException(
+                    f"Cannot include config from {path_str!r} because it's outside of "
+                    "the project."
+                )
+
+            if not include_path.exists():
+                # TODO: print warning in verbose mode, requires access to ui somehow
+                continue
+
+            if include_path.name.endswith(".toml"):
+                try:
+                    with include_path.open("rb") as file:
+                        self._merge_config(tomli.load(file), include_path)
+                except tomli.TOMLDecodeError as error:
+                    raise PoeException(
+                        f"Couldn't parse included toml file from {include_path}", error
+                    ) from error
+
+            elif include_path.name.endswith(".json"):
+                try:
+                    with include_path.open("rb") as file:
+                        self._merge_config(json.load(file), include_path)
+                except json.decoder.JSONDecodeError as error:
+                    raise PoeException(
+                        f"Couldn't parse included json file from {include_path}", error
+                    ) from error
+
+    def _merge_config(self, extra_config: Mapping[str, Any], path: Path):
+        from .task import PoeTask
+
+        try:
+            poe_config = extra_config.get("tool", {}).get("poe", {})
+            tasks = poe_config.get("tasks", {})
+        except AttributeError as error:
+            raise PoeException(
+                f"Invalid content in included file from {path}", error
+            ) from error
+
+        # Env is special because it can be extended rather than just overwritten
+        if "env" in poe_config:
+            self._poe["env"] = {**poe_config["env"], **self._poe.get("env", {})}
+
+        if "envfile" in poe_config and "envfile" not in self._poe:
+            self._poe["envfile"] = poe_config["envfile"]
+
+        # Includes additional tasks with preserved ordering
+        own_tasks = self._poe["tasks"]
+        for task_name, task_def in tasks.items():
+            if task_name not in own_tasks:
+                own_tasks[task_name] = task_def
+
     @staticmethod
     def _read_pyproject(path: Path) -> Mapping[str, Any]:
         try:
-            with path.open("rb") as pyproj:
-                return tomli.load(pyproj)
+            with path.open("rb") as file:
+                return tomli.load(file)
         except tomli.TOMLDecodeError as error:
             raise PoeException(f"Couldn't parse toml file at {path}", error) from error
         except Exception as error:

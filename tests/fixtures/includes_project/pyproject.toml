@@ -1,0 +1,7 @@
+[tool.poe]
+include = "greet.toml"
+
+
+[tool.poe.tasks.echo]
+cmd = "echo"
+help = "says what you say"

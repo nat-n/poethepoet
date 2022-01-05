@@ -37,7 +37,7 @@ class MetaPoeTask(type):
     """
 
     def __init__(cls, *args):
-        newclass = super().__init__(*args)
+        super().__init__(*args)
         if cls.__name__ == "PoeTask":
             return
         assert isinstance(getattr(cls, "__key__", None), str)

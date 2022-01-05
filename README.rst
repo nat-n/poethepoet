@@ -508,7 +508,6 @@ You can also use the toml syntax for subtables like so:
 When using this form the *name* option is no longer applicable because the key for the
 argument within the args table is taken as the name.
 
-
 Task argument options
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -755,6 +754,42 @@ Normally shell tasks are executed using a posix shell by default (see section fo
     fib 89 1 1
   """
 
+Load tasks from another file
+============================
+
+There are some scenarios where one might wish to define tasks outside of pyproject.toml. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, or simply have a lot of tasks and don't want the pyproject.toml to get too large. This can be achieved by creating a toml or json file within your project directory structure including the same structure for tasks as used in pyproject.toml
+
+For example:
+
+.. code-block:: toml
+
+  # acme_common/shared_tasks.toml
+  [tool.poe.tasks.build-image]
+  cmd = "docker build"
+
+
+.. code-block:: toml
+
+  [tool.poe]
+  # this references a file from a git submodule
+  include = "modules/acme_common/shared_tasks.toml"
+
+Imported files may also specify environment variables via
+:code:`tool.poe.envfile` or entries for :code:`tool.poe.env`.
+
+It's also possible to include tasks from multiple files by providing a list like
+so:
+
+.. code-block:: toml
+
+  [tool.poe]
+  include = ["modules/acme_common/shared_tasks.toml", "generated_tasks.json"]
+
+Files are loaded in the order specified. If an item already exists then the included value it ignored.
+
+If a referenced file is missing then poe ignores it without error, though
+failure to read the contents will result in failure.
+
 Usage as a poetry plugin
 ========================
 
@@ -840,7 +875,6 @@ By default poe will run tasks in the poetry managed environment, if the pyprojec
 contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to
 use from :bash:`./.venv` or :bash:`./venv` relative to the pyproject.toml file.
 Otherwise it falls back to running tasks without any special environment management.
-
 
 Composing tasks into graphs (Experimental)
 ==========================================
