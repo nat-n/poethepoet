@@ -8,7 +8,7 @@ authors     = ["Nat Noordanus <n@natn.me>"]
 python = "^3.6.2"
 
 [tool.poetry.dev-dependencies]
-flask      = "1.0.0"
+cowsay = "3.0"
 
 [tool.poe.poetry_hooks]
 pre_env_info = "echo 'THIS IS YOUR ENV!'"
@@ -16,7 +16,9 @@ post_env_info = "echo 'THAT WAS YOUR ENV!'"
 
 [tool.poe.tasks]
 echo = { cmd = "echo", help = "It's like echo"}
-flask-version = "flask --version"
+cow-greet = "cowsay 'good day sir!'"
+cow-cheese.shell = "import cowsay ;print(cowsay.char_names[1])"
+cow-cheese.interpreter = "python"
 
 [build-system]
 requires      = ["poetry-core"]

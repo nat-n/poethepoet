@@ -52,7 +52,7 @@ def projects():
             f"{project_key}/"
             + re.match(
                 fr".*?/{project_key}_project/([_\w\/]+?)(:?\/pyproject)?.toml$",
-                path.as_posix()
+                path.as_posix(),
             ).groups()[0]: path
             for project_key, project_path in projects.items()
             for path in project_path.glob("**/*.toml")
@@ -145,14 +145,16 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         task_out, task_err = poeproc.communicate()
 
         with temp_file.open("rb") as output_file:
-            captured_output = output_file.read().decode().replace("\r\n", "\n")
+            captured_output = (
+                output_file.read().decode(errors="ignore").replace("\r\n", "\n")
+            )
 
         result = PoeRunResult(
             code=poeproc.returncode,
             path=cwd,
             capture=captured_output,
-            stdout=task_out.decode().replace("\r\n", "\n"),
-            stderr=task_err.decode().replace("\r\n", "\n"),
+            stdout=task_out.decode(errors="ignore").replace("\r\n", "\n"),
+            stderr=task_err.decode(errors="ignore").replace("\r\n", "\n"),
         )
         print(result)  # when a test fails this is usually useful to debug
         return result
@@ -200,7 +202,7 @@ def run_poe_main(capsys, projects):
 
 
 @pytest.fixture(scope="session")
-def run_poetry(use_virtualenv, poe_project_path):
+def run_poetry(use_venv, poe_project_path):
     venv_location = poe_project_path / "tests" / "temp" / "poetry_venv"
 
     def run_poetry(args: List[str], cwd: str, env: Optional[Dict[str, str]] = None):
@@ -218,13 +220,13 @@ def run_poetry(use_virtualenv, poe_project_path):
             code=poetry_proc.returncode,
             path=cwd,
             capture="",
-            stdout=poetry_out.decode().replace("\r\n", "\n"),
-            stderr=poetry_err.decode().replace("\r\n", "\n"),
+            stdout=poetry_out.decode(errors="ignore").replace("\r\n", "\n"),
+            stderr=poetry_err.decode(errors="ignore").replace("\r\n", "\n"),
         )
         print(result)  # when a test fails this is usually useful to debug
         return result
 
-    with use_virtualenv(
+    with use_venv(
         venv_location,
         [".[poetry_plugin]", "poetry==1.2.0a2", "--pre"],
         require_empty=True,
@@ -251,7 +253,7 @@ def install_into_virtualenv():
             env=venv.get_env_vars(os.environ),
             stdout=PIPE,
             stderr=PIPE,
-        ).wait()
+        ).communicate(timeout=120)
 
     return install_into_virtualenv
 

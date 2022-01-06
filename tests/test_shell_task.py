@@ -46,6 +46,7 @@ def test_shell_task_with_dash_case_arg(run_poe_subproc):
     assert result.stderr == ""
 
 
+@pytest.mark.skipif(not shutil.which("sh"), reason="No sh available")
 def test_interpreter_sh(run_poe_subproc):
     result = run_poe_subproc("echo_sh", project="shells")
     assert result.capture == (f"Poe => echo $0 $test_var\n")
@@ -53,6 +54,7 @@ def test_interpreter_sh(run_poe_subproc):
     assert result.stderr == ""
 
 
+@pytest.mark.skipif(not shutil.which("bash"), reason="No bash available")
 def test_interpreter_bash(run_poe_subproc):
     result = run_poe_subproc("echo_bash", project="shells")
     assert result.capture == (f"Poe => echo $0 $test_var\n")
@@ -61,10 +63,7 @@ def test_interpreter_bash(run_poe_subproc):
     assert result.stderr == ""
 
 
-@pytest.mark.skipif(
-    not (shutil.which("powershell") or shutil.which("pwsh")),
-    reason="No powershell available",
-)
+@pytest.mark.skipif(not shutil.which("pwsh"), reason="No powershell available")
 def test_interpreter_pwsh(run_poe_subproc, is_windows):
     result = run_poe_subproc("echo_pwsh", project="shells")
     assert result.capture == (f"Poe => echo $ENV:test_var\n")

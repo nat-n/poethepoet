@@ -8,14 +8,14 @@ authors     = ["Nat Noordanus <n@natn.me>"]
 python = "^3.6.2"
 
 [tool.poetry.dev-dependencies]
-flask      = "1.0.0"
+cowsay = "3.0"
 
 [tool.poe]
 poetry_command = ""
 
 [tool.poe.tasks]
 echo = { cmd = "echo", help = "It's like echo"}
-flask-version = "flask --version"
+cow-greet = "cowsay 'good day sir!'"
 
 [build-system]
 requires      = ["poetry-core"]

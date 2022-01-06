@@ -45,7 +45,10 @@ class ShellTask(PoeTask):
         interpreter_cmd = self.resolve_interpreter_cmd()
         if not interpreter_cmd:
             config_value = self._get_interpreter_config()
-            message = f"Couldn't locate interpreter executable for {config_value!r} to run shell task. "
+            message = (
+                f"Couldn't locate interpreter executable for {config_value!r} to run "
+                "shell task. "
+            )
             if self._is_windows and config_value in ("posix", "bash"):
                 message += "Installing Git Bash or using WSL should fix this."
             else:

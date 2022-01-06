@@ -45,7 +45,13 @@ Installation
 ============
 
 1.
-  Install the CLI into any python environment
+  Install the CLI
+
+  .. code-block:: bash
+
+    pipx install poethepoet
+
+  Or use pip to install into any python environment
 
   .. code-block:: bash
 
@@ -982,9 +988,11 @@ macOS, linux and windows.
 Contributing
 ============
 
-There's plenty to do, come say hi in `the issues <https://github.com/nat-n/poethepoet/issues>`_! 👋
+There's plenty to do, come say hi in
+`the issues <https://github.com/nat-n/poethepoet/issues>`_! 👋
 
-Also check out the `CONTRIBUTING.MD <https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.md>`_ 🤓
+Also check out the
+`CONTRIBUTING.MD <https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.md>`_ 🤓
 
 Licence
 =======
