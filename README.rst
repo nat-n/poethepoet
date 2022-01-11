@@ -160,7 +160,7 @@ You can also run it like so if you fancy
 
   python -m poethepoet [options] task [task_args]
 
-Or use it as aa poetry plugin like (for poetry >= 1.2)
+Or use it as a poetry plugin (for poetry >= 1.2) like so
 
 .. code-block:: bash
 
