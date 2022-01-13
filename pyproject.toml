@@ -1,6 +1,6 @@
 [tool.poetry]
 name        = "poethepoet"
-version     = "0.12.0"
+version     = "0.12.1"
 description = "A task runner that works well with poetry."
 authors     = ["Nat Noordanus <n@natn.me>"]
 readme      = "README.rst"
@@ -9,7 +9,7 @@ repository  = "https://github.com/nat-n/poethepoet"
 homepage    = "https://github.com/nat-n/poethepoet"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = ">=3.6.2"
 pastel = "^0.2.1"
 tomli  = "^1.2.2"
 poetry = {version = "^1.0", allow-prereleases = true, optional = true}
