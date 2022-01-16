@@ -1,0 +1,2 @@
+[tool.poe]
+include = "greet.toml"

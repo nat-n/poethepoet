@@ -281,7 +281,7 @@ class PoeConfig:
             self._poe["envfile"] = poe_config["envfile"]
 
         # Includes additional tasks with preserved ordering
-        own_tasks = self._poe["tasks"]
+        self._poe["tasks"] = own_tasks = self._poe.get("tasks", {})
         for task_name, task_def in tasks.items():
             if task_name not in own_tasks:
                 own_tasks[task_name] = task_def
