@@ -74,7 +74,12 @@ class PoeCommand(Command):
 
 class PoetryPlugin(ApplicationPlugin):
     def activate(self, application: Application) -> None:
-        poe_config = self._get_config(application)
+        try:
+            poe_config = self._get_config(application)
+        except RuntimeError:
+            # If there's no pyproject.toml then probably that's OK, don't freak out
+            return
+
         command_prefix = poe_config.get("poetry_command", "poe")
         poe_tasks = poe_config.get("tasks", {})
         self._validate_command_prefix(command_prefix)
