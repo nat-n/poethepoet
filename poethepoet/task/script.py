@@ -54,7 +54,7 @@ class ScriptTask(PoeTask):
             "from os import environ; "
             "from importlib import import_module; "
             f"sys.argv = {argv!r}; sys.path.append('src');"
-            f"\n{self.format_args_class(self.named_args)}"
+            f"{self.format_args_class(self.named_args)}"
             f"import_module('{target_module}').{function_call}",
         )
 
