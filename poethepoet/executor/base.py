@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+from ..env.manager import EnvVarsManager
 from ..exceptions import PoeException
 from ..virtualenv import Virtualenv
 
@@ -46,13 +47,14 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     working_dir: Optional["Path"]
 
     __executor_types: Dict[str, Type["PoeExecutor"]] = {}
+    __key__: Optional[str] = None
 
     def __init__(
         self,
         invocation: Tuple[str, ...],
         context: "RunContext",
         options: Mapping[str, str],
-        env: Mapping[str, str],
+        env: EnvVarsManager,
         working_dir: Optional["Path"] = None,
         dry: bool = False,
         capture_stdout: Union[str, bool] = False,
@@ -70,7 +72,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         cls,
         invocation: Tuple[str, ...],
         context: "RunContext",
-        env: Mapping[str, str],
+        env: EnvVarsManager,
         working_dir: Optional["Path"] = None,
         dry: bool = False,
         executor_config: Optional[Mapping[str, str]] = None,
@@ -117,7 +119,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             return cls.__executor_types[config_executor_type]
 
     def execute(self, cmd: Sequence[str], input: Optional[bytes] = None) -> int:
-        raise NotImplementedError
+        """
+        Execute the given cmd as a subprocess inside the poetry managed dev environment
+        """
+        return self._exec_via_subproc(cmd, input=input)
 
     def _exec_via_subproc(
         self,
@@ -130,7 +135,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         if self.dry:
             return 0
         popen_kwargs: MutableMapping[str, Any] = {"shell": shell}
-        popen_kwargs["env"] = self.env if env is None else env
+        popen_kwargs["env"] = dict(
+            (self.env.to_dict() if env is None else env), POE_ACTIVE=self.__key__
+        )
         if input is not None:
             popen_kwargs["stdin"] = PIPE
         if self.capture_stdout:

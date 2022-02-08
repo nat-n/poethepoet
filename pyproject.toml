@@ -101,7 +101,7 @@ commands =
 
 
 [tool.coverage.report]
-omit = ["**/site-packages/**"]
+omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"]
 
 
 [tool.pytest.ini_options]

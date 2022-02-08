@@ -20,9 +20,7 @@ class VirtualenvExecutor(PoeExecutor):
         return self._exec_via_subproc(
             (venv.resolve_executable(cmd[0]), *cmd[1:]),
             input=input,
-            env=dict(
-                venv.get_env_vars(self.env), POE_ACTIVE=VirtualenvExecutor.__key__
-            ),
+            env=venv.get_env_vars(self.env.to_dict()),
         )
 
     def _resolve_virtualenv(self) -> Virtualenv:

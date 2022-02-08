@@ -17,7 +17,7 @@ from typing import (
 from .args import PoeTaskArgs
 from ..exceptions import PoeException
 from ..helpers import is_valid_env_var
-from ..helpers.env import resolve_envvars
+from ..env.manager import EnvVarsManager
 
 if TYPE_CHECKING:
     from ..context import RunContext
@@ -191,30 +191,24 @@ class PoeTask(metaclass=MetaPoeTask):
             return PoeTaskArgs(args_def, self.name).parse(extra_args)
         return None
 
-    def add_named_args_to_env(
-        self, env: Mapping[str, str]
-    ) -> Tuple[Mapping[str, str], bool]:
-        if self.named_args is None:
-            return env, False
-        return (
-            dict(
-                env,
-                **(
-                    {
-                        key: str(value)
-                        for key, value in self.named_args.items()
-                        if value is not None
-                    }
-                ),
-            ),
-            bool(self.named_args),
-        )
+    @property
+    def has_named_args(self):
+        return bool(self.named_args)
+
+    def get_named_arg_values(self) -> Mapping[str, str]:
+        if not self.named_args:
+            return {}
+        return {
+            key: str(value)
+            for key, value in self.named_args.items()
+            if value is not None
+        }
 
     def run(
         self,
         context: "RunContext",
         extra_args: Sequence[str] = tuple(),
-        env: Optional[Mapping[str, str]] = None,
+        parent_env: Optional[EnvVarsManager] = None,
     ) -> int:
         """
         Run this task
@@ -223,8 +217,8 @@ class PoeTask(metaclass=MetaPoeTask):
         return self._handle_run(
             context,
             extra_args,
-            context.get_env(
-                env,
+            context.get_task_env(
+                parent_env,
                 self.options.get("envfile"),
                 self.options.get("env"),
                 upstream_invocations["uses"],
@@ -235,10 +229,10 @@ class PoeTask(metaclass=MetaPoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: Mapping[str, str],
+        env: EnvVarsManager,
     ) -> int:
         """
-        _handle_run must be implemented by a subclass and return a single executor
+        This method must be implemented by a subclass and return a single executor
         result.
         """
         raise NotImplementedError
@@ -256,23 +250,22 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         NB. this memoization assumes the context (and contained env vars) will be the
         same in all instances for the lifetime of this object. Whilst this should be OK
-        for all corrent usecases is it strictly speaking something that this object
+        for all current usecases is it strictly speaking something that this object
         should not know enough to safely assume. So we probably want to revisit this.
         """
         if self.__upstream_invocations is None:
-            env: Mapping
-            env = context.get_env(
-                {}, self.options.get("envfile"), self.options.get("env")
+            env = context.get_task_env(
+                None, self.options.get("envfile"), self.options.get("env")
             )
-            env, _ = self.add_named_args_to_env(env)
+            env.update(self.get_named_arg_values())
 
             self.__upstream_invocations = {
                 "deps": [
-                    tuple(shlex.split(resolve_envvars(task_ref, env)))
+                    tuple(shlex.split(env.fill_template(task_ref)))
                     for task_ref in self.options.get("deps", tuple())
                 ],
                 "uses": {
-                    key: tuple(shlex.split(resolve_envvars(task_ref, env)))
+                    key: tuple(shlex.split(env.fill_template(task_ref)))
                     for key, task_ref in self.options.get("uses", {}).items()
                 },
             }
