@@ -2,7 +2,6 @@ import ast
 from typing import (
     Any,
     Dict,
-    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -12,7 +11,7 @@ from typing import (
 )
 from .base import PoeTask
 from ..exceptions import ScriptParseError
-from ..helpers.env import resolve_envvars
+from ..env.manager import EnvVarsManager
 from ..helpers.python import (
     resolve_function_call,
     parse_and_validate,
@@ -38,14 +37,14 @@ class ScriptTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: Mapping[str, str],
+        env: EnvVarsManager,
     ) -> int:
         # TODO: check whether the project really does use src layout, and don't do
         #       sys.path.append('src') if it doesn't
         target_module, function_call = self.parse_script_content(self.named_args)
         argv = [
             self.name,
-            *(resolve_envvars(token, env) for token in extra_args),
+            *(env.fill_template(token) for token in extra_args),
         ]
         cmd = (
             "python",

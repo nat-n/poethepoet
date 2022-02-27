@@ -2,7 +2,6 @@ from typing import (
     Any,
     Dict,
     List,
-    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -11,6 +10,7 @@ from typing import (
     Union,
 )
 from .base import PoeTask, TaskContent
+from ..env.manager import EnvVarsManager
 from ..exceptions import ExecutionError, PoeException
 
 if TYPE_CHECKING:
@@ -64,11 +64,11 @@ class SequenceTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: Mapping[str, str],
+        env: EnvVarsManager,
     ) -> int:
-        env, has_named_args = self.add_named_args_to_env(env)
+        env.update(self.get_named_arg_values())
 
-        if not has_named_args and any(arg.strip() for arg in extra_args):
+        if not self.has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
 
         if len(self.subtasks) > 1:
@@ -78,7 +78,9 @@ class SequenceTask(PoeTask):
         ignore_fail = self.options.get("ignore_fail")
         non_zero_subtasks: List[str] = list()
         for subtask in self.subtasks:
-            task_result = subtask.run(context=context, extra_args=tuple(), env=env)
+            task_result = subtask.run(
+                context=context, extra_args=tuple(), parent_env=env
+            )
             if task_result and not ignore_fail:
                 raise ExecutionError(
                     f"Sequence aborted after failed subtask {subtask.name!r}"

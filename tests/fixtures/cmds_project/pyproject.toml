@@ -8,3 +8,7 @@ env = { BEST_PASSWORD = "Password1" }
 [tool.poe.tasks.greet]
 shell = "echo $formal_greeting $subject"
 args = ["formal-greeting", "subject"]
+
+[tool.poe.tasks.surfin-bird]
+cmd = "echo $WORD is the word"
+env = { WORD = "${SOME_INPUT_VAR}"}

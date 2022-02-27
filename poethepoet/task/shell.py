@@ -5,7 +5,6 @@ from typing import (
     Any,
     Dict,
     List,
-    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -13,6 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+from ..env.manager import EnvVarsManager
 from ..exceptions import PoeException
 from .base import PoeTask
 
@@ -35,11 +35,11 @@ class ShellTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: Mapping[str, str],
+        env: EnvVarsManager,
     ) -> int:
-        env, has_named_args = self.add_named_args_to_env(env)
+        env.update(self.get_named_arg_values())
 
-        if not has_named_args and any(arg.strip() for arg in extra_args):
+        if not self.has_named_args and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
 
         interpreter_cmd = self.resolve_interpreter_cmd()

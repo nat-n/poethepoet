@@ -38,7 +38,9 @@ def test_virtualenv_executor_provides_access_to_venv_content(
 ):
     # version 1.0.0 of flask isn't around much
     venv_path = projects["venv"].joinpath("myvenv")
-    for _ in with_virtualenv_and_venv(venv_path, ["flask==1.0.0"]):
+    for _ in with_virtualenv_and_venv(
+        venv_path, ["itsdangerous==2.0.1", "flask==1.0.0"]
+    ):
         # binaries from the venv are directly callable
         result = run_poe_subproc("server-version", project="venv")
         assert result.capture == "Poe => flask --version\n"
@@ -76,7 +78,7 @@ def test_detect_venv(
         assert result.stderr == ""
 
         # if we install flask into this virtualenv then we should get a different result
-        install_into_virtualenv(venv_path, ["flask==1.0.0"])
+        install_into_virtualenv(venv_path, ["itsdangerous==2.0.1", "flask==1.0.0"])
         result = run_poe_subproc("detect_flask", project="simple")
         assert result.capture == "Poe => detect_flask\n"
         assert result.stdout.startswith("Flask found at ")

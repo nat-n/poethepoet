@@ -2,7 +2,6 @@ import shlex
 from typing import (
     Any,
     Dict,
-    Mapping,
     Optional,
     Sequence,
     Type,
@@ -11,7 +10,7 @@ from typing import (
     Union,
 )
 from .base import PoeTask
-from ..helpers.env import resolve_envvars
+from ..env.manager import EnvVarsManager
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -32,14 +31,14 @@ class RefTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: Mapping[str, str],
+        env: EnvVarsManager,
     ) -> int:
         """
         Lookup and delegate to the referenced task
         """
-        invocation = tuple(shlex.split(resolve_envvars(self.content, env)))
+        invocation = tuple(shlex.split(env.fill_template(self.content)))
         task = self.from_config(invocation[0], self._config, self._ui, invocation)
-        return task.run(context=context, extra_args=extra_args, env=env)
+        return task.run(context=context, extra_args=extra_args, parent_env=env)
 
     @classmethod
     def _validate_task_def(
