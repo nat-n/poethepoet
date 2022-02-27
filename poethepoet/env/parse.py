@@ -1,13 +1,21 @@
 from enum import Enum
 import re
-from typing import Dict, List, Optional, TextIO
+from typing import Iterable, Optional, Sequence
 
 
 class ParserException(ValueError):
-    def __init__(self, message: str, position: int):
-        super().__init__(message)
-        self.message = message
-        self.position = position
+    def __init__(self, issue: str, offset: int, lines: Iterable[str]):
+        self.line_num, self.position = self._get_line_number(offset, lines)
+        super().__init__(f"{issue} at line {self.line_num} position {self.position}.")
+
+    def _get_line_number(self, position: int, lines: Iterable[str]):
+        line_num = 1
+        for line in lines:
+            if len(line) > position:
+                break
+            line_num += 1
+            position -= len(line)
+        return line_num, position
 
 
 class ParserState(Enum):
@@ -21,19 +29,6 @@ class ParserState(Enum):
     IN_DOUBLE_QUOTE = 3
 
 
-def load_env_file(envfile: TextIO) -> Dict[str, str]:
-    """
-    Parses variable assignments from the given string. Expects a subset of bash syntax.
-    """
-
-    content_lines = envfile.readlines()
-    try:
-        return parse_env_file("".join(content_lines))
-    except ParserException as error:
-        line_num, position = _get_line_number(content_lines, error.position)
-        raise ValueError(f"{error.message} at line {line_num} position {position}.")
-
-
 VARNAME_PATTERN = r"^[\s\t;]*(?:export[\s\t]+)?([a-zA-Z_][a-zA-Z_0-9]*)"
 ASSIGNMENT_PATTERN = f"{VARNAME_PATTERN}="
 COMMENT_SUFFIX_PATTERN = r"^[\s\t;]*\#.*?\n"
@@ -43,8 +38,8 @@ SINGLE_QUOTE_VALUE_PATTERN = r"^((?:.|\n)*?)'"
 DOUBLE_QUOTE_VALUE_PATTERN = r"^((?:.|\n)*?)(\"|\\+)"
 
 
-def parse_env_file(content: str):
-    content = content + "\n"
+def parse_env_file(content_lines: Sequence[str]):
+    content = "".join(content_lines) + "\n"
     result = {}
     cursor = 0
     state = ParserState.SCAN_VAR_NAME
@@ -78,11 +73,12 @@ def parse_env_file(content: str):
                 if var_name_match:
                     cursor += var_name_match.span()[1]
                     raise ParserException(
-                        f"Expected assignment operator",
-                        cursor,
+                        f"Expected assignment operator", cursor, content_lines
                     )
 
-                raise ParserException(f"Expected variable assignment", cursor)
+                raise ParserException(
+                    f"Expected variable assignment", cursor, content_lines
+                )
 
             var_name = match.group(1)
             cursor += match.end()
@@ -133,7 +129,9 @@ def parse_env_file(content: str):
                 SINGLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException(f"Unmatched single quote", cursor - 1)
+                raise ParserException(
+                    f"Unmatched single quote", cursor - 1, content_lines
+                )
             var_content.append(match.group(1))
             cursor += match.end()
             state = ParserState.SCAN_VALUE
@@ -145,7 +143,9 @@ def parse_env_file(content: str):
                 DOUBLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException(f"Unmatched double quote", cursor - 1)
+                raise ParserException(
+                    f"Unmatched double quote", cursor - 1, content_lines
+                )
             new_var_content, backslashes_or_dquote = match.groups()
             var_content.append(new_var_content)
             cursor += match.end()
@@ -164,13 +164,3 @@ def parse_env_file(content: str):
                 cursor += 1
 
     return result
-
-
-def _get_line_number(lines: List[str], position: int):
-    line_num = 1
-    for line in lines:
-        if len(line) > position:
-            break
-        line_num += 1
-        position -= len(line)
-    return line_num, position

@@ -53,17 +53,11 @@ class PoetryExecutor(PoeExecutor):
             return self._exec_via_subproc(
                 (venv.resolve_executable(cmd[0]), *cmd[1:]),
                 input=input,
-                env=dict(
-                    venv.get_env_vars(self.env), POE_ACTIVE=PoetryExecutor.__key__
-                ),
+                env=venv.get_env_vars(self.env.to_dict()),
+                shell=shell,
             )
 
-        return self._exec_via_subproc(
-            cmd,
-            input=input,
-            env=dict(self.env, POE_ACTIVE=PoetryExecutor.__key__),
-            shell=shell,
-        )
+        return self._exec_via_subproc(cmd, input=input, shell=shell)
 
     def _get_poetry_virtualenv(self, force: bool = True):
         """

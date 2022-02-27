@@ -231,11 +231,17 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
     pfwd = { "shell" = "ssh -N -L 0.0.0.0:8080:$STAGING:8080 $STAGING & ssh -N -L 0.0.0.0:5432:$STAGINGDB:5432 $STAGINGDB &" }
     pfwdstop = { "shell" = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")" }
 
-  By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the system and uses that. When running on windows, this might not always be possible. If bash is not found on the path on windows then poe will explicitly look for `Git bash <https://gitforwindows.org>`_ at the usual location.
+  By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the
+  system and uses that. When running on windows, this might not always be possible. If
+  bash is not found on the path on windows then poe will explicitly look for
+  `Git bash <https://gitforwindows.org>`_ at the usual location.
 
   **Using different types of shell/interpreter**
 
-  It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:
+  It is also possible to specify an alternative interpreter (or list of compatible
+  interpreters ordered by preference) to be invoked to execute shell task content. For
+  example if you only expect the task to be executed on windows or other environments
+  with powershell installed then you can specify a powershell based task like so:
 
   .. code-block:: toml
 
@@ -245,13 +251,17 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
     """
     interpreter = "pwsh"
 
-  If your task content is restricted to syntax that is valid for both posix shells and powershell then you can maximise increase the likelihood of it working on any system by specifying the interpreter as:
+  If your task content is restricted to syntax that is valid for both posix shells and
+  powershell then you can maximise increase the likelihood of it working on any system
+  by specifying the interpreter as:
 
   .. code-block:: toml
 
     interpreter = ["posix", "pwsh"]
 
-  It is also possible to specify python code as the shell task code as in the following example. However it is recommended to use a *script* task rather than writing complex code inline within your pyproject.toml.
+  It is also possible to specify python code as the shell task code as in the following
+  example. However it is recommended to use a *script* task rather than writing complex
+  code inline within your pyproject.toml.
 
   .. code-block:: toml
 
@@ -266,9 +276,11 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
   The following interpreter values may be used:
 
   posix
-      This is the default behavoir, equivalent to ["sh", "bash", "zsh"], meaning that poe will try to find sh, and fallback to bash, then zsh.
+      This is the default behavoir, equivalent to ["sh", "bash", "zsh"], meaning that
+      poe will try to find sh, and fallback to bash, then zsh.
   sh
-      Use the basic posix shell. This is often an alias for bash or dash depending on the operating system.
+      Use the basic posix shell. This is often an alias for bash or dash depending on
+      the operating system.
   bash
       Uses whatever version of bash can be found. This is usually the most portable option.
   zsh
@@ -280,7 +292,8 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
   powershell
       Uses the newest version of powershell that can be found.
 
-  The default value can be changed with the global *shell_interpreter* option as described below.
+  The default value can be changed with the global *shell_interpreter* option as
+  described below.
 
 - **Composite tasks** are defined as a sequence of other tasks as an array.
 
@@ -387,7 +400,7 @@ env key like so:
     serve.env = { PORT = "9001" }
 
 Notice this example uses deep keys which can be more convenient but aren't as well
-supported by some toml implementations.
+supported by some older toml implementations.
 
 The above example can be modified to only set the `PORT` variable if it is not already
 set by replacing the last line with the following:
@@ -410,6 +423,19 @@ You can also specify an env file (with bash-like syntax) to load per task like s
     [tool.poe.tasks]
     serve.script  = "myapp:run"
     serve.envfile = ".env"
+
+It it also possible to reference existing env vars when defining a new env var for a
+task. This may be useful for aliasing or extending a variable already defined in the
+host environment, globally in the config, or in a referencd envfile. In the following
+example the value from $TF_VAR_service_port on the host environment is also made
+available as $FLASK_RUN_PORT within the task.
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    serve.cmd = "flask run"
+    serve.env   = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
+
 
 Declaring CLI arguments
 -----------------------
@@ -633,9 +659,13 @@ pyproject.toml file by specifying :toml:`tool.poe.env` like so
 
   [tool.poe.env]
   VAR1 = "FOO"
-  VAR2 = "BAR"
+  VAR2 = "BAR BAR BLACK ${FARM_ANIMAL}"
 
-As for the task level option, you can indicated that a variable should only be set if
+The example above also demonstrates how – as with env vars defined at the task level –
+posix variable interpolation syntax may be used to define global env vars with reference
+to variables already defined in the host environment or in a referenced env file.
+
+As with the task level option, you can indicated that a variable should only be set if
 not already set like so:
 
 .. code-block:: toml
@@ -799,7 +829,8 @@ so:
   [tool.poe]
   include = ["modules/acme_common/shared_tasks.toml", "generated_tasks.json"]
 
-Files are loaded in the order specified. If an item already exists then the included value it ignored.
+Files are loaded in the order specified. If an item already exists then the included
+value it ignored.
 
 If a referenced file is missing then poe ignores it without error, though
 failure to read the contents will result in failure.

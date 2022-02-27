@@ -22,3 +22,12 @@ def test_cmd_task_with_dash_case_arg(run_poe_subproc):
     assert result.capture == f"Poe => echo $formal_greeting $subject\n"
     assert result.stdout == "hey you\n"
     assert result.stderr == ""
+
+
+def test_cmd_alias_env_var(run_poe_subproc):
+    result = run_poe_subproc(
+        "surfin-bird", project="cmds", env={"SOME_INPUT_VAR": "BIRD"}
+    )
+    assert result.capture == f"Poe => echo BIRD is the word\n"
+    assert result.stdout == "BIRD is the word\n"
+    assert result.stderr == ""
