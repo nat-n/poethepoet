@@ -935,7 +935,7 @@ poetry_plugin = ["poetry"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.6.2"
-content-hash = "efabe7286c79ff1d1cca3615573df9b7446660189577b952dc09b8926dc5f17d"
+content-hash = "5e063911bf568c9f5ed91a447ecd2b1dd0f22a8edf1ffc2640f0e317e6b64f09"
 
 [metadata.files]
 appdirs = [
