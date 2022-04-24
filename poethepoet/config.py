@@ -234,12 +234,6 @@ class PoeConfig:
 
             include_path = project_dir.joinpath(path_str).resolve()
 
-            if not str(include_path).startswith(str(project_dir)):
-                raise PoeException(
-                    f"Cannot include config from {path_str!r} because it's outside of "
-                    "the project."
-                )
-
             if not include_path.exists():
                 # TODO: print warning in verbose mode, requires access to ui somehow
                 continue
