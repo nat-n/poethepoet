@@ -15,6 +15,11 @@ def echo_args():
     print("hello", *sys.argv[1:])
 
 
+def echo_script(*args, **kwargs):
+    print("args", args)
+    print("kwargs", kwargs)
+
+
 def describe_args(*args, **kwargs):
     for value in args:
         print(f"{type(value).__name__}: {value}")

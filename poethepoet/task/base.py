@@ -196,13 +196,18 @@ class PoeTask(metaclass=MetaPoeTask):
         return bool(self.named_args)
 
     def get_named_arg_values(self) -> Mapping[str, str]:
+        result = {}
+
         if not self.named_args:
             return {}
-        return {
-            key: str(value)
-            for key, value in self.named_args.items()
-            if value is not None
-        }
+
+        for key, value in self.named_args.items():
+            if isinstance(value, list):
+                result[key] = " ".join(str(item) for item in value)
+            elif value is not None:
+                result[key] = str(value)
+
+        return result
 
     def run(
         self,

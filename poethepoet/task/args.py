@@ -26,6 +26,7 @@ arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "positional": (bool, str),
     "required": bool,
     "type": str,
+    "multiple": (bool, int),
 }
 arg_types: Dict[str, Type] = {
     "string": str,
@@ -96,6 +97,8 @@ class PoeTaskArgs:
     @classmethod
     def validate_def(cls, task_name: str, args_def: ArgsDef) -> Optional[str]:
         arg_names: Set[str] = set()
+        arg_params = []
+
         if isinstance(args_def, list):
             for item in args_def:
                 # can be a list of strings (just arg name) or ArgConfig dictionaries
@@ -103,14 +106,13 @@ class PoeTaskArgs:
                     arg_name = item
                 elif isinstance(item, dict):
                     arg_name = item.get("name", "")
-                    error = cls._validate_params(item, arg_name, task_name)
-                    if error:
-                        return error
+                    arg_params.append((item, arg_name, task_name))
                 else:
                     return f"Arg {item!r} of task {task_name!r} has invlaid type"
                 error = cls._validate_name(arg_name, task_name, arg_names)
                 if error:
                     return error
+
         elif isinstance(args_def, dict):
             for arg_name, params in args_def.items():
                 error = cls._validate_name(arg_name, task_name, arg_names)
@@ -121,12 +123,26 @@ class PoeTaskArgs:
                         f"Unexpected 'name' option for arg {arg_name!r} of task "
                         f"{task_name!r}"
                     )
-                error = cls._validate_params(params, arg_name, task_name)
-                if error:
-                    return error
                 error = cls._validate_type(params, arg_name, task_name)
                 if error:
                     return error
+                arg_params.append((params, arg_name, task_name))
+
+        positional_multiple = None
+        for params, arg_name, task_name in arg_params:
+            error = cls._validate_params(params, arg_name, task_name)
+            if error:
+                return error
+
+            if params.get("positional", False):
+                if positional_multiple:
+                    return (
+                        f"Only the last positional arg of task {task_name!r} may accept"
+                        f" multiple values ({positional_multiple!r})."
+                    )
+                if params.get("multiple", False):
+                    positional_multiple = arg_name
+
         return None
 
     @classmethod
@@ -182,6 +198,17 @@ class PoeTaskArgs:
                     "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
                 )
 
+        multiple = params.get("multiple", False)
+        if (
+            not isinstance(multiple, bool)
+            and isinstance(multiple, int)
+            and multiple < 2
+        ):
+            return (
+                f"The multiple option for arg {arg_name!r} of {task_name!r}"
+                " must be given a boolean or integer >= 2"
+            )
+
         return None
 
     @classmethod
@@ -217,10 +244,19 @@ class PoeTaskArgs:
         }
 
         required = arg.get("required", False)
+        multiple = arg.get("multiple", False)
         arg_type = str(arg.get("type"))
 
+        if multiple is True:
+            if required:
+                result["nargs"] = "+"
+            else:
+                result["nargs"] = "*"
+        elif isinstance(multiple, int):
+            result["nargs"] = multiple
+
         if arg.get("positional", False):
-            if not required:
+            if not multiple and not required:
                 result["nargs"] = "?"
         else:
             result["dest"] = arg["name"]
@@ -235,7 +271,7 @@ class PoeTaskArgs:
 
     def parse(self, extra_args: Sequence[str]):
         parsed_args = vars(self.build_parser().parse_args(extra_args))
-        # Ensure positional args are still exposed by name even if the were parsed with
+        # Ensure positional args are still exposed by name even if they were parsed with
         # alternate identifiers
         for arg in self._args:
             if isinstance(arg.get("positional"), str):
