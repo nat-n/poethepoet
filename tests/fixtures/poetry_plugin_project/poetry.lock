@@ -1,6 +1,6 @@
 [[package]]
 name = "cowsay"
-version = "3.0"
+version = "4.0"
 description = "The famous cowsay for GNU/Linux is now available for python"
 category = "dev"
 optional = false
@@ -8,11 +8,11 @@ python-versions = "*"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.6.2"
-content-hash = "b37ed7894232a20155373603b2347aa464bfdd33fd808b3e4822456a880eb94c"
+python-versions = "^3.7"
+content-hash = "2d0a2b1a347aadbadc1ac311b3a6fb22222d61d1bc110deaf3b3321a0bd15413"
 
 [metadata.files]
 cowsay = [
-    {file = "cowsay-3.0-py2.py3-none-any.whl", hash = "sha256:d60b691f4a62823f329936bb4dce27f8af859d72a4de7b69da25fe68d86ac107"},
-    {file = "cowsay-3.0.tar.gz", hash = "sha256:f165c6924bf786e15d41f90ce932170c65e49d6c58ad4802db001397ed971117"},
+    {file = "cowsay-4.0-py2.py3-none-any.whl", hash = "sha256:2594b11d6624fff4bf5147b6bdd510ada54a7b5b4e3f2b15ac2a6d3cf99e0bf8"},
+    {file = "cowsay-4.0.tar.gz", hash = "sha256:a9e1e5f957054010b7faa6406deb5f6aa5cb674498118bbbed0151f92c2dc20e"},
 ]

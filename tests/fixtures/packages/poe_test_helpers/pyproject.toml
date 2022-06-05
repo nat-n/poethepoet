@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "poe_test_helpers"
+version = "0.1.0"
+description = "Provides cross platform executables to help with testing"
+authors = ["Nat Noordanus <n@natn.me>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.scripts]
+poe_test_echo = "poe_test_helpers:echo"
+poe_test_env = "poe_test_helpers:env"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

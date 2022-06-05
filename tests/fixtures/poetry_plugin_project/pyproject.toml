@@ -5,10 +5,10 @@ description = "A project that uses poetry as a plugin."
 authors     = ["Nat Noordanus <n@natn.me>"]
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.7"
 
 [tool.poetry.dev-dependencies]
-cowsay = "3.0"
+cowsay = "../packages/python_cowsay-1.0.1-py3-none-any.whl"
 
 [tool.poe.poetry_hooks]
 pre_env_info = "echo 'THIS IS YOUR ENV!'"
@@ -17,7 +17,7 @@ post_env_info = "echo 'THAT WAS YOUR ENV!'"
 [tool.poe.tasks]
 echo = { cmd = "echo", help = "It's like echo"}
 cow-greet = "cowsay 'good day sir!'"
-cow-cheese.shell = "import cowsay ;print(cowsay.char_names[1])"
+cow-cheese.shell = "import cowsay; print(list(cowsay.char_names)[1])"
 cow-cheese.interpreter = "python"
 
 [build-system]

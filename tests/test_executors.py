@@ -7,11 +7,10 @@ PY_V = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 def test_virtualenv_executor_fails_without_venv_dir(run_poe_subproc, projects):
     venv_path = projects["venv"].joinpath("myvenv")
-    print("venv_path", venv_path)
     assert (
         not venv_path.is_dir()
     ), f"This test requires the virtualenv not to already exist at {venv_path}!"
-    result = run_poe_subproc("show_env", project="venv")
+    result = run_poe_subproc("show-env", project="venv")
     assert (
         f"Error: Could not find valid virtualenv at configured location: {venv_path}"
         in result.capture
@@ -26,44 +25,38 @@ def test_virtualenv_executor_activates_venv(
 ):
     venv_path = projects["venv"].joinpath("myvenv")
     for _ in with_virtualenv_and_venv(venv_path):
-        result = run_poe_subproc("show_env", project="venv")
-        assert result.capture == "Poe => env\n"
+        result = run_poe_subproc("show-env", project="venv")
+        assert result.capture == "Poe => poe_test_env\n"
         assert f"VIRTUAL_ENV={venv_path}" in result.stdout
         assert result.stderr == ""
-
-
-DEPS_FOR_FLASK_1_0_0 = [
-    "itsdangerous==2.0.1",
-    "jinja2==2.11.3",
-    "markupsafe==1.1.1",
-    "flask==1.0.0",
-]
 
 
 @pytest.mark.slow
 def test_virtualenv_executor_provides_access_to_venv_content(
     run_poe_subproc, with_virtualenv_and_venv, projects
 ):
-    # version 1.0.0 of flask isn't around much
+    # Create a venv containing our special test package
     venv_path = projects["venv"].joinpath("myvenv")
     for _ in with_virtualenv_and_venv(
         venv_path,
-        DEPS_FOR_FLASK_1_0_0,
+        ("./tests/fixtures/packages/poe_test_package",),
     ):
         # binaries from the venv are directly callable
-        result = run_poe_subproc("server-version", project="venv")
-        assert result.capture == "Poe => flask --version\n"
-        assert "Flask 1.0" in result.stdout
+        result = run_poe_subproc("show-version", project="venv")
+        assert result.capture == "Poe => test_print_version\n"
+        assert "Poe test package 0.0.99" in result.stdout
         assert result.stderr == ""
+
         # python packages from the venv are importable
-        result = run_poe_subproc("flask-version", project="venv")
-        assert result.capture == "Poe => flask-version\n"
-        assert result.stdout == "1.0\n"
+        result = run_poe_subproc("test-package-version", project="venv")
+        assert result.capture == "Poe => test-package-version\n"
+        assert result.stdout == "0.0.99\n"
         assert result.stderr == ""
+
         # binaries from the venv are on the path
-        result = run_poe_subproc("server-version2", project="venv")
-        assert result.capture == "Poe => server-version2\n"
-        assert "Flask 1.0" in result.stdout
+        result = run_poe_subproc("test-package-exec-version", project="venv")
+        assert result.capture == "Poe => test-package-exec-version\n"
+        assert "Poe test package 0.0.99" in result.stdout
         assert result.stderr == ""
 
 
@@ -81,34 +74,36 @@ def test_detect_venv(
     """
     venv_path = projects["simple"].joinpath("venv")
     for _ in with_virtualenv_and_venv(venv_path):
-        result = run_poe_subproc("detect_flask", project="simple")
-        assert result.capture == "Poe => detect_flask\n"
-        assert result.stdout == "No flask found\n"
+        result = run_poe_subproc("detect_poe_test_package", project="simple")
+        assert result.capture == "Poe => detect_poe_test_package\n"
+        assert result.stdout == "No poe_test_package found\n"
         assert result.stderr == ""
 
-        # if we install flask into this virtualenv then we should get a different result
-        install_into_virtualenv(venv_path, DEPS_FOR_FLASK_1_0_0)
-        result = run_poe_subproc("detect_flask", project="simple")
-        assert result.capture == "Poe => detect_flask\n"
-        assert result.stdout.startswith("Flask found at ")
+        # if we install poe_test_package into this virtualenv then we should get a different result
+        install_into_virtualenv(
+            venv_path, ("./tests/fixtures/packages/poe_test_package",)
+        )
+        result = run_poe_subproc("detect_poe_test_package", project="simple")
+        assert result.capture == "Poe => detect_poe_test_package\n"
+        assert result.stdout.startswith("poe_test_package found at ")
         if is_windows:
             assert result.stdout.endswith(
-                f"\\tests\\fixtures\\simple_project\\venv\\lib\\site-packages\\flask\\__init__.py\n"
+                f"\\tests\\fixtures\\simple_project\\venv\\lib\\site-packages\\poe_test_package\\__init__.py\n"
             )
         else:
             assert result.stdout.endswith(
-                f"/tests/fixtures/simple_project/venv/lib/python{PY_V}/site-packages/flask/__init__.py\n"
+                f"/tests/fixtures/simple_project/venv/lib/python{PY_V}/site-packages/poe_test_package/__init__.py\n"
             )
         assert result.stderr == ""
 
 
 def test_simple_exector(run_poe_subproc):
     """
-    The task should execute but not find flask from a local venv
+    The task should execute but not find poe_test_package from a local venv
     """
-    result = run_poe_subproc("detect_flask", project="simple")
-    assert result.capture == "Poe => detect_flask\n"
-    assert result.stdout == "No flask found\n" or not result.stdout.endswith(
-        f"/tests/fixtures/simple_project/venv/lib/python{PY_V}/site-packages/flask/__init__.py\n"
+    result = run_poe_subproc("detect_poe_test_package", project="simple")
+    assert result.capture == "Poe => detect_poe_test_package\n"
+    assert result.stdout == "No poe_test_package found\n" or not result.stdout.endswith(
+        f"/tests/fixtures/simple_project/venv/lib/python{PY_V}/site-packages/poe_test_package/__init__.py\n"
     )
     assert result.stderr == ""

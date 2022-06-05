@@ -51,7 +51,7 @@ def projects():
         {
             f"{project_key}/"
             + re.match(
-                fr".*?/{project_key}_project/([_\w\/]+?)(:?\/pyproject)?.toml$",
+                rf".*?/{project_key}_project/([_\w\/]+?)(:?\/pyproject)?.toml$",
                 path.as_posix(),
             ).groups()[0]: path
             for project_key, project_path in projects.items()
@@ -98,7 +98,7 @@ class PoeRunResult(
 def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     coverage_setup = (
         "from coverage import Coverage;"
-        fr'Coverage(data_file=r\"{PROJECT_ROOT.joinpath(".coverage")}\").start();'
+        rf'Coverage(data_file=r\"{PROJECT_ROOT.joinpath(".coverage")}\").start();'
     )
     shell_cmd_template = (
         'python -c "'
@@ -125,7 +125,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
             with config_path.open("w+") as config_file:
                 toml.dump(config, config_file)
                 config_file.seek(0)
-            config_arg = fr"tomli.load(open(r\"{config_path}\", \"rb\"))"
+            config_arg = rf"tomli.load(open(r\"{config_path}\", \"rb\"))"
         else:
             config_arg = "None"
 
@@ -134,7 +134,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
             cwd=cwd,
             config=config_arg,
             run_args=",".join(f'r\\"{arg}\\"' for arg in run_args),
-            output=fr"open(r\"{temp_file}\", \"w\")",
+            output=rf"open(r\"{temp_file}\", \"w\")",
         )
 
         env = dict(os.environ, **(env or {}))
@@ -228,7 +228,12 @@ def run_poetry(use_venv, poe_project_path):
 
     with use_venv(
         venv_location,
-        [".[poetry_plugin]", "poetry==1.2.0a2", "--pre"],
+        [
+            ".[poetry_plugin]",
+            # TODO: poetry install from a release
+            "./tests/fixtures/packages/poetry-1.2.0b2.dev0-py3-none-any.whl",
+            "--pre",
+        ],
         require_empty=True,
     ):
         yield run_poetry
