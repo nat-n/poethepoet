@@ -1,10 +1,10 @@
-def flask_version():
-    import flask
+def test_package_version():
+    import poe_test_package
 
-    print(flask.__version__)
+    print(poe_test_package.__version__)
 
 
-def flask_exec_version():
+def test_package_exec_version():
     from subprocess import Popen, PIPE
 
-    Popen(["flask", "--version"])
+    Popen(["test_print_version"])

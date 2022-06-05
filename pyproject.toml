@@ -9,20 +9,24 @@ repository  = "https://github.com/nat-n/poethepoet"
 homepage    = "https://github.com/nat-n/poethepoet"
 
 [tool.poetry.dependencies]
-python = ">=3.6.2"
+python = ">=3.7"
 pastel = "^0.2.1"
 tomli  = ">=1.2.2"
 poetry = {version = "^1.0", allow-prereleases = true, optional = true}
 
 [tool.poetry.dev-dependencies]
-black      = "^21.10b0"
+black      = "^22.3.0"
 bpython    = "^0.22.1"
-mypy       = "^0.910"
-pylint     = "^2.11.1"
-pytest     = "^6.2.5"
+filelock   = "^3.7.1"
+mypy       = "^0.960"
+pylint     = "^2.13.0"
+pytest     = "^7.1.2"
 pytest-cov = "^3.0.0"
 rstcheck   = "^3.3.1"
-tox        = "^3.24.4"
+virtualenv = "^20.14.1"
+zipp       = "^3.8.0"
+distlib    = "^0.3.4"
+poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
 
 [tool.poetry.extras]
 poetry_plugin = ["poetry"]
@@ -85,19 +89,6 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   [tool.poe.tasks.poe]
   help   = "Execute poe from this repo (useful for testing)"
   script = "poethepoet:main"
-
-
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-isolated_build = true
-envlist = py36, py37, py38
-[testenv]
-whitelist_externals = poetry
-commands =
-    poetry install -v
-    poe test
-"""
 
 
 [tool.coverage.report]

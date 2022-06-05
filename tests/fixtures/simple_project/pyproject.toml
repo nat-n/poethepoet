@@ -1,2 +1,2 @@
 [tool.poe.tasks]
-detect_flask.script = "scripts_pkg:detect_flask"
+detect_poe_test_package.script = "scripts_pkg:detect_poe_test_package"

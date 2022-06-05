@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "poe_test_package"
+version = "0.0.99"
+description = "An installable package for use in test scenarios"
+authors = ["Nat Noordanus <n@natn.me>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.scripts]
+test_simple_say = "poe_test_package:simple_say"
+test_print_version = "poe_test_package:print_version"
+test_print_env = "poe_test_package:print_env"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

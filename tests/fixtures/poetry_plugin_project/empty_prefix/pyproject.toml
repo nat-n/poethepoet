@@ -5,10 +5,10 @@ description = "A project that uses poetry as a plugin."
 authors     = ["Nat Noordanus <n@natn.me>"]
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.7"
 
 [tool.poetry.dev-dependencies]
-cowsay = "3.0"
+cowsay = "../../packages/python_cowsay-1.0.1-py3-none-any.whl"
 
 [tool.poe]
 poetry_command = ""
