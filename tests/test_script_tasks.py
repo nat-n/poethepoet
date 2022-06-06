@@ -252,3 +252,95 @@ def test_script_with_positional_args_and_options(run_poe_subproc):
     assert result.capture == "Poe => greet-positional --upper help! Santa\n"
     assert result.stdout == "HELP! SANTA\n"
     assert result.stderr == ""
+
+
+def test_script_with_multi_value_args(run_poe_subproc):
+    # Test with all args
+    result = run_poe_subproc(
+        "multiple-value-args",
+        "hey",
+        "1",
+        "2",
+        "3",
+        "--widgets",
+        "cow",
+        "dog",
+        "--engines",
+        "v2",
+        "v8",
+        project="scripts",
+    )
+    assert (
+        result.capture
+        == "Poe => multiple-value-args hey 1 2 3 --widgets cow dog --engines v2 v8\n"
+    )
+    assert result.stdout == (
+        "args ('hey', [1, 2, 3])\n"
+        "kwargs {'widgets': ['cow', 'dog'], 'engines': ['v2', 'v8']}\n"
+    )
+    assert result.stderr == ""
+
+    # Test with some args
+    result = run_poe_subproc(
+        "multiple-value-args", "1", "--engines", "v2", project="scripts"
+    )
+    assert result.capture == "Poe => multiple-value-args 1 --engines v2\n"
+    assert result.stdout == (
+        "args ('1', [])\nkwargs {'widgets': None, 'engines': ['v2']}\n"
+    )
+    assert result.stderr == ""
+
+    # Test with minimal args
+    result = run_poe_subproc(
+        "multiple-value-args", "--engines", "v2", project="scripts"
+    )
+    assert result.capture == "Poe => multiple-value-args --engines v2\n"
+    assert result.stdout == (
+        "args (None, [])\nkwargs {'widgets': None, 'engines': ['v2']}\n"
+    )
+    assert result.stderr == ""
+
+    # Not enough values for option: 0
+    result = run_poe_subproc(
+        "multiple-value-args", "--widgets", "--engines", "v2", project="scripts"
+    )
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert (
+        "poe multiple-value-args: error: argument --widgets: expected 2 arguments"
+        in result.stderr
+    )
+
+    # Too many values for option: 3
+    result = run_poe_subproc(
+        "multiple-value-args",
+        "bloop",  # without the first arg, dong gets read an positional
+        "--widgets",
+        "ding",
+        "dang",
+        "dong",
+        "--engines",
+        "v2",
+        project="scripts",
+    )
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert (
+        "poe multiple-value-args: error: unrecognized arguments: dong" in result.stderr
+    )
+
+    # wrong type for multiple values
+    result = run_poe_subproc(
+        "multiple-value-args",
+        "1",
+        "wrong",
+        "--engines",
+        "v2",
+        project="scripts",
+    )
+    assert result.capture == ""
+    assert result.stdout == ""
+    assert (
+        "poe multiple-value-args: error: argument second: invalid int value: 'wrong'"
+        in result.stderr
+    )
