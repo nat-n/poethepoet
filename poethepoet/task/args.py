@@ -252,7 +252,7 @@ class PoeTaskArgs:
                 result["nargs"] = "+"
             else:
                 result["nargs"] = "*"
-        elif isinstance(multiple, int):
+        elif multiple and isinstance(multiple, int):
             result["nargs"] = multiple
 
         if arg.get("positional", False):

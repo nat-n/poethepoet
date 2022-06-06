@@ -1,4 +1,5 @@
 from poethepoet import __version__
+import re
 
 
 def test_call_no_args(run_poe):
@@ -76,25 +77,26 @@ def test_documentation_of_task_named_args(run_poe):
     assert (
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
-    assert (
-        "CONFIGURED TASKS\n"
-        "  composite_task     \n"
-        "  echo-args          \n"
-        "  static-args-test   \n"
-        "  call_attrs         \n"
-        "  greet              \n"
-        "  greet-passed-args  \n"
-        "    --greeting       \n"
-        "    --user           \n"
-        "    --optional       \n"
-        "    --upper          \n"
-        "  greet-full-args    \n"
-        "    --greeting, -g   \n"
-        "    --user           \n"
-        "    --upper          \n"
-        "    --age, -a        \n"
-        "    --height, -h     The user's height in meters\n"
-        "  greet-strict       All arguments are required\n"
-        "    --greeting       this one is required\n"
-        "    --name           and this one is required\n"
-    ) in result.capture
+    assert re.search(
+        r"CONFIGURED TASKS\n"
+        r"  composite_task   \s+\n"
+        r"  echo-args        \s+\n"
+        r"  static-args-test \s+\n"
+        r"  call_attrs       \s+\n"
+        r"  greet            \s+\n"
+        r"  greet-passed-args\s+\n"
+        r"    --greeting     \s+\n"
+        r"    --user         \s+\n"
+        r"    --optional     \s+\n"
+        r"    --upper        \s+\n"
+        r"  greet-full-args  \s+\n"
+        r"    --greeting, -g \s+\n"
+        r"    --user         \s+\n"
+        r"    --upper        \s+\n"
+        r"    --age, -a      \s+\n"
+        r"    --height, -h   \s+The user's height in meters\n"
+        r"  greet-strict     \s+All arguments are required\n"
+        r"    --greeting     \s+this one is required\n"
+        r"    --name         \s+and this one is required\n",
+        result.capture,
+    )
