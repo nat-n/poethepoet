@@ -2,36 +2,36 @@ tool.poe.default_task_type = "shell"
 
 [tool.poe.tasks]
 
-count = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')"
+count = "poe_test_echo 1 && poe_test_echo 2 && poe_test_echo $(python -c 'print(1 + 2)')"
 
 sing = """
-echo "this is the story";
-echo "all about how" &&      # the last line won't run
-echo "my life got flipped;
+poe_test_echo "this is the story";
+poe_test_echo "all about how" &&      # the last line won't run
+poe_test_echo "my life got flipped;
   turned upside down" ||
-echo "bam bam baaam bam"
+poe_test_echo "bam bam baaam bam"
 """
 
 [tool.poe.tasks.greet]
-shell = "echo $formal_greeting $subject"
+shell = "poe_test_echo $formal_greeting $subject"
 args = ["formal-greeting", "subject"]
 
 
 [tool.poe.tasks.echo_sh]
 interpreter = ["sh"]
-shell = "echo $0 $test_var"
+shell = "poe_test_echo $0 $test_var"
 env = { test_var =  "roflcopter"}
 
 
 [tool.poe.tasks.echo_bash]
 interpreter = "bash"
-shell = "echo $0 $test_var"
+shell = "poe_test_echo $0 $test_var"
 env = { test_var =  "roflcopter"}
 
 
 [tool.poe.tasks.echo_pwsh]
 interpreter = "pwsh"
-shell = "echo $ENV:test_var"
+shell = "poe_test_echo $ENV:test_var"
 env = { test_var =  "roflcopter"}
 
 
@@ -42,3 +42,24 @@ import sys, os
 print(sys.version_info, os.environ.get("test_var"))
 """
 env = { test_var =  "roflcopter"}
+
+
+[tool.poe.tasks.multiple-value-arg]
+shell = """
+poe_test_echo "first: ${first} second: ${second}"
+
+# bash treats space delimited string like array for iteration!
+for word in $second; do
+  poe_test_echo $word
+done
+"""
+
+  [[tool.poe.tasks.multiple-value-arg.args]]
+  name       = "first"
+  positional = true
+
+  [[tool.poe.tasks.multiple-value-arg.args]]
+  name       = "second"
+  positional = true
+  multiple   = true
+  type       = "integer"

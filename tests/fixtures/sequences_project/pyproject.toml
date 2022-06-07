@@ -1,12 +1,12 @@
 [tool.poe.tasks]
 
-part1 = "echo 'Hello'"
-_part2.cmd = "echo '${SUBJECT}!'"
+part1 = "poe_test_echo 'Hello'"
+_part2.cmd = "poe_test_echo '${SUBJECT}!'"
 _part2.env = { SUBJECT = "World" }
 composite_task.sequence = [
   ["part1", "_part2"],
   # wrapping in arrays means we can have different types of task in the sequence
-  [{cmd = "echo '${SMILEY}!'"}]
+  [{cmd = "poe_test_echo '${SMILEY}!'"}]
 ]
 # env var is inherited by subtask
 composite_task.env = { SMILEY = ":)" }
@@ -20,6 +20,19 @@ greet-multiple.args = ["mouse"]
 
 
 travel = [
-  { cmd = "echo 'from $PLANET to'" },
+  { cmd = "poe_test_echo 'from $PLANET to'" },
   { script = "my_package:print_var('DEST')" }
 ]
+
+[tool.poe.tasks.multiple-value-arg]
+sequence = [{ cmd = "poe_test_echo first: ${first}" }, { cmd = " poe_test_echo second: ${second}" }]
+
+  [[tool.poe.tasks.multiple-value-arg.args]]
+  name       = "first"
+  positional = true
+
+  [[tool.poe.tasks.multiple-value-arg.args]]
+  name       = "second"
+  positional = true
+  multiple   = true
+  type       = "integer"
