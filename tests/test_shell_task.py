@@ -105,7 +105,7 @@ def test_global_interpreter_config(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_cmd_multiple_value_arg(run_poe_subproc):
+def test_shell_task_with_multiple_value_arg(run_poe_subproc):
     result = run_poe_subproc(
         "multiple-value-arg", "hey", "1", "2", "3", project="shells"
     )

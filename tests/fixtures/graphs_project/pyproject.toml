@@ -3,18 +3,17 @@
 greet = "echo hello"
 
 _noop.shell = ":"
-_about = "echo about"
-_do_setup  = "echo here we go..."
-
+_about      = "echo about"
+_do_setup   = "echo here we go..."
 
   [tool.poe.tasks.think]
-  cmd = "echo Thinking $first_thing and $subject2"
+  shell  = "echo Thinking $first_thing and $subject2"
   deps = ["_noop", "_do_setup"]
   uses = { first_thing = "_about $subject1" }
   args = [{ name = "subject1", positional = true }, { name = "subject2", positional = true }]
 
   [tool.poe.tasks.deep-graph-with-args]
-  cmd  = "echo $greeting1 and $greeting2"
+  shell  = "echo $greeting1 and $greeting2"
   deps = ["_do_setup", "think $subject1 $subject2"]
-  uses = { greeting1 = "greet $subject1", greeting2 = "greet $subject2"}
+  uses = { "greeting1" = "greet $subject1", greeting2 = "greet $subject2"}
   args = ["subject1", "subject2"]

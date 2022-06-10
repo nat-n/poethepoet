@@ -46,7 +46,7 @@ def test_a_script_sequence_task_with_args(run_poe_subproc, esc_prefix):
     assert result.stderr == ""
 
 
-def test_cmd_multiple_value_arg(run_poe_subproc):
+def test_sequence_task_with_multiple_value_arg(run_poe_subproc):
     result = run_poe_subproc(
         "multiple-value-arg", "hey", "1", "2", "3", project="sequences"
     )

@@ -33,8 +33,12 @@ def test_cmd_alias_env_var(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_cmd_multiple_value_arg(run_poe_subproc):
+def test_cmd_task_with_multiple_value_arg(run_poe_subproc, is_windows):
     result = run_poe_subproc("multiple-value-arg", "hey", "1", "2", "3", project="cmds")
-    assert result.capture == "Poe => poe_test_echo first: hey second: 1 2 3\n"
-    assert result.stdout == "first: hey second: 1 2 3\n"
+    if is_windows:
+        assert result.capture == 'Poe => poe_test_echo "first: hey second: 1 2 3"\n'
+        assert result.stdout == '"first: hey second: 1 2 3\n"'
+    else:
+        assert result.capture == "Poe => poe_test_echo first: hey second: 1 2 3\n"
+        assert result.stdout == "first: hey second: 1 2 3\n"
     assert result.stderr == ""

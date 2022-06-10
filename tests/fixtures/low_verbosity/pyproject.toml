@@ -2,4 +2,4 @@
 verbosity = -1
 
 [tool.poe.tasks]
-test = "echo Hello there!"
+test = "poe_test_echo Hello there!"

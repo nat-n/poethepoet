@@ -64,7 +64,7 @@ def test_version_option(run_poe):
 
 def test_dry_run(run_poe_subproc):
     result = run_poe_subproc("-d", "show_env")
-    assert result.capture == f"Poe => env\n"
+    assert result.capture == f"Poe => poe_test_env\n"
     assert result.stdout == ""
     assert result.stderr == ""
 
