@@ -208,6 +208,11 @@ class PoeTaskArgs:
                 f"The multiple option for arg {arg_name!r} of {task_name!r}"
                 " must be given a boolean or integer >= 2"
             )
+        if multiple is not False and params.get("type") == "boolean":
+            return (
+                "Incompatible param 'multiple' for arg {arg_name!r} of {task_name!r} "
+                "with type: 'boolean'"
+            )
 
         return None
 
