@@ -7,7 +7,7 @@ FIVE.default = "nope"
 SIX.default = "!six!"
 
 [tool.poe.tasks.test]
-cmd = "echo $ONE $TWO $THREE $FOUR $FIVE $SIX"
+cmd = "poe_test_echo $ONE $TWO $THREE $FOUR $FIVE $SIX"
 env.TWO = "!two!"
 env.FIVE = "!five!"
 env.SIX.default = "nope"

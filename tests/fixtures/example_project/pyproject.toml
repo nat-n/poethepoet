@@ -14,13 +14,13 @@ env.DEST = "MARS"
 
 
 [tool.poe.tasks.echo]
-cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
+cmd = "poe_test_echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
 help = "It says what you say"
 env = { BEST_PASSWORD = "Password1" }
 
 
 [tool.poe.tasks]
-show_env = "env"
+show_env = "poe_test_env"
 greet = { script = "dummy_package:main" }
 greet-shouty = { script = "dummy_package:main(upper=True)" }
 
@@ -37,13 +37,13 @@ echo "my life got flipped;
 echo "bam bam baaam bam"
 """
 
-part1 = "echo 'Hello'"
-_part2.cmd = "echo '${SUBJECT}!'"
+part1 = "poe_test_echo 'Hello'"
+_part2.cmd = "poe_test_echo '${SUBJECT}!'"
 _part2.env = { SUBJECT = "World" }
 composite_task.sequence = [
   ["part1", "_part2"],
   # wrapping in arrays means we can have different types of task in the sequence
-  [{cmd = "echo '${SMILEY}!'"}]
+  [{cmd = "poe_test_echo '${SMILEY}!'"}]
 ]
 # env var is inherited by subtask
 composite_task.env = { SMILEY = ":)" }
@@ -54,7 +54,7 @@ greet-multiple.sequence = ["dummy_package:main('Tom')", "dummy_package:main('Jer
 greet-multiple.default_item_type = "script"
 
 travel = [
-  { cmd = "echo 'from $PLANET to'" },
+  { cmd = "poe_test_echo 'from $PLANET to'" },
   { script = "dummy_package:print_var('DEST')" }
 ]
 

@@ -18,7 +18,9 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
 
 def test_setting_default_array_item_task_type(run_poe_subproc):
     result = run_poe_subproc("composite_task", project="scripts")
-    assert result.capture == f"Poe => echo Hello\nPoe => echo World!\n"
+    assert (
+        result.capture == f"Poe => poe_test_echo Hello\nPoe => poe_test_echo World!\n"
+    )
     assert result.stdout == f"Hello\nWorld!\n"
     assert result.stderr == ""
 
@@ -26,10 +28,15 @@ def test_setting_default_array_item_task_type(run_poe_subproc):
 def test_setting_global_env_vars(run_poe_subproc, is_windows):
     result = run_poe_subproc("travel")
     if is_windows:
-        assert result.capture == f"Poe => echo 'from EARTH to'\nPoe => travel[1]\n"
+        assert (
+            result.capture
+            == f"Poe => poe_test_echo 'from EARTH to'\nPoe => travel[1]\n"
+        )
         assert result.stdout == f"'from EARTH to'\nMARS\n"
     else:
-        assert result.capture == f"Poe => echo from EARTH to\nPoe => travel[1]\n"
+        assert (
+            result.capture == f"Poe => poe_test_echo from EARTH to\nPoe => travel[1]\n"
+        )
         assert result.stdout == f"from EARTH to\nMARS\n"
     assert result.stderr == ""
 
@@ -51,7 +58,7 @@ def test_override_default_verbosity(run_poe_subproc, low_verbosity_project_path)
         "test",
         cwd=low_verbosity_project_path,
     )
-    assert result.capture == "Poe => echo Hello there!\n"
+    assert result.capture == "Poe => poe_test_echo Hello there!\n"
     assert result.stdout == "Hello there!\n"
     assert result.stderr == ""
 
@@ -62,7 +69,7 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
         "test",
         cwd=high_verbosity_project_path,
     )
-    assert result.capture == "Poe => echo Hello there!\n"
+    assert result.capture == "Poe => poe_test_echo Hello there!\n"
     assert result.stdout == "Hello there!\n"
     assert result.stderr == ""
 

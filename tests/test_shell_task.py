@@ -6,7 +6,7 @@ def test_shell_task(run_poe_subproc):
     result = run_poe_subproc("count", project="shells")
     assert (
         result.capture
-        == f"Poe => echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')\n"
+        == f"Poe => poe_test_echo 1 && poe_test_echo 2 && poe_test_echo $(python -c 'print(1 + 2)')\n"
     )
     assert result.stdout == "1\n2\n3\n"
     assert result.stderr == ""
@@ -23,10 +23,10 @@ def test_multiline_non_default_type_task(run_poe_subproc):
     # This should be exactly the same as calling the echo task directly
     result = run_poe_subproc("sing", project="shells")
     assert result.capture == (
-        f'Poe => echo "this is the story";\n'
-        'echo "all about how" &&      # the last line won\'t run\n'
-        'echo "my life got flipped;\n'
-        '  turned upside down" ||\necho "bam bam baaam bam"\n'
+        f'Poe => poe_test_echo "this is the story";\n'
+        'poe_test_echo "all about how" &&      # the last line won\'t run\n'
+        'poe_test_echo "my life got flipped;\n'
+        '  turned upside down" ||\npoe_test_echo "bam bam baaam bam"\n'
     )
     assert result.stdout == (
         f"this is the story\n"
@@ -41,7 +41,7 @@ def test_shell_task_with_dash_case_arg(run_poe_subproc):
     result = run_poe_subproc(
         "greet", "--formal-greeting=hey", "--subject=you", project="shells"
     )
-    assert result.capture == (f"Poe => echo $formal_greeting $subject\n")
+    assert result.capture == (f"Poe => poe_test_echo $formal_greeting $subject\n")
     assert result.stdout == "hey you\n"
     assert result.stderr == ""
 
@@ -49,7 +49,7 @@ def test_shell_task_with_dash_case_arg(run_poe_subproc):
 @pytest.mark.skipif(not shutil.which("sh"), reason="No sh available")
 def test_interpreter_sh(run_poe_subproc):
     result = run_poe_subproc("echo_sh", project="shells")
-    assert result.capture == (f"Poe => echo $0 $test_var\n")
+    assert result.capture == (f"Poe => poe_test_echo $0 $test_var\n")
     assert "roflcopter" in result.stdout
     assert result.stderr == ""
 
@@ -57,7 +57,7 @@ def test_interpreter_sh(run_poe_subproc):
 @pytest.mark.skipif(not shutil.which("bash"), reason="No bash available")
 def test_interpreter_bash(run_poe_subproc):
     result = run_poe_subproc("echo_bash", project="shells")
-    assert result.capture == (f"Poe => echo $0 $test_var\n")
+    assert result.capture == (f"Poe => poe_test_echo $0 $test_var\n")
     assert "bash" in result.stdout
     assert "roflcopter" in result.stdout
     assert result.stderr == ""
@@ -66,7 +66,7 @@ def test_interpreter_bash(run_poe_subproc):
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="No powershell available")
 def test_interpreter_pwsh(run_poe_subproc, is_windows):
     result = run_poe_subproc("echo_pwsh", project="shells")
-    assert result.capture == (f"Poe => echo $ENV:test_var\n")
+    assert result.capture == (f"Poe => poe_test_echo $ENV:test_var\n")
     assert "roflcopter" in result.stdout
     assert result.stderr == ""
 
@@ -102,4 +102,22 @@ def test_global_interpreter_config(run_poe_subproc, projects):
     )
     assert result.capture == (f"Poe => import sys\nprint(sys.version_info)\n")
     assert result.stdout.startswith("sys.version_info(major=3,")
+    assert result.stderr == ""
+
+
+def test_shell_task_with_multiple_value_arg(run_poe_subproc):
+    result = run_poe_subproc(
+        "multiple-value-arg", "hey", "1", "2", "3", project="shells"
+    )
+    assert (
+        result.capture
+        == """Poe => poe_test_echo "first: ${first} second: ${second}"
+
+# bash treats space delimited string like array for iteration!
+for word in $second; do
+  poe_test_echo $word
+done
+"""
+    )
+    assert result.stdout == "first: hey second: 1 2 3\n1\n2\n3\n"
     assert result.stderr == ""

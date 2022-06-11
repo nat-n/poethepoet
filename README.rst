@@ -566,6 +566,31 @@ Named arguments support the following configuration options:
    If set to true then the argument becomes a position argument instead of an option
    argument. Note that positional arguments may not have type *bool*.
 
+- **multiple** : Union[bool, int]
+   If the multiple option is set to true on a positional or option argument then that
+   argument will accept multiple values.
+
+   If set to a number, then the argument will accept exactly that number of values.
+
+   For positional aguments, only the last positional argument may have the multiple
+   option set.
+
+   The multiple option is not compatible with arguments with type boolean since
+   these are interpreted as flags. However multiple ones or zeros can be passed to an
+   argument of type "integer" for similar effect.
+
+   The values provided to an argument with the multiple option set are available on
+   the environment as a string of whitespace separated values. For script tasks, the
+   values will be provided to your python function as a list of values. In a cmd task
+   the values can be passed as separate arugments to the task via templating as in the
+   following example.
+
+   .. code-block:: toml
+
+    [tool.poe.tasks.save]
+    cmd  = "echo ${FILE_PATHS}"
+    args = [{ name = "FILE_PATHS", positional = true, multiple = true }]
+
 - **required** : bool
    If true then not providing the argument will result in an error. Arguments are not
    required by default.

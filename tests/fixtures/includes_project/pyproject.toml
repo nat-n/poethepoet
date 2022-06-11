@@ -3,5 +3,5 @@ include = "greet.toml"
 
 
 [tool.poe.tasks.echo]
-cmd = "echo"
+cmd = "poe_test_echo"
 help = "says what you say"

@@ -14,7 +14,7 @@ cowsay = "../../packages/python_cowsay-1.0.1-py3-none-any.whl"
 poetry_command = ""
 
 [tool.poe.tasks]
-echo = { cmd = "echo", help = "It's like echo"}
+echo = { cmd = "poe_test_echo", help = "It's like echo"}
 cow-greet = "cowsay 'good day sir!'"
 
 [build-system]

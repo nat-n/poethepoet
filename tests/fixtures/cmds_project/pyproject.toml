@@ -1,14 +1,27 @@
-tool.poe.tasks.show_env = "env"
+tool.poe.tasks.show_env = "poe_test_env"
 
 [tool.poe.tasks.echo]
-cmd = "echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
+cmd = "poe_test_echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
 help = "It says what you say"
 env = { BEST_PASSWORD = "Password1" }
 
 [tool.poe.tasks.greet]
-shell = "echo $formal_greeting $subject"
+shell = "poe_test_echo $formal_greeting $subject"
 args = ["formal-greeting", "subject"]
 
 [tool.poe.tasks.surfin-bird]
-cmd = "echo $WORD is the word"
+cmd = "poe_test_echo $WORD is the word"
 env = { WORD = "${SOME_INPUT_VAR}"}
+
+[tool.poe.tasks.multiple-value-arg]
+cmd = "poe_test_echo \"first: ${first} second: ${second}\""
+
+  [[tool.poe.tasks.multiple-value-arg.args]]
+  name       = "first"
+  positional = true
+
+  [[tool.poe.tasks.multiple-value-arg.args]]
+  name       = "second"
+  positional = true
+  multiple   = true
+  type       = "integer"

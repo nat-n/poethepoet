@@ -56,7 +56,7 @@ def test_task_accepts_any_args(run_poetry, projects, setup_poetry_project):
         cwd=projects["poetry_plugin"],
     )
     assert result.stdout == (
-        "Poe => echo --lol=:D --version --help\n--lol=:D --version --help\n"
+        "Poe => poe_test_echo --lol=:D --version --help\n--lol=:D --version --help\n"
     )
     # assert result.stderr == ""
 
@@ -83,7 +83,7 @@ def test_running_tasks_without_poe_command_prefix(
         cwd=projects["poetry_plugin/empty_prefix"].parent,
     )
     assert result.stdout == (
-        "Poe => echo --lol=:D --version --help\n--lol=:D --version --help\n"
+        "Poe => poe_test_echo --lol=:D --version --help\n--lol=:D --version --help\n"
     )
     # assert result.stderr == ""
 

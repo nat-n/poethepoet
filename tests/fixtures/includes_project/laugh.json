@@ -4,11 +4,11 @@
       "envfile": "some_vars.env",
       "tasks": {
         "laugh": {
-          "shell": "echo $ONE_LAUGH | tr a-z A-Z",
+          "shell": "poe_test_echo $ONE_LAUGH | tr a-z A-Z",
           "help": "a mirthful task"
         },
         "echo": {
-          "shell": "echo echo echo",
+          "shell": "poe_test_echo echo echo",
           "help": "This is ignored becuase it's already defined!"
         }
       }

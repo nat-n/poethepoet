@@ -14,7 +14,7 @@ default_array_item_task_type = "cmd"
 
 [tool.poe.tasks]
 # Interpret subtasks as cmd instead of ref
-composite_task = ["echo Hello", "echo World!"]
+composite_task = ["poe_test_echo Hello", "poe_test_echo World!"]
 
 # test_setting_default_task_type
 echo-args = "pkg:echo_args"
@@ -97,6 +97,29 @@ greet = "pkg:greet"
     name = "uppercase"
     options = ["--upper"]
     type = "boolean"
+
+
+  [tool.poe.tasks.multiple-value-args]
+  script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
+
+    [[tool.poe.tasks.multiple-value-args.args]]
+    name       = "first"
+    positional = true
+
+    [[tool.poe.tasks.multiple-value-args.args]]
+    name       = "second"
+    positional = true
+    multiple   = true
+    type       = "integer"
+
+    [[tool.poe.tasks.multiple-value-args.args]]
+    name     = "widgets"
+    multiple = 2
+
+    [[tool.poe.tasks.multiple-value-args.args]]
+    name     = "engines"
+    multiple = true
+    required = true
 
 
 [build-system]
