@@ -164,7 +164,7 @@ Or use it as a poetry plugin (for poetry >= 1.2) like so
 
 .. code-block:: bash
 
-  poetry plugin add poethepoet[poetry_plugin]
+  poetry self add poethepoet[poetry_plugin]
   poetry poe [options] task [task_args]
 
 Or just install it as a dev dependency with poetry and run it like

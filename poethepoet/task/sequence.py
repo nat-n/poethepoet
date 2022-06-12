@@ -57,7 +57,9 @@ class SequenceTask(PoeTask):
                 array_item=self.options.get("default_item_type", True),
             )
             for index, item in enumerate(self.content)
-            for task_name in (item if isinstance(item, str) else f"{name}[{index}]",)
+            for task_name in (
+                item if isinstance(item, str) else self._subtask_name(name, index),
+            )
         ]
 
     def _handle_run(
@@ -95,6 +97,10 @@ class SequenceTask(PoeTask):
         return 0
 
     @classmethod
+    def _subtask_name(cls, task_name: str, index: int):
+        return f"{task_name}[{index}]"
+
+    @classmethod
     def _validate_task_def(
         cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
     ) -> Optional[str]:
@@ -106,6 +112,7 @@ class SequenceTask(PoeTask):
                 "Unsupported value for option `default_item_type` for task "
                 f"{task_name!r}. Expected one of {cls.get_task_types(content_type=str)}"
             )
+
         ignore_fail = task_def.get("ignore_fail")
         if ignore_fail is not None and ignore_fail not in (
             True,
@@ -114,8 +121,39 @@ class SequenceTask(PoeTask):
             "return_non_zero",
         ):
             return (
-                "Unsupported value for option `ignore_fail` for task "
-                f'{task_name!r}. Expected one of (true, false, "return_zero", "return_non_zero")'
+                f"Unsupported value for option `ignore_fail` for task {task_name!r}."
+                ' Expected one of (true, false, "return_zero", "return_non_zero")'
             )
+
+        for index, task_item in enumerate(task_def["sequence"]):
+            if isinstance(task_item, dict):
+                if len(task_item.get("args", tuple())):
+                    return (
+                        "Unsupported option `args` for task declared inside sequence task "
+                        f"{task_name!r}."
+                    )
+
+                subtask_issue = cls.validate_def(
+                    cls._subtask_name(task_name, index),
+                    task_item,
+                    config,
+                    anonymous=True,
+                )
+                if subtask_issue:
+                    return subtask_issue
+
+            else:
+                subtask_issue = cls.validate_def(
+                    cls._subtask_name(task_name, index),
+                    cls._normalize_task_def(
+                        task_item,
+                        config,
+                        array_item=default_item_type or True,
+                    ),
+                    config,
+                    anonymous=True,
+                )
+                if subtask_issue:
+                    return subtask_issue
 
         return None

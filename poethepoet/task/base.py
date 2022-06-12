@@ -137,13 +137,8 @@ class PoeTask(metaclass=MetaPoeTask):
             options["capture_stdout"] = capture_stdout
 
         if isinstance(task_def, (str, list)):
-            return cls.__task_types[task_type](
-                name=task_name,
-                content=task_def,
-                options=options,
-                ui=ui,
-                config=config,
-                invocation=invocation,
+            task_def = cls._normalize_task_def(
+                task_def, config, task_type=cls.__task_types[task_type]
             )
 
         assert isinstance(task_def, dict)
@@ -157,6 +152,25 @@ class PoeTask(metaclass=MetaPoeTask):
             config=config,
             invocation=invocation,
         )
+
+    @classmethod
+    def _normalize_task_def(
+        cls,
+        task_def: TaskDef,
+        config: "PoeConfig",
+        *,
+        task_type: Optional[Type["PoeTask"]] = None,
+        array_item: Union[bool, str] = False,
+    ):
+        if isinstance(task_def, dict):
+            return task_def
+
+        if not task_type:
+            task_type_key = cls.resolve_task_type(task_def, config, array_item)
+            assert task_type_key
+            task_type = cls.__task_types[task_type_key]
+
+        return {getattr(task_type, "__key__", "__key_unknown__"): task_def}
 
     @classmethod
     def resolve_task_type(
@@ -175,13 +189,13 @@ class PoeTask(metaclass=MetaPoeTask):
             else:
                 return config.default_task_type
 
-        elif isinstance(task_def, list):
-            return config.default_array_task_type
-
         elif isinstance(task_def, dict):
             task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
             if len(task_type_keys) == 1:
                 return next(iter(task_type_keys))
+
+        elif isinstance(task_def, list):
+            return config.default_array_task_type
 
         return None
 
@@ -293,23 +307,31 @@ class PoeTask(metaclass=MetaPoeTask):
 
     @classmethod
     def validate_def(
-        cls, task_name: str, task_def: TaskDef, config: "PoeConfig"
+        cls,
+        task_name: str,
+        task_def: TaskDef,
+        config: "PoeConfig",
+        *,
+        anonymous: bool = False,
     ) -> Optional[str]:
         """
         Check the given task name and definition for validity and return a message
         describing the first encountered issue if any.
+        If anonymous is set to True then task_name is not validated.
         """
-        if not (task_name[0].isalpha() or task_name[0] == "_"):
+        if not anonymous and (not (task_name[0].isalpha() or task_name[0] == "_")):
             return (
                 f"Invalid task name: {task_name!r}. Task names must start with a letter"
                 " or underscore."
             )
-        elif not _TASK_NAME_PATTERN.match(task_name):
+
+        if not anonymous and not _TASK_NAME_PATTERN.match(task_name):
             return (
                 f"Invalid task name: {task_name!r}. Task names characters must be "
                 "alphanumeric, colon, underscore or dash."
             )
-        elif isinstance(task_def, dict):
+
+        if isinstance(task_def, dict):
             task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
             if len(task_type_keys) != 1:
                 return (
@@ -380,6 +402,19 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"Invalid task: {task_name!r}. uses options contains "
                             f"reference to unknown task: {dep_task_name!r}"
                         )
+
+        elif isinstance(task_def, list):
+            task_type_key = config.default_array_task_type
+            task_type = cls.__task_types[task_type_key]
+            normalized_task_def = cls._normalize_task_def(
+                task_def, config, task_type=task_type
+            )
+            if hasattr(task_type, "_validate_task_def"):
+                task_type_issue = task_type._validate_task_def(
+                    task_name, normalized_task_def, config
+                )
+                if task_type_issue:
+                    return task_type_issue
 
         return None
 
