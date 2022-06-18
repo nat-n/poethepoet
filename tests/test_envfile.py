@@ -38,3 +38,24 @@ def test_task_envfile_and_default(run_poe_subproc, is_windows):
         )
         assert result.stdout == "deploying to admin:12345@prod.example.com/app\n"
         assert result.stderr == ""
+
+
+def test_multiple_envfiles(run_poe_subproc, projects, is_windows):
+    result = run_poe_subproc(
+        f'--root={projects["envfile/multiple_envfiles"]}', "show_me_the_vals"
+    )
+
+    if is_windows:
+        assert (
+            'Poe => poe_test_echo "VAL_A-VAL_B-VAL_C-VAL_D-VAL_E-VAL_F!!"\n'
+            in result.capture
+        )
+        assert result.stdout == '"VAL_A-VAL_B-VAL_C-VAL_D-VAL_E-VAL_F!!"\n'
+        assert result.stderr == ""
+    else:
+        assert (
+            "Poe => poe_test_echo VAL_A-VAL_B-VAL_C-VAL_D-VAL_E-VAL_F!!\n"
+            in result.capture
+        )
+        assert result.stdout == "VAL_A-VAL_B-VAL_C-VAL_D-VAL_E-VAL_F!!\n"
+        assert result.stderr == ""

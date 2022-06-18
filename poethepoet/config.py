@@ -28,7 +28,7 @@ class PoeConfig:
         "default_array_task_type": str,
         "default_array_item_task_type": str,
         "env": dict,
-        "envfile": str,
+        "envfile": (str, list),
         "executor": dict,
         "include": (str, list),
         "poetry_command": str,

@@ -60,7 +60,7 @@ class PoeTask(metaclass=MetaPoeTask):
         "capture_stdout": (str),
         "deps": list,
         "env": dict,
-        "envfile": str,
+        "envfile": (str, list),
         "executor": dict,
         "help": str,
         "uses": dict,

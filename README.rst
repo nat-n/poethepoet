@@ -410,7 +410,10 @@ set by replacing the last line with the following:
     serve.env.PORT.default = "9001"
 
 
-You can also specify an env file (with bash-like syntax) to load per task like so:
+Loading env vars from an env file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can also specify one or more env files (with bash-like syntax) to load per task like so:
 
 .. code-block:: bash
 
@@ -424,9 +427,21 @@ You can also specify an env file (with bash-like syntax) to load per task like s
     serve.script  = "myapp:run"
     serve.envfile = ".env"
 
-It it also possible to reference existing env vars when defining a new env var for a
+The envfile option accepts the name (or relative path) to a single envfile as shown
+above but can also by given a list of such paths like so:
+
+.. code-block:: toml
+
+    serve.envfile = [".env", "local.env"]
+
+In this case the referenced files will be loaded in the given order.
+
+Defining env vars in terms of other env vars
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is also possible to reference existing env vars when defining a new env var for a
 task. This may be useful for aliasing or extending a variable already defined in the
-host environment, globally in the config, or in a referencd envfile. In the following
+host environment, globally in the config, or in a referenced envfile. In the following
 example the value from $TF_VAR_service_port on the host environment is also made
 available as $FLASK_RUN_PORT within the task.
 
@@ -434,7 +449,7 @@ available as $FLASK_RUN_PORT within the task.
 
     [tool.poe.tasks.serve]
     serve.cmd = "flask run"
-    serve.env   = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
+    serve.env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
 
 
 Declaring CLI arguments
@@ -710,6 +725,8 @@ You can also specify an env file (with bash-like syntax) to load for all tasks l
 
     [tool.poe]
     envfile = ".env"
+
+The envfile global option also accepts a list of env files.
 
 Default command verbosity
 -------------------------

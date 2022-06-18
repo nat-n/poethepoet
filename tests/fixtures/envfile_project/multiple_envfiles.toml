@@ -1,0 +1,10 @@
+[tool.poe]
+envfile = ["first.env", "second.env"]
+env = { VAR_C = "VAL_C" }
+
+[tool.poe.tasks.show_me_the_vals]
+cmd = """
+poe_test_echo "${VAR_A}-${VAR_B}-${VAR_C}-${VAR_D}-${VAR_E}-${VAR_F}!!"
+"""
+envfile = ["third.env", "fourth.env"]
+env = { VAR_F = "VAL_F" }
