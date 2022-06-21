@@ -53,7 +53,7 @@ class ScriptTask(PoeTask):
             "from os import environ; "
             "from importlib import import_module; "
             f"sys.argv = {argv!r}; sys.path.append('src');"
-            f"\n{self.format_args_class(self.named_args)}"
+            f"{self.format_args_class(self.named_args)}"
             f"import_module('{target_module}').{function_call}",
         )
 
@@ -107,7 +107,8 @@ class ScriptTask(PoeTask):
         if named_args is None:
             return ""
         return (
-            f"class {classname}:\n"
-            + "\n".join(f"    {name} = {value!r}" for name, value in named_args.items())
-            + "\n"
+            f'__args=type("{classname}",(object,),'
+            "{"
+            + ",".join(f"{name!r}:{value!r}" for name, value in named_args.items())
+            + "});"
         )
