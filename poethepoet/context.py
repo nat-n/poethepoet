@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from typing import (
     Any,
     Dict,
@@ -71,10 +72,15 @@ class RunContext:
         self, used_task_invocations: Mapping[str, Tuple[str, ...]]
     ) -> Dict[str, str]:
         """
-        Get env vars from upstream tasks declared via the uses option
+        Get env vars from upstream tasks declared via the uses option.
+
+        New lines are replaced with whitespace similar to how unquoted command
+        interpolation works in bash.
         """
         return {
-            var_name: self.captured_stdout[invocation]
+            var_name: re.sub(
+                r"\s+", " ", self.captured_stdout[invocation].strip("\r\n")
+            )
             for var_name, invocation in used_task_invocations.items()
         }
 

@@ -1048,6 +1048,10 @@ uses the output of the hidden *_website_bucket_name* task, which means that this
 gets executed, but its output it captured and then made available to the *shipit* task
 as the environment variable BUCKET_NAME.
 
+Note that captured output that is exposed as an environment variable via the `uses`
+is compacted to have new lines removed. This is similar to how interpolated command
+output is treated by bash.
+
 This feature is experimental. There may be edge cases that aren't handled well, so
 feedback is requested. Some details of the implementation or API may be altered in
 future versions.
