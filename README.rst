@@ -451,6 +451,23 @@ available as $FLASK_RUN_PORT within the task.
     serve.cmd = "flask run"
     serve.env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
 
+Running a task with a specific working directory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default tasks are run from the project root – that is the parent directory of the
+pyproject.toml file. However if a task needs to be run in another directory within the
+project then this can be accomplished by using the `cwd` option like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.build-client]
+    cmd = "npx ts-node -T ./build.ts"
+    cwd = "./client"
+
+In this example, the npx executable is executed inside the `./client` subdirectory of
+the project, and will use the nodejs package.json configuration from that location and
+evaluate paths relative to that location.
+
 
 Declaring CLI arguments
 -----------------------

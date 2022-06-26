@@ -42,3 +42,13 @@ def test_cmd_task_with_multiple_value_arg(run_poe_subproc, is_windows):
         assert result.capture == "Poe => poe_test_echo first: hey second: 1 2 3\n"
         assert result.stdout == "first: hey second: 1 2 3\n"
     assert result.stderr == ""
+
+
+def test_cmd_task_with_cwd_option(run_poe_subproc, poe_project_path):
+    result = run_poe_subproc("cwd", project="cwd")
+    assert result.capture == "Poe => poe_test_pwd\n"
+    assert (
+        result.stdout
+        == f'{poe_project_path.joinpath("tests", "fixtures", "cwd_project", "subdir", "foo")}\n'
+    )
+    assert result.stderr == ""

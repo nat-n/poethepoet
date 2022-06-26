@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 import shlex
 import sys
@@ -14,6 +15,7 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+
 from .args import PoeTaskArgs
 from ..exceptions import PoeException
 from ..helpers import is_valid_env_var
@@ -57,7 +59,8 @@ class PoeTask(metaclass=MetaPoeTask):
     __content_type__: Type = str
     __base_options: Dict[str, Union[Type, Tuple[Type, ...]]] = {
         "args": (dict, list),
-        "capture_stdout": (str),
+        "capture_stdout": str,
+        "cwd": str,
         "deps": list,
         "env": dict,
         "envfile": (str, list),
@@ -371,6 +374,14 @@ class PoeTask(metaclass=MetaPoeTask):
 
             if "args" in task_def:
                 return PoeTaskArgs.validate_def(task_name, task_def["args"])
+
+            if "cwd" in task_def:
+                path = Path(config.project_dir).joinpath(task_def["cwd"]).resolve()
+                if not str(path).startswith(config.project_dir):
+                    return (
+                        f"Invalid task: {task_name!r}. cwd option may not specify a "
+                        "directory outside of the project."
+                    )
 
             if "\n" in task_def.get("help", ""):
                 return (

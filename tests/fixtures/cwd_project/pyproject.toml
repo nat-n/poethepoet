@@ -1,0 +1,3 @@
+[tool.poe.tasks.cwd]
+cmd = "poe_test_pwd"
+cwd = "./subdir/foo"

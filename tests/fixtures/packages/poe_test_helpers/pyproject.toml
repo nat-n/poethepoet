@@ -10,6 +10,7 @@ python = "^3.7"
 [tool.poetry.scripts]
 poe_test_echo = "poe_test_helpers:echo"
 poe_test_env = "poe_test_helpers:env"
+poe_test_pwd = "poe_test_helpers:pwd"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

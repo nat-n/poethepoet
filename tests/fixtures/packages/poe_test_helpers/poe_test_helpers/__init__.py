@@ -15,3 +15,10 @@ def env():
     """
     for key, value in os.environ.items():
         print(f"{key}={value}")
+
+
+def pwd():
+    """
+    Imitates the basic usage of the POSIX pwd command for cross platform usage
+    """
+    print(os.getcwd())

@@ -94,7 +94,7 @@ class RunContext:
             invocation=invocation,
             context=self,
             env=env,
-            working_dir=self.project_dir,
+            working_dir=self.project_dir / task_options.get("cwd", "."),
             dry=self.dry,
             executor_config=task_options.get("executor"),
             capture_stdout=task_options.get("capture_stdout", False),
