@@ -1055,7 +1055,7 @@ future versions.
 Supported python versions
 =========================
 
-Poe the Poet officially supports python >3.6.2, and is tested with python 3.6 to 3.9 on
+Poe the Poet officially supports python >=3.7, and is tested with python 3.7 to 3.10 on
 macOS, linux and windows.
 
 Contributing
