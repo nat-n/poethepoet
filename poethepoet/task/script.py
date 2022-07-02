@@ -47,6 +47,7 @@ class ScriptTask(PoeTask):
             *(env.fill_template(token) for token in extra_args),
         ]
         cmd = (
+            # Exactly which python executable to use is usually resolved by the executor
             "python",
             "-c",
             "import sys; "
@@ -85,9 +86,9 @@ class ScriptTask(PoeTask):
         variables that are not in scope.
         """
         try:
-            target_module, target_ref = self.content.split(":", 1)
+            target_module, target_ref = self.content.strip().split(":", 1)
         except ValueError:
-            raise ScriptParseError(f"Invalid task content: {self.content!r}")
+            raise ScriptParseError(f"Invalid task content: {self.content.strip()!r}")
 
         if target_ref.isidentifier():
             if args:

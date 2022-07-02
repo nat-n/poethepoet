@@ -74,7 +74,7 @@ def test_interpreter_pwsh(run_poe_subproc, is_windows):
 def test_interpreter_python(run_poe_subproc):
     result = run_poe_subproc("echo_python", project="shells")
     assert result.capture == (
-        f'Poe => import sys, os\nprint(sys.version_info, os.environ.get("test_var"))\n'
+        f'Poe => import sys, os\n\ndef run():\n    print(sys.version_info, os.environ.get("test_var"))\n\nrun()\n'
     )
     assert result.stdout.startswith("sys.version_info(major=3,")
     assert "roflcopter" in result.stdout

@@ -97,7 +97,7 @@ def test_detect_venv(
         assert result.stderr == ""
 
 
-def test_simple_exector(run_poe_subproc):
+def test_simple_executor(run_poe_subproc):
     """
     The task should execute but not find poe_test_package from a local venv
     """

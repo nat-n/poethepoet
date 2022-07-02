@@ -48,7 +48,7 @@ class CmdTask(PoeTask):
         return context.get_executor(self.invocation, env, self.options).execute(cmd)
 
     def _resolve_args(self, context: "RunContext", env: EnvVarsManager):
-        updated_content = env.fill_template(self.content)
+        updated_content = env.fill_template(self.content.strip())
         # Parse shell command tokens and check if they're quoted
         if self._is_windows:
             cmd_tokens = (

@@ -12,54 +12,57 @@ poe_test_echo "my life got flipped;
 poe_test_echo "bam bam baaam bam"
 """
 
-[tool.poe.tasks.greet]
-shell = "poe_test_echo $formal_greeting $subject"
-args = ["formal-greeting", "subject"]
+  [tool.poe.tasks.greet]
+  shell = "poe_test_echo $formal_greeting $subject"
+  args = ["formal-greeting", "subject"]
 
 
-[tool.poe.tasks.echo_sh]
-interpreter = ["sh"]
-shell = "poe_test_echo $0 $test_var"
-env = { test_var =  "roflcopter"}
+  [tool.poe.tasks.echo_sh]
+  interpreter = ["sh"]
+  shell = "poe_test_echo $0 $test_var"
+  env = { test_var =  "roflcopter"}
 
 
-[tool.poe.tasks.echo_bash]
-interpreter = "bash"
-shell = "poe_test_echo $0 $test_var"
-env = { test_var =  "roflcopter"}
+  [tool.poe.tasks.echo_bash]
+  interpreter = "bash"
+  shell = "poe_test_echo $0 $test_var"
+  env = { test_var =  "roflcopter"}
 
 
-[tool.poe.tasks.echo_pwsh]
-interpreter = "pwsh"
-shell = "poe_test_echo $ENV:test_var"
-env = { test_var =  "roflcopter"}
+  [tool.poe.tasks.echo_pwsh]
+  interpreter = "pwsh"
+  shell = "poe_test_echo $ENV:test_var"
+  env = { test_var =  "roflcopter"}
 
 
-[tool.poe.tasks.echo_python]
-interpreter = "python"
-shell = """
-import sys, os
-print(sys.version_info, os.environ.get("test_var"))
-"""
-env = { test_var =  "roflcopter"}
+  [tool.poe.tasks.echo_python]
+  interpreter = "python"
+  shell = """
+  import sys, os
 
+  def run():
+      print(sys.version_info, os.environ.get("test_var"))
 
-[tool.poe.tasks.multiple-value-arg]
-shell = """
-poe_test_echo "first: ${first} second: ${second}"
+  run()
+  """
+  env = { test_var =  "roflcopter"}
 
-# bash treats space delimited string like array for iteration!
-for word in $second; do
-  poe_test_echo $word
-done
-"""
+  [tool.poe.tasks.multiple-value-arg]
+  shell = """
+  poe_test_echo "first: ${first} second: ${second}"
 
-  [[tool.poe.tasks.multiple-value-arg.args]]
-  name       = "first"
-  positional = true
+  # bash treats space delimited string like array for iteration!
+  for word in $second; do
+    poe_test_echo $word
+  done
+  """
 
-  [[tool.poe.tasks.multiple-value-arg.args]]
-  name       = "second"
-  positional = true
-  multiple   = true
-  type       = "integer"
+    [[tool.poe.tasks.multiple-value-arg.args]]
+    name       = "first"
+    positional = true
+
+    [[tool.poe.tasks.multiple-value-arg.args]]
+    name       = "second"
+    positional = true
+    multiple   = true
+    type       = "integer"

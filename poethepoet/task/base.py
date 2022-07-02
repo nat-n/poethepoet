@@ -85,7 +85,7 @@ class PoeTask(metaclass=MetaPoeTask):
         capture_stdout: bool = False,
     ):
         self.name = name
-        self.content = content.strip() if isinstance(content, str) else content
+        self.content = content
         if capture_stdout:
             self.options = dict(options, capture_stdout=True)
         else:

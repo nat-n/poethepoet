@@ -1,6 +1,6 @@
 from os import environ
+import re
 from shutil import which
-import sys
 from typing import (
     Any,
     Dict,
@@ -55,9 +55,12 @@ class ShellTask(PoeTask):
                 message += "Some dependencies may be missing from your system."
             raise PoeException(message)
 
-        self._print_action(self.content, context.dry)
+        content = _unindent_code(self.content).rstrip()
+
+        self._print_action(content, context.dry)
+
         return context.get_executor(self.invocation, env, self.options).execute(
-            interpreter_cmd, input=self.content.encode()
+            interpreter_cmd, input=content.encode()
         )
 
     def _get_interpreter_config(self) -> Tuple[str, ...]:
@@ -76,10 +79,13 @@ class ShellTask(PoeTask):
         for item in self._get_interpreter_config():
             executable = self._locate_interpreter(item)
             if executable is None:
-                return None
+                continue
+
             if item in ("pwsh", "powershell"):
                 return [executable, "-NoLogo", "-Command", "-"]
+
             return [executable]
+
         return None
 
     def _locate_interpreter(self, interpreter: str) -> Optional[str]:
@@ -131,7 +137,8 @@ class ShellTask(PoeTask):
                 )
 
         elif interpreter == "python":
-            result = which("python") or which("python3") or sys.executable
+            # Exactly which python executable to use is usually resolved by the executor
+            result = "python"
 
         return result
 
@@ -162,3 +169,36 @@ class ShellTask(PoeTask):
                     )
 
         return None
+
+
+def _unindent_code(python_code: str):
+    """
+    Unindent all lines by the indent level of the first line.
+    This is rather naive, but should usually work as one would naively expect for a
+    multiline script in a multiline string value in toml.
+
+    It will not always work correctly if the multiline string itself contains a triple
+    quoted multiline python string or similar. Let's say that's OK for now.
+    """
+
+    if not python_code.startswith(" "):
+        return python_code
+
+    indent = 0
+    while python_code[indent] == " ":
+        indent += 1
+
+    prefix = " " * indent
+    return "\n".join(
+        _remove_prefix(line, prefix)
+        for line in re.split(r"(?:\r\n|\r|\n)", python_code)
+    )
+
+
+def _remove_prefix(text: str, prefix: str):
+    """
+    When we drop support for python <3.9 then str.removeprefix can be used
+    """
+    if text.startswith(prefix):
+        return text[len(prefix) :]
+    return text
