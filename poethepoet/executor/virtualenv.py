@@ -12,15 +12,19 @@ class VirtualenvExecutor(PoeExecutor):
     __key__ = "virtualenv"
     __options__: Dict[str, Type] = {"location": str}
 
-    def execute(self, cmd: Sequence[str], input: Optional[bytes] = None) -> int:
+    def execute(
+        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+    ) -> int:
         """
         Execute the given cmd as a subprocess inside the configured virtualenv
         """
         venv = self._resolve_virtualenv()
-        return self._exec_via_subproc(
+
+        return self._execute_cmd(
             (venv.resolve_executable(cmd[0]), *cmd[1:]),
             input=input,
             env=venv.get_env_vars(self.env.to_dict()),
+            use_exec=use_exec,
         )
 
     def _resolve_virtualenv(self) -> Virtualenv:

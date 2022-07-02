@@ -28,7 +28,9 @@ static-args-test = """
   )
 """
 
-call_attrs = "pkg:Scripts.Deep.fun(0)"
+# For testing that deep module scope references work & use_exec works with script tasks
+call_attrs.script   = "pkg:Scripts.Deep.fun(0)"
+call_attrs.use_exec = true
 
 greet = "pkg:greet"
 

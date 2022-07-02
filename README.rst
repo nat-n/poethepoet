@@ -4,6 +4,8 @@ Poe the Poet
 
 A task runner that works well with poetry.
 
+.. role:: sh(code)
+   :language: sh
 .. role:: bash(code)
    :language: bash
 .. role:: fish(code)
@@ -448,15 +450,15 @@ available as $FLASK_RUN_PORT within the task.
 .. code-block:: toml
 
     [tool.poe.tasks.serve]
-    serve.cmd = "flask run"
-    serve.env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
+    cmd = "flask run"
+    env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
 
 Running a task with a specific working directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default tasks are run from the project root – that is the parent directory of the
 pyproject.toml file. However if a task needs to be run in another directory within the
-project then this can be accomplished by using the `cwd` option like so:
+project then this can be accomplished by using the :toml:`cwd` option like so:
 
 .. code-block:: toml
 
@@ -464,10 +466,31 @@ project then this can be accomplished by using the `cwd` option like so:
     cmd = "npx ts-node -T ./build.ts"
     cwd = "./client"
 
-In this example, the npx executable is executed inside the `./client` subdirectory of
+In this example, the npx executable is executed inside the :sh:`./client` subdirectory of
 the project, and will use the nodejs package.json configuration from that location and
 evaluate paths relative to that location.
 
+Defining tasks that run via exec instead of a subprocess
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Normally tasks are executed as subprocesses of the poe cli. This makes it possible for
+poe to run multiple tasks, for example within a sequence task or task graph.
+
+However in certain situations it can be desirable to define a task that is instead
+executed within the same process via exec. Cmd and script tasks can be configured to
+work this way using the :toml:`use_exec` option like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd      = "gunicorn ./my_app:run"
+    use_exec = true
+
+Note the following limitations with this feature:
+
+- a task configured in this way may not be referenced by another task
+
+- this does not work on windows becuase of `this issue <https://bugs.python.org/issue19066>`_. On windows a subprocess is always created.
 
 Declaring CLI arguments
 -----------------------

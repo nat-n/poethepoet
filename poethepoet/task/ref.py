@@ -53,4 +53,11 @@ class RefTask(PoeTask):
         if shlex.split(task_ref)[0] not in config.tasks:
             return f"Task {task_name!r} contains reference to unkown task {task_ref!r}"
 
+        referenced_task = config.tasks[task_ref]
+        if isinstance(referenced_task, dict) and referenced_task.get("use_exec"):
+            return (
+                f"Invalid task: {task_name!r}. contains illegal reference to task with "
+                f"use_exec set to true: {task_ref!r}"
+            )
+
         return None

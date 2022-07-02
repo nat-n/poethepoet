@@ -6,7 +6,8 @@ from sys import version_info
 @pytest.fixture(scope="session")
 def setup_poetry_project(run_poetry, projects):
     run_poetry(
-        ["config", "virtualenvs.in-project", "true"], cwd=projects["poetry_plugin"]
+        ["config", "--local", "virtualenvs.in-project", "true"],
+        cwd=projects["poetry_plugin"],
     )
     run_poetry(["install"], cwd=projects["poetry_plugin"])
 

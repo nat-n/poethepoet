@@ -31,7 +31,9 @@ class ScriptTask(PoeTask):
     _callnode: ast.Call
 
     __key__ = "script"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
+        "use_exec": bool,
+    }
 
     def _handle_run(
         self,
@@ -59,7 +61,9 @@ class ScriptTask(PoeTask):
         )
 
         self._print_action(" ".join(argv), context.dry)
-        return context.get_executor(self.invocation, env, self.options).execute(cmd)
+        return context.get_executor(self.invocation, env, self.options).execute(
+            cmd, use_exec=self.options.get("use_exec", False)
+        )
 
     @classmethod
     def _validate_task_def(

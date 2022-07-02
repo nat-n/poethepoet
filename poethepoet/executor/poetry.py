@@ -17,7 +17,9 @@ class PoetryExecutor(PoeExecutor):
     __key__ = "poetry"
     __options__: Dict[str, Type] = {}
 
-    def execute(self, cmd: Sequence[str], input: Optional[bytes] = None) -> int:
+    def execute(
+        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+    ) -> int:
         """
         Execute the given cmd as a subprocess inside the poetry managed dev environment
         """
@@ -32,32 +34,24 @@ class PoetryExecutor(PoeExecutor):
             or sys.prefix == poetry_env
         ):
             # The target venv is already active so we can execute the command unaltered
-            return self._execute_cmd(cmd, input)
+            return self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
         if poetry_env:
             # Execute the task in the virtualenv from poetry
-            return self._execute_cmd(cmd, input, venv=Virtualenv(Path(poetry_env)))
-
-        # Run this task with `poetry run`
-        return self._execute_cmd((self._poetry_cmd(), "run", *cmd), input)
-
-    def _execute_cmd(
-        self,
-        cmd: Sequence[str],
-        input: Optional[bytes] = None,
-        shell: bool = False,
-        *,
-        venv: Optional[Virtualenv] = None,
-    ) -> int:
-        if venv:
-            return self._exec_via_subproc(
+            venv = Virtualenv(Path(poetry_env))
+            return self._execute_cmd(
                 (venv.resolve_executable(cmd[0]), *cmd[1:]),
                 input=input,
                 env=venv.get_env_vars(self.env.to_dict()),
-                shell=shell,
+                use_exec=use_exec,
             )
 
-        return self._exec_via_subproc(cmd, input=input, shell=shell)
+        # Run this task with `poetry run`
+        return self._execute_cmd(
+            (self._poetry_cmd(), "run", *cmd),
+            input=input,
+            use_exec=use_exec,
+        )
 
     def _get_poetry_virtualenv(self, force: bool = True):
         """

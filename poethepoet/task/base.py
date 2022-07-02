@@ -389,7 +389,7 @@ class PoeTask(metaclass=MetaPoeTask):
                     "line breaks"
                 )
 
-            all_task_names = set(config.tasks)
+            all_task_names = set(config.tasks.keys())
 
             if "deps" in task_def:
                 for dep in task_def["deps"]:
@@ -400,6 +400,15 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"reference to unknown task: {dep_task_name!r}"
                         )
 
+                    referenced_task = config.tasks[dep_task_name]
+                    if isinstance(referenced_task, dict) and referenced_task.get(
+                        "use_exec"
+                    ):
+                        return (
+                            f"Invalid task: {task_name!r}. deps options contains "
+                            f"reference to task with use_exec set to true: {dep_task_name!r}"
+                        )
+
             if "uses" in task_def:
                 for key, dep in task_def["uses"].items():
                     if not is_valid_env_var(key):
@@ -407,11 +416,21 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"Invalid task: {task_name!r} uses options contains invalid"
                             f" key: {key!r}"
                         )
+
                     dep_task_name = dep.split(" ", 1)[0]
                     if dep_task_name not in all_task_names:
                         return (
                             f"Invalid task: {task_name!r}. uses options contains "
                             f"reference to unknown task: {dep_task_name!r}"
+                        )
+
+                    referenced_task = config.tasks[dep_task_name]
+                    if isinstance(referenced_task, dict) and referenced_task.get(
+                        "use_exec"
+                    ):
+                        return (
+                            f"Invalid task: {task_name!r}. uses options contains "
+                            f"reference to task with use_exec set to true: {dep_task_name!r}"
                         )
 
         elif isinstance(task_def, list):

@@ -28,7 +28,9 @@ class CmdTask(PoeTask):
     content: str
 
     __key__ = "cmd"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
+    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
+        "use_exec": bool,
+    }
 
     def _handle_run(
         self,
@@ -45,7 +47,9 @@ class CmdTask(PoeTask):
         else:
             cmd = (*self._resolve_args(context, env), *extra_args)
         self._print_action(" ".join(cmd), context.dry)
-        return context.get_executor(self.invocation, env, self.options).execute(cmd)
+        return context.get_executor(self.invocation, env, self.options).execute(
+            cmd, use_exec=self.options.get("use_exec", False)
+        )
 
     def _resolve_args(self, context: "RunContext", env: EnvVarsManager):
         updated_content = env.fill_template(self.content.strip())

@@ -24,7 +24,7 @@ def test_script_task_with_hard_coded_args(run_poe_subproc, projects, esc_prefix)
     assert result.stderr == ""
 
 
-def test_call_attr_func(run_poe_subproc):
+def test_call_attr_func_with_exec(run_poe_subproc):
     result = run_poe_subproc("call_attrs", project="scripts")
     assert result.capture == "Poe => call_attrs\n"
     assert result.stdout == "task!\n"

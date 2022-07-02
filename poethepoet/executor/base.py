@@ -1,3 +1,4 @@
+import os
 import signal
 from subprocess import Popen, PIPE
 import sys
@@ -14,7 +15,7 @@ from typing import (
     Union,
 )
 from ..env.manager import EnvVarsManager
-from ..exceptions import PoeException
+from ..exceptions import ExecutionError, PoeException
 from ..virtualenv import Virtualenv
 
 if TYPE_CHECKING:
@@ -66,6 +67,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self.env = env
         self.dry = dry
         self.capture_stdout = capture_stdout
+        self._is_windows = sys.platform == "win32"
 
     @classmethod
     def get(
@@ -118,11 +120,61 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
             return cls.__executor_types[config_executor_type]
 
-    def execute(self, cmd: Sequence[str], input: Optional[bytes] = None) -> int:
+    def execute(
+        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+    ) -> int:
         """
-        Execute the given cmd as a subprocess inside the poetry managed dev environment
+        Execute the given cmd
         """
-        return self._exec_via_subproc(cmd, input=input)
+        return self._execute_cmd(cmd, input=input, use_exec=use_exec)
+
+    def _execute_cmd(
+        self,
+        cmd: Sequence[str],
+        *,
+        input: Optional[bytes] = None,
+        env: Optional[Mapping[str, str]] = None,
+        shell: bool = False,
+        use_exec: bool = False,
+    ) -> int:
+        """
+        Execute the given cmd either as a subprocess or use exec to replace the current
+        process. Using exec supports fewer options, and doesn't work on windows.
+        """
+
+        if use_exec:
+            if input:
+                raise ExecutionError("Cannot exec task that requires input!")
+            if shell:
+                raise ExecutionError("Cannot exec task that requires shell!")
+            if not self._is_windows:
+                # execvpe doesn't work properly on windows so we just don't go there
+                return self._exec(cmd, env=env)
+
+        return self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
+
+    def _exec(
+        self,
+        cmd: Sequence[str],
+        *,
+        env: Optional[Mapping[str, str]] = None,
+    ):
+        if self.dry:
+            return 0
+
+        # Beware: this is the point of no return!
+
+        exec_env = dict(
+            (self.env.to_dict() if env is None else env), POE_ACTIVE=self.__key__
+        )
+        if self.working_dir:
+            os.chdir(self.working_dir)
+        sys.stdout.flush()
+
+        # if running tests then wrap up coverage instrumentation while we still can
+        _stop_coverage()
+
+        os.execvpe(cmd[0], tuple(cmd), exec_env)
 
     def _exec_via_subproc(
         self,
