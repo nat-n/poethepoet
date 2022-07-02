@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "poe_test_helpers"
-version = "0.1.0"
+version = "0.2.0"
 description = "Provides cross platform executables to help with testing"
 authors = ["Nat Noordanus <n@natn.me>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.7"
 
 [tool.poetry.scripts]
 poe_test_echo = "poe_test_helpers:echo"
