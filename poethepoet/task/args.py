@@ -123,13 +123,14 @@ class PoeTaskArgs:
                         f"Unexpected 'name' option for arg {arg_name!r} of task "
                         f"{task_name!r}"
                     )
-                error = cls._validate_type(params, arg_name, task_name)
-                if error:
-                    return error
                 arg_params.append((params, arg_name, task_name))
 
         positional_multiple = None
         for params, arg_name, task_name in arg_params:
+            error = cls._validate_type(params, arg_name, task_name)
+            if error:
+                return error
+
             error = cls._validate_params(params, arg_name, task_name)
             if error:
                 return error

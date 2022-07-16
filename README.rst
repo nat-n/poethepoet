@@ -653,9 +653,10 @@ Named arguments support the following configuration options:
 - **type** : str
    The type that the provided value will be cast to. The set of acceptable options is
    {"string", "float", "integer", "boolean"}. If not provided then the default behaviour
-   is to keep values as strings. Setting the type to "bool" makes the resulting argument
-   a flag that if provided will set the value to the boolean opposite of the default
-   value – i.e. *true* if no default value is given, or false if :toml:`default = true`.
+   is to keep values as strings. Setting the type to "boolean" makes the resulting
+   argument a flag that if provided will set the value to the boolean opposite of the
+   default value – i.e. *true* if no default value is given, or false if
+   :toml:`default = true`.
 
 
 Arguments for cmd and shell tasks
