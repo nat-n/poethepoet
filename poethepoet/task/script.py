@@ -33,6 +33,7 @@ class ScriptTask(PoeTask):
     __key__ = "script"
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
         "use_exec": bool,
+        "print_result": bool,
     }
 
     def _handle_run(
@@ -48,17 +49,21 @@ class ScriptTask(PoeTask):
             self.name,
             *(env.fill_template(token) for token in extra_args),
         ]
-        cmd = (
-            # Exactly which python executable to use is usually resolved by the executor
-            "python",
-            "-c",
-            "import sys; "
-            "from os import environ; "
-            "from importlib import import_module; "
-            f"sys.argv = {argv!r}; sys.path.append('src');"
-            f"{self.format_args_class(self.named_args)}"
-            f"import_module('{target_module}').{function_call}",
-        )
+
+        script = [
+            "import sys; ",
+            "from os import environ; ",
+            "from importlib import import_module; ",
+            f"sys.argv = {argv!r}; sys.path.append('src');",
+            f"{self.format_args_class(self.named_args)}",
+            f"result = import_module('{target_module}').{function_call};",
+        ]
+
+        if self.options.get("print_result"):
+            script.append(f"result is not None and print(result);")
+
+        # Exactly which python executable to use is usually resolved by the executor
+        cmd = ("python", "-c", "".join(script))
 
         self._print_action(" ".join(argv), context.dry)
         return context.get_executor(self.invocation, env, self.options).execute(

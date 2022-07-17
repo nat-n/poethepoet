@@ -31,6 +31,20 @@ def test_call_attr_func_with_exec(run_poe_subproc):
     assert result.stderr == ""
 
 
+def test_print_result(run_poe_subproc):
+    result = run_poe_subproc("print-script-result", project="scripts")
+    assert result.capture == "Poe => print-script-result\n"
+    assert result.stdout == "determining most random number...\n7\n"
+    assert result.stderr == ""
+
+
+def test_dont_print_result(run_poe_subproc):
+    result = run_poe_subproc("dont-print-script-result", project="scripts")
+    assert result.capture == "Poe => dont-print-script-result\n"
+    assert result.stdout == "determining most random number...\n"
+    assert result.stderr == ""
+
+
 def test_automatic_kwargs_from_args(run_poe_subproc):
     result = run_poe_subproc("greet", project="scripts")
     assert result.capture == "Poe => greet\n"

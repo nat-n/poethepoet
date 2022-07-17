@@ -34,6 +34,14 @@ call_attrs.use_exec = true
 
 greet = "pkg:greet"
 
+
+  [tool.poe.tasks.print-script-result]
+  script       = "pkg:get_random_number"
+  print_result = true
+
+  [tool.poe.tasks.dont-print-script-result]
+  script = "pkg:get_random_number"
+
   [tool.poe.tasks.greet-passed-args]
   # weird formatting is intentional
   script = """
@@ -99,7 +107,6 @@ greet = "pkg:greet"
     name = "uppercase"
     options = ["--upper"]
     type = "boolean"
-
 
   [tool.poe.tasks.multiple-value-args]
   script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"

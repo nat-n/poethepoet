@@ -15,6 +15,11 @@ def echo_args():
     print("hello", *sys.argv[1:])
 
 
+def get_random_number():
+    print("determining most random number...")
+    return 7
+
+
 def echo_script(*args, **kwargs):
     print("args", args)
     print("kwargs", kwargs)

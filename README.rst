@@ -220,6 +220,46 @@ scripts *(shell)*, and sequence tasks *(sequence)*.
   declared), then they will be available within the called python function via
   :python:`sys.argv`.
 
+  **Calling standard library functions**
+
+  Any python callable accessible via the python path can be referenced, including the
+  standard library. This can be useful for ensuring that tasks work across platforms.
+
+  For example, the following task will not always work on windows:
+
+  .. code-block:: toml
+
+    [[tool.poe.tasks.build]]
+    cmd = "mkdir -p build/assets"
+
+  whereas the same behaviour can can be reliably achieved like so:
+
+  .. code-block:: toml
+
+    [[tool.poe.tasks.build]]
+    script = "os:makedirs('build/assets', exist_ok=True)"
+
+  **Output the return value from the python callable**
+
+  Script tasks can be configured to output the return value of a callable using the
+  :toml:`print_result` option like so:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks.create-secret]
+    script = "django.core.management.utils:get_random_secret_key()"
+    print_result = true
+
+  Given the above configuration running the following command would output just the
+  generated key.
+
+  .. code-block:: bash
+
+    poe -q create-secret
+
+  Note that if the return value is None then the :toml:`print_result` option has no
+  effect.
+
 - **Shell tasks** are similar to simple command tasks except that they are executed
   inside a new shell, and can consist of multiple separate commands, command
   substitution, pipes, background processes, etc.
