@@ -71,7 +71,7 @@ Installation
 
   .. code-block:: bash
 
-    poetry self add poethepoet[poetry_plugin]
+    poetry self add 'poethepoet[poetry_plugin]'
 
 Enable tab completion for your shell
 ------------------------------------
