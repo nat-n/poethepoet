@@ -215,7 +215,7 @@ class PoeConfig:
 
         maybe_result = self.cwd.joinpath(self.TOML_NAME)
         while not maybe_result.exists():
-            if maybe_result.parent == Path("/"):
+            if len(maybe_result.parents) == 1:
                 raise PoeException(
                     f"Poe could not find a pyproject.toml file in {self.cwd} or"
                     " its parents"

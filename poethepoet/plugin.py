@@ -75,6 +75,23 @@ class PoeCommand(Command):
 class PoetryPlugin(ApplicationPlugin):
     def activate(self, application: Application) -> None:
         try:
+            return self._activate(application)
+        # pylint: disable=bare-except
+        except:
+            import os, sys
+
+            print(
+                "error: poethepoet plugin failed to activate. Set DEBUG_POE_PLUGIN=1 for details.",
+                file=sys.stderr,
+            )
+            if os.environ.get("DEBUG_POE_PLUGIN"):
+                import traceback
+
+                traceback.print_exc()
+                raise SystemExit(1)
+
+    def _activate(self, application: Application) -> None:
+        try:
             poe_config = self._get_config(application)
         except RuntimeError:
             # If there's no pyproject.toml then probably that's OK, don't freak out
