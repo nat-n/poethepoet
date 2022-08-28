@@ -90,7 +90,7 @@ class PoeThePoet:
         return True
 
     def run_task(self, context: Optional[RunContext] = None) -> Optional[int]:
-        _, *extra_args = self.ui["task"]
+        extra_args = self.ui["task"][1:]
         if context is None:
             context = self.get_run_context()
         try:
