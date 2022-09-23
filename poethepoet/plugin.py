@@ -266,7 +266,7 @@ class PoetryPlugin(ApplicationPlugin):
                 # update tokens list in place
                 tokens.insert(task_name_index, "--")
 
-            continue_run(self, io)
+            return continue_run(self, io)
 
         # Apply the patch
         cleo.application.Application._run = _run
