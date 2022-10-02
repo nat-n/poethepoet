@@ -8,14 +8,15 @@ authors     = ["Nat Noordanus <n@natn.me>"]
 python = "^3.7"
 
 [tool.poetry.dev-dependencies]
-cowsay = "../../packages/python_cowsay-1.0.1-py3-none-any.whl"
+cowpy = { path = "../../packages/cowpy-1.1.5-py3-none-any.whl" }
+poe_test_helpers = { path = "../../packages/poe_test_helpers" }
 
 [tool.poe]
 poetry_command = ""
 
 [tool.poe.tasks]
 echo = { cmd = "poe_test_echo", help = "It's like echo"}
-cow-greet = "cowsay 'good day sir!'"
+cow-greet = "cowpy 'good day sir!'"
 
 [build-system]
 requires      = ["poetry-core"]

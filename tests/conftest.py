@@ -207,15 +207,17 @@ def run_poetry(use_venv, poe_project_path):
 
     def run_poetry(args: List[str], cwd: str, env: Optional[Dict[str, str]] = None):
         venv = Virtualenv(venv_location)
+
+        cmd = (venv.resolve_executable("python"), "-m", "poetry", *args)
+        print("Poetry cmd:", cmd[0])
         poetry_proc = Popen(
-            (venv.resolve_executable("poetry"), *args),
+            cmd,
             env=venv.get_env_vars({**os.environ, **(env or {})}),
             stdout=PIPE,
             stderr=PIPE,
             cwd=cwd,
         )
         poetry_out, poetry_err = poetry_proc.communicate()
-
         result = PoeRunResult(
             code=poetry_proc.returncode,
             path=cwd,
@@ -230,9 +232,7 @@ def run_poetry(use_venv, poe_project_path):
         venv_location,
         [
             ".[poetry_plugin]",
-            # TODO: poetry install from a release
-            "./tests/fixtures/packages/poetry-1.2.0b2.dev0-py3-none-any.whl",
-            "--pre",
+            "./tests/fixtures/packages/poetry-1.2.1-py3-none-any.whl",
         ],
         require_empty=True,
     ):

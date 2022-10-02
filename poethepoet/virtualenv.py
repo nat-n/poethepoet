@@ -30,12 +30,13 @@ class Virtualenv:
         bin_dir = self.bin_dir()
         if bin_dir.joinpath(executable).is_file():
             return str(bin_dir.joinpath(executable))
-        if (
-            self._is_windows
-            and not executable.endswith(".exe")
-            and bin_dir.joinpath(f"{executable}.exe").is_file()
-        ):
-            return str(bin_dir.joinpath(f"{executable}.exe"))
+        if self._is_windows:
+            if bin_dir.joinpath(f"{executable}.com").is_file():
+                return str(bin_dir.joinpath(f"{executable}.com"))
+            if bin_dir.joinpath(f"{executable}.exe").is_file():
+                return str(bin_dir.joinpath(f"{executable}.exe"))
+            if bin_dir.joinpath(f"{executable}.bat").is_file():
+                return str(bin_dir.joinpath(f"{executable}.bat"))
         return executable
 
     @staticmethod
