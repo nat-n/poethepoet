@@ -1,4 +1,5 @@
 import ast
+import re
 from typing import (
     Any,
     Dict,
@@ -104,7 +105,12 @@ class ScriptTask(PoeTask):
                 return target_module, f"{target_ref}(**({args}))"
             return target_module, f"{target_ref}()"
 
-        return target_module, resolve_function_call(target_ref, set(args or tuple()))
+        function_call = resolve_function_call(target_ref, set(args or tuple()))
+        # Strip out any new lines because they can be problematic on windows
+        function_call = re.sub(r"((\r\n|\r|\n) | (\r\n|\r|\n))", " ", function_call)
+        function_call = re.sub(r"(\r\n|\r|\n)", " ", function_call)
+
+        return target_module, function_call
 
     @staticmethod
     def format_args_class(
@@ -117,7 +123,7 @@ class ScriptTask(PoeTask):
         if named_args is None:
             return ""
         return (
-            f'__args=type("{classname}",(object,),'
+            f'{classname}=type("{classname}",(object,),'
             "{"
             + ",".join(f"{name!r}:{value!r}" for name, value in named_args.items())
             + "});"

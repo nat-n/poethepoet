@@ -8,7 +8,7 @@ python-versions = ">=3.6"
 
 [package.source]
 type = "file"
-url = "../packages/cowpy-1.1.5-py3-none-any.whl"
+url = "../../packages/cowpy-1.1.5-py3-none-any.whl"
 
 [[package]]
 name = "poe-test-helpers"
@@ -21,12 +21,12 @@ develop = false
 
 [package.source]
 type = "directory"
-url = "../packages/poe_test_helpers"
+url = "../../packages/poe_test_helpers"
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "5fa24f3ca30fc90015b8a3d1b0ba6b99711a860a945dce08a64dc9c06dc35c59"
+content-hash = "94002636f413787b5c4816f3f896ec98cd57abc7c8a9bb8e084a4af1eb6d551c"
 
 [metadata.files]
 cowpy = [

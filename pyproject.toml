@@ -55,6 +55,7 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
            htmlcov
            ./tests/fixtures/simple_project/venv
            ./tests/fixtures/venv_project/myvenv
+           ./tests/fixtures/poetry_plugin_project/**/.venv
            ./tests/temp
   """
 
