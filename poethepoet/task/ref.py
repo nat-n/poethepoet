@@ -49,11 +49,12 @@ class RefTask(PoeTask):
         return a message describing the first encountered issue if any.
         """
         task_ref = task_def["ref"]
+        task_name_ref = shlex.split(task_ref)[0]
 
-        if shlex.split(task_ref)[0] not in config.tasks:
-            return f"Task {task_name!r} contains reference to unkown task {task_ref!r}"
+        if task_name_ref not in config.tasks:
+            return f"Task {task_name!r} contains reference to unkown task {task_name_ref!r}"
 
-        referenced_task = config.tasks[task_ref]
+        referenced_task = config.tasks[task_name_ref]
         if isinstance(referenced_task, dict) and referenced_task.get("use_exec"):
             return (
                 f"Invalid task: {task_name!r}. contains illegal reference to task with "

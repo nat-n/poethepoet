@@ -52,7 +52,7 @@ def test_sequence_task_with_multiple_value_arg(run_poe_subproc):
     )
     assert (
         result.capture
-        == "Poe => poe_test_echo first: hey\nPoe => poe_test_echo second: 1 2 3\n"
+        == "Poe => poe_test_echo first: hey\nPoe => poe_test_echo second: 1 2 3\nPoe => poe_test_echo Done.\n"
     )
-    assert result.stdout == "first: hey\nsecond: 1 2 3\n"
+    assert result.stdout == "first: hey\nsecond: 1 2 3\nDone.\n"
     assert result.stderr == ""
