@@ -24,8 +24,14 @@ travel = [
   { script = "my_package:print_var('DEST')" }
 ]
 
+
+[tool.poe.tasks.say]
+cmd  = "poe_test_echo ${thing}"
+args = ["thing"]
+
 [tool.poe.tasks.multiple-value-arg]
-sequence = [{ cmd = "poe_test_echo first: ${first}" }, { cmd = " poe_test_echo second: ${second}" }]
+sequence = [{ cmd = "poe_test_echo first: ${first}" }, { cmd = " poe_test_echo second: ${second}" }, { ref = "say --thing ${thing}" }]
+env      = {thing = "Done."}
 
   [[tool.poe.tasks.multiple-value-arg.args]]
   name       = "first"
@@ -36,3 +42,5 @@ sequence = [{ cmd = "poe_test_echo first: ${first}" }, { cmd = " poe_test_echo s
   positional = true
   multiple   = true
   type       = "integer"
+
+
