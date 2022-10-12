@@ -64,7 +64,7 @@ Installation
 
   .. code-block:: bash
 
-    poetry add --dev poethepoet
+    poetry add --group dev poethepoet
 
 3.
   Or into poetry as a plugin (requires poetry >= 1.2)
@@ -173,7 +173,7 @@ Or just install it as a dev dependency with poetry and run it like
 
 .. code-block:: bash
 
-  poetry add --dev poethepoet
+  poetry add --group dev poethepoet
   poetry run poe [options] task [task_args]
 
 Though in that case you might like to define :bash:`alias poe='poetry run poe'`.
