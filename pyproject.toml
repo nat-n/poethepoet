@@ -11,8 +11,8 @@ homepage    = "https://github.com/nat-n/poethepoet"
 [tool.poetry.dependencies]
 python = ">=3.7"
 pastel = "^0.2.1"
-tomli  = ">=1.2.2"
-poetry = {version = "^1.0", allow-prereleases = true, optional = true}
+tomli  = { version = ">=1.2.2", python = "<3.11" }
+poetry = { version = "^1.0", allow-prereleases = true, optional = true }
 
 [tool.poetry.dev-dependencies]
 black      = "^22.3.0"
@@ -23,6 +23,7 @@ pylint     = "^2.13.0"
 pytest     = "^7.1.2"
 pytest-cov = "^3.0.0"
 rstcheck   = "^3.3.1"
+tomli      = ">=1.2.2"
 virtualenv = "^20.14.1"
 zipp       = "^3.8.0"
 distlib    = "^0.3.4"
