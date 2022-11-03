@@ -9,12 +9,12 @@ repository  = "https://github.com/nat-n/poethepoet"
 homepage    = "https://github.com/nat-n/poethepoet"
 
 [tool.poetry.dependencies]
-python = ">=3.7"
+python = "^3.7"
 pastel = "^0.2.1"
 tomli  = { version = ">=1.2.2", python = "<3.11" }
 poetry = { version = "^1.0", allow-prereleases = true, optional = true }
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black      = "^22.3.0"
 bpython    = "^0.22.1"
 filelock   = "^3.7.1"
