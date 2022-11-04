@@ -11,19 +11,19 @@ homepage    = "https://github.com/nat-n/poethepoet"
 [tool.poetry.dependencies]
 python = ">=3.7"
 pastel = "^0.2.1"
-tomli  = { version = ">=1.2.2", python = "<3.11" }
-poetry = { version = "^1.0", allow-prereleases = true, optional = true }
+tomli  = ">=1.2.2"
+poetry = {version = "^1.0", allow-prereleases = true, optional = true}
 
 [tool.poetry.dev-dependencies]
 black      = "^22.3.0"
 bpython    = "^0.22.1"
 filelock   = "^3.7.1"
+isort      = { version = "^5.10.1", python = "<3.11" }
 mypy       = "^0.960"
 pylint     = "^2.13.0"
 pytest     = "^7.1.2"
 pytest-cov = "^3.0.0"
 rstcheck   = "^3.3.1"
-tomli      = ">=1.2.2"
 virtualenv = "^20.14.1"
 zipp       = "^3.8.0"
 distlib    = "^0.3.4"
@@ -40,9 +40,17 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
 
 [tool.poe.tasks]
 
-  [tool.poe.tasks.format]
+  [tool.poe.tasks.format-isort]
+  help = "Run isort on the code base"
+  cmd  = "isort ."
+
+  [tool.poe.tasks.format-black]
   help = "Run black on the code base"
   cmd  = "black ."
+
+  [tool.poe.tasks.format]
+  help = "Run formating tools on the code base"
+  sequence  = ["format-isort", "format-black"]
 
   [tool.poe.tasks.clean]
   help = "Remove generated files"
@@ -76,9 +84,17 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   help = "Run the linter"
   cmd  = "pylint poethepoet"
 
+  [tool.poe.tasks.style-black]
+  help = "Validate black code style"
+  cmd  = "black . --check --diff"
+
+  [tool.poe.tasks.style-isort]
+  help = "Validate isort code style"
+  cmd  = "isort . --check --diff"
+
   [tool.poe.tasks.style]
   help = "Validate code style"
-  cmd  = "black . --check --diff"
+  sequence = ["style-isort", "style-black"]
 
   [tool.poe.tasks.check-docs]
   help = "Validate rst syntax in the docs"
@@ -92,15 +108,17 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   help   = "Execute poe from this repo (useful for testing)"
   script = "poethepoet:main"
 
+
 [tool.coverage.report]
 omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"]
-
 
 [tool.pytest.ini_options]
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
+[tool.isort]
+profile = "black"
 
 [build-system]
 requires      = ["poetry-core"]
