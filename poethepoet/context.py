@@ -1,15 +1,9 @@
-from pathlib import Path
 import re
-from typing import (
-    Any,
-    Dict,
-    Mapping,
-    Optional,
-    Tuple,
-    TYPE_CHECKING,
-)
-from .executor import PoeExecutor
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple
+
 from .env.manager import EnvVarsManager
+from .executor import PoeExecutor
 
 if TYPE_CHECKING:
     from .config import PoeConfig

@@ -1,22 +1,11 @@
 import ast
 import re
-from typing import (
-    Any,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TYPE_CHECKING,
-    Union,
-)
-from .base import PoeTask
-from ..exceptions import ScriptParseError
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
+
 from ..env.manager import EnvVarsManager
-from ..helpers.python import (
-    resolve_function_call,
-    parse_and_validate,
-)
+from ..exceptions import ScriptParseError
+from ..helpers.python import parse_and_validate, resolve_function_call
+from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig

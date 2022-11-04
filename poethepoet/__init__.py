@@ -26,6 +26,7 @@ def main():
             return
 
     from pathlib import Path
+
     from .app import PoeThePoet
 
     app = PoeThePoet(cwd=Path(".").resolve(), output=sys.stdout)

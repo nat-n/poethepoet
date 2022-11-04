@@ -1,5 +1,6 @@
-from poethepoet.env.parse import parse_env_file
 import pytest
+
+from poethepoet.env.parse import parse_env_file
 
 valid_examples = [
     (

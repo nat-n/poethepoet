@@ -1,5 +1,6 @@
-import pytest
 import shutil
+
+import pytest
 
 
 def test_shell_task(run_poe_subproc):

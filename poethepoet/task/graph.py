@@ -1,4 +1,5 @@
-from typing import Dict, Set, List, Tuple
+from typing import Dict, List, Set, Tuple
+
 from ..context import RunContext
 from ..exceptions import CyclicDependencyError
 from .base import PoeTask

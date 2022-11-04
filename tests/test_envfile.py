@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def test_global_envfile_and_default(run_poe_subproc, is_windows):

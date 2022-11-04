@@ -1,5 +1,6 @@
-from poethepoet import __version__
 import re
+
+from poethepoet import __version__
 
 
 def test_call_no_args(run_poe):

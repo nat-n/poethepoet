@@ -1,10 +1,12 @@
 import argparse
 import os
-from pastel import Pastel
 import sys
 from typing import IO, List, Mapping, Optional, Sequence, Tuple, Union
-from .exceptions import PoeException
+
+from pastel import Pastel
+
 from .__version__ import __version__
+from .exceptions import PoeException
 
 
 def guess_ansi_support(file):

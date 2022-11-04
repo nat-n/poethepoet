@@ -5,6 +5,6 @@ def test_package_version():
 
 
 def test_package_exec_version():
-    from subprocess import Popen, PIPE
+    from subprocess import PIPE, Popen
 
     Popen(["test_print_version"])

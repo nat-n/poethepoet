@@ -1,4 +1,5 @@
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -6,12 +7,12 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TYPE_CHECKING,
     Union,
 )
-from .base import PoeTask, TaskContent
+
 from ..env.manager import EnvVarsManager
 from ..exceptions import ExecutionError, PoeException
+from .base import PoeTask, TaskContent
 
 if TYPE_CHECKING:
     from ..config import PoeConfig

@@ -1,6 +1,7 @@
-from pathlib import Path
-import pytest
 import sys
+from pathlib import Path
+
+import pytest
 
 PY_V = f"{sys.version_info.major}.{sys.version_info.minor}"
 

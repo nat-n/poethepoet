@@ -1,7 +1,8 @@
 import os
-from pathlib import Path
 import sys
-from typing import Any, Dict, IO, Mapping, Optional, Sequence, Tuple, Union
+from pathlib import Path
+from typing import IO, Any, Dict, Mapping, Optional, Sequence, Tuple, Union
+
 from .config import PoeConfig
 from .context import RunContext
 from .exceptions import ExecutionError, PoeException

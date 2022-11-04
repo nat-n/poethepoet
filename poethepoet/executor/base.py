@@ -1,8 +1,9 @@
 import os
 import signal
-from subprocess import Popen, PIPE
 import sys
+from subprocess import PIPE, Popen
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Mapping,
@@ -11,15 +12,16 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TYPE_CHECKING,
     Union,
 )
+
 from ..env.manager import EnvVarsManager
 from ..exceptions import ExecutionError, PoeException
 from ..virtualenv import Virtualenv
 
 if TYPE_CHECKING:
     from pathlib import Path
+
     from ..context import RunContext
 
 # TODO: maybe invert the control so the executor is given a task to run?

@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 
 def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):

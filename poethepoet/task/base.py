@@ -1,8 +1,9 @@
-from pathlib import Path
 import re
 import shlex
 import sys
+from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Iterator,
@@ -12,18 +13,17 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TYPE_CHECKING,
     Union,
 )
 
-from .args import PoeTaskArgs
+from ..env.manager import EnvVarsManager
 from ..exceptions import PoeException
 from ..helpers import is_valid_env_var
-from ..env.manager import EnvVarsManager
+from .args import PoeTaskArgs
 
 if TYPE_CHECKING:
-    from ..context import RunContext
     from ..config import PoeConfig
+    from ..context import RunContext
     from ..ui import PoeUi
 
 
