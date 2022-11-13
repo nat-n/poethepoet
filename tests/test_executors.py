@@ -89,7 +89,11 @@ def test_detect_venv(
         assert result.stdout.startswith("poe_test_package found at ")
         if is_windows:
             assert result.stdout.endswith(
-                f"\\tests\\fixtures\\simple_project\\venv\\lib\\site-packages\\poe_test_package\\__init__.py\n"
+                (
+                    f"\\tests\\fixtures\\simple_project\\venv\\lib\\site-packages\\poe_test_package\\__init__.py\n",
+                    # Lib has a captital with python >=11
+                    f"\\tests\\fixtures\\simple_project\\venv\\Lib\\site-packages\\poe_test_package\\__init__.py\n",
+                )
             )
         else:
             assert result.stdout.endswith(
