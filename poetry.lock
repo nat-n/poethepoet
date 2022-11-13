@@ -925,7 +925,7 @@ poetry-plugin = ["poetry"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7"
-content-hash = "c99e2ca4aa90d253747fd956ddb0584fda61df00f8b709f8e65b22f0f4b2cb3f"
+content-hash = "190e9209fb8eed6fdc84f1fa0c6eb41ae87b2de6c3f0f678a3aef73b82a5c720"
 
 [metadata.files]
 ansicon = [
