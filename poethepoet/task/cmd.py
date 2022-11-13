@@ -1,16 +1,10 @@
-from glob import glob
 import re
 import shlex
-from typing import (
-    Dict,
-    Sequence,
-    Type,
-    Tuple,
-    TYPE_CHECKING,
-    Union,
-)
-from .base import PoeTask
+from glob import glob
+from typing import TYPE_CHECKING, Dict, Sequence, Tuple, Type, Union
+
 from ..env.manager import EnvVarsManager
+from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig

@@ -1,16 +1,8 @@
 import shlex
-from typing import (
-    Any,
-    Dict,
-    Optional,
-    Sequence,
-    Type,
-    Tuple,
-    TYPE_CHECKING,
-    Union,
-)
-from .base import PoeTask
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
+
 from ..env.manager import EnvVarsManager
+from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig

@@ -1,11 +1,6 @@
 from pathlib import Path
-from typing import (
-    Dict,
-    Mapping,
-    Optional,
-    Union,
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Union
+
 from .cache import EnvFileCache
 from .template import apply_envvars_to_template
 

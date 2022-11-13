@@ -1,5 +1,5 @@
-from enum import Enum
 import re
+from enum import Enum
 from typing import Iterable, Optional, Sequence
 
 

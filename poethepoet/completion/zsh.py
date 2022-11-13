@@ -7,6 +7,7 @@ def get_zsh_completion_script() -> str:
     script for poe generated from the argparses config
     """
     from pathlib import Path
+
     from ..app import PoeThePoet
 
     # build and interogate the argument parser as the normal cli would

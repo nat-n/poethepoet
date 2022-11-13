@@ -1,5 +1,6 @@
 import argparse
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -9,7 +10,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    TYPE_CHECKING,
 )
 
 if TYPE_CHECKING:

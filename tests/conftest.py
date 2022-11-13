@@ -1,21 +1,23 @@
+import os
+import re
+import shutil
+import sys
+import time
+import venv
 from collections import namedtuple
 from contextlib import contextmanager
 from io import StringIO
-import os
 from pathlib import Path
+from subprocess import PIPE, Popen
+from tempfile import TemporaryDirectory
+from typing import Any, Dict, List, Mapping, Optional
+
+import pytest
+import tomli
+import virtualenv
+
 from poethepoet.app import PoeThePoet
 from poethepoet.virtualenv import Virtualenv
-import pytest
-import re
-import shutil
-from subprocess import PIPE, Popen
-import sys
-from tempfile import TemporaryDirectory
-import time
-import tomli
-from typing import Any, Dict, List, Mapping, Optional
-import venv
-import virtualenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TOML = PROJECT_ROOT.joinpath("pyproject.toml")

@@ -3,12 +3,12 @@ Helper functions for parsing python code, as required by ScriptTask
 """
 
 import ast
-from itertools import chain
 import re
 import sys
+from itertools import chain
 from typing import Container, Iterator, List, Tuple
-from ..exceptions import ScriptParseError
 
+from ..exceptions import ScriptParseError
 
 _BUILTINS_WHITELIST = {
     "abs",

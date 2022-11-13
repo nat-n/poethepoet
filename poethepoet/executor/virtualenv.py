@@ -1,7 +1,8 @@
 from typing import Any, Dict, Optional, Sequence, Type
-from .base import PoeExecutor
+
 from ..exceptions import PoeException
 from ..virtualenv import Virtualenv
+from .base import PoeExecutor
 
 
 class VirtualenvExecutor(PoeExecutor):

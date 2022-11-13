@@ -1,6 +1,7 @@
-import pytest
 import re
 from sys import version_info
+
+import pytest
 
 
 @pytest.fixture(scope="session")

@@ -5,7 +5,9 @@ try:
     import tomllib as tomli
 except ImportError:
     import tomli  # type: ignore
+
 from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
+
 from .exceptions import PoeException
 
 
@@ -117,8 +119,8 @@ class PoeConfig:
         self._load_includes(self._project_dir)
 
     def validate(self):
-        from .task import PoeTask
         from .executor import PoeExecutor
+        from .task import PoeTask
 
         # Validate keys
         supported_keys = {"tasks", *self.__options__}

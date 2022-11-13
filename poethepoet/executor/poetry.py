@@ -1,9 +1,10 @@
-from subprocess import Popen, PIPE
 import os
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
+from subprocess import PIPE, Popen
 from typing import Dict, Optional, Sequence, Type
+
 from ..virtualenv import Virtualenv
 from .base import PoeExecutor
 

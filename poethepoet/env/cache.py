@@ -1,9 +1,6 @@
 from pathlib import Path
-from typing import (
-    Dict,
-    Optional,
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING, Dict, Optional
+
 from ..exceptions import ExecutionError
 from .parse import parse_env_file
 

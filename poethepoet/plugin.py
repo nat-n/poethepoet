@@ -1,14 +1,15 @@
 # pylint: disable=import-error
 
+from pathlib import Path
+from typing import Any, Dict, List
+
 from cleo.commands.command import Command
 from cleo.events.console_command_event import ConsoleCommandEvent
-from cleo.events.event_dispatcher import EventDispatcher
 from cleo.events.console_events import COMMAND, TERMINATE
+from cleo.events.event_dispatcher import EventDispatcher
 from cleo.io.io import IO
-from pathlib import Path
-from poetry.console.application import Application, COMMANDS
+from poetry.console.application import COMMANDS, Application
 from poetry.plugins.application_plugin import ApplicationPlugin
-from typing import Any, Dict, List
 
 from .exceptions import PoePluginException
 
@@ -79,7 +80,8 @@ class PoetryPlugin(ApplicationPlugin):
 
         # pylint: disable=bare-except
         except:
-            import os, sys
+            import os
+            import sys
 
             debug = bool(int(os.environ.get("DEBUG_POE_PLUGIN", "0")))
             print(
@@ -146,6 +148,7 @@ class PoetryPlugin(ApplicationPlugin):
             # Fallback to loading the config again in case of future failure of the
             # above undocumented API
             import tomlkit
+
             from .config import PoeConfig
 
             pyproject = tomlkit.loads(

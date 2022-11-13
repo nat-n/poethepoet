@@ -1,7 +1,8 @@
-from os import environ
 import re
+from os import environ
 from shutil import which
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -9,9 +10,9 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TYPE_CHECKING,
     Union,
 )
+
 from ..env.manager import EnvVarsManager
 from ..exceptions import PoeException
 from .base import PoeTask
