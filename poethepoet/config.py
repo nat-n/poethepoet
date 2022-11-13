@@ -1,6 +1,10 @@
 import json
 from pathlib import Path
-import tomli
+
+try:
+    import tomllib as tomli
+except ImportError:
+    import tomli  # type: ignore
 from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 from .exceptions import PoeException
 

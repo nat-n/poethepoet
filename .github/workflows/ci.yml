@@ -39,6 +39,10 @@ jobs:
       matrix:
         os: [Ubuntu, MacOS, Windows]
         python-version: ['3.7', '3.8', '3.9', '3.10']
+        # TODO: remove this when apparent issue with GitHub actions is fixed
+        exclude:
+        - os: Windows
+          python-version: '3.7'
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v3
