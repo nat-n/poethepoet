@@ -93,7 +93,7 @@ class PoeUi:
             dest="dry_run",
             action="store_true",
             default=False,
-            help="Print the task contents but don't actaully run it",
+            help="Print the task contents but don't actually run it",
         )
 
         parser.add_argument(
