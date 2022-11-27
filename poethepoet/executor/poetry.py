@@ -1,5 +1,4 @@
 import shutil
-import sys
 from os import environ
 from pathlib import Path
 from subprocess import PIPE, Popen
@@ -27,16 +26,6 @@ class PoetryExecutor(PoeExecutor):
 
         poetry_env = self._get_poetry_virtualenv()
         project_dir = self.context.config.project_dir
-
-        if sys.prefix == poetry_env or (
-            (
-                bool(environ.get("POETRY_ACTIVE"))
-                or self.context.poe_active == PoetryExecutor.__key__
-            )
-            and project_dir == environ.get("POE_ROOT", project_dir)
-        ):
-            # The target venv is already active so we can execute the command unaltered
-            return self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
         if poetry_env:
             # Execute the task in the virtualenv from poetry
