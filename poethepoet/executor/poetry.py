@@ -1,6 +1,6 @@
-import os
 import shutil
 import sys
+from os import environ
 from pathlib import Path
 from subprocess import PIPE, Popen
 from typing import Dict, Optional, Sequence, Type
@@ -25,14 +25,15 @@ class PoetryExecutor(PoeExecutor):
         Execute the given cmd as a subprocess inside the poetry managed dev environment
         """
 
-        # If this run involves multiple executions then it's worth trying to
-        # avoid repetative (and expensive) calls to `poetry run` if we can
-        poetry_env = self._get_poetry_virtualenv(force=self.context.multistage)
+        poetry_env = self._get_poetry_virtualenv()
+        project_dir = self.context.config.project_dir
 
-        if (
-            bool(os.environ.get("POETRY_ACTIVE"))
-            or self.context.poe_active == PoetryExecutor.__key__
-            or sys.prefix == poetry_env
+        if sys.prefix == poetry_env or (
+            (
+                bool(environ.get("POETRY_ACTIVE"))
+                or self.context.poe_active == PoetryExecutor.__key__
+            )
+            and project_dir == environ.get("POE_ROOT", project_dir)
         ):
             # The target venv is already active so we can execute the command unaltered
             return self._execute_cmd(cmd, input=input, use_exec=use_exec)
@@ -47,6 +48,10 @@ class PoetryExecutor(PoeExecutor):
                 use_exec=use_exec,
             )
 
+        if self._virtualenv_creation_disabled():
+            # There's no poetry env, and there isn't going to be
+            return self._execute_cmd(cmd, input=input, use_exec=use_exec)
+
         # Run this task with `poetry run`
         return self._execute_cmd(
             (self._poetry_cmd(), "run", *cmd),
@@ -57,16 +62,52 @@ class PoetryExecutor(PoeExecutor):
     def _get_poetry_virtualenv(self, force: bool = True):
         """
         Ask poetry where it put the virtualenv for this project.
-        This is a relatively expensive operation so uses the context.exec_cache
+        Invoking poetry is relatively expensive so cache the result
         """
-        if force and "poetry_virtualenv" not in self.context.exec_cache:
-            self.context.exec_cache["poetry_virtualenv"] = (
-                Popen((self._poetry_cmd(), "env", "info", "-p"), stdout=PIPE)
+
+        # TODO: see if there's a more efficient way to do this that doesn't involve
+        #       invoking the poetry cli or relying on undocumented APIs
+
+        exec_cache = self.context.exec_cache
+
+        if force and "poetry_virtualenv" not in exec_cache:
+            # Need to make sure poetry isn't influenced by whatever virtualenv is
+            # currently active
+            clean_env = dict(environ)
+            clean_env.pop("VIRTUAL_ENV", None)
+
+            exec_cache["poetry_virtualenv"] = (
+                Popen(
+                    (self._poetry_cmd(), "env", "info", "-p"),
+                    stdout=PIPE,
+                    cwd=self.context.config.project_dir,
+                    env=clean_env,
+                )
                 .communicate()[0]
                 .decode()
                 .strip()
             )
-        return self.context.exec_cache.get("poetry_virtualenv")
+
+        return exec_cache.get("poetry_virtualenv")
 
     def _poetry_cmd(self):
         return shutil.which("poetry") or "poetry"
+
+    def _virtualenv_creation_disabled(self):
+        exec_cache = self.context.exec_cache
+
+        while "poetry_virtualenvs_create_disabled" not in exec_cache:
+            # Check env override
+            env_override = environ.get("POETRY_VIRTUALENVS_CREATE")
+            if env_override is not None:
+                exec_cache["poetry_virtualenvs_create_disabled"] = (
+                    env_override == "false"
+                )
+                break
+
+            # A complete implementation would also check for a local poetry config file
+            # and a global poetry config file (location for this is platform dependent)
+            # in that order but just checking the env will do for now.
+            break
+
+        return exec_cache.get("poetry_virtualenvs_create_disabled", False)
