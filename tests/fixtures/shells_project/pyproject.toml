@@ -35,6 +35,12 @@ poe_test_echo "bam bam baaam bam"
   env = { test_var =  "roflcopter"}
 
 
+  [tool.poe.tasks.echo_powershell]
+  interpreter = "powershell"
+  shell = "poe_test_echo $ENV:test_var"
+  env = { test_var =  "roflcopter"}
+
+
   [tool.poe.tasks.echo_python]
   interpreter = "python"
   shell = """

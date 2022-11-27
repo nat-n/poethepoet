@@ -76,12 +76,16 @@ class Virtualenv:
         )
 
     def get_env_vars(self, base_env: Mapping[str, str]) -> Dict[str, str]:
-        path_delim = ";" if self._is_windows else ":"
-        result = dict(
-            base_env,
-            VIRTUAL_ENV=str(self.path),
-            PATH=f"{self.bin_dir()}{path_delim}{os.environ.get('PATH', '')}",
-        )
+        bin_dir = str(self.bin_dir())
+        path_var = os.environ.get("PATH", "")
+
+        if not path_var.startswith(bin_dir):
+            path_delim = ";" if self._is_windows else ":"
+            path_var = bin_dir + path_delim + path_var
+
+        result = dict(base_env, VIRTUAL_ENV=str(self.path), PATH=path_var)
+
         if "PYTHONHOME" in result:
             result.pop("PYTHONHOME")
+
         return result

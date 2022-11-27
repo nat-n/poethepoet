@@ -109,12 +109,21 @@ class ShellTask(PoeTask):
         elif interpreter == "sh":
             result = which("sh") or which("/bin/sh")
 
-        elif interpreter == "bash":
-            result = which("bash") or which("/bin/bash")
-
-            # Specifically look for git bash on windows
+            # Specifically look for git sh on windows
             if result is None and self._is_windows:
-                result = which(f"{prog_files}\\Git\\bin\\bash.exe")
+                result = which(f"{prog_files}\\Git\\bin\\sh.exe")
+
+        elif interpreter == "bash":
+            if self._is_windows:
+                # Specifically look for git bash on windows as the preferred option
+                # Don't trust bash from the path becuase it might be a useless decoy
+                result = (
+                    which(f"{prog_files}\\Git\\bin\\bash.exe")
+                    or which("/bin/bash")
+                    or which("bash")
+                )
+            else:
+                result = which("bash") or which("/bin/bash")
 
         elif interpreter == "zsh":
             result = which("zsh") or which("/bin/zsh")

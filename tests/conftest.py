@@ -139,11 +139,17 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
             output=rf"open(r\"{temp_file}\", \"w\")",
         )
 
-        env = dict(os.environ, **(env or {}))
-        if coverage:
-            env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
+        subproc_env = dict(os.environ)
+        subproc_env.pop("VIRTUAL_ENV", None)
+        if env:
+            subproc_env.update(env)
 
-        poeproc = Popen(shell_cmd, shell=True, stdout=PIPE, stderr=PIPE, env=env)
+        if coverage:
+            subproc_env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
+
+        poeproc = Popen(
+            shell_cmd, shell=True, stdout=PIPE, stderr=PIPE, env=subproc_env
+        )
         task_out, task_err = poeproc.communicate()
 
         with temp_file.open("rb") as output_file:

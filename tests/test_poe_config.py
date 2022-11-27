@@ -1,6 +1,13 @@
 import os
+import shutil
 import tempfile
 from pathlib import Path
+
+import pytest
+
+# Setting POETRY_VIRTUALENVS_CREATE stops poetry from creating the virtualenv and
+# spamming about it in stdout
+no_venv = {"POETRY_VIRTUALENVS_CREATE": "false"}
 
 
 def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
@@ -10,6 +17,7 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
         "nat,",
         r"welcome to " + esc_prefix + "${POE_ROOT}",
         project="scripts",
+        env=no_venv,
     )
     assert result.capture == f"Poe => echo-args nat, welcome to {projects['scripts']}\n"
     assert result.stdout == f"hello nat, welcome to {projects['scripts']}\n"
@@ -17,7 +25,7 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
 
 
 def test_setting_default_array_item_task_type(run_poe_subproc):
-    result = run_poe_subproc("composite_task", project="scripts")
+    result = run_poe_subproc("composite_task", project="scripts", env=no_venv)
     assert (
         result.capture == f"Poe => poe_test_echo Hello\nPoe => poe_test_echo World!\n"
     )
@@ -26,7 +34,7 @@ def test_setting_default_array_item_task_type(run_poe_subproc):
 
 
 def test_setting_global_env_vars(run_poe_subproc, is_windows):
-    result = run_poe_subproc("travel")
+    result = run_poe_subproc("travel", env=no_venv)
     if is_windows:
         assert (
             result.capture
@@ -74,11 +82,11 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
     assert result.stderr == ""
 
 
-def test_decrease_verbosity(run_poe_subproc, projects, is_windows):
+def test_decrease_verbosity(run_poe_subproc, is_windows):
     result = run_poe_subproc(
         "-q",
         "part1",
-        cwd=projects["example"],
+        env=no_venv,
     )
     assert result.capture == ""
     assert result.stderr == ""
