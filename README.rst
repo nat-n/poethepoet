@@ -641,8 +641,25 @@ Task argument options
 Named arguments support the following configuration options:
 
 - **default** : Union[str, int, float, bool]
-   The value to use if the argument is not provided. This option has no effect if the
-   required option is set to true.
+   The value to use if the argument is not provided. This option has no significance if
+   the required option is set to true.
+
+   For string values, environment variables can be referenced using the usual templating
+   syntax as in the following example.
+
+   .. code-block:: toml
+
+    [[tool.poe.tasks.deploy.args]]
+    name    = "region"
+    help    = "The region to deploy to"
+    default = "${AWS_REGION}"
+
+   This can be combined with setting an env values on the task with the default
+   specifier to get the following precendence of values for the arg:
+
+   1. the value passed on the command line
+   2. the value of the variable set on the environment
+   3. the default value for the environment variable configured on the task
 
 - **help** : str
    A short description of the argument to include in the documentation of the task.

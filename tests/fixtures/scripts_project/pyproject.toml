@@ -77,10 +77,11 @@ greet = "pkg:greet"
 
   [tool.poe.tasks.greet-strict]
   script = "pkg:greet(greeting, user=name)"
-  help = "All arguments are required"
+  help   = "All arguments are required"
+  env    = { DOES = "does", STUFF = "matter" }
 
     [tool.poe.tasks.greet-strict.args.greeting]
-    default = "doesn't matter"
+    default = "${DOES}n't ${STUFF}"
     required = true
     help = "this one is required"
 
@@ -90,11 +91,12 @@ greet = "pkg:greet"
 
   [tool.poe.tasks.greet-positional]
   script = "pkg:greet(greeting, user=username, upper=uppercase)"
+  env.DEFAULT_GREETING.default = "yo"
 
     [[tool.poe.tasks.greet-positional.args]]
     name = "greeting"
     positional = true
-    default = "yo"
+    default = "${DEFAULT_GREETING}"
     help = "this one is required"
 
     [[tool.poe.tasks.greet-positional.args]]
