@@ -8,7 +8,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -54,6 +53,7 @@ class PoeTask(metaclass=MetaPoeTask):
     name: str
     content: TaskContent
     options: Dict[str, Any]
+    named_args: Optional[Dict[str, str]] = None
 
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
     __content_type__: Type = str
@@ -94,7 +94,6 @@ class PoeTask(metaclass=MetaPoeTask):
         self._config = config
         self._is_windows = sys.platform == "win32"
         self.invocation = invocation
-        self.named_args = self._parse_named_args(invocation[1:])
 
     @classmethod
     def from_config(
@@ -202,18 +201,23 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return None
 
-    def _parse_named_args(self, extra_args: Sequence[str]) -> Optional[Dict[str, str]]:
+    def _parse_named_args(
+        self, extra_args: Sequence[str], env: EnvVarsManager
+    ) -> Optional[Dict[str, str]]:
         args_def = self.options.get("args")
         if args_def:
-            return PoeTaskArgs(args_def, self.name).parse(extra_args)
+            return PoeTaskArgs(args_def, self.name, env).parse(extra_args)
         return None
 
-    @property
-    def has_named_args(self):
-        return bool(self.named_args)
+    # @property
+    # def has_named_args(self):
+    #     return bool(self.named_args)
 
-    def get_named_arg_values(self) -> Mapping[str, str]:
-        result = {}
+    def get_named_arg_values(self, env: EnvVarsManager) -> Dict[str, str]:
+        result: Dict[str, str] = {}
+
+        if self.named_args is None:
+            self.named_args = self._parse_named_args(self.invocation[1:], env)
 
         if not self.named_args:
             return {}
@@ -279,7 +283,7 @@ class PoeTask(metaclass=MetaPoeTask):
             env = context.get_task_env(
                 None, self.options.get("envfile"), self.options.get("env")
             )
-            env.update(self.get_named_arg_values())
+            env.update(self.get_named_arg_values(env))
 
             self.__upstream_invocations = {
                 "deps": [

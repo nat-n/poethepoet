@@ -32,9 +32,10 @@ class CmdTask(PoeTask):
         extra_args: Sequence[str],
         env: EnvVarsManager,
     ) -> int:
-        env.update(self.get_named_arg_values())
+        named_arg_values = self.get_named_arg_values(env)
+        env.update(named_arg_values)
 
-        if self.has_named_args:
+        if named_arg_values:
             # If named arguments are defined then it doesn't make sense to pass extra
             # args to the command, because they've already been parsed
             cmd = self._resolve_args(context, env)

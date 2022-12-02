@@ -69,9 +69,10 @@ class SequenceTask(PoeTask):
         extra_args: Sequence[str],
         env: EnvVarsManager,
     ) -> int:
-        env.update(self.get_named_arg_values())
+        named_arg_values = self.get_named_arg_values(env)
+        env.update(named_arg_values)
 
-        if not self.has_named_args and any(arg.strip() for arg in extra_args):
+        if not named_arg_values and any(arg.strip() for arg in extra_args):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
 
         if len(self.subtasks) > 1:

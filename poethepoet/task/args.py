@@ -12,6 +12,8 @@ from typing import (
     Union,
 )
 
+from ..env.manager import EnvVarsManager
+
 if TYPE_CHECKING:
     from ..config import PoeConfig
 
@@ -39,9 +41,10 @@ arg_types: Dict[str, Type] = {
 class PoeTaskArgs:
     _args: Tuple[ArgParams, ...]
 
-    def __init__(self, args_def: ArgsDef, task_name: str):
+    def __init__(self, args_def: ArgsDef, task_name: str, env: EnvVarsManager):
         self._args = self._normalize_args_def(args_def)
         self._task_name = task_name
+        self._env = env
 
     @classmethod
     def _normalize_args_def(cls, args_def: ArgsDef) -> Tuple[ArgParams, ...]:
@@ -244,6 +247,9 @@ class PoeTaskArgs:
 
     def _get_argument_params(self, arg: ArgParams):
         default = arg.get("default")
+        if isinstance(default, str):
+            default = self._env.fill_template(default)
+
         result = {
             "default": default,
             "help": arg.get("help", ""),
