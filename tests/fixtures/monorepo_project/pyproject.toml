@@ -1,0 +1,11 @@
+
+[[tool.poe.include]]
+path = "subproject_1/pyproject.toml"
+[[tool.poe.include]]
+path = "subproject_2/pyproject.toml"
+cwd  = "subproject_2"
+
+
+[tool.poe.tasks.get_cwd_0]
+interpreter = "python"
+shell       = "import os; print(os.getcwd())"

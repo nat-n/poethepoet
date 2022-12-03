@@ -1,0 +1,5 @@
+
+
+[tool.poe.tasks.extra_task]
+interpreter = "python"
+shell       = "print('nope')"
