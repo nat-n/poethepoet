@@ -6,7 +6,7 @@ try:
 except ImportError:
     import tomli  # type: ignore
 
-from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .exceptions import PoeException
 
@@ -36,7 +36,7 @@ class PoeConfig:
         "env": dict,
         "envfile": (str, list),
         "executor": dict,
-        "include": (str, list),
+        "include": (str, list, dict),
         "poetry_command": str,
         "poetry_hooks": dict,
         "shell_interpreter": (str, list),
@@ -230,15 +230,31 @@ class PoeConfig:
         return maybe_result
 
     def _load_includes(self, project_dir: Path):
-        includes: Union[str, Sequence[str]] = self._poe.get("include", tuple())
-        if isinstance(includes, str):
-            includes = (includes,)
+        include_option: Union[str, Sequence[str]] = self._poe.get("include", tuple())
+        includes: List[Dict[str, str]] = []
 
-        for path_str in includes:
-            if not isinstance(path_str, str):
-                raise PoeException(f"Invalid include value {path_str!r}")
+        if isinstance(include_option, str):
+            includes.append({"path": include_option})
+        elif isinstance(include_option, dict):
+            includes.append(include_option)
+        elif isinstance(include_option, list):
+            valid_keys = {"path", "cwd"}
+            for include in include_option:
+                if isinstance(include, str):
+                    includes.append({"path": include})
+                elif (
+                    isinstance(include, dict)
+                    and include.get("path")
+                    and set(include.keys()) <= valid_keys
+                ):
+                    includes.append(include)
+                else:
+                    raise PoeException(
+                        f"Invalid item for the include option {include!r}"
+                    )
 
-            include_path = project_dir.joinpath(path_str).resolve()
+        for include in includes:
+            include_path = project_dir.joinpath(include["path"]).resolve()
 
             if not include_path.exists():
                 # TODO: print warning in verbose mode, requires access to ui somehow
@@ -247,7 +263,9 @@ class PoeConfig:
             if include_path.name.endswith(".toml"):
                 try:
                     with include_path.open("rb") as file:
-                        self._merge_config(tomli.load(file), include_path)
+                        self._merge_config(
+                            tomli.load(file), include_path, include.get("cwd")
+                        )
                 except tomli.TOMLDecodeError as error:
                     raise PoeException(
                         f"Couldn't parse included toml file from {include_path}", error
@@ -256,21 +274,26 @@ class PoeConfig:
             elif include_path.name.endswith(".json"):
                 try:
                     with include_path.open("rb") as file:
-                        self._merge_config(json.load(file), include_path)
+                        self._merge_config(
+                            json.load(file), include_path, include.get("cwd")
+                        )
                 except json.decoder.JSONDecodeError as error:
                     raise PoeException(
                         f"Couldn't parse included json file from {include_path}", error
                     ) from error
 
-    def _merge_config(self, extra_config: Mapping[str, Any], path: Path):
-        from .task import PoeTask
-
+    def _merge_config(
+        self,
+        extra_config: Mapping[str, Any],
+        include_path: Path,
+        task_cwd: Optional[str],
+    ):
         try:
             poe_config = extra_config.get("tool", {}).get("poe", {})
             tasks = poe_config.get("tasks", {})
         except AttributeError as error:
             raise PoeException(
-                f"Invalid content in included file from {path}", error
+                f"Invalid content in included file from {include_path}", error
             ) from error
 
         # Env is special because it can be extended rather than just overwritten
@@ -283,6 +306,22 @@ class PoeConfig:
         # Includes additional tasks with preserved ordering
         self._poe["tasks"] = own_tasks = self._poe.get("tasks", {})
         for task_name, task_def in tasks.items():
+
+            if task_cwd:
+                # Override the config of each task to use the include level cwd as a
+                # base for the task level cwd
+                if "cwd" in task_def:
+                    # rebase the configured cwd onto the include level cwd
+                    task_def["cwd"] = (
+                        Path(self.project_dir)
+                        .joinpath(task_cwd)
+                        .resolve()
+                        .joinpath(task_def["cwd"])
+                        .relative_to(self.project_dir)
+                    )
+                else:
+                    task_def["cwd"] = task_cwd
+
             if task_name not in own_tasks:
                 own_tasks[task_name] = task_def
 
