@@ -64,6 +64,7 @@ class PoetryExecutor(PoeExecutor):
             # currently active
             clean_env = dict(environ)
             clean_env.pop("VIRTUAL_ENV", None)
+            clean_env["PYTHONIOENCODING"] = "utf-8"
 
             exec_cache["poetry_virtualenv"] = (
                 Popen(
