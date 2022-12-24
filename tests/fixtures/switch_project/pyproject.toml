@@ -1,0 +1,75 @@
+
+[tool.poe.tasks.platform_dependent]
+control.script = "sys:stdout.write(override or sys.platform)"
+args = [{ name = "override", default = "" }]
+
+  [[tool.poe.tasks.platform_dependent.switch]]
+  case = "win32"
+  shell = "import sys; print('You are on windows.')"
+  interpreter = "python"
+
+  [[tool.poe.tasks.platform_dependent.switch]]
+  case = "linux"
+  shell = "import sys; print('You are on linux.')"
+  interpreter = "python"
+
+  [[tool.poe.tasks.platform_dependent.switch]]
+  case = "darwin"
+  shell = "import sys; print('You are on a mac.')"
+  interpreter = "python"
+
+  [[tool.poe.tasks.platform_dependent.switch]]
+  shell = "import sys; print('Looks like you are running some exotic OS.')"
+  interpreter = "python"
+
+
+[tool.poe.tasks.var_dependent]
+control.script = "sys:stdout.write(str(int(environ['FOO_VAR']) % 2))"
+
+  [[tool.poe.tasks.var_dependent.switch]]
+  case = "0"
+  shell = "import sys, os; print(os.environ['FOO_VAR'], 'is even')"
+  interpreter = "python"
+
+  [[tool.poe.tasks.var_dependent.switch]]
+  case = "1"
+  shell = "import sys, os; print(os.environ['FOO_VAR'], 'is odd')"
+  interpreter = "python"
+
+
+[tool.poe.tasks.default_pass]
+control.cmd = "poe_test_echo nothing"
+default     = "pass"
+
+  [[tool.poe.tasks.default_pass.switch]]
+  case = "not a match"
+  shell = "import sys; print('never')"
+  interpreter = "python"
+
+
+[tool.poe.tasks.default_fail]
+control.cmd = "poe_test_echo nothing"
+default    = "fail"
+
+  [[tool.poe.tasks.default_fail.switch]]
+  case = "not a match"
+  shell = "import sys; print('never')"
+  interpreter = "python"
+
+
+[tool.poe.tasks.multivalue_case]
+control = "poe_test_echo ${WHATEVER}"
+
+  [[tool.poe.tasks.multivalue_case.switch]]
+  case = ["1","2","3","4","5"]
+  shell = "import sys; print('It is in 1-5')"
+  interpreter = "python"
+
+  [[tool.poe.tasks.multivalue_case.switch]]
+  case = "6"
+  shell = "import sys; print('It is 6')"
+  interpreter = "python"
+
+  [[tool.poe.tasks.multivalue_case.switch]]
+  shell = "import sys; print('It is not in 1-6')"
+  interpreter = "python"

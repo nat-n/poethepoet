@@ -181,239 +181,409 @@ Though in that case you might like to define :bash:`alias poe='poetry run poe'`.
 Types of task
 =============
 
-There are four types of task: simple commands *(cmd)*, python scripts *(script)*, shell
-scripts *(shell)*, and sequence tasks *(sequence)*.
+There are six types of task:
 
-- **Command tasks** contain a single command that will be executed without a shell.
-  This covers most basic use cases for example:
+- **Command tasks (cmd)**: for simple commands that are executed as a subprocess without a shell
+- **Script tasks (script)**: for python function calls
+- **Shell tasks (shell)**: for scripts to be executed with via an external interpreter (such as sh).
+- **Sequence tasks (sequence)**: for composing multiple tasks into a sequence
+- **Switch tasks (switch)**: for running different tasks depending on a control value (such as the platform)
+- **Ref tasks (ref)**: used for defining a task as an alias of another task, such as in a sequence task.
 
-  .. code-block:: toml
+The default task type is cmd.
 
-    [tool.poe.tasks]
-    format = "black ."  # strings are interpreted as commands by default
-    clean = """
-    # Multiline commands including comments work too. Unescaped whitespace is ignored.
-    rm -rf .coverage
-           .mypy_cache
-           .pytest_cache
-           dist
-           ./**/__pycache__
-    """
-    lint = { "cmd": "pylint poethepoet" }  # Inline tables with a cmd key work too
-    greet = "echo Hello $USER"  # Environment variables work, even though there's no shell!
+'cmd' tasks
+-----------
 
-- **Script tasks** contain a reference to a python callable to import and execute, for
-  example:
+**Command tasks** contain a single command that will be executed without a shell.
+This covers most basic use cases for example:
 
-  .. code-block:: toml
+.. code-block:: toml
 
-    [tool.poe.tasks]
-    fetch-assets = { "script" = "my_package.assets:fetch" }
-    fetch-images = { "script" = "my_package.assets:fetch(only='images', log=environ['LOG_PATH'])" }
+  [tool.poe.tasks]
+  format = "black ."  # strings are interpreted as commands by default
+  clean = """
+  # Multiline commands including comments work too. Unescaped whitespace is ignored.
+  rm -rf .coverage
+         .mypy_cache
+         .pytest_cache
+         dist
+         ./**/__pycache__
+  """
+  lint = { "cmd": "pylint poethepoet" }  # Inline tables with a cmd key work too
+  greet = "echo Hello $USER"  # Environment variables work, even though there's no shell!
 
-  As in the second example, is it possible to hard code literal arguments to the target
-  callable. In fact a subset of python syntax, operators, and globals can be used inline
-  to define the arguments to the function using normal python syntax, including environ
-  (from the os package) to access environment variables that are available to the task.
+'script' tasks
+--------------
 
-  If extra arguments are passed to task on the command line (and no CLI args are
-  declared), then they will be available within the called python function via
-  :python:`sys.argv`.
+**Script tasks** consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example:
 
-  **Calling standard library functions**
+.. code-block:: toml
 
-  Any python callable accessible via the python path can be referenced, including the
-  standard library. This can be useful for ensuring that tasks work across platforms.
+  [tool.poe.tasks]
+  fetch-assets = { "script" = "my_package.assets:fetch" }
+  fetch-images = { "script" = "my_package.assets:fetch(only='images', log=environ['LOG_PATH'])" }
 
-  For example, the following task will not always work on windows:
+As in the second example, is it possible to hard code literal arguments to the target
+callable. In fact a subset of python syntax, operators, and globals can be used inline
+to define the arguments to the function using normal python syntax, including environ
+(from the os package) to access environment variables that are available to the task.
 
-  .. code-block:: toml
+If extra arguments are passed to task on the command line (and no CLI args are
+declared), then they will be available within the called python function via
+:python:`sys.argv`.
 
-    [[tool.poe.tasks.build]]
-    cmd = "mkdir -p build/assets"
+Calling standard library functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  whereas the same behaviour can can be reliably achieved like so:
+Any python callable accessible via the python path can be referenced, including the
+standard library. This can be useful for ensuring that tasks work across platforms.
 
-  .. code-block:: toml
+For example, the following task will not always work on windows:
 
-    [[tool.poe.tasks.build]]
-    script = "os:makedirs('build/assets', exist_ok=True)"
+.. code-block:: toml
 
-  **Output the return value from the python callable**
+  [[tool.poe.tasks.build]]
+  cmd = "mkdir -p build/assets"
 
-  Script tasks can be configured to output the return value of a callable using the
-  :toml:`print_result` option like so:
+whereas the same behaviour can can be reliably achieved like so:
 
-  .. code-block:: toml
+.. code-block:: toml
 
-    [tool.poe.tasks.create-secret]
-    script = "django.core.management.utils:get_random_secret_key()"
-    print_result = true
+  [[tool.poe.tasks.build]]
+  script = "os:makedirs('build/assets', exist_ok=True)"
 
-  Given the above configuration running the following command would output just the
-  generated key.
+Output the return value from the python callable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  .. code-block:: bash
+Script tasks can be configured to output the return value of a callable using the
+:toml:`print_result` option like so:
 
-    poe -q create-secret
+.. code-block:: toml
 
-  Note that if the return value is None then the :toml:`print_result` option has no
-  effect.
+  [tool.poe.tasks.create-secret]
+  script = "django.core.management.utils:get_random_secret_key()"
+  print_result = true
 
-- **Shell tasks** are similar to simple command tasks except that they are executed
-  inside a new shell, and can consist of multiple separate commands, command
-  substitution, pipes, background processes, etc.
+Given the above configuration running the following command would output just the
+generated key.
 
-  An example use case for this might be opening some ssh tunnels in the background with
-  one task and closing them with another like so:
+.. code-block:: bash
 
-  .. code-block:: toml
+  poe -q create-secret
 
-    [tool.poe.tasks]
-    pfwd = { "shell" = "ssh -N -L 0.0.0.0:8080:$STAGING:8080 $STAGING & ssh -N -L 0.0.0.0:5432:$STAGINGDB:5432 $STAGINGDB &" }
-    pfwdstop = { "shell" = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")" }
+Note that if the return value is None then the :toml:`print_result` option has no
+effect.
 
-  By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the
-  system and uses that. When running on windows, this might not always be possible. If
-  bash is not found on the path on windows then poe will explicitly look for
-  `Git bash <https://gitforwindows.org>`_ at the usual location.
+'shell' tasks
+-------------
 
-  **Using different types of shell/interpreter**
+Shell tasks are similar to simple command tasks except that they are executed
+inside a new shell, and can consist of multiple statements. This means they can leverage
+the full syntax of the shell interpreter such as command substitution, pipes, background
+processes, etc.
 
-  It is also possible to specify an alternative interpreter (or list of compatible
-  interpreters ordered by preference) to be invoked to execute shell task content. For
-  example if you only expect the task to be executed on windows or other environments
-  with powershell installed then you can specify a powershell based task like so:
+An example use case for this might be opening some ssh tunnels in the background with
+one task and closing them with another like so:
 
-  .. code-block:: toml
+.. code-block:: toml
 
-    [tool.poe.tasks.install-poetry]
-    shell = """
-    (Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python -
-    """
-    interpreter = "pwsh"
+  [tool.poe.tasks]
+  pfwd = { "shell" = "ssh -N -L 0.0.0.0:8080:$STAGING:8080 $STAGING & ssh -N -L 0.0.0.0:5432:$STAGINGDB:5432 $STAGINGDB &" }
+  pfwdstop = { "shell" = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")" }
 
-  If your task content is restricted to syntax that is valid for both posix shells and
-  powershell then you can maximise increase the likelihood of it working on any system
-  by specifying the interpreter as:
+By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the
+system and uses that. When running on windows, poe will first look for
+`Git bash <https://gitforwindows.org>`_ at the usual location, and otherwise attempt to
+find it via the PATH, though this might not always be possible.
 
-  .. code-block:: toml
+Using different types of shell/interpreter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    interpreter = ["posix", "pwsh"]
+It is also possible to specify an alternative interpreter (or list of compatible
+interpreters ordered by preference) to be invoked to execute shell task content. For
+example if you only expect the task to be executed on windows or other environments
+with powershell installed then you can specify a powershell based task like so:
 
-  It is also possible to specify python code as the shell task code as in the following
-  example. However it is recommended to use a *script* task rather than writing complex
-  code inline within your pyproject.toml.
+.. code-block:: toml
 
-  .. code-block:: toml
+  [tool.poe.tasks.install-poetry]
+  shell = """
+  (Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python -
+  """
+  interpreter = "pwsh"
 
-    [tool.poe.tasks.time]
-    shell = """
-    from datetime import datetime
+If your task content is restricted to syntax that is valid for both posix shells and
+powershell then you can maximise the likelihood of it working on any system by
+specifying the interpreter as:
 
-    print(datetime.now())
-    """
+.. code-block:: toml
+
+  interpreter = ["posix", "pwsh"]
+
+It is also possible to specify python code as the shell task code as in the following
+example. However it is recommended to use a *script* task rather than writing complex
+code inline within your pyproject.toml.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.time]
+  shell = """
+  from datetime import datetime
+
+  print(datetime.now())
+  """
+  interpreter = "python"
+
+The following interpreter values may be used:
+
+posix
+    This is the default behavoir, equivalent to ["sh", "bash", "zsh"], meaning that
+    poe will try to find sh, and fallback to bash, then zsh.
+sh
+    Use the basic posix shell. This is often an alias for bash or dash depending on
+    the operating system.
+bash
+    Uses whatever version of bash can be found. This is usually the most portable option.
+zsh
+    Uses whatever version of zsh can be found.
+fish
+    Uses whatever version of fish can be found.
+pwsh
+    Uses powershell version 6 or higher.
+powershell
+    Uses the newest version of powershell that can be found.
+
+The default value can be changed with the global *shell_interpreter* option as
+described below.
+
+'sequence' tasks
+----------------
+
+Sequence tasks are defined as a array of other tasks to be run one after the other.
+
+By default the contents of the array are interpreted as references to other tasks
+(actually a ref task type), though this behaviour can be altered by setting the global
+:toml:`default_array_item_task_type` option to the name of another task type such as
+*cmd*, or by setting the :toml:`default_item_type` option locally on the sequence task.
+
+Sequence task with references
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+
+  test = "pytest --cov=src"
+  build = "poetry build"
+  _publish = "poetry publish"
+  release = ["test", "build", "_publish"]
+
+Note that tasks with names prefixed with :code:`_` are not included in the
+documentation or directly executable, but can be useful for cases where a task is only
+needed for referencing from another task.
+
+Sequence task with inline tasks expressed via inline tables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: toml
+
+  release = [
+    { cmd = "pytest --cov=src" },
+    { script = "devtasks:build" },
+    { ref = "_publish" },
+  ]
+
+Sequence task with inline tasks expressed via an array of tables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+
+    [[tool.poe.tasks.release]]
+    cmd = "pytest --cov=src"
+
+    [[tool.poe.tasks.release]]
+    script = "devtasks:build"
+
+    [[tool.poe.tasks.release]]
+    ref = "_publish"
+
+Sequence task with inline script subtasks using default_item_type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: toml
+
+  release.sequence = [
+    "devtasks:run_tests(all=True)",
+    "devtasks:build",
+    "devtasks:publish",
+  ]
+  release.default_item_type = "script"
+
+A failure (non-zero result) will result in the rest of the tasks in the sequence not
+being executed, unless the :toml:`ignore_fail` option is set on the task to
+:toml:`true` or :toml:`"return_zero"` like so:
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  attempts.sequence = ["task1", "task2", "task3"]
+  attempts.ignore_fail = "return_zero"
+
+If you want to run all the subtasks in the sequence but return non-zero result in the
+end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail`
+option to the :toml:`return_non_zero` value like so:
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  attempts.sequence = ["task1", "task2", "task3"]
+  attempts.ignore_fail = "return_non_zero"
+
+
+'switch' tasks
+--------------
+
+Much like a switch statement in many programming languages, a switch task consists of a
+control task and a array of tasks to switch between. The control task is run first, and
+its output is captured and matched against the case option of each of the items in the
+switch array to determine which one to run.
+
+This can be used to define a task that runs a different subtask depending on which
+platform it is running on like so:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.build]
+  control.script = "sys:stdout.write(sys.platform)"
+
+    [[tool.poe.tasks.platform_dependent.switch]]
+    case = "win32"
+    cmd  = "windows_build"
+
+    [[tool.poe.tasks.platform_dependent.switch]]
+    cmd  = "posix_build"
+
+In the above example the control task checks the value of sys.platform, and if running
+on windows it'll execute :toml:`windows_build`, otherwise it'll fall back to the default
+case (i.e. the switch item with no case option defined) and execute :toml:`posix_build`.
+
+Multiple values per case
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is also possible to define multiple values for a single case option by providing a
+array of values like so:
+
+.. code-block:: toml
+
+    [[tool.poe.tasks.platform_dependent.switch]]
+    case = ["linux", "darwin"]
+    cmd  = "build"
+
+Don't fail if there's no match
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If all tasks in the switch array include a case value, but none of them match the result
+of the control task then by default the switch task will fail. You can instead configure
+the switch task to pass and simply do nothing by providing the 'default' option like so:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.build_on_windows]
+  control.script = "sys:stdout.write(sys.platform)"
+  default = "pass"
+
+    [[tool.poe.tasks.platform_dependent.switch]]
+    case = "win32"
+    cmd  = "build"
+
+Switching on an environment variable or named argument
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to run a different task depending on the value of an environment variable
+as in the following example.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.check_number]
+  control.script = "sys:stdout.write(str(int(environ['BEST_NUMBER']) % 2))"
+
+    [[tool.poe.tasks.check_number.switch]]
+    case = "0"
+    shell = "import sys, os; print(os.environ['BEST_NUMBER'], 'is even')"
     interpreter = "python"
 
-  The following interpreter values may be used:
+    [[tool.poe.tasks.check_number.switch]]
+    case = "1"
+    shell = "import sys, os; print(os.environ['BEST_NUMBER'], 'is odd')"
+    interpreter = "python"
 
-  posix
-      This is the default behavoir, equivalent to ["sh", "bash", "zsh"], meaning that
-      poe will try to find sh, and fallback to bash, then zsh.
-  sh
-      Use the basic posix shell. This is often an alias for bash or dash depending on
-      the operating system.
-  bash
-      Uses whatever version of bash can be found. This is usually the most portable option.
-  zsh
-      Uses whatever version of zsh can be found.
-  fish
-      Uses whatever version of fish can be found.
-  pwsh
-      Uses powershell version 6 or higher.
-  powershell
-      Uses the newest version of powershell that can be found.
+Using this task will look like the following:
 
-  The default value can be changed with the global *shell_interpreter* option as
-  described below.
+.. code-block:: sh
 
-- **Composite tasks** are defined as a sequence of other tasks as an array.
+  $ BEST_NUMBER=12 poe check_number
+  Poe <= check_number[control]
+  Poe => import sys, os; print(os.environ['BEST_NUMBER'], 'is even')
+  12 is even
 
-  By default the contents of the array are interpreted as references to other tasks
-  (actually a ref task type), though this behaviour can be altered by setting the global
-  :toml:`default_array_item_task_type` option to the name of another task type such as
-  *cmd*, or by setting the :toml:`default_item_type` option locally on the sequence task.
+  $ BEST_NUMBER=17 poe check_number
+  Poe <= check_number[control]
+  Poe => import sys, os; print(os.environ['BEST_NUMBER'], 'is odd')
+  17 is odd
 
-  **An example task with references**
+You can also run a different task depending on the value of a named argument as in the following example.
 
-  .. code-block:: toml
+.. code-block:: toml
 
-    [tool.poe.tasks]
+  [tool.poe.tasks.icecream]
+  control.script = "sys:stdout.write(flavor)"
+  args = ["flavor"]
 
-    test = "pytest --cov=src"
-    build = "poetry build"
-    _publish = "poetry publish"
-    release = ["test", "build", "_publish"]
+    [[tool.poe.tasks.icecream.switch]]
+    case = "chocolate"
+    cmd  = "make_chocolate_icecream"
 
-  Note that tasks with names prefixed with :code:`_` are not included in the
-  documentation or directly executable, but can be useful for cases where a task is only
-  needed for referencing from another task.
+    [[tool.poe.tasks.icecream.switch]]
+    case = "strawberry"
+    cmd  = "make_strawberry_icecream"
 
-  **An example task with inline tasks expressed via inline tables**
+    [[tool.poe.tasks.icecream.switch]]
+    cmd  = "make_vanilla_icecream"
 
-  .. code-block:: toml
 
-    release = [
-      { cmd = "pytest --cov=src" },
-      { script = "devtasks:build" },
-      { ref = "_publish" },
-    ]
+'ref' tasks
+-----------
 
-  **An example task with inline tasks expressed via an array of tables**
+A ref task is essentially a call to another task. It is the default task type within a sequence task, but is not often used otherwise.
 
-  .. code-block:: toml
+A ref task can set environment variables, and pass arguments to the referenced task as
+follows:
 
-    [tool.poe.tasks]
+.. code-block:: toml
 
-      [[tool.poe.tasks.release]]
-      cmd = "pytest --cov=src"
+  [tool.poe.tasks]
+  do_things.cmd = "do_cmd"
+  do_things.args = [{ name = "things", multiple = true, positional = true }]
 
-      [[tool.poe.tasks.release]]
-      script = "devtasks:build"
+  do_specific_things.ref = "do_things thing1 thing2"
+  do_specific_things.env = { URGENCY = "11" }
 
-      [[tool.poe.tasks.release]]
-      ref = "_publish"
 
-  **An example task with inline script subtasks using default_item_type**
+In the above example calling:
 
-  .. code-block:: toml
+.. code-block:: sh
 
-    release.sequence = [
-      "devtasks:run_tests(all=True)",
-      "devtasks:build",
-      "devtasks:publish",
-    ]
-    release.default_item_type = "script"
+  poe do_specific_things
 
-  A failure (non-zero result) will result in the rest of the tasks in the sequence not
-  being executed, unless the :toml:`ignore_fail` option is set on the task to
-  :toml:`true` or :toml:`"return_zero"` like so:
+would be equivalent to executing the following in the shell:
 
-  .. code-block:: toml
+.. code-block:: sh
 
-    [tool.poe.tasks]
-    attempts.sequence = ["task1", "task2", "task3"]
-    attempts.ignore_fail = "return_zero"
+  URGENCY=11 do_cmd thing1 thing2
 
-  If you want to run all the subtasks in the sequence but return non-zero result in the
-  end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail`
-  option to the :toml:`return_non_zero` value like so:
-
-  .. code-block:: toml
-
-    [tool.poe.tasks]
-    attempts.sequence = ["task1", "task2", "task3"]
-    attempts.ignore_fail = "return_non_zero"
 
 Task level configuration
 ========================
@@ -1175,7 +1345,7 @@ future versions.
 Supported python versions
 =========================
 
-Poe the Poet officially supports python >=3.7, and is tested with python 3.7 to 3.10 on
+Poe the Poet officially supports python >=3.7, and is tested with python 3.7 to 3.11 on
 macOS, linux and windows.
 
 Contributing

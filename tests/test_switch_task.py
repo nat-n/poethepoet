@@ -1,0 +1,112 @@
+import shutil
+import sys
+
+import pytest
+
+
+def test_switch_on_platform(run_poe_subproc):
+    common_prefix = "Poe <= platform_dependent[control]\n"
+    result = run_poe_subproc("platform_dependent", project="switch")
+
+    if sys.platform == "win32":
+        assert (
+            result.capture
+            == f"{common_prefix}Poe => import sys; print('You are on windows.')\n"
+        )
+        assert result.stdout == "You are on windows.\n"
+
+    elif sys.platform == "linux":
+        assert (
+            result.capture
+            == f"{common_prefix}Poe => import sys; print('You are on linux.')\n"
+        )
+        assert result.stdout == "You are on linux.\n"
+
+    elif sys.platform == "darwin":
+        assert (
+            result.capture
+            == f"{common_prefix}Poe => import sys; print('You are on a mac.')\n"
+        )
+        assert result.stdout == "You are on a mac.\n"
+
+    else:
+        assert result.capture == (
+            f"{common_prefix}Poe => import sys; "
+            "print('Looks like you are running some exotic OS.')\n"
+        )
+        assert result.stdout == "Looks like you are running some exotic OS.\n"
+
+    assert result.stderr == ""
+
+
+def test_switch_on_override_arg(run_poe_subproc):
+    common_prefix = "Poe <= platform_dependent[control] --override=Ti83\n"
+    result = run_poe_subproc("platform_dependent", "--override=Ti83", project="switch")
+    assert result.capture == (
+        f"{common_prefix}Poe => import sys; "
+        "print('Looks like you are running some exotic OS.')\n"
+    )
+    assert result.stdout == "Looks like you are running some exotic OS.\n"
+    assert result.stderr == ""
+
+
+def test_switch_on_env_var(run_poe_subproc):
+    common_prefix = "Poe <= var_dependent[control]\n"
+    result = run_poe_subproc("var_dependent", project="switch", env={"FOO_VAR": "42"})
+    assert result.capture == (
+        f"{common_prefix}Poe => import sys, os; "
+        "print(os.environ['FOO_VAR'], 'is even')\n"
+    )
+    assert result.stdout == "42 is even\n"
+    assert result.stderr == ""
+
+    result = run_poe_subproc("var_dependent", project="switch", env={"FOO_VAR": "99"})
+    assert result.capture == (
+        f"{common_prefix}Poe => import sys, os; "
+        "print(os.environ['FOO_VAR'], 'is odd')\n"
+    )
+    assert result.stdout == "99 is odd\n"
+    assert result.stderr == ""
+
+
+def test_switch_default_pass(run_poe_subproc):
+    result = run_poe_subproc("default_pass", project="switch")
+    assert result.capture == "Poe <= poe_test_echo nothing\n"
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_switch_default_fail(run_poe_subproc):
+    result = run_poe_subproc("default_fail", project="switch")
+    assert result.capture == (
+        "Poe <= poe_test_echo nothing\nError: Control value 'nothing' did not match "
+        "any cases in switch task 'default_fail'. \n"
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_switch_multivalue_case(run_poe_subproc):
+    for num in ("1", "3", "5"):
+        result = run_poe_subproc(
+            "multivalue_case", project="switch", env={"WHATEVER": num}
+        )
+        assert result.capture == (
+            f"Poe <= poe_test_echo {num}\nPoe => import sys; print('It is in 1-5')\n"
+        )
+        assert result.stdout == "It is in 1-5\n"
+        assert result.stderr == ""
+
+    result = run_poe_subproc("multivalue_case", project="switch", env={"WHATEVER": "6"})
+    assert result.capture == (
+        "Poe <= poe_test_echo 6\nPoe => import sys; print('It is 6')\n"
+    )
+    assert result.stdout == "It is 6\n"
+    assert result.stderr == ""
+
+    result = run_poe_subproc("multivalue_case", project="switch", env={"WHATEVER": "7"})
+    assert result.capture == (
+        "Poe <= poe_test_echo 7\nPoe => import sys; print('It is not in 1-6')\n"
+    )
+    assert result.stdout == "It is not in 1-6\n"
+    assert result.stderr == ""

@@ -52,7 +52,7 @@ greet = "pkg:greet"
   args = ["greeting", "user", "optional", "upper"]
 
   [tool.poe.tasks.greet-full-args]
-  script = "pkg:greet(greeting, user, upper=(not upper), fvar=user_height, ivar=age)"
+  script = "pkg:greet(greeting, user, upper=(not not upper), fvar=user_height, ivar=age)"
 
     [tool.poe.tasks.greet-full-args.args.greeting]
     options = ["--greeting", "-g"]
@@ -63,7 +63,7 @@ greet = "pkg:greet"
     # defaults to string if no type given
 
     [tool.poe.tasks.greet-full-args.args.upper]
-    default = true
+    default = false
     type = "boolean"
 
     [tool.poe.tasks.greet-full-args.args.age]

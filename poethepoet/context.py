@@ -58,25 +58,35 @@ class RunContext:
 
         # Include env vars from dependencies
         if task_uses is not None:
-            result.update(self.get_dep_values(task_uses))
+            result.update(self._get_dep_values(task_uses))
 
         return result
 
-    def get_dep_values(
+    def _get_dep_values(
         self, used_task_invocations: Mapping[str, Tuple[str, ...]]
     ) -> Dict[str, str]:
         """
         Get env vars from upstream tasks declared via the uses option.
+        """
+        return {
+            var_name: self.get_task_output(invocation)
+            for var_name, invocation in used_task_invocations.items()
+        }
+
+    def save_task_output(self, invocation: Tuple[str, ...], captured_stdout: bytes):
+        """
+        Store the stdout data from a task so that it can be reused by other tasks
+        """
+        self.captured_stdout[invocation] = captured_stdout.decode()
+
+    def get_task_output(self, invocation: Tuple[str, ...]):
+        """
+        Get the stored stdout data from a task so that it can be reused by other tasks
 
         New lines are replaced with whitespace similar to how unquoted command
         interpolation works in bash.
         """
-        return {
-            var_name: re.sub(
-                r"\s+", " ", self.captured_stdout[invocation].strip("\r\n")
-            )
-            for var_name, invocation in used_task_invocations.items()
-        }
+        return re.sub(r"\s+", " ", self.captured_stdout[invocation].strip("\r\n"))
 
     def get_executor(
         self,

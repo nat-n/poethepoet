@@ -217,7 +217,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         (captured_stdout, _) = proc.communicate(input)
 
         if self.capture_stdout == True:
-            self.context.captured_stdout[self.invocation] = captured_stdout.decode()
+            self.context.save_task_output(self.invocation, captured_stdout)
 
         # restore signal handler
         signal.signal(signal.SIGINT, old_signal_handler)

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
 from .cache import EnvFileCache
 from .template import apply_envvars_to_template
@@ -91,8 +91,17 @@ class EnvVarsManager:
 
         return result
 
-    def update(self, env_vars: Mapping[str, str]):
-        self._vars.update(env_vars)
+    def update(self, env_vars: Mapping[str, Any]):
+        # ensure all values are strings
+        str_vars: Dict[str, str] = {}
+        for key, value in env_vars.items():
+            if isinstance(value, list):
+                str_vars[key] = " ".join(str(item) for item in value)
+            elif value is not None:
+                str_vars[key] = str(value)
+
+        self._vars.update(str_vars)
+
         return self
 
     def to_dict(self):

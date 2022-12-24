@@ -4,3 +4,4 @@ from .ref import RefTask
 from .script import ScriptTask
 from .sequence import SequenceTask
 from .shell import ShellTask
+from .switch import SwitchTask

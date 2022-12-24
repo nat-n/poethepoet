@@ -32,20 +32,23 @@ class ScriptTask(PoeTask):
         extra_args: Sequence[str],
         env: EnvVarsManager,
     ) -> int:
-        # TODO: check whether the project really does use src layout, and don't do
-        #       sys.path.append('src') if it doesn't
-        target_module, function_call = self.parse_script_content(self.named_args)
+        named_arg_values = self.get_named_arg_values(env)
+        env.update(named_arg_values)
+        target_module, function_call = self.parse_script_content(named_arg_values)
         argv = [
             self.name,
             *(env.fill_template(token) for token in extra_args),
         ]
 
+        # TODO: check whether the project really does use src layout, and don't do
+        #       sys.path.append('src') if it doesn't
+
         script = [
-            "import sys; ",
+            "import os,sys; ",
             "from os import environ; ",
             "from importlib import import_module; ",
             f"sys.argv = {argv!r}; sys.path.append('src');",
-            f"{self.format_args_class(self.named_args)}",
+            f"{self.format_args_class(named_arg_values)}",
             f"result = import_module('{target_module}').{function_call};",
         ]
 

@@ -31,6 +31,7 @@ _BUILTINS_WHITELIST = {
     "next",
     "oct",
     "ord",
+    "os",
     "pow",
     "repr",
     "round",
@@ -58,6 +59,7 @@ _BUILTINS_WHITELIST = {
     "set",
     "slice",
     "str",
+    "sys",
     "tuple",
     "type",
     "zip",
@@ -95,14 +97,11 @@ def resolve_function_call(
         ),
     )
     for node in name_nodes:
-        if node.id in _BUILTINS_WHITELIST:
-            # builtin values have precedence over unqualified args
-            continue
         if node.id in arguments:
             substitutions.append(
                 (_get_name_node_abs_range(source, node), args_prefix + node.id)
             )
-        else:
+        elif node.id not in _BUILTINS_WHITELIST:
             raise ScriptParseError(
                 "Invalid variable reference in script: "
                 + _get_name_source_segment(source, node)

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Collection,
     Dict,
     Iterator,
     List,
@@ -209,26 +210,14 @@ class PoeTask(metaclass=MetaPoeTask):
             return PoeTaskArgs(args_def, self.name, env).parse(extra_args)
         return None
 
-    # @property
-    # def has_named_args(self):
-    #     return bool(self.named_args)
-
     def get_named_arg_values(self, env: EnvVarsManager) -> Dict[str, str]:
-        result: Dict[str, str] = {}
-
         if self.named_args is None:
             self.named_args = self._parse_named_args(self.invocation[1:], env)
 
         if not self.named_args:
             return {}
 
-        for key, value in self.named_args.items():
-            if isinstance(value, list):
-                result[key] = " ".join(str(item) for item in value)
-            elif value is not None:
-                result[key] = str(value)
-
-        return result
+        return self.named_args
 
     def run(
         self,
@@ -320,6 +309,7 @@ class PoeTask(metaclass=MetaPoeTask):
         config: "PoeConfig",
         *,
         anonymous: bool = False,
+        extra_options: Collection[str] = tuple(),
     ) -> Optional[str]:
         """
         Check the given task name and definition for validity and return a message
@@ -350,31 +340,32 @@ class PoeTask(metaclass=MetaPoeTask):
             task_type = cls.__task_types[task_type_key]
             if not isinstance(task_content, task_type.__content_type__):
                 return (
-                    f"Invalid task: {task_name!r}. {task_type} value must be a "
-                    f"{task_type.__content_type__}"
+                    f"Invalid task: {task_name!r}. Content for {task_type.__name__} "
+                    f"must be a {task_type.__content_type__.__name__}"
                 )
-            else:
-                for key in set(task_def) - {task_type_key}:
-                    expected_type = cls.__base_options.get(
-                        key, task_type.__options__.get(key)
-                    )
-                    if expected_type is None:
+
+            for key in set(task_def) - {task_type_key}:
+                expected_type = cls.__base_options.get(
+                    key, task_type.__options__.get(key)
+                )
+                if expected_type is None:
+                    if key not in extra_options:
                         return (
                             f"Invalid task: {task_name!r}. Unrecognised option "
                             f"{key!r} for task of type: {task_type_key}."
                         )
-                    elif not isinstance(task_def[key], expected_type):
-                        return (
-                            f"Invalid task: {task_name!r}. Option {key!r} should "
-                            f"have a value of type {expected_type!r}"
-                        )
-                else:
-                    if hasattr(task_type, "_validate_task_def"):
-                        task_type_issue = task_type._validate_task_def(
-                            task_name, task_def, config
-                        )
-                        if task_type_issue:
-                            return task_type_issue
+                elif not isinstance(task_def[key], expected_type):
+                    return (
+                        f"Invalid task: {task_name!r}. Option {key!r} should "
+                        f"have a value of type {expected_type!r}"
+                    )
+            else:
+                if hasattr(task_type, "_validate_task_def"):
+                    task_type_issue = task_type._validate_task_def(
+                        task_name, task_def, config
+                    )
+                    if task_type_issue:
+                        return task_type_issue
 
             if "args" in task_def:
                 return PoeTaskArgs.validate_def(task_name, task_def["args"])
