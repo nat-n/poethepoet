@@ -212,10 +212,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         proc = Popen(cmd, **popen_kwargs)
 
         # signal pass through
-        def handle_signal(signum, _frame):
+        def handle_sigint(signum, _frame):
+            # sigint is not handled on windows
+            signum = signal.CTRL_C_EVENT if self._is_windows else signum
             proc.send_signal(signum)
 
-        old_signal_handler = signal.signal(signal.SIGINT, handle_signal)
+        old_sigint_handler = signal.signal(signal.SIGINT, handle_sigint)
 
         # send data to the subprocess and wait for it to finish
         (captured_stdout, _) = proc.communicate(input)
@@ -224,7 +226,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             self.context.save_task_output(self.invocation, captured_stdout)
 
         # restore signal handler
-        signal.signal(signal.SIGINT, old_signal_handler)
+        signal.signal(signal.SIGINT, old_sigint_handler)
 
         return proc.returncode
 
