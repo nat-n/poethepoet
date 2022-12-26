@@ -49,6 +49,9 @@ class EnvVarsManager:
 
         self._vars["POE_ROOT"] = str(self._config.project_dir)
 
+    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        return self._vars.get(key, default)
+
     def _apply_env_config(
         self,
         config_env: Mapping[str, Union[str, Mapping[str, str]]],

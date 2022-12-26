@@ -77,7 +77,15 @@ class RunContext:
         """
         Store the stdout data from a task so that it can be reused by other tasks
         """
-        self.captured_stdout[invocation] = captured_stdout.decode()
+        try:
+            self.captured_stdout[invocation] = captured_stdout.decode()
+        except UnicodeDecodeError:
+            # Attempt to recover in case a specific encoding is configured
+            io_encoding = self.env.get("PYTHONIOENCODING")
+            if io_encoding:
+                self.captured_stdout[invocation] = captured_stdout.decode(io_encoding)
+            else:
+                raise
 
     def get_task_output(self, invocation: Tuple[str, ...]):
         """

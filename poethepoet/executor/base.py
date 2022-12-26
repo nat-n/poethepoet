@@ -199,6 +199,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
             else:
                 popen_kwargs["stdout"] = PIPE
+
+            if "PYTHONIOENCODING" not in popen_kwargs["env"]:
+                popen_kwargs["env"]["PYTHONIOENCODING"] = "utf-8"
+
         if self.working_dir is not None:
             popen_kwargs["cwd"] = self.working_dir
 
