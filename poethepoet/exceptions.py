@@ -9,7 +9,7 @@ class CyclicDependencyError(PoeException):
     pass
 
 
-class ScriptParseError(PoeException):
+class ExpressionParseError(PoeException):
     pass
 
 

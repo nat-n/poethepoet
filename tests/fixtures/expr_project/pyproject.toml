@@ -1,0 +1,57 @@
+
+[tool.poe.tasks.expr_with_args]
+expr = """ "power level is " + (f"only {power_level}" if int(${power_level}) <= 9000 else 'over nine thousand!') """
+args = [{ name = "power_level", positional = true, type = "integer", default = 42 }]
+
+[tool.poe.tasks.expr_with_argv]
+expr = """"power level is " + (f"only {sys.argv[1]}" if int(sys.argv[1]) <= 9000 else 'over nine thousand!') """
+
+[tool.poe.tasks.expr_with_env_vars]
+expr = "[${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}')"
+
+[tool.poe.tasks.expr_with_imports]
+help    = "check if the argument looks like an email address"
+expr    = "bool(re.match('^\\S+@\\S+\\.\\S+$', ${EMAIL}))"
+imports = ["re"]
+env.EMAIL.default = 'user@example.com'
+assert = false
+
+[tool.poe.tasks.expr_with_assert]
+expr   = "min_value < 3"
+args   = [{ name = "min_value", positional = true, type = "integer", required = true}]
+assert = true
+
+[tool.poe.tasks]
+_days_since_incident.expr = "0"
+
+[tool.poe.tasks.expr_with_uses]
+expr = "f'There have been {${GOOD_DAYS}} since the last failed test.'"
+uses = { GOOD_DAYS = '_days_since_incident'}
+
+[tool.poe.tasks.christmas_tree_expr]
+expr = """
+  True == (
+    (
+      sum({ 'x': map((lambda y: y * 1), list([1, tuple(x * foo for x in (2,3))[0]])) }['x']) - 2
+    )
+    + len(
+      set([
+        "*" * max(0
+          or {
+              int(12.0),
+              4.2,
+              next(
+                iter(
+                  ({
+                    a: True
+                    for a in (3/3, 3/2, 3/1)
+                  }).keys()
+                )
+              )
+            }
+        )][:1][0]
+      )
+    )
+  ) / 3
+"""
+args = [{ name = "foo", positional = true, type = "float", default = 1.5 }]

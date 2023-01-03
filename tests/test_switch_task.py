@@ -5,7 +5,7 @@ import pytest
 
 
 def test_switch_on_platform(run_poe_subproc):
-    common_prefix = "Poe <= platform_dependent[control]\n"
+    common_prefix = "Poe <= override or sys.platform\n"
     result = run_poe_subproc("platform_dependent", project="switch")
 
     if sys.platform == "win32":
@@ -23,10 +23,7 @@ def test_switch_on_platform(run_poe_subproc):
         assert result.stdout == "You are on linux.\n"
 
     elif sys.platform == "darwin":
-        assert (
-            result.capture
-            == f"{common_prefix}Poe => import sys; print('You are on a mac.')\n"
-        )
+        assert result.capture == f"{common_prefix}Poe => 'You are on a mac.'\n"
         assert result.stdout == "You are on a mac.\n"
 
     else:
@@ -40,7 +37,7 @@ def test_switch_on_platform(run_poe_subproc):
 
 
 def test_switch_on_override_arg(run_poe_subproc):
-    common_prefix = "Poe <= platform_dependent[control] --override=Ti83\n"
+    common_prefix = "Poe <= override or sys.platform\n"
     result = run_poe_subproc("platform_dependent", "--override=Ti83", project="switch")
     assert result.capture == (
         f"{common_prefix}Poe => import sys; "
@@ -51,12 +48,9 @@ def test_switch_on_override_arg(run_poe_subproc):
 
 
 def test_switch_on_env_var(run_poe_subproc):
-    common_prefix = "Poe <= var_dependent[control]\n"
+    common_prefix = "Poe <= int(${FOO_VAR}) % 2\n"
     result = run_poe_subproc("var_dependent", project="switch", env={"FOO_VAR": "42"})
-    assert result.capture == (
-        f"{common_prefix}Poe => import sys, os; "
-        "print(os.environ['FOO_VAR'], 'is even')\n"
-    )
+    assert result.capture == common_prefix + "Poe => f'{${FOO_VAR}} is even'\n"
     assert result.stdout == "42 is even\n"
     assert result.stderr == ""
 

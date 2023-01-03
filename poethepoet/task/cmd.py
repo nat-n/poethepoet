@@ -1,14 +1,13 @@
 import re
-import shlex
-from glob import glob
 from typing import TYPE_CHECKING, Dict, Sequence, Tuple, Type, Union
 
-from ..env.manager import EnvVarsManager
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
+    from ..env.manager import EnvVarsManager
+
 
 _GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
 _QUOTED_TOKEN_PATTERN = re.compile(r"(^\".*\"$|^'.*'$)")
@@ -30,7 +29,7 @@ class CmdTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: EnvVarsManager,
+        env: "EnvVarsManager",
     ) -> int:
         named_arg_values = self.get_named_arg_values(env)
         env.update(named_arg_values)
@@ -46,7 +45,10 @@ class CmdTask(PoeTask):
             cmd, use_exec=self.options.get("use_exec", False)
         )
 
-    def _resolve_args(self, context: "RunContext", env: EnvVarsManager):
+    def _resolve_args(self, context: "RunContext", env: "EnvVarsManager"):
+        import shlex
+        from glob import glob
+
         updated_content = env.fill_template(self.content.strip())
         # Parse shell command tokens and check if they're quoted
         if self._is_windows:

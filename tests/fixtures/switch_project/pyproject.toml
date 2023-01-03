@@ -1,6 +1,6 @@
 
 [tool.poe.tasks.platform_dependent]
-control.script = "sys:stdout.write(override or sys.platform)"
+control.expr = "override or sys.platform"
 args = [{ name = "override", default = "" }]
 
   [[tool.poe.tasks.platform_dependent.switch]]
@@ -15,8 +15,7 @@ args = [{ name = "override", default = "" }]
 
   [[tool.poe.tasks.platform_dependent.switch]]
   case = "darwin"
-  shell = "import sys; print('You are on a mac.')"
-  interpreter = "python"
+  expr = "'You are on a mac.'"
 
   [[tool.poe.tasks.platform_dependent.switch]]
   shell = "import sys; print('Looks like you are running some exotic OS.')"
@@ -24,12 +23,11 @@ args = [{ name = "override", default = "" }]
 
 
 [tool.poe.tasks.var_dependent]
-control.script = "sys:stdout.write(str(int(environ['FOO_VAR']) % 2))"
+control.expr = "int(${FOO_VAR}) % 2"
 
   [[tool.poe.tasks.var_dependent.switch]]
   case = "0"
-  shell = "import sys, os; print(os.environ['FOO_VAR'], 'is even')"
-  interpreter = "python"
+  expr = "f'{${FOO_VAR}} is even'"
 
   [[tool.poe.tasks.var_dependent.switch]]
   case = "1"

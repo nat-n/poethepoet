@@ -1,12 +1,14 @@
-import argparse
 import os
 import sys
-from typing import IO, List, Mapping, Optional, Sequence, Tuple, Union
-
-from pastel import Pastel
+from typing import IO, TYPE_CHECKING, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .__version__ import __version__
 from .exceptions import PoeException
+
+if TYPE_CHECKING:
+    from argparse import ArgumentParser, Namespace
+
+    from pastel import Pastel
 
 
 def guess_ansi_support(file):
@@ -21,14 +23,16 @@ STDOUT_ANSI_SUPPORT = guess_ansi_support(sys.stdout)
 
 
 class PoeUi:
-    args: argparse.Namespace
-    _color: Pastel
+    args: "Namespace"
+    _color: "Pastel"
 
     def __init__(self, output: IO):  # TODO: make IO wrapper
         self.output = output
         self._init_colors()
 
     def _init_colors(self):
+        from pastel import Pastel
+
         self._color = Pastel(guess_ansi_support(self.output))
         self._color.add_style("u", "default", options="underline")
         self._color.add_style("hl", "light_gray")
@@ -44,7 +48,9 @@ class PoeUi:
         """Provide easy access to arguments"""
         return getattr(self.args, key, None)
 
-    def build_parser(self) -> argparse.ArgumentParser:
+    def build_parser(self) -> "ArgumentParser":
+        import argparse
+
         parser = argparse.ArgumentParser(
             prog="poe",
             description="Poe the Poet: A task runner that works well with poetry.",

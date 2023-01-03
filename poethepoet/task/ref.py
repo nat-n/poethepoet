@@ -1,12 +1,11 @@
-import shlex
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
 
-from ..env.manager import EnvVarsManager
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
+    from ..env.manager import EnvVarsManager
 
 
 class RefTask(PoeTask):
@@ -23,11 +22,13 @@ class RefTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: EnvVarsManager,
+        env: "EnvVarsManager",
     ) -> int:
         """
         Lookup and delegate to the referenced task
         """
+        import shlex
+
         invocation = tuple(shlex.split(env.fill_template(self.content.strip())))
         task = self.from_config(invocation[0], self._config, self._ui, invocation)
         return task.run(context=context, extra_args=extra_args, parent_env=env)
@@ -40,11 +41,16 @@ class RefTask(PoeTask):
         Check the given task definition for validity specific to this task type and
         return a message describing the first encountered issue if any.
         """
+        import shlex
+
         task_ref = task_def["ref"]
         task_name_ref = shlex.split(task_ref)[0]
 
         if task_name_ref not in config.tasks:
-            return f"Task {task_name!r} contains reference to unkown task {task_name_ref!r}"
+            return (
+                f"Task {task_name!r} contains reference to unkown task "
+                f"{task_name_ref!r}"
+            )
 
         referenced_task = config.tasks[task_name_ref]
         if isinstance(referenced_task, dict) and referenced_task.get("use_exec"):

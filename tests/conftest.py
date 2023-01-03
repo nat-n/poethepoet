@@ -109,7 +109,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         "from poethepoet.app import PoeThePoet;"
         "from pathlib import Path;"
         r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
-        "poe([{run_args}]);"
+        "exit(poe([{run_args}]));"
         '"'
     )
 

@@ -1,6 +1,5 @@
 import re
 from os import environ
-from shutil import which
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,13 +12,13 @@ from typing import (
     Union,
 )
 
-from ..env.manager import EnvVarsManager
 from ..exceptions import PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
+    from ..env.manager import EnvVarsManager
 
 
 class ShellTask(PoeTask):
@@ -36,7 +35,7 @@ class ShellTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: EnvVarsManager,
+        env: "EnvVarsManager",
     ) -> int:
         named_arg_values = self.get_named_arg_values(env)
         env.update(named_arg_values)
@@ -91,6 +90,8 @@ class ShellTask(PoeTask):
         return None
 
     def _locate_interpreter(self, interpreter: str) -> Optional[str]:
+        from shutil import which
+
         result = None
         prog_files = environ.get("PROGRAMFILES", "C:\\Program Files")
 

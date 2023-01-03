@@ -7,6 +7,8 @@ readme      = "README.rst"
 license     = "MIT"
 repository  = "https://github.com/nat-n/poethepoet"
 homepage    = "https://github.com/nat-n/poethepoet"
+keywords    = ["automation", "tasks", "task-runner", "plugin", "poetry", "poe"]
+classifiers = ["Topic :: Software Development :: Build Tools"]
 
 [tool.poetry.dependencies]
 python = ">=3.7"
@@ -107,7 +109,6 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   [tool.poe.tasks.poe]
   help   = "Execute poe from this repo (useful for testing)"
   script = "poethepoet:main"
-
 
 [tool.coverage.report]
 omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"]

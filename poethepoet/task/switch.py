@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,13 +12,13 @@ from typing import (
     cast,
 )
 
-from ..env.manager import EnvVarsManager
 from ..exceptions import ExecutionError, PoeException
 from .base import PoeTask, TaskContent
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
+    from ..env.manager import EnvVarsManager
     from ..executor import PoeExecutor
     from ..ui import PoeUi
 
@@ -91,7 +90,7 @@ class SwitchTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: EnvVarsManager,
+        env: "EnvVarsManager",
     ) -> int:
         named_arg_values = self.get_named_arg_values(env)
         env.update(named_arg_values)
@@ -138,12 +137,13 @@ class SwitchTask(PoeTask):
     def _validate_task_def(
         cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
     ) -> Optional[str]:
+        from collections import defaultdict
 
         control_task_def = task_def.get("control")
         if not control_task_def:
             return f"Switch task {task_name!r} has no control task."
 
-        allowed_control_task_types = ("cmd", "script")
+        allowed_control_task_types = ("expr", "cmd", "script")
         if isinstance(control_task_def, dict) and not any(
             key in control_task_def for key in allowed_control_task_types
         ):

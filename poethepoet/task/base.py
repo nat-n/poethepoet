@@ -1,5 +1,4 @@
 import re
-import shlex
 import sys
 from pathlib import Path
 from typing import (
@@ -16,14 +15,12 @@ from typing import (
     Union,
 )
 
-from ..env.manager import EnvVarsManager
 from ..exceptions import PoeException
-from ..helpers import is_valid_env_var
-from .args import PoeTaskArgs
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
+    from ..env.manager import EnvVarsManager
     from ..ui import PoeUi
 
 
@@ -203,14 +200,16 @@ class PoeTask(metaclass=MetaPoeTask):
         return None
 
     def _parse_named_args(
-        self, extra_args: Sequence[str], env: EnvVarsManager
+        self, extra_args: Sequence[str], env: "EnvVarsManager"
     ) -> Optional[Dict[str, str]]:
+        from .args import PoeTaskArgs
+
         args_def = self.options.get("args")
         if args_def:
             return PoeTaskArgs(args_def, self.name, env).parse(extra_args)
         return None
 
-    def get_named_arg_values(self, env: EnvVarsManager) -> Dict[str, str]:
+    def get_named_arg_values(self, env: "EnvVarsManager") -> Dict[str, str]:
         if self.named_args is None:
             self.named_args = self._parse_named_args(self.invocation[1:], env)
 
@@ -223,7 +222,7 @@ class PoeTask(metaclass=MetaPoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str] = tuple(),
-        parent_env: Optional[EnvVarsManager] = None,
+        parent_env: Optional["EnvVarsManager"] = None,
     ) -> int:
         """
         Run this task
@@ -244,7 +243,7 @@ class PoeTask(metaclass=MetaPoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: EnvVarsManager,
+        env: "EnvVarsManager",
     ) -> int:
         """
         This method must be implemented by a subclass and return a single executor
@@ -268,6 +267,8 @@ class PoeTask(metaclass=MetaPoeTask):
         for all current usecases is it strictly speaking something that this object
         should not know enough to safely assume. So we probably want to revisit this.
         """
+        import shlex
+
         if self.__upstream_invocations is None:
             env = context.get_task_env(
                 None, self.options.get("envfile"), self.options.get("env")
@@ -368,6 +369,8 @@ class PoeTask(metaclass=MetaPoeTask):
                         return task_type_issue
 
             if "args" in task_def:
+                from .args import PoeTaskArgs
+
                 return PoeTaskArgs.validate_def(task_name, task_def["args"])
 
             if "cwd" in task_def:
@@ -405,6 +408,8 @@ class PoeTask(metaclass=MetaPoeTask):
                         )
 
             if "uses" in task_def:
+                from ..helpers import is_valid_env_var
+
                 for key, dep in task_def["uses"].items():
                     if not is_valid_env_var(key):
                         return (

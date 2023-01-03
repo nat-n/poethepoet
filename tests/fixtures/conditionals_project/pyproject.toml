@@ -1,0 +1,34 @@
+
+
+[tool.poe.tasks.build1]
+shell = """
+echo build part 1
+mkdir -p build
+touch ./build/asset1
+"""
+cond.target = "./build/asset1"
+
+
+[tool.poe.tasks.build2]
+shell = """
+echo build part 2
+touch ./build/asset2
+"""
+cond.target = "./build/asset1"
+
+
+
+[tool.poe.tasks.buildZ]
+shell   = "cat artifactX artifactY > artifactZ"
+prereqs = ["artifactX", "artifactY"]
+deps    = ["buildX", "buildY"] # automatically consider target of deps as prereqs?
+target  = "artifactZ"
+check.expr = "${val} == 'lol'"
+uses    = {val = {cmd = "echo lol"}}
+
+
+
+[tool.poe.tasks.clean]
+script = "shutil:rmtree('build')"
+
+

@@ -1,7 +1,6 @@
 import os
-import signal
 import sys
-from subprocess import PIPE, Popen
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -15,14 +14,13 @@ from typing import (
     Union,
 )
 
-from ..env.manager import EnvVarsManager
 from ..exceptions import ExecutionError, PoeException
-from ..virtualenv import Virtualenv
 
 if TYPE_CHECKING:
-    from pathlib import Path
 
     from ..context import RunContext
+    from ..env.manager import EnvVarsManager
+
 
 # TODO: maybe invert the control so the executor is given a task to run?
 
@@ -47,7 +45,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     A base class for poe task executors
     """
 
-    working_dir: Optional["Path"]
+    working_dir: Optional[Path]
 
     __executor_types: Dict[str, Type["PoeExecutor"]] = {}
     __key__: Optional[str] = None
@@ -57,8 +55,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         invocation: Tuple[str, ...],
         context: "RunContext",
         options: Mapping[str, str],
-        env: EnvVarsManager,
-        working_dir: Optional["Path"] = None,
+        env: "EnvVarsManager",
+        working_dir: Optional[Path] = None,
         dry: bool = False,
         capture_stdout: Union[str, bool] = False,
     ):
@@ -76,8 +74,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         cls,
         invocation: Tuple[str, ...],
         context: "RunContext",
-        env: EnvVarsManager,
-        working_dir: Optional["Path"] = None,
+        env: "EnvVarsManager",
+        working_dir: Optional[Path] = None,
         dry: bool = False,
         executor_config: Optional[Mapping[str, str]] = None,
         capture_stdout: Union[str, bool] = False,
@@ -98,6 +96,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         by making some reasonable assumptions based on visible features of the
         environment
         """
+        from ..virtualenv import Virtualenv
+
         config_executor_type = context.executor_type
         if executor_config:
             if executor_config["type"] not in cls.__executor_types:
@@ -186,6 +186,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         env: Optional[Mapping[str, str]] = None,
         shell: bool = False,
     ) -> int:
+        import signal
+        from subprocess import PIPE, Popen
+
         if self.dry:
             return 0
         popen_kwargs: MutableMapping[str, Any] = {"shell": shell}

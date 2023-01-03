@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
-from .cache import EnvFileCache
 from .template import apply_envvars_to_template
 
 if TYPE_CHECKING:
+    from .cache import EnvFileCache
     from .config import PoeConfig
     from .ui import PoeUi
 
@@ -13,7 +13,7 @@ class EnvVarsManager:
     _config: "PoeConfig"
     _ui: Optional["PoeUi"]
     _vars: Dict[str, str]
-    envfiles: EnvFileCache
+    envfiles: "EnvFileCache"
 
     def __init__(
         self,
@@ -22,6 +22,8 @@ class EnvVarsManager:
         parent_env: Optional["EnvVarsManager"] = None,
         base_env: Optional[Mapping[str, str]] = None,
     ):
+        from .cache import EnvFileCache
+
         self._config = config
         self._ui = ui
         self.envfiles = (

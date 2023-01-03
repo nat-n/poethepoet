@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 try:
@@ -272,6 +271,8 @@ class PoeConfig:
                     ) from error
 
             elif include_path.name.endswith(".json"):
+                import json
+
                 try:
                     with include_path.open("rb") as file:
                         self._merge_config(

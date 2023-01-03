@@ -1,10 +1,7 @@
-import shutil
 from os import environ
 from pathlib import Path
-from subprocess import PIPE, Popen
 from typing import Dict, Optional, Sequence, Type
 
-from ..virtualenv import Virtualenv
 from .base import PoeExecutor
 
 
@@ -28,6 +25,9 @@ class PoetryExecutor(PoeExecutor):
         project_dir = self.context.config.project_dir
 
         if poetry_env:
+
+            from ..virtualenv import Virtualenv
+
             # Execute the task in the virtualenv from poetry
             venv = Virtualenv(Path(poetry_env))
             return self._execute_cmd(
@@ -60,6 +60,8 @@ class PoetryExecutor(PoeExecutor):
         exec_cache = self.context.exec_cache
 
         if force and "poetry_virtualenv" not in exec_cache:
+            from subprocess import PIPE, Popen
+
             # Need to make sure poetry isn't influenced by whatever virtualenv is
             # currently active
             clean_env = dict(environ)
@@ -81,6 +83,8 @@ class PoetryExecutor(PoeExecutor):
         return exec_cache.get("poetry_virtualenv")
 
     def _poetry_cmd(self):
+        import shutil
+
         return shutil.which("poetry") or "poetry"
 
     def _virtualenv_creation_disabled(self):

@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional
 
 from ..exceptions import ExecutionError
-from .parse import parse_env_file
 
 if TYPE_CHECKING:
     from .ui import PoeUi
@@ -18,6 +17,8 @@ class EnvFileCache:
         self._ui = ui
 
     def get(self, envfile_path_str: str) -> Dict[str, str]:
+        from .parse import parse_env_file
+
         if envfile_path_str in self._cache:
             return self._cache[envfile_path_str]
 

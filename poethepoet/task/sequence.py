@@ -10,13 +10,13 @@ from typing import (
     Union,
 )
 
-from ..env.manager import EnvVarsManager
 from ..exceptions import ExecutionError, PoeException
 from .base import PoeTask, TaskContent
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
+    from ..env.manager import EnvVarsManager
     from ..executor import PoeExecutor
     from ..ui import PoeUi
 
@@ -67,7 +67,7 @@ class SequenceTask(PoeTask):
         self,
         context: "RunContext",
         extra_args: Sequence[str],
-        env: EnvVarsManager,
+        env: "EnvVarsManager",
     ) -> int:
         named_arg_values = self.get_named_arg_values(env)
         env.update(named_arg_values)

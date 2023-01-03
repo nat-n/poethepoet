@@ -2,18 +2,17 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple
 
-from .env.manager import EnvVarsManager
-from .executor import PoeExecutor
-
 if TYPE_CHECKING:
     from .config import PoeConfig
+    from .env.manager import EnvVarsManager
+    from .executor import PoeExecutor
     from .ui import PoeUi
 
 
 class RunContext:
     config: "PoeConfig"
     ui: "PoeUi"
-    env: EnvVarsManager
+    env: "EnvVarsManager"
     dry: bool
     poe_active: Optional[str]
     project_dir: Path
@@ -30,6 +29,8 @@ class RunContext:
         poe_active: Optional[str],
         multistage: bool = False,
     ):
+        from .env.manager import EnvVarsManager
+
         self.config = config
         self.ui = ui
         self.project_dir = Path(config.project_dir)
@@ -46,11 +47,11 @@ class RunContext:
 
     def get_task_env(
         self,
-        parent_env: Optional[EnvVarsManager],
+        parent_env: Optional["EnvVarsManager"],
         task_envfile: Optional[str],
         task_env: Optional[Mapping[str, str]],
         task_uses: Optional[Mapping[str, Tuple[str, ...]]] = None,
-    ) -> EnvVarsManager:
+    ) -> "EnvVarsManager":
         if parent_env is None:
             parent_env = self.env
 
@@ -99,9 +100,11 @@ class RunContext:
     def get_executor(
         self,
         invocation: Tuple[str, ...],
-        env: EnvVarsManager,
+        env: "EnvVarsManager",
         task_options: Dict[str, Any],
-    ) -> PoeExecutor:
+    ) -> "PoeExecutor":
+        from .executor import PoeExecutor
+
         return PoeExecutor.get(
             invocation=invocation,
             context=self,

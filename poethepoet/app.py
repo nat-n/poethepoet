@@ -1,30 +1,44 @@
 import os
 import sys
 from pathlib import Path
-from typing import IO, Any, Dict, Mapping, Optional, Sequence, Tuple, Union
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
-from .config import PoeConfig
-from .context import RunContext
 from .exceptions import ExecutionError, PoeException
-from .task import PoeTask
-from .task.args import PoeTaskArgs
-from .task.graph import TaskExecutionGraph
-from .ui import PoeUi
+
+if TYPE_CHECKING:
+
+    from .config import PoeConfig
+    from .context import RunContext
+    from .task import PoeTask
+    from .ui import PoeUi
 
 
 class PoeThePoet:
     cwd: Path
-    ui: PoeUi
-    config: PoeConfig
-    task: Optional[PoeTask] = None
+    ui: "PoeUi"
+    config: "PoeConfig"
+    task: Optional["PoeTask"] = None
 
     def __init__(
         self,
         cwd: Path,
-        config: Optional[Union[Mapping[str, Any], PoeConfig]] = None,
+        config: Optional[Union[Mapping[str, Any], "PoeConfig"]] = None,
         output: IO = sys.stdout,
         poetry_env_path: Optional[str] = None,
     ):
+        from .config import PoeConfig
+        from .ui import PoeUi
+
         self.cwd = cwd
         self.config = (
             config
@@ -67,6 +81,8 @@ class PoeThePoet:
             return self.run_task() or 0
 
     def resolve_task(self) -> bool:
+        from .task import PoeTask
+
         task = tuple(self.ui["task"])
         if not task:
             self.print_help(info="No task specified.")
@@ -90,7 +106,7 @@ class PoeThePoet:
         )
         return True
 
-    def run_task(self, context: Optional[RunContext] = None) -> Optional[int]:
+    def run_task(self, context: Optional["RunContext"] = None) -> Optional[int]:
         if context is None:
             context = self.get_run_context()
         try:
@@ -104,6 +120,8 @@ class PoeThePoet:
             return 1
 
     def run_task_graph(self) -> Optional[int]:
+        from .task.graph import TaskExecutionGraph
+
         assert self.task
         context = self.get_run_context(multistage=True)
         graph = TaskExecutionGraph(self.task, context)
@@ -131,7 +149,9 @@ class PoeThePoet:
                     return 1
         return 0
 
-    def get_run_context(self, multistage: bool = False) -> RunContext:
+    def get_run_context(self, multistage: bool = False) -> "RunContext":
+        from .context import RunContext
+
         result = RunContext(
             config=self.config,
             ui=self.ui,
@@ -150,6 +170,8 @@ class PoeThePoet:
         info: Optional[str] = None,
         error: Optional[Union[str, PoeException]] = None,
     ):
+        from .task.args import PoeTaskArgs
+
         if isinstance(error, str):
             error == PoeException(error)
         tasks_help: Dict[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str]]]] = {

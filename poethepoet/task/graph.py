@@ -1,12 +1,14 @@
-from typing import Dict, List, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 
-from ..context import RunContext
 from ..exceptions import CyclicDependencyError
-from .base import PoeTask
+
+if TYPE_CHECKING:
+    from ..context import RunContext
+    from .base import PoeTask
 
 
 class TaskExecutionNode:
-    task: PoeTask
+    task: "PoeTask"
     direct_dependants: List["TaskExecutionNode"]
     direct_dependencies: Set[Tuple[str, ...]]
     path_dependants: Tuple[str, ...]
@@ -14,7 +16,7 @@ class TaskExecutionNode:
 
     def __init__(
         self,
-        task: PoeTask,
+        task: "PoeTask",
         direct_dependants: List["TaskExecutionNode"],
         path_dependants: Tuple[str, ...],
         capture_stdout: bool = False,
@@ -43,7 +45,7 @@ class TaskExecutionGraph:
     one does not. Nodes are deduplicated to enforce this.
     """
 
-    _context: RunContext
+    _context: "RunContext"
     sink: TaskExecutionNode
     sources: List[TaskExecutionNode]
     captured_tasks: Dict[Tuple[str, ...], TaskExecutionNode]
@@ -51,8 +53,8 @@ class TaskExecutionGraph:
 
     def __init__(
         self,
-        sink_task: PoeTask,
-        context: RunContext,
+        sink_task: "PoeTask",
+        context: "RunContext",
     ):
         self._context = context
         self.sink = TaskExecutionNode(sink_task, [], tuple())
@@ -63,7 +65,7 @@ class TaskExecutionGraph:
         # Build graph
         self._resolve_node_deps(self.sink)
 
-    def get_execution_plan(self) -> List[List[PoeTask]]:
+    def get_execution_plan(self) -> List[List["PoeTask"]]:
         """
         Derive an execution plan from the DAG in terms of stages consisting of tasks
         that could theoretically be parallelized.

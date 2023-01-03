@@ -1,8 +1,10 @@
-from typing import Any, Dict, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type
 
 from ..exceptions import PoeException
-from ..virtualenv import Virtualenv
 from .base import PoeExecutor
+
+if TYPE_CHECKING:
+    from ..virtualenv import Virtualenv
 
 
 class VirtualenvExecutor(PoeExecutor):
@@ -28,7 +30,9 @@ class VirtualenvExecutor(PoeExecutor):
             use_exec=use_exec,
         )
 
-    def _resolve_virtualenv(self) -> Virtualenv:
+    def _resolve_virtualenv(self) -> "Virtualenv":
+        from ..virtualenv import Virtualenv
+
         if "location" in self.options:
             venv = Virtualenv(
                 self.context.project_dir.joinpath(self.options["location"])

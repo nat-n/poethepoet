@@ -1,4 +1,3 @@
-import argparse
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,10 +11,11 @@ from typing import (
     Union,
 )
 
-from ..env.manager import EnvVarsManager
-
 if TYPE_CHECKING:
+    from argparse import ArgumentParser
+
     from ..config import PoeConfig
+    from ..env.manager import EnvVarsManager
 
 ArgParams = Dict[str, Any]
 ArgsDef = Union[List[str], List[ArgParams], Dict[str, ArgParams]]
@@ -41,7 +41,7 @@ arg_types: Dict[str, Type] = {
 class PoeTaskArgs:
     _args: Tuple[ArgParams, ...]
 
-    def __init__(self, args_def: ArgsDef, task_name: str, env: EnvVarsManager):
+    def __init__(self, args_def: ArgsDef, task_name: str, env: "EnvVarsManager"):
         self._args = self._normalize_args_def(args_def)
         self._task_name = task_name
         self._env = env
@@ -234,7 +234,9 @@ class PoeTaskArgs:
             )
         return None
 
-    def build_parser(self) -> argparse.ArgumentParser:
+    def build_parser(self) -> "ArgumentParser":
+        import argparse
+
         parser = argparse.ArgumentParser(
             prog=f"poe {self._task_name}", add_help=False, allow_abbrev=False
         )
