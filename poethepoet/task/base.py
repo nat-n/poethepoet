@@ -228,6 +228,15 @@ class PoeTask(metaclass=MetaPoeTask):
         Run this task
         """
         upstream_invocations = self._get_upstream_invocations(context)
+
+        if context.dry and upstream_invocations.get("uses", {}):
+            self._print_action(
+                f"unresolved dependency task results via uses option for task {self.name!r}",
+                dry=True,
+                unresolved=True,
+            )
+            return 0
+
         return self._handle_run(
             context,
             extra_args,
@@ -484,12 +493,14 @@ class PoeTask(metaclass=MetaPoeTask):
         issue = None
         return issue
 
-    def _print_action(self, action: str, dry: bool):
+    def _print_action(self, action: str, dry: bool, unresolved: bool = False):
         """
         Print the action taken by a task just before executing it.
         """
         min_verbosity = -1 if dry else 0
-        arrow = "<=" if self.options.get("capture_stdout") else "=>"
+        arrow = (
+            "??" if unresolved else "<=" if self.options.get("capture_stdout") else "=>"
+        )
         self._ui.print_msg(
             f"<hl>Poe {arrow}</hl> <action>{action}</action>", min_verbosity
         )

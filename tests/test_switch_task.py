@@ -80,6 +80,15 @@ def test_switch_default_fail(run_poe_subproc):
     assert result.stderr == ""
 
 
+def test_switch_dry_run(run_poe_subproc):
+    result = run_poe_subproc("-d", "var_dependent", project="switch")
+    assert result.capture == (
+        "Poe <= int(${FOO_VAR}) % 2\n" "Poe ?? unresolved case for switch task\n"
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
 def test_switch_multivalue_case(run_poe_subproc):
     for num in ("1", "3", "5"):
         result = run_poe_subproc(

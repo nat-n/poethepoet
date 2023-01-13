@@ -111,6 +111,12 @@ class SwitchTask(PoeTask):
                 f"Switch task {self.name!r} aborted after failed control task"
             )
 
+        if context.dry:
+            self._print_action(
+                f"unresolved case for switch task", dry=True, unresolved=True
+            )
+            return 0
+
         control_task_output = context.get_task_output(self.control_task.invocation)
         case_task = self.switch_tasks.get(
             control_task_output, self.switch_tasks.get(DEFAULT_CASE)
