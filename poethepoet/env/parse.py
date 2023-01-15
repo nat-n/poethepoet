@@ -39,6 +39,26 @@ DOUBLE_QUOTE_VALUE_PATTERN = r"^((?:.|\n)*?)(\"|\\+)"
 
 
 def parse_env_file(content_lines: Sequence[str]):
+    """
+    This function implements envfile parsing similar to bash.
+
+    Line commenting is respected via # outside of quotes and following a non-escaped
+    whitespace char.
+
+    Escaping rules:
+    - outside of quotes:
+      - escaped new lines are omitted
+      - other escaped characters are always included
+        (including backslashes, whitespace and semicolons)
+      - non-escaped backslashes are omitted
+    - inside single quotes
+      - backslashes are treated like normal character - no escaping
+    - inside double quotes
+      - escaped new lines are omitted
+      - escaped backslashes and double-quotes are kept
+      - backslashes not used for escaping are kept
+    """
+
     content = "".join(content_lines) + "\n"
     result = {}
     cursor = 0
@@ -86,6 +106,7 @@ def parse_env_file(content_lines: Sequence[str]):
 
         if state == ParserState.SCAN_VALUE:
             # collect up until the first quote, whitespace, or group of backslashes
+
             match = re.search(UNQUOTED_VALUE_PATTERN, content[cursor:], re.MULTILINE)
             assert match
             new_var_content, match_terminator = match.groups()
@@ -116,11 +137,16 @@ def parse_env_file(content_lines: Sequence[str]):
                 var_content.append("\\" * (num_backslashes // 2))
                 cursor += num_backslashes
 
-                if num_backslashes % 2 > 0:
-                    # Odd number of backslashes, means the next char is escaped
+                if num_backslashes % 2 != 0:
                     next_char = content[cursor]
-                    var_content.append(next_char)
                     cursor += 1
+
+                    if next_char == "\n":
+                        # Omit escaped new line
+                        continue
+
+                    # Non-escaped backslashes that don't precede a terminator are dropped
+                    var_content.append(next_char)
                     continue
 
         if state == ParserState.IN_SINGLE_QUOTE:
@@ -129,9 +155,7 @@ def parse_env_file(content_lines: Sequence[str]):
                 SINGLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException(
-                    f"Unmatched single quote", cursor - 1, content_lines
-                )
+                raise ParserException(f"Unmatched single quote", cursor, content_lines)
             var_content.append(match.group(1))
             cursor += match.end()
             state = ParserState.SCAN_VALUE
@@ -143,9 +167,7 @@ def parse_env_file(content_lines: Sequence[str]):
                 DOUBLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException(
-                    f"Unmatched double quote", cursor - 1, content_lines
-                )
+                raise ParserException(f"Unmatched double quote", cursor, content_lines)
             new_var_content, backslashes_or_dquote = match.groups()
             var_content.append(new_var_content)
             cursor += match.end()
@@ -154,13 +176,23 @@ def parse_env_file(content_lines: Sequence[str]):
                 state = ParserState.SCAN_VALUE
                 continue
 
-            # Keep the excess (escaped) backslashes
-            var_content.append("\\" * (len(backslashes_or_dquote) // 2))
+            # We found one or more backslashes
+            num_backslashes = len(backslashes_or_dquote)
 
-            if len(backslashes_or_dquote) % 2 == 0:
-                # whatever follows is escaped
+            # Keep the excess (escaped) backslashes
+            var_content.append("\\" * (num_backslashes // 2))
+
+            if num_backslashes % 2 != 0:
+                # Odd number of backslashes maybe an escape sequence
                 next_char = content[cursor]
-                var_content.append(next_char)
                 cursor += 1
+                if next_char == "\n":
+                    # Omit escaped new line
+                    pass
+                if next_char == '"':
+                    var_content.append(next_char)
+                else:
+                    # otherwise keep the backslash
+                    var_content.append("\\" + next_char)
 
     return result
