@@ -85,7 +85,11 @@ class PoetryExecutor(PoeExecutor):
     def _poetry_cmd(self):
         import shutil
 
-        return shutil.which("poetry") or "poetry"
+        from_path = shutil.which("poetry")
+        if from_path:
+            return str(Path(from_path).resolve())
+
+        return "poetry"
 
     def _virtualenv_creation_disabled(self):
         exec_cache = self.context.exec_cache
