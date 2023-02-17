@@ -25,7 +25,8 @@ class Virtualenv:
 
     def resolve_executable(self, executable: str) -> str:
         """
-        If the given executable can be found in the bin_dir then return its absolute path
+        If the given executable can be found in the bin_dir then return its absolute
+        path. Otherwise return the input.
         """
         bin_dir = self.bin_dir()
         if bin_dir.joinpath(executable).is_file():
