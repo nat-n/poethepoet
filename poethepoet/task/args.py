@@ -89,11 +89,18 @@ class PoeTaskArgs:
     @classmethod
     def get_help_content(
         cls, args_def: Optional[ArgsDef]
-    ) -> List[Tuple[Tuple[str, ...], str]]:
+    ) -> List[Tuple[Tuple[str, ...], str, str]]:
         if args_def is None:
             return []
+
+        def format_default(arg) -> str:
+            default = arg.get("default")
+            if default:
+                return f"[default: {default}]"
+            return ""
+
         return [
-            (arg["options"], arg.get("help", ""))
+            (arg["options"], arg.get("help", ""), format_default(arg))
             for arg in cls._normalize_args_def(args_def)
         ]
 

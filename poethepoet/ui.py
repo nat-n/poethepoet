@@ -143,7 +143,7 @@ class PoeUi:
     def print_help(
         self,
         tasks: Optional[
-            Mapping[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str]]]]
+            Mapping[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str, str]]]]
         ] = None,
         info: Optional[str] = None,
         error: Optional[PoeException] = None,
@@ -195,11 +195,13 @@ class PoeUi:
                 max_task_len = max(
                     max(
                         len(task),
-                        max([len(", ".join(opts)) for (opts, _) in args] or (0,)) + 2,
+                        max([len(", ".join(opts)) for (opts, _, _) in args] or (0,))
+                        + 2,
                     )
                     for task, (_, args) in tasks.items()
                 )
                 col_width = max(13, min(30, max_task_len))
+
                 tasks_section = ["<h2>CONFIGURED TASKS</h2>"]
                 for task, (help_text, args_help) in tasks.items():
                     if task.startswith("_"):
@@ -207,13 +209,19 @@ class PoeUi:
                     tasks_section.append(
                         f"  <em>{self._padr(task, col_width)}</em>  {help_text}"
                     )
-                    for (options, arg_help_text) in args_help:
-                        tasks_section.append(
-                            "    "
-                            f"<em3>{self._padr(', '.join(options), col_width - 2)}</em3>"
-                            f"  {arg_help_text}"
-                        )
+                    for (options, arg_help_text, default) in args_help:
+                        task_arg_help = [
+                            "   ",
+                            f"<em3>{self._padr(', '.join(options), col_width-1)}</em3>",
+                        ]
+                        if arg_help_text:
+                            task_arg_help.append(arg_help_text)
+                        if default:
+                            task_arg_help.append(default)
+                        tasks_section.append(" ".join(task_arg_help))
+
                 result.append(tasks_section)
+
             else:
                 result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
 

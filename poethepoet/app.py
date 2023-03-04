@@ -16,7 +16,6 @@ from typing import (
 from .exceptions import ExecutionError, PoeException
 
 if TYPE_CHECKING:
-
     from .config import PoeConfig
     from .context import RunContext
     from .task import PoeTask
@@ -175,7 +174,9 @@ class PoeThePoet:
         if isinstance(error, str):
             error = PoeException(error)
 
-        tasks_help: Dict[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str]]]] = {
+        tasks_help: Dict[
+            str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str, str]]]
+        ] = {
             task_name: (
                 (
                     content.get("help", ""),

@@ -110,6 +110,7 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   help   = "Execute poe from this repo (useful for testing)"
   script = "poethepoet:main"
 
+
 [tool.coverage.report]
 omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"]
 
