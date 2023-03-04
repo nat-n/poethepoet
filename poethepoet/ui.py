@@ -3,7 +3,7 @@ import sys
 from typing import IO, TYPE_CHECKING, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .__version__ import __version__
-from .exceptions import PoeException
+from .exceptions import ExecutionError, PoeException
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -142,7 +142,9 @@ class PoeUi:
 
     def print_help(
         self,
-        tasks: Optional[Mapping[str, Tuple[str, Sequence[Tuple[str, str]]]]] = None,
+        tasks: Optional[
+            Mapping[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str]]]]
+        ] = None,
         info: Optional[str] = None,
         error: Optional[PoeException] = None,
     ):
@@ -165,9 +167,10 @@ class PoeUi:
 
         if error:
             # TODO: send this to stderr instead?
-            result.append([f"<error>Error: {error.msg} </error>"])
+            error_line = [f"<error>Error: {error.msg} </error>"]
             if error.cause:
-                result[-1].append(f"<error> From: {error.cause} </error>")  # type: ignore
+                error_line.append(f"<error> From: {error.cause} </error>")
+            result.append(error_line)
 
         if verbosity >= 0:
             # Use argparse for usage summary
@@ -233,10 +236,10 @@ class PoeUi:
         if verbosity <= self.verbosity:
             self._print(message, end=end)
 
-    def print_error(self, error: Exception):
-        self._print(f"<error>Error: {error.msg} </error>")  # type: ignore
-        if error.cause:  # type: ignore
-            self._print(f"<error> From: {error.cause} </error>")  # type: ignore
+    def print_error(self, error: Union[PoeException, ExecutionError]):
+        self._print(f"<error>Error: {error.msg} </error>")
+        if error.cause:
+            self._print(f"<error> From: {error.cause} </error>")
 
     def print_version(self):
         if self.verbosity >= 0:

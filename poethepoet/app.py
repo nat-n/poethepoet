@@ -173,7 +173,8 @@ class PoeThePoet:
         from .task.args import PoeTaskArgs
 
         if isinstance(error, str):
-            error == PoeException(error)
+            error = PoeException(error)
+
         tasks_help: Dict[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str]]]] = {
             task_name: (
                 (
@@ -185,4 +186,5 @@ class PoeThePoet:
             )
             for task_name, content in self.config.tasks.items()
         }
-        self.ui.print_help(tasks=tasks_help, info=info, error=error)  # type: ignore
+
+        self.ui.print_help(tasks=tasks_help, info=info, error=error)

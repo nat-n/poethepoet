@@ -1,4 +1,9 @@
+from typing import Optional
+
+
 class PoeException(RuntimeError):
+    cause: Optional[str]
+
     def __init__(self, msg, *args):
         self.msg = msg
         self.cause = args[0].args[0] if args else None
@@ -14,6 +19,8 @@ class ExpressionParseError(PoeException):
 
 
 class ExecutionError(RuntimeError):
+    cause: Optional[str]
+
     def __init__(self, msg, *args):
         self.msg = msg
         self.cause = args[0].args[0] if args else None

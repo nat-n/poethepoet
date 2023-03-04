@@ -70,7 +70,9 @@ class Virtualenv:
             and bin_dir.joinpath("python").is_file()
             and bool(
                 next(
-                    self.path.glob(os.path.sep.join(("lib", "python3*", "site-packages"))),  # type: ignore
+                    self.path.glob(
+                        os.path.sep.join(("lib", "python3*", "site-packages"))
+                    ),
                     False,
                 )
             )
