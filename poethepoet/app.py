@@ -110,7 +110,7 @@ class PoeThePoet:
             context = self.get_run_context()
         try:
             assert self.task
-            return self.task.run(context=context, extra_args=self.ui["task"][1:])
+            return self.task.run(context=context, extra_args=self.task.invocation[1:])
         except PoeException as error:
             self.print_help(error=error)
             return 1

@@ -1064,6 +1064,34 @@ This works by setting the argument values as environment variables for the subta
 which can be read at runtime, but also referenced in the task definition as
 demonstrated in the above example for a *ref* task and *script* task.
 
+Passing free arguments in addition to named arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If no args are defined for a cmd task then any cli arguments that are provided are
+simply appended to the command. If named arguments are defined then one can still
+provide additional free arguments to the command by separating them from the defined
+arguments with a double dash token :sh:`--`.
+
+For example given a task like:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.lint]
+  cmd  = "ruff check ${target_dir}"
+  args = { target_dir = { options = ["--target", "-t"], default = "." }}
+
+calling the task like so:
+
+.. code-block:: sh
+
+  poe lint -t tests -- --fix
+
+will result in poe parsing the target_dir cli option, but appending the :sh:`--fix`
+flag to the ruff command without attempting to interpret it.
+
+Passing :sh:`--` in the arguments list to any other task type will simple result in any
+subsequent arguments being ignored.
+
 Project-wide configuration options
 ==================================
 

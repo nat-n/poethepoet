@@ -196,6 +196,21 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return None
 
+    def get_named_arg_values(self, env: "EnvVarsManager") -> Dict[str, str]:
+        try:
+            split_index = self.invocation.index("--")
+            parse_args = self.invocation[1:split_index]
+        except ValueError:
+            parse_args = self.invocation[1:]
+
+        if self.named_args is None:
+            self.named_args = self._parse_named_args(parse_args, env)
+
+        if not self.named_args:
+            return {}
+
+        return self.named_args
+
     def _parse_named_args(
         self, extra_args: Sequence[str], env: "EnvVarsManager"
     ) -> Optional[Dict[str, str]]:
@@ -205,15 +220,6 @@ class PoeTask(metaclass=MetaPoeTask):
         if args_def:
             return PoeTaskArgs(args_def, self.name, env).parse(extra_args)
         return None
-
-    def get_named_arg_values(self, env: "EnvVarsManager") -> Dict[str, str]:
-        if self.named_args is None:
-            self.named_args = self._parse_named_args(self.invocation[1:], env)
-
-        if not self.named_args:
-            return {}
-
-        return self.named_args
 
     def run(
         self,
