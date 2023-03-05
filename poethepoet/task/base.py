@@ -84,10 +84,7 @@ class PoeTask(metaclass=MetaPoeTask):
     ):
         self.name = name
         self.content = content
-        if capture_stdout:
-            self.options = dict(options, capture_stdout=True)
-        else:
-            self.options = options
+        self.options = dict(options, capture_stdout=True) if capture_stdout else options
         self._ui = ui
         self._config = config
         self._is_windows = sys.platform == "win32"

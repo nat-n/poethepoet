@@ -1,0 +1,12 @@
+[tool.poe.tasks.greet]
+cmd = "poe_test_echo hi"
+
+[tool.poe.tasks.greet-subject]
+cmd  = "poe_test_echo hi ${subject}"
+args = ["subject"]
+
+[tool.poe.tasks.greet-funny]
+ref = "greet lol!"
+
+[tool.poe.tasks.greet-dave]
+ref = "greet-subject --subject dave"

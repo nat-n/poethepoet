@@ -38,7 +38,7 @@ class EnvVarsManager:
         }
 
         if parent_env is None:
-            # Get env vars from envfile referenced in global options
+            # Get env vars from envfile(s) referenced in global options
             global_envfile = self._config.global_envfile
             if isinstance(global_envfile, str):
                 self._vars.update(self.envfiles.get(global_envfile))
@@ -83,7 +83,7 @@ class EnvVarsManager:
         """
         result = EnvVarsManager(self._config, self._ui, parent_env=self)
 
-        # Include env vars from envfile referenced in task options
+        # Include env vars from envfile(s) referenced in task options
         if isinstance(task_envfile, str):
             result.update(self.envfiles.get(task_envfile))
         elif isinstance(task_envfile, list):
