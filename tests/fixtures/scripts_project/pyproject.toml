@@ -34,6 +34,8 @@ call_attrs.use_exec = true
 
 greet = "pkg:greet"
 
+async-task.script = "pkg:async_task"
+async-task.args = ["a","b"]
 
   [tool.poe.tasks.print-script-result]
   script       = "pkg:get_random_number"

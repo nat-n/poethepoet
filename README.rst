@@ -234,6 +234,8 @@ If extra arguments are passed to task on the command line (and no CLI args are
 declared), then they will be available within the called python function via
 :python:`sys.argv`.
 
+If the target python function is an async function then it will be exectued with :python:`asyncio.run`.
+
 Calling standard library functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
