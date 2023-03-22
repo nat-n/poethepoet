@@ -16,7 +16,6 @@ from typing import (
 from .exceptions import ExecutionError, PoeException
 
 if TYPE_CHECKING:
-
     from .config import PoeConfig
     from .context import RunContext
     from .task import PoeTask
@@ -48,7 +47,13 @@ class PoeThePoet:
         self.ui = PoeUi(output=output)
         self.poetry_env_path = poetry_env_path
 
-    def __call__(self, cli_args: Sequence[str]) -> int:
+    def __call__(self, cli_args: Sequence[str], internal: bool = False) -> int:
+        """
+        :param internal:
+            indicates that this is an internal call to run poe, e.g. from a
+            plugin hook.
+        """
+
         self.ui.parse_args(cli_args)
 
         if self.ui["version"]:
@@ -71,7 +76,7 @@ class PoeThePoet:
             self.print_help()
             return 0
 
-        if not self.resolve_task():
+        if not self.resolve_task(internal):
             return 1
 
         assert self.task
@@ -80,7 +85,7 @@ class PoeThePoet:
         else:
             return self.run_task() or 0
 
-    def resolve_task(self) -> bool:
+    def resolve_task(self, allow_hidden: bool = False) -> bool:
         from .task import PoeTask
 
         task = tuple(self.ui["task"])
@@ -93,7 +98,7 @@ class PoeThePoet:
             self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"))
             return False
 
-        if task_name.startswith("_"):
+        if task_name.startswith("_") and not allow_hidden:
             self.print_help(
                 error=PoeException(
                     "Tasks prefixed with `_` cannot be executed directly"
@@ -111,7 +116,7 @@ class PoeThePoet:
             context = self.get_run_context()
         try:
             assert self.task
-            return self.task.run(context=context, extra_args=self.ui["task"][1:])
+            return self.task.run(context=context, extra_args=self.task.invocation[1:])
         except PoeException as error:
             self.print_help(error=error)
             return 1
@@ -173,8 +178,11 @@ class PoeThePoet:
         from .task.args import PoeTaskArgs
 
         if isinstance(error, str):
-            error == PoeException(error)
-        tasks_help: Dict[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str]]]] = {
+            error = PoeException(error)
+
+        tasks_help: Dict[
+            str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str, str]]]
+        ] = {
             task_name: (
                 (
                     content.get("help", ""),
@@ -185,4 +193,5 @@ class PoeThePoet:
             )
             for task_name, content in self.config.tasks.items()
         }
-        self.ui.print_help(tasks=tasks_help, info=info, error=error)  # type: ignore
+
+        self.ui.print_help(tasks=tasks_help, info=info, error=error)

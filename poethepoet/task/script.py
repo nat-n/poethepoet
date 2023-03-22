@@ -33,7 +33,10 @@ class ScriptTask(PoeTask):
 
         named_arg_values = self.get_named_arg_values(env)
         env.update(named_arg_values)
+
         target_module, function_call = self.parse_content(named_arg_values)
+        function_ref = function_call[: function_call.index("(")]
+
         argv = [
             self.name,
             *(env.fill_template(token) for token in extra_args),
@@ -43,16 +46,19 @@ class ScriptTask(PoeTask):
         #       sys.path.append('src') if it doesn't
 
         script = [
-            "import os,sys; ",
-            "from os import environ; ",
-            "from importlib import import_module; ",
+            "import asyncio,os,sys;",
+            "from inspect import iscoroutinefunction as ic;",
+            "from os import environ;",
+            "from importlib import import_module as im;",
             f"sys.argv = {argv!r}; sys.path.append('src');",
             f"{format_class(named_arg_values)}",
-            f"result = import_module('{target_module}').{function_call};",
+            f"_m = im('{target_module}');",
+            f"_r = asyncio.run(_m.{function_call}) if ic(_m.{function_ref})",
+            f" else _m.{function_call};",
         ]
 
         if self.options.get("print_result"):
-            script.append(f"result is not None and print(result);")
+            script.append(f"_r is not None and print(_r);")
 
         # Exactly which python executable to use is usually resolved by the executor
         # It's important that the script contains no line breaks to avoid issues on

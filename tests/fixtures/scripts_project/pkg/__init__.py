@@ -59,3 +59,7 @@ class Scripts:
     class Deep:
         def fun(self):
             print("task!")
+
+
+def async_task(*args, **kwargs):
+    print("I'm an async task!", args, kwargs)

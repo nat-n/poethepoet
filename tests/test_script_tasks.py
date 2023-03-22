@@ -390,3 +390,16 @@ def test_script_with_multi_value_args(run_poe_subproc):
         "poe multiple-value-args: error: argument second: invalid int value: 'wrong'"
         in result.stderr
     )
+
+
+def test_async_script_task(run_poe_subproc, projects):
+    result = run_poe_subproc(
+        "async-task",
+        "--a=foo",
+        "--b=bar",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.capture == "Poe => async-task --a=foo --b=bar\n"
+    assert result.stdout == "I'm an async task! () {'a': 'foo', 'b': 'bar'}\n"
+    assert result.stderr == ""

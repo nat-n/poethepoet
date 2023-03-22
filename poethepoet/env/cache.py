@@ -24,7 +24,7 @@ class EnvFileCache:
 
         result = {}
 
-        envfile_path = self._project_dir.joinpath(envfile_path_str)
+        envfile_path = self._project_dir.joinpath(Path(envfile_path_str).expanduser())
         if envfile_path.is_file():
             try:
                 with envfile_path.open() as envfile:

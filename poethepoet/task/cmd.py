@@ -35,12 +35,18 @@ class CmdTask(PoeTask):
         env.update(named_arg_values)
 
         if named_arg_values:
-            # If named arguments are defined then it doesn't make sense to pass extra
-            # args to the command, because they've already been parsed
-            cmd = self._resolve_args(context, env)
-        else:
-            cmd = (*self._resolve_args(context, env), *extra_args)
+            # If named arguments are defined then pass only arguments following a double
+            # dash token: `--`
+            try:
+                split_index = extra_args.index("--")
+                extra_args = extra_args[split_index + 1 :]
+            except ValueError:
+                extra_args = tuple()
+
+        cmd = (*self._resolve_args(context, env), *extra_args)
+
         self._print_action(" ".join(cmd), context.dry)
+
         return context.get_executor(self.invocation, env, self.options).execute(
             cmd, use_exec=self.options.get("use_exec", False)
         )

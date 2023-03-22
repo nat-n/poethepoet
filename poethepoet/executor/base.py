@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import (
@@ -126,8 +127,15 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
     ) -> int:
         """
-        Execute the given cmd
+        Execute the given cmd.
         """
+
+        # Attempt to explicitly resolve the target executable, because we can't count
+        # on the OS to do this consistently.
+        resolved_executable = shutil.which(cmd[0])
+        if resolved_executable:
+            cmd = (resolved_executable, *cmd[1:])
+
         return self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
     def _execute_cmd(

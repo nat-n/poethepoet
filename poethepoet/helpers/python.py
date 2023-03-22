@@ -301,7 +301,7 @@ def _get_name_source_segment(source: str, node: ast.Name):
     performant in common cases.
     """
     if sys.version_info.minor >= 8:
-        return ast.get_source_segment(source, node)  # type: ignore
+        return ast.get_source_segment(source, node)
 
     partial_result = (
         re.split(r"(?:\r\n|\r|\n)", source)[node.lineno - 1]

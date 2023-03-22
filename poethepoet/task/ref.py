@@ -30,6 +30,7 @@ class RefTask(PoeTask):
         import shlex
 
         invocation = tuple(shlex.split(env.fill_template(self.content.strip())))
+        extra_args = [*invocation[1:], *extra_args]
         task = self.from_config(invocation[0], self._config, self._ui, invocation)
         return task.run(context=context, extra_args=extra_args, parent_env=env)
 

@@ -19,8 +19,23 @@ def test_cmd_task_with_dash_case_arg(run_poe_subproc):
     result = run_poe_subproc(
         "greet", "--formal-greeting=hey", "--subject=you", project="cmds"
     )
-    assert result.capture == f"Poe => poe_test_echo $formal_greeting $subject\n"
+    assert result.capture == f"Poe => poe_test_echo hey you\n"
     assert result.stdout == "hey you\n"
+    assert result.stderr == ""
+
+
+def test_cmd_task_with_args_and_extra_args(run_poe_subproc):
+    result = run_poe_subproc(
+        "greet",
+        "--formal-greeting=hey",
+        "--subject=you",
+        "--",
+        "guy",
+        "!",
+        project="cmds",
+    )
+    assert result.capture == f"Poe => poe_test_echo hey you guy !\n"
+    assert result.stdout == "hey you guy !\n"
     assert result.stderr == ""
 
 
