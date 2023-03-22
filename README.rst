@@ -1491,11 +1491,10 @@ macOS, linux and windows.
 Contributing
 ============
 
-There's plenty to do, come say hi in
-`the issues <https://github.com/nat-n/poethepoet/issues>`_! 👋
+There's plenty to do, come say hi in `the discussions <https://github.com/nat-n/poethepoet/discussions>`_  or
+`open an issue <https://github.com/nat-n/poethepoet/issues>`_! 👋
 
-Also check out the
-`CONTRIBUTING.MD <https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.md>`_ 🤓
+Also check out the `CONTRIBUTING.MD <https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.md>`_ 🤓
 
 Licence
 =======

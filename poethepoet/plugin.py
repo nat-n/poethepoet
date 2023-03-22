@@ -128,6 +128,8 @@ class PoetryPlugin(ApplicationPlugin):
                 command_prefix,
             )
             for task_name, task in poe_tasks.items():
+                if task_name.startswith("_"):
+                    continue
                 self._register_command(
                     application, task_name, task, f"{command_prefix} "
                 )
@@ -220,7 +222,7 @@ class PoetryPlugin(ApplicationPlugin):
             import shlex
 
             task_status = PoeCommand.get_poe(application, event.io)(
-                cli_args=shlex.split(task)
+                cli_args=shlex.split(task), internal=True
             )
 
             if task_status:
@@ -235,7 +237,7 @@ class PoetryPlugin(ApplicationPlugin):
         """
         Cleo is quite opinionated about CLI structure and loose about how options are
         used, and so doesn't currently support invidual commands having their own way of
-        interpreting arguments, and forces them in inherit certain options from the
+        interpreting arguments, and forces them to inherit certain options from the
         application. This is a problem for poe which requires that global options are
         provided before the task name, and everything after the task name is interpreted
         ONLY in terms of the task.
@@ -245,7 +247,7 @@ class PoetryPlugin(ApplicationPlugin):
         option parsing are effectively disabled following any occurance of a "--" on the
         command line, but parsing of the command name still works! Thus the solution is
         to detect when it is a command from this plugin that is about to be executed and
-        insert the "--" token and the start of the tokens list of the ArgvInput instance
+        insert the "--" token at the start of the tokens list of the ArgvInput instance
         that the application is about to read the CLI options from.
 
         Hopefully this doesn't get broken by a future update to poetry or cleo :S

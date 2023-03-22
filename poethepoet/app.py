@@ -47,7 +47,13 @@ class PoeThePoet:
         self.ui = PoeUi(output=output)
         self.poetry_env_path = poetry_env_path
 
-    def __call__(self, cli_args: Sequence[str]) -> int:
+    def __call__(self, cli_args: Sequence[str], internal: bool = False) -> int:
+        """
+        :param internal:
+            indicates that this is an internal call to run poe, e.g. from a
+            plugin hook.
+        """
+
         self.ui.parse_args(cli_args)
 
         if self.ui["version"]:
@@ -70,7 +76,7 @@ class PoeThePoet:
             self.print_help()
             return 0
 
-        if not self.resolve_task():
+        if not self.resolve_task(internal):
             return 1
 
         assert self.task
@@ -79,7 +85,7 @@ class PoeThePoet:
         else:
             return self.run_task() or 0
 
-    def resolve_task(self) -> bool:
+    def resolve_task(self, allow_hidden: bool = False) -> bool:
         from .task import PoeTask
 
         task = tuple(self.ui["task"])
@@ -92,7 +98,7 @@ class PoeThePoet:
             self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"))
             return False
 
-        if task_name.startswith("_"):
+        if task_name.startswith("_") and not allow_hidden:
             self.print_help(
                 error=PoeException(
                     "Tasks prefixed with `_` cannot be executed directly"
