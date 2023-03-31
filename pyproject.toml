@@ -11,7 +11,7 @@ keywords    = ["automation", "tasks", "task-runner", "plugin", "poetry", "poe"]
 classifiers = ["Topic :: Software Development :: Build Tools"]
 
 [tool.poetry.dependencies]
-python = ">=3.7"
+python = ">=3.7,<4.0"
 pastel = "^0.2.1"
 tomli  = ">=1.2.2"
 poetry = {version = "^1.0", allow-prereleases = true, optional = true}
@@ -29,6 +29,7 @@ rstcheck   = "^3.3.1"
 virtualenv = "^20.14.1"
 zipp       = "^3.8.0"
 distlib    = "^0.3.4"
+sphinx     = "^5.0"
 poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
 
 [tool.poetry.extras]
@@ -54,6 +55,11 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   help = "Run formating tools on the code base"
   sequence  = ["format-isort", "format-black"]
 
+  [tool.poe.tasks.doc-html]
+  help = "Generate the HTML doc using Sphinx"
+  cmd  = "make html"
+  cwd = "./docs"
+
   [tool.poe.tasks.clean]
   help = "Remove generated files"
   cmd  = """
@@ -64,6 +70,7 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
            ./**/__pycache__
            dist
            htmlcov
+           ./docs/_build
            ./tests/fixtures/simple_project/venv
            ./tests/fixtures/venv_project/myvenv
            ./tests/fixtures/poetry_plugin_project/**/.venv
