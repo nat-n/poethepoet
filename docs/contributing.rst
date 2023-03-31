@@ -1,7 +1,10 @@
-.. include:: ../../.github/CONTRIBUTING.rst
+Contributing
+============
+
+.. include:: ../.github/CONTRIBUTING.rst
 
 
 Licence
 =======
 
-MIT.
+.. include:: ../LICENSE

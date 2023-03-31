@@ -1,6 +1,3 @@
-Contributing to poethepoet
-==========================
-
 So you’d like to contribute? Awesome! Here are some things worth
 knowing.
 
