@@ -26,7 +26,7 @@ This will alias the command :code:`poe test` to :code:`pytest --cov=poethepoet`.
   Poe will run the command within the Poetry shell, so you don't need to activate the virtualenv.
 
 There exists quite a few other types of tasks, such as shell tasks, python script tasks, and more.
-You can find more information about them in the :ref:`Types of tasks` section.
+You can find more information about them in the :ref:`Tasks` section.
 
 .. code-block:: toml
 
@@ -84,7 +84,7 @@ You can find a more complex example of tasks in `this repo's pyproject.toml <htt
 
 
 Run a task with the :code:`poe` CLI
-----------------------------------
+-----------------------------------
 
 Once you have defined your tasks, you'll want to run them. Poe provides a CLI to run your tasks.
 

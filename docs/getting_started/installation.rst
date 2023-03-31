@@ -95,8 +95,6 @@ Fish
   # Homebrew fish
   poe _fish_completion > (brew --prefix)/share/fish/vendor_completions.d/poe.fish
 
-.. _Usage as a poetry plugin:
-
 Usage as a poetry plugin
 ------------------------
 
