@@ -31,6 +31,8 @@ zipp       = "^3.8.0"
 distlib    = "^0.3.4"
 sphinx     = "^5.0"
 poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
+livereload = "^2.6.3"
+furo = "^2023.3.27"
 
 [tool.poetry.extras]
 poetry_plugin = ["poetry"]
@@ -55,10 +57,20 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   help = "Run formating tools on the code base"
   sequence  = ["format-isort", "format-black"]
 
-  [tool.poe.tasks.doc-html]
-  help = "Generate the HTML doc using Sphinx"
-  cmd  = "make html"
-  cwd = "./docs"
+  [tool.poe.tasks.doc-generate]
+  help = "(Re)Generate the HTML doc using Sphinx"
+  sequence = [
+    { ref = "clean" },
+    { cmd = "make html", cwd = "./docs" }
+  ]
+
+  [tool.poe.tasks.doc-livereload]
+  help = "Serves the doc locally and re-generate it upon editting"
+  sequence = [
+    { ref = "doc-generate" },
+    { script = "docs.html_livereload:main", cwd = "./docs" }
+  ]
+  
 
   [tool.poe.tasks.clean]
   help = "Remove generated files"
@@ -107,7 +119,7 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
 
   [tool.poe.tasks.check-docs]
   help = "Validate rst syntax in the docs"
-  cmd  = "rstcheck README.rst"
+  cmd  = "rstcheck -r README.rst docs"
 
   [tool.poe.tasks.check]
   help     = "Run all checks on the code base"
