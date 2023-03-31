@@ -45,3 +45,8 @@ rst_prolog = """
 html_theme = 'furo'
 html_static_path = ['_static']
 html_title = "Poe the Poet"
+html_favicon = '_static/favicon.ico'
+html_theme_options = {
+    "light_logo": "poe_logo_x2000.png",
+    "dark_logo": "poe_logo_x2000.png",
+}
