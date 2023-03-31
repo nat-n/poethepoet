@@ -15,7 +15,8 @@ release = '0.19.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.autosectionlabel", # Automatically add section labels, which can be used as :ref:`My section title`
+    "sphinx.ext.autosectionlabel",  # Automatically add section labels, which can be used as :ref:`My section title`
+    "sphinx.ext.githubpages"
 ]
 
 templates_path = ['_templates']
