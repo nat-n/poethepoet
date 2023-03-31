@@ -34,7 +34,7 @@ rst_prolog = """
    :language: toml
 .. role:: python(code)
    :language: python
-.. |•| unicode:: ✅ 0xA0 0xA0
+.. |V| unicode:: ✅ 0xA0 0xA0
    :trim:
 
 """

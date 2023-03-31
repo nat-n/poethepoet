@@ -56,7 +56,7 @@ You can add help text to your tasks by adding a :code:`help` key to your task de
 
 This will allow you to run :code:`poe --help` and see the help text for your tasks.
 
-.. code-block:: bash
+.. code-block::
 
   $ poe --help
   Poe the Poet - A task runner that works well with poetry.

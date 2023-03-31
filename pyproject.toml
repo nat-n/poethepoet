@@ -119,7 +119,7 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
 
   [tool.poe.tasks.check-docs]
   help = "Validate rst syntax in the docs"
-  cmd  = "rstcheck -r README.rst docs"
+  cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V"
 
   [tool.poe.tasks.check]
   help     = "Run all checks on the code base"
