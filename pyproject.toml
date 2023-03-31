@@ -65,7 +65,7 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
   ]
 
   [tool.poe.tasks.doc-livereload]
-  help = "Serves the doc locally and re-generate it upon editting"
+  help = "Serves the doc locally and re-generate it upon editing"
   sequence = [
     { ref = "doc-generate" },
     { script = "docs.html_livereload:main", cwd = "./docs" }
