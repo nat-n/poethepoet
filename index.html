@@ -164,19 +164,19 @@
 <li class="toctree-l2"><a class="reference internal" href="getting_started/basic_usage.html">Basic Usage</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials/index.html">Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/composing_tasks.html">Composing tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="guides/composing_tasks.html">Composing tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="tasks/index.html">Tasks</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/cmd.html">“cmd” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/expr.html">“expr” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/ref.html">“ref” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/script.html">“script” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/sequence.html">“sequence” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/shell.html">“shell” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/switch.html">“switch” tasks</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tasks/index.html">Types of Task</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_task/cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_task/script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_task/shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_task/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_task/expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_task/switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_task/ref.html">Reference tasks</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="configuration/index.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -220,25 +220,25 @@
           </label>
         </div>
         <article role="main">
-          <section id="welcome">
-<h1>Welcome!<a class="headerlink" href="#welcome" title="Permalink to this heading">#</a></h1>
-<a class="reference external image-reference" href="https://pypi.python.org/pypi/poethepoet"><img alt="PyPI" src="https://img.shields.io/pypi/v/poethepoet.svg" /></a>
-<p><strong>Poe The Poet</strong> is a task runner that works well with poetry.</p>
+          <section id="poe-the-poet-documentation">
+<h1>Poe the Poet Documentation<a class="headerlink" href="#poe-the-poet-documentation" title="Permalink to this heading">#</a></h1>
+<a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/v/poethepoet.svg" /></a>
+<p><strong>Poe the Poet</strong> is a task runner that works well with poetry.</p>
 <section id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this heading">#</a></h2>
 <p>✅  Straight forward declaration of project tasks in your pyproject.toml (kind of like npm scripts)</p>
-<p>✅  Task are run in poetry’s virtualenv (or another env you specify)</p>
+<p>✅  Tasks are run in poetry’s virtualenv (or another env you specify)</p>
 <p>✅  Shell completion of task names (and global options too for zsh)</p>
 <p>✅  Can be used standalone or as a poetry plugin</p>
-<p>✅  Tasks can be commands (with or without a shell) or references to python functions (like <code class="code docutils literal notranslate"><span class="pre">tool.poetry.scripts</span></code>)</p>
+<p>✅  Tasks can be commands, shell scripts, or references to python functions (like <code class="code docutils literal notranslate"><span class="pre">tool.poetry.scripts</span></code>)</p>
 <p>✅  Short and sweet commands with extra arguments passed to the task <code class="code highlight bash docutils literal highlight-bash">poe<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span>task<span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span></code>, or you can define arguments explicitly.</p>
 <p>✅  Tasks can specify and reference environment variables as if they were evaluated by a shell</p>
-<p>✅  Tasks are self documenting, with optional help messages (just run poe without arguments)</p>
-<p>✅  Tasks can be defined as a sequence of other tasks</p>
+<p>✅  Tasks are self documenting, with optional help messages (just run <cite>poe</cite> without arguments)</p>
+<p>✅  Tasks can be composed into sequences or DAGs</p>
 <p>✅  Works with <code class="code docutils literal notranslate"><span class="pre">.env</span></code> files</p>
 </section>
-<section id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading">#</a></h2>
+<section id="learn-more">
+<h2>Learn more<a class="headerlink" href="#learn-more" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a><ul>
@@ -246,21 +246,12 @@
 <li class="toctree-l2"><a class="reference internal" href="getting_started/basic_usage.html">Basic Usage</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/composing_tasks.html">Composing tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/index.html">Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guides/composing_tasks.html">Composing tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="tasks/index.html">Tasks</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/cmd.html">“cmd” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/expr.html">“expr” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/ref.html">“ref” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/script.html">“script” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/sequence.html">“sequence” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/shell.html">“shell” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tasks/types_of_tasks/switch.html">“switch” tasks</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="tasks/index.html">Types of Task</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration/index.html">Configuration</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="configuration/project-wide_configuration.html">Project-wide configuration options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="configuration/task_level_configuration.html">Task level configuration</a></li>
@@ -322,9 +313,9 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Welcome!</a><ul>
+<li><a class="reference internal" href="#">Poe the Poet Documentation</a><ul>
 <li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#learn-more">Learn more</a></li>
 </ul>
 </li>
 </ul>

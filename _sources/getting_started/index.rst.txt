@@ -11,4 +11,4 @@ Here are the first steps to get started:
    installation
    basic_usage
 
-Once you've installed and setup Poe The Poet, you can read the :ref:`Tutorials` section to do use advanced features.
+Once you've installed and setup Poe The Poet, you can read the :ref:`Guides` section to do use advanced features.

@@ -3,7 +3,6 @@ Contributing
 
 .. include:: ../.github/CONTRIBUTING.rst
 
-
 Licence
 =======
 

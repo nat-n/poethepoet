@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="“ref” tasks" href="ref.html" /><link rel="prev" title="“cmd” tasks" href="cmd.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="“shell” tasks" href="shell.html" /><link rel="prev" title="“cmd” tasks" href="cmd.html" />
 
     <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 5.3.0 and Furo 2023.03.27 -->
-        <title>“expr” tasks - Poe the Poet</title>
+        <title>“script” tasks - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -164,19 +164,19 @@
 <li class="toctree-l2"><a class="reference internal" href="../../getting_started/basic_usage.html">Basic Usage</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../tutorials/composing_tasks.html">Composing tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../tutorials/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/composing_tasks.html">Composing tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="cmd.html">“cmd” tasks</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">“expr” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ref.html">“ref” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script.html">“script” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sequence.html">“sequence” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shell.html">“shell” tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="switch.html">“switch” tasks</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Types of Task</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cmd.html">Command tasks</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ref.html">Reference tasks</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../configuration/index.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -220,100 +220,53 @@
           </label>
         </div>
         <article role="main">
-          <section id="expr-tasks">
-<h1>“expr” tasks<a class="headerlink" href="#expr-tasks" title="Permalink to this heading">#</a></h1>
-<p>Expr tasks consist of a single <a class="reference external" href="https://docs.python.org/3/reference/expressions.html">python expression</a>. Running the task evaluates the expression and outputs the resulting
-value. Here’s a trivial example of an expr task that will print 2 when run:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.trivial-example]</span>
-<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1 + 1&quot;</span>
+          <section id="script-tasks">
+<h1>“script” tasks<a class="headerlink" href="#script-tasks" title="Permalink to this heading">#</a></h1>
+<p><strong>Script tasks</strong> consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">fetch-assets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.assets:fetch&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">fetch-images</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.assets:fetch(only=&#39;images&#39;, log=environ[&#39;LOG_PATH&#39;])&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>trivial-example
-<span class="nv">Poe</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span><span class="m">1</span><span class="w"> </span>+<span class="w"> </span><span class="m">1</span>
-<span class="m">2</span>
+<p>As in the second example, is it possible to hard code literal arguments to the target
+callable. In fact a subset of python syntax, operators, and globals can be used inline
+to define the arguments to the function using normal python syntax, including environ
+(from the os package) to access environment variables that are available to the task.</p>
+<p>If extra arguments are passed to task on the command line (and no CLI args are
+declared), then they will be available within the called python function via
+<code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code>.</p>
+<p>If the target python function is an async function then it will be exectued with <code class="code highlight python docutils literal highlight-python"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span></code>.</p>
+<section id="calling-standard-library-functions">
+<h2>Calling standard library functions<a class="headerlink" href="#calling-standard-library-functions" title="Permalink to this heading">#</a></h2>
+<p>Any python callable accessible via the python path can be referenced, including the
+standard library. This can be useful for ensuring that tasks work across platforms.</p>
+<p>For example, the following task will not always work on windows:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build]]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;mkdir -p build/assets&quot;</span>
 </pre></div>
 </div>
-<p>Expressions can:</p>
-<ul class="simple">
-<li><p>use most python expression constructs with the exception of yield, await, or named
-expressions</p></li>
-<li><p>use most builtin functions including all members of
-<a class="reference external" href="https://github.com/nat-n/poethepoet/blob/main/poethepoet/helpers/python.py#L13">this collection</a></p></li>
-<li><p>reference the sys module without having to specify it as an import</p></li>
-<li><p>reference sys.argv to get whatever arguments were passed to the task, just like in
-script tasks</p></li>
-<li><p>referene values of named args as python variables</p></li>
-<li><p>include environment variables as string values that are injected into the expression
-using the usual templating syntax</p></li>
-</ul>
-<section id="referencing-arguments-and-environment-variables">
-<h2>Referencing arguments and environment variables<a class="headerlink" href="#referencing-arguments-and-environment-variables" title="Permalink to this heading">#</a></h2>
-<p>The expression can reference environment variables using templating syntax like in cmd
-tasks, and named arguments as python variables in scope like in script tasks.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
-<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;(</span>
-<span class="s">  f&#39;{target_venv} is active&#39;</span>
-<span class="s">  if ${VIRTUAL_ENV}.endswith(target_venv)</span>
-<span class="s">  else f&#39;{target_venv} is not active&#39;</span>
-<span class="s">)&quot;&quot;&quot;</span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ poe venv-active poethepoet-LCpCQf8S-py3.10
-Poe =&gt; (
-  f&#39;{target_venv} is active&#39;
-  if ${VIRTUAL_ENV}.endswith(target_venv)
-  else f&#39;{target_venv} is not active&#39;
-)
-poethepoet-LCpCQf8S-py3.10 is not active
-</pre></div>
-</div>
-<p>In this example the <code class="code docutils literal notranslate"><span class="pre">VIRTUAL_ENV</span></code> environment variable is templated into the
-expression using the usual templating syntax, and the <code class="code docutils literal notranslate"><span class="pre">target_venv</span></code> argument is
-referenced directly as a variable.</p>
-<p>Notice that the expression may be formatted over multiple lines, as in normal python
-code.</p>
-</section>
-<section id="referencing-imported-modules-in-an-expression">
-<h2>Referencing imported modules in an expression<a class="headerlink" href="#referencing-imported-modules-in-an-expression" title="Permalink to this heading">#</a></h2>
-<p>By default the sys module is available to the expression which allows access to sys.argv
-or sys.platform amoung other useful values. However you can also reference any other
-importable module via the imports option as in the following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.count-hidden]</span>
-<span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Count hidden files or subdirectories&quot;</span>
-<span class="n">expr</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;len(list(pathlib.Path(&#39;.&#39;).glob(&#39;.*&#39;)))&quot;</span>
-<span class="n">imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;pathlib&quot;</span><span class="p">]</span>
+<p>whereas the same behaviour can can be reliably achieved like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build]]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;os:makedirs(&#39;build/assets&#39;, exist_ok=True)&quot;</span>
 </pre></div>
 </div>
 </section>
-<section id="fail-if-the-expression-result-is-falsey">
-<h2>Fail if the expression result is falsey<a class="headerlink" href="#fail-if-the-expression-result-is-falsey" title="Permalink to this heading">#</a></h2>
-<p>The expression can be made to behave like an assertion that fails if the result is not truthy by providing the assert option. The task defined in the following example will
-return non-zero if the result is False.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
-<span class="n">expr</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${VIRTUAL_ENV}.endswith(target_venv)&quot;</span>
-<span class="n">assert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">args</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
+<section id="output-the-return-value-from-the-python-callable">
+<h2>Output the return value from the python callable<a class="headerlink" href="#output-the-return-value-from-the-python-callable" title="Permalink to this heading">#</a></h2>
+<p>Script tasks can be configured to output the return value of a callable using the
+<code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.create-secret]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;django.core.management.utils:get_random_secret_key()&quot;</span>
+<span class="n">print_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
-</section>
-<section id="referencing-the-result-of-other-tasks-in-an-expression">
-<h2>Referencing the result of other tasks in an expression<a class="headerlink" href="#referencing-the-result-of-other-tasks-in-an-expression" title="Permalink to this heading">#</a></h2>
-<p>Expr tasks can reference the results of other tasks by leveraging the <code class="code docutils literal notranslate"><span class="pre">uses</span></code>
-option.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks._get_active_session]
-cmd = &quot;read_session --format json&quot;
-
-[tool.poe.tasks.show-user]
-expr    = &quot;&quot;&quot;(
-  f&quot;User: {json.loads(${SESSION_JSON})[&#39;User&#39;]}&quot;
-  if len(${SESSION_JSON}) &gt; 2
-  else &quot;No active session.&quot;
-)&quot;&quot;&quot;
-uses    = { SESSION_JSON = &quot;_get_active_session&quot; }
-imports = [&quot;json&quot;]
+<p>Given the above configuration running the following command would output just the
+generated key.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>-q<span class="w"> </span>create-secret
 </pre></div>
 </div>
+<p>Note that if the return value is None then the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option has no
+effect.</p>
 </section>
 </section>
 
@@ -322,12 +275,12 @@ imports = [&quot;json&quot;]
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="ref.html">
+          <a class="next-page" href="shell.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">“ref” tasks</div>
+                <div class="title">“shell” tasks</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -372,11 +325,9 @@ imports = [&quot;json&quot;]
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">“expr” tasks</a><ul>
-<li><a class="reference internal" href="#referencing-arguments-and-environment-variables">Referencing arguments and environment variables</a></li>
-<li><a class="reference internal" href="#referencing-imported-modules-in-an-expression">Referencing imported modules in an expression</a></li>
-<li><a class="reference internal" href="#fail-if-the-expression-result-is-falsey">Fail if the expression result is falsey</a></li>
-<li><a class="reference internal" href="#referencing-the-result-of-other-tasks-in-an-expression">Referencing the result of other tasks in an expression</a></li>
+<li><a class="reference internal" href="#">“script” tasks</a><ul>
+<li><a class="reference internal" href="#calling-standard-library-functions">Calling standard library functions</a></li>
+<li><a class="reference internal" href="#output-the-return-value-from-the-python-callable">Output the return value from the python callable</a></li>
 </ul>
 </li>
 </ul>

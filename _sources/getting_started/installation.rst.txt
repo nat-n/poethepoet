@@ -104,7 +104,7 @@ either into the same environment as poetry or into poetry itself.
 `See the poetry docs <https://python-poetry.org/docs/master/plugins/#using-plugins>`_
 for more details.
 
-Due to how the poetry CLI works (using `cleo <https://github.com/sdispater/cleo>`_ — a
+Due to how the poetry CLI works (using `cleo <https://github.com/python-poetry/cleo>`_ — a
 featureful but highly opinionated  CLI framework) there exist a few minor limitations
 when used in this way.
 
