@@ -78,18 +78,6 @@ jobs:
       - name: Build package
         run: poetry build
 
-      - name: Build HTML documentation with Sphinx
-        run: |
-          poetry install --with=dev
-          poetry run sphinx-build docs docs/_build
-
-      - name: Deploy doc to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/_build
-
       - name: Publish package to PyPI
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
         run: poetry publish -n

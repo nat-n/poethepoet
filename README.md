@@ -1,6 +1,6 @@
 # Poe the Poet
 
-[![PyPI version](https://img.shields.io/pypi/v/poethepoet.svg)](https://pypi.python.org/pypi/poethepoet)
+[![PyPI version](https://img.shields.io/pypi/v/poethepoet.svg)](https://pypi.org/project/poethepoet/)
 
 <img alt="Poe the Poet" src="./docs/_static/poe_logo_x2000.png" height="300" width="300"/>
 

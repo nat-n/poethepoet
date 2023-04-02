@@ -1,24 +1,32 @@
-Tasks
-=====
+Types of Task
+=============
 
-There are seven types of task:
+You can define seven different types of task:
 
-- **Command tasks** (:code:`cmd`) for simple commands that are executed as a subprocess without a shell
+- :doc:`Command tasks <types_of_task/cmd>` :code:`cmd` : for simple commands that are executed as a subprocess without a shell
 
-- **Script tasks** (:code:`script`) for python function calls
+- :doc:`Script tasks<types_of_task/script>` (:code:`script`) for python function calls
 
-- **Shell tasks** (:code:`shell`) for scripts to be executed with via an external interpreter (such as sh).
+- :doc:`Shell tasks<types_of_task/shell>` (:code:`shell`) for scripts to be executed with via an external interpreter (such as sh).
 
-- **Sequence tasks** (:code:`sequence`) for composing multiple tasks into a sequence
+- :doc:`Sequence tasks<types_of_task/sequence>` (:code:`sequence`) for composing multiple tasks into a sequence
 
-- **Expression tasks** (:code:`expr`) which consist of a python expression to evaluate
+- :doc:`Expression tasks<types_of_task/expr>` (:code:`expr`) which consist of a python expression to evaluate
 
-- **Switch tasks** (:code:`switch`) for running different tasks depending on a control value (such as the platform)
+- :doc:`Switch tasks<types_of_task/switch>` (:code:`switch`) for running different tasks depending on a control value (such as the platform)
 
-- **Ref tasks** (:code:`ref`): used for defining a task as an alias of another task, such as in a sequence task.
+- :doc:`Reference tasks<types_of_task/ref>` (:code:`ref`): for defining a task as an alias of another task, such as in a sequence task.
+
+
+
 
 .. toctree::
-   :maxdepth: 2
-   :glob:
+   :hidden:
 
-   ./types_of_tasks/*
+   Command tasks <types_of_task/cmd>
+   Script tasks<types_of_task/script>
+   Shell tasks<types_of_task/shell>
+   Sequence tasks<types_of_task/sequence>
+   Expression tasks<types_of_task/expr>
+   Switch tasks<types_of_task/switch>
+   Reference tasks<types_of_task/ref>
