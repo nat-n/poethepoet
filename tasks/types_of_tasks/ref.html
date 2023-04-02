@@ -225,20 +225,20 @@
 <p>A ref task is essentially a call to another task. It is the default task type within a sequence task, but is not often used otherwise.</p>
 <p>A ref task can set environment variables, and pass arguments to the referenced task as
 follows:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">do_things</span><span class="p">.</span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;do_cmd&quot;</span><span class="w"></span>
-<span class="n">do_things</span><span class="p">.</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;things&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">do_things</span><span class="p">.</span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;do_cmd&quot;</span>
+<span class="n">do_things</span><span class="p">.</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;things&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
 
-<span class="n">do_specific_things</span><span class="p">.</span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;do_things thing1 thing2&quot;</span><span class="w"></span>
-<span class="n">do_specific_things</span><span class="p">.</span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">URGENCY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;11&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="n">do_specific_things</span><span class="p">.</span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;do_things thing1 thing2&quot;</span>
+<span class="n">do_specific_things</span><span class="p">.</span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">URGENCY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;11&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>In the above example calling:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe do_specific_things
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>do_specific_things
 </pre></div>
 </div>
 <p>would be equivalent to executing the following in the shell:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nv">URGENCY</span><span class="o">=</span><span class="m">11</span> do_cmd thing1 thing2
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nv">URGENCY</span><span class="o">=</span><span class="m">11</span><span class="w"> </span>do_cmd<span class="w"> </span>thing1<span class="w"> </span>thing2
 </pre></div>
 </div>
 </section>

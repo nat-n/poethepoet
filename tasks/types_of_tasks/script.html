@@ -223,9 +223,9 @@
           <section id="script-tasks">
 <h1>“script” tasks<a class="headerlink" href="#script-tasks" title="Permalink to this heading">#</a></h1>
 <p><strong>Script tasks</strong> consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">fetch-assets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.assets:fetch&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="n">fetch-images</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.assets:fetch(only=&#39;images&#39;, log=environ[&#39;LOG_PATH&#39;])&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">fetch-assets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.assets:fetch&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">fetch-images</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.assets:fetch(only=&#39;images&#39;, log=environ[&#39;LOG_PATH&#39;])&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>As in the second example, is it possible to hard code literal arguments to the target
@@ -241,31 +241,31 @@ declared), then they will be available within the called python function via
 <p>Any python callable accessible via the python path can be referenced, including the
 standard library. This can be useful for ensuring that tasks work across platforms.</p>
 <p>For example, the following task will not always work on windows:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build]]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;mkdir -p build/assets&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build]]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;mkdir -p build/assets&quot;</span>
 </pre></div>
 </div>
 <p>whereas the same behaviour can can be reliably achieved like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build]]</span><span class="w"></span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;os:makedirs(&#39;build/assets&#39;, exist_ok=True)&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build]]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;os:makedirs(&#39;build/assets&#39;, exist_ok=True)&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="output-the-return-value-from-the-python-callable">
 <h2>Output the return value from the python callable<a class="headerlink" href="#output-the-return-value-from-the-python-callable" title="Permalink to this heading">#</a></h2>
 <p>Script tasks can be configured to output the return value of a callable using the
-<code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span><span class="w"></span></code> option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.create-secret]</span><span class="w"></span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;django.core.management.utils:get_random_secret_key()&quot;</span><span class="w"></span>
-<span class="n">print_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+<code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.create-secret]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;django.core.management.utils:get_random_secret_key()&quot;</span>
+<span class="n">print_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
 <p>Given the above configuration running the following command would output just the
 generated key.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe -q create-secret
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>-q<span class="w"> </span>create-secret
 </pre></div>
 </div>
-<p>Note that if the return value is None then the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span><span class="w"></span></code> option has no
+<p>Note that if the return value is None then the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option has no
 effect.</p>
 </section>
 </section>

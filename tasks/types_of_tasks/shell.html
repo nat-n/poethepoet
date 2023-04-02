@@ -243,29 +243,29 @@ find it via the PATH, though this might not always be possible.</p>
 interpreters ordered by preference) to be invoked to execute shell task content. For
 example if you only expect the task to be executed on windows or other environments
 with powershell installed then you can specify a powershell based task like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.install-poetry]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.install-poetry]</span>
 <span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <span class="s">(Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python -</span>
-<span class="s">&quot;&quot;&quot;</span><span class="w"></span>
-<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pwsh&quot;</span><span class="w"></span>
+<span class="s">&quot;&quot;&quot;</span>
+<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pwsh&quot;</span>
 </pre></div>
 </div>
 <p>If your task content is restricted to syntax that is valid for both posix shells and
 powershell then you can maximise the likelihood of it working on any system by
 specifying the interpreter as:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;posix&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pwsh&quot;</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;posix&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pwsh&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>It is also possible to specify python code as the shell task code as in the following
 example. However it is recommended to use a <em>script</em> task rather than writing complex
 code inline within your pyproject.toml.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.time]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.time]</span>
 <span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <span class="s">from datetime import datetime</span>
 
 <span class="s">print(datetime.now())</span>
-<span class="s">&quot;&quot;&quot;</span><span class="w"></span>
-<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;python&quot;</span><span class="w"></span>
+<span class="s">&quot;&quot;&quot;</span>
+<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;python&quot;</span>
 </pre></div>
 </div>
 <p>The following interpreter values may be used:</p>

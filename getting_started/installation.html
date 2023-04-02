@@ -227,26 +227,26 @@
 <p>There are a few ways to install Poe the Poet:</p>
 <ol class="arabic">
 <li><p>Install the CLI <strong>globally</strong> using pipx:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pipx install poethepoet
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pipx<span class="w"> </span>install<span class="w"> </span>poethepoet
 </pre></div>
 </div>
 <p>Or using pip:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install poethepoet
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>poethepoet
 </pre></div>
 </div>
 <p>It’ll then be available as the <code class="code highlight bash docutils literal highlight-bash">poe</code> command anywhere in your system.</p>
 </li>
 <li><p>Install the CLI <strong>locally</strong> into your project (so it works inside poetry shell):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry add --group dev poethepoet
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>add<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>poethepoet
 </pre></div>
 </div>
-<p>It’ll then be available only when inside a <code class="code highlight bash docutils literal highlight-bash">poetry shell</code> as the <code class="code highlight bash docutils literal highlight-bash">poe</code> command.</p>
+<p>It’ll then be available only when inside a <code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>shell</code> as the <code class="code highlight bash docutils literal highlight-bash">poe</code> command.</p>
 </li>
 <li><p>Install the CLI into poetry as a plugin <strong>(requires poetry &gt;= 1.2)</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry self add <span class="s1">&#39;poethepoet[poetry_plugin]&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>self<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;poethepoet[poetry_plugin]&#39;</span>
 </pre></div>
 </div>
-<p>It’ll then be available as the <code class="code highlight bash docutils literal highlight-bash">poetry poe</code> command anywhere in your system.</p>
+<p>It’ll then be available as the <code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>poe</code> command anywhere in your system.</p>
 <p>More info below in the <a class="reference internal" href="#usage-as-a-poetry-plugin"><span class="std std-ref">Usage as a poetry plugin</span></a> section.</p>
 </li>
 </ol>
@@ -263,12 +263,12 @@ How to install them will depend on your shell setup.</p>
 <section id="zsh">
 <h3>Zsh<a class="headerlink" href="#zsh" title="Permalink to this heading">#</a></h3>
 <div class="highlight-zsh notranslate"><div class="highlight"><pre><span></span><span class="c1"># oh-my-zsh</span>
-mkdir -p ~/.oh-my-zsh/completions
-poe _zsh_completion &gt; ~/.oh-my-zsh/completions/_poe
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/.oh-my-zsh/completions
+poe<span class="w"> </span>_zsh_completion<span class="w"> </span>&gt;<span class="w"> </span>~/.oh-my-zsh/completions/_poe
 
 <span class="c1"># without oh-my-zsh</span>
-mkdir -p ~/.zfunc/
-poe _zsh_completion &gt; ~/.zfunc/_poetry
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/.zfunc/
+poe<span class="w"> </span>_zsh_completion<span class="w"> </span>&gt;<span class="w"> </span>~/.zfunc/_poetry
 </pre></div>
 </div>
 <p>Note that you’ll need to start a new shell for the new completion script to be loaded.
@@ -278,10 +278,10 @@ file.</p>
 <section id="bash">
 <h3>Bash<a class="headerlink" href="#bash" title="Permalink to this heading">#</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># System bash</span>
-poe _bash_completion &gt; /etc/bash_completion.d/poe.bash-completion
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>&gt;<span class="w"> </span>/etc/bash_completion.d/poe.bash-completion
 
 <span class="c1"># Homebrew bash</span>
-poe _bash_completion &gt; <span class="k">$(</span>brew --prefix<span class="k">)</span>/etc/bash_completion.d/poe.bash-completion
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>&gt;<span class="w"> </span><span class="k">$(</span>brew<span class="w"> </span>--prefix<span class="k">)</span>/etc/bash_completion.d/poe.bash-completion
 </pre></div>
 </div>
 <p>How to ensure installed bash completions are enabled may vary depending on your system.</p>
@@ -328,9 +328,9 @@ it installed onto your path.</p>
 <p>Poe the Poet was originally intended for use alongside poetry. But it works just as
 well with any other kind of virtualenv, or simply as a general purpose way to define
 handy tasks for use within a certain directory structure! This behaviour is configurable
-via the <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">executor</span><span class="w"></span></code> global option (see above).</p>
+via the <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">executor</span></code> global option (see above).</p>
 <p>By default poe will run tasks in the poetry managed environment, if the pyproject.toml
-contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span><span class="w"></span></code> section. If it doesn’t then poe looks for a virtualenv to
+contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code> section. If it doesn’t then poe looks for a virtualenv to
 use from <code class="code highlight bash docutils literal highlight-bash">./.venv</code> or <code class="code highlight bash docutils literal highlight-bash">./venv</code> relative to the pyproject.toml file.
 Otherwise it falls back to running tasks without any special environment management.</p>
 </section>

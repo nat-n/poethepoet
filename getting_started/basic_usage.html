@@ -231,8 +231,8 @@
 </div>
 <p>There exists a few different ways to define tasks. The simplest is to just define a command to run within the Poetry shell.</p>
 <p>For instance, if you want to run your tests, you can define a task like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span><span class="w">  </span><span class="c1"># simple command based task</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span><span class="w">  </span><span class="c1"># simple command based task</span>
 </pre></div>
 </div>
 <p>This will alias the command <code class="code docutils literal notranslate"><span class="pre">poe</span> <span class="pre">test</span></code> to <code class="code docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">--cov=poethepoet</span></code>.</p>
@@ -242,27 +242,27 @@
 </div>
 <p>There exists quite a few other types of tasks, such as shell tasks, python script tasks, and more.
 You can find more information about them in the <a class="reference internal" href="../tasks/index.html#tasks"><span class="std std-ref">Tasks</span></a> section.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span><span class="w">                                </span><span class="c1"># simple command based task</span><span class="w"></span>
-<span class="n">serve</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.service:run(debug=True)&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">            </span><span class="c1"># python script based task</span><span class="w"></span>
-<span class="n">tunnel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1"># (posix) shell based task</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span><span class="w">                                </span><span class="c1"># simple command based task</span>
+<span class="n">serve</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.service:run(debug=True)&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">            </span><span class="c1"># python script based task</span>
+<span class="n">tunnel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1"># (posix) shell based task</span>
 </pre></div>
 </div>
 </section>
 <section id="adding-help-text">
 <h2>Adding help text<a class="headerlink" href="#adding-help-text" title="Permalink to this heading">#</a></h2>
 <p>You can add help text to your tasks by adding a <code class="code docutils literal notranslate"><span class="pre">help</span></code> key to your task definition, like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span><span class="w"></span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the test suite&quot;</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the test suite&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span>
 
-<span class="k">[tool.poe.tasks.serve]</span><span class="w"></span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the app in debug mode&quot;</span><span class="w"></span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.service:run(debug=True)&quot;</span><span class="w"></span>
+<span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the app in debug mode&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.service:run(debug=True)&quot;</span>
 
-<span class="k">[tool.poe.tasks.tunnel]</span><span class="w"></span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Create an SSH tunnel to the production server&quot;</span><span class="w"></span>
-<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w"></span>
+<span class="k">[tool.poe.tasks.tunnel]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Create an SSH tunnel to the production server&quot;</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span>
 </pre></div>
 </div>
 <p>This will allow you to run <code class="code docutils literal notranslate"><span class="pre">poe</span> <span class="pre">--help</span></code> and see the help text for your tasks.</p>
@@ -295,9 +295,9 @@ CONFIGURED TASKS
 <h2>Run a task with the <code class="code docutils literal notranslate"><span class="pre">poe</span></code> CLI<a class="headerlink" href="#run-a-task-with-the-poe-cli" title="Permalink to this heading">#</a></h2>
 <p>Once you have defined your tasks, you’ll want to run them. Poe provides a CLI to run your tasks.</p>
 <p>Using the above example of task definitions, you’d be able to run the following tasks:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ poe <span class="nb">test</span>
-$ poe serve
-$ poe tunnel
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span><span class="nb">test</span>
+$<span class="w"> </span>poe<span class="w"> </span>serve
+$<span class="w"> </span>poe<span class="w"> </span>tunnel
 </pre></div>
 </div>
 <p>The above command can only be ran if you’ve installed Poe globally, or if you’ve sourced the venv that
@@ -305,38 +305,38 @@ Poe is installed in (e.g. using <code class="code docutils literal notranslate">
 <section id="running-poe-as-a-python-module">
 <h3>Running Poe as a Python module<a class="headerlink" href="#running-poe-as-a-python-module" title="Permalink to this heading">#</a></h3>
 <p>You can also run it like so if you fancy</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python -m poethepoet <span class="o">[</span>options<span class="o">]</span> task <span class="o">[</span>task_args<span class="o">]</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>poethepoet<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span>task<span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
 </pre></div>
 </div>
 </section>
 <section id="running-poe-as-a-poetry-plugin">
 <h3>Running Poe as a Poetry plugin<a class="headerlink" href="#running-poe-as-a-poetry-plugin" title="Permalink to this heading">#</a></h3>
 <p>If you’ve installed it as a poetry plugin (for poetry &gt;= 1.2), you can run it like so</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry self add poethepoet<span class="o">[</span>poetry_plugin<span class="o">]</span>
-poetry poe <span class="o">[</span>options<span class="o">]</span> task_name <span class="o">[</span>task_args<span class="o">]</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>self<span class="w"> </span>add<span class="w"> </span>poethepoet<span class="o">[</span>poetry_plugin<span class="o">]</span>
+poetry<span class="w"> </span>poe<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span>task_name<span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
 </pre></div>
 </div>
 </section>
 <section id="running-poe-as-a-poetry-dependency">
 <h3>Running Poe as a Poetry dependency<a class="headerlink" href="#running-poe-as-a-poetry-dependency" title="Permalink to this heading">#</a></h3>
 <p>If you’ve installed it as a dev dependency with poetry, you can run it like so</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry add --group dev poethepoet
-poetry run poe <span class="o">[</span>options<span class="o">]</span> task_name <span class="o">[</span>task_args<span class="o">]</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>add<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>poethepoet
+poetry<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span>task_name<span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
 </pre></div>
 </div>
 <div class="admonition hint">
 <p class="admonition-title">Hint</p>
-<p>Though in that case you might like to alias it using <code class="code highlight bash docutils literal highlight-bash"><span class="nb">alias</span> <span class="nv">poe</span><span class="o">=</span><span class="s1">&#39;poetry run poe&#39;</span></code>.</p>
+<p>Though in that case you might like to alias it using <code class="code highlight bash docutils literal highlight-bash"><span class="nb">alias</span><span class="w"> </span><span class="nv">poe</span><span class="o">=</span><span class="s1">&#39;poetry run poe&#39;</span></code>.</p>
 </div>
 </section>
 <section id="passing-arguments">
 <h3>Passing arguments<a class="headerlink" href="#passing-arguments" title="Permalink to this heading">#</a></h3>
 <p>By default additional arguments are passed to the task so</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe <span class="nb">test</span> -v tests/favorite_test.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-v<span class="w"> </span>tests/favorite_test.py
 </pre></div>
 </div>
 <p>will result in the following being run inside poetry’s virtualenv</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest --cov<span class="o">=</span>poethepoet -v tests/favorite_test.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>poethepoet<span class="w"> </span>-v<span class="w"> </span>tests/favorite_test.py
 </pre></div>
 </div>
 </section>

@@ -225,10 +225,10 @@
 <section id="global-environment-variables">
 <h2>Global environment variables<a class="headerlink" href="#global-environment-variables" title="Permalink to this heading">#</a></h2>
 <p>You can configure environment variables to be set for all poe tasks in the
-pyproject.toml file by specifying <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">env</span><span class="w"></span></code> like so</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span><span class="w"></span>
-<span class="n">VAR1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FOO&quot;</span><span class="w"></span>
-<span class="n">VAR2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;BAR BAR BLACK ${FARM_ANIMAL}&quot;</span><span class="w"></span>
+pyproject.toml file by specifying <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">env</span></code> like so</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span>
+<span class="n">VAR1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FOO&quot;</span>
+<span class="n">VAR2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;BAR BAR BLACK ${FARM_ANIMAL}&quot;</span>
 </pre></div>
 </div>
 <p>The example above also demonstrates how – as with env vars defined at the task level –
@@ -236,8 +236,8 @@ posix variable interpolation syntax may be used to define global env vars with r
 to variables already defined in the host environment or in a referenced env file.</p>
 <p>As with the task level option, you can indicated that a variable should only be set if
 not already set like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span><span class="w"></span>
-<span class="n">VAR1</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FOO&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span>
+<span class="n">VAR1</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FOO&quot;</span>
 </pre></div>
 </div>
 <p>You can also specify an env file (with bash-like syntax) to load for all tasks like so:</p>
@@ -246,8 +246,8 @@ not already set like so:</p>
 <span class="nv">PASSWORD</span><span class="o">=</span><span class="s1">&#39;!@#$%^&amp;*(&#39;</span>
 </pre></div>
 </div>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span><span class="w"></span>
-<span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span>
 </pre></div>
 </div>
 <p>The envfile global option also accepts a list of env files.</p>
@@ -258,17 +258,17 @@ not already set like so:</p>
 <code class="code highlight bash docutils literal highlight-bash">-q</code> (which decreases verbosity) or <code class="code highlight bash docutils literal highlight-bash">--verbose</code> / <code class="code highlight bash docutils literal highlight-bash">-v</code> (which
 increases verbosity) on the CLI.</p>
 <p>If you want to change the default verbosity level for all commands, you can use
-the <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">verbose</span><span class="w"></span></code> option in pyproject.toml like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span><span class="w"></span>
-<span class="n">verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="w"></span>
+the <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">verbose</span></code> option in pyproject.toml like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span>
 </pre></div>
 </div>
-<p><code class="code highlight toml docutils literal highlight-toml"><span class="mi">-1</span><span class="w"></span></code> is the quietest and <code class="code highlight toml docutils literal highlight-toml"><span class="mi">1</span><span class="w"></span></code> is the most verbose. <code class="code highlight toml docutils literal highlight-toml"><span class="mi">0</span><span class="w"></span></code> is the
+<p><code class="code highlight toml docutils literal highlight-toml"><span class="mi">-1</span></code> is the quietest and <code class="code highlight toml docutils literal highlight-toml"><span class="mi">1</span></code> is the most verbose. <code class="code highlight toml docutils literal highlight-toml"><span class="mi">0</span></code> is the
 default.</p>
 <p>Note that the command line arguments are incremental: <code class="code highlight bash docutils literal highlight-bash">-q</code> subtracts one
 from the default verbosity, and <code class="code highlight bash docutils literal highlight-bash">-v</code> adds one. So setting the default
-verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">-1</span><span class="w"></span></code> and passing <code class="code highlight bash docutils literal highlight-bash">-v -v</code> on the command line is
-equivalent to setting the verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">0</span><span class="w"></span></code> and just passing <code class="code highlight bash docutils literal highlight-bash">-v</code>.</p>
+verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">-1</span></code> and passing <code class="code highlight bash docutils literal highlight-bash">-v<span class="w"> </span>-v</code> on the command line is
+equivalent to setting the verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">0</span></code> and just passing <code class="code highlight bash docutils literal highlight-bash">-v</code>.</p>
 </section>
 <section id="run-poe-from-anywhere">
 <h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Permalink to this heading">#</a></h2>
@@ -283,25 +283,25 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
 <h2>Change the default task type<a class="headerlink" href="#change-the-default-task-type" title="Permalink to this heading">#</a></h2>
 <p>By default tasks defined as strings are interpreted as shell commands, and script tasks
 require the more verbose table syntax to specify. For example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cmd args&quot;</span><span class="w"></span>
-<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.my_module:run&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cmd args&quot;</span>
+<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.my_module:run&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>This behaviour can be reversed by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_task_type</span><span class="w"></span></code> option in your
+<p>This behaviour can be reversed by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_task_type</span></code> option in your
 pyproject.toml like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span><span class="w"></span>
-<span class="n">default_task_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">default_task_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;script&quot;</span>
 
-<span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;cmd&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cmd args&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.my_module:run&quot;</span><span class="w"></span>
+<span class="k">[tool.poe.tasks]</span>
+<span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;cmd&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cmd args&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.my_module:run&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="change-the-executor-type">
 <h2>Change the executor type<a class="headerlink" href="#change-the-executor-type" title="Permalink to this heading">#</a></h2>
 <p>You can configure poe to use a specific executor by setting
-<code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">executor</span><span class="p">.</span><span class="n">type</span><span class="w"></span></code>. Valid values include:</p>
+<code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">executor</span><span class="p">.</span><span class="n">type</span></code>. Valid values include:</p>
 <ul class="simple">
 <li><p><strong>auto</strong>: to automatically use the most appropriate of the following executors in order</p></li>
 <li><p><strong>poetry</strong>: to run tasks in the poetry managed environment</p></li>
@@ -312,9 +312,9 @@ pyproject.toml like so:</p>
 <p>For example the following configuration will cause poe to ignore the poetry environment
 (if present), and instead use the virtualenv at the given location relative to the
 parent directory.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span><span class="w"></span>
-<span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;virtualenv&quot;</span><span class="w"></span>
-<span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myvenv&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span>
+<span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;virtualenv&quot;</span>
+<span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myvenv&quot;</span>
 </pre></div>
 </div>
 <p>See below for more details.</p>
@@ -325,10 +325,10 @@ parent directory.</p>
 tasks above). This default can be overridden to something else by setting the
 <em>shell_interpreter</em> global option. In the following example we configure all shell tasks
 to use <em>fish</em> by default.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">shell_interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;fish&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">shell_interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;fish&quot;</span>
 
-<span class="k">[tool.poe.tasks.fibonacci]</span><span class="w"></span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Output the fibonacci sequence up to 89&quot;</span><span class="w"></span>
+<span class="k">[tool.poe.tasks.fibonacci]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Output the fibonacci sequence up to 89&quot;</span>
 <span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <span class="s">  function fib --argument-names max n0 n1</span>
 <span class="s">    if test $max -ge $n0</span>
@@ -338,7 +338,7 @@ to use <em>fish</em> by default.</p>
 <span class="s">  end</span>
 
 <span class="s">  fib 89 1 1</span>
-<span class="s">&quot;&quot;&quot;</span><span class="w"></span>
+<span class="s">&quot;&quot;&quot;</span>
 </pre></div>
 </div>
 </section>

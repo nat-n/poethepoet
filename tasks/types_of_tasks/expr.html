@@ -224,12 +224,12 @@
 <h1>“expr” tasks<a class="headerlink" href="#expr-tasks" title="Permalink to this heading">#</a></h1>
 <p>Expr tasks consist of a single <a class="reference external" href="https://docs.python.org/3/reference/expressions.html">python expression</a>. Running the task evaluates the expression and outputs the resulting
 value. Here’s a trivial example of an expr task that will print 2 when run:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.trivial-example]</span><span class="w"></span>
-<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1 + 1&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.trivial-example]</span>
+<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1 + 1&quot;</span>
 </pre></div>
 </div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ poe trivial-example
-<span class="nv">Poe</span> <span class="o">=</span>&gt; <span class="m">1</span> + <span class="m">1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>trivial-example
+<span class="nv">Poe</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span><span class="m">1</span><span class="w"> </span>+<span class="w"> </span><span class="m">1</span>
 <span class="m">2</span>
 </pre></div>
 </div>
@@ -250,13 +250,13 @@ using the usual templating syntax</p></li>
 <h2>Referencing arguments and environment variables<a class="headerlink" href="#referencing-arguments-and-environment-variables" title="Permalink to this heading">#</a></h2>
 <p>The expression can reference environment variables using templating syntax like in cmd
 tasks, and named arguments as python variables in scope like in script tasks.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
 <span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;(</span>
 <span class="s">  f&#39;{target_venv} is active&#39;</span>
 <span class="s">  if ${VIRTUAL_ENV}.endswith(target_venv)</span>
 <span class="s">  else f&#39;{target_venv} is not active&#39;</span>
-<span class="s">)&quot;&quot;&quot;</span><span class="w"></span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span><span class="w"></span>
+<span class="s">)&quot;&quot;&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ poe venv-active poethepoet-LCpCQf8S-py3.10
@@ -279,10 +279,10 @@ code.</p>
 <p>By default the sys module is available to the expression which allows access to sys.argv
 or sys.platform amoung other useful values. However you can also reference any other
 importable module via the imports option as in the following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.count-hidden]</span><span class="w"></span>
-<span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Count hidden files or subdirectories&quot;</span><span class="w"></span>
-<span class="n">expr</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;len(list(pathlib.Path(&#39;.&#39;).glob(&#39;.*&#39;)))&quot;</span><span class="w"></span>
-<span class="n">imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;pathlib&quot;</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.count-hidden]</span>
+<span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Count hidden files or subdirectories&quot;</span>
+<span class="n">expr</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;len(list(pathlib.Path(&#39;.&#39;).glob(&#39;.*&#39;)))&quot;</span>
+<span class="n">imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;pathlib&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>
@@ -290,10 +290,10 @@ importable module via the imports option as in the following example.</p>
 <h2>Fail if the expression result is falsey<a class="headerlink" href="#fail-if-the-expression-result-is-falsey" title="Permalink to this heading">#</a></h2>
 <p>The expression can be made to behave like an assertion that fails if the result is not truthy by providing the assert option. The task defined in the following example will
 return non-zero if the result is False.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span><span class="w"></span>
-<span class="n">expr</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${VIRTUAL_ENV}.endswith(target_venv)&quot;</span><span class="w"></span>
-<span class="n">assert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
-<span class="n">args</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
+<span class="n">expr</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${VIRTUAL_ENV}.endswith(target_venv)&quot;</span>
+<span class="n">assert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="n">args</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
 </section>

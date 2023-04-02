@@ -228,27 +228,27 @@ its output is captured and matched against the case option of each of the items 
 switch array to determine which one to run.</p>
 <p>This can be used to define a task that runs a different subtask depending on which
 platform it is running on like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span><span class="w"></span>
-<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;sys.platform&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
+<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;sys.platform&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;win32&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;windows_build&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;win32&quot;</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;windows_build&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;posix_build&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;posix_build&quot;</span>
 </pre></div>
 </div>
 <p>In the above example the control task checks the value of sys.platform, and if running
-on windows it’ll execute <code class="code highlight toml docutils literal highlight-toml"><span class="n">windows_build</span><span class="w"></span></code>, otherwise it’ll fall back to the default
-case (i.e. the switch item with no case option defined) and execute <code class="code highlight toml docutils literal highlight-toml"><span class="n">posix_build</span><span class="w"></span></code>.</p>
+on windows it’ll execute <code class="code highlight toml docutils literal highlight-toml"><span class="n">windows_build</span></code>, otherwise it’ll fall back to the default
+case (i.e. the switch item with no case option defined) and execute <code class="code highlight toml docutils literal highlight-toml"><span class="n">posix_build</span></code>.</p>
 <section id="multiple-values-per-case">
 <h2>Multiple values per case<a class="headerlink" href="#multiple-values-per-case" title="Permalink to this heading">#</a></h2>
 <p>It is also possible to define multiple values for a single case option by providing a
 array of values like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span><span class="w"></span>
-<span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;linux&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;darwin&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;linux&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;darwin&quot;</span><span class="p">]</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
 </pre></div>
 </div>
 </section>
@@ -257,13 +257,13 @@ array of values like so:</p>
 <p>If all tasks in the switch array include a case value, but none of them match the result
 of the control task then by default the switch task will fail. You can instead configure
 the switch task to pass and simply do nothing by providing the ‘default’ option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build_on_windows]</span><span class="w"></span>
-<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;sys.platform&quot;</span><span class="w"></span>
-<span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pass&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build_on_windows]</span>
+<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;sys.platform&quot;</span>
+<span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pass&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;win32&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;win32&quot;</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
 </pre></div>
 </div>
 </section>
@@ -271,45 +271,45 @@ the switch task to pass and simply do nothing by providing the ‘default’ opt
 <h2>Switching on an environment variable or named argument<a class="headerlink" href="#switching-on-an-environment-variable-or-named-argument" title="Permalink to this heading">#</a></h2>
 <p>It is possible to run a different task depending on the value of an environment variable
 as in the following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.check_number]</span><span class="w"></span>
-<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;int(${BEST_NUMBER}) % 2&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.check_number]</span>
+<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;int(${BEST_NUMBER}) % 2&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.check_number.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;f&#39;{${BEST_NUMBER}} is even&#39;)&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.check_number.switch]]</span>
+<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;0&quot;</span>
+<span class="w">  </span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;f&#39;{${BEST_NUMBER}} is even&#39;)&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.check_number.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;f&#39;{${BEST_NUMBER}} is odd&#39;&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.check_number.switch]]</span>
+<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1&quot;</span>
+<span class="w">  </span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;f&#39;{${BEST_NUMBER}} is odd&#39;&quot;</span>
 </pre></div>
 </div>
 <p>Using this task will look like the following:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ <span class="nv">BEST_NUMBER</span><span class="o">=</span><span class="m">12</span> poe check_number
-Poe &lt;<span class="o">=</span> int<span class="o">(</span><span class="si">${</span><span class="nv">BEST_NUMBER</span><span class="si">}</span><span class="o">)</span> % <span class="m">2</span>
-<span class="nv">Poe</span> <span class="o">=</span>&gt; f<span class="s1">&#39;{${BEST_NUMBER}} is even&#39;</span><span class="o">)</span>
-<span class="m">12</span> is even
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nv">BEST_NUMBER</span><span class="o">=</span><span class="m">12</span><span class="w"> </span>poe<span class="w"> </span>check_number
+Poe<span class="w"> </span>&lt;<span class="o">=</span><span class="w"> </span>int<span class="o">(</span><span class="si">${</span><span class="nv">BEST_NUMBER</span><span class="si">}</span><span class="o">)</span><span class="w"> </span>%<span class="w"> </span><span class="m">2</span>
+<span class="nv">Poe</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span>f<span class="s1">&#39;{${BEST_NUMBER}} is even&#39;</span><span class="o">)</span>
+<span class="m">12</span><span class="w"> </span>is<span class="w"> </span>even
 
-$ <span class="nv">BEST_NUMBER</span><span class="o">=</span><span class="m">17</span> poe check_number
-Poe &lt;<span class="o">=</span> int<span class="o">(</span><span class="si">${</span><span class="nv">BEST_NUMBER</span><span class="si">}</span><span class="o">)</span> % <span class="m">2</span>
-<span class="nv">Poe</span> <span class="o">=</span>&gt; f<span class="s1">&#39;{${BEST_NUMBER}} is odd&#39;</span>
-<span class="m">17</span> is odd
+$<span class="w"> </span><span class="nv">BEST_NUMBER</span><span class="o">=</span><span class="m">17</span><span class="w"> </span>poe<span class="w"> </span>check_number
+Poe<span class="w"> </span>&lt;<span class="o">=</span><span class="w"> </span>int<span class="o">(</span><span class="si">${</span><span class="nv">BEST_NUMBER</span><span class="si">}</span><span class="o">)</span><span class="w"> </span>%<span class="w"> </span><span class="m">2</span>
+<span class="nv">Poe</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span>f<span class="s1">&#39;{${BEST_NUMBER}} is odd&#39;</span>
+<span class="m">17</span><span class="w"> </span>is<span class="w"> </span>odd
 </pre></div>
 </div>
 <p>You can also run a different task depending on the value of a named argument as in the following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.icecream]</span><span class="w"></span>
-<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;flavor&quot;</span><span class="w"></span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;flavor&quot;</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.icecream]</span>
+<span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;flavor&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;flavor&quot;</span><span class="p">]</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.icecream.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;chocolate&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;make_chocolate_icecream&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.icecream.switch]]</span>
+<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;chocolate&quot;</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;make_chocolate_icecream&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.icecream.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;strawberry&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;make_strawberry_icecream&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.icecream.switch]]</span>
+<span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;strawberry&quot;</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;make_strawberry_icecream&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.icecream.switch]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;make_vanilla_icecream&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.icecream.switch]]</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;make_vanilla_icecream&quot;</span>
 </pre></div>
 </div>
 </section>

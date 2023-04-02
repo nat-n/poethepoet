@@ -228,8 +228,8 @@
 </div>
 <p><strong>Command tasks</strong> contain a single command that will be executed without a shell.
 This covers most basic use cases for example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;black .&quot;</span><span class="w">  </span><span class="c1"># strings are interpreted as commands by default</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;black .&quot;</span><span class="w">  </span><span class="c1"># strings are interpreted as commands by default</span>
 <span class="n">clean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <span class="s"># Multiline commands including comments work too. Unescaped whitespace is ignored.</span>
 <span class="s">rm -rf .coverage</span>
@@ -237,9 +237,9 @@ This covers most basic use cases for example:</p>
 <span class="s">       .pytest_cache</span>
 <span class="s">       dist</span>
 <span class="s">       ./**/__pycache__</span>
-<span class="s">&quot;&quot;&quot;</span><span class="w"></span>
-<span class="n">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;cmd&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;pylint poethepoet&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1"># Inline tables with a cmd key work too</span><span class="w"></span>
-<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello $USER&quot;</span><span class="w">  </span><span class="c1"># Environment variables work, even though there&#39;s no shell!</span><span class="w"></span>
+<span class="s">&quot;&quot;&quot;</span>
+<span class="n">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;cmd&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;pylint poethepoet&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1"># Inline tables with a cmd key work too</span>
+<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello $USER&quot;</span><span class="w">  </span><span class="c1"># Environment variables work, even though there&#39;s no shell!</span>
 </pre></div>
 </div>
 </section>

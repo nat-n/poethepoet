@@ -225,16 +225,16 @@
 <p>Sequence tasks are defined as a array of other tasks to be run one after the other.</p>
 <p>By default the contents of the array are interpreted as references to other tasks
 (actually a ref task type), though this behaviour can be altered by setting the global
-<code class="code highlight toml docutils literal highlight-toml"><span class="n">default_array_item_task_type</span><span class="w"></span></code> option to the name of another task type such as
-<em>cmd</em>, or by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span><span class="w"></span></code> option locally on the sequence task.</p>
+<code class="code highlight toml docutils literal highlight-toml"><span class="n">default_array_item_task_type</span></code> option to the name of another task type such as
+<em>cmd</em>, or by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option locally on the sequence task.</p>
 <section id="sequence-task-with-references">
 <h2>Sequence task with references<a class="headerlink" href="#sequence-task-with-references" title="Permalink to this heading">#</a></h2>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 
-<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span><span class="w"></span>
-<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry build&quot;</span><span class="w"></span>
-<span class="n">_publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry publish&quot;</span><span class="w"></span>
-<span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;test&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span>
+<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry build&quot;</span>
+<span class="n">_publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry publish&quot;</span>
+<span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;test&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Note that tasks with names prefixed with <code class="code docutils literal notranslate"><span class="pre">_</span></code> are not included in the
@@ -243,55 +243,55 @@ needed for referencing from another task.</p>
 </section>
 <section id="sequence-task-with-inline-tasks-expressed-via-inline-tables">
 <h2>Sequence task with inline tasks expressed via inline tables<a class="headerlink" href="#sequence-task-with-inline-tasks-expressed-via-inline-tables" title="Permalink to this heading">#</a></h2>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 
-<span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"></span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
-<span class="p">]</span><span class="w"></span>
+<span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">]</span>
 </pre></div>
 </div>
 </section>
 <section id="sequence-task-with-inline-tasks-expressed-via-an-array-of-tables">
 <h2>Sequence task with inline tasks expressed via an array of tables<a class="headerlink" href="#sequence-task-with-inline-tasks-expressed-via-an-array-of-tables" title="Permalink to this heading">#</a></h2>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.release]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.release]]</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.release]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.release]]</span>
+<span class="w">  </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.release]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.release]]</span>
+<span class="w">  </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="sequence-task-with-inline-script-subtasks-using-default-item-type">
 <h2>Sequence task with inline script subtasks using <code class="code docutils literal notranslate"><span class="pre">default_item_type</span></code><a class="headerlink" href="#sequence-task-with-inline-script-subtasks-using-default-item-type" title="Permalink to this heading">#</a></h2>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">release</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
-<span class="w">  </span><span class="s">&quot;devtasks:run_tests(all=True)&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="s">&quot;devtasks:build&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="w">  </span><span class="s">&quot;devtasks:publish&quot;</span><span class="p">,</span><span class="w"></span>
-<span class="p">]</span><span class="w"></span>
-<span class="n">release</span><span class="p">.</span><span class="n">default_item_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">release</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s">&quot;devtasks:run_tests(all=True)&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s">&quot;devtasks:build&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s">&quot;devtasks:publish&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">release</span><span class="p">.</span><span class="n">default_item_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;script&quot;</span>
 </pre></div>
 </div>
 <p>A failure (non-zero result) will result in the rest of the tasks in the sequence not
-being executed, unless the <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span><span class="w"></span></code> option is set on the task to
-<code class="code highlight toml docutils literal highlight-toml"><span class="kc">true</span><span class="w"></span></code> or <code class="code highlight toml docutils literal highlight-toml"><span class="s">&quot;return_zero&quot;</span><span class="w"></span></code> like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">attempts</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task3&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;return_zero&quot;</span><span class="w"></span>
+being executed, unless the <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option is set on the task to
+<code class="code highlight toml docutils literal highlight-toml"><span class="kc">true</span></code> or <code class="code highlight toml docutils literal highlight-toml"><span class="s">&quot;return_zero&quot;</span></code> like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task3&quot;</span><span class="p">]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;return_zero&quot;</span>
 </pre></div>
 </div>
 <p>If you want to run all the subtasks in the sequence but return non-zero result in the
-end of the sequence if any of the subtasks have failed you can set <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span><span class="w"></span></code>
-option to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">return_non_zero</span><span class="w"></span></code> value like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">attempts</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task3&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;return_non_zero&quot;</span><span class="w"></span>
+end of the sequence if any of the subtasks have failed you can set <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code>
+option to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">return_non_zero</span></code> value like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task3&quot;</span><span class="p">]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;return_non_zero&quot;</span>
 </pre></div>
 </div>
 </section>

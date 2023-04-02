@@ -229,22 +229,22 @@ your code in a monorepo, or simply have a lot of tasks and don’t want the pypr
 to get too large. This can be achieved by creating a toml or json including the same
 structure for tasks as used in pyproject.toml</p>
 <p>For example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># acme_common/shared_tasks.toml</span><span class="w"></span>
-<span class="k">[tool.poe.tasks.build-image]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;docker build&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># acme_common/shared_tasks.toml</span>
+<span class="k">[tool.poe.tasks.build-image]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;docker build&quot;</span>
 </pre></div>
 </div>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span><span class="w"></span>
-<span class="c1"># this references a file from a git submodule</span><span class="w"></span>
-<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="c1"># this references a file from a git submodule</span>
+<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span>
 </pre></div>
 </div>
 <p>Imported files may also specify environment variables via
 <code class="code docutils literal notranslate"><span class="pre">tool.poe.envfile</span></code> or entries for <code class="code docutils literal notranslate"><span class="pre">tool.poe.env</span></code>.</p>
 <p>It’s also possible to include tasks from multiple files by providing a list like
 so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span><span class="w"></span>
-<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;generated_tasks.json&quot;</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;generated_tasks.json&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Files are loaded in the order specified. If an item already exists then the included
@@ -256,9 +256,9 @@ other file should be run from within a specific directory. For example with the
 following configuration, when tasks imported from my_subproject are run
 from the root, the task will actually execute as if it had been run from the
 my_subproject subdirectory.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.include]]</span><span class="w"></span>
-<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject/pyproject.toml&quot;</span><span class="w"></span>
-<span class="n">cwd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.include]]</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject/pyproject.toml&quot;</span>
+<span class="n">cwd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject&quot;</span>
 </pre></div>
 </div>
 <p>The cwd option still has the limitation that it cannot be used to specify a directory
@@ -269,28 +269,28 @@ failure to read the contents will result in failure.</p>
 <h2>Configuring the plugin<a class="headerlink" href="#configuring-the-plugin" title="Permalink to this heading">#</a></h2>
 <p>By default the poetry plugin will register <em>poe</em> as a command prefix so tasks can be
 invoked like:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry poe <span class="o">[</span>task_name<span class="o">]</span> <span class="o">[</span>task_args<span class="o">]</span>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>poe<span class="w"> </span><span class="o">[</span>task_name<span class="o">]</span><span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
 </pre></div>
 </div>
 <p>And the poe documentation can be viewed via:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry poe
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>poe
 </pre></div>
 </div>
 <p>It is also possible to modify this behavoir, to either have a different command prefix
-or none at all by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">poetry_command</span><span class="w"></span></code> global option in your
+or none at all by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">poetry_command</span></code> global option in your
 pyproject.toml like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span><span class="w"></span>
-<span class="n">poetry_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">poetry_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;</span>
 </pre></div>
 </div>
 <p>In this case poe tasks will be registered as top level commands on poetry and can be
 invoked simply as:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry <span class="o">[</span>task_name<span class="o">]</span>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span><span class="o">[</span>task_name<span class="o">]</span>
 </pre></div>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Whatever <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">poetry_command</span><span class="w"></span></code> is set to must not already exist as a
+<p>Whatever <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">poetry_command</span></code> is set to must not already exist as a
 poetry command!</p>
 <p>Additionally if setting it to the emtpy string then care must be taken to avoid
 defining any poe tasks that conflict with any other built in or plugin provided
@@ -301,31 +301,31 @@ poetry command.</p>
 <h2>Hooking into poetry commands<a class="headerlink" href="#hooking-into-poetry-commands" title="Permalink to this heading">#</a></h2>
 <p>It is also possible to configure a task to be run before or after a specific poetry
 command by declaring the poetry_hooks global option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span><span class="w"></span>
-<span class="n">pre_build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;prep-assets --verbosity=5&quot;</span><span class="w"></span>
-<span class="n">post_build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;archive-build&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span>
+<span class="n">pre_build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;prep-assets --verbosity=5&quot;</span>
+<span class="n">post_build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;archive-build&quot;</span>
 
-<span class="k">[tool.poe.tasks.prep-assets]</span><span class="w"></span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:prepare_assets&quot;</span><span class="w"></span>
-<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Optimise static assets for inclusion in the build&quot;</span><span class="w"></span>
+<span class="k">[tool.poe.tasks.prep-assets]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:prepare_assets&quot;</span>
+<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Optimise static assets for inclusion in the build&quot;</span>
 
-<span class="k">[tool.poe.tasks.archive-build]</span><span class="w"></span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:archive_build&quot;</span><span class="w"></span>
-<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Upload the latest build version to archive server&quot;</span><span class="w"></span>
+<span class="k">[tool.poe.tasks.archive-build]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:archive_build&quot;</span>
+<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Upload the latest build version to archive server&quot;</span>
 </pre></div>
 </div>
 <p>In this example the <code class="code docutils literal notranslate"><span class="pre">prep-assets</span></code> task will be run as the first step in calling
-<code class="code highlight bash docutils literal highlight-bash">poetry build</code> with an argument passed as if the task were being called via the
+<code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>build</code> with an argument passed as if the task were being called via the
 poe CLI. We’ve also configured the <code class="code docutils literal notranslate"><span class="pre">archive-build</span></code> task to be run after every
 successful build.</p>
 <p>If a task fails when running as a hook, then the poetry command will exit with an error.
 If it is a <em>pre</em> hook then this will cause the actual poetry command not to execute.
-This behaviour may be useful for running checks before <code class="code highlight bash docutils literal highlight-bash">poetry publish</code></p>
+This behaviour may be useful for running checks before <code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>publish</code></p>
 <p>Hooks can be disabled for a single invocation by passing the <code class="code highlight bash docutils literal highlight-bash">--no-plugins</code> option
 to poetry.</p>
-<p>Namespaced commands like <code class="code highlight bash docutils literal highlight-bash">poetry env info</code> can be specified with underscores like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span><span class="w"></span>
-<span class="n">post_env_info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;info&quot;</span><span class="w"></span>
+<p>Namespaced commands like <code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>env<span class="w"> </span>info</code> can be specified with underscores like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span>
+<span class="n">post_env_info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;info&quot;</span>
 </pre></div>
 </div>
 </section>

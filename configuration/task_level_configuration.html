@@ -226,8 +226,8 @@
 <h2>Task help text<a class="headerlink" href="#task-help-text" title="Permalink to this heading">#</a></h2>
 <p>You can specify help text to be shown alongside the task name in the list of available
 tasks (such as when executing poe with no arguments), by adding a help key like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;black . --check --diff&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Check code style&quot;</span><span class="p">}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;black . --check --diff&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Check code style&quot;</span><span class="p">}</span>
 </pre></div>
 </div>
 </section>
@@ -235,16 +235,16 @@ tasks (such as when executing poe with no arguments), by adding a help key like 
 <h2>Environment variables<a class="headerlink" href="#environment-variables" title="Permalink to this heading">#</a></h2>
 <p>You can specify arbitrary environment variables to be set for a task by providing the
 env key like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span><span class="w"></span>
-<span class="n">serve</span><span class="p">.</span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Notice this example uses deep keys which can be more convenient but aren’t as well
 supported by some older toml implementations.</p>
 <p>The above example can be modified to only set the <cite>PORT</cite> variable if it is not already
 set by replacing the last line with the following:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">env</span><span class="p">.</span><span class="n">PORT</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">env</span><span class="p">.</span><span class="n">PORT</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span>
 </pre></div>
 </div>
 <section id="loading-env-vars-from-an-env-file">
@@ -255,14 +255,14 @@ set by replacing the last line with the following:</p>
 <span class="nv">PASSWORD</span><span class="o">=</span><span class="s1">&#39;!@#$%^&amp;*(&#39;</span>
 </pre></div>
 </div>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span><span class="w"></span>
-<span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span>
 </pre></div>
 </div>
 <p>The envfile option accepts the name (or relative path) to a single envfile as shown
 above but can also by given a list of such paths like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;local.env&quot;</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;local.env&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>In this case the referenced files will be loaded in the given order.</p>
@@ -274,9 +274,9 @@ task. This may be useful for aliasing or extending a variable already defined in
 host environment, globally in the config, or in a referenced envfile. In the following
 example the value from $TF_VAR_service_port on the host environment is also made
 available as $FLASK_RUN_PORT within the task.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;flask run&quot;</span><span class="w"></span>
-<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FLASK_RUN_PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${TF_VAR_service_port}&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;flask run&quot;</span>
+<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FLASK_RUN_PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${TF_VAR_service_port}&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 </section>
@@ -284,10 +284,10 @@ available as $FLASK_RUN_PORT within the task.</p>
 <h3>Running a task with a specific working directory<a class="headerlink" href="#running-a-task-with-a-specific-working-directory" title="Permalink to this heading">#</a></h3>
 <p>By default tasks are run from the project root – that is the parent directory of the
 pyproject.toml file. However if a task needs to be run in another directory within the
-project then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span><span class="w"></span></code> option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-client]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;npx ts-node -T ./build.ts&quot;</span><span class="w"></span>
-<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./client&quot;</span><span class="w"></span>
+project then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-client]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;npx ts-node -T ./build.ts&quot;</span>
+<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./client&quot;</span>
 </pre></div>
 </div>
 <p>In this example, the npx executable is executed inside the <code class="code highlight sh docutils literal highlight-sh">./client</code> subdirectory of
@@ -300,10 +300,10 @@ evaluate paths relative to that location.</p>
 poe to run multiple tasks, for example within a sequence task or task graph.</p>
 <p>However in certain situations it can be desirable to define a task that is instead
 executed within the same process via exec. Cmd and script tasks can be configured to
-work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span><span class="w"></span></code> option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gunicorn ./my_app:run&quot;</span><span class="w"></span>
-<span class="n">use_exec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w"></span>
+work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gunicorn ./my_app:run&quot;</span>
+<span class="n">use_exec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
 <p>Note the following limitations with this feature:</p>
@@ -323,17 +323,17 @@ exposed to the task in a way the makes the most sense for that task type.</p>
 <p>In general named arguments can take one of the following three forms:</p>
 <ul class="simple">
 <li><dl class="simple">
-<dt><strong>positional arguments</strong> which are provided directly following the name of the task like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe task-name arg-value</code></p>
+<dt><strong>positional arguments</strong> which are provided directly following the name of the task like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe<span class="w"> </span>task-name<span class="w"> </span>arg-value</code></p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>option arguments</strong> which are provided like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe task-name --option-name arg-value</code></p>
+<dt><strong>option arguments</strong> which are provided like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe<span class="w"> </span>task-name<span class="w"> </span>--option-name<span class="w"> </span>arg-value</code></p>
 </dd>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>flags</strong> which are either provided or not, but don’t accept a value like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe task-name --flag</code></p>
+<dt><strong>flags</strong> which are either provided or not, but don’t accept a value like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe<span class="w"> </span>task-name<span class="w"> </span>--flag</code></p>
 </dd>
 </dl>
 </li>
@@ -348,57 +348,57 @@ a subtable.</p>
 <h4>Array configuration syntax<a class="headerlink" href="#array-configuration-syntax" title="Permalink to this heading">#</a></h4>
 <p>The array form may contain string items which are interpreted as an option argument with
 the given name.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span><span class="w"></span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;host&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;host&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>This example can be invoked as</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe serve --host <span class="m">0</span>.0.0.0 --port <span class="m">8001</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>serve<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8001</span>
 </pre></div>
 </div>
 <p>Items in the array can also be inline tables to allow for more configuration to be
 provided to the task like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span><span class="w"></span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;host&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9000&quot;</span><span class="w"> </span><span class="p">}]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;host&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9000&quot;</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
 <p>You can also use the toml syntax for an array of tables like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span><span class="w"></span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the application server&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the application server&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.serve.args]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;host&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-h&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--host&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The host on which to expose the service&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.serve.args]]</span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;host&quot;</span>
+<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-h&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--host&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The host on which to expose the service&quot;</span>
+<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.serve.args]]</span><span class="w"></span>
-<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-p&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--port&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The port on which to expose the service&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;8000&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.serve.args]]</span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;port&quot;</span>
+<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-p&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--port&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The port on which to expose the service&quot;</span>
+<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;8000&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="table-configuration-syntax">
 <h4>Table configuration syntax<a class="headerlink" href="#table-configuration-syntax" title="Permalink to this heading">#</a></h4>
 <p>You can also use the toml syntax for subtables like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span><span class="w"></span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the application server&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the application server&quot;</span>
 
-<span class="w">  </span><span class="k">[tool.poe.tasks.serve.args.host]</span><span class="w"></span>
-<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-h&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--host&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The host on which to expose the service&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[tool.poe.tasks.serve.args.host]</span>
+<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-h&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--host&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The host on which to expose the service&quot;</span>
+<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span>
 
-<span class="w">  </span><span class="k">[tool.poe.tasks.serve.args.port]</span><span class="w"></span>
-<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-p&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--port&quot;</span><span class="p">]</span><span class="w"></span>
-<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The port on which to expose the service&quot;</span><span class="w"></span>
-<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;8000&quot;</span><span class="w"></span>
+<span class="w">  </span><span class="k">[tool.poe.tasks.serve.args.port]</span>
+<span class="w">  </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;-p&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;--port&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The port on which to expose the service&quot;</span>
+<span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;8000&quot;</span>
 </pre></div>
 </div>
 <p>When using this form the <em>name</em> option is no longer applicable because the key for the
@@ -414,10 +414,10 @@ argument within the args table is taken as the name.</p>
 the required option is set to true.</p>
 <p>For string values, environment variables can be referenced using the usual templating
 syntax as in the following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.deploy.args]]</span><span class="w"></span>
-<span class="n">name</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;region&quot;</span><span class="w"></span>
-<span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The region to deploy to&quot;</span><span class="w"></span>
-<span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${AWS_REGION}&quot;</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.deploy.args]]</span>
+<span class="n">name</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;region&quot;</span>
+<span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The region to deploy to&quot;</span>
+<span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${AWS_REGION}&quot;</span>
 </pre></div>
 </div>
 <p>This can be combined with setting an env values on the task with the default
@@ -469,9 +469,9 @@ the environment as a string of whitespace separated values. For script tasks, th
 values will be provided to your python function as a list of values. In a cmd task
 the values can be passed as separate arugments to the task via templating as in the
 following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.save]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo ${FILE_PATHS}&quot;</span><span class="w"></span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FILE_PATHS&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.save]</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo ${FILE_PATHS}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FILE_PATHS&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
 </dd>
@@ -489,7 +489,7 @@ required by default.</p>
 is to keep values as strings. Setting the type to “boolean” makes the resulting
 argument a flag that if provided will set the value to the boolean opposite of the
 default value – i.e. <em>true</em> if no default value is given, or false if
-<code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w"></span></code>.</p>
+<code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span></code>.</p>
 </dd>
 </dl>
 </li>
@@ -514,7 +514,7 @@ help = &quot;Pass by a planet!&quot;
 </pre></div>
 </div>
 <p>The resulting task can be run like:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe passby --planet mars
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>passby<span class="w"> </span>--planet<span class="w"> </span>mars
 </pre></div>
 </div>
 </section>
@@ -524,14 +524,14 @@ help = &quot;Pass by a planet!&quot;
 the underlying python function depends on how the script is defined.</p>
 <p>In the following example, since no parenthesis are included for the referenced function,
 all provided args will be passed to the function as kwargs:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;project.util:build&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;version&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;project.util:build&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;version&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>You can also control exactly how values are passed to the python function as
 demonstrated in the following example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;project.util:build(dest, build_version=version, verbose=True)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;version&quot;</span><span class="p">]</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;project.util:build(dest, build_version=version, verbose=True)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;version&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>
@@ -539,12 +539,12 @@ demonstrated in the following example:</p>
 <h3>Arguments for sequence tasks<a class="headerlink" href="#arguments-for-sequence-tasks" title="Permalink to this heading">#</a></h3>
 <p>Arguments can be passed to the tasks referenced from a sequence task as in the following
 example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span><span class="w"></span>
-<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;util:build_app&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;util:build_app&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span><span class="w"> </span><span class="p">}</span>
 
-<span class="k">[tool.poe.tasks.check]</span><span class="w"></span>
-<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;build ${target}&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;util:run_tests(environ[&#39;target&#39;])&quot;</span><span class="w"> </span><span class="p">}]</span><span class="w"></span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;target&quot;</span><span class="p">]</span><span class="w"></span>
+<span class="k">[tool.poe.tasks.check]</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;build ${target}&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;util:run_tests(environ[&#39;target&#39;])&quot;</span><span class="w"> </span><span class="p">}]</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;target&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>This works by setting the argument values as environment variables for the subtasks,
@@ -558,13 +558,13 @@ simply appended to the command. If named arguments are defined then one can stil
 provide additional free arguments to the command by separating them from the defined
 arguments with a double dash token <code class="code highlight sh docutils literal highlight-sh">--</code>.</p>
 <p>For example given a task like:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.lint]</span><span class="w"></span>
-<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ruff check ${target_dir}&quot;</span><span class="w"></span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">target_dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;--target&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-t&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.&quot;</span><span class="w"> </span><span class="p">}}</span><span class="w"></span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.lint]</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ruff check ${target_dir}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">target_dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;--target&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-t&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.&quot;</span><span class="w"> </span><span class="p">}}</span>
 </pre></div>
 </div>
 <p>calling the task like so:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe lint -t tests -- --fix
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>lint<span class="w"> </span>-t<span class="w"> </span>tests<span class="w"> </span>--<span class="w"> </span>--fix
 </pre></div>
 </div>
 <p>will result in poe parsing the target_dir cli option, but appending the <code class="code highlight sh docutils literal highlight-sh">--fix</code>
