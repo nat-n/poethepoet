@@ -45,6 +45,7 @@ rst_prolog = """
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
+html_baseurl = "http://poethepoet.natn.io/"
 html_theme = "furo"
 html_static_path = ["_static"]
 html_title = "Poe the Poet"
