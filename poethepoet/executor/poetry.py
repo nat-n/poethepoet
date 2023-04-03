@@ -25,7 +25,6 @@ class PoetryExecutor(PoeExecutor):
         project_dir = self.context.config.project_dir
 
         if poetry_env:
-
             from ..virtualenv import Virtualenv
 
             # Execute the task in the virtualenv from poetry

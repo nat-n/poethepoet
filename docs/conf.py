@@ -17,8 +17,9 @@ release = __version__
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.autosectionlabel",  # Automatically add section labels, which can be used as :ref:`My section title`
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.githubpages",
+    "sphinxext.opengraph",
 ]
 
 templates_path = ["_templates"]
@@ -53,4 +54,7 @@ html_favicon = "_static/favicon.ico"
 html_theme_options = {
     "light_logo": "poe_logo_x2000.png",
     "dark_logo": "poe_logo_x2000.png",
+    "source_repository": "https://github.com/nat-n/poethepoet/",
+    "source_branch": "main",
+    "source_directory": "docs/",
 }

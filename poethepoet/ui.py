@@ -209,7 +209,7 @@ class PoeUi:
                     tasks_section.append(
                         f"  <em>{self._padr(task, col_width)}</em>  {help_text}"
                     )
-                    for (options, arg_help_text, default) in args_help:
+                    for options, arg_help_text, default in args_help:
                         task_arg_help = [
                             "   ",
                             f"<em3>{self._padr(', '.join(options), col_width-1)}</em3>",

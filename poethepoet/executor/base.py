@@ -18,7 +18,6 @@ from typing import (
 from ..exceptions import ExecutionError, PoeException
 
 if TYPE_CHECKING:
-
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
 

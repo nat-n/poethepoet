@@ -1,5 +1,5 @@
-Types of Task
-=============
+Defining tasks
+==============
 
 You can define seven different types of task:
 

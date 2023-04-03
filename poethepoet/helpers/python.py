@@ -254,7 +254,7 @@ def _apply_substitutions(content: str, subs: List[Substitution]):
     cursor = 0
     segments: List[str] = []
 
-    for ((start, end), replacement) in sorted(subs, key=lambda x: x[0][0]):
+    for (start, end), replacement in sorted(subs, key=lambda x: x[0][0]):
         in_between = content[cursor:start]
         segments.extend((in_between, replacement))
         cursor += len(in_between) + (end - start)
