@@ -37,8 +37,8 @@ Learn more
 .. toctree::
    :maxdepth: 2
 
-   getting_started/index
-   guides/index
+   introduction/index
    tasks/index
    configuration/index
+   guides/index
    contributing
