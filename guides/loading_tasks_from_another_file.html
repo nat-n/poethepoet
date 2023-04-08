@@ -11,13 +11,14 @@
 <meta property="og:image" content="/_images/social_previews/summary_guides_loading_tasks_from_another_file_759eeebb.png" />
 <meta property="og:image:alt" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if..." />
 <meta name="description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Contributing" href="../contributing.html" /><link rel="prev" title="Composing tasks" href="composing_tasks.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Contributing" href="../contributing.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/loading_tasks_from_another_file.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
         <title>Load tasks from another file - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
     
@@ -143,7 +144,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -168,12 +169,10 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1 has-children"><a class="reference internal" href="../introduction/index.html">Getting Started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../introduction/installation.html">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../introduction/basic_usage.html">Basic Usage</a></li>
-</ul>
-</li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/options.html">Configuring tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/cmd.html">Command tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/shell.html">Shell tasks</a></li>
@@ -183,13 +182,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../configuration/index.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../configuration/project-wide_configuration.html">Project-wide configuration options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../configuration/task_level_configuration.html">Task level configuration</a></li>
-</ul>
-</li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="composing_tasks.html">Composing tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Global configuration</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="args_guide.html">Declaring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="toml_guide.html">Using toml syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Load tasks from another file</a></li>
 </ul>
 </li>
@@ -231,7 +229,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -282,70 +280,6 @@ my_subproject subdirectory.</p>
 outside of parent directory of the pyproject.toml file that poe is running with.</p>
 <p>If a referenced file is missing then poe ignores it without error, though
 failure to read the contents will result in failure.</p>
-<section id="configuring-the-plugin">
-<h2>Configuring the plugin<a class="headerlink" href="#configuring-the-plugin" title="Permalink to this heading">#</a></h2>
-<p>By default the poetry plugin will register <em>poe</em> as a command prefix so tasks can be
-invoked like:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>poe<span class="w"> </span><span class="o">[</span>task_name<span class="o">]</span><span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
-</pre></div>
-</div>
-<p>And the poe documentation can be viewed via:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>poe
-</pre></div>
-</div>
-<p>It is also possible to modify this behavoir, to either have a different command prefix
-or none at all by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">poetry_command</span></code> global option in your
-pyproject.toml like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
-<span class="n">poetry_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;</span>
-</pre></div>
-</div>
-<p>In this case poe tasks will be registered as top level commands on poetry and can be
-invoked simply as:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span><span class="o">[</span>task_name<span class="o">]</span>
-</pre></div>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Whatever <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">poetry_command</span></code> is set to must not already exist as a
-poetry command!</p>
-<p>Additionally if setting it to the emtpy string then care must be taken to avoid
-defining any poe tasks that conflict with any other built in or plugin provided
-poetry command.</p>
-</div>
-</section>
-<section id="hooking-into-poetry-commands">
-<h2>Hooking into poetry commands<a class="headerlink" href="#hooking-into-poetry-commands" title="Permalink to this heading">#</a></h2>
-<p>It is also possible to configure a task to be run before or after a specific poetry
-command by declaring the poetry_hooks global option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span>
-<span class="n">pre_build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;prep-assets --verbosity=5&quot;</span>
-<span class="n">post_build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;archive-build&quot;</span>
-
-<span class="k">[tool.poe.tasks.prep-assets]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:prepare_assets&quot;</span>
-<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Optimise static assets for inclusion in the build&quot;</span>
-
-<span class="k">[tool.poe.tasks.archive-build]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:archive_build&quot;</span>
-<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Upload the latest build version to archive server&quot;</span>
-</pre></div>
-</div>
-<p>In this example the <code class="code docutils literal notranslate"><span class="pre">prep-assets</span></code> task will be run as the first step in calling
-<code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>build</code> with an argument passed as if the task were being called via the
-poe CLI. We’ve also configured the <code class="code docutils literal notranslate"><span class="pre">archive-build</span></code> task to be run after every
-successful build.</p>
-<p>If a task fails when running as a hook, then the poetry command will exit with an error.
-If it is a <em>pre</em> hook then this will cause the actual poetry command not to execute.
-This behaviour may be useful for running checks before <code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>publish</code></p>
-<p>Hooks can be disabled for a single invocation by passing the <code class="code highlight bash docutils literal highlight-bash">--no-plugins</code> option
-to poetry.</p>
-<p>Namespaced commands like <code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>env<span class="w"> </span>info</code> can be specified with underscores like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span>
-<span class="n">post_env_info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;info&quot;</span>
-</pre></div>
-</div>
-</section>
 </section>
 
         </article>
@@ -362,7 +296,7 @@ to poetry.</p>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="composing_tasks.html">
+          <a class="prev-page" href="composition_guide.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
@@ -385,34 +319,26 @@ to poetry.</p>
             
           </div>
           <div class="right-details">
-            
+            <div class="icons">
+              <a class="muted-link " href="https://pypi.org/project/poethepoet/" aria-label="PyPI">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg"  stroke="currentColor" fill="currentColor" stroke-width="0" width="16px" height="16" viewBox="0 0 512 512">
+                    <path d="M454,305.8294373l-91.1191101,33.691803v106.4807434L181.94487,512V298.2970276l179.8842926-66.8633728V58.8240128L454,92.4968643V305.8294373z M276.8390503,363.3849487c-15.7174377,5.7245483-28.4572144,23.9239502-28.4515686,40.6481018c0.0061646,16.7174377,12.7523499,25.6329346,28.4636841,19.919281c15.7173462-5.7247009,28.4602051-23.9217834,28.4544983-40.6459656C305.303009,366.5810547,292.5565491,357.6635437,276.8390503,363.3849487z M334.6160889,212.4997864l-180.3925323,66.8782959l0.2966461,135.7604065l-64.2104874,22.9912415L0,405.2594604V191.9265442l90.704361-33.6917877V51.7543259L232.9717102,0l101.6443787,32.4636765V212.4997864z M215.2144775,94.8330383c-15.7174835,5.7222672-28.4621582,23.9249802-28.458725,40.6499329c0.0025787,16.725235,12.750824,25.6462555,28.4683228,19.9248505c15.7174988-5.7219086,28.4623871-23.9248047,28.4592285-40.6498184C243.6806641,98.0326996,230.9319763,89.1116333,215.2144775,94.8330383z"/>
+                </svg>
+            </a>
+              <a class="muted-link " href="https://github.com/nat-n/poethepoet" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
           </div>
         </div>
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">Load tasks from another file</a><ul>
-<li><a class="reference internal" href="#configuring-the-plugin">Configuring the plugin</a></li>
-<li><a class="reference internal" href="#hooking-into-poetry-commands">Hooking into poetry commands</a></li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>
@@ -421,5 +347,7 @@ to poetry.</p>
     <script src="../_static/doctools.js"></script>
     <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/scripts/furo.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
     </body>
 </html>

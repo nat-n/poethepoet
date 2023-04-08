@@ -3,21 +3,22 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="Task level configuration" />
+<meta property="og:title" content="Configuring tasks" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="configuration/task_level_configuration.html" />
+<meta property="og:url" content="tasks/options.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Task help text: You can specify help text to be shown alongside the task name in the list of available tasks (such as when executing poe with no arguments), by adding a help key like so: Environmen..." />
-<meta property="og:image" content="/_images/social_previews/summary_configuration_task_level_configuration_b0b94545.png" />
-<meta property="og:image:alt" content="Task help text: You can specify help text to be shown alongside the task name in the list of available tasks (such as when executing poe with no arguments),..." />
-<meta name="description" content="Task help text: You can specify help text to be shown alongside the task name in the list of available tasks (such as when executing poe with no arguments), by adding a help key like so: Environmen..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Guides" href="../guides/index.html" /><link rel="prev" title="Project-wide configuration options" href="project-wide_configuration.html" />
-        <link rel="canonical" href="http://poethepoet.natn.io/configuration/task_level_configuration.html" />
+<meta property="og:description" content="Overview of standard task options: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the ta..." />
+<meta property="og:image" content="/_images/social_previews/summary_tasks_options_c86d8c17.png" />
+<meta property="og:image:alt" content="Overview of standard task options: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖,..." />
+<meta name="description" content="Overview of standard task options: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the ta..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="cmd tasks" href="types_of_task/cmd.html" /><link rel="prev" title="Defining tasks" href="index.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/tasks/options.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
-        <title>Task level configuration - Poe the Poet</title>
+        <title>Configuring tasks - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
     
@@ -168,28 +169,25 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1 has-children"><a class="reference internal" href="../introduction/index.html">Getting Started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../introduction/installation.html">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../introduction/basic_usage.html">Basic Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Configuring tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types_of_task/cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types_of_task/script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types_of_task/shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types_of_task/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types_of_task/expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types_of_task/switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types_of_task/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/cmd.html">Command tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/script.html">Script tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/shell.html">Shell tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/sequence.html">Sequence tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/expr.html">Expression tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/switch.html">Switch tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/ref.html">Reference tasks</a></li>
-</ul>
-</li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Configuration</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="project-wide_configuration.html">Project-wide configuration options</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Task level configuration</a></li>
-</ul>
-</li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../guides/composing_tasks.html">Composing tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Global configuration</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guides/help_guide.html">Documenting tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/args_guide.html">Declaring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/toml_guide.html">Using toml syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
 </ul>
 </li>
@@ -215,7 +213,7 @@
         </a>
         <div class="content-icon-container">
           <div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/configuration/task_level_configuration.rst" title="Edit this page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/tasks/options.rst" title="Edit this page">
     <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
@@ -237,98 +235,75 @@
           </label>
         </div>
         <article role="main">
-          <section id="task-level-configuration">
-<h1>Task level configuration<a class="headerlink" href="#task-level-configuration" title="Permalink to this heading">#</a></h1>
-<section id="task-help-text">
-<h2>Task help text<a class="headerlink" href="#task-help-text" title="Permalink to this heading">#</a></h2>
-<p>You can specify help text to be shown alongside the task name in the list of available
-tasks (such as when executing poe with no arguments), by adding a help key like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;black . --check --diff&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Check code style&quot;</span><span class="p">}</span>
-</pre></div>
+          <section id="configuring-tasks">
+<h1>Configuring tasks<a class="headerlink" href="#configuring-tasks" title="Permalink to this heading">#</a></h1>
+<section id="overview-of-standard-task-options">
+<h2>Overview of standard task options<a class="headerlink" href="#overview-of-standard-task-options" title="Permalink to this heading">#</a></h2>
+<p>The following options can be configured on your tasks and are not specific to any particular task type.</p>
+<dl>
+<dt><strong>help</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code> <a class="reference internal" href="#documenting-tasks"><span class="std std-ref">📖</span></a></span></dt><dd><p>Help text to be displayed next to the task name in the documentation when poe is run without specifying a task.</p>
+</dd>
+<dt><strong>args</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">dict]</span></code> | <code class="docutils literal notranslate"><span class="pre">List[Union[str,</span> <span class="pre">dict]]</span></code> <a class="reference internal" href="#declaring-cli-arguments"><span class="std std-ref">📖</span></a></span></dt><dd><p>Define CLI options, positional arguments, or flags that this task should accept.</p>
+</dd>
+<dt><strong>env</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#setting-task-specific-environment-variables"><span class="std std-ref">📖</span></a></span></dt><dd><p>A map of environment variables to be set for this task.</p>
+</dd>
+<dt><strong>envfile</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">List[str]</span></code> <a class="reference internal" href="#loading-environment-variables-from-an-env-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Provide one or more env files to be loaded before running this task.</p>
+</dd>
+<dt><strong>cwd</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#running-a-task-with-a-specific-working-directory"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.</p>
+</dd>
+<dt><strong>deps</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">List[str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>A list of task invocations that will be executed before this one.</p>
+</dd>
+<dt><strong>uses</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Allows this task to use the output of other tasks which are executed first.
+The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.</p>
+</dd>
+<dt><strong>use_exec</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed in the same process, instead of as a subprocess.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This option is only applicable to <strong>cmd</strong> and <strong>script</strong> tasks, and it implies the task in question cannot be referenced by another task.</p>
 </div>
+</dd>
+</dl>
 </section>
-<section id="environment-variables">
-<h2>Environment variables<a class="headerlink" href="#environment-variables" title="Permalink to this heading">#</a></h2>
-<p>You can specify arbitrary environment variables to be set for a task by providing the
-env key like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
-<span class="n">serve</span><span class="p">.</span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span><span class="w"> </span><span class="p">}</span>
+<section id="documenting-tasks">
+<h2>Documenting tasks<a class="headerlink" href="#documenting-tasks" title="Permalink to this heading">#</a></h2>
+<p>You can add help text to your tasks by adding the <code class="docutils literal notranslate"><span class="pre">help</span></code> option to the task definition, like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the test suite&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span>
+
+<span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the app in debug mode&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.service:run(debug=True)&quot;</span>
+
+<span class="k">[tool.poe.tasks.tunnel]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Create an SSH tunnel to the production server&quot;</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span>
 </pre></div>
 </div>
-<p>Notice this example uses deep keys which can be more convenient but aren’t as well
-supported by some older toml implementations.</p>
-<p>The above example can be modified to only set the <cite>PORT</cite> variable if it is not already
-set by replacing the last line with the following:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">env</span><span class="p">.</span><span class="n">PORT</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span>
+<p>This help text will be displayed alongside the task name in the list of configured tasks when <code class="docutils literal notranslate"><span class="pre">poe</span></code> is run without specifying a task.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ poe --help
+Poe the Poet - A task runner that works well with poetry.
+version 0.19.0
+
+USAGE
+  poe [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]
+
+GLOBAL OPTIONS
+  -h, --help     Show this help page and exit
+  --version      Print the version and exit
+  -v, --verbose  Increase command output (repeatable)
+  -q, --quiet    Decrease command output (repeatable)
+  -d, --dry-run  Print the task contents but don&#39;t actually run it
+  --root PATH    Specify where to find the pyproject.toml
+  --ansi         Force enable ANSI output
+  --no-ansi      Force disable ANSI output
+
+CONFIGURED TASKS
+  test           Run the test suite
+  serve          Run the app in debug mode
+  tunnel         Create an SSH tunnel to the production server
 </pre></div>
 </div>
-<section id="loading-env-vars-from-an-env-file">
-<h3>Loading env vars from an env file<a class="headerlink" href="#loading-env-vars-from-an-env-file" title="Permalink to this heading">#</a></h3>
-<p>You can also specify one or more env files (with bash-like syntax) to load per task like so:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># .env</span>
-<span class="nv">STAGE</span><span class="o">=</span>dev
-<span class="nv">PASSWORD</span><span class="o">=</span><span class="s1">&#39;!@#$%^&amp;*(&#39;</span>
-</pre></div>
-</div>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
-<span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span>
-</pre></div>
-</div>
-<p>The envfile option accepts the name (or relative path) to a single envfile as shown
-above but can also by given a list of such paths like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;local.env&quot;</span><span class="p">]</span>
-</pre></div>
-</div>
-<p>In this case the referenced files will be loaded in the given order.</p>
-</section>
-<section id="defining-env-vars-in-terms-of-other-env-vars">
-<h3>Defining env vars in terms of other env vars<a class="headerlink" href="#defining-env-vars-in-terms-of-other-env-vars" title="Permalink to this heading">#</a></h3>
-<p>It is also possible to reference existing env vars when defining a new env var for a
-task. This may be useful for aliasing or extending a variable already defined in the
-host environment, globally in the config, or in a referenced envfile. In the following
-example the value from $TF_VAR_service_port on the host environment is also made
-available as $FLASK_RUN_PORT within the task.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;flask run&quot;</span>
-<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FLASK_RUN_PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${TF_VAR_service_port}&quot;</span><span class="w"> </span><span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="running-a-task-with-a-specific-working-directory">
-<h3>Running a task with a specific working directory<a class="headerlink" href="#running-a-task-with-a-specific-working-directory" title="Permalink to this heading">#</a></h3>
-<p>By default tasks are run from the project root – that is the parent directory of the
-pyproject.toml file. However if a task needs to be run in another directory within the
-project then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span></code> option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-client]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;npx ts-node -T ./build.ts&quot;</span>
-<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./client&quot;</span>
-</pre></div>
-</div>
-<p>In this example, the npx executable is executed inside the <code class="code highlight sh docutils literal highlight-sh">./client</code> subdirectory of
-the project, and will use the nodejs package.json configuration from that location and
-evaluate paths relative to that location.</p>
-</section>
-<section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
-<h3>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Permalink to this heading">#</a></h3>
-<p>Normally tasks are executed as subprocesses of the poe cli. This makes it possible for
-poe to run multiple tasks, for example within a sequence task or task graph.</p>
-<p>However in certain situations it can be desirable to define a task that is instead
-executed within the same process via exec. Cmd and script tasks can be configured to
-work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span></code> option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
-<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gunicorn ./my_app:run&quot;</span>
-<span class="n">use_exec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-</pre></div>
-</div>
-<p>Note the following limitations with this feature:</p>
-<ul class="simple">
-<li><p>a task configured in this way may not be referenced by another task</p></li>
-<li><p>this does not work on windows becuase of <a class="reference external" href="https://bugs.python.org/issue19066">this issue</a>. On windows a subprocess is always created.</p></li>
-</ul>
-</section>
 </section>
 <section id="declaring-cli-arguments">
 <h2>Declaring CLI arguments<a class="headerlink" href="#declaring-cli-arguments" title="Permalink to this heading">#</a></h2>
@@ -427,18 +402,15 @@ argument within the args table is taken as the name.</p>
 <p>Named arguments support the following configuration options:</p>
 <ul>
 <li><dl>
-<dt><strong>default</strong><span class="classifier">Union[str, int, float, bool]</span></dt><dd><p>The value to use if the argument is not provided. This option has no significance if
-the required option is set to true.</p>
-<p>For string values, environment variables can be referenced using the usual templating
-syntax as in the following example.</p>
+<dt><strong>default</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code> | <code class="docutils literal notranslate"><span class="pre">float</span></code> | <code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>The value to use if the argument is not provided. This option has no significance if the required option is set to true.</p>
+<p>For string values, environment variables can be referenced using the usual templating syntax as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.deploy.args]]</span>
 <span class="n">name</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;region&quot;</span>
 <span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The region to deploy to&quot;</span>
 <span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${AWS_REGION}&quot;</span>
 </pre></div>
 </div>
-<p>This can be combined with setting an env values on the task with the default
-specifier to get the following precendence of values for the arg:</p>
+<p>This can be combined with setting an env values on the task with the default specifier to get the following precendence of values for the arg:</p>
 <ol class="arabic simple">
 <li><p>the value passed on the command line</p></li>
 <li><p>the value of the variable set on the environment</p></li>
@@ -447,45 +419,32 @@ specifier to get the following precendence of values for the arg:</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt><strong>help</strong><span class="classifier">str</span></dt><dd><p>A short description of the argument to include in the documentation of the task.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name of the task. Only applicable when <em>args</em> is an array.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>options</strong><span class="classifier">List[str]</span></dt><dd><p>A list of options to accept for this argument, similar to
-<a class="reference external" href="https://docs.python.org/3/library/argparse.html#name-or-flags">argsparse name or flags</a>.
-If not provided then the name of the argument is used. You can use this option to
-expose a different name to the CLI vs the name that is used inside the task, or to
-specify long and short forms of the CLI option, e.g. [“-h”, “–help”].</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>positional</strong><span class="classifier">bool</span></dt><dd><p>If set to true then the argument becomes a position argument instead of an option
-argument. Note that positional arguments may not have type <em>bool</em>.</p>
+<li><dl>
+<dt><strong>help</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>A short description of the argument to include in the documentation of the task.</p>
 </dd>
 </dl>
 </li>
 <li><dl>
-<dt><strong>multiple</strong><span class="classifier">Union[bool, int]</span></dt><dd><p>If the multiple option is set to true on a positional or option argument then that
-argument will accept multiple values.</p>
+<dt><strong>name</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>The name of the task. Only applicable when <em>args</em> is an array.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>options</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">List[str]</span></code></span></dt><dd><p>A list of options to accept for this argument, similar to <a class="reference external" href="https://docs.python.org/3/library/argparse.html#name-or-flags">argsparse name or flags</a>. If not provided then the name of the argument is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. [“-h”, “–help”].</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>positional</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>If set to true then the argument becomes a position argument instead of an option argument. Note that positional arguments may not have type <em>bool</em>.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>multiple</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>If the multiple option is set to true on a positional or option argument then that argument will accept multiple values.</p>
 <p>If set to a number, then the argument will accept exactly that number of values.</p>
-<p>For positional aguments, only the last positional argument may have the multiple
-option set.</p>
-<p>The multiple option is not compatible with arguments with type boolean since
-these are interpreted as flags. However multiple ones or zeros can be passed to an
-argument of type “integer” for similar effect.</p>
-<p>The values provided to an argument with the multiple option set are available on
-the environment as a string of whitespace separated values. For script tasks, the
-values will be provided to your python function as a list of values. In a cmd task
-the values can be passed as separate arugments to the task via templating as in the
-following example.</p>
+<p>For positional aguments, only the last positional argument may have the multiple option set.</p>
+<p>The multiple option is not compatible with arguments with type boolean since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type “integer” for similar effect.</p>
+<p>The values provided to an argument with the multiple option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your python function as a list of values. In a cmd task the values can be passed as separate arugments to the task via templating as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.save]</span>
 <span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo ${FILE_PATHS}&quot;</span>
 <span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FILE_PATHS&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
@@ -494,19 +453,13 @@ following example.</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt><strong>required</strong><span class="classifier">bool</span></dt><dd><p>If true then not providing the argument will result in an error. Arguments are not
-required by default.</p>
+<li><dl>
+<dt><strong>required</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>If true then not providing the argument will result in an error. Arguments are not required by default.</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt><strong>type</strong><span class="classifier">str</span></dt><dd><p>The type that the provided value will be cast to. The set of acceptable options is
-{“string”, “float”, “integer”, “boolean”}. If not provided then the default behaviour
-is to keep values as strings. Setting the type to “boolean” makes the resulting
-argument a flag that if provided will set the value to the boolean opposite of the
-default value – i.e. <em>true</em> if no default value is given, or false if
-<code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span></code>.</p>
+<li><dl>
+<dt><strong>type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>The type that the provided value will be cast to. The set of acceptable options is    {“string”, “float”, “integer”, “boolean”}. If not provided then the default behaviour    is to keep values as strings. Setting the type to “boolean” makes the resulting    argument a flag that if provided will set the value to the boolean opposite of the    default value – i.e. <em>true</em> if no default value is given, or false if <code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span></code>.</p>
 </dd>
 </dl>
 </li>
@@ -590,6 +543,80 @@ flag to the ruff command without attempting to interpret it.</p>
 subsequent arguments being ignored.</p>
 </section>
 </section>
+<section id="setting-task-specific-environment-variables">
+<h2>Setting task specific environment variables<a class="headerlink" href="#setting-task-specific-environment-variables" title="Permalink to this heading">#</a></h2>
+<p>You can specify arbitrary environment variables to be set for a single task by providing the env option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Notice this example uses deep keys which can be more convenient but aren’t as well supported by some older toml implementations.</p>
+<section id="setting-defaults-for-environment-variables">
+<h3>Setting defaults for environment variables<a class="headerlink" href="#setting-defaults-for-environment-variables" title="Permalink to this heading">#</a></h3>
+<p>The previous example can be modified to only set the <cite>PORT</cite> variable if it is not already set by replacing the last line with the following:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">env</span><span class="p">.</span><span class="n">PORT</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="templating-environment-variables">
+<h3>Templating environment variables<a class="headerlink" href="#templating-environment-variables" title="Permalink to this heading">#</a></h3>
+<p>It is also possible to reference existing environment variables when defining a new environment variable for a task. This may be useful for aliasing or extending a variable already defined in the host environment, globally in the config, or in a referenced envfile. In the following example the value from $TF_VAR_service_port on the host environment is also made available as $FLASK_RUN_PORT within the task.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;flask run&quot;</span>
+<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FLASK_RUN_PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${TF_VAR_service_port}&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="loading-environment-variables-from-an-env-file">
+<h2>Loading environment variables from an env file<a class="headerlink" href="#loading-environment-variables-from-an-env-file" title="Permalink to this heading">#</a></h2>
+<p>You can also specify one or more env files (with bash-like syntax) to load per task like so:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># .env</span>
+<span class="nv">STAGE</span><span class="o">=</span>dev
+<span class="nv">PASSWORD</span><span class="o">=</span><span class="s1">&#39;!@#$%^&amp;*(&#39;</span>
+</pre></div>
+</div>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span>
+</pre></div>
+</div>
+<p>The envfile option accepts the name (or relative path) to a single envfile as shown
+above but can also by given a list of such paths like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;local.env&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>In this case the referenced files will be loaded in the given order.</p>
+</section>
+<section id="running-a-task-with-a-specific-working-directory">
+<h2>Running a task with a specific working directory<a class="headerlink" href="#running-a-task-with-a-specific-working-directory" title="Permalink to this heading">#</a></h2>
+<p>By default tasks are run from the project root – that is the parent directory of the pyproject.toml file. However if a task needs to be run in another directory within the project then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-client]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;npx ts-node -T ./build.ts&quot;</span>
+<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./client&quot;</span>
+</pre></div>
+</div>
+<p>In this example, the npx executable is executed inside the <code class="code highlight sh docutils literal highlight-sh">./client</code> subdirectory of the project, and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.</p>
+<section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
+<h3>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Permalink to this heading">#</a></h3>
+<p>Normally tasks are executed as subprocesses of the <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.</p>
+<p>However in certain situations it can be desirable to define a task that is instead executed within the same process via an <em>exec</em> call. <span class="xref std std-doc">cmd</span> and <span class="xref std std-doc">script</span> tasks can be configured to work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gunicorn ./my_app:run&quot;</span>
+<span class="n">use_exec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note the following limitations with this feature:</p>
+<ol class="arabic simple">
+<li><p>a task configured in this way may not be referenced by another task</p></li>
+<li><p>this does not work on windows becuase of <a class="reference external" href="https://bugs.python.org/issue19066">this issue</a>. On windows a subprocess is always created.</p></li>
+</ol>
+</div>
+</section>
+</section>
 </section>
 
         </article>
@@ -597,23 +624,23 @@ subsequent arguments being ignored.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../guides/index.html">
+          <a class="next-page" href="types_of_task/cmd.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Guides</div>
+                <div class="title"><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="project-wide_configuration.html">
+          <a class="prev-page" href="index.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Project-wide configuration options</div>
+                <div class="title">Defining tasks</div>
                 
               </div>
             </a>
@@ -629,7 +656,19 @@ subsequent arguments being ignored.</p>
             
           </div>
           <div class="right-details">
-            
+            <div class="icons">
+              <a class="muted-link " href="https://pypi.org/project/poethepoet/" aria-label="PyPI">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg"  stroke="currentColor" fill="currentColor" stroke-width="0" width="16px" height="16" viewBox="0 0 512 512">
+                    <path d="M454,305.8294373l-91.1191101,33.691803v106.4807434L181.94487,512V298.2970276l179.8842926-66.8633728V58.8240128L454,92.4968643V305.8294373z M276.8390503,363.3849487c-15.7174377,5.7245483-28.4572144,23.9239502-28.4515686,40.6481018c0.0061646,16.7174377,12.7523499,25.6329346,28.4636841,19.919281c15.7173462-5.7247009,28.4602051-23.9217834,28.4544983-40.6459656C305.303009,366.5810547,292.5565491,357.6635437,276.8390503,363.3849487z M334.6160889,212.4997864l-180.3925323,66.8782959l0.2966461,135.7604065l-64.2104874,22.9912415L0,405.2594604V191.9265442l90.704361-33.6917877V51.7543259L232.9717102,0l101.6443787,32.4636765V212.4997864z M215.2144775,94.8330383c-15.7174835,5.7222672-28.4621582,23.9249802-28.458725,40.6499329c0.0025787,16.725235,12.750824,25.6462555,28.4683228,19.9248505c15.7174988-5.7219086,28.4623871-23.9248047,28.4592285-40.6498184C243.6806641,98.0326996,230.9319763,89.1116333,215.2144775,94.8330383z"/>
+                </svg>
+            </a>
+              <a class="muted-link " href="https://github.com/nat-n/poethepoet" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
           </div>
         </div>
         
@@ -647,15 +686,9 @@ subsequent arguments being ignored.</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Task level configuration</a><ul>
-<li><a class="reference internal" href="#task-help-text">Task help text</a></li>
-<li><a class="reference internal" href="#environment-variables">Environment variables</a><ul>
-<li><a class="reference internal" href="#loading-env-vars-from-an-env-file">Loading env vars from an env file</a></li>
-<li><a class="reference internal" href="#defining-env-vars-in-terms-of-other-env-vars">Defining env vars in terms of other env vars</a></li>
-<li><a class="reference internal" href="#running-a-task-with-a-specific-working-directory">Running a task with a specific working directory</a></li>
-<li><a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess">Defining tasks that run via exec instead of a subprocess</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Configuring tasks</a><ul>
+<li><a class="reference internal" href="#overview-of-standard-task-options">Overview of standard task options</a></li>
+<li><a class="reference internal" href="#documenting-tasks">Documenting tasks</a></li>
 <li><a class="reference internal" href="#declaring-cli-arguments">Declaring CLI arguments</a><ul>
 <li><a class="reference internal" href="#configuration-syntax">Configuration syntax</a><ul>
 <li><a class="reference internal" href="#array-configuration-syntax">Array configuration syntax</a></li>
@@ -667,6 +700,16 @@ subsequent arguments being ignored.</p>
 <li><a class="reference internal" href="#arguments-for-script-tasks">Arguments for script tasks</a></li>
 <li><a class="reference internal" href="#arguments-for-sequence-tasks">Arguments for sequence tasks</a></li>
 <li><a class="reference internal" href="#passing-free-arguments-in-addition-to-named-arguments">Passing free arguments in addition to named arguments</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#setting-task-specific-environment-variables">Setting task specific environment variables</a><ul>
+<li><a class="reference internal" href="#setting-defaults-for-environment-variables">Setting defaults for environment variables</a></li>
+<li><a class="reference internal" href="#templating-environment-variables">Templating environment variables</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#loading-environment-variables-from-an-env-file">Loading environment variables from an env file</a></li>
+<li><a class="reference internal" href="#running-a-task-with-a-specific-working-directory">Running a task with a specific working directory</a><ul>
+<li><a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess">Defining tasks that run via exec instead of a subprocess</a></li>
 </ul>
 </li>
 </ul>
@@ -684,5 +727,7 @@ subsequent arguments being ignored.</p>
     <script src="../_static/doctools.js"></script>
     <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/scripts/furo.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
     </body>
 </html>

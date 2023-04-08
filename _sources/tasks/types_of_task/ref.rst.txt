@@ -1,5 +1,5 @@
-"ref" tasks
-===========
+``ref`` tasks
+=============
 
 A ref task is essentially a call to another task. It is the default task type within a sequence task, but is not often used otherwise.
 
@@ -29,3 +29,7 @@ would be equivalent to executing the following in the shell:
   URGENCY=11 do_cmd thing1 thing2
 
 
+Available task options
+----------------------
+
+``ref`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec``.

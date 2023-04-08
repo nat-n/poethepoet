@@ -10,5 +10,8 @@ You can also read the following sections for more advanced topics.
 .. toctree::
    :maxdepth: 1
 
-   composing_tasks
+   help_guide
+   args_guide
+   toml_guide
+   composition_guide
    loading_tasks_from_another_file

@@ -3,21 +3,22 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="“cmd” tasks" />
+<meta property="og:title" content="cmd tasks" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/types_of_task/cmd.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Command tasks contain a single command that will be executed without a shell. This covers most basic use cases for example:" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_types_of_task_cmd_204dc907.png" />
-<meta property="og:image:alt" content="Command tasks contain a single command that will be executed without a shell. This covers most basic use cases for example:" />
-<meta name="description" content="Command tasks contain a single command that will be executed without a shell. This covers most basic use cases for example:" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="“script” tasks" href="script.html" /><link rel="prev" title="Defining tasks" href="../index.html" />
+<meta property="og:description" content="Command tasks contain a single command that will be executed as a sub process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
+<meta property="og:image" content="/_images/social_previews/summary_tasks_types_of_task_cmd_652ae2bf.png" />
+<meta property="og:image:alt" content="Command tasks contain a single command that will be executed as a sub process without a shell. This covers most basic use cases such as the following example..." />
+<meta name="description" content="Command tasks contain a single command that will be executed as a sub process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="“script” tasks" href="script.html" /><link rel="prev" title="Configuring tasks" href="../options.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/types_of_task/cmd.html" />
 
     <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
-        <title>“cmd” tasks - Poe the Poet</title>
+        <title>cmd tasks - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
     
@@ -143,7 +144,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -168,12 +169,10 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../introduction/index.html">Getting Started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../introduction/installation.html">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../introduction/basic_usage.html">Basic Usage</a></li>
-</ul>
-</li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../options.html">Configuring tasks</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Command tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shell.html">Shell tasks</a></li>
@@ -183,13 +182,12 @@
 <li class="toctree-l2"><a class="reference internal" href="ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../configuration/index.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../configuration/project-wide_configuration.html">Project-wide configuration options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../configuration/task_level_configuration.html">Task level configuration</a></li>
-</ul>
-</li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/composing_tasks.html">Composing tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration/index.html">Global configuration</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/help_guide.html">Documenting tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/args_guide.html">Declaring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/toml_guide.html">Using toml syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
 </ul>
 </li>
@@ -231,34 +229,73 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
           <section id="cmd-tasks">
-<h1>“cmd” tasks<a class="headerlink" href="#cmd-tasks" title="Permalink to this heading">#</a></h1>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The default task type is <code class="code docutils literal notranslate"><span class="pre">cmd</span></code>.</p>
-</div>
-<p><strong>Command tasks</strong> contain a single command that will be executed without a shell.
-This covers most basic use cases for example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;black .&quot;</span><span class="w">  </span><span class="c1"># strings are interpreted as commands by default</span>
-<span class="n">clean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
-<span class="s"># Multiline commands including comments work too. Unescaped whitespace is ignored.</span>
-<span class="s">rm -rf .coverage</span>
-<span class="s">       .mypy_cache</span>
-<span class="s">       .pytest_cache</span>
-<span class="s">       dist</span>
-<span class="s">       ./**/__pycache__</span>
-<span class="s">&quot;&quot;&quot;</span>
-<span class="n">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;cmd&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;pylint poethepoet&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1"># Inline tables with a cmd key work too</span>
-<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello $USER&quot;</span><span class="w">  </span><span class="c1"># Environment variables work, even though there&#39;s no shell!</span>
+<h1><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks<a class="headerlink" href="#cmd-tasks" title="Permalink to this heading">#</a></h1>
+<p><strong>Command tasks</strong> contain a single command that will be executed as a sub process without a shell.
+This covers most basic use cases such as the following examples.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest -v tests&quot;</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Tasks defined as just a string value, are interpreted as <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks by default.</p>
+</div>
+<section id="available-task-options">
+<h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
+</section>
+<section id="shell-like-features">
+<h2>Shell like features<a class="headerlink" href="#shell-like-features" title="Permalink to this heading">#</a></h2>
+<p>It it important to understand that <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks are executed without a shell (to maximise portability). However some shell like features are still available.</p>
+<section id="referencing-environment-variables">
+<h3>Referencing environment variables<a class="headerlink" href="#referencing-environment-variables" title="Permalink to this heading">#</a></h3>
+<p>Environment variables can be referenced using shell like syntax and are templated into the command.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello ${USER}&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>greet
+<span class="nv">Poe</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span><span class="nb">echo</span><span class="w"> </span>Hello<span class="w"> </span>nat
+Hello<span class="w"> </span>nat
+</pre></div>
+</div>
+<p>Parsing of variable referenced can be ignored by escaping with a backslash like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello \\${USER}&quot;</span><span class="w">  </span><span class="c1"># the backslash itself needs escaping for the toml parser</span>
+</pre></div>
+</div>
+</section>
+<section id="glob-expansion">
+<h3>Glob expansion<a class="headerlink" href="#glob-expansion" title="Permalink to this heading">#</a></h3>
+<p>Glob patterns in cmd tasks are expanded and replaced with their results.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">clean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">rm -rf ./**/*.pyc</span>
+<span class="s">       ./**/__pycache__    # this will match all __pycache__ dirs in the project</span>
+<span class="s">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>greet
+<span class="nv">Poe</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>./tests/__pycache__<span class="w"> </span>./docs/__pycache__<span class="w"> </span>...
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Notice that this example also demonstrates that comments and excess whitespace (including new lines) are ignored.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Much like in a POSIX shell, the glob pattern can be escaped by wrapping it in single quotes.</p>
+</div>
+</section>
+</section>
 </section>
 
         </article>
@@ -275,14 +312,14 @@ This covers most basic use cases for example:</p>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../index.html">
+          <a class="prev-page" href="../options.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Defining tasks</div>
+                <div class="title">Configuring tasks</div>
                 
               </div>
             </a>
@@ -298,14 +335,50 @@ This covers most basic use cases for example:</p>
             
           </div>
           <div class="right-details">
-            
+            <div class="icons">
+              <a class="muted-link " href="https://pypi.org/project/poethepoet/" aria-label="PyPI">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg"  stroke="currentColor" fill="currentColor" stroke-width="0" width="16px" height="16" viewBox="0 0 512 512">
+                    <path d="M454,305.8294373l-91.1191101,33.691803v106.4807434L181.94487,512V298.2970276l179.8842926-66.8633728V58.8240128L454,92.4968643V305.8294373z M276.8390503,363.3849487c-15.7174377,5.7245483-28.4572144,23.9239502-28.4515686,40.6481018c0.0061646,16.7174377,12.7523499,25.6329346,28.4636841,19.919281c15.7173462-5.7247009,28.4602051-23.9217834,28.4544983-40.6459656C305.303009,366.5810547,292.5565491,357.6635437,276.8390503,363.3849487z M334.6160889,212.4997864l-180.3925323,66.8782959l0.2966461,135.7604065l-64.2104874,22.9912415L0,405.2594604V191.9265442l90.704361-33.6917877V51.7543259L232.9717102,0l101.6443787,32.4636765V212.4997864z M215.2144775,94.8330383c-15.7174835,5.7222672-28.4621582,23.9249802-28.458725,40.6499329c0.0025787,16.725235,12.750824,25.6462555,28.4683228,19.9248505c15.7174988-5.7219086,28.4623871-23.9248047,28.4592285-40.6498184C243.6806641,98.0326996,230.9319763,89.1116333,215.2144775,94.8330383z"/>
+                </svg>
+            </a>
+              <a class="muted-link " href="https://github.com/nat-n/poethepoet" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
           </div>
         </div>
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks</a><ul>
+<li><a class="reference internal" href="#available-task-options">Available task options</a></li>
+<li><a class="reference internal" href="#shell-like-features">Shell like features</a><ul>
+<li><a class="reference internal" href="#referencing-environment-variables">Referencing environment variables</a></li>
+<li><a class="reference internal" href="#glob-expansion">Glob expansion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
@@ -314,5 +387,7 @@ This covers most basic use cases for example:</p>
     <script src="../../_static/doctools.js"></script>
     <script src="../../_static/sphinx_highlight.js"></script>
     <script src="../../_static/scripts/furo.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
     </body>
 </html>

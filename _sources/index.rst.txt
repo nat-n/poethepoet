@@ -6,38 +6,87 @@ Poe the Poet Documentation
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
-**Poe the Poet** is a task runner that works well with poetry.
+**Poe the Poet** is a batteries included task runner that works well with |poetry_link|.
 
-Features
-========
+It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project's virtual environment.
 
-|V| Straight forward declaration of project tasks in your pyproject.toml (kind of like npm scripts)
+"Simple things should be simple, complex things should be possible." – Alan Kay
+
+Top features
+============
+
+|V| Straight forward declaration of project tasks in your pyproject.toml
 
 |V| Tasks are run in poetry's virtualenv (or another env you specify)
 
 |V| Shell completion of task names (and global options too for zsh)
 
-|V| Can be used standalone or as a poetry plugin
+|V| The poe CLI can be used standalone, or as a plugin for the poetry
 
-|V| Tasks can be commands, shell scripts, or references to python functions (like :code:`tool.poetry.scripts`)
+|V| Tasks can be commands, shell scripts, python expressions, or references to python functions
 
-|V| Short and sweet commands with extra arguments passed to the task :bash:`poe [options] task [task_args]`, or you can define arguments explicitly.
+|V| Concise commands with extra arguments passed to the task :sh:`poe [options] task [task_args]`
 
-|V| Tasks can specify and reference environment variables as if they were evaluated by a shell
+|V| Easily to define CLI arguments for your tasks
 
-|V| Tasks are self documenting, with optional help messages (just run `poe` without arguments)
+|V| Tasks can specify and reference environment variables, even without a shell
+
+|V| Tasks are self documenting, with optional help messages (just run :sh:`poe` with no arguments)
 
 |V| Tasks can be composed into sequences or DAGs
 
 |V| Works with :code:`.env` files
 
-Learn more
-==========
+
+Quick start
+===========
+
+1.
+  Install the CLI *globally* from PyPI using |pipx_link| (or via :doc:`another method <installation>`):
+
+  .. code-block:: sh
+
+    pipx install poethepoet
+
+2.
+  Add a section for poe tasks to your pyproject.toml
+
+  .. code-block:: toml
+
+   [tool.poe.tasks]
+   test         = "pytest --cov=my_app"                         # a simple command task
+   serve.script = "my_app.service:run(debug=True)"              # python script based task
+   tunnel.shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &" } # (posix) shell based task
+
+  `Click here for a real example <https://github.com/nat-n/poethepoet/blob/main/pyproject.toml>`_.
+
+3.
+  Run one of your tasks using the CLI
+
+  .. code-block:: sh
+
+    poe test -v
+
+  The extra argument is appended to the task command.
+
+
+Usage without poetry
+--------------------
+
+Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the :toml:`tool.poe.executor` global option.
+
+By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml
+contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to
+use at ``./.venv`` or ``./venv`` relative to the pyproject.toml.
+
+If no virtualenv is found then poe will run tasks without any special environment management.
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
 
-   introduction/index
+   installation
+   poetry_plugin
    tasks/index
    configuration/index
    guides/index
