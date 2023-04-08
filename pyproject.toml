@@ -34,6 +34,7 @@ poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
 furo                = "^2023.3.27"
 livereload          = "^2.6.3"
 sphinx              = "^6.1.3"
+sphinx-copybutton   = "^0.5.1"
 sphinxext-opengraph = "^0.8.1"
 
 [tool.poetry.extras]
