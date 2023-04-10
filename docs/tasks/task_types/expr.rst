@@ -1,7 +1,7 @@
 ``expr`` tasks
 ==============
 
-Expr tasks consist of a single `python expression <https://docs.python.org/3/reference/expressions.html>`_. Running the task evaluates the expression and outputs the resulting value. Here's a trivial example of an expr task that will print `2` when run:
+**Expr tasks** consist of a single `python expression <https://docs.python.org/3/reference/expressions.html>`_. Running the task evaluates the expression and outputs the resulting value. Here's a trivial example of an expr task that will print `2` when run:
 
 .. code-block:: toml
 
@@ -31,7 +31,7 @@ Available task options
 
 ``expr`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec``.
 
-The following options are also available:
+The following options are also accepted:
 
 **imports** : ``List[str]`` :ref:`📖<Referencing imported modules in an expression>`
   A list of modules to import for use in the expression.

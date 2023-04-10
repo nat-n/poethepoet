@@ -41,25 +41,6 @@ rst_prolog = """
 .. |V| unicode:: ✅ 0xA0 0xA0
    :trim:
 
-.. |pipx_link| raw:: html
-
-   <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a>
-
-.. |poetry_link| raw:: html
-
-   <a href="https://python-poetry.org/" target="_blank">poetry</a>
-
-.. |poetry_plugin_link| raw:: html
-
-   <a href="https://python-poetry.org/docs/master/plugins/#using-plugins" target="_blank">poetry plugin</a>
-
-.. |nbsp| unicode:: 0xA0
-   :trim:
-
-.. |br| raw:: html
-
-   <br />
-
 """
 
 

@@ -3,14 +3,14 @@ Defining tasks
 
 Poe the Poet supports several ways of defining tasks under :toml:`[tool.poe.tasks]`, trading off simplicity against configurability. Furthermore toml syntax supports both more terse or more expressive alternative ways of writing the same thing, see the guide on :doc:`../guides/toml_guide` for details.
 
-A task defined as a string will by default be interpreted as a single command to be executed without a shell (aka a :doc:`cmd task <types_of_task/cmd>`).
+A task defined as a string will by default be interpreted as a single command to be executed without a shell (aka a :doc:`cmd task <task_types/cmd>`).
 
 .. code-block:: toml
 
   [tool.poe.tasks]
   test = "pytest"
 
-A task defined as an array will by default be interepreted as a :doc:`sequence <types_of_task/sequence>` of :doc:`references<types_of_task/ref>` to other tasks.
+A task defined as an array will by default be interepreted as a :doc:`sequence <task_types/sequence>` of :doc:`references<task_types/ref>` to other tasks.
 
 .. code-block:: toml
 
@@ -42,36 +42,36 @@ This implies that you can also define tasks of other types on a single line, lik
 
 .. seealso::
 
-   Top level tasks are defined as members of :toml:`[tool.poe.tasks]`, but sometimes tasks can be defined as children of other tasks, for example as items within a :doc:`sequence <types_of_task/sequence>` task, or as the ``control`` or ``case`` roles with a :doc:`switch <types_of_task/sequence>` task.
+   Top level tasks are defined as members of :toml:`[tool.poe.tasks]`, but sometimes tasks can be defined as children of other tasks, for example as items within a :doc:`sequence <task_types/sequence>` task, or as the ``control`` or ``case`` roles with a :doc:`switch <task_types/sequence>` task.
 
 Types of task
 -------------
 
 You can define seven different types of task:
 
-- :doc:`Command tasks <types_of_task/cmd>` :code:`cmd` : for simple commands that are executed as a subprocess without a shell
+- :doc:`Command tasks <task_types/cmd>` :code:`cmd` : for simple commands that are executed as a subprocess without a shell
 
-- :doc:`Script tasks<types_of_task/script>` :code:`script` : for python function calls
+- :doc:`Script tasks<task_types/script>` :code:`script` : for python function calls
 
-- :doc:`Shell tasks<types_of_task/shell>` :code:`shell` : for scripts to be executed with via an external interpreter (such as sh).
+- :doc:`Shell tasks<task_types/shell>` :code:`shell` : for scripts to be executed with via an external interpreter (such as sh).
 
-- :doc:`Sequence tasks<types_of_task/sequence>` :code:`sequence` : for composing multiple tasks into a sequence
+- :doc:`Sequence tasks<task_types/sequence>` :code:`sequence` : for composing multiple tasks into a sequence
 
-- :doc:`Expression tasks<types_of_task/expr>` :code:`expr` : which consist of a python expression to evaluate
+- :doc:`Expression tasks<task_types/expr>` :code:`expr` : which consist of a python expression to evaluate
 
-- :doc:`Switch tasks<types_of_task/switch>` :code:`switch` : for running different tasks depending on a control value (such as the platform)
+- :doc:`Switch tasks<task_types/switch>` :code:`switch` : for running different tasks depending on a control value (such as the platform)
 
-- :doc:`Reference tasks<types_of_task/ref>` :code:`ref` : for defining a task as an alias of another task, such as in a sequence task.
+- :doc:`Reference tasks<task_types/ref>` :code:`ref` : for defining a task as an alias of another task, such as in a sequence task.
 
 
 .. toctree::
    :hidden:
 
-   Configuring tasks <options>
-   Command tasks <types_of_task/cmd>
-   Script tasks<types_of_task/script>
-   Shell tasks<types_of_task/shell>
-   Sequence tasks<types_of_task/sequence>
-   Expression tasks<types_of_task/expr>
-   Switch tasks<types_of_task/switch>
-   Reference tasks<types_of_task/ref>
+   Standard task options <options>
+   Command tasks <task_types/cmd>
+   Script tasks<task_types/script>
+   Shell tasks<task_types/shell>
+   Sequence tasks<task_types/sequence>
+   Expression tasks<task_types/expr>
+   Switch tasks<task_types/switch>
+   Reference tasks<task_types/ref>

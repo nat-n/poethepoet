@@ -34,7 +34,6 @@ Environment variables can be referenced using shell like syntax and are template
   [tool.poe.tasks]
   greet = "echo Hello ${USER}"
 
-
 .. code-block:: sh
 
   $ poe greet
@@ -62,7 +61,6 @@ Glob patterns in cmd tasks are expanded and replaced with their results.
   rm -rf ./**/*.pyc
          ./**/__pycache__    # this will match all __pycache__ dirs in the project
   """
-
 
 .. code-block:: sh
 

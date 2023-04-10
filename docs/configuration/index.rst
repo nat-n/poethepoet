@@ -1,5 +1,30 @@
-Global configuration
-====================
+Project level configuration
+===========================
+
+The following options may be provided in the prproject.toml directly under :toml:`[tool.poe]` to configure the behavoir of Poe the Poet for all tasks or in general within the project.
+
+**env** : ``dict``  :ref:`📖<Global environment variables>`
+
+**envfile** : ``str`` | ``List[str]`` :ref:`📖<>`
+
+**include** : ``str`` | ``List[str]`` | ``Dict[str, str]`` | ``List[Dict[str, str]]``  :ref:`📖<>`
+
+**poetry_command** : ``str``  :ref:`📖<>`
+
+**poetry_hooks** : ``Dict[str, str]``  :ref:`📖<>`
+
+**executor** : ``str``  :ref:`📖<>`
+
+**default_task_type** : ``str``  :ref:`📖<>`
+
+**default_array_task_type** : ``str``  :ref:`📖<>`
+
+**default_array_item_task_type** : ``str``  :ref:`📖<>`
+
+**shell_interpreter** : ``str`` | ``List[str]``  :ref:`📖<>`
+
+**verbosity** : ``int``  :ref:`📖<>`
+
 
 Global environment variables
 ----------------------------
@@ -63,16 +88,6 @@ from the default verbosity, and :bash:`-v` adds one. So setting the default
 verbosity to :toml:`-1` and passing :bash:`-v -v` on the command line is
 equivalent to setting the verbosity to :toml:`0` and just passing :bash:`-v`.
 
-Run poe from anywhere
----------------------
-
-By default poe will detect when you're inside a project with a pyproject.toml in the
-root. However if you want to run it from elsewhere then that is supported by using the
-:bash:`--root` option to specify an alternate location for the toml file. The task will
-run with the given location as the current working directory.
-
-In all cases the path to project root (where the pyproject.toml resides) will be
-available as :bash:`$POE_ROOT` within the command line and process.
 
 Change the default task type
 ----------------------------

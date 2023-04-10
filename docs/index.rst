@@ -6,11 +6,25 @@ Poe the Poet Documentation
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
-**Poe the Poet** is a batteries included task runner that works well with |poetry_link|.
+.. image:: https://img.shields.io/github/stars/nat-n/poethepoet?style=social
+   :target: https://github.com/nat-n/poethepoet
+   :alt: GitHub repo
+
+.. image:: https://img.shields.io/pypi/dw/poethepoet
+   :target: installation.html
+   :alt: PyPI - Downloads
+
+.. image:: https://img.shields.io/pypi/l/ansicolortags.svg
+   :target: license.html
+   :alt: MIT
+
+
+Poe the Poet is a batteries included task runner that works well with |poetry_link|.
 
 It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project's virtual environment.
 
 "Simple things should be simple, complex things should be possible." – Alan Kay
+
 
 Top features
 ============
@@ -56,7 +70,7 @@ Quick start
    [tool.poe.tasks]
    test         = "pytest --cov=my_app"                         # a simple command task
    serve.script = "my_app.service:run(debug=True)"              # python script based task
-   tunnel.shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &" } # (posix) shell based task
+   tunnel.shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &"   # (posix) shell based task
 
   `Click here for a real example <https://github.com/nat-n/poethepoet/blob/main/pyproject.toml>`_.
 
@@ -90,4 +104,23 @@ If no virtualenv is found then poe will run tasks without any special environmen
    tasks/index
    configuration/index
    guides/index
-   contributing
+   .. contributing
+   license
+
+
+Run poe from anywhere
+=====================
+
+By default poe will detect when you're inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the :sh:`--root` option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.
+
+In all cases the path to project root (where the pyproject.toml resides) will be available as :sh:`$POE_ROOT` within the command line and process.
+
+
+.. |poetry_link| raw:: html
+
+   <a href="https://python-poetry.org/" target="_blank">poetry</a>
+
+.. |pipx_link| raw:: html
+
+   <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a>
+

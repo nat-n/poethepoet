@@ -73,6 +73,13 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   cwd    = "./docs"
   deps   = ["docs"]
 
+  [tool.poe.tasks.docs-check]
+  help = "Validate rst syntax in the docs"
+  sequence = [
+    { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V" },
+    "docs -b linkcheck"
+  ]
+
   [tool.poe.tasks.clean]
   help = "Remove generated files"
   cmd  = """
@@ -118,16 +125,9 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   help = "Validate code style"
   sequence = ["style-isort", "style-black"]
 
-  [tool.poe.tasks.check-docs]
-  help = "Validate rst syntax in the docs"
-  sequence = [
-    { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V" },
-    "docs -b linkcheck"
-  ]
-
   [tool.poe.tasks.check]
   help     = "Run all checks on the code base"
-  sequence = ["check-docs", "style", "types", "lint", "test"]
+  sequence = ["docs-check", "style", "types", "lint", "test"]
 
   [tool.poe.tasks.poe]
   help   = "Execute poe from this repo (useful for testing)"
