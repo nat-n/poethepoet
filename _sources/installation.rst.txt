@@ -6,40 +6,40 @@ Installing Poe the Poet
 
 There are a few ways to install Poe the Poet:
 
-1.
-  Install the CLI *globally* using |pipx_link| **(recommended)**:
+1. Install the CLI globally using |pipx_link| *(recommended)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  .. code-block:: sh
+.. code-block:: sh
 
-    pipx install poethepoet
+  pipx install poethepoet
 
-  Or using pip:
+Or using pip:
 
-  .. code-block:: sh
+.. code-block:: sh
 
-    pip install poethepoet
+  pip install poethepoet
 
-  The :sh:`poe` executable will then be available anywhere in your system.
+The :sh:`poe` executable will then be available anywhere in your system.
 
-2.
-  Install Poe the Poet into your poetry project:
+2. Install Poe the Poet into your poetry project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  .. code-block:: sh
+.. code-block:: sh
 
-    poetry add --group dev poethepoet
+  poetry add --group dev poethepoet
 
-  The :sh:`poe` executable will then be available when inside a :sh:`poetry shell` or as :sh:`poetry run poe`.
+The :sh:`poe` executable will then be available when inside a :sh:`poetry shell` or as :sh:`poetry run poe`.
 
-3.
-  Install Poe the Poet as a poetry plugin **(requires poetry >= 1.2)**
+3. Install Poe the Poet as a poetry plugin
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  .. code-block:: sh
+.. code-block:: sh
 
-    poetry self add 'poethepoet[poetry_plugin]'
+  poetry self add 'poethepoet[poetry_plugin]'
 
-  It'll then be available as the :sh:`poetry poe` command anywhere in your system.
+It'll then be available as the :sh:`poetry poe` command anywhere in your system.
 
-  See the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
+See the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
 
 .. tip::
 
@@ -100,3 +100,9 @@ Supported python versions
 
 Poe the Poet officially supports python >=3.8, and is tested with python 3.8 to 3.11 on
 macOS, linux and windows.
+
+
+.. |pipx_link| raw:: html
+
+   <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a>
+

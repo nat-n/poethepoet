@@ -11,7 +11,7 @@
 <meta property="og:image" content="/_images/social_previews/summary_guides_loading_tasks_from_another_file_759eeebb.png" />
 <meta property="og:image:alt" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if..." />
 <meta name="description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Contributing" href="../contributing.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using toml syntax" href="toml_guide.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/loading_tasks_from_another_file.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
@@ -172,27 +172,26 @@
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/options.html">Configuring tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/cmd.html">Command tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/script.html">Script tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/shell.html">Shell tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/sequence.html">Sequence tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/expr.html">Expression tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/switch.html">Switch tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/ref.html">Reference tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/options.html">Standard task options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Global configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Project level configuration</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="args_guide.html">Declaring CLI arguments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="toml_guide.html">Using toml syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Load tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="toml_guide.html">Using toml syntax</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html#licence">Licence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
 </ul>
 
 </div>
@@ -287,12 +286,12 @@ failure to read the contents will result in failure.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../contributing.html">
+          <a class="next-page" href="toml_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Contributing</div>
+                <div class="title">Using toml syntax</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

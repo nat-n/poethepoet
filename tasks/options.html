@@ -3,19 +3,19 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="Configuring tasks" />
+<meta property="og:title" content="Standard task options" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/options.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Overview of standard task options: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the ta..." />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_options_c86d8c17.png" />
-<meta property="og:image:alt" content="Overview of standard task options: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖,..." />
-<meta name="description" content="Overview of standard task options: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the ta..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="cmd tasks" href="types_of_task/cmd.html" /><link rel="prev" title="Defining tasks" href="index.html" />
+<meta property="og:description" content="Overview: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the task name in the documentat..." />
+<meta property="og:image" content="/_images/social_previews/summary_tasks_options_e36c7439.png" />
+<meta property="og:image:alt" content="Overview: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed..." />
+<meta name="description" content="Overview: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the task name in the documentat..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="cmd tasks" href="task_types/cmd.html" /><link rel="prev" title="Defining tasks" href="index.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/options.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
-        <title>Configuring tasks - Poe the Poet</title>
+        <title>Standard task options - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
@@ -172,27 +172,26 @@
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Configuring tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types_of_task/cmd.html">Command tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types_of_task/script.html">Script tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types_of_task/shell.html">Shell tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types_of_task/sequence.html">Sequence tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types_of_task/expr.html">Expression tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types_of_task/switch.html">Switch tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types_of_task/ref.html">Reference tasks</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Standard task options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Global configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Project level configuration</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../guides/help_guide.html">Documenting tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/args_guide.html">Declaring CLI arguments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../guides/toml_guide.html">Using toml syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/toml_guide.html">Using toml syntax</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html#licence">Licence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
 </ul>
 
 </div>
@@ -235,10 +234,10 @@
           </label>
         </div>
         <article role="main">
-          <section id="configuring-tasks">
-<h1>Configuring tasks<a class="headerlink" href="#configuring-tasks" title="Permalink to this heading">#</a></h1>
-<section id="overview-of-standard-task-options">
-<h2>Overview of standard task options<a class="headerlink" href="#overview-of-standard-task-options" title="Permalink to this heading">#</a></h2>
+          <section id="standard-task-options">
+<h1>Standard task options<a class="headerlink" href="#standard-task-options" title="Permalink to this heading">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
 <p>The following options can be configured on your tasks and are not specific to any particular task type.</p>
 <dl>
 <dt><strong>help</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code> <a class="reference internal" href="#documenting-tasks"><span class="std std-ref">📖</span></a></span></dt><dd><p>Help text to be displayed next to the task name in the documentation when poe is run without specifying a task.</p>
@@ -601,7 +600,7 @@ above but can also by given a list of such paths like so:</p>
 <section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
 <h3>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Permalink to this heading">#</a></h3>
 <p>Normally tasks are executed as subprocesses of the <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.</p>
-<p>However in certain situations it can be desirable to define a task that is instead executed within the same process via an <em>exec</em> call. <span class="xref std std-doc">cmd</span> and <span class="xref std std-doc">script</span> tasks can be configured to work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span></code> option like so:</p>
+<p>However in certain situations it can be desirable to define a task that is instead executed within the same process via an <em>exec</em> call. <a class="reference internal" href="task_types/cmd.html"><span class="doc">cmd tasks</span></a> and <a class="reference internal" href="task_types/script.html"><span class="doc">script tasks</span></a> tasks can be configured to work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gunicorn ./my_app:run&quot;</span>
 <span class="n">use_exec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
@@ -624,7 +623,7 @@ above but can also by given a list of such paths like so:</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="types_of_task/cmd.html">
+          <a class="next-page" href="task_types/cmd.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
@@ -686,8 +685,8 @@ above but can also by given a list of such paths like so:</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Configuring tasks</a><ul>
-<li><a class="reference internal" href="#overview-of-standard-task-options">Overview of standard task options</a></li>
+<li><a class="reference internal" href="#">Standard task options</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
 <li><a class="reference internal" href="#documenting-tasks">Documenting tasks</a></li>
 <li><a class="reference internal" href="#declaring-cli-arguments">Declaring CLI arguments</a><ul>
 <li><a class="reference internal" href="#configuration-syntax">Configuration syntax</a><ul>

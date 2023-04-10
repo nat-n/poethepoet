@@ -122,3 +122,7 @@ Therefore it is generally recommended to use the poe CLI tool directly if you do
 .. |poetry_comp_link| raw:: html
 
    <a href="https://python-poetry.org/docs/#enable-tab-completion-for-bash-fish-or-zsh" target="_blank">command line completion</a>
+
+.. |poetry_plugin_link| raw:: html
+
+   <a href="https://python-poetry.org/docs/master/plugins/#using-plugins" target="_blank">poetry plugin</a>

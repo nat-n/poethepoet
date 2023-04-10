@@ -3,19 +3,19 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="Global configuration" />
+<meta property="og:title" content="Project level configuration" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="configuration/index.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Global environment variables: You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying tool.poe.env like so The example above also demonstrates h..." />
-<meta property="og:image" content="/_images/social_previews/summary_configuration_index_e4c6b6b3.png" />
-<meta property="og:image:alt" content="Global environment variables: You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying tool.poe.env like..." />
-<meta name="description" content="Global environment variables: You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying tool.poe.env like so The example above also demonstrates h..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Guides" href="../guides/index.html" /><link rel="prev" title="ref tasks" href="../tasks/types_of_task/ref.html" />
+<meta property="og:description" content="The following options may be provided in the prproject.toml directly under[tool.poe] to configure the behavoir of Poe the Poet for all tasks or in general within the project. env: dict 📖 envfile: s..." />
+<meta property="og:image" content="/_images/social_previews/summary_configuration_index_380bef21.png" />
+<meta property="og:image:alt" content="The following options may be provided in the prproject.toml directly under[tool.poe] to configure the behavoir of Poe the Poet for all tasks or in general wi..." />
+<meta name="description" content="The following options may be provided in the prproject.toml directly under[tool.poe] to configure the behavoir of Poe the Poet for all tasks or in general within the project. env: dict 📖 envfile: s..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Guides" href="../guides/index.html" /><link rel="prev" title="ref tasks" href="../tasks/task_types/ref.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/configuration/index.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
-        <title>Global configuration - Poe the Poet</title>
+        <title>Project level configuration - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
@@ -172,27 +172,26 @@
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/options.html">Configuring tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/cmd.html">Command tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/script.html">Script tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/shell.html">Shell tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/sequence.html">Sequence tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/expr.html">Expression tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/switch.html">Switch tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tasks/types_of_task/ref.html">Reference tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/options.html">Standard task options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Global configuration</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Project level configuration</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../guides/help_guide.html">Documenting tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/args_guide.html">Declaring CLI arguments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../guides/toml_guide.html">Using toml syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/toml_guide.html">Using toml syntax</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html#licence">Licence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
 </ul>
 
 </div>
@@ -235,8 +234,20 @@
           </label>
         </div>
         <article role="main">
-          <section id="global-configuration">
-<h1>Global configuration<a class="headerlink" href="#global-configuration" title="Permalink to this heading">#</a></h1>
+          <section id="project-level-configuration">
+<h1>Project level configuration<a class="headerlink" href="#project-level-configuration" title="Permalink to this heading">#</a></h1>
+<p>The following options may be provided in the prproject.toml directly under <code class="code highlight toml docutils literal highlight-toml"><span class="k">[tool.poe]</span></code> to configure the behavoir of Poe the Poet for all tasks or in general within the project.</p>
+<p><strong>env</strong> : <code class="docutils literal notranslate"><span class="pre">dict</span></code>  <a class="reference internal" href="#global-environment-variables"><span class="std std-ref">📖</span></a></p>
+<p><strong>envfile</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">List[str]</span></code> <span class="xref std std-ref">📖</span></p>
+<p><strong>include</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">List[str]</span></code> | <code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code> | <code class="docutils literal notranslate"><span class="pre">List[Dict[str,</span> <span class="pre">str]]</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>poetry_command</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>poetry_hooks</strong> : <code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>executor</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>default_task_type</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>default_array_task_type</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>default_array_item_task_type</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>shell_interpreter</strong> : <code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">List[str]</span></code>  <span class="xref std std-ref">📖</span></p>
+<p><strong>verbosity</strong> : <code class="docutils literal notranslate"><span class="pre">int</span></code>  <span class="xref std std-ref">📖</span></p>
 <section id="global-environment-variables">
 <h2>Global environment variables<a class="headerlink" href="#global-environment-variables" title="Permalink to this heading">#</a></h2>
 <p>You can configure environment variables to be set for all poe tasks in the
@@ -284,15 +295,6 @@ default.</p>
 from the default verbosity, and <code class="code highlight bash docutils literal highlight-bash">-v</code> adds one. So setting the default
 verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">-1</span></code> and passing <code class="code highlight bash docutils literal highlight-bash">-v<span class="w"> </span>-v</code> on the command line is
 equivalent to setting the verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">0</span></code> and just passing <code class="code highlight bash docutils literal highlight-bash">-v</code>.</p>
-</section>
-<section id="run-poe-from-anywhere">
-<h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Permalink to this heading">#</a></h2>
-<p>By default poe will detect when you’re inside a project with a pyproject.toml in the
-root. However if you want to run it from elsewhere then that is supported by using the
-<code class="code highlight bash docutils literal highlight-bash">--root</code> option to specify an alternate location for the toml file. The task will
-run with the given location as the current working directory.</p>
-<p>In all cases the path to project root (where the pyproject.toml resides) will be
-available as <code class="code highlight bash docutils literal highlight-bash"><span class="nv">$POE_ROOT</span></code> within the command line and process.</p>
 </section>
 <section id="change-the-default-task-type">
 <h2>Change the default task type<a class="headerlink" href="#change-the-default-task-type" title="Permalink to this heading">#</a></h2>
@@ -373,7 +375,7 @@ to use <em>fish</em> by default.</p>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../tasks/types_of_task/ref.html">
+          <a class="prev-page" href="../tasks/task_types/ref.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
@@ -426,10 +428,9 @@ to use <em>fish</em> by default.</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Global configuration</a><ul>
+<li><a class="reference internal" href="#">Project level configuration</a><ul>
 <li><a class="reference internal" href="#global-environment-variables">Global environment variables</a></li>
 <li><a class="reference internal" href="#default-command-verbosity">Default command verbosity</a></li>
-<li><a class="reference internal" href="#run-poe-from-anywhere">Run poe from anywhere</a></li>
 <li><a class="reference internal" href="#change-the-default-task-type">Change the default task type</a></li>
 <li><a class="reference internal" href="#change-the-executor-type">Change the executor type</a></li>
 <li><a class="reference internal" href="#change-the-default-shell-interpreter">Change the default shell interpreter</a></li>

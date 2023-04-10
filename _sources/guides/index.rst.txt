@@ -12,6 +12,6 @@ You can also read the following sections for more advanced topics.
 
    help_guide
    args_guide
-   toml_guide
    composition_guide
    loading_tasks_from_another_file
+   toml_guide

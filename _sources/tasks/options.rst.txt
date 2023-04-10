@@ -1,8 +1,8 @@
-Configuring tasks
-=================
+Standard task options
+=====================
 
-Overview of standard task options
----------------------------------
+Overview
+--------
 
 The following options can be configured on your tasks and are not specific to any particular task type.
 
@@ -421,7 +421,7 @@ Defining tasks that run via exec instead of a subprocess
 
 Normally tasks are executed as subprocesses of the ``poe`` executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.
 
-However in certain situations it can be desirable to define a task that is instead executed within the same process via an *exec* call. :doc:`cmd` and :doc:`script` tasks can be configured to work this way using the :toml:`use_exec` option like so:
+However in certain situations it can be desirable to define a task that is instead executed within the same process via an *exec* call. :doc:`task_types/cmd` and :doc:`task_types/script` tasks can be configured to work this way using the :toml:`use_exec` option like so:
 
 .. code-block:: toml
 

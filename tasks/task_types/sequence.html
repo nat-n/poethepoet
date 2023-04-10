@@ -1,0 +1,430 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<meta property="og:title" content="sequence tasks" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="tasks/task_types/sequence.html" />
+<meta property="og:site_name" content="Poe the Poet" />
+<meta property="og:description" content="A Sequence task is defined by an array of other tasks to be run one after the other. The array items can be sub-tables that declare inline tasks, or strings referencing to other tasks. By default t..." />
+<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_sequence_912893ac.png" />
+<meta property="og:image:alt" content="A Sequence task is defined by an array of other tasks to be run one after the other. The array items can be sub-tables that declare inline tasks, or strings..." />
+<meta name="description" content="A Sequence task is defined by an array of other tasks to be run one after the other. The array items can be sub-tables that declare inline tasks, or strings referencing to other tasks. By default t..." />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="expr tasks" href="expr.html" /><link rel="prev" title="shell tasks" href="shell.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/sequence.html" />
+
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
+        <title>sequence tasks - Poe the Poet</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">Poe the Poet</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo only-light" src="../../_static/poe_logo_x2000.png" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="../../_static/poe_logo_x2000.png" alt="Dark Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">Poe the Poet</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../options.html">Standard task options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shell.html">Shell tasks</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ref.html">Reference tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration/index.html">Project level configuration</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/help_guide.html">Documenting tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/args_guide.html">Declaring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/composition_guide.html">Composing tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/loading_tasks_from_another_file.html">Load tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/toml_guide.html">Using toml syntax</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">Licence</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/tasks/task_types/sequence.rst" title="Edit this page">
+    <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
+      <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
+    </svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="sequence-tasks">
+<h1><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks<a class="headerlink" href="#sequence-tasks" title="Permalink to this heading">#</a></h1>
+<p>A <strong>Sequence task</strong> is defined by an array of other tasks to be run one after the other.</p>
+<p>The array items can be sub-tables that declare inline tasks, or strings <a class="reference internal" href="ref.html"><span class="doc">referencing</span></a> to other tasks.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+
+<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span>
+<span class="n">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry build&quot;</span>
+<span class="n">_publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry publish&quot;</span>
+<span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;test&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;build&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Task with names prefixed with an underscore <code class="docutils literal notranslate"><span class="pre">_</span></code> are excluded from documentation and cannot be run directly from the command line, but can be useful for cases where a task is only needed for referencing from another task.</p>
+</div>
+<p>By default the contents of the array are interpreted as references to other tasks (actually an inline <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> task). However, this behaviour can be altered by setting the global <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_array_item_task_type</span></code> option to the name of another task type such as <code class="docutils literal notranslate"><span class="pre">&quot;cmd&quot;</span></code>, or by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option locally on the sequence task.</p>
+<section id="available-task-options">
+<h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code>.</p>
+<p>The following options are also accepted:</p>
+<dl>
+<dt><strong>ignore_fail</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#continue-sequence-on-task-failure"><span class="std std-ref">📖</span></a></span></dt><dd><p>If true then the failure (or non-zero return value) of one task in the sequence does not abort the sequence.</p>
+</dd>
+<dt><strong>default_item_type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#changing-the-default-item-type"><span class="std std-ref">📖</span></a></span></dt><dd><p>Change the task type that is applied to string array items in this sequence.</p>
+</dd>
+</dl>
+</section>
+<section id="continue-sequence-on-task-failure">
+<h2>Continue sequence on task failure<a class="headerlink" href="#continue-sequence-on-task-failure" title="Permalink to this heading">#</a></h2>
+<p>A failure (non-zero result) will result in the rest of the tasks in the sequence not
+being executed, unless the <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option is set on the task to
+<code class="code highlight toml docutils literal highlight-toml"><span class="kc">true</span></code> or <code class="code highlight toml docutils literal highlight-toml"><span class="s">&quot;return_zero&quot;</span></code> like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task3&quot;</span><span class="p">]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;return_zero&quot;</span>
+</pre></div>
+</div>
+<p>If you want to run all the subtasks in the sequence but return non-zero result in the
+end of the sequence if any of the subtasks have failed you can set <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code>
+option to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">return_non_zero</span></code> value like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;task3&quot;</span><span class="p">]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;return_non_zero&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="changing-the-default-item-type">
+<h2>Changing the default item type<a class="headerlink" href="#changing-the-default-item-type" title="Permalink to this heading">#</a></h2>
+<p>If you want strings in the array to be interpreted as a task type other than <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> you may specify then <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">release</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s">&quot;devtasks:run_tests(all=True)&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s">&quot;devtasks:build&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s">&quot;devtasks:publish&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">release</span><span class="p">.</span><span class="n">default_item_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;script&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="sequence-task-as-an-array-of-tables">
+<h2>Sequence task as an array of tables<a class="headerlink" href="#sequence-task-as-an-array-of-tables" title="Permalink to this heading">#</a></h2>
+<p>When declaring more complex sequences the following syntax is often preferred.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+
+<span class="w">  </span><span class="k">[[tool.poe.tasks.release.sequence]]</span>
+<span class="w">  </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span>
+
+<span class="w">  </span><span class="k">[[tool.poe.tasks.release.sequence]]</span>
+<span class="w">  </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span>
+
+<span class="w">  </span><span class="k">[[tool.poe.tasks.release.sequence]]</span>
+<span class="w">  </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span>
+</pre></div>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Double square brackets in toml specify an <a href="https://toml.io/en/v1.0.0#array-of-tables" target="_blank">array of tables</a>.</p>
+</div>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>Using sequences in this way is sometimes a good alternative to a <a class="reference internal" href="shell.html"><span class="doc">shell</span></a> task, which may be less portable.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example <code class="docutils literal notranslate"><span class="pre">help</span></code> and <code class="docutils literal notranslate"><span class="pre">args</span></code> are forbidden becuase they don’t make sense in this context.</p>
+</div>
+</section>
+<section id="sequence-task-as-an-array-of-inline-tables">
+<h2>Sequence task as an array of inline tables<a class="headerlink" href="#sequence-task-as-an-array-of-inline-tables" title="Permalink to this heading">#</a></h2>
+<p>In some simpler cases a more succinct syntax may be preferred, missing strings (for ref tasks) and inline tables for other task types like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+
+<span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="s">&quot;_publish&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="expr.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title"><code class="docutils literal notranslate"><span class="pre">expr</span></code> tasks</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="shell.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title"><code class="docutils literal notranslate"><span class="pre">shell</span></code> tasks</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Nat Noordanus
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://pypi.org/project/poethepoet/" aria-label="PyPI">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg"  stroke="currentColor" fill="currentColor" stroke-width="0" width="16px" height="16" viewBox="0 0 512 512">
+                    <path d="M454,305.8294373l-91.1191101,33.691803v106.4807434L181.94487,512V298.2970276l179.8842926-66.8633728V58.8240128L454,92.4968643V305.8294373z M276.8390503,363.3849487c-15.7174377,5.7245483-28.4572144,23.9239502-28.4515686,40.6481018c0.0061646,16.7174377,12.7523499,25.6329346,28.4636841,19.919281c15.7173462-5.7247009,28.4602051-23.9217834,28.4544983-40.6459656C305.303009,366.5810547,292.5565491,357.6635437,276.8390503,363.3849487z M334.6160889,212.4997864l-180.3925323,66.8782959l0.2966461,135.7604065l-64.2104874,22.9912415L0,405.2594604V191.9265442l90.704361-33.6917877V51.7543259L232.9717102,0l101.6443787,32.4636765V212.4997864z M215.2144775,94.8330383c-15.7174835,5.7222672-28.4621582,23.9249802-28.458725,40.6499329c0.0025787,16.725235,12.750824,25.6462555,28.4683228,19.9248505c15.7174988-5.7219086,28.4623871-23.9248047,28.4592285-40.6498184C243.6806641,98.0326996,230.9319763,89.1116333,215.2144775,94.8330383z"/>
+                </svg>
+            </a>
+              <a class="muted-link " href="https://github.com/nat-n/poethepoet" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks</a><ul>
+<li><a class="reference internal" href="#available-task-options">Available task options</a></li>
+<li><a class="reference internal" href="#continue-sequence-on-task-failure">Continue sequence on task failure</a></li>
+<li><a class="reference internal" href="#changing-the-default-item-type">Changing the default item type</a></li>
+<li><a class="reference internal" href="#sequence-task-as-an-array-of-tables">Sequence task as an array of tables</a></li>
+<li><a class="reference internal" href="#sequence-task-as-an-array-of-inline-tables">Sequence task as an array of inline tables</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/scripts/furo.js"></script>
+    <script src="../../_static/clipboard.min.js"></script>
+    <script src="../../_static/copybutton.js"></script>
+    </body>
+</html>
