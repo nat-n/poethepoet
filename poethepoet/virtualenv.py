@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Dict, Mapping
@@ -38,6 +39,7 @@ class Virtualenv:
                 return str(bin_dir.joinpath(f"{executable}.exe"))
             if bin_dir.joinpath(f"{executable}.bat").is_file():
                 return str(bin_dir.joinpath(f"{executable}.bat"))
+            return shutil.which(executable) or executable
         return executable
 
     @staticmethod
