@@ -31,7 +31,7 @@ jobs:
         run: poetry run poe types
 
       - name: Check rst syntax
-        run: poetry run poe check-docs
+        run: poetry run poe docs-check
 
   run-tests:
     name: Run tests

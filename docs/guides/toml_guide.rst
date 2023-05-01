@@ -1,4 +1,4 @@
 Using toml syntax
 =================
 
-TODO
+TODO: Explain different ways of leveraging toml syntax to define tasks.

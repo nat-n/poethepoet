@@ -1,7 +1,7 @@
 Documenting tasks
 -----------------
 
-You can add help text to your tasks by adding a :code:`help` key to your task definition, like so:
+You can add help text to your tasks by adding the ``help`` option to the task definition, like so:
 
 .. code-block:: toml
 
@@ -17,7 +17,7 @@ You can add help text to your tasks by adding a :code:`help` key to your task de
   help = "Create an SSH tunnel to the production server"
   shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &"
 
-This will allow you to run :code:`poe --help` and see the help text for your tasks.
+This help text will be displayed alongside the task name in the list of configured tasks when ``poe`` is run without specifying a task.
 
 .. code-block::
 
@@ -42,5 +42,3 @@ This will allow you to run :code:`poe --help` and see the help text for your tas
     test           Run the test suite
     serve          Run the app in debug mode
     tunnel         Create an SSH tunnel to the production server
-
-You can find a more complex example of tasks in `this repo's pyproject.toml <https://github.com/nat-n/poethepoet/blob/main/pyproject.toml#L43>`_ file.

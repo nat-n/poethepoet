@@ -1,23 +1,35 @@
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+
+   installation
+   poetry_plugin
+   tasks/index
+   configuration/index
+   guides/index
+   license
+
 **************************
 Poe the Poet Documentation
 **************************
+
+.. image:: https://img.shields.io/pypi/pyversions/poethepoet.svg
+   :target: https://pypi.org/project/poethepoet/
+   :alt: PyPI
 
 .. image:: https://img.shields.io/pypi/v/poethepoet.svg
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
-.. image:: https://img.shields.io/github/stars/nat-n/poethepoet?style=social
-   :target: https://github.com/nat-n/poethepoet
-   :alt: GitHub repo
-
 .. image:: https://img.shields.io/pypi/dw/poethepoet
-   :target: installation.html
    :alt: PyPI - Downloads
 
 .. image:: https://img.shields.io/pypi/l/ansicolortags.svg
-   :target: license.html
    :alt: MIT
 
+.. image:: https://img.shields.io/github/stars/nat-n/poethepoet?style=social
+   :target: https://github.com/nat-n/poethepoet
+   :alt: GitHub repo
 
 Poe the Poet is a batteries included task runner that works well with |poetry_link|.
 
@@ -41,7 +53,7 @@ Top features
 
 |V| Concise commands with extra arguments passed to the task :sh:`poe [options] task [task_args]`
 
-|V| Easily to define CLI arguments for your tasks
+|V| Easily define CLI arguments for your tasks
 
 |V| Tasks can specify and reference environment variables, even without a shell
 
@@ -83,9 +95,13 @@ Quick start
 
   The extra argument is appended to the task command.
 
+.. hint::
+
+  If you're using |poetry_link|, then poe will automatically use the poetry managed virtualenv to find executables and python libraries, without needing to use ``poetry run`` or ``poetry shell``.
+
 
 Usage without poetry
---------------------
+====================
 
 Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the :toml:`tool.poe.executor` global option.
 
@@ -94,18 +110,6 @@ contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtu
 use at ``./.venv`` or ``./venv`` relative to the pyproject.toml.
 
 If no virtualenv is found then poe will run tasks without any special environment management.
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   installation
-   poetry_plugin
-   tasks/index
-   configuration/index
-   guides/index
-   .. contributing
-   license
 
 
 Run poe from anywhere
