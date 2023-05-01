@@ -3,19 +3,22 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="Declaring CLI arguments" />
+<meta property="og:title" content="Configuring CLI arguments" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="guides/args_guide.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="By default extra arguments passed to the poe CLI following the task name are appended to the end of a cmd task, or exposed as sys.argv in a script task (but will cause an error for shell or sequenc..." />
-<meta property="og:image" content="/_images/social_previews/summary_guides_args_guide_1cd5b6a8.png" />
-<meta property="og:image:alt" content="By default extra arguments passed to the poe CLI following the task name are appended to the end of a cmd task, or exposed as sys.argv in a script task (but..." />
-<meta name="description" content="By default extra arguments passed to the poe CLI following the task name are appended to the end of a cmd task, or exposed as sys.argv in a script task (but will cause an error for shell or sequenc..." />
+<meta property="og:description" content="By default extra arguments passed to the poe CLI following the task name are appended to the end of a cmd task, or exposed as sys.argv in a script task, but will cause an error for other task types..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="/_images/social_previews/summary_guides_args_guide_5463f526.png" />
+<meta property="og:image:alt" content="By default extra arguments passed to the poe CLI following the task name are appended to the end of a cmd task, or exposed as sys.argv in a script task, but..." />
+<meta name="description" content="By default extra arguments passed to the poe CLI following the task name are appended to the end of a cmd task, or exposed as sys.argv in a script task, but will cause an error for other task types..." />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Composing tasks" href="composition_guide.html" /><link rel="prev" title="Documenting tasks" href="help_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/args_guide.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
-        <title>Declaring CLI arguments - Poe the Poet</title>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.03.27 -->
+        <title>Configuring CLI arguments - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
@@ -182,13 +185,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Project level configuration</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="running_guide.html">Running tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Declaring CLI arguments</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="loading_tasks_from_another_file.html">Load tasks from another file</a></li>
-<li class="toctree-l2"><a class="reference internal" href="toml_guide.html">Using toml syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
@@ -234,13 +236,9 @@
           </label>
         </div>
         <article role="main">
-          <section id="declaring-cli-arguments">
-<h1>Declaring CLI arguments<a class="headerlink" href="#declaring-cli-arguments" title="Permalink to this heading">#</a></h1>
-<p>By default extra arguments passed to the poe CLI following the task name are appended to
-the end of a cmd task, or exposed as sys.argv in a script task (but will cause an error
-for shell or sequence tasks). Alternatively it is possible to define named arguments
-that a task should accept, which will be documented in the help for that task, and
-exposed to the task in a way the makes the most sense for that task type.</p>
+          <section id="configuring-cli-arguments">
+<h1>Configuring CLI arguments<a class="headerlink" href="#configuring-cli-arguments" title="Permalink to this heading">#</a></h1>
+<p>By default extra arguments passed to the poe CLI following the task name are appended to the end of a <a class="reference internal" href="../tasks/task_types/cmd.html"><span class="doc">cmd task</span></a>, or exposed as <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> in a <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script task</span></a>, but will cause an error for other task types). Alternatively it is possible to define named arguments that a task should accept, which will be documented in the help for that task, and exposed to the task in a way the makes the most sense for that task type.</p>
 <p>In general named arguments can take one of the following three forms:</p>
 <ul class="simple">
 <li><dl class="simple">
@@ -249,7 +247,7 @@ exposed to the task in a way the makes the most sense for that task type.</p>
 </dl>
 </li>
 <li><dl class="simple">
-<dt><strong>option arguments</strong> which are provided like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe<span class="w"> </span>task-name<span class="w"> </span>--option-name<span class="w"> </span>arg-value</code></p>
+<dt><strong>option arguments</strong> which consist of a key and one or more values like</dt><dd><p><code class="code highlight bash docutils literal highlight-bash">poe<span class="w"> </span>task-name<span class="w"> </span>--option-name<span class="w"> </span>arg-value</code></p>
 </dd>
 </dl>
 </li>
@@ -263,12 +261,11 @@ exposed to the task in a way the makes the most sense for that task type.</p>
 though exactly how will depend on the type of the task as detailed below.</p>
 <section id="configuration-syntax">
 <h2>Configuration syntax<a class="headerlink" href="#configuration-syntax" title="Permalink to this heading">#</a></h2>
-<p>Named arguments are configured by declaring the <em>args</em> task option as either an array or
-a subtable.</p>
-<section id="array-configuration-syntax">
-<h3>Array configuration syntax<a class="headerlink" href="#array-configuration-syntax" title="Permalink to this heading">#</a></h3>
-<p>The array form may contain string items which are interpreted as an option argument with
-the given name.</p>
+<p>Named arguments are configured by declaring the <code class="docutils literal notranslate"><span class="pre">args</span></code> task option as either an array or
+a sub-table.</p>
+<section id="abbreviated-form">
+<h3>Abbreviated form<a class="headerlink" href="#abbreviated-form" title="Permalink to this heading">#</a></h3>
+<p>The array form may contain string items which are interpreted as an option argument with the given name.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
 <span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;host&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="p">]</span>
@@ -278,14 +275,22 @@ the given name.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>serve<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8001</span>
 </pre></div>
 </div>
-<p>Items in the array can also be inline tables to allow for more configuration to be
-provided to the task like so:</p>
+</section>
+<section id="array-of-inline-tables">
+<h3>Array of inline tables<a class="headerlink" href="#array-of-inline-tables" title="Permalink to this heading">#</a></h3>
+<p>Items in the array can also be inline tables to allow for more configuration to be provided to the task like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;host&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9000&quot;</span><span class="w"> </span><span class="p">}]</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;host&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;localhost&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;port&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9000&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">]</span>
 </pre></div>
 </div>
-<p>You can also use the toml syntax for an array of tables like so:</p>
+</section>
+<section id="array-of-tables">
+<h3>Array of tables<a class="headerlink" href="#array-of-tables" title="Permalink to this heading">#</a></h3>
+<p>If you want to provide more configuration per argument then the following toml syntax can be used to declare an array of tables with each key on a separate line:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
 <span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the application server&quot;</span>
@@ -303,10 +308,14 @@ provided to the task like so:</p>
 <span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;8000&quot;</span>
 </pre></div>
 </div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The double square brackets is toml syntax for a table within an array.</p>
+</div>
 </section>
-<section id="table-configuration-syntax">
-<h3>Table configuration syntax<a class="headerlink" href="#table-configuration-syntax" title="Permalink to this heading">#</a></h3>
-<p>You can also use the toml syntax for subtables like so:</p>
+<section id="subtable-configuration-syntax">
+<h3>Subtable configuration syntax<a class="headerlink" href="#subtable-configuration-syntax" title="Permalink to this heading">#</a></h3>
+<p>The following toml syntax structure achieves exactly the same result as the previous example but instead of <code class="docutils literal notranslate"><span class="pre">args</span></code> being an array of tables, it is a table of tables like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
 <span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the application server&quot;</span>
@@ -322,8 +331,7 @@ provided to the task like so:</p>
 <span class="w">  </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;8000&quot;</span>
 </pre></div>
 </div>
-<p>When using this form the <em>name</em> option is no longer applicable because the key for the
-argument within the args table is taken as the name.</p>
+<p>When using this form the <code class="docutils literal notranslate"><span class="pre">name</span></code> option is no longer applicable because the key for the argument within the args table is taken as the name.</p>
 </section>
 </section>
 <section id="task-argument-options">
@@ -331,18 +339,16 @@ argument within the args table is taken as the name.</p>
 <p>Named arguments support the following configuration options:</p>
 <ul>
 <li><dl>
-<dt><strong>default</strong><span class="classifier">Union[str, int, float, bool]</span></dt><dd><p>The value to use if the argument is not provided. This option has no significance if
-the required option is set to true.</p>
-<p>For string values, environment variables can be referenced using the usual templating
-syntax as in the following example.</p>
+<dt><strong>default</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code> | <code class="docutils literal notranslate"><span class="pre">float</span></code> | <code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>The value to use if the argument is not provided. This option has no significance if the <code class="docutils literal notranslate"><span class="pre">required</span></code> option is set to true.</p>
+<p>For string values, environment variables can be referenced using the usual templating syntax as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.deploy.args]]</span>
 <span class="n">name</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;region&quot;</span>
 <span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;The region to deploy to&quot;</span>
 <span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${AWS_REGION}&quot;</span>
+<span class="n">env</span><span class="p">.</span><span class="n">AWS_REGION</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;eu-central-1&quot;</span>
 </pre></div>
 </div>
-<p>This can be combined with setting an env values on the task with the default
-specifier to get the following precendence of values for the arg:</p>
+<p>As in the above example, this can be combined with setting an <a class="reference internal" href="../tasks/options.html"><span class="doc">env value</span></a> on the task with the <code class="docutils literal notranslate"><span class="pre">default</span></code> specifier to get the following precendence of values for the arg:</p>
 <ol class="arabic simple">
 <li><p>the value passed on the command line</p></li>
 <li><p>the value of the variable set on the environment</p></li>
@@ -351,45 +357,32 @@ specifier to get the following precendence of values for the arg:</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt><strong>help</strong><span class="classifier">str</span></dt><dd><p>A short description of the argument to include in the documentation of the task.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name of the task. Only applicable when <em>args</em> is an array.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>options</strong><span class="classifier">List[str]</span></dt><dd><p>A list of options to accept for this argument, similar to
-<a class="reference external" href="https://docs.python.org/3/library/argparse.html#name-or-flags">argsparse name or flags</a>.
-If not provided then the name of the argument is used. You can use this option to
-expose a different name to the CLI vs the name that is used inside the task, or to
-specify long and short forms of the CLI option, e.g. [“-h”, “–help”].</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>positional</strong><span class="classifier">bool</span></dt><dd><p>If set to true then the argument becomes a position argument instead of an option
-argument. Note that positional arguments may not have type <em>bool</em>.</p>
+<li><dl>
+<dt><strong>help</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>A short description of the argument to include in the documentation of the task.</p>
 </dd>
 </dl>
 </li>
 <li><dl>
-<dt><strong>multiple</strong><span class="classifier">Union[bool, int]</span></dt><dd><p>If the multiple option is set to true on a positional or option argument then that
-argument will accept multiple values.</p>
-<p>If set to a number, then the argument will accept exactly that number of values.</p>
-<p>For positional aguments, only the last positional argument may have the multiple
-option set.</p>
-<p>The multiple option is not compatible with arguments with type boolean since
-these are interpreted as flags. However multiple ones or zeros can be passed to an
-argument of type “integer” for similar effect.</p>
-<p>The values provided to an argument with the multiple option set are available on
-the environment as a string of whitespace separated values. For script tasks, the
-values will be provided to your python function as a list of values. In a cmd task
-the values can be passed as separate arugments to the task via templating as in the
-following example.</p>
+<dt><strong>name</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>The name of the task. Only applicable when <em>args</em> is an array.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>options</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">List[str]</span></code></span></dt><dd><p>A list of options to accept for this argument, similar to <a class="reference external" href="https://docs.python.org/3/library/argparse.html#name-or-flags">argsparse name or flags</a>. If not provided then the name of the argument is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. <code class="docutils literal notranslate"><span class="pre">[&quot;-h&quot;,</span> <span class="pre">&quot;--help&quot;]</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>positional</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>If set to true then the argument becomes a position argument instead of an option argument. Note that positional arguments may not have type <code class="docutils literal notranslate"><span class="pre">boolean</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>multiple</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>If the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option is set to true on a positional or option argument then that argument will accept multiple values.</p>
+<p>If set to a number, then the argument will accept <em>exactly</em> that number of values.</p>
+<p>For positional aguments, only the last positional argument may have the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option set.</p>
+<p>This option is not compatible with arguments with type <code class="docutils literal notranslate"><span class="pre">boolean</span></code> since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type “integer” for similar effect.</p>
+<p>The values provided to an argument with the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your python function as a list of values. In a cmd task the values can be passed as separate arugments to the task via templating as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.save]</span>
 <span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo ${FILE_PATHS}&quot;</span>
 <span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FILE_PATHS&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
@@ -398,23 +391,88 @@ following example.</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt><strong>required</strong><span class="classifier">bool</span></dt><dd><p>If true then not providing the argument will result in an error. Arguments are not
-required by default.</p>
+<li><dl>
+<dt><strong>required</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>If true then not providing the argument will result in an error. Arguments are not required by default.</p>
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt><strong>type</strong><span class="classifier">str</span></dt><dd><p>The type that the provided value will be cast to. The set of acceptable options is
-{“string”, “float”, “integer”, “boolean”}. If not provided then the default behaviour
-is to keep values as strings. Setting the type to “boolean” makes the resulting
-argument a flag that if provided will set the value to the boolean opposite of the
-default value – i.e. <em>true</em> if no default value is given, or false if
-<code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span></code>.</p>
+<li><dl>
+<dt><strong>type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Literal[&quot;string&quot;,</span> <span class="pre">&quot;float&quot;,</span> <span class="pre">&quot;integer&quot;,</span> <span class="pre">&quot;boolean&quot;]</span></code></span></dt><dd><p>The type that the provided value will be cast to. If not provided then the default behaviour    is to keep values as strings. Setting the type to <code class="docutils literal notranslate"><span class="pre">&quot;boolean&quot;</span></code> makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. <code class="code highlight toml docutils literal highlight-toml"><span class="kc">true</span></code> if no default value is given, or <code class="code highlight toml docutils literal highlight-toml"><span class="kc">false</span></code> if <code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span></code>.</p>
 </dd>
 </dl>
 </li>
 </ul>
+</section>
+<section id="arguments-for-cmd-and-shell-tasks">
+<h2>Arguments for cmd and shell tasks<a class="headerlink" href="#arguments-for-cmd-and-shell-tasks" title="Permalink to this heading">#</a></h2>
+<p>For <a class="reference internal" href="../tasks/task_types/cmd.html"><span class="doc">cmd</span></a> and <a class="reference internal" href="../tasks/task_types/shell.html"><span class="doc">shell</span></a> tasks the values are exposed to the task as environment variables. For example given the following configuration:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks.passby]
+shell = &quot;&quot;&quot;
+echo &quot;hello $planet&quot;;
+echo &quot;goodbye $planet&quot;;
+&quot;&quot;&quot;
+help = &quot;Pass by a planet!&quot;
+
+  [[tool.poe.tasks.passby.args]]
+  name = &quot;planet&quot;
+  help = &quot;Name of the planet to pass&quot;
+  default = &quot;earth&quot;
+  options = [&quot;-p&quot;, &quot;--planet&quot;]
+</pre></div>
+</div>
+<p>The resulting task can be run like:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>passby<span class="w"> </span>--planet<span class="w"> </span>mars
+</pre></div>
+</div>
+</section>
+<section id="arguments-for-script-tasks">
+<h2>Arguments for script tasks<a class="headerlink" href="#arguments-for-script-tasks" title="Permalink to this heading">#</a></h2>
+<p>Arguments can be defined for <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script</span></a> tasks in the same way, but how they are exposed to the underlying python function depends on how the script is defined.</p>
+<p>In the following example, since no parenthesis are included for the referenced function, all provided args will be passed to the function as kwargs:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.util:build&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;version&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>You can also control exactly how values are passed to the python function as demonstrated in the following example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.util:build(dest, build_version=version, verbose=True)&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;dest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;version&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="arguments-for-sequence-tasks">
+<h2>Arguments for sequence tasks<a class="headerlink" href="#arguments-for-sequence-tasks" title="Permalink to this heading">#</a></h2>
+<p>Arguments can be passed to the tasks referenced from a sequence task as in the following
+example.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;util:build_app&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
+
+<span class="k">[tool.poe.tasks.check]</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;build ${target}&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;util:run_tests(environ[&#39;target&#39;])&quot;</span><span class="w"> </span><span class="p">}]</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;target&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>This works by setting the argument values as environment variables for the subtasks, which can be read at runtime, but also referenced in the task definition as demonstrated in the above example for a <a class="reference internal" href="../tasks/task_types/ref.html"><span class="doc">ref</span></a> task and <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script</span></a> task.</p>
+</section>
+<section id="passing-free-arguments-in-addition-to-named-arguments">
+<h2>Passing free arguments in addition to named arguments<a class="headerlink" href="#passing-free-arguments-in-addition-to-named-arguments" title="Permalink to this heading">#</a></h2>
+<p>If no args are defined for a cmd task then any cli arguments that are provided are simply appended to the command. If named arguments are defined then one can still provide additional free arguments to the command by separating them from the defined arguments with a double dash token <code class="code highlight sh docutils literal highlight-sh">--</code>.</p>
+<p>For example given a task like:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.lint]</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ruff check ${target_dir}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">target_dir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;--target&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;-t&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.&quot;</span><span class="w"> </span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>calling the task like so:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>lint<span class="w"> </span>-t<span class="w"> </span>tests<span class="w"> </span>--<span class="w"> </span>--fix
+</pre></div>
+</div>
+<p>will result in poe parsing the target_dir cli option, but appending the <code class="code highlight sh docutils literal highlight-sh">--fix</code> flag to the ruff command without attempting to interpret it.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Passing <code class="code highlight sh docutils literal highlight-sh">--</code> in the arguments list to any other task type will simply result in any subsequent arguments being ignored.</p>
+</div>
 </section>
 </section>
 
@@ -485,13 +543,19 @@ default value – i.e. <em>true</em> if no default value is given, or false if
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Declaring CLI arguments</a><ul>
+<li><a class="reference internal" href="#">Configuring CLI arguments</a><ul>
 <li><a class="reference internal" href="#configuration-syntax">Configuration syntax</a><ul>
-<li><a class="reference internal" href="#array-configuration-syntax">Array configuration syntax</a></li>
-<li><a class="reference internal" href="#table-configuration-syntax">Table configuration syntax</a></li>
+<li><a class="reference internal" href="#abbreviated-form">Abbreviated form</a></li>
+<li><a class="reference internal" href="#array-of-inline-tables">Array of inline tables</a></li>
+<li><a class="reference internal" href="#array-of-tables">Array of tables</a></li>
+<li><a class="reference internal" href="#subtable-configuration-syntax">Subtable configuration syntax</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#task-argument-options">Task argument options</a></li>
+<li><a class="reference internal" href="#arguments-for-cmd-and-shell-tasks">Arguments for cmd and shell tasks</a></li>
+<li><a class="reference internal" href="#arguments-for-script-tasks">Arguments for script tasks</a></li>
+<li><a class="reference internal" href="#arguments-for-sequence-tasks">Arguments for sequence tasks</a></li>
+<li><a class="reference internal" href="#passing-free-arguments-in-addition-to-named-arguments">Passing free arguments in addition to named arguments</a></li>
 </ul>
 </li>
 </ul>

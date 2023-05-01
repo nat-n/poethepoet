@@ -3,19 +3,22 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="Load tasks from another file" />
+<meta property="og:title" content="Loading tasks from another file" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="guides/loading_tasks_from_another_file.html" />
+<meta property="og:url" content="guides/include_guide.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
-<meta property="og:image" content="/_images/social_previews/summary_guides_loading_tasks_from_another_file_759eeebb.png" />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="/_images/social_previews/summary_guides_include_guide_3385aad1.png" />
 <meta property="og:image:alt" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if..." />
 <meta name="description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using toml syntax" href="toml_guide.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
-        <link rel="canonical" href="http://poethepoet.natn.io/guides/loading_tasks_from_another_file.html" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Licence" href="../license.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/guides/include_guide.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
-        <title>Load tasks from another file - Poe the Poet</title>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.03.27 -->
+        <title>Loading tasks from another file - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
@@ -144,7 +147,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -182,13 +185,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Project level configuration</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="running_guide.html">Running tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="args_guide.html">Declaring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Load tasks from another file</a></li>
-<li class="toctree-l2"><a class="reference internal" href="toml_guide.html">Using toml syntax</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Loading tasks from another file</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
@@ -212,7 +214,7 @@
         </a>
         <div class="content-icon-container">
           <div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/loading_tasks_from_another_file.rst" title="Edit this page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/include_guide.rst" title="Edit this page">
     <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
@@ -228,57 +230,54 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
-          <section id="load-tasks-from-another-file">
-<h1>Load tasks from another file<a class="headerlink" href="#load-tasks-from-another-file" title="Permalink to this heading">#</a></h1>
-<p>There are some scenarios where one might wish to define tasks outside of pyproject.toml,
-or to collect tasks from multiple projects into one. For example, if you want to share
-tasks between projects via git modules, generate tasks definitions dynamically, organise
-your code in a monorepo, or simply have a lot of tasks and don’t want the pyproject.toml
-to get too large. This can be achieved by creating a toml or json including the same
-structure for tasks as used in pyproject.toml</p>
+          <section id="loading-tasks-from-another-file">
+<h1>Loading tasks from another file<a class="headerlink" href="#loading-tasks-from-another-file" title="Permalink to this heading">#</a></h1>
+<p>There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organise your code in a monorepo, or simply have a lot of tasks and don’t want the pyproject.toml to get too large. This can be achieved by creating a toml or json file including the same structure for tasks as used in pyproject.toml</p>
 <p>For example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pyproject.toml</span>
+
+<span class="k">[tool.poe]</span>
+<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="w"> </span><span class="c1"># include tasks from a git submodule</span>
+</pre></div>
+</div>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># acme_common/shared_tasks.toml</span>
+
 <span class="k">[tool.poe.tasks.build-image]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;docker build&quot;</span>
 </pre></div>
 </div>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
-<span class="c1"># this references a file from a git submodule</span>
-<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span>
-</pre></div>
-</div>
 <p>Imported files may also specify environment variables via
-<code class="code docutils literal notranslate"><span class="pre">tool.poe.envfile</span></code> or entries for <code class="code docutils literal notranslate"><span class="pre">tool.poe.env</span></code>.</p>
-<p>It’s also possible to include tasks from multiple files by providing a list like
-so:</p>
+<code class="docutils literal notranslate"><span class="pre">tool.poe.envfile</span></code> or entries for <code class="docutils literal notranslate"><span class="pre">tool.poe.env</span></code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.</p>
+</div>
+<section id="including-multiple-files">
+<h2>Including multiple files<a class="headerlink" href="#including-multiple-files" title="Permalink to this heading">#</a></h2>
+<p>It’s also possible to include tasks from multiple files by providing a list like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;generated_tasks.json&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>Files are loaded in the order specified. If an item already exists then the included
-value it ignored.</p>
-<p>If an included task file itself includes other files, these second order includes are
-not inherited, so circular includes don’t cause any problems.</p>
-<p>When including files from another location, you can also specify that tasks from that
-other file should be run from within a specific directory. For example with the
-following configuration, when tasks imported from my_subproject are run
-from the root, the task will actually execute as if it had been run from the
-my_subproject subdirectory.</p>
+<p>Files are loaded in the order specified. If an item already exists then the included value is ignored.</p>
+<p>If an included task file itself includes other files, these second order includes are <strong>not inherited</strong>, so circular includes are not a concern.</p>
+</section>
+<section id="setting-a-working-directory-for-included-tasks">
+<h2>Setting a working directory for included tasks<a class="headerlink" href="#setting-a-working-directory-for-included-tasks" title="Permalink to this heading">#</a></h2>
+<p>When including files from another location, you can also specify that tasks from that other file should be run from within a specific directory. For example with the following configuration, when tasks imported from my_subproject are run from the root, the task will actually execute as if it had been run from the <em>my_subproject</em> subdirectory.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.include]]</span>
 <span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject/pyproject.toml&quot;</span>
 <span class="n">cwd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject&quot;</span>
 </pre></div>
 </div>
-<p>The cwd option still has the limitation that it cannot be used to specify a directory
-outside of parent directory of the pyproject.toml file that poe is running with.</p>
-<p>If a referenced file is missing then poe ignores it without error, though
-failure to read the contents will result in failure.</p>
+<p>The cwd option still has the limitation that it cannot be used to specify a directory outside of parent directory of the pyproject.toml file that poe is running with.</p>
+</section>
 </section>
 
         </article>
@@ -286,12 +285,12 @@ failure to read the contents will result in failure.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="toml_guide.html">
+          <a class="next-page" href="../license.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Using toml syntax</div>
+                <div class="title">Licence</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -336,8 +335,28 @@ failure to read the contents will result in failure.</p>
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Loading tasks from another file</a><ul>
+<li><a class="reference internal" href="#including-multiple-files">Including multiple files</a></li>
+<li><a class="reference internal" href="#setting-a-working-directory-for-included-tasks">Setting a working directory for included tasks</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

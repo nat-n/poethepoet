@@ -7,14 +7,17 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="guides/composition_guide.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Composing tasks into sequences: The main way to compose tasks is to use the sequence task type, which allows you to define a sequence of tasks to be executed in order. Here’s a basic example: And h..." />
-<meta property="og:image" content="/_images/social_previews/summary_guides_composition_guide_fd10c0e4.png" />
-<meta property="og:image:alt" content="Composing tasks into sequences: The main way to compose tasks is to use the sequence task type, which allows you to define a sequence of tasks to be executed..." />
-<meta name="description" content="Composing tasks into sequences: The main way to compose tasks is to use the sequence task type, which allows you to define a sequence of tasks to be executed in order. Here’s a basic example: And h..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Load tasks from another file" href="loading_tasks_from_another_file.html" /><link rel="prev" title="Declaring CLI arguments" href="args_guide.html" />
+<meta property="og:description" content="Composing tasks into sequences: You can compose tasks into a new task that runs them in order by declaring a sequence task. For example: And here’s an example that uses the sequence task type expli..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="/_images/social_previews/summary_guides_composition_guide_71d89851.png" />
+<meta property="og:image:alt" content="Composing tasks into sequences: You can compose tasks into a new task that runs them in order by declaring a sequence task. For example: And here’s an exampl..." />
+<meta name="description" content="Composing tasks into sequences: You can compose tasks into a new task that runs them in order by declaring a sequence task. For example: And here’s an example that uses the sequence task type expli..." />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Loading tasks from another file" href="include_guide.html" /><link rel="prev" title="Configuring CLI arguments" href="args_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/composition_guide.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.1.3 and Furo 2023.03.27 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.03.27 -->
         <title>Composing tasks - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
@@ -182,13 +185,12 @@
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../configuration/index.html">Project level configuration</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="running_guide.html">Running tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="args_guide.html">Declaring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Composing tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="loading_tasks_from_another_file.html">Load tasks from another file</a></li>
-<li class="toctree-l2"><a class="reference internal" href="toml_guide.html">Using toml syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
@@ -238,9 +240,8 @@
 <h1>Composing tasks<a class="headerlink" href="#composing-tasks" title="Permalink to this heading">#</a></h1>
 <section id="composing-tasks-into-sequences">
 <h2>Composing tasks into sequences<a class="headerlink" href="#composing-tasks-into-sequences" title="Permalink to this heading">#</a></h2>
-<p>The main way to compose tasks is to use the <em>sequence</em> task type, which allows you
-to define a sequence of tasks to be executed in order.</p>
-<p>Here’s a basic example:</p>
+<p>You can compose tasks into a new task that runs them in order by declaring a <a class="reference internal" href="../tasks/task_types/sequence.html"><span class="doc">sequence</span></a> task.</p>
+<p>For example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 
 <span class="n">_publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry publish&quot;</span>
@@ -265,15 +266,12 @@ to define a sequence of tasks to be executed in order.</p>
 </div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>See <span class="xref std std-ref">“sequence” tasks</span> specifics for more information on the <code class="code docutils literal notranslate"><span class="pre">sequence</span></code> task type.</p>
+<p>See <a class="reference internal" href="../tasks/task_types/sequence.html"><span class="doc">sequence tasks</span></a> specifics for more information on the <code class="code docutils literal notranslate"><span class="pre">sequence</span></code> task type.</p>
 </div>
 </section>
-<section id="composing-tasks-into-graphs-experimental">
-<h2>Composing tasks into graphs (Experimental)<a class="headerlink" href="#composing-tasks-into-graphs-experimental" title="Permalink to this heading">#</a></h2>
-<p>You can define tasks that depend on other tasks, and optionally capture and reuse the
-output of those tasks, thus defining an execution graph of tasks. This is done by using
-the <em>deps</em> task option, or if you want to capture the output of the upstream task to
-pass it to the present task then specify the <em>uses</em> option, as demonstrated below.</p>
+<section id="composing-tasks-into-graphs">
+<h2>Composing tasks into graphs<a class="headerlink" href="#composing-tasks-into-graphs" title="Permalink to this heading">#</a></h2>
+<p>You can define tasks that depend on other tasks, and optionally capture and reuse the output of those tasks, thus defining an execution graph of tasks. This is done by using the <code class="docutils literal notranslate"><span class="pre">deps</span></code> task option, or if you want to capture the output of the upstream task to pass it to the present task then specify the <code class="docutils literal notranslate"><span class="pre">uses</span></code> option, as demonstrated below.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks]
 _website_bucket_name.shell = &quot;&quot;&quot;
   aws cloudformation describe-stacks \
@@ -304,22 +302,10 @@ deps = [&quot;build-frontend&quot;, &quot;build-backend&quot;]
 uses = { BUCKET_NAME = &quot;_website_bucket_name&quot; }
 </pre></div>
 </div>
-<p>In this example the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task depends on the <code class="code docutils literal notranslate"><span class="pre">build-frontend</span></code> <code class="code docutils literal notranslate"><span class="pre">build-backend</span></code>, which
-means that these tasks get executed before the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task. It also declares that it
-uses the output of the hidden <code class="code docutils literal notranslate"><span class="pre">_website_bucket_name</span></code> task, which means that this also
-gets executed, but its output it captured and then made available to the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task
-as the environment variable <code class="code docutils literal notranslate"><span class="pre">BUCKET_NAME</span></code>.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Note that captured output that is exposed as an environment variable via the <cite>uses</cite>
-is compacted to have new lines removed. This is similar to how interpolated command
-output is treated by bash.</p>
-</div>
-<div class="admonition caution">
-<p class="admonition-title">Caution</p>
-<p>This feature is experimental. There may be edge cases that aren’t handled well, so
-feedback is requested. Some details of the implementation or API may be altered in
-future versions.</p>
+<p>In this example the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task depends on the <code class="code docutils literal notranslate"><span class="pre">build-frontend</span></code> <code class="code docutils literal notranslate"><span class="pre">build-backend</span></code>, which means that these tasks get executed before the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task. It also declares that it uses the output of the hidden <code class="code docutils literal notranslate"><span class="pre">_website_bucket_name</span></code> task, which means that this also gets executed, but its output it captured and then made available to the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task as the environment variable <code class="code docutils literal notranslate"><span class="pre">BUCKET_NAME</span></code>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Note that captured output that is exposed as an environment variable via the <code class="docutils literal notranslate"><span class="pre">uses</span></code> is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash.</p>
 </div>
 </section>
 </section>
@@ -329,12 +315,12 @@ future versions.</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="loading_tasks_from_another_file.html">
+          <a class="next-page" href="include_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Load tasks from another file</div>
+                <div class="title">Loading tasks from another file</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -345,7 +331,7 @@ future versions.</p>
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Declaring CLI arguments</div>
+                <div class="title">Configuring CLI arguments</div>
                 
               </div>
             </a>
@@ -393,7 +379,7 @@ future versions.</p>
             <ul>
 <li><a class="reference internal" href="#">Composing tasks</a><ul>
 <li><a class="reference internal" href="#composing-tasks-into-sequences">Composing tasks into sequences</a></li>
-<li><a class="reference internal" href="#composing-tasks-into-graphs-experimental">Composing tasks into graphs (Experimental)</a></li>
+<li><a class="reference internal" href="#composing-tasks-into-graphs">Composing tasks into graphs</a></li>
 </ul>
 </li>
 </ul>
