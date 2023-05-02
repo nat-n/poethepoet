@@ -84,7 +84,7 @@ class CmdTask(PoeTask):
             )
         # Resolve any unquoted glob pattern paths
         result = []
-        for (cmd_token, is_quoted) in cmd_tokens:
+        for cmd_token, is_quoted in cmd_tokens:
             if not is_quoted and _GLOBCHARS_PATTERN.match(cmd_token):
                 # looks like a glob path so resolve it
                 result.extend(glob(cmd_token, recursive=True))

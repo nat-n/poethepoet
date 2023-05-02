@@ -31,14 +31,14 @@ jobs:
         run: poetry run poe types
 
       - name: Check rst syntax
-        run: poetry run poe check-docs
+        run: poetry run poe docs-check
 
   run-tests:
     name: Run tests
     strategy:
       matrix:
         os: [Ubuntu, MacOS, Windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
         exclude: # TODO: remove this when pip is fixed
           - os: Windows
             python-version: '3.11'

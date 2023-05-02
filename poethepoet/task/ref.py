@@ -42,6 +42,9 @@ class RefTask(PoeTask):
         Check the given task definition for validity specific to this task type and
         return a message describing the first encountered issue if any.
         """
+
+        # TODO: disallow capture_stdout and executor options?
+
         import shlex
 
         task_ref = task_def["ref"]
