@@ -88,6 +88,11 @@ class CmdTask(PoeTask):
             if not is_quoted and _GLOBCHARS_PATTERN.match(cmd_token):
                 # looks like a glob path so resolve it
                 result.extend(glob(cmd_token, recursive=True))
+            elif is_quoted and self._is_windows:
+                # In this case, the cmd_token will still be wrapped in double or single
+                # quotes. We need to remove those otherwise they'll be pass into the
+                # command.
+                result.append(cmd_token[1:-1])
             else:
                 result.append(cmd_token)
         return result
