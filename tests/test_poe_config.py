@@ -35,17 +35,8 @@ def test_setting_default_array_item_task_type(run_poe_subproc):
 
 def test_setting_global_env_vars(run_poe_subproc, is_windows):
     result = run_poe_subproc("travel", env=no_venv)
-    if is_windows:
-        assert (
-            result.capture
-            == f"Poe => poe_test_echo 'from EARTH to'\nPoe => travel[1]\n"
-        )
-        assert result.stdout == f"'from EARTH to'\nMARS\n"
-    else:
-        assert (
-            result.capture == f"Poe => poe_test_echo from EARTH to\nPoe => travel[1]\n"
-        )
-        assert result.stdout == f"from EARTH to\nMARS\n"
+    assert result.capture == f"Poe => poe_test_echo from EARTH to\nPoe => travel[1]\n"
+    assert result.stdout == f"from EARTH to\nMARS\n"
     assert result.stderr == ""
 
 
@@ -90,9 +81,4 @@ def test_decrease_verbosity(run_poe_subproc, is_windows):
     )
     assert result.capture == ""
     assert result.stderr == ""
-    if is_windows:
-        # On Windows, "echo 'Hello'" results in "'Hello'".
-        assert result.stdout == "'Hello'\n"
-    else:
-        # On UNIX, "echo 'Hello'" results in just "Hello".
-        assert result.stdout == "Hello\n"
+    assert result.stdout == "Hello\n"
