@@ -62,7 +62,7 @@ Zsh
 
   # without oh-my-zsh
   mkdir -p ~/.zfunc/
-  poe _zsh_completion > ~/.zfunc/_poetry
+  poe _zsh_completion > ~/.zfunc/_poe
 
 .. note::
 
