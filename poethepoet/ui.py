@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from typing import IO, TYPE_CHECKING, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .__version__ import __version__
@@ -174,10 +175,12 @@ class PoeUi:
 
         if verbosity >= 0:
             # Use argparse for usage summary
+            program = Path(sys.argv[0] if sys.argv else "poe").name
+            program = "poe" if program in ("poetry", "__main__.py") else program
             result.append(
                 (
                     "<h2>USAGE</h2>",
-                    "  <u>poe</u> [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]",
+                    f"  <u>{program}</u> [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]",
                 )
             )
 
