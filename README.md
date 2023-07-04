@@ -9,7 +9,7 @@
 
 **A batteries included task runner that works well with [poetry](https://python-poetry.org/).**
 
-**[Read the docs](https://poethepoet.natn.io/)**
+📖 **[Read the documentation](https://poethepoet.natn.io/)** 📖 
 
 <br clear="both"/>
 
