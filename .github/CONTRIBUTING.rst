@@ -8,6 +8,13 @@ Go `open an issue <https://github.com/nat-n/poethepoet/issues>`_ or
 `start a discussion <https://github.com/nat-n/poethepoet/discussions>`_ and
 I’ll probably reply soon.
 
+Contributing to the docs
+------------------------
+
+Just make a PR with your proposed changes targeting the main branch. 
+The [documentation website](https://poethepoet.natn.io/) will update once your
+PR is merged.
+
 Contributing code
 -----------------
 
