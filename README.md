@@ -72,7 +72,7 @@ Poe can also be [used without poetry](https://poethepoet.natn.io/index.html#usag
 
 There's plenty to do, come say hi in the [discussions](https://github.com/nat-n/poethepoet/discussions) or [open an issue](https://github.com/nat-n/poethepoet/issues)! 👋
 
-Also check out the [CONTRIBUTING.MD](https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.md) 🤓
+Also check out the [CONTRIBUTING guide](https://github.com/nat-n/poethepoet/blob/main/.github/CONTRIBUTING.rst) 🤓
 
 
 ## License
