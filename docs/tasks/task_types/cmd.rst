@@ -64,7 +64,7 @@ Glob patterns in cmd tasks are expanded and replaced with their results.
 
 .. code-block:: sh
 
-  $ poe greet
+  $ poe clean
   Poe => rm -rf ./tests/__pycache__ ./docs/__pycache__ ...
 
 .. seealso::
