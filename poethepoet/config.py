@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 try:
@@ -13,7 +14,6 @@ from .exceptions import PoeException
 class PoeConfig:
     _table: Mapping[str, Any]
 
-    TOML_NAME = "pyproject.toml"
     KNOWN_SHELL_INTERPRETERS = (
         "posix",
         "sh",
@@ -51,9 +51,11 @@ class PoeConfig:
         self,
         cwd: Optional[Union[Path, str]] = None,
         table: Optional[Mapping[str, Any]] = None,
+        config_name: str = "pyproject.toml",
     ):
         self.cwd = Path(".").resolve() if cwd is None else Path(cwd)
         self._poe = {} if table is None else dict(table)
+        self._config_name = config_name
         self._project_dir: Optional[Path] = None
 
     @property
@@ -106,13 +108,13 @@ class PoeConfig:
     def load(self, target_dir: Optional[str] = None):
         if self._poe:
             raise PoeException("Cannot load poetry config more than once!")
-        config_path = self.find_pyproject_toml(target_dir)
+        config_path = self.find_config_file(target_dir)
         try:
-            self._project = self._read_pyproject(config_path)
+            self._project = self._read_config_file(config_path)
             self._poe = self._project["tool"]["poe"]
         except KeyError as error:
             raise PoeException(
-                f"No poe configuration found in file at {self.TOML_NAME}"
+                f"No poe configuration found in file at {self._config_name}"
             )
         self._project_dir = config_path.parent
         self._load_includes(self._project_dir)
@@ -197,35 +199,37 @@ class PoeConfig:
                 "Should be between -1 and 2."
             )
 
-    def find_pyproject_toml(self, target_dir: Optional[str] = None) -> Path:
+    def find_config_file(self, target_dir: Optional[str] = None) -> Path:
         """
-        Resolve a path to a pyproject.toml using one of two strategies:
-          1. If target_dir is provided then only look there, (accept path to .toml file
+        Resolve a path to a self._config_name using one of two strategies:
+          1. If target_dir is provided then only look there, (accept path to config file
              or to a directory dir).
-          2. Otherwise look for the pyproject.toml is the current working directory,
+          2. Otherwise look for the self._config_name is the current working directory,
              following by all parent directories in ascending order.
 
         Both strategies result in an Exception on failure.
         """
         if target_dir:
             target_path = Path(target_dir).resolve()
-            if not target_path.name.endswith(".toml"):
-                target_path = target_path.joinpath(self.TOML_NAME)
+            if not (
+                target_path.name.endswith(".toml") or target_path.name.endswith(".json")
+            ):
+                target_path = target_path.joinpath(self._config_name)
             if not target_path.exists():
                 raise PoeException(
-                    "Poe could not find a pyproject.toml file at the given location: "
+                    f"Poe could not find a {self._config_name} file at the given location: "
                     f"{target_dir}"
                 )
             return target_path
 
-        maybe_result = self.cwd.joinpath(self.TOML_NAME)
+        maybe_result = self.cwd.joinpath(self._config_name)
         while not maybe_result.exists():
             if len(maybe_result.parents) == 1:
                 raise PoeException(
-                    f"Poe could not find a pyproject.toml file in {self.cwd} or"
+                    f"Poe could not find a {self._config_name} file in {self.cwd} or"
                     " its parents"
                 )
-            maybe_result = maybe_result.parents[1].joinpath(self.TOML_NAME).resolve()
+            maybe_result = maybe_result.parents[1].joinpath(self._config_name).resolve()
         return maybe_result
 
     def _load_includes(self, project_dir: Path):
@@ -259,29 +263,8 @@ class PoeConfig:
                 # TODO: print warning in verbose mode, requires access to ui somehow
                 continue
 
-            if include_path.name.endswith(".toml"):
-                try:
-                    with include_path.open("rb") as file:
-                        self._merge_config(
-                            tomli.load(file), include_path, include.get("cwd")
-                        )
-                except tomli.TOMLDecodeError as error:
-                    raise PoeException(
-                        f"Couldn't parse included toml file from {include_path}", error
-                    ) from error
-
-            elif include_path.name.endswith(".json"):
-                import json
-
-                try:
-                    with include_path.open("rb") as file:
-                        self._merge_config(
-                            json.load(file), include_path, include.get("cwd")
-                        )
-                except json.decoder.JSONDecodeError as error:
-                    raise PoeException(
-                        f"Couldn't parse included json file from {include_path}", error
-                    ) from error
+            include_config = self._read_config_file(include_path)
+            self._merge_config(include_config, include_path, include.get("cwd"))
 
     def _merge_config(
         self,
@@ -326,11 +309,21 @@ class PoeConfig:
                 own_tasks[task_name] = task_def
 
     @staticmethod
-    def _read_pyproject(path: Path) -> Mapping[str, Any]:
+    def _read_config_file(path: Path) -> Mapping[str, Any]:
         try:
             with path.open("rb") as file:
-                return tomli.load(file)
+                if path.suffix.endswith(".json"):
+                    return json.load(file)
+                else:
+                    return tomli.load(file)
+
         except tomli.TOMLDecodeError as error:
             raise PoeException(f"Couldn't parse toml file at {path}", error) from error
+
+        except json.decoder.JSONDecodeError as error:
+            raise PoeException(
+                f"Couldn't parse json file from {path}", error
+            ) from error
+
         except Exception as error:
             raise PoeException(f"Couldn't open file at {path}") from error

@@ -16,6 +16,7 @@ from .exceptions import PoePluginException
 
 class PoeCommand(Command):
     prefix: str
+    command_prefix: str = "poe"
 
     def __init__(self):
         super().__init__()
@@ -70,6 +71,7 @@ class PoeCommand(Command):
             config=config,
             output=io.output.stream,
             poetry_env_path=poetry_env_path,
+            program_name=f"poetry {cls.command_prefix}",
         )
 
 
@@ -102,7 +104,9 @@ class PoetryPlugin(ApplicationPlugin):
             # If there's no pyproject.toml then probably that's OK, don't freak out
             return
 
-        command_prefix = poe_config.get("poetry_command", "poe")
+        command_prefix = poe_config.get("poetry_command", "poe").strip()
+        PoeCommand.command_prefix = command_prefix
+
         poe_tasks = poe_config.get("tasks", {})
         self._validate_command_prefix(command_prefix)
 
@@ -124,7 +128,7 @@ class PoetryPlugin(ApplicationPlugin):
             self._register_command(
                 application,
                 "",
-                {"help": "A task runner that works well with poetry"},
+                {"help": "Run poe tasks defined for this project"},
                 command_prefix,
             )
             for task_name, task in poe_tasks.items():
@@ -153,9 +157,7 @@ class PoetryPlugin(ApplicationPlugin):
 
             from .config import PoeConfig
 
-            pyproject = tomlkit.loads(
-                Path(PoeConfig().find_pyproject_toml()).read_text()
-            )
+            pyproject = tomlkit.loads(Path(PoeConfig().find_config_file()).read_text())
 
         return pyproject.get("tool", {}).get("poe", {})
 

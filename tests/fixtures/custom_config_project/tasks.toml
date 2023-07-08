@@ -1,0 +1,4 @@
+
+
+[tool.poe.tasks.hello]
+cmd = "poe_test_echo hello from tasks.toml"

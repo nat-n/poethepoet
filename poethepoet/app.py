@@ -34,6 +34,8 @@ class PoeThePoet:
         config: Optional[Union[Mapping[str, Any], "PoeConfig"]] = None,
         output: IO = sys.stdout,
         poetry_env_path: Optional[str] = None,
+        config_name: str = "pyproject.toml",
+        program_name: str = "poe",
     ):
         from .config import PoeConfig
         from .ui import PoeUi
@@ -42,10 +44,10 @@ class PoeThePoet:
         self.config = (
             config
             if isinstance(config, PoeConfig)
-            else PoeConfig(cwd=cwd, table=config)
+            else PoeConfig(cwd=cwd, table=config, config_name=config_name)
         )
-        self.ui = PoeUi(output=output)
-        self.poetry_env_path = poetry_env_path
+        self.ui = PoeUi(output=output, program_name=program_name)
+        self._poetry_env_path = poetry_env_path
 
     def __call__(self, cli_args: Sequence[str], internal: bool = False) -> int:
         """
@@ -165,9 +167,9 @@ class PoeThePoet:
             poe_active=os.environ.get("POE_ACTIVE"),
             multistage=multistage,
         )
-        if self.poetry_env_path:
+        if self._poetry_env_path:
             # This allows the PoetryExecutor to use the venv from poetry directly
-            result.exec_cache["poetry_virtualenv"] = self.poetry_env_path
+            result.exec_cache["poetry_virtualenv"] = self._poetry_env_path
         return result
 
     def print_help(

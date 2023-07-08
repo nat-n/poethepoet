@@ -177,10 +177,18 @@ def run_poe(capsys, projects):
         cwd: str = projects["example"],
         config: Optional[Mapping[str, Any]] = None,
         project: Optional[str] = None,
+        config_name="pyproject.toml",
+        program_name="poe",
     ) -> PoeRunResult:
         cwd = projects.get(project, cwd)
         output_capture = StringIO()
-        poe = PoeThePoet(cwd=cwd, config=config, output=output_capture)
+        poe = PoeThePoet(
+            cwd=cwd,
+            config=config,
+            output=output_capture,
+            config_name=config_name,
+            program_name=program_name,
+        )
         result = poe(run_args)
         output_capture.seek(0)
         return PoeRunResult(result, cwd, output_capture.read(), *capsys.readouterr())

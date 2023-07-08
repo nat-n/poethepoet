@@ -43,6 +43,10 @@ rst_prolog = """
 
 """
 
+linkcheck_ignore = [
+    # link checker chokes on GitHub source code links with hashes: https://github.com/sphinx-doc/sphinx/issues/9016
+    "https://github.com/nat-n/poethepoet/blob/main/poethepoet/helpers/python.py#L13"
+]
 
 # -- Options for HTML output ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
