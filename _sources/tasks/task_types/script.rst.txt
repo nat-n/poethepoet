@@ -19,7 +19,7 @@ If the target python function is an async function then it will be exectued with
 Available task options
 ----------------------
 
-``cmd`` tasks support all of the :doc:`standard task options <../options>`.
+``script`` tasks support all of the :doc:`standard task options <../options>`.
 
 The following options are also accepted:
 
