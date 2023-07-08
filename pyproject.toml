@@ -46,6 +46,7 @@ poe = "poethepoet:main"
 [tool.poetry.plugins."poetry.application.plugin"]
 poethepoet = "poethepoet.plugin:PoetryPlugin"
 
+
 [tool.poe.tasks]
 
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
@@ -128,6 +129,14 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   [tool.poe.tasks.check]
   help     = "Run all checks on the code base"
   sequence = ["docs-check", "style", "types", "lint", "test"]
+
+  [tool.poe.tasks.install-poetry-plugin]
+  help = "Install or update this project as a plugin in poetry"
+  sequence = [
+    { cmd = "poetry self remove poethepoet"},
+    { cmd = "poetry self add \"${POE_ROOT}[poetry_plugin]\""}
+  ]
+  ignore_fail = true
 
   [tool.poe.tasks.poe]
   help   = "Execute poe from this repo (useful for testing)"

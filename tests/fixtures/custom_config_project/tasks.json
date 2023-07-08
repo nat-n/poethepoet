@@ -1,0 +1,9 @@
+{
+  "tool": {
+    "poe": {
+      "tasks": {
+        "hello": "poe_test_echo hello from tasks.json"
+      }
+    }
+  }
+}

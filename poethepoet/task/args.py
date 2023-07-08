@@ -41,8 +41,15 @@ arg_types: Dict[str, Type] = {
 class PoeTaskArgs:
     _args: Tuple[ArgParams, ...]
 
-    def __init__(self, args_def: ArgsDef, task_name: str, env: "EnvVarsManager"):
+    def __init__(
+        self,
+        args_def: ArgsDef,
+        task_name: str,
+        program_name: str,
+        env: "EnvVarsManager",
+    ):
         self._args = self._normalize_args_def(args_def)
+        self._program_name = program_name
         self._task_name = task_name
         self._env = env
 
@@ -245,7 +252,9 @@ class PoeTaskArgs:
         import argparse
 
         parser = argparse.ArgumentParser(
-            prog=f"poe {self._task_name}", add_help=False, allow_abbrev=False
+            prog=f"{self._program_name} {self._task_name}",
+            add_help=False,
+            allow_abbrev=False,
         )
         for arg in self._args:
             parser.add_argument(

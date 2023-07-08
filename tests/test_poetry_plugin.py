@@ -14,8 +14,12 @@ def setup_poetry_project_empty_prefix(run_poetry, projects):
     run_poetry(["install"], cwd=projects["poetry_plugin/empty_prefix"].parent)
 
 
+@pytest.fixture(scope="session")
+def setup_poetry_project_with_prefix(run_poetry, projects):
+    run_poetry(["install"], cwd=projects["poetry_plugin/with_prefix"].parent)
+
+
 @pytest.mark.slow
-@pytest.mark.skipif(version_info < (3, 8), reason="dependencies require python>=3.8")
 def test_poetry_help(run_poetry, projects):
     result = run_poetry([], cwd=projects["poetry_plugin"])
     assert result.stdout.startswith("Poetry (version ")
@@ -25,7 +29,6 @@ def test_poetry_help(run_poetry, projects):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(version_info < (3, 8), reason="dependencies require python>=3.8")
 def test_task_with_cli_dependency(
     run_poetry, projects, setup_poetry_project, is_windows
 ):
@@ -47,7 +50,6 @@ def test_task_with_cli_dependency(
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(version_info < (3, 8), reason="dependencies require python>=3.8")
 def test_task_with_lib_dependency(
     run_poetry, projects, setup_poetry_project, is_windows
 ):
@@ -59,7 +61,6 @@ def test_task_with_lib_dependency(
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(version_info < (3, 8), reason="dependencies require python>=3.8")
 def test_task_accepts_any_args(run_poetry, projects, setup_poetry_project):
     result = run_poetry(
         ["poe", "echo", "--lol=:D", "--version", "--help"],
@@ -72,7 +73,6 @@ def test_task_accepts_any_args(run_poetry, projects, setup_poetry_project):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(version_info < (3, 8), reason="dependencies require python>=3.8")
 def test_poetry_help_without_poe_command_prefix(
     run_poetry, projects, setup_poetry_project_empty_prefix
 ):
@@ -84,7 +84,6 @@ def test_poetry_help_without_poe_command_prefix(
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(version_info < (3, 8), reason="dependencies require python>=3.8")
 def test_running_tasks_without_poe_command_prefix(
     run_poetry, projects, setup_poetry_project_empty_prefix
 ):
@@ -99,7 +98,43 @@ def test_running_tasks_without_poe_command_prefix(
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(version_info < (3, 8), reason="dependencies require python>=3.8")
+def test_poetry_help_with_poe_command_prefix(
+    run_poetry, projects, setup_poetry_project_empty_prefix
+):
+    result = run_poetry([], cwd=projects["poetry_plugin/with_prefix"].parent)
+    assert result.stdout.startswith("Poetry (version ")
+    assert "\n  foo cow-greet" in result.stdout
+    assert "\n  foo echo           It's like echo\n" in result.stdout
+    # assert result.stderr == ""
+
+
+@pytest.mark.slow
+def test_running_tasks_with_poe_command_prefix(
+    run_poetry, projects, setup_poetry_project_with_prefix
+):
+    result = run_poetry(
+        ["foo", "echo", "--lol=:D", "--version", "--help"],
+        cwd=projects["poetry_plugin/with_prefix"].parent,
+    )
+    assert result.stdout == (
+        "Poe => poe_test_echo --lol=:D --version --help\n--lol=:D --version --help\n"
+    )
+    # assert result.stderr == ""
+
+
+@pytest.mark.slow
+def test_running_tasks_with_poe_command_prefix(
+    run_poetry, projects, setup_poetry_project_with_prefix
+):
+    result = run_poetry(
+        ["foo"],
+        cwd=projects["poetry_plugin/with_prefix"].parent,
+    )
+    assert "USAGE\n  poetry foo [-h]" in result.stdout
+    # assert result.stderr == ""
+
+
+@pytest.mark.slow
 def test_running_poetry_command_with_hooks(run_poetry, projects, setup_poetry_project):
     result = run_poetry(["env", "info"], cwd=projects["poetry_plugin"])
     assert "THIS IS YOUR ENV!" in result.stdout

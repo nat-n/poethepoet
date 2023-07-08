@@ -214,11 +214,13 @@ class PoeTask(metaclass=MetaPoeTask):
     def _parse_named_args(
         self, extra_args: Sequence[str], env: "EnvVarsManager"
     ) -> Optional[Dict[str, str]]:
-        from .args import PoeTaskArgs
+        if args_def := self.options.get("args"):
+            from .args import PoeTaskArgs
 
-        args_def = self.options.get("args")
-        if args_def:
-            return PoeTaskArgs(args_def, self.name, env).parse(extra_args)
+            return PoeTaskArgs(args_def, self.name, self._ui.program_name, env).parse(
+                extra_args
+            )
+
         return None
 
     def run(
