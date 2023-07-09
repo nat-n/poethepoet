@@ -12,6 +12,10 @@
 Poe the Poet Documentation
 **************************
 
+.. image:: https://img.shields.io/github/stars/nat-n/poethepoet?style=social
+   :target: https://github.com/nat-n/poethepoet
+   :alt: GitHub repo
+
 .. image:: https://img.shields.io/pypi/pyversions/poethepoet.svg
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
@@ -25,10 +29,6 @@ Poe the Poet Documentation
 
 .. image:: https://img.shields.io/pypi/l/ansicolortags.svg
    :alt: MIT
-
-.. image:: https://img.shields.io/github/stars/nat-n/poethepoet?style=social
-   :target: https://github.com/nat-n/poethepoet
-   :alt: GitHub repo
 
 Poe the Poet is a batteries included task runner that works well with |poetry_link|.
 
