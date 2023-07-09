@@ -111,11 +111,11 @@ How to add a new feature
 
 1. Create your branch from *development*
 
-   ::
+.. code-block:: bash
 
-      git fetch
-      git checkout origin/development
-      git checkout -b feature/my_new_feature
+   git fetch
+   git checkout origin/development
+   git checkout -b feature/my_new_feature
 
 2. Create a pull request back to *development*
 
@@ -124,11 +124,11 @@ How to add a hot fix
 
 1. Create your branch from *main*
 
-   ::
+.. code-block:: bash
 
-      git fetch
-      git checkout origin/main
-      git checkout -b feature/my_new_feature
+   git fetch
+   git checkout origin/main
+   git checkout -b feature/my_new_feature
 
 2. Create a pull request back to *main*, and one to *development*
 

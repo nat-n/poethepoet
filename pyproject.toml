@@ -24,7 +24,8 @@ mypy       = "^1.1.1"
 pylint     = "^2.13.0"
 pytest     = "^7.1.2"
 pytest-cov = "^3.0.0"
-rstcheck   = "^3.5.0"
+rstcheck   = { version = "^6.1.2", python = "<4" }
+
 virtualenv = "^20.14.1"
 
 poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
@@ -144,6 +145,20 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   help   = "Execute poe from this repo (useful for testing)"
   script = "poethepoet:main"
 
+
+[tool.rstcheck]
+ignore_messages = [
+  "Unknown directive type \"autoclass\"",
+  "Hyperlink target \"shell-completion\" is not referenced.",
+  "Hyperlink target \"envfile-option\" is not referenced.",
+  "Hyperlink target \"ref-env-vars\" is not referenced.",
+  "Hyperlink target \"sequence-composition\" is not referenced.",
+  "Hyperlink target \"graph-composition\" is not referenced.",
+  " No directive entry for \"autoclass\" in module \"docutils.parsers.rst.languages.en\""
+]
+ignore_directives = [
+  "include"
+]
 
 [tool.coverage.report]
 omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"]

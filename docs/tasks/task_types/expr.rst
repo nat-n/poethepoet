@@ -55,7 +55,7 @@ The expression can reference environment variables using templating syntax as in
   )"""
   args = [{ name = "target-venv", default = ".venv", positional = true }]
 
-.. code-block::
+.. code-block:: sh
 
   $ poe venv-active poethepoet-LCpCQf8S-py3.10
   Poe => (
@@ -65,12 +65,9 @@ The expression can reference environment variables using templating syntax as in
   )
   poethepoet-LCpCQf8S-py3.10 is not active
 
-In this example the :code:`VIRTUAL_ENV` environment variable is templated into the
-expression using the usual templating syntax, and the :code:`target_venv` argument is
-referenced directly as a variable.
+In this example the ``VIRTUAL_ENV`` environment variable is templated into the expression using the usual templating syntax, and the ``target_venv`` argument is referenced directly as a variable.
 
-Notice that the expression may be formatted over multiple lines, as in normal python
-code.
+Notice that the expression may be formatted over multiple lines, as in normal python code.
 
 
 Referencing imported modules in an expression

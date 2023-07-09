@@ -15,7 +15,7 @@ The following script replicates the main functionality of the `poe` standalone c
 
     if __name__ == "__main__":
         app = PoeThePoet()
-        result = app(cli_args=sys.argv[1:]
+        result = app(cli_args=sys.argv[1:])
         if result:
             sys.exit(result)
 
