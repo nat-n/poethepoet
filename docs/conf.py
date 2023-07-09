@@ -21,10 +21,12 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinxext.opengraph",
     "sphinx_copybutton",
+    "sphinx.ext.autodoc",
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
 rst_prolog = """
 .. role:: sh(code)
    :language: sh
@@ -85,3 +87,19 @@ html_theme_options = {
         },
     ],
 }
+
+
+def setup(app):
+    # Inject a lightweight, privacy-preserving view tracker
+    app.add_js_file(
+        None,
+        body="""
+        (function(){
+            var plausible_script = document.createElement('script');
+            plausible_script.setAttribute('defer','true');
+            plausible_script.setAttribute('data-domain','poethepoet.natn.io');
+            plausible_script.setAttribute('src','https://plausible.io/js/script.js');
+            document.head.appendChild(plausible_script);
+        })()
+        """,
+    )

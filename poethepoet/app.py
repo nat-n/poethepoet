@@ -23,14 +23,42 @@ if TYPE_CHECKING:
 
 
 class PoeThePoet:
+    """
+    :param cwd:
+        The directory that poe should take as the current working directory,
+        this determines where to look for a pyproject.toml file, defaults to
+        ``Path(".").resolve()``
+    :type cwd: Path, optional
+    :param config:
+        Either a dictionary with the same schema as a pyproject.toml file, or a
+        `PoeConfig <https://github.com/nat-n/poethepoet/blob/main/poethepoet/config.py>`_
+        object to use as an alternative to loading config from a file.
+    :type config: dict | PoeConfig, optional
+    :param output:
+        A stream for the application to write its own output to, defaults to sys.stdout
+    :type output: IO, optional
+    :param poetry_env_path:
+        The path to the poetry virtualenv. If provided then it is used by the
+        `PoetryExecutor <https://github.com/nat-n/poethepoet/blob/main/poethepoet/executor/poetry.py>`_,
+        instead of having to execute poetry in a subprocess to determine this.
+    :type poetry_env_path: str, optional
+    :param config_name:
+        The name of the file to load tasks and configuration from, defaults to
+        "pyproject.toml"
+    :type config_name: str, optional
+    :param program_name:
+        The name of the program that is being run. This is used primarily when
+        outputting help messages, defaults to "poe"
+    :type program_name: str, optional
+    """
+
     cwd: Path
     ui: "PoeUi"
     config: "PoeConfig"
-    task: Optional["PoeTask"] = None
 
     def __init__(
         self,
-        cwd: Path,
+        cwd: Optional[Path] = None,
         config: Optional[Union[Mapping[str, Any], "PoeConfig"]] = None,
         output: IO = sys.stdout,
         poetry_env_path: Optional[str] = None,
@@ -40,7 +68,7 @@ class PoeThePoet:
         from .config import PoeConfig
         from .ui import PoeUi
 
-        self.cwd = cwd
+        self.cwd = cwd or Path(".").resolve()
         self.config = (
             config
             if isinstance(config, PoeConfig)
@@ -51,8 +79,10 @@ class PoeThePoet:
 
     def __call__(self, cli_args: Sequence[str], internal: bool = False) -> int:
         """
+        :param cli_args:
+            A sequence of command line arguments to pass to poe (i.e. sys.argv[1:])
         :param internal:
-            indicates that this is an internal call to run poe, e.g. from a
+            Indicates that this is an internal call to run poe, e.g. from a
             plugin hook.
         """
 
@@ -78,27 +108,27 @@ class PoeThePoet:
             self.print_help()
             return 0
 
-        if not self.resolve_task(internal):
+        task = self.resolve_task(internal)
+        if not task:
             return 1
 
-        assert self.task
-        if self.task.has_deps():
-            return self.run_task_graph() or 0
+        if task.has_deps():
+            return self.run_task_graph(task) or 0
         else:
-            return self.run_task() or 0
+            return self.run_task(task) or 0
 
-    def resolve_task(self, allow_hidden: bool = False) -> bool:
+    def resolve_task(self, allow_hidden: bool = False) -> Optional["PoeTask"]:
         from .task import PoeTask
 
         task = tuple(self.ui["task"])
         if not task:
             self.print_help(info="No task specified.")
-            return False
+            return None
 
         task_name = task[0]
         if task_name not in self.config.tasks:
             self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"))
-            return False
+            return None
 
         if task_name.startswith("_") and not allow_hidden:
             self.print_help(
@@ -106,19 +136,19 @@ class PoeThePoet:
                     "Tasks prefixed with `_` cannot be executed directly"
                 ),
             )
-            return False
+            return None
 
-        self.task = PoeTask.from_config(
+        return PoeTask.from_config(
             task_name, config=self.config, ui=self.ui, invocation=task
         )
-        return True
 
-    def run_task(self, context: Optional["RunContext"] = None) -> Optional[int]:
+    def run_task(
+        self, task: "PoeTask", context: Optional["RunContext"] = None
+    ) -> Optional[int]:
         if context is None:
             context = self.get_run_context()
         try:
-            assert self.task
-            return self.task.run(context=context, extra_args=self.task.invocation[1:])
+            return task.run(context=context, extra_args=task.invocation[1:])
         except PoeException as error:
             self.print_help(error=error)
             return 1
@@ -126,27 +156,26 @@ class PoeThePoet:
             self.ui.print_error(error=error)
             return 1
 
-    def run_task_graph(self) -> Optional[int]:
+    def run_task_graph(self, task: "PoeTask") -> Optional[int]:
         from .task.graph import TaskExecutionGraph
 
-        assert self.task
         context = self.get_run_context(multistage=True)
-        graph = TaskExecutionGraph(self.task, context)
+        graph = TaskExecutionGraph(task, context)
         plan = graph.get_execution_plan()
 
         for stage in plan:
-            for task in stage:
-                if task == self.task:
+            for stage_task in stage:
+                if stage_task == task:
                     # The final sink task gets special treatment
-                    return self.run_task(context)
+                    return self.run_task(stage_task, context)
 
                 try:
-                    task_result = task.run(
-                        context=context, extra_args=task.invocation[1:]
+                    task_result = stage_task.run(
+                        context=context, extra_args=stage_task.invocation[1:]
                     )
                     if task_result:
                         raise ExecutionError(
-                            f"Task graph aborted after failed task {task.name!r}"
+                            f"Task graph aborted after failed task {stage_task.name!r}"
                         )
                 except PoeException as error:
                     self.print_help(error=error)

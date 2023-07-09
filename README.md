@@ -9,34 +9,36 @@
 
 **A batteries included task runner that works well with [poetry](https://python-poetry.org/).**
 
-📖 **[Read the documentation](https://poethepoet.natn.io/)** 📖 
+**[📖 Read the documentation 📖](https://poethepoet.natn.io/)**
 
 <br clear="both"/>
 
 ## Features
 
 
-- ✅ Straight forward declaration of project tasks in your pyproject.toml
+- ✅ Straight forward [declaration of project tasks in your pyproject.toml](http://127.0.0.1:5500/tasks/index.html)
 
-- ✅ Tasks are run in poetry's virtualenv (or another env you specify)
+- ✅ Tasks are run in poetry's virtualenv ([or another env](http://127.0.0.1:5500/index.html#usage-without-poetry) you specify)
 
-- ✅ Shell completion of task names (and global options too for zsh)
+- ✅ [Shell completion of task names](http://127.0.0.1:5500/installation.html#shell-completion) (and global options too for zsh)
 
-- ✅ The poe CLI can be used standalone, or as a [plugin for the poetry](https://poethepoet.natn.io/poetry_plugin.html)
+- ✅ The poe CLI can be used standalone, or as a [plugin for poetry](https://poethepoet.natn.io/poetry_plugin.html)
 
-- ✅ Tasks can be commands, shell scripts, python expressions, or references to python functions
+- ✅ Tasks can be [commands](http://127.0.0.1:5500/tasks/task_types/cmd.html), [shell scripts](http://127.0.0.1:5500/tasks/task_types/shell.html), [python expressions](http://127.0.0.1:5500/tasks/task_types/expr.html), or references to [python functions](http://127.0.0.1:5500/tasks/task_types/script.html)
 
 - ✅ Concise commands with extra arguments passed to the task `poe [options] task [task_args]`
 
-- ✅ Easily define CLI arguments for your tasks
+- ✅ Easily [define CLI arguments](http://127.0.0.1:5500/guides/args_guide.html) for your tasks
 
-- ✅ Tasks can specify and reference environment variables, even without a shell
+- ✅ Tasks can specify and [reference environment variables](http://127.0.0.1:5500/tasks/task_types/cmd.html#ref-env-vars), even without a shell
 
-- ✅ Tasks are self documenting, with optional help messages (just run `poe` with no arguments)
+- ✅ Tasks are [self documenting](http://127.0.0.1:5500/guides/help_guide.html), with optional help messages (just run `poe` with no arguments)
 
-- ✅ Tasks can be composed into sequences or DAGs
+- ✅ Tasks can be composed into [sequences](http://127.0.0.1:5500/guides/composition_guide.html#composing-tasks-into-sequences) or [DAGs](http://127.0.0.1:5500/guides/composition_guide.html#composing-tasks-into-graphs)
 
-- ✅ Works with `.env` files
+- ✅ Works with [`.env` files](http://127.0.0.1:5500/tasks/options.html#loading-environment-variables-from-an-env-file)
+
+- ✅ Can be [used as a library](http://127.0.0.1:5500/guides/library_guide.html) to embed in other tools
 
 
 ## Quick start

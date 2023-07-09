@@ -9,4 +9,5 @@ def serve(docs_dir: str = ".", delay: int = 1):
     server.watch("**/*.py", shell(build_cmd), delay=delay)
     server.watch("_static/*", shell(build_cmd), delay=delay)
     server.watch("_templates/*", shell(build_cmd), delay=delay)
+    server.watch("../poethepoet/**/*", shell(build_cmd), delay=delay)
     server.serve(root=f"{build_dir}")

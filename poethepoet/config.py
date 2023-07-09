@@ -12,8 +12,6 @@ from .exceptions import PoeException
 
 
 class PoeConfig:
-    _table: Mapping[str, Any]
-
     KNOWN_SHELL_INTERPRETERS = (
         "posix",
         "sh",
@@ -107,7 +105,8 @@ class PoeConfig:
 
     def load(self, target_dir: Optional[str] = None):
         if self._poe:
-            raise PoeException("Cannot load poetry config more than once!")
+            return
+
         config_path = self.find_config_file(target_dir)
         try:
             self._project = self._read_config_file(config_path)

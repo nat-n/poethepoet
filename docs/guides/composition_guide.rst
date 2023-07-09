@@ -1,6 +1,8 @@
 Composing tasks
 ===============
 
+.. _sequence_composition:
+
 Composing tasks into sequences
 ------------------------------
 
@@ -36,6 +38,8 @@ And here's an example that uses the *sequence* task type explicitly in a task de
 .. seealso::
 
     See :doc:`sequence tasks<../tasks/task_types/sequence>` specifics for more information on the :code:`sequence` task type.
+
+.. _graph_composition:
 
 Composing tasks into graphs
 ---------------------------
