@@ -72,6 +72,8 @@ It is also possible to reference existing environment variables when defining a 
     env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
 
 
+.. _envfile_option:
+
 Loading environment variables from an env file
 ----------------------------------------------
 

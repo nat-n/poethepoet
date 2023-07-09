@@ -24,6 +24,8 @@ Shell like features
 
 It it important to understand that ``cmd`` tasks are executed without a shell (to maximise portability). However some shell like features are still available.
 
+.. _ref_env_vars:
+
 Referencing environment variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

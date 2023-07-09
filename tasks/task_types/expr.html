@@ -17,10 +17,10 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="switch tasks" href="switch.html" /><link rel="prev" title="sequence tasks" href="sequence.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/expr.html" />
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.03.27 -->
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.05.20 -->
         <title>expr tasks - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=fad236701ea90a88636c2a8c73b44ae642ed2a53" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=e6660623a769aa55fea372102b9bf3151b292993" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
@@ -174,7 +174,7 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../poetry_plugin.html">Poetry plugin</a></li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Defining tasks</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../options.html">Standard task options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cmd.html">Command tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="script.html">Script tasks</a></li>
@@ -185,12 +185,13 @@
 <li class="toctree-l2"><a class="reference internal" href="ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Guides</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/running_guide.html">Running tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/help_guide.html">Documenting tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/include_guide.html">Loading tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../license.html">Licence</a></li>
@@ -283,20 +284,17 @@ using the usual templating syntax <code class="docutils literal notranslate"><sp
 <span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ poe venv-active poethepoet-LCpCQf8S-py3.10
-Poe =&gt; (
-  f&#39;{target_venv} is active&#39;
-  if ${VIRTUAL_ENV}.endswith(target_venv)
-  else f&#39;{target_venv} is not active&#39;
-)
-poethepoet-LCpCQf8S-py3.10 is not active
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>venv-active<span class="w"> </span>poethepoet-LCpCQf8S-py3.10
+<span class="nv">Poe</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span><span class="o">(</span>
+<span class="w">  </span>f<span class="s1">&#39;{target_venv} is active&#39;</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="si">${</span><span class="nv">VIRTUAL_ENV</span><span class="si">}</span>.endswith<span class="o">(</span>target_venv<span class="o">)</span>
+<span class="w">  </span><span class="k">else</span><span class="w"> </span>f<span class="s1">&#39;{target_venv} is not active&#39;</span>
+<span class="o">)</span>
+poethepoet-LCpCQf8S-py3.10<span class="w"> </span>is<span class="w"> </span>not<span class="w"> </span>active
 </pre></div>
 </div>
-<p>In this example the <code class="code docutils literal notranslate"><span class="pre">VIRTUAL_ENV</span></code> environment variable is templated into the
-expression using the usual templating syntax, and the <code class="code docutils literal notranslate"><span class="pre">target_venv</span></code> argument is
-referenced directly as a variable.</p>
-<p>Notice that the expression may be formatted over multiple lines, as in normal python
-code.</p>
+<p>In this example the <code class="docutils literal notranslate"><span class="pre">VIRTUAL_ENV</span></code> environment variable is templated into the expression using the usual templating syntax, and the <code class="docutils literal notranslate"><span class="pre">target_venv</span></code> argument is referenced directly as a variable.</p>
+<p>Notice that the expression may be formatted over multiple lines, as in normal python code.</p>
 </section>
 <section id="referencing-imported-modules-in-an-expression">
 <h2>Referencing imported modules in an expression<a class="headerlink" href="#referencing-imported-modules-in-an-expression" title="Permalink to this heading">#</a></h2>
@@ -428,5 +426,14 @@ imports = [&quot;json&quot;]
     <script src="../../_static/scripts/furo.js"></script>
     <script src="../../_static/clipboard.min.js"></script>
     <script src="../../_static/copybutton.js"></script>
+    <script>
+        (function(){
+            var plausible_script = document.createElement('script');
+            plausible_script.setAttribute('defer','true');
+            plausible_script.setAttribute('data-domain','poethepoet.natn.io');
+            plausible_script.setAttribute('src','https://plausible.io/js/script.js');
+            document.head.appendChild(plausible_script);
+        })()
+        </script>
     </body>
 </html>

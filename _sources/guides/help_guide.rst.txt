@@ -19,7 +19,7 @@ You can add help text to your tasks by adding the ``help`` option to the task de
 
 This help text will be displayed alongside the task name in the list of configured tasks when ``poe`` is run without specifying a task.
 
-.. code-block::
+.. code-block:: docs
 
   $ poe --help
   Poe the Poet - A task runner that works well with poetry.

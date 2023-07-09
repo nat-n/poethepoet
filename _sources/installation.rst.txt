@@ -45,6 +45,8 @@ See the :doc:`poetry plugin docs <poetry_plugin>` for more details about this op
 
   If you prefer not to install poe globally, then you might want to create for yourself an alias such like :sh:`alias poe="poetry run poe"` or :sh:`alias poe="poetry poe"`, which should enable you to still benefit from tab completion.
 
+.. _shell_completion:
+
 Enable tab completion for your shell
 ------------------------------------
 

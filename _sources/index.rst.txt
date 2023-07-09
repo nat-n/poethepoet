@@ -5,7 +5,6 @@
    installation
    poetry_plugin
    tasks/index
-   configuration/index
    guides/index
    license
 
@@ -45,23 +44,25 @@ Top features
 
 |V| Tasks are run in poetry's virtualenv (or another env you specify)
 
-|V| Shell completion of task names (and global options too for zsh)
+|V| :ref:`Shell completion of task names<shell_completion>` (and global options too for zsh)
 
-|V| The poe CLI can be used standalone, or as a plugin for the poetry
+|V| The poe CLI can be used standalone, or as a :doc:`plugin for poetry<./poetry_plugin>`
 
-|V| Tasks can be commands, shell scripts, python expressions, or references to python functions
+|V| Tasks can be :doc:`commands<./tasks/task_types/cmd>`, :doc:`shell scripts<./tasks/task_types/shell>`, :doc:`python expressions<./tasks/task_types/expr>`, or references to :doc:`python functions<./tasks/task_types/script>`
 
 |V| Concise commands with extra arguments passed to the task :sh:`poe [options] task [task_args]`
 
-|V| Easily define CLI arguments for your tasks
+|V| Easily :doc:`define CLI arguments<./guides/args_guide>` for your tasks
 
-|V| Tasks can specify and reference environment variables, even without a shell
+|V| Tasks can specify and :ref:`reference environment variables<ref_env_vars>`, even without a shell
 
-|V| Tasks are self documenting, with optional help messages (just run :sh:`poe` with no arguments)
+|V| Tasks are :doc:`self documenting<./guides/help_guide>`, with optional help messages (just run :sh:`poe` with no arguments)
 
-|V| Tasks can be composed into sequences or DAGs
+|V| Tasks can be composed into :ref:`sequences<sequence_composition>` or :ref:`DAGs<graph_composition>`
 
-|V| Works with :code:`.env` files
+|V| Works with :ref:`.env files<envfile_option>`
+
+|V| Can be :doc:`used as a library<./guides/library_guide>` to embed in other tools
 
 
 Quick start
