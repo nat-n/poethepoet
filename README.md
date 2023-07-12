@@ -16,29 +16,29 @@
 ## Features
 
 
-- ✅ Straight forward [declaration of project tasks in your pyproject.toml](http://127.0.0.1:5500/tasks/index.html)
+- ✅ Straight forward [declaration of project tasks in your pyproject.toml](https://poethepoet.natn.io/tasks/index.html)
 
-- ✅ Tasks are run in poetry's virtualenv ([or another env](http://127.0.0.1:5500/index.html#usage-without-poetry) you specify)
+- ✅ Tasks are run in poetry's virtualenv ([or another env](https://poethepoet.natn.io/index.html#usage-without-poetry) you specify)
 
-- ✅ [Shell completion of task names](http://127.0.0.1:5500/installation.html#shell-completion) (and global options too for zsh)
+- ✅ [Shell completion of task names](https://poethepoet.natn.io/installation.html#shell-completion) (and global options too for zsh)
 
 - ✅ The poe CLI can be used standalone, or as a [plugin for poetry](https://poethepoet.natn.io/poetry_plugin.html)
 
-- ✅ Tasks can be [commands](http://127.0.0.1:5500/tasks/task_types/cmd.html), [shell scripts](http://127.0.0.1:5500/tasks/task_types/shell.html), [python expressions](http://127.0.0.1:5500/tasks/task_types/expr.html), or references to [python functions](http://127.0.0.1:5500/tasks/task_types/script.html)
+- ✅ Tasks can be [commands](https://poethepoet.natn.io/tasks/task_types/cmd.html), [shell scripts](https://poethepoet.natn.io/tasks/task_types/shell.html), [python expressions](https://poethepoet.natn.io/tasks/task_types/expr.html), or references to [python functions](https://poethepoet.natn.io/tasks/task_types/script.html)
 
 - ✅ Concise commands with extra arguments passed to the task `poe [options] task [task_args]`
 
-- ✅ Easily [define CLI arguments](http://127.0.0.1:5500/guides/args_guide.html) for your tasks
+- ✅ Easily [define CLI arguments](https://poethepoet.natn.io/guides/args_guide.html) for your tasks
 
-- ✅ Tasks can specify and [reference environment variables](http://127.0.0.1:5500/tasks/task_types/cmd.html#ref-env-vars), even without a shell
+- ✅ Tasks can specify and [reference environment variables](https://poethepoet.natn.io/tasks/task_types/cmd.html#ref-env-vars), even without a shell
 
-- ✅ Tasks are [self documenting](http://127.0.0.1:5500/guides/help_guide.html), with optional help messages (just run `poe` with no arguments)
+- ✅ Tasks are [self documenting](https://poethepoet.natn.io/guides/help_guide.html), with optional help messages (just run `poe` with no arguments)
 
-- ✅ Tasks can be composed into [sequences](http://127.0.0.1:5500/guides/composition_guide.html#composing-tasks-into-sequences) or [DAGs](http://127.0.0.1:5500/guides/composition_guide.html#composing-tasks-into-graphs)
+- ✅ Tasks can be composed into [sequences](https://poethepoet.natn.io/guides/composition_guide.html#composing-tasks-into-sequences) or [DAGs](https://poethepoet.natn.io/guides/composition_guide.html#composing-tasks-into-graphs)
 
-- ✅ Works with [`.env` files](http://127.0.0.1:5500/tasks/options.html#loading-environment-variables-from-an-env-file)
+- ✅ Works with [`.env` files](https://poethepoet.natn.io/tasks/options.html#loading-environment-variables-from-an-env-file)
 
-- ✅ Can be [used as a library](http://127.0.0.1:5500/guides/library_guide.html) to embed in other tools
+- ✅ Can be [used as a library](https://poethepoet.natn.io/guides/library_guide.html) to embed in other tools
 
 
 ## Quick start
