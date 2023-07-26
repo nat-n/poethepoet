@@ -289,6 +289,10 @@ class PoeConfig:
         # Includes additional tasks with preserved ordering
         self._poe["tasks"] = own_tasks = self._poe.get("tasks", {})
         for task_name, task_def in tasks.items():
+            if isinstance(task_def, str):
+                # If the task is a string, then convert it to the dict form
+                task_def = {"cmd": task_def}
+                tasks[task_name] = task_def
             if task_cwd:
                 # Override the config of each task to use the include level cwd as a
                 # base for the task level cwd
