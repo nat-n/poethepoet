@@ -19,7 +19,7 @@ The following options can be configured on your tasks and are not specific to an
   Provide one or more env files to be loaded before running this task.
 
 **cwd** :  ``str`` :ref:`📖<Running a task with a specific working directory>`
-  Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the ``pyproject.toml``.
+  Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the ``pyproject.toml``. May be set to a special value ``$exec_cwd`` to use the working directory from which the task has been executed.
 
 **deps** :  ``List[str]`` :doc:`📖<../guides/composition_guide>`
   A list of task invocations that will be executed before this one.

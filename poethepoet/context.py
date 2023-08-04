@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple
@@ -105,11 +106,15 @@ class RunContext:
     ) -> "PoeExecutor":
         from .executor import PoeExecutor
 
+        cwd_option = task_options.get("cwd", ".")
+        if cwd_option == '$exec_cwd':
+            cwd_option = os.getcwd()
+
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
             env=env,
-            working_dir=self.project_dir / task_options.get("cwd", "."),
+            working_dir=self.project_dir / cwd_option,
             dry=self.dry,
             executor_config=task_options.get("executor"),
             capture_stdout=task_options.get("capture_stdout", False),
