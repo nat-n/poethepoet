@@ -1,7 +1,10 @@
 
 tool.poe.include = ["extra_tasks.toml", { path = "../pyproject.toml" }]
+tool.poe.default_task_type = "expr"
+
+[tool.poe.tasks]
+add = "1 + 1"
 
 [tool.poe.tasks.get_cwd_2]
 interpreter = "python"
 shell       = "import os; print(os.getcwd())"
-

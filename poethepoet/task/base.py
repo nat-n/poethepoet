@@ -134,7 +134,7 @@ class PoeTask(metaclass=MetaPoeTask):
             options["capture_stdout"] = capture_stdout
 
         if isinstance(task_def, (str, list)):
-            task_def = cls._normalize_task_def(
+            task_def = cls.normalize_task_def(
                 task_def, config, task_type=cls.__task_types[task_type]
             )
 
@@ -151,7 +151,7 @@ class PoeTask(metaclass=MetaPoeTask):
         )
 
     @classmethod
-    def _normalize_task_def(
+    def normalize_task_def(
         cls,
         task_def: TaskDef,
         config: "PoeConfig",
@@ -450,7 +450,7 @@ class PoeTask(metaclass=MetaPoeTask):
         elif isinstance(task_def, list):
             task_type_key = config.default_array_task_type
             task_type = cls.__task_types[task_type_key]
-            normalized_task_def = cls._normalize_task_def(
+            normalized_task_def = cls.normalize_task_def(
                 task_def, config, task_type=task_type
             )
             if hasattr(task_type, "_validate_task_def"):

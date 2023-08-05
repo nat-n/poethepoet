@@ -187,7 +187,7 @@ class PoeConfig:
         # Validate shell_interpreter type
         for interpreter in self.shell_interpreter:
             if interpreter not in self.KNOWN_SHELL_INTERPRETERS:
-                return (
+                raise PoeException(
                     f"Unsupported value {interpreter!r} for option `shell_interpreter`."
                 )
 
@@ -262,54 +262,53 @@ class PoeConfig:
                 # TODO: print warning in verbose mode, requires access to ui somehow
                 continue
 
-            include_config = self._read_config_file(include_path)
-            self._merge_config(include_config, include_path, include.get("cwd"))
+            try:
+                include_config = PoeConfig(
+                    cwd=include.get("cwd", self.project_dir),
+                    table=self._read_config_file(include_path)["tool"]["poe"],
+                )
+                include_config._project_dir = self._project_dir
+                include_config.validate()
+            except (PoeException, KeyError) as error:
+                raise PoeException(
+                    f"Invalid content in included file from {include_path}", error
+                ) from error
 
-    def _merge_config(
-        self,
-        extra_config: Mapping[str, Any],
-        include_path: Path,
-        task_cwd: Optional[str],
-    ):
-        try:
-            poe_config = extra_config.get("tool", {}).get("poe", {})
-            tasks = poe_config.get("tasks", {})
-        except AttributeError as error:
-            raise PoeException(
-                f"Invalid content in included file from {include_path}", error
-            ) from error
+            self._merge_config(include_config)
+
+    def _merge_config(self, include_config: "PoeConfig"):
+        from .task import PoeTask
 
         # Env is special because it can be extended rather than just overwritten
-        if "env" in poe_config:
-            self._poe["env"] = {**poe_config["env"], **self._poe.get("env", {})}
+        if include_config.global_env:
+            self._poe["env"] = {**include_config.global_env, **self._poe.get("env", {})}
 
-        if "envfile" in poe_config and "envfile" not in self._poe:
-            self._poe["envfile"] = poe_config["envfile"]
+        if include_config.global_envfile and "envfile" not in self._poe:
+            self._poe["envfile"] = include_config.global_envfile
 
         # Includes additional tasks with preserved ordering
         self._poe["tasks"] = own_tasks = self._poe.get("tasks", {})
-        for task_name, task_def in tasks.items():
-            if isinstance(task_def, str):
-                # If the task is a string, then convert it to the dict form
-                task_def = {"cmd": task_def}
-                tasks[task_name] = task_def
-            if task_cwd:
+        for task_name, task_def in include_config.tasks.items():
+            if task_name in own_tasks:
+                # don't override tasks from the base config
+                continue
+
+            task_def = PoeTask.normalize_task_def(task_def, include_config)
+            if include_config.cwd:
                 # Override the config of each task to use the include level cwd as a
                 # base for the task level cwd
                 if "cwd" in task_def:
                     # rebase the configured cwd onto the include level cwd
-                    task_def["cwd"] = (
-                        Path(self.project_dir)
-                        .joinpath(task_cwd)
+                    task_def["cwd"] = str(
+                        Path(include_config.cwd)
                         .resolve()
                         .joinpath(task_def["cwd"])
                         .relative_to(self.project_dir)
                     )
                 else:
-                    task_def["cwd"] = task_cwd
+                    task_def["cwd"] = str(include_config.cwd)
 
-            if task_name not in own_tasks:
-                own_tasks[task_name] = task_def
+            own_tasks[task_name] = task_def
 
     @staticmethod
     def _read_config_file(path: Path) -> Mapping[str, Any]:
