@@ -88,6 +88,7 @@ def test_monorepo_contains_only_expected_tasks(run_poe_subproc, projects):
         "CONFIGURED TASKS\n"
         "  get_cwd_0      \n"
         "  get_cwd_1      \n"
+        "  add            \n"
         "  get_cwd_2      \n\n\n"
     )
     assert result.stdout == ""
@@ -98,6 +99,7 @@ def test_monorepo_can_also_include_parent(run_poe_subproc, projects, is_windows)
     result = run_poe_subproc(cwd=projects["monorepo/subproject_2"])
     assert result.capture.endswith(
         "CONFIGURED TASKS\n"
+        "  add            \n"
         "  get_cwd_2      \n"
         "  extra_task     \n"
         "  get_cwd_0      \n\n\n"
@@ -109,12 +111,17 @@ def test_monorepo_can_also_include_parent(run_poe_subproc, projects, is_windows)
     assert result.capture == "Poe => import os; print(os.getcwd())\n"
     if is_windows:
         assert result.stdout.endswith(
-            "poethepoet\\tests\\fixtures\\monorepo_project\\subproject_2\n"
+            "\\tests\\fixtures\\monorepo_project\\subproject_2\n"
         )
     else:
-        assert result.stdout.endswith(
-            "poethepoet/tests/fixtures/monorepo_project/subproject_2\n"
-        )
+        assert result.stdout.endswith("/tests/fixtures/monorepo_project/subproject_2\n")
+    assert result.stderr == ""
+
+
+def test_set_default_task_type_with_include(run_poe_subproc, projects, is_windows):
+    result = run_poe_subproc("add", cwd=projects["monorepo/subproject_2"])
+    assert result.capture == "Poe => 1 + 1\n"
+    assert result.stdout == "2\n"
     assert result.stderr == ""
 
 
@@ -124,27 +131,25 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     result = run_poe_subproc("get_cwd_0", project="monorepo")
     assert result.capture == "Poe => import os; print(os.getcwd())\n"
     if is_windows:
-        assert result.stdout.endswith("poethepoet\\tests\\fixtures\\monorepo_project\n")
+        assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
     else:
-        assert result.stdout.endswith("poethepoet/tests/fixtures/monorepo_project\n")
+        assert result.stdout.endswith("/tests/fixtures/monorepo_project\n")
     assert result.stderr == ""
 
     result = run_poe_subproc("get_cwd_1", project="monorepo")
     assert result.capture == "Poe => import os; print(os.getcwd())\n"
     if is_windows:
-        assert result.stdout.endswith("poethepoet\\tests\\fixtures\\monorepo_project\n")
+        assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
     else:
-        assert result.stdout.endswith("poethepoet/tests/fixtures/monorepo_project\n")
+        assert result.stdout.endswith("/tests/fixtures/monorepo_project\n")
     assert result.stderr == ""
 
     result = run_poe_subproc("get_cwd_2", project="monorepo")
     assert result.capture == "Poe => import os; print(os.getcwd())\n"
     if is_windows:
         assert result.stdout.endswith(
-            "poethepoet\\tests\\fixtures\\monorepo_project\\subproject_2\n"
+            "\\tests\\fixtures\\monorepo_project\\subproject_2\n"
         )
     else:
-        assert result.stdout.endswith(
-            "poethepoet/tests/fixtures/monorepo_project/subproject_2\n"
-        )
+        assert result.stdout.endswith("/tests/fixtures/monorepo_project/subproject_2\n")
     assert result.stderr == ""

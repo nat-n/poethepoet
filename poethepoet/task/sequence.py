@@ -147,7 +147,7 @@ class SequenceTask(PoeTask):
             else:
                 subtask_issue = cls.validate_def(
                     cls._subtask_name(task_name, index),
-                    cls._normalize_task_def(
+                    cls.normalize_task_def(
                         task_item,
                         config,
                         array_item=default_item_type or True,
