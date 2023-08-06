@@ -4,6 +4,7 @@
 
    installation
    poetry_plugin
+   global_options
    tasks/index
    guides/index
    license
@@ -25,9 +26,11 @@ Poe the Poet Documentation
    :alt: PyPI
 
 .. image:: https://img.shields.io/pypi/dw/poethepoet
+   :target: https://pypistats.org/packages/poethepoet
    :alt: PyPI - Downloads
 
 .. image:: https://img.shields.io/pypi/l/ansicolortags.svg
+   :target: https://github.com/nat-n/poethepoet/blob/main/LICENSE
    :alt: MIT
 
 Poe the Poet is a batteries included task runner that works well with |poetry_link|.
@@ -104,11 +107,9 @@ Quick start
 Usage without poetry
 ====================
 
-Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the :toml:`tool.poe.executor` global option.
+Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the :ref:`tool.poe.executor global option<Change the executor type>`.
 
-By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml
-contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to
-use at ``./.venv`` or ``./venv`` relative to the pyproject.toml.
+By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to use at ``./.venv`` or ``./venv`` relative to the pyproject.toml.
 
 If no virtualenv is found then poe will run tasks without any special environment management.
 
