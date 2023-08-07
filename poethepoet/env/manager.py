@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
@@ -50,6 +51,9 @@ class EnvVarsManager:
             self._apply_env_config(self._config.global_env)
 
         self._vars["POE_ROOT"] = str(self._config.project_dir)
+
+        if "POE_PWD" not in self._vars:
+            self._vars["POE_PWD"] = os.getcwd()
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         return self._vars.get(key, default)
