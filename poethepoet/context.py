@@ -105,7 +105,7 @@ class RunContext:
     ) -> "PoeExecutor":
         from .executor import PoeExecutor
 
-        cwd_option = self.env.fill_template(task_options.get("cwd", "."))
+        cwd_option = env.fill_template(task_options.get("cwd", "."))
         working_dir = Path(cwd_option)
 
         if not working_dir.is_absolute():

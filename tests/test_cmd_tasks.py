@@ -109,8 +109,10 @@ def test_cmd_task_with_cwd_option_pwd_override(run_poe_subproc, poe_project_path
             "cwd_poe_pwd",
             project="cwd",
             env={
-                "POE_PWD": poe_project_path.joinpath(
-                    "tests", "fixtures", "cwd_project", "subdir", "bar"
+                "POE_PWD": str(
+                    poe_project_path.joinpath(
+                        "tests", "fixtures", "cwd_project", "subdir", "bar"
+                    )
                 )
             },
         )
@@ -122,3 +124,13 @@ def test_cmd_task_with_cwd_option_pwd_override(run_poe_subproc, poe_project_path
         assert result.stderr == ""
     finally:
         os.chdir(prev_cwd)
+
+
+def test_cmd_task_with_cwd_option_arg(run_poe_subproc, poe_project_path):
+    result = run_poe_subproc("cwd_arg", "--foo_var", "foo", project="cwd")
+    assert result.capture == "Poe => poe_test_pwd\n"
+    assert (
+        result.stdout
+        == f'{poe_project_path.joinpath("tests", "fixtures", "cwd_project", "subdir", "foo")}\n'
+    )
+    assert result.stderr == ""
