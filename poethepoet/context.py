@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from .config import PoeConfig
@@ -28,6 +28,7 @@ class RunContext:
         dry: bool,
         poe_active: Optional[str],
         multistage: bool = False,
+        cwd: Optional[Union[Path, str]] = None,
     ):
         from .env.manager import EnvVarsManager
 
@@ -39,7 +40,7 @@ class RunContext:
         self.multistage = multistage
         self.exec_cache = {}
         self.captured_stdout = {}
-        self.env = EnvVarsManager(self.config, self.ui, base_env=env)
+        self.env = EnvVarsManager(self.config, self.ui, base_env=env, cwd=cwd)
 
     @property
     def executor_type(self) -> Optional[str]:

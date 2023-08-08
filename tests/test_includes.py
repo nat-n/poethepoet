@@ -158,17 +158,10 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         assert result.stdout.endswith("/tests/fixtures/monorepo_project/subproject_2\n")
     assert result.stderr == ""
 
-    prev_cwd = os.getcwd()
-    try:
-        os.chdir(projects["example"])
-        result = run_poe_subproc("get_cwd_3", project="monorepo")
-        assert result.capture == "Poe => import os; print(os.getcwd())\n"
-        if is_windows:
-            assert result.stdout.endswith(
-                "poethepoet\\tests\\fixtures\\example_project\n"
-            )
-        else:
-            assert result.stdout.endswith("poethepoet/tests/fixtures/example_project\n")
-        assert result.stderr == ""
-    finally:
-        os.chdir(prev_cwd)
+    result = run_poe_subproc("get_cwd_3", project="monorepo", cwd=projects["example"])
+    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    if is_windows:
+        assert result.stdout.endswith("poethepoet\\tests\\fixtures\\example_project\n")
+    else:
+        assert result.stdout.endswith("poethepoet/tests/fixtures/example_project\n")
+    assert result.stderr == ""

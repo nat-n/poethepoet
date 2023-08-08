@@ -79,51 +79,42 @@ def test_cmd_task_with_cwd_option_env(run_poe_subproc, poe_project_path):
 
 
 def test_cmd_task_with_cwd_option_pwd(run_poe_subproc, poe_project_path):
-    prev_cwd = os.getcwd()
-    try:
-        os.chdir(
-            poe_project_path.joinpath(
-                "tests", "fixtures", "cwd_project", "subdir", "foo"
-            )
-        )
-        result = run_poe_subproc("cwd_poe_pwd", project="cwd")
-        assert result.capture == "Poe => poe_test_pwd\n"
-        assert (
-            result.stdout
-            == f'{poe_project_path.joinpath("tests", "fixtures", "cwd_project", "subdir", "foo")}\n'
-        )
-        assert result.stderr == ""
-    finally:
-        os.chdir(prev_cwd)
+    result = run_poe_subproc(
+        "cwd_poe_pwd",
+        project="cwd",
+        cwd=poe_project_path.joinpath(
+            "tests", "fixtures", "cwd_project", "subdir", "foo"
+        ),
+    )
+    assert result.capture == "Poe => poe_test_pwd\n"
+    assert (
+        result.stdout
+        == f'{poe_project_path.joinpath("tests", "fixtures", "cwd_project", "subdir", "foo")}\n'
+    )
+    assert result.stderr == ""
 
 
 def test_cmd_task_with_cwd_option_pwd_override(run_poe_subproc, poe_project_path):
-    prev_cwd = os.getcwd()
-    try:
-        os.chdir(
-            poe_project_path.joinpath(
-                "tests", "fixtures", "cwd_project", "subdir", "foo"
-            )
-        )
-        result = run_poe_subproc(
-            "cwd_poe_pwd",
-            project="cwd",
-            env={
-                "POE_PWD": str(
-                    poe_project_path.joinpath(
-                        "tests", "fixtures", "cwd_project", "subdir", "bar"
-                    )
+    result = run_poe_subproc(
+        "cwd_poe_pwd",
+        project="cwd",
+        env={
+            "POE_PWD": str(
+                poe_project_path.joinpath(
+                    "tests", "fixtures", "cwd_project", "subdir", "bar"
                 )
-            },
-        )
-        assert result.capture == "Poe => poe_test_pwd\n"
-        assert (
-            result.stdout
-            == f'{poe_project_path.joinpath("tests", "fixtures", "cwd_project", "subdir", "bar")}\n'
-        )
-        assert result.stderr == ""
-    finally:
-        os.chdir(prev_cwd)
+            )
+        },
+        cwd=poe_project_path.joinpath(
+            "tests", "fixtures", "cwd_project", "subdir", "foo"
+        ),
+    )
+    assert result.capture == "Poe => poe_test_pwd\n"
+    assert (
+        result.stdout
+        == f'{poe_project_path.joinpath("tests", "fixtures", "cwd_project", "subdir", "bar")}\n'
+    )
+    assert result.stderr == ""
 
 
 def test_cmd_task_with_cwd_option_arg(run_poe_subproc, poe_project_path):
