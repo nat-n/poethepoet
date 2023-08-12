@@ -115,7 +115,7 @@ By default tasks are run from the project root – that is the parent directory 
 
 In this example, the npx executable is executed inside the :sh:`./client` subdirectory of the project (when ``cwd`` is a relative path, it gets resolved relatively to the project root), and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.
 
-The ``cwd`` option accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}``.
+The ``cwd`` option also accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}``.
 
 Poe provides its own :sh:`$POE_PWD` variable that is by default set to the directory, from which poe was executed; this may be overridden by setting the variable to a different value beforehand. Using :sh:`$POE_PWD`, a task's working directory may be set to the one from which it was executed like so:
 

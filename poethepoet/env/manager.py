@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
@@ -53,7 +54,8 @@ class EnvVarsManager:
         self._vars["POE_ROOT"] = str(self._config.project_dir)
 
         if "POE_PWD" not in self._vars:
-            self._vars["POE_PWD"] = str(cwd)
+            self._vars["POE_PWD"] = str(cwd or os.getcwd())
+        self.cwd = self._vars["POE_PWD"]
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         return self._vars.get(key, default)
@@ -80,15 +82,17 @@ class EnvVarsManager:
             )
 
     def for_task(
-        self,
-        task_envfile: Optional[str],
-        task_env: Optional[Mapping[str, str]],
-        cwd: Optional[Union[Path, str]] = None,
+        self, task_envfile: Optional[str], task_env: Optional[Mapping[str, str]]
     ) -> "EnvVarsManager":
         """
         Create a copy of self and extend it to include vars for the task.
         """
-        result = EnvVarsManager(self._config, self._ui, parent_env=self, cwd=cwd)
+        result = EnvVarsManager(
+            self._config,
+            self._ui,
+            parent_env=self,
+            cwd=self.cwd,
+        )
 
         # Include env vars from envfile(s) referenced in task options
         if isinstance(task_envfile, str):

@@ -113,9 +113,9 @@ class PoeThePoet:
             return 1
 
         if task.has_deps():
-            return self.run_task_graph(task, cwd=self.cwd) or 0
+            return self.run_task_graph(task) or 0
         else:
-            return self.run_task(task, cwd=self.cwd) or 0
+            return self.run_task(task) or 0
 
     def resolve_task(self, allow_hidden: bool = False) -> Optional["PoeTask"]:
         from .task import PoeTask
@@ -143,13 +143,10 @@ class PoeThePoet:
         )
 
     def run_task(
-        self,
-        task: "PoeTask",
-        context: Optional["RunContext"] = None,
-        cwd: Optional[Union[Path, str]] = None,
+        self, task: "PoeTask", context: Optional["RunContext"] = None
     ) -> Optional[int]:
         if context is None:
-            context = self.get_run_context(cwd=cwd)
+            context = self.get_run_context()
         try:
             return task.run(context=context, extra_args=task.invocation[1:])
         except PoeException as error:
@@ -159,14 +156,10 @@ class PoeThePoet:
             self.ui.print_error(error=error)
             return 1
 
-    def run_task_graph(
-        self,
-        task: "PoeTask",
-        cwd: Optional[Union[Path, str]] = None,
-    ) -> Optional[int]:
+    def run_task_graph(self, task: "PoeTask") -> Optional[int]:
         from .task.graph import TaskExecutionGraph
 
-        context = self.get_run_context(multistage=True, cwd=cwd)
+        context = self.get_run_context(multistage=True)
         graph = TaskExecutionGraph(task, context)
         plan = graph.get_execution_plan()
 
@@ -174,7 +167,7 @@ class PoeThePoet:
             for stage_task in stage:
                 if stage_task == task:
                     # The final sink task gets special treatment
-                    return self.run_task(stage_task, context, cwd=cwd)
+                    return self.run_task(stage_task, context)
 
                 try:
                     task_result = stage_task.run(
@@ -192,11 +185,7 @@ class PoeThePoet:
                     return 1
         return 0
 
-    def get_run_context(
-        self,
-        multistage: bool = False,
-        cwd: Optional[Union[Path, str]] = None,
-    ) -> "RunContext":
+    def get_run_context(self, multistage: bool = False) -> "RunContext":
         from .context import RunContext
 
         result = RunContext(
@@ -206,7 +195,7 @@ class PoeThePoet:
             dry=self.ui["dry_run"],
             poe_active=os.environ.get("POE_ACTIVE"),
             multistage=multistage,
-            cwd=cwd,
+            cwd=self.cwd,
         )
         if self._poetry_env_path:
             # This allows the PoetryExecutor to use the venv from poetry directly
