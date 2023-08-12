@@ -55,7 +55,9 @@ class EnvVarsManager:
 
         if "POE_PWD" not in self._vars:
             self._vars["POE_PWD"] = str(cwd or os.getcwd())
-        self.cwd = self._vars["POE_PWD"]
+        self.cwd = str(cwd or os.getcwd())
+        if "POE_PWD" not in self._vars:
+            self._vars["POE_PWD"] = self.cwd
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         return self._vars.get(key, default)
