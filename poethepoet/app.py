@@ -195,6 +195,7 @@ class PoeThePoet:
             dry=self.ui["dry_run"],
             poe_active=os.environ.get("POE_ACTIVE"),
             multistage=multistage,
+            cwd=self.cwd,
         )
         if self._poetry_env_path:
             # This allows the PoetryExecutor to use the venv from poetry directly

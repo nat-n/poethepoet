@@ -1,3 +1,6 @@
+import os
+
+
 def test_docs_for_include_toml_file(run_poe_subproc):
     result = run_poe_subproc(project="includes")
     assert (
@@ -89,7 +92,8 @@ def test_monorepo_contains_only_expected_tasks(run_poe_subproc, projects):
         "  get_cwd_0      \n"
         "  get_cwd_1      \n"
         "  add            \n"
-        "  get_cwd_2      \n\n\n"
+        "  get_cwd_2      \n"
+        "  get_cwd_3      \n\n\n"
     )
     assert result.stdout == ""
     assert result.stderr == ""
@@ -152,4 +156,17 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         )
     else:
         assert result.stdout.endswith("/tests/fixtures/monorepo_project/subproject_2\n")
+    assert result.stderr == ""
+
+    result = run_poe_subproc(
+        "--root",
+        str(projects["monorepo/subproject_3"]),
+        "get_cwd_3",
+        cwd=projects["example"],
+    )
+    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    if is_windows:
+        assert result.stdout.endswith("\\tests\\fixtures\\example_project\n")
+    else:
+        assert result.stdout.endswith("/tests/fixtures/example_project\n")
     assert result.stderr == ""

@@ -1,0 +1,7 @@
+
+
+
+[tool.poe.tasks.get_cwd_3]
+interpreter = "python"
+shell       = "import os; print(os.getcwd())"
+cwd         = "${POE_PWD}"

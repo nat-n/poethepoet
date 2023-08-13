@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from .config import PoeConfig
@@ -28,6 +28,7 @@ class RunContext:
         dry: bool,
         poe_active: Optional[str],
         multistage: bool = False,
+        cwd: Optional[Union[Path, str]] = None,
     ):
         from .env.manager import EnvVarsManager
 
@@ -39,7 +40,7 @@ class RunContext:
         self.multistage = multistage
         self.exec_cache = {}
         self.captured_stdout = {}
-        self.env = EnvVarsManager(self.config, self.ui, base_env=env)
+        self.env = EnvVarsManager(self.config, self.ui, base_env=env, cwd=cwd)
 
     @property
     def executor_type(self) -> Optional[str]:
@@ -105,11 +106,17 @@ class RunContext:
     ) -> "PoeExecutor":
         from .executor import PoeExecutor
 
+        cwd_option = env.fill_template(task_options.get("cwd", "."))
+        working_dir = Path(cwd_option)
+
+        if not working_dir.is_absolute():
+            working_dir = self.project_dir / working_dir
+
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
             env=env,
-            working_dir=self.project_dir / task_options.get("cwd", "."),
+            working_dir=working_dir,
             dry=self.dry,
             executor_config=task_options.get("executor"),
             capture_stdout=task_options.get("capture_stdout", False),

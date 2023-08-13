@@ -115,13 +115,14 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
 
     def run_poe_subproc(
         *run_args: str,
-        cwd: str = projects["example"],
+        cwd: Optional[str] = None,
         config: Optional[Mapping[str, Any]] = None,
         coverage: bool = not is_windows,
         env: Dict[str, str] = None,
         project: Optional[str] = None,
     ) -> PoeRunResult:
-        cwd = projects.get(project, cwd)
+        if cwd is None:
+            cwd = projects.get(project, projects["example"])
         if config is not None:
             config_path = tmp_path.joinpath("tmp_test_config_file")
             with config_path.open("w+") as config_file:
@@ -141,6 +142,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
 
         subproc_env = dict(os.environ)
         subproc_env.pop("VIRTUAL_ENV", None)
+        subproc_env.pop("POE_PWD", None)  # do not inherit this from the test
         if env:
             subproc_env.update(env)
 
