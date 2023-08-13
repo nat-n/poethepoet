@@ -53,8 +53,6 @@ class EnvVarsManager:
 
         self._vars["POE_ROOT"] = str(self._config.project_dir)
 
-        if "POE_PWD" not in self._vars:
-            self._vars["POE_PWD"] = str(cwd or os.getcwd())
         self.cwd = str(cwd or os.getcwd())
         if "POE_PWD" not in self._vars:
             self._vars["POE_PWD"] = self.cwd
