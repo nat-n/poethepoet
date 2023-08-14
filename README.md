@@ -4,7 +4,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/pyversions/poethepoet.svg)](https://pypi.org/project/poethepoet/)
 [![PyPI version](https://img.shields.io/pypi/v/poethepoet.svg)](https://pypi.org/project/poethepoet/)
-[![PyPI version](https://img.shields.io/pypi/dw/poethepoet.svg)](https://pypi.org/project/poethepoet/)
+[![PyPI version](https://img.shields.io/pypi/dw/poethepoet.svg)](https://pypistats.org/packages/poethepoet/)
 [![PyPI version](https://img.shields.io/pypi/l/ansicolortags.svg)](https://github.com/nat-n/poethepoet/blob/doc/init-sphinx/LICENSE)
 
 **A batteries included task runner that works well with [poetry](https://python-poetry.org/).**
