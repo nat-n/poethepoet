@@ -19,7 +19,8 @@ The following options can be configured on your tasks and are not specific to an
   Provide one or more env files to be loaded before running this task.
 
 **cwd** :  ``str`` :ref:`📖<Running a task with a specific working directory>`
-  Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the ``pyproject.toml``.
+  Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the ``pyproject.toml``, or it may be absolute.
+  Resolves environment variables in the format ``${VAR_NAME}``.
 
 **deps** :  ``List[str]`` :doc:`📖<../guides/composition_guide>`
   A list of task invocations that will be executed before this one.
@@ -104,7 +105,7 @@ In this case the referenced files will be loaded in the given order.
 Running a task with a specific working directory
 ------------------------------------------------
 
-By default tasks are run from the project root – that is the parent directory of the pyproject.toml file. However if a task needs to be run in another directory within the project then this can be accomplished by using the :toml:`cwd` option like so:
+By default tasks are run from the project root – that is the parent directory of the pyproject.toml file. However if a task needs to be run in another directory then this can be accomplished by using the :toml:`cwd` option like so:
 
 .. code-block:: toml
 
@@ -112,7 +113,17 @@ By default tasks are run from the project root – that is the parent directory 
     cmd = "npx ts-node -T ./build.ts"
     cwd = "./client"
 
-In this example, the npx executable is executed inside the :sh:`./client` subdirectory of the project, and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.
+In this example, the npx executable is executed inside the :sh:`./client` subdirectory of the project (when ``cwd`` is a relative path, it gets resolved relatively to the project root), and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.
+
+The ``cwd`` option also accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}``.
+
+Poe provides its own :sh:`$POE_PWD` variable that is by default set to the directory, from which poe was executed; this may be overridden by setting the variable to a different value beforehand. Using :sh:`$POE_PWD`, a task's working directory may be set to the one from which it was executed like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.convert]
+    script = "my_project.conversion_tool:main"
+    cwd = "${POE_PWD}"
 
 
 Defining tasks that run via exec instead of a subprocess

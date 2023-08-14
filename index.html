@@ -174,6 +174,7 @@
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="global_options.html">Global options</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Defining tasks</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="tasks/options.html">Standard task options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/cmd.html">Command tasks</a></li>
@@ -244,8 +245,9 @@
 <a class="reference external image-reference" href="https://github.com/nat-n/poethepoet"><img alt="GitHub repo" src="https://img.shields.io/github/stars/nat-n/poethepoet?style=social" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/pyversions/poethepoet.svg" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/v/poethepoet.svg" /></a>
-<img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/poethepoet" />
-<img alt="MIT" src="https://img.shields.io/pypi/l/ansicolortags.svg" /><p>Poe the Poet is a batteries included task runner that works well with <a href="https://python-poetry.org/" target="_blank">poetry</a>.</p>
+<a class="reference external image-reference" href="https://pypistats.org/packages/poethepoet"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/poethepoet" /></a>
+<a class="reference external image-reference" href="https://github.com/nat-n/poethepoet/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/pypi/l/ansicolortags.svg" /></a>
+<p>Poe the Poet is a batteries included task runner that works well with <a href="https://python-poetry.org/" target="_blank">poetry</a>.</p>
 <p>It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project’s virtual environment.</p>
 <p>“Simple things should be simple, complex things should be possible.” – Alan Kay</p>
 <section id="top-features">
@@ -294,16 +296,14 @@
 </section>
 <section id="usage-without-poetry">
 <h2>Usage without poetry<a class="headerlink" href="#usage-without-poetry" title="Permalink to this heading">#</a></h2>
-<p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">executor</span></code> global option.</p>
-<p>By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml
-contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code> section. If it doesn’t then poe looks for a virtualenv to
-use at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the pyproject.toml.</p>
+<p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the <a class="reference internal" href="global_options.html#change-the-executor-type"><span class="std std-ref">tool.poe.executor global option</span></a>.</p>
+<p>By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code> section. If it doesn’t then poe looks for a virtualenv to use at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the pyproject.toml.</p>
 <p>If no virtualenv is found then poe will run tasks without any special environment management.</p>
 </section>
 <section id="run-poe-from-anywhere">
 <h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Permalink to this heading">#</a></h2>
 <p>By default poe will detect when you’re inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the <code class="code highlight sh docutils literal highlight-sh">--root</code> option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.</p>
-<p>In all cases the path to project root (where the pyproject.toml resides) will be available as <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_ROOT</span></code> within the command line and process.</p>
+<p>In all cases the path to project root (where the pyproject.toml resides) will be available as <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_ROOT</span></code> within the command line and process. The variable <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code> contains the original working directory from which poe was run.</p>
 </section>
 </section>
 

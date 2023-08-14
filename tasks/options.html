@@ -174,6 +174,7 @@
   <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../global_options.html">Global options</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Defining tasks</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Standard task options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/cmd.html">Command tasks</a></li>
@@ -251,7 +252,8 @@
 </dd>
 <dt><strong>envfile</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">List[str]</span></code> <a class="reference internal" href="#loading-environment-variables-from-an-env-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Provide one or more env files to be loaded before running this task.</p>
 </dd>
-<dt><strong>cwd</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#running-a-task-with-a-specific-working-directory"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.</p>
+<dt><strong>cwd</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#running-a-task-with-a-specific-working-directory"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, or it may be absolute.
+Resolves environment variables in the format <code class="docutils literal notranslate"><span class="pre">${VAR_NAME}</span></code>.</p>
 </dd>
 <dt><strong>deps</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">List[str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>A list of task invocations that will be executed before this one.</p>
 </dd>
@@ -314,13 +316,20 @@ above but can also by given a list of such paths like so:</p>
 </section>
 <section id="running-a-task-with-a-specific-working-directory">
 <h2>Running a task with a specific working directory<a class="headerlink" href="#running-a-task-with-a-specific-working-directory" title="Permalink to this heading">#</a></h2>
-<p>By default tasks are run from the project root – that is the parent directory of the pyproject.toml file. However if a task needs to be run in another directory within the project then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span></code> option like so:</p>
+<p>By default tasks are run from the project root – that is the parent directory of the pyproject.toml file. However if a task needs to be run in another directory then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-client]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;npx ts-node -T ./build.ts&quot;</span>
 <span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./client&quot;</span>
 </pre></div>
 </div>
-<p>In this example, the npx executable is executed inside the <code class="code highlight sh docutils literal highlight-sh">./client</code> subdirectory of the project, and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.</p>
+<p>In this example, the npx executable is executed inside the <code class="code highlight sh docutils literal highlight-sh">./client</code> subdirectory of the project (when <code class="docutils literal notranslate"><span class="pre">cwd</span></code> is a relative path, it gets resolved relatively to the project root), and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">cwd</span></code> option also accepts absolute paths and resolves environment variables in the format <code class="docutils literal notranslate"><span class="pre">${VAR_NAME}</span></code>.</p>
+<p>Poe provides its own <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code> variable that is by default set to the directory, from which poe was executed; this may be overridden by setting the variable to a different value beforehand. Using <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code>, a task’s working directory may be set to the one from which it was executed like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.convert]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_project.conversion_tool:main&quot;</span>
+<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${POE_PWD}&quot;</span>
+</pre></div>
+</div>
 <section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
 <h3>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Permalink to this heading">#</a></h3>
 <p>Normally tasks are executed as subprocesses of the <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.</p>
