@@ -133,8 +133,23 @@ class PoeUi:
         return parser
 
     def parse_args(self, cli_args: Sequence[str]):
+        pre_pa_args: Sequence[str]
+        post_pa_args: Optional[Sequence[str]]
+        try:
+            pa_index = cli_args.index("--")
+            pre_pa_args = cli_args[:pa_index]
+            post_pa_args = cli_args[pa_index:]
+        except ValueError:
+            pre_pa_args = cli_args
+            post_pa_args = None
+
         self.parser = self.build_parser()
-        self.args = self.parser.parse_args(cli_args)
+        self.args = self.parser.parse_args(pre_pa_args)
+        if post_pa_args is not None:
+            if "task" in self.args:
+                self.args.task.extend(post_pa_args)
+            else:
+                self.args.task = post_pa_args
         self.verbosity: int = self["increase_verbosity"] - self["decrease_verbosity"]
         self._color.with_colors(self.args.ansi)
 

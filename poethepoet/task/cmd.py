@@ -39,7 +39,7 @@ class CmdTask(PoeTask):
             # dash token: `--`
             try:
                 split_index = extra_args.index("--")
-                extra_args = extra_args[split_index + 1 :]
+                extra_args = extra_args[split_index:]
             except ValueError:
                 extra_args = tuple()
 

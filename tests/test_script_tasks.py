@@ -152,6 +152,29 @@ def test_script_task_with_short_args(run_poe_subproc):
     assert result.stderr == ""
 
 
+def test_script_task_with_short_args_extra(run_poe_subproc):
+    result = run_poe_subproc(
+        "greet-full-args",
+        "-g=Ciao",
+        "--user=toni",
+        "-a",
+        "109",
+        "-h=1.09",
+        "--",
+        "extra",
+        "arg",
+        "-h",
+        "x",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.capture == (
+        "Poe => greet-full-args -g=Ciao --user=toni -a 109 -h=1.09 -- extra arg -h x\n"
+    )
+    assert result.stdout == "Ciao toni 1.09 109\n"
+    assert result.stderr == ""
+
+
 def test_wrong_args_passed(run_poe_subproc):
     base_error = (
         "usage: poe greet-full-args [--greeting GREETING] [--user USER] [--upper]\n"

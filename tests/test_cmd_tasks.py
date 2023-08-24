@@ -37,8 +37,8 @@ def test_cmd_task_with_args_and_extra_args(run_poe_subproc):
         "!",
         project="cmds",
     )
-    assert result.capture == f"Poe => poe_test_echo hey you guy !\n"
-    assert result.stdout == "hey you guy !\n"
+    assert result.capture == f"Poe => poe_test_echo hey you -- guy !\n"
+    assert result.stdout == "hey you -- guy !\n"
     assert result.stderr == ""
 
 
