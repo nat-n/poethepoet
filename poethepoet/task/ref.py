@@ -52,7 +52,7 @@ class RefTask(PoeTask):
 
         if task_name_ref not in config.tasks:
             return (
-                f"Task {task_name!r} contains reference to unkown task "
+                f"Task {task_name!r} contains reference to unknown task "
                 f"{task_name_ref!r}"
             )
 
