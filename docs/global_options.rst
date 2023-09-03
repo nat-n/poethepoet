@@ -17,7 +17,7 @@ The following options can be set for all tasks in a project directly under ``[to
   Specify one or more other toml or json files to load tasks from.
 
 **shell_interpreter** : ``str`` | ``List[str]`` :ref:`📖<Change the default shell interpreter>`
-  Change the default interpreter to use for executing :doc:`shell tasks<../tasks/shell>`.
+  Change the default interpreter to use for executing :doc:`shell tasks<../tasks/task_types/shell>`.
 
 **poetry_command** : ``str`` :ref:`📖<Configuring the plugin>`
   Change the name of the task poe registers with poetry when used as a plugin.
