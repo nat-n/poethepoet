@@ -1,0 +1,3 @@
+[tool.poe.tasks]
+
+reference_peer_include = ["echo", "laugh"]

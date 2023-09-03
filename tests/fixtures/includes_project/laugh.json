@@ -8,7 +8,7 @@
           "help": "a mirthful task"
         },
         "echo": {
-          "shell": "poe_test_echo echo echo",
+          "shell": "poe_test_echo echo echo echo echo echo echo echo",
           "help": "This is ignored becuase it's already defined!"
         }
       }

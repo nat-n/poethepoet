@@ -34,11 +34,12 @@ def test_docs_for_multiple_includes(run_poe_subproc, projects):
     )
     assert (
         "CONFIGURED TASKS\n"
-        "  echo           says what you say\n"
-        "  greet          \n"
-        "  greet1         \n"
-        "  greet2         Issue a greeting from the Iberian Peninsula\n"
-        "  laugh          a mirthful task\n"
+        "  echo                    says what you say\n"
+        "  greet                   \n"
+        "  greet1                  \n"
+        "  greet2                  Issue a greeting from the Iberian Peninsula\n"
+        "  reference_peer_include  \n"
+        "  laugh                   a mirthful task\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
@@ -67,6 +68,18 @@ def test_running_from_multiple_includes(run_poe_subproc, projects):
     )
     assert result.capture == "Poe => poe_test_echo $ONE_LAUGH | tr a-z A-Z\n"
     assert result.stdout == "LOL\n"
+    assert result.stderr == ""
+
+
+def test_reference_peer_include(run_poe_subproc, projects):
+    result = run_poe_subproc(
+        f'--root={projects["includes/multiple_includes"]}', "reference_peer_include"
+    )
+    assert (
+        result.capture
+        == "Poe => poe_test_echo\nPoe => poe_test_echo $ONE_LAUGH | tr a-z A-Z\n"
+    )
+    assert result.stdout == "\nLOL\n"
     assert result.stderr == ""
 
 
@@ -122,7 +135,7 @@ def test_monorepo_can_also_include_parent(run_poe_subproc, projects, is_windows)
     assert result.stderr == ""
 
 
-def test_set_default_task_type_with_include(run_poe_subproc, projects, is_windows):
+def test_set_default_task_type_with_include(run_poe_subproc, projects):
     result = run_poe_subproc("add", cwd=projects["monorepo/subproject_2"])
     assert result.capture == "Poe => 1 + 1\n"
     assert result.stdout == "2\n"

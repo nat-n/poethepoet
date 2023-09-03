@@ -1,5 +1,5 @@
 [tool.poe]
-include = ["greet.toml", "laugh.json"]
+include = ["greet.toml", "cross_ref.toml", "laugh.json"]
 
 [tool.poe.tasks.echo]
 cmd = "poe_test_echo"

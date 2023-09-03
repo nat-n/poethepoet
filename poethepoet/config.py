@@ -268,7 +268,6 @@ class PoeConfig:
                     table=self._read_config_file(include_path)["tool"]["poe"],
                 )
                 include_config._project_dir = self._project_dir
-                include_config.validate()
             except (PoeException, KeyError) as error:
                 raise PoeException(
                     f"Invalid content in included file from {include_path}", error
