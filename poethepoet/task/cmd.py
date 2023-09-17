@@ -1,16 +1,12 @@
-import re
 from typing import TYPE_CHECKING, Dict, Sequence, Tuple, Type, Union
 
+from ..exceptions import PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
-
-
-_GLOBCHARS_PATTERN = re.compile(r".*[\*\?\[]")
-_QUOTED_TOKEN_PATTERN = re.compile(r"(^\".*\"$|^'.*'$)")
 
 
 class CmdTask(PoeTask):
@@ -52,47 +48,30 @@ class CmdTask(PoeTask):
         )
 
     def _resolve_args(self, context: "RunContext", env: "EnvVarsManager"):
-        import shlex
         from glob import glob
 
-        updated_content = env.fill_template(self.content.strip())
-        # Parse shell command tokens and check if they're quoted
-        if self._is_windows:
-            cmd_tokens = (
-                (compat_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
-                for compat_token in shlex.split(
-                    updated_content,
-                    posix=False,
-                    comments=True,
-                )
+        from ..helpers.command import parse_poe_cmd, resolve_command_tokens
+
+        command_lines = parse_poe_cmd(self.content).command_lines
+
+        if not command_lines:
+            raise PoeException(
+                f"Invalid cmd task {self.name!r} does not include any command lines"
             )
-        else:
-            cmd_tokens = (
-                (posix_token, bool(_QUOTED_TOKEN_PATTERN.match(compat_token)))
-                for (posix_token, compat_token) in zip(
-                    shlex.split(
-                        updated_content,
-                        posix=True,
-                        comments=True,
-                    ),
-                    shlex.split(
-                        updated_content,
-                        posix=False,
-                        comments=True,
-                    ),
-                )
+        if len(command_lines) > 1:
+            raise PoeException(
+                f"Invalid cmd task {self.name!r} includes multiple command lines"
             )
-        # Resolve any unquoted glob pattern paths
+
         result = []
-        for cmd_token, is_quoted in cmd_tokens:
-            if not is_quoted and _GLOBCHARS_PATTERN.match(cmd_token):
-                # looks like a glob path so resolve it
+        for cmd_token, has_glob in resolve_command_tokens(
+            command_lines[0], env.to_dict()
+        ):
+            if has_glob:
+                # Resolve glob path
+                # TODO: check whether cwd is correct here??
                 result.extend(glob(cmd_token, recursive=True))
-            elif is_quoted and self._is_windows:
-                # In this case, the cmd_token will still be wrapped in double or single
-                # quotes. We need to remove those otherwise they'll be pass into the
-                # command.
-                result.append(cmd_token[1:-1])
             else:
                 result.append(cmd_token)
+
         return result

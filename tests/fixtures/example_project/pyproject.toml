@@ -38,12 +38,12 @@ echo "bam bam baaam bam"
 """
 
 part1 = "poe_test_echo 'Hello'"
-_part2.cmd = "poe_test_echo '${SUBJECT}!'"
+_part2.cmd = """poe_test_echo ${SUBJECT}! """
 _part2.env = { SUBJECT = "World" }
 composite_task.sequence = [
   ["part1", "_part2"],
   # wrapping in arrays means we can have different types of task in the sequence
-  [{cmd = "poe_test_echo '${SMILEY}!'"}]
+  [{cmd = """poe_test_echo "${SMILEY}!" """}]
 ]
 # env var is inherited by subtask
 composite_task.env = { SMILEY = ":)" }
@@ -54,7 +54,7 @@ greet-multiple.sequence = ["dummy_package:main('Tom')", "dummy_package:main('Jer
 greet-multiple.default_item_type = "script"
 
 travel = [
-  { cmd = "poe_test_echo 'from $PLANET to'" },
+  { cmd = """poe_test_echo "from $PLANET to" """ },
   { script = "dummy_package:print_var('DEST')" }
 ]
 
