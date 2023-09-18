@@ -33,7 +33,7 @@ def test_setting_default_array_item_task_type(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_setting_global_env_vars(run_poe_subproc, is_windows):
+def test_setting_global_env_vars(run_poe_subproc):
     result = run_poe_subproc("travel", env=no_venv)
     assert result.capture == f"Poe => poe_test_echo from EARTH to\nPoe => travel[1]\n"
     assert result.stdout == f"from EARTH to\nMARS\n"
@@ -73,7 +73,7 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
     assert result.stderr == ""
 
 
-def test_decrease_verbosity(run_poe_subproc, is_windows):
+def test_decrease_verbosity(run_poe_subproc):
     result = run_poe_subproc(
         "-q",
         "part1",

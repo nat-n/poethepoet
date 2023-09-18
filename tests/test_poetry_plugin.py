@@ -50,9 +50,7 @@ def test_task_with_cli_dependency(
 
 
 @pytest.mark.slow
-def test_task_with_lib_dependency(
-    run_poetry, projects, setup_poetry_project, is_windows
-):
+def test_task_with_lib_dependency(run_poetry, projects, setup_poetry_project):
     result = run_poetry(["poe", "cow-cheese"], cwd=projects["poetry_plugin"])
     assert result.stdout == (
         "Poe => from cowpy import cow; print(list(cow.COWACTERS)[5])\ncheese\n"

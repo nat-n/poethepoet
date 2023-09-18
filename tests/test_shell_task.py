@@ -65,7 +65,7 @@ def test_interpreter_bash(run_poe_subproc):
 
 
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="No pwsh available")
-def test_interpreter_pwsh(run_poe_subproc, is_windows):
+def test_interpreter_pwsh(run_poe_subproc):
     result = run_poe_subproc("echo_pwsh", project="shells")
     assert result.capture == (f"Poe => poe_test_echo $ENV:test_var\n")
     assert "roflcopter" in result.stdout
@@ -73,7 +73,7 @@ def test_interpreter_pwsh(run_poe_subproc, is_windows):
 
 
 @pytest.mark.skipif(not shutil.which("powershell"), reason="No powershell available")
-def test_interpreter_pwsh(run_poe_subproc, is_windows):
+def test_interpreter_pwsh(run_poe_subproc):
     result = run_poe_subproc("echo_powershell", project="shells")
     assert result.capture == (f"Poe => poe_test_echo $ENV:test_var\n")
     assert "roflcopter" in result.stdout

@@ -1,4 +1,4 @@
-def test_sequence_task(run_poe_subproc, esc_prefix, is_windows):
+def test_sequence_task(run_poe_subproc, esc_prefix):
     result = run_poe_subproc("composite_task", project="sequences")
     assert (
         result.capture
@@ -8,7 +8,7 @@ def test_sequence_task(run_poe_subproc, esc_prefix, is_windows):
     assert result.stderr == ""
 
 
-def test_another_sequence_task(run_poe_subproc, esc_prefix, is_windows):
+def test_another_sequence_task(run_poe_subproc, esc_prefix):
     # This should be exactly the same as calling the composite_task task directly
     result = run_poe_subproc("also_composite_task", project="sequences")
     assert (
