@@ -19,22 +19,7 @@ SINGLE_QUOTED_CONTENT   : /[^']+/
 DOUBLE_QUOTED_CONTENT   : /([^\$"]|\[\$"])+/
 """
 
-from abc import ABC, abstractmethod
-from typing import (
-    IO,
-    Dict,
-    Generic,
-    Iterable,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Iterable, List, Literal, Optional, Tuple, Union, cast
 
 PARAM_INIT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
 PARAM_CHARS = PARAM_INIT_CHARS + "0123456789"
@@ -42,167 +27,7 @@ LINE_BREAK_CHARS = "\r\n\f\v"
 LINE_SEP_CHARS = LINE_BREAK_CHARS + ";"
 
 
-class ParseCursor:
-    _line: int
-    _position: int
-    _source: Iterator[str]
-    _pushback_stack: List[str]
-
-    def __init__(self, source: Iterator[str]):
-        self._source = source
-        self._line = 0
-        self._position = 0
-        self._pushback_stack = []
-
-    @classmethod
-    def from_file(cls, file: IO[str]):
-        def iter_chars():
-            while char := file.read(1):
-                yield char
-
-        return cls(iter_chars())
-
-    def pushback(self, *items: str):
-        for item in reversed(items):
-            # TODO: rewind _line and _position
-            # HOW to get length of previous line which pushback a line break?
-            #   would need to keep a stack of all previous line lengths to be sure!?
-            self._pushback_stack.append(item)
-
-    def peek(self):
-        if not self._pushback_stack:
-            try:
-                self._pushback_stack.append(next(self._source))
-            except StopIteration:
-                return None
-        return self._pushback_stack[-1]
-
-    def take(self):
-        # TODO: update _line and _position
-        if self._pushback_stack:
-            return self._pushback_stack.pop()
-
-        try:
-            return next(self._source)
-        except StopIteration:
-            return None
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if char := self.take():
-            return char
-        raise StopIteration
-
-    def __bool__(self):
-        return bool(self.peek())
-
-
-class ParseConfig:
-    substitute_nodes: Dict[Type["AstNode"], Type["AstNode"]]
-    line_seperators: str
-
-    def __init__(
-        self,
-        substitute_nodes: Optional[Dict[Type["AstNode"], Type["AstNode"]]] = None,
-        line_seperators=LINE_SEP_CHARS,
-    ):
-        self.substitute_nodes = substitute_nodes or {}
-        self.line_seperators = line_seperators
-
-    def resolve_node_cls(self, klass: Type["AstNode"]) -> Type["AstNode"]:
-        return self.substitute_nodes.get(klass, klass)
-
-
-class AstNode(ABC):
-    _cancelled: bool = False
-
-    def __init__(self, chars: ParseCursor, config: ParseConfig = ParseConfig()):
-        self.config = config
-        self._parse(chars)
-
-    @abstractmethod
-    def _parse(self, chars: ParseCursor):
-        ...
-
-    @abstractmethod
-    def pretty(self, indent: int = 0, increment: int = 4):
-        ...
-
-    def __bool__(self):
-        return not self._cancelled
-
-    @abstractmethod
-    def __len__(self):
-        ...
-
-
-T = TypeVar("T")
-
-
-class SyntaxNode(AstNode, Generic[T]):
-    _children: List[T]
-
-    def get_child_node_cls(self, node_type: Type[AstNode]) -> Type[T]:
-        """
-        Apply Node class substitution for the given node AstNode if specified in
-        the ParseConfig.
-        """
-        return cast(Type[T], self.config.resolve_node_cls(node_type))
-
-    @property
-    def children(self) -> Tuple["SyntaxNode", ...]:
-        return tuple(getattr(self, "_children", tuple()))
-
-    def pretty(self, indent: int = 0, increment: int = 4):
-        indent += increment
-        lines = [f"{self.__class__.__name__}:"]
-        for child in self:
-            lines.append(" " * indent + child.pretty(indent))
-
-        return "\n".join(lines)
-
-    def __iter__(self):
-        return iter(self._children)
-
-    def __len__(self):
-        return len(self._children)
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}({', '.join(repr(c) for c in self._children)})"
-        )
-
-    def __eq__(self, other):
-        if isinstance(other, tuple):
-            return self.children == other
-        return super().__eq__(other)
-
-
-class ContentNode(AstNode):
-    _content: str = ""
-
-    @property
-    def content(self) -> str:
-        return self._content
-
-    def pretty(self, indent: int = 0, increment: int = 4):
-        return f"{self.__class__.__name__}: {self._content!r}"
-
-    def __str__(self):
-        return self._content
-
-    def __len__(self):
-        return len(self._content)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self._content!r})"
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return self._content == other
-        return super().__eq__(other)
+from .ast_core import ContentNode, ParseConfig, ParseCursor, ParseError, SyntaxNode
 
 
 class SingleQuotedText(ContentNode):
@@ -210,11 +35,11 @@ class SingleQuotedText(ContentNode):
         content: List[str] = []
         for char in chars:
             if char == "'":
-                chars.pushback(char)
                 self._content = "".join(content)
                 return
-
             content.append(char)
+        else:
+            raise ParseError("Unexpected end of input with unmatched single quote")
 
 
 class DoubleQuotedText(ContentNode):
@@ -245,13 +70,13 @@ class UnquotedText(ContentNode):
                 escaped_char = chars.take()
                 if not escaped_char:
                     raise ParseError(
-                        "Invalid pattern: unexpected end of input after backslash",
+                        "Unexpected end of input after backslash",
                         chars,
                     )
                 content.append(escaped_char)
                 continue
 
-            elif char.isspace() or char in "'\"#$?*[":
+            elif char.isspace() or char in "'\";#$?*[":
                 chars.pushback(char)
                 break
 
@@ -260,6 +85,7 @@ class UnquotedText(ContentNode):
         if content:
             self._content = "".join(content)
         else:
+            # This should not happen
             self._cancelled = True
 
 
@@ -322,9 +148,11 @@ class Glob(ContentNode):
 
 class PythonGlob(Glob):
     """
-    This implementation recognises glob patterns supports by the python standard library glob module.
+    This implementation recognises glob patterns supports by the python standard library
+    glob module.
 
-    The key divergences from bash style pattern matching are that within square bracket patterns:
+    The key divergences from bash style pattern matching are that within square bracket
+    patterns:
         1. unescaped spaces are allowed
         2. backslashes are not interpreted as escapes
     """
@@ -344,7 +172,7 @@ class PythonGlob(Glob):
             chars.take()
             for char in chars:
                 if char == "]":
-                    if group_chars:
+                    if group_chars and group_chars != ["!"]:
                         # Group complete
                         self._content = f"[{''.join(group_chars)}]"
                         return
@@ -388,7 +216,9 @@ class ParamExpansion(ContentNode):
                 if param:
                     if char not in PARAM_CHARS:
                         raise ParseError(
-                            f"Illegal character in parameter name {char!r}", chars
+                            "Bad substitution: Illegal character in parameter name "
+                            f"{char!r}",
+                            chars,
                         )
 
                     param.append(char)
@@ -398,8 +228,11 @@ class ParamExpansion(ContentNode):
 
                 else:
                     raise ParseError(
-                        f"Illegal first character in parameter name {char!r}", chars
+                        "Bad substitution: Illegal first character in parameter name "
+                        f"{char!r}",
+                        chars,
                     )
+            raise ParseError("Unexpected end of input, expected closing '}' after '${'")
 
         else:
             for char in chars:
@@ -442,11 +275,11 @@ class Segment(SyntaxNode[ContentNode]):
         return bool(self._quote_char)
 
     @property
-    def is_singlequoted(self) -> bool:
+    def is_single_quoted(self) -> bool:
         return self._quote_char == "'"
 
     @property
-    def is_doublequoted(self) -> bool:
+    def is_double_quoted(self) -> bool:
         return self._quote_char == '"'
 
     def _parse(self, chars: ParseCursor):
@@ -463,15 +296,7 @@ class Segment(SyntaxNode[ContentNode]):
     def __consume_single_quoted(self, chars):
         # pylint: disable=invalid-name
         SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
-
-        while next_char := chars.peek():
-            if next_char == "'":
-                chars.take()
-                return
-
-            self._children.append(SingleQuotedTextCls(chars, self.config))
-
-        raise ParseError("Unexpected end of input with unmatched single quote.")
+        self._children.append(SingleQuotedTextCls(chars, self.config))
 
     def __consume_double_quoted(self, chars):
         # pylint: disable=invalid-name
@@ -481,6 +306,9 @@ class Segment(SyntaxNode[ContentNode]):
 
         while next_char := chars.peek():
             if next_char == '"':
+                if not self._children:
+                    # make sure this segment contains at least an empty string
+                    self._children.append(DoubleQuotedTextCls(chars, self.config))
                 chars.take()
                 return
 
@@ -495,7 +323,7 @@ class Segment(SyntaxNode[ContentNode]):
             else:
                 self._children.append(DoubleQuotedTextCls(chars, self.config))
 
-        raise ParseError("Unexpected end of input with unmatched double quote.")
+        raise ParseError("Unexpected end of input with unmatched double quote")
 
     def __consume_unquoted(self, chars):
         # pylint: disable=invalid-name
@@ -506,7 +334,7 @@ class Segment(SyntaxNode[ContentNode]):
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
 
         while next_char := chars.peek():
-            if next_char.isspace() or next_char in "'\"#":
+            if next_char.isspace() or next_char in "'\";#":
                 return
 
             elif next_char == "$":
@@ -543,6 +371,7 @@ class Word(SyntaxNode[Segment]):
         while next_char := chars.peek():
             if next_char.isspace() or next_char in ";#":
                 if not self._children:
+                    # This should never happen
                     self._cancelled = True
                 return
 
@@ -590,6 +419,11 @@ class Line(SyntaxNode[Union[Word, Comment]]):
 
 
 class Script(SyntaxNode[Line]):
+    def __init__(self, chars: ParseCursor, config: ParseConfig = ParseConfig()):
+        if not config.line_seperators:
+            config.line_seperators = LINE_SEP_CHARS
+        super().__init__(chars, config)
+
     @property
     def lines(self):
         return tuple(self._children)
@@ -613,7 +447,3 @@ class Script(SyntaxNode[Line]):
 
             if line_node := LineCls(chars, self.config):
                 self._children.append(line_node)
-
-
-class ParseError(RuntimeError):
-    pass

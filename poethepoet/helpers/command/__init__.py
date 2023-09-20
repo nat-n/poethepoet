@@ -1,7 +1,6 @@
 import re
 from glob import escape
 from typing import (
-    IO,
     TYPE_CHECKING,
     Dict,
     Generic,
@@ -14,7 +13,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -22,7 +20,7 @@ if TYPE_CHECKING:
     from .ast import Line, ParseConfig
 
 
-def parse_poe_cmd(source: Union[IO[str], str], config: Optional["ParseConfig"] = None):
+def parse_poe_cmd(source: str, config: Optional["ParseConfig"] = None):
     from .ast import Glob, ParseConfig, ParseCursor, PythonGlob, Script
 
     if not config:
@@ -31,12 +29,7 @@ def parse_poe_cmd(source: Union[IO[str], str], config: Optional["ParseConfig"] =
         # python standard library glob module can support
         config = ParseConfig(substitute_nodes={Glob: PythonGlob}, line_seperators=";")
 
-    if isinstance(source, str):
-        cursor = ParseCursor(((char for char in source)))
-    else:
-        cursor = ParseCursor.from_file(source)
-
-    return Script(cursor, config)
+    return Script(ParseCursor.from_string(source), config)
 
 
 def resolve_command_tokens(
@@ -97,7 +90,7 @@ def resolve_command_tokens(
                             yield finalize_token(token_parts)
 
                         param_words = (
-                            (word, bool(glob_pattern.match(word)))
+                            (word, bool(glob_pattern.search(word)))
                             for word in param_value.split()
                         )
 
@@ -106,7 +99,7 @@ def resolve_command_tokens(
                         for param_word in param_words:
                             if token_parts:
                                 yield finalize_token(token_parts)
-                            token_parts.append(next(param_words))
+                            token_parts.append(param_word)
 
                         if param_value[-1].isspace() and token_parts:
                             # param_value ends with a word break

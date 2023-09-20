@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
 
 from ..exceptions import PoeException
 from .base import PoeTask
@@ -51,8 +51,14 @@ class CmdTask(PoeTask):
         from glob import glob
 
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens
+        from ..helpers.command.ast_core import ParseError
 
-        command_lines = parse_poe_cmd(self.content).command_lines
+        try:
+            command_lines = parse_poe_cmd(self.content).command_lines
+        except ParseError as error:
+            raise PoeException(
+                f"Couldn't parse command line for task {self.name!r}: {error.args[0]}"
+            ) from error
 
         if not command_lines:
             raise PoeException(
@@ -75,3 +81,12 @@ class CmdTask(PoeTask):
                 result.append(cmd_token)
 
         return result
+
+    @classmethod
+    def _validate_task_def(
+        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
+    ) -> Optional[str]:
+        if not task_def["cmd"].strip():
+            return f"Task {task_name!r} has no content"
+
+        return None

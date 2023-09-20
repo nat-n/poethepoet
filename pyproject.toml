@@ -103,11 +103,11 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
   [tool.poe.tasks.test]
   help = "Run unit and feature tests"
-  cmd  = "pytest --cov=poethepoet"
+  cmd  = "pytest"
 
   [tool.poe.tasks.test-quick]
   help = "Run unit and feature tests, excluding slow ones"
-  cmd  = "pytest --cov=poethepoet -m \"not slow\""
+  cmd  = "pytest -m \"not slow\""
 
   [tool.poe.tasks.types]
   help = "Run the type checker"
