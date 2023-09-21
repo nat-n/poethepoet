@@ -14,3 +14,9 @@ cwd = "${POE_PWD}"
 cmd = "poe_test_pwd"
 cwd = "./subdir/${foo_var}"
 args = ["foo_var"]
+
+[tool.poe.tasks.ls]
+cmd = "ls ${path_arg}"
+cwd = "${cwd_arg}"
+env = {VIRTUAL_ENV = ""}
+args = ["cwd-arg", "path-arg"]

@@ -98,6 +98,15 @@ class RunContext:
         """
         return re.sub(r"\s+", " ", self.captured_stdout[invocation].strip("\r\n"))
 
+    def get_working_dir(self, env: "EnvVarsManager", task_options: Dict[str, Any]):
+        cwd_option = env.fill_template(task_options.get("cwd", "."))
+        working_dir = Path(cwd_option)
+
+        if not working_dir.is_absolute():
+            working_dir = self.project_dir / working_dir
+
+        return working_dir
+
     def get_executor(
         self,
         invocation: Tuple[str, ...],
@@ -106,17 +115,11 @@ class RunContext:
     ) -> "PoeExecutor":
         from .executor import PoeExecutor
 
-        cwd_option = env.fill_template(task_options.get("cwd", "."))
-        working_dir = Path(cwd_option)
-
-        if not working_dir.is_absolute():
-            working_dir = self.project_dir / working_dir
-
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
             env=env,
-            working_dir=working_dir,
+            working_dir=self.get_working_dir(env, task_options),
             dry=self.dry,
             executor_config=task_options.get("executor"),
             capture_stdout=task_options.get("capture_stdout", False),

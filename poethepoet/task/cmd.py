@@ -48,8 +48,6 @@ class CmdTask(PoeTask):
         )
 
     def _resolve_args(self, context: "RunContext", env: "EnvVarsManager"):
-        from glob import glob
-
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens
         from ..helpers.command.ast_core import ParseError
 
@@ -69,14 +67,15 @@ class CmdTask(PoeTask):
                 f"Invalid cmd task {self.name!r} includes multiple command lines"
             )
 
+        working_dir = context.get_working_dir(env, self.options)
+
         result = []
         for cmd_token, has_glob in resolve_command_tokens(
             command_lines[0], env.to_dict()
         ):
             if has_glob:
-                # Resolve glob path
-                # TODO: check whether cwd is correct here??
-                result.extend(glob(cmd_token, recursive=True))
+                # Resolve glob pattern from the working directory
+                result.extend([str(match) for match in working_dir.glob(cmd_token)])
             else:
                 result.append(cmd_token)
 

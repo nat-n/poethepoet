@@ -57,7 +57,7 @@ def test_resolve_command_tokens():
     )[0]
 
     assert list(resolve_command_tokens(line, {"thing1": r" *\o/", "thing2": ""})) == [
-        ("ab *\o/* and ? ' *\o/'", False),
+        (r"ab *\o/* and ? ' *\o/'", False),
         ("${thing1}", False),
         ("", False),
     ]

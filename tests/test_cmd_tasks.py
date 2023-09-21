@@ -125,3 +125,23 @@ def test_cmd_task_with_cwd_option_arg(run_poe_subproc, poe_project_path):
         == f'{poe_project_path.joinpath("tests", "fixtures", "cwd_project", "subdir", "foo")}\n'
     )
     assert result.stderr == ""
+
+
+def test_cmd_task_with_with_glob_arg_and_cwd(run_poe_subproc, poe_project_path):
+    result = run_poe_subproc("ls", "--path-arg", "./subdir", project="cwd")
+    assert result.capture == "Poe => ls ./subdir\n"
+    assert result.stdout == f"bar\nfoo\n"
+    assert result.stderr == ""
+
+    result = run_poe_subproc("ls", "--cwd-arg", "subdir", project="cwd")
+    assert result.capture == "Poe => ls\n"
+    assert result.stdout == f"bar\nfoo\n"
+    assert result.stderr == ""
+
+    result = run_poe_subproc(
+        "ls", "--path-arg", "./f*", "--cwd-arg", "subdir", project="cwd"
+    )
+    assert result.capture.startswith("Poe => ls ")
+    assert result.capture.endswith("foo\n")
+    assert result.stdout == f"bar.txt\n"
+    assert result.stderr == ""
