@@ -21,11 +21,13 @@ def test_virtualenv_executor_fails_without_venv_dir(run_poe_subproc, projects):
 
 
 @pytest.mark.slow
-def test_virtualenv_executor_activates_venv(
+def test_virtualenv_executor_activates_venv(  # TODO: fix dependency to get poe_test_env!!
     run_poe_subproc, with_virtualenv_and_venv, projects
 ):
     venv_path = projects["venv"].joinpath("myvenv")
-    for _ in with_virtualenv_and_venv(venv_path):
+    for _ in with_virtualenv_and_venv(
+        venv_path, ["./tests/fixtures/packages/poe_test_helpers"]
+    ):
         result = run_poe_subproc("show-env", project="venv")
         assert result.capture == "Poe => poe_test_env\n"
         assert f"VIRTUAL_ENV={venv_path}" in result.stdout

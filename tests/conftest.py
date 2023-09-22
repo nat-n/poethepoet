@@ -323,7 +323,7 @@ def use_virtualenv(install_into_virtualenv):
         did_exist = location.is_dir()
         assert not require_empty or not did_exist, (
             f"Test requires no directory already exists at {location}, "
-            "maybe try delete it and run again"
+            "maybe try delete it (via `poe clean`) and try again"
         )
 
         # create new virtualenv
@@ -352,7 +352,7 @@ def try_rm_dir(location: Path):
             shutil.rmtree(location)
         except:
             print(
-                "Cleanup failed. You might need to run poe clean before tests can be "
+                "Cleanup failed. You might need to run `poe clean` before tests can be "
                 "run again."
             )
 
