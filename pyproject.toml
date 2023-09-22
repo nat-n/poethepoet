@@ -7,7 +7,7 @@ readme        = "README.md"
 license       = "MIT"
 repository    = "https://github.com/nat-n/poethepoet"
 homepage      = "https://github.com/nat-n/poethepoet"
-documentation = "http://poethepoet.natn.io/"
+documentation = "https://poethepoet.natn.io/"
 keywords      = ["automation", "tasks", "task-runner", "plugin", "poetry", "poe"]
 classifiers   = ["Topic :: Software Development :: Build Tools"]
 

@@ -245,11 +245,12 @@ def test_parse_globs():
         a*b?c[]xyz\\ ]d[!]][!] ]
         "a*b?c[]xyz\\ ]d[!]][!] ]"
         'a*b?c[]xyz\\ ]d[!]][!] ]'
+        a\\*b\\?c\\[]xyz\\\\\\ ]d\\[!]]\\[!]\\ ]
         """,
         config=ParseConfig(),
     )
     print(tree.pretty())
-    assert len(tree.lines) == 4
+    assert len(tree.lines) == 5
     assert tree.lines[0] == (
         (("*",),),
         (("?",),),
@@ -264,6 +265,7 @@ def test_parse_globs():
     )
     assert tree.lines[2] == ((("a*b?c[]xyz\\ ]d[!]][!] ]",),),)
     assert tree.lines[3] == ((("a*b?c[]xyz\\ ]d[!]][!] ]",),),)
+    assert tree.lines[4] == ((("a*b?c[]xyz\\ ]d[!]][!] ]",),),)
 
 
 def test_parse_non_globs():
