@@ -12,6 +12,10 @@ if TYPE_CHECKING:
 
 
 def guess_ansi_support(file):
+    if os.environ.get("NO_COLOR", "0")[0] != "0":
+        # https://no-color.org/
+        return False
+
     return (
         (sys.platform != "win32" or "ANSICON" in os.environ)
         and hasattr(file, "isatty")
