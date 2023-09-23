@@ -29,7 +29,7 @@
 Available task options
 ----------------------
 
-``expr`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec``.
+``expr`` tasks support all of the :doc:`standard task options <../options>`.
 
 The following options are also accepted:
 

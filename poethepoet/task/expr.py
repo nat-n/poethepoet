@@ -32,6 +32,7 @@ class ExprTask(PoeTask):
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
         "imports": list,
         "assert": (bool, int),
+        "use_exec": bool,
     }
 
     def _handle_run(

@@ -51,7 +51,7 @@ def test_expr_with_env_vars(run_poe_subproc):
     )
     assert (
         result.capture
-        == "Poe => [${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}')\n"
+        == "Poe => [${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + '${NOTHING}'\n"
     )
     assert result.stdout == "foofooboo\n"
     assert result.stderr == ""

@@ -34,7 +34,7 @@ The following options can be configured on your tasks and are not specific to an
 
   .. attention::
 
-    This option is only applicable to **cmd** and **script** tasks, and it implies the task in question cannot be referenced by another task.
+    This option is only applicable to **cmd**, **script**, and **expr** tasks, and it implies the task in question cannot be referenced by another task.
 
 
 Setting task specific environment variables

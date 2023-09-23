@@ -7,7 +7,7 @@ args = [{ name = "power_level", positional = true, type = "integer", default = 4
 expr = """"power level is " + (f"only {sys.argv[1]}" if int(sys.argv[1]) <= 9000 else 'over nine thousand!') """
 
 [tool.poe.tasks.expr_with_env_vars]
-expr = "[${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}')"
+expr = "[${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + '${NOTHING}'"
 
 [tool.poe.tasks.expr_with_imports]
 help    = "check if the argument looks like an email address"
@@ -17,9 +17,10 @@ env.EMAIL.default = 'user@example.com'
 assert = false
 
 [tool.poe.tasks.expr_with_assert]
-expr   = "min_value < 3"
-args   = [{ name = "min_value", positional = true, type = "integer", required = true}]
-assert = true
+expr     = "min_value < 3"
+args     = [{ name = "min_value", positional = true, type = "integer", required = true}]
+assert   = true
+use_exec = true
 
 [tool.poe.tasks]
 _days_since_incident.expr = "0"
