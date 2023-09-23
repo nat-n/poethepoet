@@ -1,5 +1,7 @@
 from .__version__ import __version__
 
+__all__ = ["__version__", "main"]
+
 
 def main():
     import sys
@@ -29,7 +31,7 @@ def main():
 
     from .app import PoeThePoet
 
-    app = PoeThePoet(cwd=Path(".").resolve(), output=sys.stdout)
+    app = PoeThePoet(cwd=Path().resolve(), output=sys.stdout)
     result = app(cli_args=sys.argv[1:])
     if result:
         raise SystemExit(result)

@@ -14,7 +14,6 @@ from typing import (
 if TYPE_CHECKING:
     from argparse import ArgumentParser
 
-    from ..config import PoeConfig
     from ..env.manager import EnvVarsManager
 
 ArgParams = Dict[str, Any]

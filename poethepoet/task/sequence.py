@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
-    from ..executor import PoeExecutor
     from ..ui import PoeUi
 
 
@@ -45,7 +44,7 @@ class SequenceTask(PoeTask):
         invocation: Tuple[str, ...],
         capture_stdout: bool = False,
     ):
-        assert capture_stdout == False
+        assert capture_stdout is False
         super().__init__(name, content, options, ui, config, invocation)
 
         self.subtasks = [
@@ -131,8 +130,8 @@ class SequenceTask(PoeTask):
             if isinstance(task_item, dict):
                 if len(task_item.get("args", tuple())):
                     return (
-                        "Unsupported option `args` for task declared inside sequence task "
-                        f"{task_name!r}."
+                        "Unsupported option `args` for task declared inside sequence "
+                        f"task {task_name!r}."
                     )
 
                 subtask_issue = cls.validate_def(

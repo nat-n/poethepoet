@@ -53,10 +53,10 @@ class PoeCommand(Command):
 
             poetry_env_path = EnvManager(application.poetry).get().path
         # pylint: disable=bare-except
-        except:
+        except:  # noqa: E722
             poetry_env_path = None
 
-        cwd = Path(".").resolve()
+        cwd = Path().resolve()
         config = PoeConfig(cwd=cwd)
 
         if io.output.is_quiet():
@@ -81,7 +81,7 @@ class PoetryPlugin(ApplicationPlugin):
             return self._activate(application)
 
         # pylint: disable=bare-except
-        except:
+        except:  # noqa: E722
             import os
             import sys
 
@@ -150,7 +150,7 @@ class PoetryPlugin(ApplicationPlugin):
             pyproject = application.poetry.pyproject.data
 
         # pylint: disable=bare-except
-        except:
+        except:  # noqa: E722
             # Fallback to loading the config again in case of future failure of the
             # above undocumented API
             import tomlkit

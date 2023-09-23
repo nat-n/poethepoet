@@ -78,6 +78,7 @@ def parse_env_file(content_lines: Sequence[str]):
                     continue
 
                 if (
+                    # ruff: noqa: E501
                     re.match(WHITESPACE_PATTERN, content[cursor:], re.MULTILINE).end()  # type: ignore
                     == len(content) - cursor
                 ):
@@ -93,11 +94,11 @@ def parse_env_file(content_lines: Sequence[str]):
                 if var_name_match:
                     cursor += var_name_match.span()[1]
                     raise ParserException(
-                        f"Expected assignment operator", cursor, content_lines
+                        "Expected assignment operator", cursor, content_lines
                     )
 
                 raise ParserException(
-                    f"Expected variable assignment", cursor, content_lines
+                    "Expected variable assignment", cursor, content_lines
                 )
 
             var_name = match.group(1)
@@ -145,7 +146,8 @@ def parse_env_file(content_lines: Sequence[str]):
                         # Omit escaped new line
                         continue
 
-                    # Non-escaped backslashes that don't precede a terminator are dropped
+                    # Non-escaped backslashes that don't precede a terminator are
+                    # dropped
                     var_content.append(next_char)
                     continue
 
@@ -155,7 +157,7 @@ def parse_env_file(content_lines: Sequence[str]):
                 SINGLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException(f"Unmatched single quote", cursor, content_lines)
+                raise ParserException("Unmatched single quote", cursor, content_lines)
             var_content.append(match.group(1))
             cursor += match.end()
             state = ParserState.SCAN_VALUE
@@ -167,7 +169,7 @@ def parse_env_file(content_lines: Sequence[str]):
                 DOUBLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException(f"Unmatched double quote", cursor, content_lines)
+                raise ParserException("Unmatched double quote", cursor, content_lines)
             new_var_content, backslashes_or_dquote = match.groups()
             var_content.append(new_var_content)
             cursor += match.end()

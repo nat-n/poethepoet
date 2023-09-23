@@ -218,5 +218,6 @@ def test_parse_valid_env_files(example):
 
 @pytest.mark.parametrize("example", invalid_examples)
 def test_parse_invalid_env_files(example):
+    # ruff: noqa: PT011
     with pytest.raises(ValueError):
         parse_env_file(example)

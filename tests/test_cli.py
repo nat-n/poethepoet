@@ -1,7 +1,5 @@
 import re
 
-import pytest
-
 from poethepoet import __version__
 
 
@@ -67,7 +65,7 @@ def test_version_option(run_poe):
 
 def test_dry_run(run_poe_subproc):
     result = run_poe_subproc("-d", "show_env")
-    assert result.capture == f"Poe => poe_test_env\n"
+    assert result.capture == "Poe => poe_test_env\n"
     assert result.stdout == ""
     assert result.stderr == ""
 
@@ -105,7 +103,8 @@ def test_documentation_of_task_named_args(run_poe):
         r"    --age, -a             \s+\n"
         r"    --height, -h          \s+The user's height in meters\n"
         r"  greet-strict            \s+All arguments are required\n"
-        r"    --greeting            \s+this one is required \[default: \$\{DOES\}n't \$\{STUFF\}\]\n"
+        r"    --greeting"
+        r"            \s+this one is required \[default: \$\{DOES\}n't \$\{STUFF\}\]\n"
         r"    --name                \s+and this one is required\n",
         result.capture,
     )

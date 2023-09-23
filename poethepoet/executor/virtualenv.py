@@ -62,7 +62,10 @@ class VirtualenvExecutor(PoeExecutor):
         Validate that location is a string if given and no other options are given.
         """
         if "location" in config and not isinstance(config["location"], str):
-            return f"The location option virtualenv executor must be a string not: {config['location']!r}"
+            return (
+                "The location option virtualenv executor must be a string not: "
+                f"{config['location']!r}"
+            )
         extra_options = set(config.keys()) - {"type", "location"}
         if extra_options:
             return f"Unexpected keys for executor config: {extra_options!r}"

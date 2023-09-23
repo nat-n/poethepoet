@@ -3,9 +3,9 @@ def test_ref_task(run_poe_subproc, projects, esc_prefix):
     result = run_poe_subproc(
         "also_echo", "foo", "!", env={"POETRY_VIRTUALENVS_CREATE": "false"}
     )
-    assert (
-        result.capture
-        == f"Poe => poe_test_echo POE_ROOT:{projects['example']} Password1, task_args: foo !\n"
+    assert result.capture == (
+        "Poe => poe_test_echo "
+        f"POE_ROOT:{projects['example']} Password1, task_args: foo !\n"
     )
     assert (
         result.stdout == f"POE_ROOT:{projects['example']} Password1, task_args: foo !\n"

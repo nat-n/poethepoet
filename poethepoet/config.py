@@ -51,7 +51,7 @@ class PoeConfig:
         table: Optional[Mapping[str, Any]] = None,
         config_name: str = "pyproject.toml",
     ):
-        self.cwd = Path(".").resolve() if cwd is None else Path(cwd)
+        self.cwd = Path().resolve() if cwd is None else Path(cwd)
         self._poe = {} if table is None else dict(table)
         self._config_name = config_name
         self._project_dir: Optional[Path] = None
@@ -111,7 +111,7 @@ class PoeConfig:
         try:
             self._project = self._read_config_file(config_path)
             self._poe = self._project["tool"]["poe"]
-        except KeyError as error:
+        except KeyError:
             raise PoeException(
                 f"No poe configuration found in file at {self._config_name}"
             )
@@ -216,8 +216,8 @@ class PoeConfig:
                 target_path = target_path.joinpath(self._config_name)
             if not target_path.exists():
                 raise PoeException(
-                    f"Poe could not find a {self._config_name} file at the given location: "
-                    f"{target_dir}"
+                    f"Poe could not find a {self._config_name} file at the given "
+                    f"location: {target_dir}"
                 )
             return target_path
 

@@ -68,7 +68,7 @@ class PoeThePoet:
         from .config import PoeConfig
         from .ui import PoeUi
 
-        self.cwd = cwd or Path(".").resolve()
+        self.cwd = cwd or Path().resolve()
         self.config = (
             config
             if isinstance(config, PoeConfig)

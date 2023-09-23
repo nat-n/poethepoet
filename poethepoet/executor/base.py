@@ -118,7 +118,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         else:
             if config_executor_type not in cls.__executor_types:
                 raise PoeException(
-                    f"Cannot instantiate unknown executor" + repr(config_executor_type)
+                    "Cannot instantiate unknown executor" + repr(config_executor_type)
                 )
             return cls.__executor_types[config_executor_type]
 
@@ -206,6 +206,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             popen_kwargs["stdin"] = PIPE
         if self.capture_stdout:
             if isinstance(self.capture_stdout, str):
+                # ruff: noqa: SIM115
                 popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
             else:
                 popen_kwargs["stdout"] = PIPE
@@ -232,7 +233,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         # send data to the subprocess and wait for it to finish
         (captured_stdout, _) = proc.communicate(input)
 
-        if self.capture_stdout == True:
+        if self.capture_stdout is True:
             self.context.save_task_output(self.invocation, captured_stdout)
 
         # restore signal handler

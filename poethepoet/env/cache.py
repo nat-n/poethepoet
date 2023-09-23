@@ -32,7 +32,8 @@ class EnvFileCache:
             except ValueError as error:
                 message = error.args[0]
                 raise ExecutionError(
-                    f"Syntax error in referenced envfile: {envfile_path_str!r}; {message}"
+                    f"Syntax error in referenced envfile: {envfile_path_str!r};"
+                    f" {message}"
                 ) from error
 
         elif self._ui is not None:

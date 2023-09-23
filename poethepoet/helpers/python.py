@@ -173,7 +173,7 @@ def _validate_nodes_and_get_names(
         ast.YieldFrom,
     )
 
-    if isinstance(node, ast.Name) and not node.id in ignore_names:
+    if isinstance(node, ast.Name) and node.id not in ignore_names:
         yield node
 
     elif isinstance(node, ast.Call):
@@ -207,12 +207,12 @@ def _validate_nodes_and_get_names(
     elif isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)):
         # ignore comprehension/generator scoped variables
 
-        comp_vars = set(
+        comp_vars = {
             gen_node.id
             for comp_node in node.generators
             for gen_node in ast.walk(comp_node.target)
             if isinstance(gen_node, ast.Name)
-        ) | set(ignore_names)
+        } | set(ignore_names)
 
         if isinstance(node, ast.DictComp):
             yield from _validate_nodes_and_get_names(
@@ -300,7 +300,7 @@ def _get_name_source_segment(source: str, node: ast.Name):
     and must be valid identifiers. It is expected to be correct in all cases, and
     performant in common cases.
     """
-    if sys.version_info.minor >= 8:
+    if sys.version_info >= (3, 8):
         return ast.get_source_segment(source, node)
 
     partial_result = (
@@ -311,7 +311,8 @@ def _get_name_source_segment(source: str, node: ast.Name):
 
     # The name probably extends to the first ascii char outside of [a-zA-Z\d_]
     # regex will always match with valid arguments to this function
-    partial_result = re.match(IDENTIFIER_PATTERN, partial_result).group()  # type: ignore
+    # type: ignore
+    partial_result = re.match(IDENTIFIER_PATTERN, partial_result).group()
 
     # This bit is a nasty hack, but probably always gets skipped
     while not partial_result.isidentifier() and partial_result:

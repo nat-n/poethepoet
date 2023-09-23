@@ -1,10 +1,3 @@
-import os
-import shutil
-import tempfile
-from pathlib import Path
-
-import pytest
-
 # Setting POETRY_VIRTUALENVS_CREATE stops poetry from creating the virtualenv and
 # spamming about it in stdout
 no_venv = {"POETRY_VIRTUALENVS_CREATE": "false"}
@@ -26,17 +19,15 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
 
 def test_setting_default_array_item_task_type(run_poe_subproc):
     result = run_poe_subproc("composite_task", project="scripts", env=no_venv)
-    assert (
-        result.capture == f"Poe => poe_test_echo Hello\nPoe => poe_test_echo World!\n"
-    )
-    assert result.stdout == f"Hello\nWorld!\n"
+    assert result.capture == "Poe => poe_test_echo Hello\nPoe => poe_test_echo World!\n"
+    assert result.stdout == "Hello\nWorld!\n"
     assert result.stderr == ""
 
 
 def test_setting_global_env_vars(run_poe_subproc):
     result = run_poe_subproc("travel", env=no_venv)
-    assert result.capture == f"Poe => poe_test_echo from EARTH to\nPoe => travel[1]\n"
-    assert result.stdout == f"from EARTH to\nMARS\n"
+    assert result.capture == "Poe => poe_test_echo from EARTH to\nPoe => travel[1]\n"
+    assert result.stdout == "from EARTH to\nMARS\n"
     assert result.stderr == ""
 
 

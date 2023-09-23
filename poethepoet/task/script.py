@@ -58,7 +58,7 @@ class ScriptTask(PoeTask):
         ]
 
         if self.options.get("print_result"):
-            script.append(f"_r is not None and print(_r);")
+            script.append("_r is not None and print(_r);")
 
         # Exactly which python executable to use is usually resolved by the executor
         # It's important that the script contains no line breaks to avoid issues on
@@ -93,8 +93,8 @@ class ScriptTask(PoeTask):
         """
         Returns the module to load, and the function call to execute.
 
-        Will raise an exception if the function call contains invalid syntax or references
-        variables that are not in scope.
+        Will raise an exception if the function call contains invalid syntax or
+        references variables that are not in scope.
         """
 
         from ..helpers.python import resolve_expression

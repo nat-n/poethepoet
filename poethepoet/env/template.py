@@ -5,18 +5,24 @@ _SHELL_VAR_PATTERN = re.compile(
     # Matches shell variable patterns, distinguishing escaped examples (to be ignored)
     # There may be a more direct way to doing this
     r"(?:"
-    r"(?:[^\\]|^)(?:\\(?:\\{2})*)\$(?P<esc_naked>[\w\d_]+)|"  # $VAR preceded by an odd num of \
-    r"(?:[^\\]|^)(?:\\(?:\\{2})*)\$\{(?P<esc_paren>[\w\d_]+)\}|"  # ${VAR} preceded by an odd num of \
-    r"\$(?P<naked>[\w\d_]+)|"  # $VAR
-    r"\${(?P<paren>[\w\d_]+)}"  # ${VAR}
+    # $VAR preceded by an odd num of \
+    r"(?:[^\\]|^)(?:\\(?:\\{2})*)\$(?P<esc_naked>[\w\d_]+)"
+    # ${VAR} preceded by an odd num of \
+    r"|(?:[^\\]|^)(?:\\(?:\\{2})*)\$\{(?P<esc_paren>[\w\d_]+)\}"
+    # $VAR
+    r"|\$(?P<naked>[\w\d_]+)"
+    # ${VAR}
+    r"|\${(?P<paren>[\w\d_]+)}"
     ")"
 )
 
 _SHELL_VAR_PATTERN_BRACES = re.compile(
     # Matches shell variable patterns, distinguishing escaped examples (to be ignored)
     r"(?:"
-    r"(?:[^\\]|^)(?:\\(?:\\{2})*)\$\{(?P<esc_paren>[\w\d_]+)\}|"  # ${VAR} preceded by an odd num of \
-    r"\${(?P<paren>[\w\d_]+)}"  # ${VAR}
+    # ${VAR} preceded by an odd num of \
+    r"(?:[^\\]|^)(?:\\(?:\\{2})*)\$\{(?P<esc_paren>[\w\d_]+)\}"
+    # ${VAR}
+    r"|\${(?P<paren>[\w\d_]+)}"
     ")"
 )
 

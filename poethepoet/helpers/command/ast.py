@@ -2,32 +2,31 @@ r"""
 This module implements a heirarchical parser and AST along the lines of the
 following grammar which is a subset of bash syntax.
 
-script                  : line*
-line                    : word* comment?
-word                    : segment*
-segment                 : UNQUOTED_CONTENT | single_quoted_sement | double_quoted_sement
+script                : line*
+line                  : word* comment?
+word                  : segment*
+segment               : UNQUOTED_CONTENT | single_quoted_sement | double_quoted_sement
 
-unquoted_sement         : UNQUOTED_CONTENT | param_expansion | glob
-single_quoted_sement    : "'" SINGLE_QUOTED_CONTENT "'"
-double_quoted_sement    : "\"" (DOUBLE_QUOTED_CONTENT | param_expansion) "\""
+unquoted_sement       : UNQUOTED_CONTENT | param_expansion | glob
+single_quoted_sement  : "'" SINGLE_QUOTED_CONTENT "'"
+double_quoted_sement  : "\"" (DOUBLE_QUOTED_CONTENT | param_expansion) "\""
 
-comment                 : /#[^\n\r\f\v]*/
-glob                    : "?" | "*" | "[" /(\!?\]([^\s\]\\]|\\.)*|([^\s\]\\]|\\.)+)*/ "]"
+comment               : /#[^\n\r\f\v]*/
+glob                  : "?" | "*" | "[" /(\!?\]([^\s\]\\]|\\.)*|([^\s\]\\]|\\.)+)*/ "]"
 
-UNQUOTED_CONTENT        : /[^\s;#*?[$]+/
-SINGLE_QUOTED_CONTENT   : /[^']+/
-DOUBLE_QUOTED_CONTENT   : /([^\$"]|\[\$"])+/
+UNQUOTED_CONTENT      : /[^\s;#*?[$]+/
+SINGLE_QUOTED_CONTENT : /[^']+/
+DOUBLE_QUOTED_CONTENT : /([^\$"]|\[\$"])+/
 """
 
 from typing import Iterable, List, Literal, Optional, Tuple, Union, cast
+
+from .ast_core import ContentNode, ParseConfig, ParseCursor, ParseError, SyntaxNode
 
 PARAM_INIT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
 PARAM_CHARS = PARAM_INIT_CHARS + "0123456789"
 LINE_BREAK_CHARS = "\r\n\f\v"
 LINE_SEP_CHARS = LINE_BREAK_CHARS + ";"
-
-
-from .ast_core import ContentNode, ParseConfig, ParseCursor, ParseError, SyntaxNode
 
 
 class SingleQuotedText(ContentNode):
@@ -95,7 +94,10 @@ class Glob(ContentNode):
     """
 
     # This pattern is equivalent to what this node might parse
-    PATTERN = r"(?P<simple>[\?\*])|(?P<complex>\[(?:\!?\](?:[^\s\]\\]|\\.)*|(?:[^\s\]\\]|\\.)+)\])"
+    PATTERN = (
+        r"(?P<simple>[\?\*])"
+        r"|(?P<complex>\[(?:\!?\](?:[^\s\]\\]|\\.)*|(?:[^\s\]\\]|\\.)+)\])"
+    )
 
     def _parse(self, chars: ParseCursor):
         char = chars.peek()

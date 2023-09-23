@@ -22,7 +22,8 @@ def test_uses_dry_run(run_poe_subproc):
         "Poe <= poe_test_echo about\n"
         "Poe <= poe_test_echo hello\n"
         "Poe ?? unresolved dependency task results via uses option for task 'think'\n"
-        "Poe ?? unresolved dependency task results via uses option for task 'deep-graph-with-args'\n"
+        "Poe ?? unresolved dependency task results via uses option for task"
+        " 'deep-graph-with-args'\n"
     )
     assert result.stdout == ""
     assert result.stderr == ""

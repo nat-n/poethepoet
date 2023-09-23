@@ -181,7 +181,9 @@ class PoeUi:
             result.append(
                 (
                     "<h2>USAGE</h2>",
-                    f"  <u>{self.program_name}</u> [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]",
+                    f"  <u>{self.program_name}</u>"
+                    " [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi]"
+                    " task [task arguments]",
                 )
             )
 
@@ -234,7 +236,7 @@ class PoeUi:
                 section if isinstance(section, str) else "\n".join(section).strip("\n")
                 for section in result
             )
-            + f"\n"
+            + "\n"
             + ("\n" if verbosity >= 0 else "")
         )
 

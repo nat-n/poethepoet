@@ -22,7 +22,6 @@ class PoetryExecutor(PoeExecutor):
         """
 
         poetry_env = self._get_poetry_virtualenv()
-        project_dir = self.context.config.project_dir
 
         if poetry_env:
             from ..virtualenv import Virtualenv

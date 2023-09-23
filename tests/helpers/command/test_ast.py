@@ -3,15 +3,7 @@ from io import StringIO
 import pytest
 
 from poethepoet.helpers.command import parse_poe_cmd
-from poethepoet.helpers.command.ast import (
-    Glob,
-    Line,
-    ParamExpansion,
-    PythonGlob,
-    Script,
-    Segment,
-    Word,
-)
+from poethepoet.helpers.command.ast import Glob, PythonGlob, Script
 from poethepoet.helpers.command.ast_core import ParseConfig, ParseCursor, ParseError
 
 
@@ -117,39 +109,39 @@ def test_parse_params():
 
 def test_invalid_param_expansion():
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""${}""", config=ParseConfig())
+        parse_poe_cmd("""${}""", config=ParseConfig())
     assert excinfo.value.args[0] == "Bad substitution: ${}"
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""${ x }""", config=ParseConfig())
+        parse_poe_cmd("""${ x }""", config=ParseConfig())
     assert (
         excinfo.value.args[0]
         == "Bad substitution: Illegal first character in parameter name ' '"
     )
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""${!x }""", config=ParseConfig())
+        parse_poe_cmd("""${!x }""", config=ParseConfig())
     assert (
         excinfo.value.args[0]
         == "Bad substitution: Illegal first character in parameter name '!'"
     )
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""${x }""", config=ParseConfig())
+        parse_poe_cmd("""${x }""", config=ParseConfig())
     assert (
         excinfo.value.args[0]
         == "Bad substitution: Illegal character in parameter name ' '"
     )
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""${x-}""", config=ParseConfig())
+        parse_poe_cmd("""${x-}""", config=ParseConfig())
     assert (
         excinfo.value.args[0]
         == "Bad substitution: Illegal character in parameter name '-'"
     )
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""${""", config=ParseConfig())
+        parse_poe_cmd("""${""", config=ParseConfig())
     assert (
         excinfo.value.args[0]
         == "Unexpected end of input, expected closing '}' after '${'"
@@ -194,32 +186,32 @@ def test_parse_quotes():
     )
 
     first_word = tree.lines[0].words[0]
-    assert first_word.segments[0].is_quoted == False
-    assert first_word.segments[0].is_single_quoted == False
-    assert first_word.segments[0].is_double_quoted == False
-    assert first_word.segments[1].is_quoted == True
-    assert first_word.segments[1].is_single_quoted == True
-    assert first_word.segments[1].is_double_quoted == False
-    assert first_word.segments[2].is_quoted == True
-    assert first_word.segments[2].is_single_quoted == False
-    assert first_word.segments[2].is_double_quoted == True
+    assert first_word.segments[0].is_quoted is False
+    assert first_word.segments[0].is_single_quoted is False
+    assert first_word.segments[0].is_double_quoted is False
+    assert first_word.segments[1].is_quoted is True
+    assert first_word.segments[1].is_single_quoted is True
+    assert first_word.segments[1].is_double_quoted is False
+    assert first_word.segments[2].is_quoted is True
+    assert first_word.segments[2].is_single_quoted is False
+    assert first_word.segments[2].is_double_quoted is True
 
 
 def test_parse_unmatched_quotes():
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd(""" ok"not ok """)
+        parse_poe_cmd(""" ok"not ok """)
     assert (
         excinfo.value.args[0] == "Unexpected end of input with unmatched double quote"
     )
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd(r""" ok"not ok\" """)
+        parse_poe_cmd(r""" ok"not ok\" """)
     assert (
         excinfo.value.args[0] == "Unexpected end of input with unmatched double quote"
     )
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd(""" ok'not ok """)
+        parse_poe_cmd(""" ok'not ok """)
     assert (
         excinfo.value.args[0] == "Unexpected end of input with unmatched single quote"
     )
@@ -227,11 +219,11 @@ def test_parse_unmatched_quotes():
 
 def test_invalid_features():
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""end\\""")
+        parse_poe_cmd("""end\\""")
     assert excinfo.value.args[0] == "Unexpected end of input after backslash"
 
     with pytest.raises(ParseError) as excinfo:
-        tree = parse_poe_cmd("""end[\\""", config=ParseConfig())
+        parse_poe_cmd("""end[\\""", config=ParseConfig())
     assert (
         excinfo.value.args[0]
         == "Invalid pattern: unexpected end of input after backslash"
@@ -349,30 +341,6 @@ def test_parse_python_style_non_globs():
     )
 
 
-def test_parse_non_globs():
-    tree = Script(
-        ParseCursor.from_file(
-            StringIO(
-                """
-                ab[cd ]ef
-                """
-            )
-        ),
-        config=ParseConfig(),
-    )
-    print(tree.pretty())
-    assert len(tree.lines) == 1
-    assert tree.lines[0] == (
-        (
-            (
-                "ab",
-                "[cd",
-            ),
-        ),
-        (("]ef",),),
-    )
-
-
 def test_parse_line_breaks():
     tree = Script(
         ParseCursor.from_string(
@@ -430,9 +398,9 @@ def test_ast_node_formatting():
                 ParamExpansion: 'world'
                 UnquotedText: '!'"""
     )
-    assert (
-        repr(tree)
-        == "Script(Line(Word(Segment(UnquotedText('hello'))), Word(Segment(ParamExpansion('world'), UnquotedText('!')))))"
+    assert repr(tree) == (
+        "Script(Line(Word(Segment(UnquotedText('hello'))),"
+        " Word(Segment(ParamExpansion('world'), UnquotedText('!')))))"
     )
 
 

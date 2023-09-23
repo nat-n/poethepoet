@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -20,8 +19,8 @@ def test_virtualenv_executor_fails_without_venv_dir(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-@pytest.mark.slow
-def test_virtualenv_executor_activates_venv(  # TODO: fix dependency to get poe_test_env!!
+@pytest.mark.slow()
+def test_virtualenv_executor_activates_venv(
     run_poe_subproc, with_virtualenv_and_venv, projects
 ):
     venv_path = projects["venv"].joinpath("myvenv")
@@ -34,7 +33,7 @@ def test_virtualenv_executor_activates_venv(  # TODO: fix dependency to get poe_
         assert result.stderr == ""
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_virtualenv_executor_provides_access_to_venv_content(
     run_poe_subproc, with_virtualenv_and_venv, projects
 ):
@@ -63,7 +62,7 @@ def test_virtualenv_executor_provides_access_to_venv_content(
         assert result.stderr == ""
 
 
-@pytest.mark.slow
+@pytest.mark.slow()
 def test_detect_venv(
     projects,
     run_poe_subproc,
@@ -82,7 +81,8 @@ def test_detect_venv(
         assert result.stdout == "No poe_test_package found\n"
         assert result.stderr == ""
 
-        # if we install poe_test_package into this virtualenv then we should get a different result
+        # if we install poe_test_package into this virtualenv then we should get a
+        # different result
         install_into_virtualenv(
             venv_path, ("./tests/fixtures/packages/poe_test_package",)
         )
@@ -92,14 +92,17 @@ def test_detect_venv(
         if is_windows:
             assert result.stdout.endswith(
                 (
-                    f"\\tests\\fixtures\\simple_project\\venv\\lib\\site-packages\\poe_test_package\\__init__.py\n",
+                    "\\tests\\fixtures\\simple_project\\venv\\lib\\site-packages"
+                    "\\poe_test_package\\__init__.py\n",
                     # Lib has a captital with python >=11
-                    f"\\tests\\fixtures\\simple_project\\venv\\Lib\\site-packages\\poe_test_package\\__init__.py\n",
+                    "\\tests\\fixtures\\simple_project\\venv\\Lib\\site-packages"
+                    "\\poe_test_package\\__init__.py\n",
                 )
             )
         else:
             assert result.stdout.endswith(
-                f"/tests/fixtures/simple_project/venv/lib/python{PY_V}/site-packages/poe_test_package/__init__.py\n"
+                f"/tests/fixtures/simple_project/venv/lib/python{PY_V}"
+                "/site-packages/poe_test_package/__init__.py\n"
             )
         assert result.stderr == ""
 

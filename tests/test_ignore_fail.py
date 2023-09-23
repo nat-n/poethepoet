@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def generate_pyproject(tmp_path):
     """Return function which generates pyproject.toml with a given ignore_fail value."""
 

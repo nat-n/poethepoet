@@ -11,7 +11,7 @@ def get_zsh_completion_script() -> str:
     from ..app import PoeThePoet
 
     # build and interogate the argument parser as the normal cli would
-    app = PoeThePoet(cwd=Path(".").resolve())
+    app = PoeThePoet(cwd=Path().resolve())
     parser = app.ui.build_parser()
     global_options = parser._action_groups[1]._group_actions
     excl_groups = [
@@ -45,13 +45,11 @@ def get_zsh_completion_script() -> str:
             tuple(),
         )
         # collect all option strings that are exclusive with this one
-        excl_option_strings: Set[str] = set(
-            [
-                option_string
-                for excl_option in excl_options
-                for option_string in excl_option.option_strings
-            ]
-        ) | set(option.option_strings)
+        excl_option_strings: Set[str] = {
+            option_string
+            for excl_option in excl_options
+            for option_string in excl_option.option_strings
+        } | set(option.option_strings)
 
         if len(excl_option_strings) == 1:
             options_part = option.option_strings[0]

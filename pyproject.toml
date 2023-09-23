@@ -25,6 +25,7 @@ pylint     = "^2.13.0"
 pytest     = "^7.1.2"
 pytest-cov = "^3.0.0"
 rstcheck   = { version = "^6.1.2", python = "<4" }
+ruff = "^0.0.291"
 
 virtualenv = "^20.14.1"
 
@@ -54,6 +55,14 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
 
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
+  [tool.poe.tasks.format]
+  help     = "Run all formating tools on the code base"
+  sequence = ["format-ruff", "format-isort", "format-black"]
+
+  [tool.poe.tasks.format-ruff]
+  help = "Run ruff fixer on code base"
+  cmd  = "ruff check . --fix-only"
+
   [tool.poe.tasks.format-isort]
   help = "Run isort on the code base"
   cmd  = "isort ."
@@ -61,10 +70,6 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   [tool.poe.tasks.format-black]
   help = "Run black on the code base"
   cmd  = "black ."
-
-  [tool.poe.tasks.format]
-  help     = "Run formating tools on the code base"
-  sequence = ["format-isort", "format-black"]
 
   [tool.poe.tasks.docs]
   help = "Build the docs using Sphinx"
@@ -114,8 +119,20 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   cmd  = "mypy poethepoet --ignore-missing-imports"
 
   [tool.poe.tasks.lint]
-  help = "Run the linter"
+  help = "Run linting tools on the code base"
+  sequence  = ["lint-ruff", "lint-pylint"]
+
+  [tool.poe.tasks.lint-ruff]
+  help = "Evaluate ruff rules"
+  cmd  = "ruff check ."
+
+  [tool.poe.tasks.lint-pylint]
+  help = "Evaluate pylint rules"
   cmd  = "pylint poethepoet"
+
+  [tool.poe.tasks.style]
+  help = "Validate code style"
+  sequence = ["style-isort", "style-black"]
 
   [tool.poe.tasks.style-black]
   help = "Validate black code style"
@@ -124,10 +141,6 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   [tool.poe.tasks.style-isort]
   help = "Validate isort code style"
   cmd  = "isort . --check --diff"
-
-  [tool.poe.tasks.style]
-  help = "Validate code style"
-  sequence = ["style-isort", "style-black"]
 
   [tool.poe.tasks.check]
   help     = "Run all checks on the code base"
@@ -160,16 +173,28 @@ ignore_directives = [
   "include"
 ]
 
+
 [tool.coverage.report]
 omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"]
+
 
 [tool.pytest.ini_options]
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')"
 ]
 
+
 [tool.isort]
 profile = "black"
+
+
+[tool.ruff]
+select  = [
+  "E", "F", "I", "W", "UP", "YTT","ASYNC","C4",
+  "T10", "G", "PIE", "PYI", "PT", "Q", "SIM", "TCH", "PTH", "PERF","RUF"]
+ignore  = ["C408", "PT015", "SIM118", "PTH109", "PTH123", "RUF012"]
+fixable = ["E", "F", "I"]
+
 
 [build-system]
 requires      = ["poetry-core"]

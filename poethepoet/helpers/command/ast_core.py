@@ -48,7 +48,7 @@ class ParseCursor:
 
     @classmethod
     def from_string(cls, string: str):
-        return cls((char for char in string))
+        return cls(char for char in string)
 
     def peek(self):
         if not self._pushback_stack:
@@ -145,11 +145,12 @@ class SyntaxNode(AstNode, Generic[T]):
 
     def pretty(self, indent: int = 0, increment: int = 4):
         indent += increment
-        lines = [f"{self.__class__.__name__}:"]
-        for child in self:
-            lines.append(" " * indent + child.pretty(indent))
-
-        return "\n".join(lines)
+        return "\n".join(
+            [
+                f"{self.__class__.__name__}:",
+                *(" " * indent + child.pretty(indent) for child in self),
+            ]
+        )
 
     def __getitem__(self, index: int):
         return self._children[index]

@@ -3,5 +3,5 @@ def detect_poe_test_package():
         import poe_test_package
 
         print("poe_test_package found at", poe_test_package.__file__)
-    except:
+    except:  # noqa: E722
         print("No poe_test_package found")

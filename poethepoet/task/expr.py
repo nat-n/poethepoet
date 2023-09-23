@@ -60,7 +60,7 @@ class ExprTask(PoeTask):
             f"{format_class(named_arg_values)}",
             f"{format_class(env_values, classname='__env')}",
             f"result = ({expr});",
-            f"print(result);",
+            "print(result);",
         ]
 
         falsy_return_code = int(self.options.get("assert", False))

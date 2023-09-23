@@ -1,7 +1,4 @@
-import shutil
 import sys
-
-import pytest
 
 
 def test_switch_on_platform(run_poe_subproc):

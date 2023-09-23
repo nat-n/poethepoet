@@ -1,8 +1,3 @@
-import os
-import sys
-from pathlib import Path
-
-
 def test_global_envfile_and_default(run_poe_subproc):
     result = run_poe_subproc("deploy-dev", project="envfile")
     assert (

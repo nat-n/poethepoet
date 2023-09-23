@@ -74,7 +74,7 @@ class TaskExecutionGraph:
         #       scheduling
 
         stages: List[List[TaskExecutionNode]] = [self.sources]
-        visited = set(source.identifier for source in self.sources)
+        visited = {source.identifier for source in self.sources}
 
         while True:
             next_stage = []

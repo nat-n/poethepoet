@@ -1,5 +1,4 @@
 import sys
-from typing import Any, Optional
 
 
 def uprint(*objects, sep=" ", end="\n", file=sys.stdout):
@@ -7,7 +6,10 @@ def uprint(*objects, sep=" ", end="\n", file=sys.stdout):
     if enc == "UTF-8":
         print(*objects, sep=sep, end=end, file=file)
     else:
-        f = lambda obj: str(obj).encode(enc, errors="backslashreplace").decode(enc)
+
+        def f(obj):
+            return str(obj).encode(enc, errors="backslashreplace").decode(enc)
+
         print(*map(f, objects), sep=sep, end=end, file=file)
 
 

@@ -4,13 +4,11 @@ import shutil
 import sys
 import time
 import venv
-from collections import namedtuple
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
 from subprocess import PIPE, Popen
-from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 import pytest
 import tomli
@@ -73,17 +71,21 @@ def high_verbosity_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "high_verbosity")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def temp_file(tmp_path):
     # not using NamedTemporaryFile here because it doesn't work on windows
     tmpfilepath = tmp_path / "tmp_test_file"
     tmpfilepath.touch()
-    yield tmpfilepath
+    return tmpfilepath
 
 
-class PoeRunResult(
-    namedtuple("PoeRunResult", ("code", "path", "capture", "stdout", "stderr"))
-):
+class PoeRunResult(NamedTuple):
+    code: int
+    path: str
+    capture: str
+    stdout: str
+    stderr: str
+
     def __str__(self):
         return (
             "PoeRunResult(\n"
@@ -96,7 +98,7 @@ class PoeRunResult(
         )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     coverage_setup = (
         "from coverage import Coverage;"
@@ -118,17 +120,19 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         cwd: Optional[str] = None,
         config: Optional[Mapping[str, Any]] = None,
         coverage: bool = not is_windows,
-        env: Dict[str, str] = None,
+        env: Optional[Dict[str, str]] = None,
         project: Optional[str] = None,
     ) -> PoeRunResult:
         if cwd is None:
             cwd = projects.get(project, projects["example"])
+
         if config is not None:
             config_path = tmp_path.joinpath("tmp_test_config_file")
             with config_path.open("w+") as config_file:
-                toml.dump(config, config_file)
+                tomli.dump(config, config_file)
                 config_file.seek(0)
             config_arg = rf"tomli.load(open(r\"{config_path}\", \"rb\"))"
+
         else:
             config_arg = "None"
 
@@ -172,7 +176,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     return run_poe_subproc
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def run_poe(capsys, projects):
     def run_poe(
         *run_args: str,
@@ -198,7 +202,7 @@ def run_poe(capsys, projects):
     return run_poe
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def run_poe_main(capsys, projects):
     def run_poe_main(
         *cli_args: str,
@@ -305,7 +309,8 @@ def use_venv(install_into_virtualenv):
             install_into_virtualenv(location, contents)
 
         yield
-        # Only cleanup if we actually created it to avoid this fixture being a bit dangerous
+        # Only cleanup if we actually created it to avoid this fixture being a bit
+        # dangerous
         if not did_exist:
             try_rm_dir(location)
 
@@ -333,7 +338,8 @@ def use_virtualenv(install_into_virtualenv):
             install_into_virtualenv(location, contents)
 
         yield
-        # Only cleanup if we actually created it to avoid this fixture being a bit dangerous
+        # Only cleanup if we actually created it to avoid this fixture being a bit
+        # dangerous
         if not did_exist:
             try_rm_dir(location)
 
@@ -343,14 +349,14 @@ def use_virtualenv(install_into_virtualenv):
 def try_rm_dir(location: Path):
     try:
         shutil.rmtree(location)
-    except:
+    except:  # noqa: E722
         # The above sometimes files with a Permissions error in CI for Windows
         # No idea why, but maybe this will help
         print("Retrying venv cleanup")
         time.sleep(1)
         try:
             shutil.rmtree(location)
-        except:
+        except:  # noqa: E722
             print(
                 "Cleanup failed. You might need to run `poe clean` before tests can be "
                 "run again."

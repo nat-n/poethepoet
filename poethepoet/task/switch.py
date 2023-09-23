@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
-    from ..executor import PoeExecutor
     from ..ui import PoeUi
 
 
@@ -113,7 +112,7 @@ class SwitchTask(PoeTask):
 
         if context.dry:
             self._print_action(
-                f"unresolved case for switch task", dry=True, unresolved=True
+                "unresolved case for switch task", dry=True, unresolved=True
             )
             return 0
 

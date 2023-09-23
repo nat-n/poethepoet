@@ -1,6 +1,3 @@
-import os
-
-
 def test_docs_for_include_toml_file(run_poe_subproc):
     result = run_poe_subproc(project="includes")
     assert (

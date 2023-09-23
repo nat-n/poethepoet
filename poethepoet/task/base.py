@@ -236,7 +236,10 @@ class PoeTask(metaclass=MetaPoeTask):
 
         if context.dry and upstream_invocations.get("uses", {}):
             self._print_action(
-                f"unresolved dependency task results via uses option for task {self.name!r}",
+                (
+                    "unresolved dependency task results via uses option for task "
+                    f"{self.name!r}"
+                ),
                 dry=True,
                 unresolved=True,
             )
@@ -418,7 +421,8 @@ class PoeTask(metaclass=MetaPoeTask):
                     ):
                         return (
                             f"Invalid task: {task_name!r}. deps options contains "
-                            f"reference to task with use_exec set to true: {dep_task_name!r}"
+                            "reference to task with use_exec set to true: "
+                            f"{dep_task_name!r}"
                         )
 
             if "uses" in task_def:
@@ -444,7 +448,8 @@ class PoeTask(metaclass=MetaPoeTask):
                     ):
                         return (
                             f"Invalid task: {task_name!r}. uses options contains "
-                            f"reference to task with use_exec set to true: {dep_task_name!r}"
+                            "reference to task with use_exec set to true: "
+                            f"{dep_task_name!r}"
                         )
 
         elif isinstance(task_def, list):

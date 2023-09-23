@@ -1,20 +1,6 @@
 import re
 from glob import escape
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Generic,
-    Iterable,
-    Iterator,
-    List,
-    Literal,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, Iterator, List, Mapping, Optional, Tuple, cast
 
 if TYPE_CHECKING:
     from .ast import Line, ParseConfig
@@ -42,7 +28,7 @@ def resolve_command_tokens(
     patterns that are not escaped or quoted. In case there are glob patterns in the
     token, any escaped glob characters will have been escaped with [].
     """
-    from .ast import Glob, ParamExpansion, ParseConfig, ParseCursor, PythonGlob, Script
+    from .ast import Glob, ParamExpansion, ParseConfig, PythonGlob
 
     if not config:
         config = ParseConfig(substitute_nodes={Glob: PythonGlob})

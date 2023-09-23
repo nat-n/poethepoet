@@ -1,14 +1,11 @@
 import difflib
-import shutil
-
-import pytest
 
 no_venv = {"POETRY_VIRTUALENVS_CREATE": "false"}
 
 
 def test_script_task_with_hard_coded_args(run_poe_subproc, projects, esc_prefix):
     result = run_poe_subproc("static-args-test", project="scripts", env=no_venv)
-    assert result.capture == f"Poe => static-args-test\n"
+    assert result.capture == "Poe => static-args-test\n"
     assert result.stdout == (
         "str: pat a cake\n"
         "int: 1\n"
@@ -65,12 +62,10 @@ def test_script_task_with_cli_args(run_poe_subproc, is_windows):
         project="scripts",
         env=no_venv,
     )
-    assert (
-        result.capture == f"Poe => greet-passed-args --greeting=hello --user=nat\n"
-    ), [
+    assert result.capture == "Poe => greet-passed-args --greeting=hello --user=nat\n", [
         li
         for li in difflib.ndiff(
-            result.capture, f"Poe => greet-passed-args --greeting=hello --user=nat\n"
+            result.capture, "Poe => greet-passed-args --greeting=hello --user=nat\n"
         )
         if li[0] != " "
     ]
@@ -109,7 +104,7 @@ def test_script_task_with_args_optional(run_poe_subproc, projects, is_windows):
 
 def test_script_task_default_arg(run_poe_subproc):
     result = run_poe_subproc("greet-full-args", project="scripts", env=no_venv)
-    assert result.capture == f"Poe => greet-full-args\n"
+    assert result.capture == "Poe => greet-full-args\n"
     # hi is the default value for --greeting
     assert result.stdout == "hi None None None\n"
     assert result.stderr == ""
