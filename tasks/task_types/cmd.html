@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
@@ -7,20 +7,20 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/task_types/cmd.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Command tasks contain a single command that will be executed as a sub process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
+<meta property="og:description" content="Command tasks contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
 <meta property="og:image:width" content="1146" />
 <meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_cmd_652ae2bf.png" />
-<meta property="og:image:alt" content="Command tasks contain a single command that will be executed as a sub process without a shell. This covers most basic use cases such as the following example..." />
-<meta name="description" content="Command tasks contain a single command that will be executed as a sub process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
+<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_cmd_7c35dbce.png" />
+<meta property="og:image:alt" content="Command tasks contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following example..." />
+<meta name="description" content="Command tasks contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="script tasks" href="script.html" /><link rel="prev" title="Standard task options" href="../options.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/cmd.html" />
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.05.20 -->
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
         <title>cmd tasks - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=e6660623a769aa55fea372102b9bf3151b292993" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
@@ -240,8 +240,7 @@
         <article role="main">
           <section id="cmd-tasks">
 <h1><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks<a class="headerlink" href="#cmd-tasks" title="Permalink to this heading">#</a></h1>
-<p><strong>Command tasks</strong> contain a single command that will be executed as a sub process without a shell.
-This covers most basic use cases such as the following examples.</p>
+<p><strong>Command tasks</strong> contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following examples.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest -v tests&quot;</span>
 </pre></div>
@@ -256,10 +255,10 @@ This covers most basic use cases such as the following examples.</p>
 </section>
 <section id="shell-like-features">
 <h2>Shell like features<a class="headerlink" href="#shell-like-features" title="Permalink to this heading">#</a></h2>
-<p>It it important to understand that <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks are executed without a shell (to maximise portability). However some shell like features are still available.</p>
+<p>It is important to understand that <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks are executed without a shell (to maximise portability). However some shell like features are still available including basic parameter expansion and pattern matching. Quotes and escapes are also generally interpreted as one would expect in a shell.</p>
 <section id="referencing-environment-variables">
 <span id="ref-env-vars"></span><h3>Referencing environment variables<a class="headerlink" href="#referencing-environment-variables" title="Permalink to this heading">#</a></h3>
-<p>Environment variables can be referenced using shell like syntax and are templated into the command.</p>
+<p>Environment variables can be templated into the command. Just like in bash: whitespace inside a variable results in a word break, and glob patterns are evaluated after parameter expansion, unless the parameter expansion is inside double quotes. Single quotes disable parameter expansion. Curly braces are recommended but optional.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 <span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello ${USER}&quot;</span>
 </pre></div>
@@ -269,15 +268,17 @@ This covers most basic use cases such as the following examples.</p>
 Hello<span class="w"> </span>nat
 </pre></div>
 </div>
-<p>Parsing of variable referenced can be ignored by escaping with a backslash like so:</p>
+<p>Parameter expansion can also can be disabled by escaping the $ with a backslash like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello \\${USER}&quot;</span><span class="w">  </span><span class="c1"># the backslash itself needs escaping for the toml parser</span>
+<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello \\$USER&quot;</span><span class="w">  </span><span class="c1"># the backslash itself needs escaping for the toml parser</span>
 </pre></div>
 </div>
 </section>
 <section id="glob-expansion">
 <h3>Glob expansion<a class="headerlink" href="#glob-expansion" title="Permalink to this heading">#</a></h3>
-<p>Glob patterns in cmd tasks are expanded and replaced with their results.</p>
+<p>Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. The supported glob syntax is that of the <a href="https://docs.python.org/3/library/glob.html" target="_blank">python standard library glob module</a>, which differs from bash in that square bracket patterns don’t support character classes, don’t break on whitespace, and don’t allow escaping of contained characters.</p>
+<p>Glob patterns are evaluated relative to the working directory of the task, and if there are no matches then the pattern is expanded to nothing.</p>
+<p>Here’s an example of task using a recursive glob pattern:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 <span class="n">clean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
 <span class="s">rm -rf ./**/*.pyc</span>
@@ -291,11 +292,11 @@ Hello<span class="w"> </span>nat
 </div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>Notice that this example also demonstrates that comments and excess whitespace (including new lines) are ignored.</p>
+<p>Notice that this example also demonstrates that comments and excess whitespace (including new lines) are ignored, without needing to escape new lines.</p>
 </div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>Much like in a POSIX shell, the glob pattern can be escaped by wrapping it in single quotes.</p>
+<p>Much like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.</p>
 </div>
 </section>
 </section>

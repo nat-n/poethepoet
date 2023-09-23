@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="no-js" lang="en">
+<html class="no-js" lang="en" data-content_root="">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
@@ -17,10 +17,10 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="cmd tasks" href="task_types/cmd.html" /><link rel="prev" title="Defining tasks" href="index.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/options.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.05.20 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
         <title>Standard task options - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=e6660623a769aa55fea372102b9bf3151b292993" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
@@ -263,7 +263,7 @@ The value is a map where the values are invocations of the other tasks, and the 
 <dt><strong>use_exec</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed in the same process, instead of as a subprocess.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
-<p>This option is only applicable to <strong>cmd</strong> and <strong>script</strong> tasks, and it implies the task in question cannot be referenced by another task.</p>
+<p>This option is only applicable to <strong>cmd</strong>, <strong>script</strong>, and <strong>expr</strong> tasks, and it implies the task in question cannot be referenced by another task.</p>
 </div>
 </dd>
 </dl>
