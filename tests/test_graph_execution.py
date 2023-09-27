@@ -27,3 +27,15 @@ def test_uses_dry_run(run_poe_subproc):
     )
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_task_graph_in_sequence(run_poe_subproc):
+    result = run_poe_subproc("ab", project="graphs")
+    assert result.capture == (
+        "Poe <= echo A1\n"
+        "Poe <= echo A2\n"
+        "Poe => 'a1: ' + ${a1} + ', a2: ' + ${a2}\n"
+        "Poe => echo b\n"
+    )
+    assert result.stdout == ("a1: A1, a2: A2\nb\n")
+    assert result.stderr == ""

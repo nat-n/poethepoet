@@ -32,7 +32,40 @@ class RefTask(PoeTask):
         invocation = tuple(shlex.split(env.fill_template(self.content.strip())))
         extra_args = [*invocation[1:], *extra_args]
         task = self.from_config(invocation[0], self._config, self._ui, invocation)
+
+        if task.has_deps():
+            return self._run_task_graph(task, context, extra_args, env)
+
         return task.run(context=context, extra_args=extra_args, parent_env=env)
+
+    def _run_task_graph(
+        self,
+        task: "PoeTask",
+        context: "RunContext",
+        extra_args: Sequence[str],
+        env: "EnvVarsManager",
+    ) -> int:
+        from ..exceptions import ExecutionError
+        from .graph import TaskExecutionGraph
+
+        graph = TaskExecutionGraph(task, context)
+        plan = graph.get_execution_plan()
+        for stage in plan:
+            for stage_task in stage:
+                if stage_task == task:
+                    # The final sink task gets special treatment
+                    return task.run(
+                        context=context, extra_args=extra_args, parent_env=env
+                    )
+
+                task_result = stage_task.run(
+                    context=context, extra_args=stage_task.invocation[1:]
+                )
+                if task_result:
+                    raise ExecutionError(
+                        f"Task graph aborted after failed task {stage_task.name!r}"
+                    )
+        return 0
 
     @classmethod
     def _validate_task_def(
