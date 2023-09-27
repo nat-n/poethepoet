@@ -4,7 +4,7 @@ from pathlib import Path
 try:
     import tomllib as tomli
 except ImportError:
-    import tomli  # type: ignore
+    import tomli
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 

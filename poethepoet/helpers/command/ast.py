@@ -1,3 +1,4 @@
+# ruff: noqa: N806
 r"""
 This module implements a heirarchical parser and AST along the lines of the
 following grammar which is a subset of bash syntax.

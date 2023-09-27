@@ -281,7 +281,7 @@ def _get_name_node_abs_range(source: str, node: ast.Name):
     )
     total_start_chars_offset = prev_lines_offset + own_line_offset
 
-    name_content = re.match(  # type: ignore
+    name_content = re.match(  # type: ignore[union-attr]
         IDENTIFIER_PATTERN, source[total_start_chars_offset:]
     ).group()
     while not name_content.isidentifier() and name_content:
@@ -311,7 +311,7 @@ def _get_name_source_segment(source: str, node: ast.Name):
 
     # The name probably extends to the first ascii char outside of [a-zA-Z\d_]
     # regex will always match with valid arguments to this function
-    # type: ignore
+    # type: ignore[union-attr]
     partial_result = re.match(IDENTIFIER_PATTERN, partial_result).group()
 
     # This bit is a nasty hack, but probably always gets skipped

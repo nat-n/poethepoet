@@ -2965,4 +2965,4 @@ poetry-plugin = ["poetry"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8"
-content-hash = "d84a9e34df074bb3e3d197eca20c9812e2f5fe4bc40b5b5adae59fd8dc2afd4a"
+content-hash = "a38b7a0d7be477112b19b613b8964f173d72ece95d79efb7746d756cea3e4ad3"

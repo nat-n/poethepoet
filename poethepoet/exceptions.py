@@ -1,6 +1,7 @@
 from typing import Optional
 
 
+# ruff: noqa: N818
 class PoeException(RuntimeError):
     cause: Optional[str]
 

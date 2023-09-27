@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Iterable, Optional, Sequence
 
 
-class ParserException(ValueError):
+class ParseError(ValueError):
     def __init__(self, issue: str, offset: int, lines: Iterable[str]):
         self.line_num, self.position = self._get_line_number(offset, lines)
         super().__init__(f"{issue} at line {self.line_num} position {self.position}.")
@@ -79,27 +79,25 @@ def parse_env_file(content_lines: Sequence[str]):
 
                 if (
                     # ruff: noqa: E501
-                    re.match(WHITESPACE_PATTERN, content[cursor:], re.MULTILINE).end()  # type: ignore
+                    re.match(WHITESPACE_PATTERN, content[cursor:], re.MULTILINE).end()  # type: ignore[union-attr]
                     == len(content) - cursor
                 ):
                     # The rest of the input is whitespace or semicolons
                     break
 
                 # skip any immediate whitespace
-                cursor += re.match(  # type: ignore
+                cursor += re.match(  # type: ignore[union-attr]
                     r"[\s\t\n]*", content[cursor:]
                 ).span()[1]
 
                 var_name_match = re.match(VARNAME_PATTERN, content[cursor:])
                 if var_name_match:
                     cursor += var_name_match.span()[1]
-                    raise ParserException(
+                    raise ParseError(
                         "Expected assignment operator", cursor, content_lines
                     )
 
-                raise ParserException(
-                    "Expected variable assignment", cursor, content_lines
-                )
+                raise ParseError("Expected variable assignment", cursor, content_lines)
 
             var_name = match.group(1)
             cursor += match.end()
@@ -157,7 +155,7 @@ def parse_env_file(content_lines: Sequence[str]):
                 SINGLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException("Unmatched single quote", cursor, content_lines)
+                raise ParseError("Unmatched single quote", cursor, content_lines)
             var_content.append(match.group(1))
             cursor += match.end()
             state = ParserState.SCAN_VALUE
@@ -169,7 +167,7 @@ def parse_env_file(content_lines: Sequence[str]):
                 DOUBLE_QUOTE_VALUE_PATTERN, content[cursor:], re.MULTILINE
             )
             if match is None:
-                raise ParserException("Unmatched double quote", cursor, content_lines)
+                raise ParseError("Unmatched double quote", cursor, content_lines)
             new_var_content, backslashes_or_dquote = match.groups()
             var_content.append(new_var_content)
             cursor += match.end()
