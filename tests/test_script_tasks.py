@@ -87,8 +87,8 @@ def test_script_task_with_args_optional(run_poe_subproc, projects, is_windows):
         env=no_venv,
     )
     assert result.capture == (
-        f"Poe => greet-passed-args --greeting=hello --user=nat --optional=welcome "
-        f"to {named_args_project_path}\n"
+        f"Poe => greet-passed-args --greeting=hello --user=nat "
+        f"'--optional=welcome to {named_args_project_path}'\n"
     )
 
     if is_windows:
@@ -238,7 +238,7 @@ def test_script_with_positional_args(run_poe_subproc):
     result = run_poe_subproc(
         "greet-positional", "help!", "Santa", project="scripts", env=no_venv
     )
-    assert result.capture == "Poe => greet-positional help! Santa\n"
+    assert result.capture == "Poe => greet-positional 'help!' Santa\n"
     assert result.stdout == "help! Santa\n"
     assert result.stderr == ""
 
@@ -275,14 +275,14 @@ def test_script_with_positional_args_and_options(run_poe_subproc):
     result = run_poe_subproc(
         "greet-positional", "help!", "Santa", "--upper", project="scripts", env=no_venv
     )
-    assert result.capture == "Poe => greet-positional help! Santa --upper\n"
+    assert result.capture == "Poe => greet-positional 'help!' Santa --upper\n"
     assert result.stdout == "HELP! SANTA\n"
     assert result.stderr == ""
 
     result = run_poe_subproc(
         "greet-positional", "--upper", "help!", "Santa", project="scripts", env=no_venv
     )
-    assert result.capture == "Poe => greet-positional --upper help! Santa\n"
+    assert result.capture == "Poe => greet-positional --upper 'help!' Santa\n"
     assert result.stdout == "HELP! SANTA\n"
     assert result.stderr == ""
 

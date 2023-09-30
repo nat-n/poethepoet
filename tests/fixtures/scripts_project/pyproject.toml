@@ -14,7 +14,7 @@ default_array_item_task_type = "cmd"
 
 [tool.poe.tasks]
 # Interpret subtasks as cmd instead of ref
-composite_task = ["poe_test_echo Hello", "poe_test_echo World!"]
+composite_task = ["poe_test_echo Hello", "poe_test_echo 'World!'"]
 
 # test_setting_default_task_type
 echo-args = "pkg:echo_args"

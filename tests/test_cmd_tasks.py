@@ -1,9 +1,16 @@
-def test_call_echo_task(run_poe_subproc, projects, esc_prefix):
+def test_call_echo_task(run_poe_subproc, projects, esc_prefix, is_windows):
     result = run_poe_subproc("echo", "foo", "!", project="cmds")
-    assert result.capture == (
-        "Poe => poe_test_echo "
-        f"POE_ROOT:{projects['cmds']} Password1, task_args: foo !\n"
-    )
+    if is_windows:
+        assert result.capture == (
+            "Poe => poe_test_echo "
+            f"'POE_ROOT:{projects['cmds']}' Password1, task_args: foo '!'\n"
+        )
+    else:
+        assert result.capture == (
+            "Poe => poe_test_echo "
+            f"POE_ROOT:{projects['cmds']} Password1, task_args: foo '!'\n"
+        )
+
     assert result.stdout == f"POE_ROOT:{projects['cmds']} Password1, task_args: foo !\n"
     assert result.stderr == ""
 
@@ -34,7 +41,7 @@ def test_cmd_task_with_args_and_extra_args(run_poe_subproc):
         "!",
         project="cmds",
     )
-    assert result.capture == "Poe => poe_test_echo hey you guy !\n"
+    assert result.capture == "Poe => poe_test_echo hey you guy '!'\n"
     assert result.stdout == "hey you guy !\n"
     assert result.stderr == ""
 
@@ -50,7 +57,7 @@ def test_cmd_alias_env_var(run_poe_subproc):
 
 def test_cmd_task_with_multiple_value_arg(run_poe_subproc):
     result = run_poe_subproc("multiple-value-arg", "hey", "1", "2", "3", project="cmds")
-    assert result.capture == "Poe => poe_test_echo first: hey second: 1 2 3\n"
+    assert result.capture == "Poe => poe_test_echo 'first: hey second: 1 2 3'\n"
     assert result.stdout == "first: hey second: 1 2 3\n"
     assert result.stderr == ""
 
@@ -114,7 +121,9 @@ def test_cmd_task_with_cwd_option_arg(run_poe_subproc, poe_project_path):
     assert result.stderr == ""
 
 
-def test_cmd_task_with_with_glob_arg_and_cwd(run_poe_subproc, poe_project_path):
+def test_cmd_task_with_with_glob_arg_and_cwd(
+    run_poe_subproc, poe_project_path, is_windows
+):
     result = run_poe_subproc("ls", "--path-arg", "./subdir", project="cwd")
     assert result.capture == "Poe => ls ./subdir\n"
     assert result.stdout == "bar\nfoo\n"
@@ -129,6 +138,9 @@ def test_cmd_task_with_with_glob_arg_and_cwd(run_poe_subproc, poe_project_path):
         "ls", "--path-arg", "./f*", "--cwd-arg", "subdir", project="cwd"
     )
     assert result.capture.startswith("Poe => ls ")
-    assert result.capture.endswith("foo\n")
+    if is_windows:
+        assert result.capture.endswith("foo'\n")
+    else:
+        assert result.capture.endswith("foo\n")
     assert result.stdout == "bar.txt\n"
     assert result.stderr == ""

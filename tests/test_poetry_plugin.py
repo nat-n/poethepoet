@@ -35,12 +35,12 @@ def test_task_with_cli_dependency(run_poetry, projects, is_windows):
         cwd=projects["poetry_plugin"],
     )
     if is_windows:
-        assert result.stdout.startswith("Poe => cowpy yo yo yo")
+        assert result.stdout.startswith("Poe => cowpy 'yo yo yo'")
         assert "< yo yo yo >" in result.stdout
     else:
         # On POSIX cowpy expects notices its being called as a subprocess and tries
         # unproductively to take input from stdin
-        assert result.stdout.startswith("Poe => cowpy yo yo yo")
+        assert result.stdout.startswith("Poe => cowpy 'yo yo yo'")
         assert (
             "< Cowacter, eyes:default, tongue:False, thoughts:False >" in result.stdout
         )

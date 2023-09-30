@@ -1,3 +1,4 @@
+import shlex
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
 
 from ..exceptions import PoeException
@@ -41,7 +42,7 @@ class CmdTask(PoeTask):
 
         cmd = (*self._resolve_args(context, env), *extra_args)
 
-        self._print_action(" ".join(cmd), context.dry)
+        self._print_action(shlex.join(cmd), context.dry)
 
         return context.get_executor(self.invocation, env, self.options).execute(
             cmd, use_exec=self.options.get("use_exec", False)
