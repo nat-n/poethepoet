@@ -52,7 +52,7 @@ def test_call_hidden_task(run_poe):
 def test_version_option(run_poe):
     result = run_poe("--version")
     assert result.code == 0, "Expected zero result"
-    assert result.capture.strip() == f"Poe the poet - version: {__version__}"
+    assert result.capture.strip() == f"Poe the Poet - version: {__version__}"
     assert result.stdout == ""
     assert result.stderr == ""
 

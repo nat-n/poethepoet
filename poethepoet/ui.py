@@ -257,7 +257,7 @@ class PoeUi:
 
     def print_version(self):
         if self.verbosity >= 0:
-            result = f"Poe the poet - version: <em>{__version__}</em>\n"
+            result = f"Poe the Poet - version: <em>{__version__}</em>\n"
         else:
             result = f"{__version__}\n"
         self._print(result)
