@@ -19,16 +19,17 @@ Or using pip:
 
   pip install poethepoet
 
-The :sh:`poe` executable will then be available anywhere in your system.
+The ``poe`` executable will then be available anywhere in your system.
 
-2. Install Poe the Poet into your poetry project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Install the CLI globally using |brew_link|
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``poe`` CLI is also available as a |formula_link| to be installed globally:
 
 .. code-block:: sh
 
-  poetry add --group dev poethepoet
-
-The :sh:`poe` executable will then be available when inside a :sh:`poetry shell` or as :sh:`poetry run poe`.
+  brew tap nat-n/poethepoet
+  brew install nat-n/poethepoet/poethepoet
 
 3. Install Poe the Poet as a poetry plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,6 +41,16 @@ The :sh:`poe` executable will then be available when inside a :sh:`poetry shell`
 It'll then be available as the :sh:`poetry poe` command anywhere in your system.
 
 See the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
+
+
+4. Install Poe the Poet into your poetry project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: sh
+
+  poetry add --group dev poethepoet
+
+The :sh:`poe` executable will then be available when inside a :sh:`poetry shell` or as :sh:`poetry run poe`.
 
 .. tip::
 
@@ -107,4 +118,12 @@ macOS, linux and windows.
 .. |pipx_link| raw:: html
 
    <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a>
+
+.. |brew_link| raw:: html
+
+   <a href="https://brew.sh/" target="_blank">homebrew</a>
+
+.. |formula_link| raw:: html
+
+   <a href="https://github.com/nat-n/homebrew-poethepoet" target="_blank">homebrew formula</a>
 
