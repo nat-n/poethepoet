@@ -30,6 +30,15 @@ class VirtualenvExecutor(PoeExecutor):
             use_exec=use_exec,
         )
 
+    def _handle_file_not_found(
+        self, cmd: Sequence[str], error: FileNotFoundError
+    ) -> int:
+        venv = self._resolve_virtualenv()
+        error_context = f" using virtualenv {str(venv.path)!r}" if venv else ""
+        raise PoeException(
+            f"executable {cmd[0]!r} could not be found{error_context}"
+        ) from error
+
     def _resolve_virtualenv(self) -> "Virtualenv":
         from ..virtualenv import Virtualenv
 

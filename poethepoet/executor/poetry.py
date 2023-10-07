@@ -2,6 +2,7 @@ from os import environ
 from pathlib import Path
 from typing import Dict, Optional, Sequence, Type
 
+from ..exceptions import PoeException
 from .base import PoeExecutor
 
 
@@ -45,6 +46,15 @@ class PoetryExecutor(PoeExecutor):
             input=input,
             use_exec=use_exec,
         )
+
+    def _handle_file_not_found(
+        self, cmd: Sequence[str], error: FileNotFoundError
+    ) -> int:
+        poetry_env = self._get_poetry_virtualenv()
+        error_context = f" using virtualenv {poetry_env!r}" if poetry_env else ""
+        raise PoeException(
+            f"executable {cmd[0]!r} could not be found{error_context}"
+        ) from error
 
     def _get_poetry_virtualenv(self, force: bool = True):
         """

@@ -151,16 +151,24 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         process. Using exec supports fewer options, and doesn't work on windows.
         """
 
-        if use_exec:
-            if input:
-                raise ExecutionError("Cannot exec task that requires input!")
-            if shell:
-                raise ExecutionError("Cannot exec task that requires shell!")
-            if not self._is_windows:
-                # execvpe doesn't work properly on windows so we just don't go there
-                return self._exec(cmd, env=env)
+        try:
+            if use_exec:
+                if input:
+                    raise ExecutionError("Cannot exec task that requires input!")
+                if shell:
+                    raise ExecutionError("Cannot exec task that requires shell!")
+                if not self._is_windows:
+                    # execvpe doesn't work properly on windows so we just don't go there
+                    return self._exec(cmd, env=env)
 
-        return self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
+            return self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
+        except FileNotFoundError as error:
+            return self._handle_file_not_found(cmd, error)
+
+    def _handle_file_not_found(
+        self, cmd: Sequence[str], error: FileNotFoundError
+    ) -> int:
+        raise PoeException(f"executable {cmd[0]!r} could not be found") from error
 
     def _exec(
         self,
