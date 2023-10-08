@@ -67,7 +67,7 @@ class ScriptTask(PoeTask):
         cmd = ("python", "-c", "".join(script))
 
         self._print_action(shlex.join(argv), context.dry)
-        return context.get_executor(self.invocation, env, self.options).execute(
+        return self._get_executor(context, env).execute(
             cmd, use_exec=self.options.get("use_exec", False)
         )
 

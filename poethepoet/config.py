@@ -202,8 +202,8 @@ class PoeConfig:
         """
         Resolve a path to a self._config_name using one of two strategies:
           1. If target_dir is provided then only look there, (accept path to config file
-             or to a directory dir).
-          2. Otherwise look for the self._config_name is the current working directory,
+             or to a directory).
+          2. Otherwise look for the self._config_name in the current working directory,
              following by all parent directories in ascending order.
 
         Both strategies result in an Exception on failure.

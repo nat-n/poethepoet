@@ -44,3 +44,20 @@ env      = {thing = "Done."}
   type       = "integer"
 
 
+[tool.poe.tasks.cwd_once]
+expr    = "os.getcwd()"
+imports = ["os"]
+
+[tool.poe.tasks.cwd_elsewhere]
+expr    = "os.getcwd()"
+imports = ["os"]
+cwd     = "${POE_ROOT}"
+
+[tool.poe.tasks.all_cwd]
+sequence = [
+  "cwd_once",
+  "cwd_elsewhere",
+  {script = "os:getcwd()", print_result = true},
+  {script = "os:getcwd()", cwd = ".", print_result = true}
+]
+cwd = "my_package"

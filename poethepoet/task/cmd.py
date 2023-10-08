@@ -44,7 +44,7 @@ class CmdTask(PoeTask):
 
         self._print_action(shlex.join(cmd), context.dry)
 
-        return context.get_executor(self.invocation, env, self.options).execute(
+        return self._get_executor(context, env).execute(
             cmd, use_exec=self.options.get("use_exec", False)
         )
 
@@ -68,7 +68,7 @@ class CmdTask(PoeTask):
                 f"Invalid cmd task {self.name!r} includes multiple command lines"
             )
 
-        working_dir = context.get_working_dir(env, self.options)
+        working_dir = self.get_working_dir(env)
 
         result = []
         for cmd_token, has_glob in resolve_command_tokens(

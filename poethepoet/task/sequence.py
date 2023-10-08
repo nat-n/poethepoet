@@ -11,7 +11,7 @@ from typing import (
 )
 
 from ..exceptions import ExecutionError, PoeException
-from .base import PoeTask, TaskContent
+from .base import PoeTask, TaskContent, TaskInheritance
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -43,9 +43,12 @@ class SequenceTask(PoeTask):
         config: "PoeConfig",
         invocation: Tuple[str, ...],
         capture_stdout: bool = False,
+        inheritance: Optional[TaskInheritance] = None,
     ):
         assert capture_stdout is False
-        super().__init__(name, content, options, ui, config, invocation)
+        super().__init__(
+            name, content, options, ui, config, invocation, False, inheritance
+        )
 
         self.subtasks = [
             self.from_def(
@@ -55,6 +58,7 @@ class SequenceTask(PoeTask):
                 invocation=(task_name,),
                 ui=ui,
                 array_item=self.options.get("default_item_type", True),
+                inheritance=TaskInheritance.from_task(self),
             )
             for index, item in enumerate(self.content)
             for task_name in (

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
 
-from .base import PoeTask
+from .base import PoeTask, TaskInheritance
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -31,7 +31,13 @@ class RefTask(PoeTask):
 
         invocation = tuple(shlex.split(env.fill_template(self.content.strip())))
         extra_args = [*invocation[1:], *extra_args]
-        task = self.from_config(invocation[0], self._config, self._ui, invocation)
+        task = self.from_config(
+            invocation[0],
+            self._config,
+            self._ui,
+            invocation,
+            inheritance=TaskInheritance.from_task(self),
+        )
 
         if task.has_deps():
             return self._run_task_graph(task, context, extra_args, env)
