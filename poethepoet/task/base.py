@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    NamedTuple,
     Optional,
     Sequence,
     Tuple,
@@ -47,10 +48,23 @@ class MetaPoeTask(type):
 TaskContent = Union[str, List[Union[str, Dict[str, Any]]]]
 
 
+class TaskInheritance(NamedTuple):
+    """
+    Collection of inheritanced config from a parent task to a child task
+    """
+
+    cwd: str
+
+    @classmethod
+    def from_task(cls, parent_task: "PoeTask"):
+        return cls(cwd=str(parent_task.options.get("cwd", parent_task.inheritance.cwd)))
+
+
 class PoeTask(metaclass=MetaPoeTask):
     name: str
     content: TaskContent
     options: Dict[str, Any]
+    inheritance: TaskInheritance
     named_args: Optional[Dict[str, str]] = None
 
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
@@ -81,6 +95,7 @@ class PoeTask(metaclass=MetaPoeTask):
         config: "PoeConfig",
         invocation: Tuple[str, ...],
         capture_stdout: bool = False,
+        inheritance: Optional[TaskInheritance] = None,
     ):
         self.name = name
         self.content = content
@@ -89,6 +104,7 @@ class PoeTask(metaclass=MetaPoeTask):
         self._config = config
         self._is_windows = sys.platform == "win32"
         self.invocation = invocation
+        self.inheritance = inheritance or TaskInheritance(cwd=str(config.cwd))
 
     @classmethod
     def from_config(
@@ -98,6 +114,7 @@ class PoeTask(metaclass=MetaPoeTask):
         ui: "PoeUi",
         invocation: Tuple[str, ...],
         capture_stdout: Optional[bool] = None,
+        inheritance: Optional[TaskInheritance] = None,
     ) -> "PoeTask":
         task_def = config.tasks.get(task_name)
         if not task_def:
@@ -109,6 +126,7 @@ class PoeTask(metaclass=MetaPoeTask):
             ui,
             invocation=invocation,
             capture_stdout=capture_stdout,
+            inheritance=inheritance,
         )
 
     @classmethod
@@ -121,6 +139,7 @@ class PoeTask(metaclass=MetaPoeTask):
         invocation: Tuple[str, ...],
         array_item: Union[bool, str] = False,
         capture_stdout: Optional[bool] = None,
+        inheritance: Optional[TaskInheritance] = None,
     ) -> "PoeTask":
         task_type = cls.resolve_task_type(task_def, config, array_item)
         if task_type is None:
@@ -148,6 +167,7 @@ class PoeTask(metaclass=MetaPoeTask):
             ui=ui,
             config=config,
             invocation=invocation,
+            inheritance=inheritance,
         )
 
     @classmethod
@@ -267,6 +287,31 @@ class PoeTask(metaclass=MetaPoeTask):
         result.
         """
         raise NotImplementedError
+
+    def _get_executor(
+        self,
+        context: "RunContext",
+        env: "EnvVarsManager",
+    ):
+        return context.get_executor(
+            self.invocation,
+            env,
+            working_dir=self.get_working_dir(env),
+            executor_config=self.options.get("executor"),
+            capture_stdout=self.options.get("capture_stdout", False),
+        )
+
+    def get_working_dir(
+        self,
+        env: "EnvVarsManager",
+    ) -> Path:
+        cwd_option = env.fill_template(self.options.get("cwd", self.inheritance.cwd))
+        working_dir = Path(cwd_option)
+
+        if not working_dir.is_absolute():
+            working_dir = self._config.project_dir / working_dir
+
+        return working_dir
 
     def iter_upstream_tasks(
         self, context: "RunContext"

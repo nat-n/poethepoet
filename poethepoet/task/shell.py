@@ -60,7 +60,7 @@ class ShellTask(PoeTask):
 
         self._print_action(content, context.dry)
 
-        return context.get_executor(self.invocation, env, self.options).execute(
+        return self._get_executor(context, env).execute(
             interpreter_cmd, input=content.encode()
         )
 

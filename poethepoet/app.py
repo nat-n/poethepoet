@@ -58,7 +58,7 @@ class PoeThePoet:
 
     def __init__(
         self,
-        cwd: Optional[Path] = None,
+        cwd: Optional[Union[Path, str]] = None,
         config: Optional[Union[Mapping[str, Any], "PoeConfig"]] = None,
         output: IO = sys.stdout,
         poetry_env_path: Optional[str] = None,
@@ -68,11 +68,16 @@ class PoeThePoet:
         from .config import PoeConfig
         from .ui import PoeUi
 
-        self.cwd = cwd or Path().resolve()
+        self.cwd = Path(cwd) if cwd else Path().resolve()
+
+        if self.cwd and self.cwd.is_file():
+            config_name = self.cwd.name
+            self.cwd = self.cwd.parent
+
         self.config = (
             config
             if isinstance(config, PoeConfig)
-            else PoeConfig(cwd=cwd, table=config, config_name=config_name)
+            else PoeConfig(cwd=self.cwd, table=config, config_name=config_name)
         )
         self.ui = PoeUi(output=output, program_name=program_name)
         self._poetry_env_path = poetry_env_path

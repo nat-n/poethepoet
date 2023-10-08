@@ -163,7 +163,14 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
             return self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
         except FileNotFoundError as error:
-            return self._handle_file_not_found(cmd, error)
+            if error.filename == cmd[0]:
+                return self._handle_file_not_found(cmd, error)
+            if error.filename == self.working_dir:
+                raise PoeException(
+                    "The specified working directory does not exists "
+                    f"'{self.working_dir}'"
+                )
+            raise
 
     def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError

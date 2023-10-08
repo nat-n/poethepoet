@@ -13,7 +13,7 @@ from typing import (
 )
 
 from ..exceptions import ExecutionError, PoeException
-from .base import PoeTask, TaskContent
+from .base import PoeTask, TaskContent, TaskInheritance
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
@@ -49,8 +49,12 @@ class SwitchTask(PoeTask):
         config: "PoeConfig",
         invocation: Tuple[str, ...],
         capture_stdout: bool = False,
+        inheritance: Optional[TaskInheritance] = None,
     ):
-        super().__init__(name, content, options, ui, config, invocation)
+        assert capture_stdout is False
+        super().__init__(
+            name, content, options, ui, config, invocation, False, inheritance
+        )
 
         control_task_name = f"{name}[control]"
         control_invocation: Tuple[str, ...] = (control_task_name,)
@@ -65,6 +69,7 @@ class SwitchTask(PoeTask):
             invocation=control_invocation,
             ui=ui,
             capture_stdout=True,
+            inheritance=TaskInheritance.from_task(self),
         )
 
         self.switch_tasks = {}
@@ -83,6 +88,7 @@ class SwitchTask(PoeTask):
                     config=config,
                     invocation=task_invocation,
                     ui=ui,
+                    inheritance=TaskInheritance.from_task(self),
                 )
 
     def _handle_run(

@@ -42,3 +42,32 @@ def test_sequence_task_with_multiple_value_arg(run_poe_subproc):
     )
     assert result.stdout == "first: hey\nsecond: 1 2 3\nDone.\n"
     assert result.stderr == ""
+
+
+def test_subtasks_inherit_cwd_option_as_default(run_poe_subproc, is_windows):
+    result = run_poe_subproc("all_cwd", project="sequences")
+    assert result.capture == (
+        "Poe => os.getcwd()\n"
+        "Poe => os.getcwd()\n"
+        "Poe => 'all_cwd[2]'\n"
+        "Poe => 'all_cwd[3]'\n"
+    )
+    if is_windows:
+        assert result.stdout.split()[0].endswith(
+            "tests\\fixtures\\sequences_project\\my_package"
+        )
+        assert result.stdout.split()[1].endswith("tests\\fixtures\\sequences_project")
+        assert result.stdout.split()[2].endswith(
+            "tests\\fixtures\\sequences_project\\my_package"
+        )
+        assert result.stdout.split()[3].endswith("tests\\fixtures\\sequences_project")
+    else:
+        assert result.stdout.split()[0].endswith(
+            "tests/fixtures/sequences_project/my_package"
+        )
+        assert result.stdout.split()[1].endswith("tests/fixtures/sequences_project")
+        assert result.stdout.split()[2].endswith(
+            "tests/fixtures/sequences_project/my_package"
+        )
+        assert result.stdout.split()[3].endswith("tests/fixtures/sequences_project")
+    assert result.stderr == ""
