@@ -245,11 +245,11 @@
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
 <span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;sys.platform&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.build.switch]]</span>
 <span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;win32&quot;</span>
 <span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;windows_build&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.build.switch]]</span>
 <span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;posix_build&quot;</span>
 </pre></div>
 </div>
@@ -269,7 +269,7 @@
 <h2>Multiple values per case<a class="headerlink" href="#multiple-values-per-case" title="Permalink to this heading">#</a></h2>
 <p>It is also possible to define multiple values for a single case option by providing a
 array of values like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build.switch]]</span>
 <span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;linux&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;darwin&quot;</span><span class="p">]</span>
 <span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
 </pre></div>
@@ -284,7 +284,7 @@ the switch task to pass and simply do nothing by providing the ‘default’ opt
 <span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;sys.platform&quot;</span>
 <span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pass&quot;</span>
 
-<span class="w">  </span><span class="k">[[tool.poe.tasks.platform_dependent.switch]]</span>
+<span class="w">  </span><span class="k">[[tool.poe.tasks.build-on-windows.switch]]</span>
 <span class="w">  </span><span class="n">case</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;win32&quot;</span>
 <span class="w">  </span><span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;build&quot;</span>
 </pre></div>

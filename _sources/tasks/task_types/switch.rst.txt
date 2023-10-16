@@ -10,11 +10,11 @@ This can be used to define a task that runs a different subtask depending on whi
   [tool.poe.tasks.build]
   control.expr = "sys.platform"
 
-    [[tool.poe.tasks.platform_dependent.switch]]
+    [[tool.poe.tasks.build.switch]]
     case = "win32"
     cmd  = "windows_build"
 
-    [[tool.poe.tasks.platform_dependent.switch]]
+    [[tool.poe.tasks.build.switch]]
     cmd  = "posix_build"
 
 In the above example the control task is an :doc:`expression <expr>` that checks the value of ``sys.platform``, and if running on windows it'll execute :toml:`windows_build`, otherwise it'll fall back to the default case (i.e. the switch item with no case option defined) and execute :toml:`posix_build`.
@@ -42,7 +42,7 @@ array of values like so:
 
 .. code-block:: toml
 
-    [[tool.poe.tasks.platform_dependent.switch]]
+    [[tool.poe.tasks.build.switch]]
     case = ["linux", "darwin"]
     cmd  = "build"
 
@@ -59,7 +59,7 @@ the switch task to pass and simply do nothing by providing the 'default' option 
   control.expr = "sys.platform"
   default = "pass"
 
-    [[tool.poe.tasks.platform_dependent.switch]]
+    [[tool.poe.tasks.build-on-windows.switch]]
     case = "win32"
     cmd  = "build"
 
