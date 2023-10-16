@@ -195,6 +195,9 @@ The resulting task can be run like:
 
   poe passby --planet mars
 
+.. TIP::
+   For PowerShell tasks, the variable needs to be referenced as an environment variable in the shell code, e.g., :code:`$env:planet`.
+
 Arguments for script tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
