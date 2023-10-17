@@ -4,6 +4,7 @@ from ..exceptions import PoeException
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
+    from ..context import RunContext
     from ..virtualenv import Virtualenv
 
 
@@ -14,6 +15,12 @@ class VirtualenvExecutor(PoeExecutor):
 
     __key__ = "virtualenv"
     __options__: Dict[str, Type] = {"location": str}
+
+    @classmethod
+    def fits_in(cls, context: "RunContext") -> bool:
+        from ..virtualenv import Virtualenv
+
+        return Virtualenv.detect(context.project_dir)
 
     def execute(
         self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False

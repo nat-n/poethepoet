@@ -1,9 +1,12 @@
 from os import environ
 from pathlib import Path
-from typing import Dict, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Type
 
 from ..exceptions import PoeException
 from .base import PoeExecutor
+
+if TYPE_CHECKING:
+    from ..context import RunContext
 
 
 class PoetryExecutor(PoeExecutor):
@@ -14,6 +17,12 @@ class PoetryExecutor(PoeExecutor):
 
     __key__ = "poetry"
     __options__: Dict[str, Type] = {}
+
+    @classmethod
+    def fits_in(cls, context: "RunContext") -> bool:
+        if "poetry" not in context.config.project["tool"]:
+            return False
+        return cls._poetry_cmd_from_path()
 
     def execute(
         self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
@@ -90,14 +99,19 @@ class PoetryExecutor(PoeExecutor):
 
         return exec_cache.get("poetry_virtualenv")
 
-    def _poetry_cmd(self):
-        import shutil
-
-        from_path = shutil.which("poetry")
+    @classmethod
+    def _poetry_cmd(cls):
+        from_path = cls._poetry_cmd_from_path()
         if from_path:
             return str(Path(from_path).resolve())
 
         return "poetry"
+
+    @classmethod
+    def _poetry_cmd_from_path(cls):
+        import shutil
+
+        return shutil.which("poetry")
 
     def _virtualenv_creation_disabled(self):
         exec_cache = self.context.exec_cache
