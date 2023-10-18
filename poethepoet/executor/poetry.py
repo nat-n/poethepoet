@@ -22,7 +22,7 @@ class PoetryExecutor(PoeExecutor):
     def works_with_context(cls, context: "RunContext") -> bool:
         if "poetry" not in context.config.project["tool"]:
             return False
-        return cls._poetry_cmd_from_path()
+        return bool(cls._poetry_cmd_from_path())
 
     def execute(
         self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
