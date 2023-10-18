@@ -19,7 +19,7 @@ class PoetryExecutor(PoeExecutor):
     __options__: Dict[str, Type] = {}
 
     @classmethod
-    def fits_in(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: "RunContext") -> bool:
         if "poetry" not in context.config.project["tool"]:
             return False
         return cls._poetry_cmd_from_path()

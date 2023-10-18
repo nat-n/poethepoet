@@ -17,7 +17,7 @@ class VirtualenvExecutor(PoeExecutor):
     __options__: Dict[str, Type] = {"location": str}
 
     @classmethod
-    def fits_in(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: "RunContext") -> bool:
         from ..virtualenv import Virtualenv
 
         return Virtualenv.detect(context.project_dir)

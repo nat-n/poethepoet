@@ -70,7 +70,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self._is_windows = sys.platform == "win32"
 
     @classmethod
-    def fits_in(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: "RunContext") -> bool:
         return True
 
     @classmethod
@@ -113,7 +113,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 cls.__executor_types["poetry"],
                 cls.__executor_types["virtualenv"],
             ]:
-                if impl.fits_in(context):
+                if impl.works_with_context(context):
                     return impl
 
             # Fallback to not using any particular environment
