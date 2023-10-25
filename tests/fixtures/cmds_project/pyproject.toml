@@ -1,5 +1,7 @@
 tool.poe.tasks.show_env = "poe_test_env"
 
+tool.poe.tasks.ls_color = "poe_test_echo --color='always' \"a\"' b 'c"
+
 [tool.poe.tasks.echo]
 cmd = "poe_test_echo POE_ROOT:$POE_ROOT ${BEST_PASSWORD}, task_args:"
 help = "It says what you say"

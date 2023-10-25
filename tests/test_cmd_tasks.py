@@ -121,6 +121,13 @@ def test_cmd_task_with_cwd_option_arg(run_poe_subproc, poe_project_path):
     assert result.stderr == ""
 
 
+def test_cmd_with_complex_token(run_poe_subproc):
+    result = run_poe_subproc("ls_color", project="cmds")
+    assert result.capture == "Poe => poe_test_echo --color=always 'a b c'\n"
+    assert result.stdout == "--color=always a b c\n"
+    assert result.stderr == ""
+
+
 def test_cmd_task_with_with_glob_arg_and_cwd(
     run_poe_subproc, poe_project_path, is_windows
 ):
