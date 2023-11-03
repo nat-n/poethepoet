@@ -152,6 +152,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         """
 
         try:
+            if self.working_dir and not self.working_dir.is_dir():
+                raise PoeException(
+                    f"Working directory {self.working_dir} could not be found."
+                )
             if use_exec:
                 if input:
                     raise ExecutionError("Cannot exec task that requires input!")
