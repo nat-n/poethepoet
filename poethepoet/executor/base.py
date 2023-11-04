@@ -70,6 +70,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self._is_windows = sys.platform == "win32"
 
     @classmethod
+    def works_with_context(cls, context: "RunContext") -> bool:
+        return True
+
+    @classmethod
     def get(
         cls,
         invocation: Tuple[str, ...],
@@ -96,7 +100,6 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         by making some reasonable assumptions based on visible features of the
         environment
         """
-        from ..virtualenv import Virtualenv
 
         config_executor_type = context.executor_type
         if executor_config:
@@ -106,13 +109,13 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
             return cls.__executor_types[executor_config["type"]]
         elif config_executor_type == "auto":
-            if "poetry" in context.config.project["tool"]:
-                # Looks like this is a poetry project!
-                return cls.__executor_types["poetry"]
+            for impl in [
+                cls.__executor_types["poetry"],
+                cls.__executor_types["virtualenv"],
+            ]:
+                if impl.works_with_context(context):
+                    return impl
 
-            if Virtualenv.detect(context.project_dir):
-                # Looks like there's a local virtualenv
-                return cls.__executor_types["virtualenv"]
             # Fallback to not using any particular environment
             return cls.__executor_types["simple"]
         else:
