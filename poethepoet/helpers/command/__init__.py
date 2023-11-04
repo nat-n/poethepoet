@@ -55,9 +55,8 @@ def resolve_command_tokens(
 
     for word in line:
         # For each token part indicate whether it is a glob
+        token_parts: List[Tuple[str, bool]] = []
         for segment in word:
-            token_parts: List[Tuple[str, bool]] = []
-
             for element in segment:
                 if isinstance(element, ParamExpansion):
                     param_value = env.get(element.param_name, "")
