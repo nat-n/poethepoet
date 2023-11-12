@@ -104,7 +104,7 @@ class PoeTask(metaclass=MetaPoeTask):
         self._config = config
         self._is_windows = sys.platform == "win32"
         self.invocation = invocation
-        self.inheritance = inheritance or TaskInheritance(cwd=str(config.cwd))
+        self.inheritance = inheritance or TaskInheritance(cwd=str(config.project_dir))
 
     @classmethod
     def from_config(
