@@ -78,6 +78,21 @@ def test_cmd_task_with_cwd_option_env(run_poe_subproc, poe_project_path):
     assert result.stderr == ""
 
 
+def test_cmd_task_runs_in_project_root_by_default(
+    run_poe_subproc, poe_project_path, projects
+):
+    result = run_poe_subproc(
+        "default_pwd",
+        project="cwd",
+        cwd=poe_project_path.joinpath(
+            "tests", "fixtures", "cwd_project", "subdir", "foo"
+        ),
+    )
+    assert result.capture == "Poe => poe_test_pwd\n"
+    assert result.stdout == f"{projects['cwd']}\n"
+    assert result.stderr == ""
+
+
 def test_cmd_task_with_cwd_option_pwd(run_poe_subproc, poe_project_path):
     result = run_poe_subproc(
         "cwd_poe_pwd",
