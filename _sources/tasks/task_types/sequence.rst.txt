@@ -106,7 +106,7 @@ When declaring more complex sequences the following syntax is often preferred.
 
 .. warning::
 
-  Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example ``help`` and ``args`` are forbidden becuase they don't make sense in this context.
+  Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example ``help`` and ``args`` are forbidden because they don't make sense in this context.
 
 
 Sequence task as an array of inline tables
