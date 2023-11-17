@@ -17,7 +17,7 @@ This task can the be run via the poe cli as ``poe test``.
 
 .. hint::
 
-  If your pyproject defines pytest as a dependency with poetry, then poe will run the task with pytest from the poetry manaaged virtualenv, so you don't need to explicitly activate the virtualenv via ``poetry shell`` or ``poetry run``.
+  If your pyproject defines pytest as a dependency with poetry, then poe will run the task with pytest from the poetry managed virtualenv, so you don't need to explicitly activate the virtualenv via ``poetry shell`` or ``poetry run``.
 
 
 `Click here for a real example <https://github.com/nat-n/poethepoet/blob/main/pyproject.toml>`_.
