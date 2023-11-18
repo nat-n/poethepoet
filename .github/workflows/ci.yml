@@ -19,19 +19,19 @@ jobs:
           cache: poetry
 
       - name: Install dependencies
-        run: poetry install --without dev
+        run: poetry --ansi install --without dev
 
       - name: Check code formatting
-        run: poetry run poe style
+        run: poetry --ansi run poe style
 
       - name: Run linter
-        run: poetry run poe lint
+        run: poetry --ansi run poe lint
 
       - name: Check types
-        run: poetry run poe types
+        run: poetry --ansi run poe types
 
       - name: Check rst syntax
-        run: poetry run poe docs-check
+        run: poetry --ansi run poe docs-check
 
   run-tests:
     name: Run tests
@@ -56,10 +56,10 @@ jobs:
           cache: poetry
 
       - name: Install dependencies
-        run: poetry install --without dev --without docs
+        run: poetry --ansi install --without dev --without docs
 
       - name: Run tests
-        run: poetry run pytest -v --color=yes
+        run: poetry --ansi run pytest -v --color=yes
 
   build:
     name: Build distribution
@@ -76,7 +76,7 @@ jobs:
           python-version: 3.11
 
       - name: Build package
-        run: poetry build
+        run: poetry --ansi build
 
       - name: Store the distribution packages
         if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
