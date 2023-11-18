@@ -66,7 +66,13 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self.working_dir = working_dir
         self.env = env
         self.dry = dry
-        self.capture_stdout = capture_stdout
+        self.capture_stdout = (
+            Path(self.context.config.project_dir).joinpath(
+                self.env.fill_template(capture_stdout)
+            )
+            if isinstance(capture_stdout, str)
+            else capture_stdout
+        )
         self._is_windows = sys.platform == "win32"
 
     @classmethod
@@ -227,7 +233,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         if input is not None:
             popen_kwargs["stdin"] = PIPE
         if self.capture_stdout:
-            if isinstance(self.capture_stdout, str):
+            if isinstance(self.capture_stdout, Path):
                 # ruff: noqa: SIM115
                 popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
             else:

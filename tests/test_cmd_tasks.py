@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def test_call_echo_task(run_poe_subproc, projects, esc_prefix, is_windows):
     result = run_poe_subproc("echo", "foo", "!", project="cmds")
     if is_windows:
@@ -166,3 +169,26 @@ def test_cmd_task_with_with_glob_arg_and_cwd(
         assert result.capture.endswith("foo\n")
     assert result.stdout == "bar.txt\n"
     assert result.stderr == ""
+
+
+def test_cmd_with_capture_stdout(run_poe_subproc, projects, poe_project_path):
+    result = run_poe_subproc(
+        "--root",
+        str(projects["cmds"]),
+        "meeseeks",
+        project="cmds",
+        cwd=poe_project_path,
+    )
+    assert (
+        result.capture
+        == """Poe <= poe_test_echo 'I'"'"'m Mr. Meeseeks! Look at me!'\n"""
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+    output_path = Path("message.txt")
+    try:
+        with output_path.open("r") as output_file:
+            assert output_file.read() == "I'm Mr. Meeseeks! Look at me!\n"
+    finally:
+        output_path.unlink()
