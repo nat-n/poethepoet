@@ -71,3 +71,18 @@ control = "poe_test_echo ${WHATEVER}"
   [[tool.poe.tasks.multivalue_case.switch]]
   shell = "import sys; print('It is not in 1-6')"
   interpreter = "python"
+
+
+[tool.poe.tasks.switcher]
+control.expr = "42"
+
+  [[tool.poe.tasks.switcher.switch]]
+  case = "42"
+  cmd = "echo 'matched'"
+
+  [[tool.poe.tasks.switcher.switch]]
+  cmd = "echo other"
+
+[tool.poe.tasks.switcher_user]
+uses = { switched = "switcher" }
+cmd = "echo switched=$switched"

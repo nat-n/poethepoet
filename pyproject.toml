@@ -145,13 +145,6 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   help   = "Execute poe from this repo (useful for testing)"
   script = "poethepoet:main"
 
-  [tool.poe.tasks.y]
-  cmd = "pwd"
-
-  [tool.poe.tasks.x]
-  sequence = ["y", {cmd = "pwd"}]
-  cwd = "tests"
-
 
 [tool.rstcheck]
 ignore_messages = [
