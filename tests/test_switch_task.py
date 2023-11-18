@@ -119,3 +119,17 @@ def test_switch_multivalue_case(run_poe_subproc):
     )
     assert result.stdout == "It is not in 1-6\n"
     assert result.stderr == ""
+
+
+def test_switch_capture_out(run_poe_subproc, projects):
+    result = run_poe_subproc("capture_out", project="switch")
+    assert result.capture == ("Poe <= 43\n" "Poe <= echo default\n")
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+    output_path = projects["switch"].joinpath("out.txt")
+    try:
+        with output_path.open("r") as output_file:
+            assert output_file.read() == "default\n"
+    finally:
+        output_path.unlink()

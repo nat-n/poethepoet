@@ -81,8 +81,20 @@ control.expr = "42"
   cmd = "echo 'matched'"
 
   [[tool.poe.tasks.switcher.switch]]
-  cmd = "echo other"
+  cmd = "echo default"
 
 [tool.poe.tasks.switcher_user]
 uses = { switched = "switcher" }
 cmd = "echo switched=$switched"
+
+
+[tool.poe.tasks.capture_out]
+control.expr   = "43"
+capture_stdout = "./out.txt"
+
+  [[tool.poe.tasks.capture_out.switch]]
+  case = "42"
+  cmd = "echo 'matched'"
+
+  [[tool.poe.tasks.capture_out.switch]]
+  cmd = "echo default"

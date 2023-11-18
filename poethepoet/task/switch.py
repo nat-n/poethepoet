@@ -51,7 +51,6 @@ class SwitchTask(PoeTask):
         capture_stdout: bool = False,
         inheritance: Optional[TaskInheritance] = None,
     ):
-        assert capture_stdout is False
         super().__init__(
             name, content, options, ui, config, invocation, False, inheritance
         )
