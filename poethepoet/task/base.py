@@ -449,6 +449,12 @@ class PoeTask(metaclass=MetaPoeTask):
                     "line breaks"
                 )
 
+            if task_def.get("use_exec") and task_def.get("capture_stdout"):
+                return (
+                    f"Invalid task: {task_name!r}, 'use_exec' and 'capture_stdout'"
+                    " options cannot be both provided on the same task."
+                )
+
             all_task_names = set(config.tasks.keys())
 
             if "deps" in task_def:
@@ -488,14 +494,19 @@ class PoeTask(metaclass=MetaPoeTask):
                         )
 
                     referenced_task = config.tasks[dep_task_name]
-                    if isinstance(referenced_task, dict) and referenced_task.get(
-                        "use_exec"
-                    ):
-                        return (
-                            f"Invalid task: {task_name!r}. uses options contains "
-                            "reference to task with use_exec set to true: "
-                            f"{dep_task_name!r}"
-                        )
+                    if isinstance(referenced_task, dict):
+                        if referenced_task.get("use_exec"):
+                            return (
+                                f"Invalid task: {task_name!r}, 'uses' option references"
+                                " task with 'use_exec' set to true: "
+                                f"{dep_task_name!r}"
+                            )
+                        if referenced_task.get("capture_stdout"):
+                            return (
+                                f"Invalid task: {task_name!r}, 'uses' option references"
+                                " task with 'capture_stdout' option set: "
+                                f"{dep_task_name!r}"
+                            )
 
         elif isinstance(task_def, list):
             task_type_key = config.default_array_task_type
