@@ -111,7 +111,7 @@ Fish
 Supported python versions
 -------------------------
 
-Poe the Poet officially supports python >=3.8, and is tested with python 3.8 to 3.11 on
+Poe the Poet officially supports python >=3.8, and is tested with python 3.8 to 3.12 on
 macOS, linux and windows.
 
 

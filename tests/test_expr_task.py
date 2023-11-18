@@ -59,12 +59,12 @@ def test_expr_with_env_vars(run_poe_subproc):
 
 def test_expr_with_imports(run_poe_subproc):
     result = run_poe_subproc("expr_with_imports", project="expr")
-    assert result.capture == "Poe => bool(re.match('^\\S+@\\S+\\.\\S+$', ${EMAIL}))\n"
+    assert result.capture == "Poe => bool(re.match(r'^\\S+@\\S+\\.\\S+$', ${EMAIL}))\n"
     assert result.stdout == "True\n"
     assert result.stderr == ""
 
     result = run_poe_subproc("expr_with_imports", project="expr", env={"EMAIL": "lol"})
-    assert result.capture == "Poe => bool(re.match('^\\S+@\\S+\\.\\S+$', ${EMAIL}))\n"
+    assert result.capture == "Poe => bool(re.match(r'^\\S+@\\S+\\.\\S+$', ${EMAIL}))\n"
     assert result.stdout == "False\n"
     assert result.stderr == ""
 
