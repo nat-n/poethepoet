@@ -48,13 +48,13 @@ class ScriptTask(PoeTask):
 
         script = [
             "import asyncio,os,sys;",
-            "from inspect import iscoroutinefunction as ic;",
+            "from inspect import iscoroutinefunction as _c;",
             "from os import environ;",
-            "from importlib import import_module as im;",
+            "from importlib import import_module as _i;",
             f"sys.argv = {argv!r}; sys.path.append('src');",
             f"{format_class(named_arg_values)}",
-            f"_m = im('{target_module}');",
-            f"_r = asyncio.run(_m.{function_call}) if ic(_m.{function_ref})",
+            f"_m = _i('{target_module}');",
+            f"_r = asyncio.run(_m.{function_call}) if _c(_m.{function_ref})",
             f" else _m.{function_call};",
         ]
 

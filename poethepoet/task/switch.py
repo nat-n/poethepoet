@@ -88,6 +88,7 @@ class SwitchTask(PoeTask):
                     config=config,
                     invocation=task_invocation,
                     ui=ui,
+                    capture_stdout=self.options.get("capture_stdout", capture_stdout),
                     inheritance=TaskInheritance.from_task(self),
                 )
 

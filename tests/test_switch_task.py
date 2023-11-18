@@ -86,6 +86,15 @@ def test_switch_dry_run(run_poe_subproc):
     assert result.stderr == ""
 
 
+def test_switch_in_in_graph(run_poe_subproc):
+    result = run_poe_subproc("switcher_user", project="switch")
+    assert result.capture == (
+        "Poe <= 42\n" "Poe <= echo matched\n" "Poe => echo switched=matched\n"
+    )
+    assert result.stdout == "switched=matched\n"
+    assert result.stderr == ""
+
+
 def test_switch_multivalue_case(run_poe_subproc):
     for num in ("1", "3", "5"):
         result = run_poe_subproc(
