@@ -8,12 +8,7 @@
 <meta property="og:url" content="global_options.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="The following options can be set for all tasks in a project directly under[tool.poe]. These are called global options, in contrast with task options. env, Dict[str, str] 📖, Define environment varia..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_global_options_0f0b2351.png" />
-<meta property="og:image:alt" content="The following options can be set for all tasks in a project directly under[tool.poe]. These are called global options, in contrast with task options. env, Di..." />
 <meta name="description" content="The following options can be set for all tasks in a project directly under[tool.poe]. These are called global options, in contrast with task options. env, Dict[str, str] 📖, Define environment varia..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Defining tasks" href="tasks/index.html" /><link rel="prev" title="Poetry plugin" href="poetry_plugin.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/global_options.html" />
 
@@ -269,8 +264,8 @@
 <h2>Global environment variables<a class="headerlink" href="#global-environment-variables" title="Permalink to this heading">#</a></h2>
 <p>You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">env</span></code> like so</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span>
-<span class="n">VAR1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FOO&quot;</span>
-<span class="n">VAR2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;BAR BAR BLACK ${FARM_ANIMAL}&quot;</span>
+<span class="n">VAR1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;FOO&quot;</span>
+<span class="n">VAR2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;BAR BAR BLACK ${FARM_ANIMAL}&quot;</span>
 </pre></div>
 </div>
 <p>The example above also demonstrates how – as with env vars defined at the task level –
@@ -279,7 +274,7 @@ to variables already defined in the host environment or in a referenced env file
 <p>As with the task level option, you can indicated that a variable should only be set if
 not already set like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span>
-<span class="n">VAR1</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;FOO&quot;</span>
+<span class="n">VAR1</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;FOO&quot;</span>
 </pre></div>
 </div>
 <p>You can also specify an env file (with bash-like syntax) to load for all tasks like so:</p>
@@ -293,7 +288,7 @@ not already set like so:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">pyproject.toml</span><a class="headerlink" href="#id2" title="Permalink to this code">#</a></div>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="k">[tool.poe]</span>
-<span class="w"> </span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span>
+<span class="w"> </span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span>
 </pre></div>
 </div>
 </div>
@@ -314,8 +309,8 @@ not already set like so:</p>
 (if present), and instead use the virtualenv at the given location relative to the
 parent directory.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span>
-<span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;virtualenv&quot;</span>
-<span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myvenv&quot;</span>
+<span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;virtualenv&quot;</span>
+<span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myvenv&quot;</span>
 </pre></div>
 </div>
 </section>
@@ -325,20 +320,20 @@ parent directory.</p>
 tasks above). This default can be overridden to something else by setting the
 <em>shell_interpreter</em> global option. In the following example we configure all shell tasks
 to use <em>fish</em> by default.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">shell_interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;fish&quot;</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">shell_interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;fish&quot;</span>
 
 <span class="k">[tool.poe.tasks.fibonacci]</span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Output the fibonacci sequence up to 89&quot;</span>
-<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">  function fib --argument-names max n0 n1</span>
-<span class="s">    if test $max -ge $n0</span>
-<span class="s">      echo $n0</span>
-<span class="s">      fib $max $n1 (math $n0 + $n1)</span>
-<span class="s">    end</span>
-<span class="s">  end</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Output the fibonacci sequence up to 89&quot;</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">  function fib --argument-names max n0 n1</span>
+<span class="s2">    if test $max -ge $n0</span>
+<span class="s2">      echo $n0</span>
+<span class="s2">      fib $max $n1 (math $n0 + $n1)</span>
+<span class="s2">    end</span>
+<span class="s2">  end</span>
 
-<span class="s">  fib 89 1 1</span>
-<span class="s">&quot;&quot;&quot;</span>
+<span class="s2">  fib 89 1 1</span>
+<span class="s2">&quot;&quot;&quot;</span>
 </pre></div>
 </div>
 </section>
@@ -353,29 +348,29 @@ the <code class="code highlight toml docutils literal highlight-toml"><span clas
 <span class="n">verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span>
 </pre></div>
 </div>
-<p><code class="code highlight toml docutils literal highlight-toml"><span class="mi">-1</span></code> is the quietest and <code class="code highlight toml docutils literal highlight-toml"><span class="mi">1</span></code> is the most verbose. <code class="code highlight toml docutils literal highlight-toml"><span class="mi">0</span></code> is the
+<p><code class="code highlight toml docutils literal highlight-toml"><span class="n">-1</span></code> is the quietest and <code class="code highlight toml docutils literal highlight-toml"><span class="n">1</span></code> is the most verbose. <code class="code highlight toml docutils literal highlight-toml"><span class="n">0</span></code> is the
 default.</p>
 <p>Note that the command line arguments are incremental: <code class="code highlight bash docutils literal highlight-bash">-q</code> subtracts one
 from the default verbosity, and <code class="code highlight bash docutils literal highlight-bash">-v</code> adds one. So setting the default
-verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">-1</span></code> and passing <code class="code highlight bash docutils literal highlight-bash">-v<span class="w"> </span>-v</code> on the command line is
-equivalent to setting the verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="mi">0</span></code> and just passing <code class="code highlight bash docutils literal highlight-bash">-v</code>.</p>
+verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="n">-1</span></code> and passing <code class="code highlight bash docutils literal highlight-bash">-v<span class="w"> </span>-v</code> on the command line is
+equivalent to setting the verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="n">0</span></code> and just passing <code class="code highlight bash docutils literal highlight-bash">-v</code>.</p>
 </section>
 <section id="change-the-default-task-type">
 <h2>Change the default task type<a class="headerlink" href="#change-the-default-task-type" title="Permalink to this heading">#</a></h2>
 <p>By default tasks defined as strings are interpreted as shell commands, and script tasks
 require the more verbose table syntax to specify. For example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cmd args&quot;</span>
-<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;script&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.my_module:run&quot;</span><span class="w"> </span><span class="p">}</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cmd args&quot;</span>
+<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s2">&quot;script&quot;</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;my_package.my_module:run&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>This behaviour can be reversed by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_task_type</span></code> option in your
 pyproject.toml like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
-<span class="n">default_task_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;script&quot;</span>
+<span class="n">default_task_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;script&quot;</span>
 
 <span class="k">[tool.poe.tasks]</span>
-<span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;cmd&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cmd args&quot;</span><span class="w"> </span><span class="p">}</span>
-<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_package.my_module:run&quot;</span>
+<span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s2">&quot;cmd&quot;</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;cmd args&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">my_script_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_package.my_module:run&quot;</span>
 </pre></div>
 </div>
 </section>

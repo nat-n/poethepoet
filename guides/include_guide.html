@@ -8,12 +8,7 @@
 <meta property="og:url" content="guides/include_guide.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_guides_include_guide_3385aad1.png" />
-<meta property="og:image:alt" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if..." />
 <meta name="description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/include_guide.html" />
 
@@ -245,13 +240,13 @@
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pyproject.toml</span>
 
 <span class="k">[tool.poe]</span>
-<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="w"> </span><span class="c1"># include tasks from a git submodule</span>
+<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="w"> </span><span class="c1"># include tasks from a git submodule</span>
 </pre></div>
 </div>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># acme_common/shared_tasks.toml</span>
 
 <span class="k">[tool.poe.tasks.build-image]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;docker build&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docker build&quot;</span>
 </pre></div>
 </div>
 <p>Imported files may also specify environment variables via
@@ -264,7 +259,7 @@
 <h2>Including multiple files<a class="headerlink" href="#including-multiple-files" title="Permalink to this heading">#</a></h2>
 <p>It’s also possible to include tasks from multiple files by providing a list like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
-<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;generated_tasks.json&quot;</span><span class="p">]</span>
+<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;generated_tasks.json&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Files are loaded in the order specified. If an item already exists then the included value is ignored.</p>
@@ -274,8 +269,8 @@
 <h2>Setting a working directory for included tasks<a class="headerlink" href="#setting-a-working-directory-for-included-tasks" title="Permalink to this heading">#</a></h2>
 <p>When including files from another location, you can also specify that tasks from that other file should be run from within a specific directory. For example with the following configuration, when tasks imported from my_subproject are run from the root, the task will actually execute as if it had been run from the <em>my_subproject</em> subdirectory.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.include]]</span>
-<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject/pyproject.toml&quot;</span>
-<span class="n">cwd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_subproject&quot;</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_subproject/pyproject.toml&quot;</span>
+<span class="n">cwd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_subproject&quot;</span>
 </pre></div>
 </div>
 <p>The cwd option still has the limitation that it cannot be used to specify a directory outside of parent directory of the pyproject.toml file that poe is running with.</p>

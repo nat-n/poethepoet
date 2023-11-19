@@ -8,12 +8,7 @@
 <meta property="og:url" content="tasks/task_types/script.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Script tasks consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example: As in the second example, is it possible to h..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_script_78e57eaf.png" />
-<meta property="og:image:alt" content="Script tasks consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example: As in..." />
 <meta name="description" content="Script tasks consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example: As in the second example, is it possible to h..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="shell tasks" href="shell.html" /><link rel="prev" title="cmd tasks" href="cmd.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/script.html" />
 
@@ -242,8 +237,8 @@
 <h1><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks<a class="headerlink" href="#script-tasks" title="Permalink to this heading">#</a></h1>
 <p><strong>Script tasks</strong> consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_pkg.assets:fetch&quot;</span>
-<span class="n">fetch-images</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_pkg.assets:fetch(only=&#39;images&#39;, log=environ[&#39;LOG_PATH&#39;])&quot;</span>
+<span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.assets:fetch&quot;</span>
+<span class="n">fetch-images</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.assets:fetch(only=&#39;images&#39;, log=environ[&#39;LOG_PATH&#39;])&quot;</span>
 </pre></div>
 </div>
 <p>As in the second example, is it possible to hard code literal arguments to the target callable. In fact a subset of python syntax, operators, and globals can be used inline to define the arguments to the function using normal python syntax, including environ (from the os package) to access environment variables that are available to the task.</p>
@@ -262,7 +257,7 @@
 <h2>Output the return value<a class="headerlink" href="#output-the-return-value" title="Permalink to this heading">#</a></h2>
 <p>Script tasks can be configured to output the return value of the python callable using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.create-secret]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;django.core.management.utils:get_random_secret_key()&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;django.core.management.utils:get_random_secret_key()&quot;</span>
 <span class="n">print_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
@@ -280,12 +275,12 @@ effect.</p>
 standard library. This can be useful for ensuring that tasks work across platforms.</p>
 <p>For example, the following task will not always work on windows:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;mkdir -p build/assets&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mkdir -p build/assets&quot;</span>
 </pre></div>
 </div>
 <p>whereas the same behaviour can can be reliably achieved like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;os:makedirs(&#39;build/assets&#39;, exist_ok=True)&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;os:makedirs(&#39;build/assets&#39;, exist_ok=True)&quot;</span>
 </pre></div>
 </div>
 </section>

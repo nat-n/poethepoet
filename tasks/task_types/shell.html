@@ -8,12 +8,7 @@
 <meta property="og:url" content="tasks/task_types/shell.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Shell tasks are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can leverage the full syntax of the shell i..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_shell_9eb641b4.png" />
-<meta property="og:image:alt" content="Shell tasks are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can..." />
 <meta name="description" content="Shell tasks are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can leverage the full syntax of the shell i..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="sequence tasks" href="sequence.html" /><link rel="prev" title="script tasks" href="script.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/shell.html" />
 
@@ -269,24 +264,24 @@ shell = &quot;kill $(pgrep -f &quot;ssh -N -L .*:(8080|5432)&quot;)&quot;
 <h2>Using a different shell interpreter<a class="headerlink" href="#using-a-different-shell-interpreter" title="Permalink to this heading">#</a></h2>
 <p>It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.install-poetry]</span>
-<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">(Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python -</span>
-<span class="s">&quot;&quot;&quot;</span>
-<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pwsh&quot;</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">(Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python -</span>
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span>
 </pre></div>
 </div>
 <p>If your task content is restricted to syntax that is valid for both posix shells and powershell then you can maximise the likelihood of it working on any system by specifying the interpreter as:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;posix&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pwsh&quot;</span><span class="p">]</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;posix&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>It is also possible to specify python code as the shell task code as in the following example. However it is recommended to use a <a class="reference internal" href="script.html"><span class="doc">script</span></a> or <a class="reference internal" href="expr.html"><span class="doc">expr</span></a> task rather than writing complex code inline within your pyproject.toml.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.time]</span>
-<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">from datetime import datetime</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">from datetime import datetime</span>
 
-<span class="s">print(datetime.now())</span>
-<span class="s">&quot;&quot;&quot;</span>
-<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;python&quot;</span>
+<span class="s2">print(datetime.now())</span>
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;python&quot;</span>
 </pre></div>
 </div>
 <p>The following interpreter values may be used:</p>

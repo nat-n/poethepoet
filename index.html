@@ -8,12 +8,7 @@
 <meta property="og:url" content="index.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="GitHub repo PyPI PyPI PyPI - Downloads MIT Poe the Poet is a batteries included task runner that works well with. It provides a simple way to define project tasks within your pyproject.toml, and ei..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_index_5c3c1621.png" />
-<meta property="og:image:alt" content="GitHub repo PyPI PyPI PyPI - Downloads MIT Poe the Poet is a batteries included task runner that works well with. It provides a simple way to define project..." />
 <meta name="description" content="GitHub repo PyPI PyPI PyPI - Downloads MIT Poe the Poet is a batteries included task runner that works well with. It provides a simple way to define project tasks within your pyproject.toml, and ei..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="installation.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/index.html" />
 
@@ -275,9 +270,9 @@
 </li>
 <li><p>Add a section for poe tasks to your pyproject.toml</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">test</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=my_app&quot;</span><span class="w">                         </span><span class="c1"># a simple command task</span>
-<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.service:run(debug=True)&quot;</span><span class="w">              </span><span class="c1"># python script based task</span>
-<span class="n">tunnel</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w">   </span><span class="c1"># (posix) shell based task</span>
+<span class="n">test</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=my_app&quot;</span><span class="w">                         </span><span class="c1"># a simple command task</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_app.service:run(debug=True)&quot;</span><span class="w">              </span><span class="c1"># python script based task</span>
+<span class="n">tunnel</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w">   </span><span class="c1"># (posix) shell based task</span>
 </pre></div>
 </div>
 <p><a class="reference external" href="https://github.com/nat-n/poethepoet/blob/main/pyproject.toml">Click here for a real example</a>.</p>

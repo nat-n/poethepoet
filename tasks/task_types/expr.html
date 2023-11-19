@@ -8,12 +8,7 @@
 <meta property="og:url" content="tasks/task_types/expr.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Expr tasks consist of a single python expression. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print 2 when run: Exp..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_expr_72bd370d.png" />
-<meta property="og:image:alt" content="Expr tasks consist of a single python expression. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an e..." />
 <meta name="description" content="Expr tasks consist of a single python expression. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print 2 when run: Exp..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="switch tasks" href="switch.html" /><link rel="prev" title="sequence tasks" href="sequence.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/expr.html" />
 
@@ -242,7 +237,7 @@
 <h1><code class="docutils literal notranslate"><span class="pre">expr</span></code> tasks<a class="headerlink" href="#expr-tasks" title="Permalink to this heading">#</a></h1>
 <p><strong>Expr tasks</strong> consist of a single <a class="reference external" href="https://docs.python.org/3/reference/expressions.html">python expression</a>. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print <cite>2</cite> when run:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.trivial-example]</span>
-<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;1 + 1&quot;</span>
+<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1 + 1&quot;</span>
 </pre></div>
 </div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>trivial-example
@@ -277,12 +272,12 @@ using the usual templating syntax <code class="docutils literal notranslate"><sp
 <h2>Referencing arguments and environment variables<a class="headerlink" href="#referencing-arguments-and-environment-variables" title="Permalink to this heading">#</a></h2>
 <p>The expression can reference environment variables using templating syntax as in <a class="reference internal" href="cmd.html"><span class="doc">cmd</span></a> tasks, and named arguments as python variables in scope as in <a class="reference internal" href="script.html"><span class="doc">script</span></a> tasks.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
-<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;(</span>
-<span class="s">  f&#39;{target_venv} is active&#39;</span>
-<span class="s">  if ${VIRTUAL_ENV}.endswith(target_venv)</span>
-<span class="s">  else f&#39;{target_venv} is not active&#39;</span>
-<span class="s">)&quot;&quot;&quot;</span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
+<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;(</span>
+<span class="s2">  f&#39;{target_venv} is active&#39;</span>
+<span class="s2">  if ${VIRTUAL_ENV}.endswith(target_venv)</span>
+<span class="s2">  else f&#39;{target_venv} is not active&#39;</span>
+<span class="s2">)&quot;&quot;&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>venv-active<span class="w"> </span>poethepoet-LCpCQf8S-py3.10
@@ -301,9 +296,9 @@ poethepoet-LCpCQf8S-py3.10<span class="w"> </span>is<span class="w"> </span>not<
 <h2>Referencing imported modules in an expression<a class="headerlink" href="#referencing-imported-modules-in-an-expression" title="Permalink to this heading">#</a></h2>
 <p>By default the sys module is available to the expression which allows access to <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> or <code class="docutils literal notranslate"><span class="pre">sys.platform</span></code> among other useful values. However you can also reference any other importable module via the imports option as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.count-hidden]</span>
-<span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Count hidden files or subdirectories&quot;</span>
-<span class="n">expr</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;len(list(pathlib.Path(&#39;.&#39;).glob(&#39;.*&#39;)))&quot;</span>
-<span class="n">imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;pathlib&quot;</span><span class="p">]</span>
+<span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Count hidden files or subdirectories&quot;</span>
+<span class="n">expr</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;len(list(pathlib.Path(&#39;.&#39;).glob(&#39;.*&#39;)))&quot;</span>
+<span class="n">imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pathlib&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>
@@ -312,26 +307,26 @@ poethepoet-LCpCQf8S-py3.10<span class="w"> </span>is<span class="w"> </span>not<
 <p>The expression can be made to behave like an assertion that fails if the result is not truthy by providing the assert option. The task defined in the following example will
 return non-zero if the result is False.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
-<span class="n">expr</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${VIRTUAL_ENV}.endswith(target_venv)&quot;</span>
+<span class="n">expr</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${VIRTUAL_ENV}.endswith(target_venv)&quot;</span>
 <span class="n">assert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">args</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
+<span class="n">args</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;target-venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;.venv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
 </section>
 <section id="referencing-the-result-of-other-tasks-in-an-expression">
 <h2>Referencing the result of other tasks in an expression<a class="headerlink" href="#referencing-the-result-of-other-tasks-in-an-expression" title="Permalink to this heading">#</a></h2>
 <p>Expr tasks can reference the results of other tasks by leveraging the <a class="reference internal" href="../../guides/composition_guide.html"><span class="doc">uses</span></a> option.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks._get_active_session]
-cmd = &quot;read_session --format json&quot;
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks._get_active_session]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;read_session --format json&quot;</span>
 
-[tool.poe.tasks.show-user]
-expr    = &quot;&quot;&quot;(
-  f&quot;User: {json.loads(${SESSION_JSON})[&#39;User&#39;]}&quot;
-  if len(${SESSION_JSON}) &gt; 2
-  else &quot;No active session.&quot;
-)&quot;&quot;&quot;
-uses    = { SESSION_JSON = &quot;_get_active_session&quot; }
-imports = [&quot;json&quot;]
+<span class="k">[tool.poe.tasks.show-user]</span>
+<span class="n">expr</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;(</span>
+<span class="s2">  f&quot;User: {json.loads(${SESSION_JSON})[&#39;User&#39;]}&quot;</span>
+<span class="s2">  if len(${SESSION_JSON}) &gt; 2</span>
+<span class="s2">  else &quot;No active session.&quot;</span>
+<span class="s2">)&quot;&quot;&quot;</span>
+<span class="n">uses</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">SESSION_JSON</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_get_active_session&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;json&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 </section>

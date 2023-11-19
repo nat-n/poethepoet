@@ -8,12 +8,7 @@
 <meta property="og:url" content="tasks/task_types/cmd.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Command tasks contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_cmd_7c35dbce.png" />
-<meta property="og:image:alt" content="Command tasks contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following example..." />
 <meta name="description" content="Command tasks contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following examples. Available task options: cmd tasks sup..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="script tasks" href="script.html" /><link rel="prev" title="Standard task options" href="../options.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/cmd.html" />
 
@@ -242,7 +237,7 @@
 <h1><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks<a class="headerlink" href="#cmd-tasks" title="Permalink to this heading">#</a></h1>
 <p><strong>Command tasks</strong> contain a single command that will be executed as a sub-process without a shell. This covers most basic use cases such as the following examples.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest -v tests&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest -v tests&quot;</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -260,7 +255,7 @@
 <span id="ref-env-vars"></span><h3>Referencing environment variables<a class="headerlink" href="#referencing-environment-variables" title="Permalink to this heading">#</a></h3>
 <p>Environment variables can be templated into the command. Just like in bash: whitespace inside a variable results in a word break, and glob patterns are evaluated after parameter expansion, unless the parameter expansion is inside double quotes. Single quotes disable parameter expansion. Curly braces are recommended but optional.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello ${USER}&quot;</span>
+<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo Hello ${USER}&quot;</span>
 </pre></div>
 </div>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>greet
@@ -270,7 +265,7 @@ Hello<span class="w"> </span>nat
 </div>
 <p>Parameter expansion can also can be disabled by escaping the $ with a backslash like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;echo Hello \\$USER&quot;</span><span class="w">  </span><span class="c1"># the backslash itself needs escaping for the toml parser</span>
+<span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo Hello </span><span class="se">\\</span><span class="s2">$USER&quot;</span><span class="w">  </span><span class="c1"># the backslash itself needs escaping for the toml parser</span>
 </pre></div>
 </div>
 </section>
@@ -280,10 +275,10 @@ Hello<span class="w"> </span>nat
 <p>Glob patterns are evaluated relative to the working directory of the task, and if there are no matches then the pattern is expanded to nothing.</p>
 <p>Here’s an example of task using a recursive glob pattern:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">clean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;&quot;</span>
-<span class="s">rm -rf ./**/*.pyc</span>
-<span class="s">       ./**/__pycache__    # this will match all __pycache__ dirs in the project</span>
-<span class="s">&quot;&quot;&quot;</span>
+<span class="n">clean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">rm -rf ./**/*.pyc</span>
+<span class="s2">       ./**/__pycache__    # this will match all __pycache__ dirs in the project</span>
+<span class="s2">&quot;&quot;&quot;</span>
 </pre></div>
 </div>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>clean

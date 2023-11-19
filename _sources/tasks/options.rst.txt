@@ -29,13 +29,15 @@ The following options can be configured on your tasks and are not specific to an
   Allows this task to use the output of other tasks which are executed first.
   The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.
 
+**capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
+  Causes the task output to be redirected to a file with the given path.
+
 **use_exec** : ``bool`` :ref:`📖<Defining tasks that run via exec instead of a subprocess>`
   Specify that this task should be executed in the same process, instead of as a subprocess.
 
   .. attention::
 
     This option is only applicable to **cmd**, **script**, and **expr** tasks, and it implies the task in question cannot be referenced by another task.
-
 
 Setting task specific environment variables
 -------------------------------------------
@@ -76,7 +78,7 @@ It is also possible to reference existing environment variables when defining a 
 .. _envfile_option:
 
 Loading environment variables from an env file
-----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also specify one or more env files (with bash-like syntax) to load per task like so:
 
@@ -126,8 +128,28 @@ Poe provides its own :sh:`$POE_PWD` variable that is by default set to the direc
     cwd = "${POE_PWD}"
 
 
+Redirect task output to a file
+------------------------------
+
+You can configure poe to redirect the standard output of a task to a file on disk by providing the ``capture_stdout`` option like so.
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd            = "gunicorn ./my_app:run"
+    capture_stdout = "gunicorn_log.txt"
+
+If a relative path is provided, as in the example above, then it will be resolved relative to the project root directory.
+
+The ``capture_stdout`` option supports referencing environment variables. For example setting ``capture_stdout = "${POE_PWD}/output.txt"`` will cause the output file to be created within the current working directory of the parent process.
+
+.. warning::
+
+  The ``capture_stdout`` is incompatible with the ``use_exec`` option, and tasks that declare it cannot be referenced by another task via the ``uses`` option.
+
+
 Defining tasks that run via exec instead of a subprocess
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------------
 
 Normally tasks are executed as subprocesses of the ``poe`` executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.
 
@@ -145,3 +167,4 @@ However in certain situations it can be desirable to define a task that is inste
 
   1. a task configured in this way may not be referenced by another task
   2. this does not work on windows becuase of `this issue <https://bugs.python.org/issue19066>`_. On windows a subprocess is always created.
+

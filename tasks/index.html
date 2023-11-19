@@ -8,12 +8,7 @@
 <meta property="og:url" content="tasks/index.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Poe the Poet supports several ways of defining tasks under[tool.poe.tasks], trading off simplicity against configurability. Furthermore toml syntax supports both more terse or more expressive alter..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_index_f21513bc.png" />
-<meta property="og:image:alt" content="Poe the Poet supports several ways of defining tasks under[tool.poe.tasks], trading off simplicity against configurability. Furthermore toml syntax supports..." />
 <meta name="description" content="Poe the Poet supports several ways of defining tasks under[tool.poe.tasks], trading off simplicity against configurability. Furthermore toml syntax supports both more terse or more expressive alter..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Standard task options" href="options.html" /><link rel="prev" title="Global options" href="../global_options.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/index.html" />
 
@@ -243,14 +238,14 @@
 <p>Poe the Poet supports several ways of defining tasks under <code class="code highlight toml docutils literal highlight-toml"><span class="k">[tool.poe.tasks]</span></code>, trading off simplicity against configurability. Furthermore toml syntax supports both more terse or more expressive alternative ways of writing the same thing, see the guide on <a class="reference internal" href="../guides/toml_guide.html"><span class="doc">Using toml syntax</span></a> for details.</p>
 <p>A task defined as a string will by default be interpreted as a single command to be executed without a shell (aka a <a class="reference internal" href="task_types/cmd.html"><span class="doc">cmd task</span></a>).</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest&quot;</span>
+<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
 </pre></div>
 </div>
 <p>A task defined as an array will by default be interepreted as a <a class="reference internal" href="task_types/sequence.html"><span class="doc">sequence</span></a> of <a class="reference internal" href="task_types/ref.html"><span class="doc">references</span></a> to other tasks.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest&quot;</span>
-<span class="n">_build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry build&quot;</span>
-<span class="n">build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;test&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;_build&quot;</span><span class="p">]</span><span class="w"> </span><span class="c1"># this task runs the two referenced tasks in sequence</span>
+<span class="n">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
+<span class="n">_build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;poetry build&quot;</span>
+<span class="n">build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;_build&quot;</span><span class="p">]</span><span class="w"> </span><span class="c1"># this task runs the two referenced tasks in sequence</span>
 </pre></div>
 </div>
 <div class="admonition important">
@@ -259,13 +254,13 @@
 </div>
 <p>Tasks can also be defined as sub-tables, which allows for specifying the task type and various configuration options on the task. The type of a task defined as a table is determined by the presence of a particular key that is unique to a certain task type and corresponds to the name of the task type.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-quick]</span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run tests excluding those makes as slow.&quot;</span>
-<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest -m \&quot;not slow\&quot;&quot;</span><span class="w"> </span><span class="c1"># here the cmd key identifies the task type and content</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run tests excluding those makes as slow.&quot;</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest -m </span><span class="se">\&quot;</span><span class="s2">not slow</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="w"> </span><span class="c1"># here the cmd key identifies the task type and content</span>
 </pre></div>
 </div>
 <p>This implies that you can also define tasks of other types on a single line, like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">tunnel</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="c1"># (posix) shell based task</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks]
+tunnel.shell = &quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot; } # (posix) shell based task
 </pre></div>
 </div>
 <p><a class="reference internal" href="options.html"><span class="doc">Some options</span></a> are applicable to all tasks, whereas other are only applicable to <a class="reference internal" href="#types-of-task"><span class="std std-ref">specific types of tasks</span></a>.</p>

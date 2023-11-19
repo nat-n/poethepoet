@@ -8,12 +8,7 @@
 <meta property="og:url" content="guides/help_guide.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="You can add help text to your tasks by adding the help option to the task definition, like so: This help text will be displayed alongside the task name in the list of configured tasks when poe is r..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_guides_help_guide_ec414afd.png" />
-<meta property="og:image:alt" content="You can add help text to your tasks by adding the help option to the task definition, like so: This help text will be displayed alongside the task name in th..." />
 <meta name="description" content="You can add help text to your tasks by adding the help option to the task definition, like so: This help text will be displayed alongside the task name in the list of configured tasks when poe is r..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Configuring CLI arguments" href="args_guide.html" /><link rel="prev" title="Running tasks" href="running_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/help_guide.html" />
 
@@ -242,16 +237,16 @@
 <h1>Documenting tasks<a class="headerlink" href="#documenting-tasks" title="Permalink to this heading">#</a></h1>
 <p>You can add help text to your tasks by adding the <code class="docutils literal notranslate"><span class="pre">help</span></code> option to the task definition, like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the test suite&quot;</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=poethepoet&quot;</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run the test suite&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=poethepoet&quot;</span>
 
 <span class="k">[tool.poe.tasks.serve]</span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Run the app in debug mode&quot;</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_app.service:run(debug=True)&quot;</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run the app in debug mode&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_app.service:run(debug=True)&quot;</span>
 
 <span class="k">[tool.poe.tasks.tunnel]</span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Create an SSH tunnel to the production server&quot;</span>
-<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Create an SSH tunnel to the production server&quot;</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span>
 </pre></div>
 </div>
 <p>This help text will be displayed alongside the task name in the list of configured tasks when <code class="docutils literal notranslate"><span class="pre">poe</span></code> is run without specifying a task.</p>

@@ -8,12 +8,7 @@
 <meta property="og:url" content="tasks/options.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Overview: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the task name in the documentat..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_options_e36c7439.png" />
-<meta property="og:image:alt" content="Overview: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed..." />
 <meta name="description" content="Overview: The following options can be configured on your tasks and are not specific to any particular task type. help, str| int 📖, Help text to be displayed next to the task name in the documentat..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="cmd tasks" href="task_types/cmd.html" /><link rel="prev" title="Defining tasks" href="index.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/options.html" />
 
@@ -260,6 +255,8 @@ Resolves environment variables in the format <code class="docutils literal notra
 <dt><strong>uses</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Allows this task to use the output of other tasks which are executed first.
 The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.</p>
 </dd>
+<dt><strong>capture_stdout</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#redirect-task-output-to-a-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Causes the task output to be redirected to a file with the given path.</p>
+</dd>
 <dt><strong>use_exec</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed in the same process, instead of as a subprocess.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
@@ -272,15 +269,15 @@ The value is a map where the values are invocations of the other tasks, and the 
 <h2>Setting task specific environment variables<a class="headerlink" href="#setting-task-specific-environment-variables" title="Permalink to this heading">#</a></h2>
 <p>You can specify arbitrary environment variables to be set for a single task by providing the env option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
-<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
+<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PORT</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;9001&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>Notice this example uses deep keys which can be more convenient but aren’t as well supported by some older toml implementations.</p>
 <section id="setting-defaults-for-environment-variables">
 <h3>Setting defaults for environment variables<a class="headerlink" href="#setting-defaults-for-environment-variables" title="Permalink to this heading">#</a></h3>
 <p>The previous example can be modified to only set the <cite>PORT</cite> variable if it is not already set by replacing the last line with the following:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">env</span><span class="p">.</span><span class="n">PORT</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;9001&quot;</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">env</span><span class="p">.</span><span class="n">PORT</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;9001&quot;</span>
 </pre></div>
 </div>
 </section>
@@ -288,14 +285,13 @@ The value is a map where the values are invocations of the other tasks, and the 
 <h3>Templating environment variables<a class="headerlink" href="#templating-environment-variables" title="Permalink to this heading">#</a></h3>
 <p>It is also possible to reference existing environment variables when defining a new environment variable for a task. This may be useful for aliasing or extending a variable already defined in the host environment, globally in the config, or in a referenced envfile. In the following example the value from $TF_VAR_service_port on the host environment is also made available as $FLASK_RUN_PORT within the task.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;flask run&quot;</span>
-<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FLASK_RUN_PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${TF_VAR_service_port}&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;flask run&quot;</span>
+<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">FLASK_RUN_PORT</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${TF_VAR_service_port}&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 </section>
-</section>
 <section id="loading-environment-variables-from-an-env-file">
-<span id="envfile-option"></span><h2>Loading environment variables from an env file<a class="headerlink" href="#loading-environment-variables-from-an-env-file" title="Permalink to this heading">#</a></h2>
+<span id="envfile-option"></span><h3>Loading environment variables from an env file<a class="headerlink" href="#loading-environment-variables-from-an-env-file" title="Permalink to this heading">#</a></h3>
 <p>You can also specify one or more env files (with bash-like syntax) to load per task like so:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># .env</span>
 <span class="nv">STAGE</span><span class="o">=</span>dev
@@ -303,39 +299,56 @@ The value is a map where the values are invocations of the other tasks, and the 
 </pre></div>
 </div>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;myapp:run&quot;</span>
-<span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;.env&quot;</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
+<span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span>
 </pre></div>
 </div>
 <p>The envfile option accepts the name (or relative path) to a single envfile as shown
 above but can also by given a list of such paths like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s">&quot;.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;local.env&quot;</span><span class="p">]</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;local.env&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>In this case the referenced files will be loaded in the given order.</p>
+</section>
 </section>
 <section id="running-a-task-with-a-specific-working-directory">
 <h2>Running a task with a specific working directory<a class="headerlink" href="#running-a-task-with-a-specific-working-directory" title="Permalink to this heading">#</a></h2>
 <p>By default tasks are run from the project root – that is the parent directory of the pyproject.toml file. However if a task needs to be run in another directory then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-client]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;npx ts-node -T ./build.ts&quot;</span>
-<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;./client&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;npx ts-node -T ./build.ts&quot;</span>
+<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;./client&quot;</span>
 </pre></div>
 </div>
 <p>In this example, the npx executable is executed inside the <code class="code highlight sh docutils literal highlight-sh">./client</code> subdirectory of the project (when <code class="docutils literal notranslate"><span class="pre">cwd</span></code> is a relative path, it gets resolved relatively to the project root), and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">cwd</span></code> option also accepts absolute paths and resolves environment variables in the format <code class="docutils literal notranslate"><span class="pre">${VAR_NAME}</span></code>.</p>
 <p>Poe provides its own <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code> variable that is by default set to the directory, from which poe was executed; this may be overridden by setting the variable to a different value beforehand. Using <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code>, a task’s working directory may be set to the one from which it was executed like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.convert]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;my_project.conversion_tool:main&quot;</span>
-<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;${POE_PWD}&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_project.conversion_tool:main&quot;</span>
+<span class="n">cwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_PWD}&quot;</span>
 </pre></div>
 </div>
+</section>
+<section id="redirect-task-output-to-a-file">
+<h2>Redirect task output to a file<a class="headerlink" href="#redirect-task-output-to-a-file" title="Permalink to this heading">#</a></h2>
+<p>You can configure poe to redirect the standard output of a task to a file on disk by providing the <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code> option like so.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn ./my_app:run&quot;</span>
+<span class="n">capture_stdout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn_log.txt&quot;</span>
+</pre></div>
+</div>
+<p>If a relative path is provided, as in the example above, then it will be resolved relative to the project root directory.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code> option supports referencing environment variables. For example setting <code class="docutils literal notranslate"><span class="pre">capture_stdout</span> <span class="pre">=</span> <span class="pre">&quot;${POE_PWD}/output.txt&quot;</span></code> will cause the output file to be created within the current working directory of the parent process.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code> is incompatible with the <code class="docutils literal notranslate"><span class="pre">use_exec</span></code> option, and tasks that declare it cannot be referenced by another task via the <code class="docutils literal notranslate"><span class="pre">uses</span></code> option.</p>
+</div>
+</section>
 <section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
-<h3>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Permalink to this heading">#</a></h3>
+<h2>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Permalink to this heading">#</a></h2>
 <p>Normally tasks are executed as subprocesses of the <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.</p>
 <p>However in certain situations it can be desirable to define a task that is instead executed within the same process via an <em>exec</em> call. <a class="reference internal" href="task_types/cmd.html"><span class="doc">cmd tasks</span></a> and <a class="reference internal" href="task_types/script.html"><span class="doc">script tasks</span></a> tasks can be configured to work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
-<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;gunicorn ./my_app:run&quot;</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn ./my_app:run&quot;</span>
 <span class="n">use_exec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
@@ -347,7 +360,6 @@ above but can also by given a list of such paths like so:</p>
 <li><p>this does not work on windows becuase of <a class="reference external" href="https://bugs.python.org/issue19066">this issue</a>. On windows a subprocess is always created.</p></li>
 </ol>
 </div>
-</section>
 </section>
 </section>
 
@@ -423,13 +435,12 @@ above but can also by given a list of such paths like so:</p>
 <li><a class="reference internal" href="#setting-task-specific-environment-variables">Setting task specific environment variables</a><ul>
 <li><a class="reference internal" href="#setting-defaults-for-environment-variables">Setting defaults for environment variables</a></li>
 <li><a class="reference internal" href="#templating-environment-variables">Templating environment variables</a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#loading-environment-variables-from-an-env-file">Loading environment variables from an env file</a></li>
-<li><a class="reference internal" href="#running-a-task-with-a-specific-working-directory">Running a task with a specific working directory</a><ul>
-<li><a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess">Defining tasks that run via exec instead of a subprocess</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#running-a-task-with-a-specific-working-directory">Running a task with a specific working directory</a></li>
+<li><a class="reference internal" href="#redirect-task-output-to-a-file">Redirect task output to a file</a></li>
+<li><a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess">Defining tasks that run via exec instead of a subprocess</a></li>
 </ul>
 </li>
 </ul>

@@ -8,12 +8,7 @@
 <meta property="og:url" content="guides/composition_guide.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Composing tasks into sequences: You can compose tasks into a new task that runs them in order by declaring a sequence task. For example: And here’s an example that uses the sequence task type expli..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_guides_composition_guide_71d89851.png" />
-<meta property="og:image:alt" content="Composing tasks into sequences: You can compose tasks into a new task that runs them in order by declaring a sequence task. For example: And here’s an exampl..." />
 <meta name="description" content="Composing tasks into sequences: You can compose tasks into a new task that runs them in order by declaring a sequence task. For example: And here’s an example that uses the sequence task type expli..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Loading tasks from another file" href="include_guide.html" /><link rel="prev" title="Configuring CLI arguments" href="args_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/composition_guide.html" />
 
@@ -246,23 +241,23 @@
 <p>For example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 
-<span class="n">_publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry publish&quot;</span>
+<span class="n">_publish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;poetry publish&quot;</span>
 <span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=src&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;devtasks:build&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_publish&quot;</span><span class="w"> </span><span class="p">},</span>
 <span class="p">]</span>
 </pre></div>
 </div>
 <p>And here’s an example that uses the <em>sequence</em> task type explicitly in a task definition:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks._publish]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;poetry publish&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;poetry publish&quot;</span>
 
 <span class="k">[tool.poe.tasks.release]</span>
 <span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;pytest --cov=src&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;devtasks:build&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;_publish&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=src&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;devtasks:build&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_publish&quot;</span><span class="w"> </span><span class="p">}</span>
 <span class="p">]</span>
 </pre></div>
 </div>
@@ -274,34 +269,34 @@
 <section id="composing-tasks-into-graphs">
 <span id="graph-composition"></span><h2>Composing tasks into graphs<a class="headerlink" href="#composing-tasks-into-graphs" title="Permalink to this heading">#</a></h2>
 <p>You can define tasks that depend on other tasks, and optionally capture and reuse the output of those tasks, thus defining an execution graph of tasks. This is done by using the <code class="docutils literal notranslate"><span class="pre">deps</span></code> task option, or if you want to capture the output of the upstream task to pass it to the present task then specify the <code class="docutils literal notranslate"><span class="pre">uses</span></code> option, as demonstrated below.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks]
-_website_bucket_name.shell = &quot;&quot;&quot;
-  aws cloudformation describe-stacks \
-    --stack-name $AWS_SAM_STACK_NAME \
-    --query &quot;Stacks[0].Outputs[?(@.OutputKey == &#39;FrontendS3Bucket&#39;)].OutputValue&quot; \
-  | jq -cr &#39;select(0)[0]&#39;
-&quot;&quot;&quot;
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">_website_bucket_name</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">  aws cloudformation describe-stacks </span><span class="se">\</span>
+<span class="s2">    --stack-name $AWS_SAM_STACK_NAME </span><span class="se">\</span>
+<span class="s2">    --query &quot;Stacks[0].Outputs[?(@.OutputKey == &#39;FrontendS3Bucket&#39;)].OutputValue&quot; </span><span class="se">\</span>
+<span class="s2">  | jq -cr &#39;select(0)[0]&#39;</span>
+<span class="s2">&quot;&quot;&quot;</span>
 
-[tool.poe.tasks.build-backend]
-help = &quot;Build the backend&quot;
-sequence = [
-  {cmd = &quot;poetry export -f requirements.txt --output src/requirements.txt&quot;},
-  {cmd = &quot;sam build&quot;},
-]
+<span class="k">[tool.poe.tasks.build-backend]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Build the backend&quot;</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="n">cmd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;poetry export -f requirements.txt --output src/requirements.txt&quot;</span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="n">cmd</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;sam build&quot;</span><span class="p">},</span>
+<span class="p">]</span>
 
-[tool.poe.tasks.build-frontend]
-help = &quot;Build the frontend&quot;
-cmd = &quot;npm --prefix client run build&quot;
+<span class="k">[tool.poe.tasks.build-frontend]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Build the frontend&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;npm --prefix client run build&quot;</span>
 
-[tool.poe.tasks.shipit]
-help = &quot;Build and deploy the app&quot;
-sequence = [
-  &quot;sam deploy --config-env $SAM_ENV_NAME&quot;,
-  &quot;aws s3 sync --delete ./client/build s3://${BUCKET_NAME}&quot;
-]
-default_item_type = &quot;cmd&quot;
-deps = [&quot;build-frontend&quot;, &quot;build-backend&quot;]
-uses = { BUCKET_NAME = &quot;_website_bucket_name&quot; }
+<span class="k">[tool.poe.tasks.shipit]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Build and deploy the app&quot;</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;sam deploy --config-env $SAM_ENV_NAME&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;aws s3 sync --delete ./client/build s3://${BUCKET_NAME}&quot;</span>
+<span class="p">]</span>
+<span class="n">default_item_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cmd&quot;</span>
+<span class="n">deps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;build-frontend&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;build-backend&quot;</span><span class="p">]</span>
+<span class="n">uses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">BUCKET_NAME</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_website_bucket_name&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>In this example the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task depends on the <code class="code docutils literal notranslate"><span class="pre">build-frontend</span></code> <code class="code docutils literal notranslate"><span class="pre">build-backend</span></code>, which means that these tasks get executed before the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task. It also declares that it uses the output of the hidden <code class="code docutils literal notranslate"><span class="pre">_website_bucket_name</span></code> task, which means that this also gets executed, but its output it captured and then made available to the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task as the environment variable <code class="code docutils literal notranslate"><span class="pre">BUCKET_NAME</span></code>.</p>

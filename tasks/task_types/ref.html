@@ -8,12 +8,7 @@
 <meta property="og:url" content="tasks/task_types/ref.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="A ref task is essentially a call to another task. It is the default task type within a sequence task, but is not often used otherwise. A ref task can set environment variables, and pass arguments t..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_tasks_task_types_ref_afc4b96d.png" />
-<meta property="og:image:alt" content="A ref task is essentially a call to another task. It is the default task type within a sequence task, but is not often used otherwise. A ref task can set env..." />
 <meta name="description" content="A ref task is essentially a call to another task. It is the default task type within a sequence task, but is not often used otherwise. A ref task can set environment variables, and pass arguments t..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="Guides" href="../../guides/index.html" /><link rel="prev" title="switch tasks" href="switch.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/ref.html" />
 
@@ -244,11 +239,11 @@
 <p>A ref task can set environment variables, and pass arguments to the referenced task as
 follows:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">do_things</span><span class="p">.</span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;do_cmd&quot;</span>
-<span class="n">do_things</span><span class="p">.</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;things&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">true</span><span class="w"> </span><span class="p">}]</span>
+<span class="n">do_things</span><span class="p">.</span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;do_cmd&quot;</span>
+<span class="n">do_things</span><span class="p">.</span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;things&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}]</span>
 
-<span class="n">do_specific_things</span><span class="p">.</span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;do_things thing1 thing2&quot;</span>
-<span class="n">do_specific_things</span><span class="p">.</span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">URGENCY</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;11&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">do_specific_things</span><span class="p">.</span><span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;do_things thing1 thing2&quot;</span>
+<span class="n">do_specific_things</span><span class="p">.</span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">URGENCY</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;11&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
 <p>In the above example calling:</p>

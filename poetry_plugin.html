@@ -8,12 +8,7 @@
 <meta property="og:url" content="poetry_plugin.html" />
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Depending on how you manage your python environments you may also wish to use Poe the Poet in the form of a. Configuring the plugin: By default the poetry plugin will register poe as a command pref..." />
-<meta property="og:image:width" content="1146" />
-<meta property="og:image:height" content="600" />
-<meta property="og:image" content="/_images/social_previews/summary_poetry_plugin_9c763e14.png" />
-<meta property="og:image:alt" content="Depending on how you manage your python environments you may also wish to use Poe the Poet in the form of a. Configuring the plugin: By default the poetry pl..." />
 <meta name="description" content="Depending on how you manage your python environments you may also wish to use Poe the Poet in the form of a. Configuring the plugin: By default the poetry plugin will register poe as a command pref..." />
-<meta name="twitter:card" content="summary_large_image" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Global options" href="global_options.html" /><link rel="prev" title="Installation" href="installation.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/poetry_plugin.html" />
 
@@ -260,7 +255,7 @@ invoked like:</p>
 or none at all by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">poetry_command</span></code> global option in your
 pyproject.toml like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
-<span class="n">poetry_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+<span class="n">poetry_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
 </pre></div>
 </div>
 <p>In this case poe tasks will be registered as top level commands on poetry and can be
@@ -282,16 +277,16 @@ poetry command.</p>
 <p>It is also possible to configure a task to be run before or after a specific poetry
 command by declaring the <code class="docutils literal notranslate"><span class="pre">poetry_hooks</span></code> global option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span>
-<span class="n">pre_build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;prep-assets --verbosity=5&quot;</span>
-<span class="n">post_build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;archive-build&quot;</span>
+<span class="n">pre_build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;prep-assets --verbosity=5&quot;</span>
+<span class="n">post_build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;archive-build&quot;</span>
 
 <span class="k">[tool.poe.tasks.prep-assets]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:prepare_assets&quot;</span>
-<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Optimise static assets for inclusion in the build&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scripts:prepare_assets&quot;</span>
+<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Optimise static assets for inclusion in the build&quot;</span>
 
 <span class="k">[tool.poe.tasks.archive-build]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;scripts:archive_build&quot;</span>
-<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Upload the latest build version to the archive server&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scripts:archive_build&quot;</span>
+<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Upload the latest build version to the archive server&quot;</span>
 </pre></div>
 </div>
 <p>In this example the <code class="docutils literal notranslate"><span class="pre">prep-assets</span></code> task will be run as the first step when calling
@@ -305,7 +300,7 @@ This behaviour may be useful for running checks before <code class="code highlig
 to poetry.</p>
 <p>Namespaced commands like <code class="code highlight bash docutils literal highlight-bash">poetry<span class="w"> </span>env<span class="w"> </span>info</code> can be specified with underscores like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span>
-<span class="n">post_env_info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;info&quot;</span>
+<span class="n">post_env_info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;info&quot;</span>
 </pre></div>
 </div>
 <p>All poetry commands are supported in principle.</p>
