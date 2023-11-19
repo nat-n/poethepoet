@@ -115,7 +115,7 @@ def test_cmd_task_with_cwd_option_pwd_override(run_poe_subproc, poe_project_path
         "cwd_poe_pwd",
         project="cwd",
         env={
-            "POE_PWD": str(
+            "POE_CWD": str(
                 poe_project_path.joinpath(
                     "tests", "fixtures", "cwd_project", "subdir", "bar"
                 )

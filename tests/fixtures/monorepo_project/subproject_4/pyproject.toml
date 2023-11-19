@@ -1,9 +1,8 @@
 
-
 [tool.poe]
-envfile = ["env1", "${POE_CWD}/env2", "${POE_CONF_DIR}/env3"]
+envfile = ["env0", "${POE_ROOT}/env1", "${POE_CWD}/env2", "${POE_CONF_DIR}/../env3"]
 
-[tool.poe.tasks.subproj3_env]
+[tool.poe.tasks.subproj4_env]
 shell = """
 echo POE_ROOT:          ${POE_ROOT}
 echo POE_CWD:           ${POE_CWD}
@@ -11,19 +10,14 @@ echo POE_CONF_DIR:      ${POE_CONF_DIR}
 echo POE_ROOT_COPY:     ${POE_ROOT_COPY}
 echo POE_CWD_COPY:      ${POE_CWD_COPY}
 echo POE_CONF_DIR_COPY: ${POE_CONF_DIR_COPY}
+echo FROM_INCLUDE_CWD:  ${FROM_INCLUDE_CWD}
 echo REL_ROOT:          ${REL_ROOT}
 echo REL_PROC_CWD:      ${REL_PROC_CWD}
 echo REL_SOURCE_CONFIG: ${REL_SOURCE_CONFIG}
+echo TASK_FROM_INCLUDE_CWD:  ${TASK_FROM_INCLUDE_CWD}
 echo TASK_REL_ROOT:          ${TASK_REL_ROOT}
 echo TASK_REL_PROC_CWD:      ${TASK_REL_PROC_CWD}
 echo TASK_REL_SOURCE_CONFIG: ${TASK_REL_SOURCE_CONFIG}
 """
-envfile = ["env1t", "${POE_CWD}/env2t", "${POE_CONF_DIR}/env3t"]
+envfile = ["env0t", "${POE_ROOT}/env1t", "${POE_CWD}/env2t", "${POE_CONF_DIR}/../env3t"]
 env = { POE_ROOT_COPY = "${POE_ROOT}", POE_CWD_COPY = "${POE_CWD}", POE_CONF_DIR_COPY = "${POE_CONF_DIR}" }
-
-
-
-[tool.poe.tasks.get_cwd_3]
-interpreter = "python"
-shell       = "import os; print(os.getcwd())"
-cwd         = "${POE_PWD}"

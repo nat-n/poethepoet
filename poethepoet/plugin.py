@@ -1,5 +1,3 @@
-# pylint: disable=import-error
-
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -52,7 +50,6 @@ class PoeCommand(Command):
             from poetry.utils.env import EnvManager
 
             poetry_env_path = EnvManager(application.poetry).get().path
-        # pylint: disable=bare-except
         except:  # noqa: E722
             poetry_env_path = None
 
@@ -84,7 +81,6 @@ class PoetryPlugin(ApplicationPlugin):
         try:
             return self._activate(application)
 
-        # pylint: disable=bare-except
         except:  # noqa: E722
             import os
             import sys
@@ -152,8 +148,6 @@ class PoetryPlugin(ApplicationPlugin):
     def _get_config(cls, application: Application) -> Dict[str, Any]:
         try:
             pyproject = application.poetry.pyproject.data
-
-        # pylint: disable=bare-except
         except:  # noqa: E722
             # Fallback to loading the config again in case of future failure of the
             # above undocumented API
@@ -161,7 +155,17 @@ class PoetryPlugin(ApplicationPlugin):
 
             from .config import PoeConfig
 
-            pyproject = tomlkit.loads(Path(PoeConfig().find_config_file()).read_text())
+            # Try respect poetry's '--directory' if set
+            try:
+                pyproject_path = Path(application.poetry.pyproject_path)
+            except AttributeError:
+                pyproject_path = None
+
+            pyproject = tomlkit.loads(
+                Path(
+                    PoeConfig().find_config_file(target_path=pyproject_path)
+                ).read_text()
+            )
 
         return pyproject.get("tool", {}).get("poe", {})
 

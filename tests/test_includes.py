@@ -103,7 +103,9 @@ def test_monorepo_contains_only_expected_tasks(run_poe_subproc, projects):
         "  get_cwd_1      \n"
         "  add            \n"
         "  get_cwd_2      \n"
-        "  get_cwd_3      \n\n\n"
+        "  subproj3_env   \n"
+        "  get_cwd_3      \n"
+        "  subproj4_env   \n\n\n"
     )
     assert result.stdout == ""
     assert result.stderr == ""
@@ -179,4 +181,130 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         assert result.stdout.endswith("\\tests\\fixtures\\example_project\n")
     else:
         assert result.stdout.endswith("/tests/fixtures/example_project\n")
+    assert result.stderr == ""
+
+
+def test_include_subproject_envfiles_no_cwd_set(run_poe_subproc, projects, is_windows):
+    result = run_poe_subproc("subproj3_env", project="monorepo")
+    assert result.capture == (
+        "Poe => echo POE_ROOT:          ${POE_ROOT}\n"
+        "echo POE_CWD:           ${POE_CWD}\n"
+        "echo POE_CONF_DIR:      ${POE_CONF_DIR}\n"
+        "echo POE_ROOT_COPY:     ${POE_ROOT_COPY}\n"
+        "echo POE_CWD_COPY:      ${POE_CWD_COPY}\n"
+        "echo POE_CONF_DIR_COPY: ${POE_CONF_DIR_COPY}\n"
+        "echo REL_ROOT:          ${REL_ROOT}\n"
+        "echo REL_PROC_CWD:      ${REL_PROC_CWD}\n"
+        "echo REL_SOURCE_CONFIG: ${REL_SOURCE_CONFIG}\n"
+        "echo TASK_REL_ROOT:          ${TASK_REL_ROOT}\n"
+        "echo TASK_REL_PROC_CWD:      ${TASK_REL_PROC_CWD}\n"
+        "echo TASK_REL_SOURCE_CONFIG: ${TASK_REL_SOURCE_CONFIG}\n"
+    )
+    printed_vars = {
+        line.split(": ")[0]: line.split(": ")[1]
+        for line in result.stdout.split("\n")
+        if ": " in line
+    }
+    if is_windows:
+        assert printed_vars["POE_ROOT"].endswith("\\tests\\fixtures\\monorepo_project")
+        assert printed_vars["POE_CWD"].endswith("\\tests\\fixtures\\monorepo_project")
+        assert printed_vars["POE_CONF_DIR"].endswith(
+            "\\tests\\fixtures\\monorepo_project\\subproject_3"
+        )
+        assert printed_vars["POE_ROOT_COPY"].endswith(
+            "\\tests\\fixtures\\monorepo_project"
+        )
+        assert printed_vars["POE_CWD_COPY"].endswith(
+            "\\tests\\fixtures\\monorepo_project"
+        )
+        assert printed_vars["POE_CONF_DIR_COPY"].endswith(
+            "\\tests\\fixtures\\monorepo_project\\subproject_3"
+        )
+    else:
+        assert printed_vars["POE_ROOT"].endswith("/tests/fixtures/monorepo_project")
+        assert printed_vars["POE_CWD"].endswith("/tests/fixtures/monorepo_project")
+        assert printed_vars["POE_CONF_DIR"].endswith(
+            "/tests/fixtures/monorepo_project/subproject_3"
+        )
+        assert printed_vars["POE_ROOT_COPY"].endswith(
+            "/tests/fixtures/monorepo_project"
+        )
+        assert printed_vars["POE_CWD_COPY"].endswith("/tests/fixtures/monorepo_project")
+        assert printed_vars["POE_CONF_DIR_COPY"].endswith(
+            "/tests/fixtures/monorepo_project/subproject_3"
+        )
+    assert result.stdout.endswith(
+        "REL_ROOT: rel to root\n"
+        "REL_PROC_CWD: rel to process cwd\n"
+        "REL_SOURCE_CONFIG: rel to source config\n"
+        "TASK_REL_ROOT: task level rel to root\n"
+        "TASK_REL_PROC_CWD: task level rel to process cwd\n"
+        "TASK_REL_SOURCE_CONFIG: task level rel to source config\n"
+    )
+    assert result.stderr == ""
+
+
+def test_include_subproject_envfiles_with_cwd_set(
+    run_poe_subproc, projects, is_windows
+):
+    result = run_poe_subproc("subproj4_env", project="monorepo")
+    assert result.capture == (
+        "Poe => echo POE_ROOT:          ${POE_ROOT}\n"
+        "echo POE_CWD:           ${POE_CWD}\n"
+        "echo POE_CONF_DIR:      ${POE_CONF_DIR}\n"
+        "echo POE_ROOT_COPY:     ${POE_ROOT_COPY}\n"
+        "echo POE_CWD_COPY:      ${POE_CWD_COPY}\n"
+        "echo POE_CONF_DIR_COPY: ${POE_CONF_DIR_COPY}\n"
+        "echo FROM_INCLUDE_CWD:  ${FROM_INCLUDE_CWD}\n"
+        "echo REL_ROOT:          ${REL_ROOT}\n"
+        "echo REL_PROC_CWD:      ${REL_PROC_CWD}\n"
+        "echo REL_SOURCE_CONFIG: ${REL_SOURCE_CONFIG}\n"
+        "echo TASK_FROM_INCLUDE_CWD:  ${TASK_FROM_INCLUDE_CWD}\n"
+        "echo TASK_REL_ROOT:          ${TASK_REL_ROOT}\n"
+        "echo TASK_REL_PROC_CWD:      ${TASK_REL_PROC_CWD}\n"
+        "echo TASK_REL_SOURCE_CONFIG: ${TASK_REL_SOURCE_CONFIG}\n"
+    )
+    printed_vars = {
+        line.split(": ")[0]: line.split(": ")[1]
+        for line in result.stdout.split("\n")
+        if ": " in line
+    }
+    if is_windows:
+        assert printed_vars["POE_ROOT"].endswith("\\tests\\fixtures\\monorepo_project")
+        assert printed_vars["POE_CWD"].endswith("\\tests\\fixtures\\monorepo_project")
+        assert printed_vars["POE_CONF_DIR"].endswith(
+            "\\tests\\fixtures\\monorepo_project\\subproject_4\\exec_dir"
+        )
+        assert printed_vars["POE_ROOT_COPY"].endswith(
+            "\\tests\\fixtures\\monorepo_project"
+        )
+        assert printed_vars["POE_CWD_COPY"].endswith(
+            "\\tests\\fixtures\\monorepo_project"
+        )
+        assert printed_vars["POE_CONF_DIR_COPY"].endswith(
+            "\\tests\\fixtures\\monorepo_project\\subproject_4\\exec_dir"
+        )
+    else:
+        assert printed_vars["POE_ROOT"].endswith("/tests/fixtures/monorepo_project")
+        assert printed_vars["POE_CWD"].endswith("/tests/fixtures/monorepo_project")
+        assert printed_vars["POE_CONF_DIR"].endswith(
+            "/tests/fixtures/monorepo_project/subproject_4/exec_dir"
+        )
+        assert printed_vars["POE_ROOT_COPY"].endswith(
+            "/tests/fixtures/monorepo_project"
+        )
+        assert printed_vars["POE_CWD_COPY"].endswith("/tests/fixtures/monorepo_project")
+        assert printed_vars["POE_CONF_DIR_COPY"].endswith(
+            "/tests/fixtures/monorepo_project/subproject_4/exec_dir"
+        )
+    assert result.stdout.endswith(
+        "FROM_INCLUDE_CWD: rel to cwd\n"
+        "REL_ROOT: rel to root\n"
+        "REL_PROC_CWD: rel to process cwd\n"
+        "REL_SOURCE_CONFIG: rel to source config\n"
+        "TASK_FROM_INCLUDE_CWD: task level rel to cwd\n"
+        "TASK_REL_ROOT: task level rel to root\n"
+        "TASK_REL_PROC_CWD: task level rel to process cwd\n"
+        "TASK_REL_SOURCE_CONFIG: task level rel to source config\n"
+    )
     assert result.stderr == ""

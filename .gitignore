@@ -1,5 +1,6 @@
 notes/
 tests/temp
+out.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

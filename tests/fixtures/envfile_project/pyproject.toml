@@ -1,12 +1,12 @@
 [tool.poe]
 envfile = "credentials.env"
-env = { HOST = "${HOST}:80" }
+env = { HOST = "${HOST}:80" } # reference and override value from envfile
 
 [tool.poe.tasks.deploy-dev]
 cmd = """
 poe_test_echo "deploying to ${USER}:${PASSWORD}@${HOST}${PATH_SUFFIX}"
 """
-env = { HOST = "${HOST}80" } # reference and override value from envfile
+env = { HOST = "${HOST}80" } # reference and override value from envfile again
 
 [tool.poe.tasks.deploy-prod]
 cmd = """

@@ -97,9 +97,10 @@ def test_bad_interpreter_config(run_poe_subproc, projects):
         "bad-interpreter",
     )
     assert (
-        "Error: Unsupported value for option `interpreter` for task 'bad-interpreter'."
-        " Expected one of ("
-        "'posix', 'sh', 'bash', 'zsh', 'fish', 'pwsh', 'powershell', 'python')"
+        "Error: Invalid task 'bad-interpreter'\n"
+        "     | Invalid value for option 'interpreter',\n"
+        "     | Expected one of "
+        "('posix', 'sh', 'bash', 'zsh', 'fish', 'pwsh', 'powershell', 'python')\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""

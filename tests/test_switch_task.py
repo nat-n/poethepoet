@@ -70,8 +70,9 @@ def test_switch_default_pass(run_poe_subproc):
 def test_switch_default_fail(run_poe_subproc):
     result = run_poe_subproc("default_fail", project="switch")
     assert result.capture == (
-        "Poe <= poe_test_echo nothing\nError: Control value 'nothing' did not match "
-        "any cases in switch task 'default_fail'. \n"
+        "Poe <= poe_test_echo nothing\n"
+        "Error: Control value 'nothing' did not match any cases in switch task "
+        "'default_fail'.\n"
     )
     assert result.stdout == ""
     assert result.stderr == ""

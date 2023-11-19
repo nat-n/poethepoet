@@ -1,11 +1,17 @@
 
 [[tool.poe.include]]
 path = "subproject_1/pyproject.toml"
+
 [[tool.poe.include]]
 path = "subproject_2/pyproject.toml"
 cwd  = "subproject_2"
+
 [[tool.poe.include]]
 path = "subproject_3/pyproject.toml"
+
+[[tool.poe.include]]
+path = "subproject_4/pyproject.toml"
+cwd  = "subproject_4/exec_dir"
 
 
 [tool.poe.tasks.get_cwd_0]

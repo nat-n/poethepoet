@@ -3,7 +3,7 @@ import sys
 from typing import IO, TYPE_CHECKING, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .__version__ import __version__
-from .exceptions import ExecutionError, PoeException
+from .exceptions import ConfigValidationError, ExecutionError, PoeException
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -15,6 +15,12 @@ def guess_ansi_support(file):
     if os.environ.get("NO_COLOR", "0")[0] != "0":
         # https://no-color.org/
         return False
+
+    if (
+        os.environ.get("GITHUB_ACTIONS", "false") == "true"
+        and "PYTEST_CURRENT_TEST" not in os.environ
+    ):
+        return True
 
     return (
         (sys.platform != "win32" or "ANSICON" in os.environ)
@@ -172,10 +178,28 @@ class PoeUi:
 
         if error:
             # TODO: send this to stderr instead?
-            error_line = [f"<error>Error: {error.msg} </error>"]
+            error_lines = []
+            if isinstance(error, ConfigValidationError):
+                if error.task_name:
+                    if error.context:
+                        error_lines.append(
+                            f"{error.context} in task {error.task_name!r}"
+                        )
+                    else:
+                        error_lines.append(f"Invalid task {error.task_name!r}")
+                    if error.filename:
+                        error_lines[-1] += f" in file {error.filename}"
+                elif error.global_option:
+                    error_lines.append(f"Invalid global option {error.global_option!r}")
+                    if error.filename:
+                        error_lines[-1] += f" in file {error.filename}"
+            error_lines.extend(error.msg.split("\n"))
             if error.cause:
-                error_line.append(f"<error> From: {error.cause} </error>")
-            result.append(error_line)
+                error_lines.append(error.cause)
+            if error.__cause__:
+                error_lines.append(f"From: {error.__cause__!r}")
+
+            result.append(self._format_error_lines(error_lines))
 
         if verbosity >= 0:
             result.append(
@@ -201,7 +225,13 @@ class PoeUi:
                 max_task_len = max(
                     max(
                         len(task),
-                        max([len(", ".join(opts)) for (opts, _, _) in args] or (0,))
+                        max(
+                            [
+                                len(", ".join(str(opt) for opt in opts))
+                                for (opts, _, _) in args
+                            ]
+                            or (0,)
+                        )
                         + 2,
                     )
                     for task, (_, args) in tasks.items()
@@ -216,9 +246,10 @@ class PoeUi:
                         f"  <em>{self._padr(task, col_width)}</em>  {help_text}"
                     )
                     for options, arg_help_text, default in args_help:
+                        formatted_options = ", ".join(str(opt) for opt in options)
                         task_arg_help = [
                             "   ",
-                            f"<em3>{self._padr(', '.join(options), col_width-1)}</em3>",
+                            f"<em3>{self._padr(formatted_options, col_width-1)}</em3>",
                         ]
                         if arg_help_text:
                             task_arg_help.append(arg_help_text)
@@ -230,6 +261,11 @@ class PoeUi:
 
             else:
                 result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
+
+        if error and os.environ.get("POE_DEBUG", "0").lower() == "1":
+            import traceback
+
+            result.append("".join(traceback.format_exception(error)).strip())
 
         self._print(
             "\n\n".join(
@@ -251,9 +287,25 @@ class PoeUi:
             self._print(message, end=end)
 
     def print_error(self, error: Union[PoeException, ExecutionError]):
-        self._print(f"<error>Error: {error.msg} </error>")
+        error_lines = error.msg.split("\n")
         if error.cause:
-            self._print(f"<error> From: {error.cause} </error>")
+            error_lines.append(f"From: {error.cause}")
+        if error.__cause__:
+            error_lines.append(f"From: {error.__cause__!r}")
+
+        for line in self._format_error_lines(error_lines):
+            self._print(line)
+
+        if os.environ.get("POE_DEBUG", "0").lower() == "1":
+            import traceback
+
+            self._print("".join(traceback.format_exception(error)).strip())
+
+    def _format_error_lines(self, lines: Sequence[str]):
+        return (
+            f"<error>Error: {lines[0]}</error>",
+            *(f"<error>     | {line}</error>" for line in lines[1:]),
+        )
 
     def print_version(self):
         if self.verbosity >= 0:

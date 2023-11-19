@@ -146,6 +146,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
 
         subproc_env = dict(os.environ)
         subproc_env.pop("VIRTUAL_ENV", None)
+        subproc_env.pop("POE_CWD", None)  # do not inherit this from the test
         subproc_env.pop("POE_PWD", None)  # do not inherit this from the test
         if env:
             subproc_env.update(env)
