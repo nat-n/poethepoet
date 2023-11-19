@@ -1,0 +1,5 @@
+
+tool.poe.env = {TEST_VAR_1 = "lol"}
+
+[tool.poe.tasks]
+booke = "echo $HOME $TEST_VAR_1 $TEST_VAR_2"

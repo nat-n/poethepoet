@@ -3,9 +3,10 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
+    Mapping,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
     Union,
@@ -15,6 +16,9 @@ if TYPE_CHECKING:
     from argparse import ArgumentParser
 
     from ..env.manager import EnvVarsManager
+
+from ..exceptions import ConfigValidationError
+from ..options import PoeOptions
 
 ArgParams = Dict[str, Any]
 ArgsDef = Union[List[str], List[ArgParams], Dict[str, ArgParams]]
@@ -37,60 +41,169 @@ arg_types: Dict[str, Type] = {
 }
 
 
-class PoeTaskArgs:
-    _args: Tuple[ArgParams, ...]
-
-    def __init__(
-        self,
-        args_def: ArgsDef,
-        task_name: str,
-        program_name: str,
-        env: "EnvVarsManager",
-    ):
-        self._args = self._normalize_args_def(args_def)
-        self._program_name = program_name
-        self._task_name = task_name
-        self._env = env
+class ArgSpec(PoeOptions):
+    default: Optional[Union[str, int, float, bool]] = None
+    help: str = ""
+    name: str
+    options: Union[list, tuple]
+    positional: Union[bool, str] = False
+    required: bool = False
+    type: Literal["string", "float", "integer", "boolean"] = "string"
+    multiple: Union[bool, int] = False
 
     @classmethod
-    def _normalize_args_def(cls, args_def: ArgsDef) -> Tuple[ArgParams, ...]:
+    def normalize(cls, args_def: ArgsDef, strict: bool = True):
         """
-        args_def can be defined as a dictionary of ArgParams, or a list of strings, or
-        ArgParams. Here we normalize it to a list of ArgParams, assuming that it has
-        already been validated.
+        Becuase arguments can be declared with different structures
+        (i.e. dict or list), this function normalizes the input into a list of
+        dictionaries with necessary keys.
+
+        This is also where we do any validation that requires access to the raw
+        config.
         """
-        result = []
         if isinstance(args_def, list):
             for item in args_def:
                 if isinstance(item, str):
-                    result.append({"name": item, "options": (f"--{item}",)})
-                else:
-                    result.append(
-                        dict(
-                            item,
-                            options=cls._get_arg_options_list(item),
-                        )
+                    yield {"name": item, "options": (f"--{item}",)}
+                elif isinstance(item, dict):
+                    yield dict(
+                        item,
+                        options=cls._get_arg_options_list(item, strict=strict),
                     )
-        else:
+                elif strict:
+                    raise ConfigValidationError(
+                        f"Argument {item!r} has invlaid type, a string or dict is "
+                        "expected"
+                    )
+
+        elif isinstance(args_def, dict):
             for name, params in args_def.items():
-                result.append(
-                    dict(
-                        params,
-                        name=name,
-                        options=cls._get_arg_options_list(params, name),
+                if strict and "name" in params:
+                    raise ConfigValidationError(
+                        f"Unexpected 'name' option for argument {name!r}"
                     )
+                yield dict(
+                    params,
+                    name=name,
+                    options=cls._get_arg_options_list(params, name, strict),
                 )
-        return tuple(result)
+
+    @classmethod
+    def parse(
+        cls,
+        source: Union[Mapping[str, Any], list],
+        strict: bool = True,
+        extra_keys: Sequence[str] = tuple(),
+    ):
+        """
+        Override parse function to perform validations that require considering all
+        argument declarations at once.
+        """
+        result = tuple(super().parse(source, strict, extra_keys))
+
+        if strict:
+            arg_names = set()
+            positional_multiple = None
+            for arg in result:
+                if arg.name in arg_names:
+                    raise ConfigValidationError(f"Duplicate argument name {arg.name!r}")
+                arg_names.add(arg.name)
+
+                if arg.positional:
+                    if positional_multiple:
+                        raise ConfigValidationError(
+                            f"Only the last positional arg of task may accept"
+                            f" multiple values (not {positional_multiple!r})."
+                        )
+                    if arg.multiple:
+                        positional_multiple = arg.name
+
+        yield from result
 
     @staticmethod
-    def _get_arg_options_list(arg: ArgParams, name: Optional[str] = None):
+    def _get_arg_options_list(
+        arg: ArgParams, name: Optional[str] = None, strict: bool = True
+    ):
         position = arg.get("positional", False)
-        name = name or arg["name"]
+        name = name or arg.get("name")
         if position:
+            if strict and arg.get("options"):
+                raise ConfigValidationError(
+                    f"Positional argument {name!r} may not declare options"
+                )
+            # Fill in the options param in a way that makes sesne for argparse
             if isinstance(position, str):
                 return [position]
             return [name]
         return tuple(arg.get("options", (f"--{name}",)))
+
+    def validate(self):
+        try:
+            return self._validate()
+        except ConfigValidationError as error:
+            error.context = f"Invalid argument {self.name!r} declared"
+            raise
+
+    def _validate(self):
+        if not self.name.replace("-", "_").isidentifier():
+            raise ConfigValidationError(
+                f"Argument name {self.name!r} is not a valid 'identifier',\n"
+                f"see the following documentation for details "
+                f"https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
+            )
+
+        if self.positional:
+            if self.type == "boolean":
+                raise ConfigValidationError(
+                    f"Positional argument {self.name!r} may not have type 'boolean'"
+                )
+
+            if isinstance(self.positional, str) and not self.positional.isidentifier():
+                raise ConfigValidationError(
+                    f"positional name {self.positional!r} for arg {self.name!r} is "
+                    "not a valid 'identifier'\n"
+                    "see the following documentation for details "
+                    "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
+                )
+
+        if (
+            not isinstance(self.multiple, bool)
+            and isinstance(self.multiple, int)
+            and self.multiple < 2
+        ):
+            raise ConfigValidationError(
+                "The 'multiple' option accepts a boolean or integer >= 2"
+            )
+
+        if self.multiple is not False and self.type == "boolean":
+            raise ConfigValidationError(
+                "Argument with type 'boolean' may not delcare option 'multiple'"
+            )
+
+
+class PoeTaskArgs:
+    _args: Tuple[ArgSpec, ...]
+
+    def __init__(self, args_def: ArgsDef, task_name: str):
+        self._task_name = task_name
+        self._args = self._parse_args_def(args_def)
+
+    def _parse_args_def(self, args_def: ArgsDef):
+        try:
+            return tuple(ArgSpec.parse(args_def))
+        except ConfigValidationError as error:
+            if isinstance(error.index, int):
+                if isinstance(args_def, list):
+                    item = args_def[error.index]
+                    if arg_name := (isinstance(item, dict) and item.get("name")):
+                        arg_ref = arg_name
+                elif arg_name := tuple(args_def.keys())[error.index]:
+                    arg_ref = arg_name
+                else:
+                    arg_ref = error.index
+                error.context = f"Invalid argument {arg_ref!r} declared"
+            error.task_name = self._task_name
+            raise
 
     @classmethod
     def get_help_content(
@@ -107,165 +220,30 @@ class PoeTaskArgs:
 
         return [
             (arg["options"], arg.get("help", ""), format_default(arg))
-            for arg in cls._normalize_args_def(args_def)
+            for arg in ArgSpec.normalize(args_def, strict=False)
         ]
 
-    @classmethod
-    def validate_def(cls, task_name: str, args_def: ArgsDef) -> Optional[str]:
-        arg_names: Set[str] = set()
-        arg_params = []
-
-        if isinstance(args_def, list):
-            for item in args_def:
-                # can be a list of strings (just arg name) or ArgConfig dictionaries
-                if isinstance(item, str):
-                    arg_name = item
-                elif isinstance(item, dict):
-                    arg_name = item.get("name", "")
-                    arg_params.append((item, arg_name, task_name))
-                else:
-                    return f"Arg {item!r} of task {task_name!r} has invlaid type"
-                error = cls._validate_name(arg_name, task_name, arg_names)
-                if error:
-                    return error
-
-        elif isinstance(args_def, dict):
-            for arg_name, params in args_def.items():
-                error = cls._validate_name(arg_name, task_name, arg_names)
-                if error:
-                    return error
-                if "name" in params:
-                    return (
-                        f"Unexpected 'name' option for arg {arg_name!r} of task "
-                        f"{task_name!r}"
-                    )
-                arg_params.append((params, arg_name, task_name))
-
-        positional_multiple = None
-        for params, arg_name, task_name in arg_params:
-            error = cls._validate_type(params, arg_name, task_name)
-            if error:
-                return error
-
-            error = cls._validate_params(params, arg_name, task_name)
-            if error:
-                return error
-
-            if params.get("positional", False):
-                if positional_multiple:
-                    return (
-                        f"Only the last positional arg of task {task_name!r} may accept"
-                        f" multiple values ({positional_multiple!r})."
-                    )
-                if params.get("multiple", False):
-                    positional_multiple = arg_name
-
-        return None
-
-    @classmethod
-    def _validate_name(
-        cls, name: Any, task_name: str, arg_names: Set[str]
-    ) -> Optional[str]:
-        if not isinstance(name, str):
-            return f"Arg name {name!r} of task {task_name!r} should be a string"
-        if not name.replace("-", "_").isidentifier():
-            return (
-                f"Arg name {name!r} of task {task_name!r} is not a valid  'identifier'"
-                f"see the following documentation for details"
-                f"https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
-            )
-        if name in arg_names:
-            return f"Duplicate arg name {name!r} for task {task_name!r}"
-        arg_names.add(name)
-        return None
-
-    @classmethod
-    def _validate_params(
-        cls, params: ArgParams, arg_name: str, task_name: str
-    ) -> Optional[str]:
-        for param, value in params.items():
-            if param not in arg_param_schema:
-                return (
-                    f"Invalid option {param!r} for arg {arg_name!r} of task "
-                    f"{task_name!r}"
-                )
-            if not isinstance(value, arg_param_schema[param]):
-                return (
-                    f"Invalid value for option {param!r} of arg {arg_name!r} of"
-                    f" task {task_name!r}"
-                )
-
-        positional = params.get("positional", False)
-        if positional:
-            if params.get("type") == "boolean":
-                return (
-                    f"Positional argument {arg_name!r} of task {task_name!r} may not"
-                    "have type 'boolean'"
-                )
-            if params.get("options") is not None:
-                return (
-                    f"Positional argument {arg_name!r} of task {task_name!r} may not"
-                    "have options defined"
-                )
-            if isinstance(positional, str) and not positional.isidentifier():
-                return (
-                    f"positional name  {positional!r} for arg {arg_name!r} of task "
-                    f"{task_name!r} is not a valid  'identifier' see the following "
-                    "documentation for details"
-                    "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
-                )
-
-        multiple = params.get("multiple", False)
-        if (
-            not isinstance(multiple, bool)
-            and isinstance(multiple, int)
-            and multiple < 2
-        ):
-            return (
-                f"The multiple option for arg {arg_name!r} of {task_name!r}"
-                " must be given a boolean or integer >= 2"
-            )
-        if multiple is not False and params.get("type") == "boolean":
-            return (
-                "Incompatible param 'multiple' for arg {arg_name!r} of {task_name!r} "
-                "with type: 'boolean'"
-            )
-
-        return None
-
-    @classmethod
-    def _validate_type(
-        cls, params: ArgParams, arg_name: str, task_name: str
-    ) -> Optional[str]:
-        if "type" in params and params["type"] not in arg_types:
-            return (
-                f"{params['type']!r} is not a valid type for arg {arg_name!r} of task "
-                f"{task_name!r}. Choose one of "
-                "{"
-                f'{" ".join(sorted(str_type for str_type in arg_types.keys()))}'
-                "}"
-            )
-        return None
-
-    def build_parser(self) -> "ArgumentParser":
+    def build_parser(
+        self, env: "EnvVarsManager", program_name: str
+    ) -> "ArgumentParser":
         import argparse
 
         parser = argparse.ArgumentParser(
-            prog=f"{self._program_name} {self._task_name}",
+            prog=f"{program_name} {self._task_name}",
             add_help=False,
             allow_abbrev=False,
         )
         for arg in self._args:
             parser.add_argument(
-                *arg["options"],
-                **self._get_argument_params(arg),
+                *arg.options,
+                **self._get_argument_params(arg, env),
             )
         return parser
 
-    def _get_argument_params(self, arg: ArgParams):
+    def _get_argument_params(self, arg: ArgSpec, env: "EnvVarsManager"):
         default = arg.get("default")
         if isinstance(default, str):
-            default = self._env.fill_template(default)
+            default = env.fill_template(default)
 
         result = {
             "default": default,
@@ -288,7 +266,7 @@ class PoeTaskArgs:
             if not multiple and not required:
                 result["nargs"] = "?"
         else:
-            result["dest"] = arg["name"]
+            result["dest"] = arg.name
             result["required"] = required
 
         if arg_type == "boolean":
@@ -298,13 +276,15 @@ class PoeTaskArgs:
 
         return result
 
-    def parse(self, extra_args: Sequence[str]):
-        parsed_args = vars(self.build_parser().parse_args(extra_args))
+    def parse(
+        self, extra_args: Sequence[str], env: "EnvVarsManager", program_name: str
+    ):
+        parsed_args = vars(self.build_parser(env, program_name).parse_args(extra_args))
         # Ensure positional args are still exposed by name even if they were parsed with
         # alternate identifiers
         for arg in self._args:
-            if isinstance(arg.get("positional"), str):
-                parsed_args[arg["name"]] = parsed_args[arg["positional"]]
-                del parsed_args[arg["positional"]]
+            if isinstance(arg.positional, str):
+                parsed_args[arg.name] = parsed_args[arg.positional]
+                del parsed_args[arg.positional]
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}

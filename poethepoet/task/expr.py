@@ -8,17 +8,17 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Type,
     Union,
 )
 
-from ..exceptions import ExpressionParseError
+from ..exceptions import ConfigValidationError, ExpressionParseError
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from .base import TaskSpecFactory
 
 
 class ExprTask(PoeTask):
@@ -29,11 +29,35 @@ class ExprTask(PoeTask):
     content: str
 
     __key__ = "expr"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
-        "imports": list,
-        "assert": (bool, int),
-        "use_exec": bool,
-    }
+
+    class TaskOptions(PoeTask.TaskOptions):
+        imports: Sequence[str] = tuple()
+        assert_: Union[bool, int] = False
+        use_exec: bool = False
+
+        def validate(self):
+            super().validate()
+            if self.use_exec and self.capture_stdout:
+                raise ConfigValidationError(
+                    "'use_exec' and 'capture_stdout'"
+                    " options cannot be both provided on the same task."
+                )
+
+    class TaskSpec(PoeTask.TaskSpec):
+        content: str
+        options: "ExprTask.TaskOptions"
+
+        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+            """
+            Perform validations on this TaskSpec that apply to a specific task type
+            """
+            try:
+                # ruff: noqa: E501
+                self.task_type._substitute_env_vars(self.content.strip(), {})  # type: ignore[attr-defined]
+            except (ValueError, ExpressionParseError) as error:
+                raise ConfigValidationError(f"Invalid expression: {error}")
+
+    spec: TaskSpec
 
     def _handle_run(
         self,
@@ -46,11 +70,11 @@ class ExprTask(PoeTask):
         named_arg_values = self.get_named_arg_values(env)
         env.update(named_arg_values)
 
-        imports = self.options.get("imports", tuple())
+        imports = self.spec.options.imports
 
         expr, env_values = self.parse_content(named_arg_values, env, imports)
         argv = [
-            self.name,
+            self.spec.name,
             *(env.fill_template(token) for token in extra_args),
         ]
 
@@ -63,7 +87,7 @@ class ExprTask(PoeTask):
             "print(result);",
         ]
 
-        falsy_return_code = int(self.options.get("assert", False))
+        falsy_return_code = int(self.spec.options.get("assert"))
         if falsy_return_code:
             script.append(f"exit(0 if result else {falsy_return_code});")
 
@@ -72,21 +96,10 @@ class ExprTask(PoeTask):
         # windows
         cmd = ("python", "-c", "".join(script))
 
-        self._print_action(self.content.strip(), context.dry)
+        self._print_action(self.spec.content.strip(), context.dry)
         return self._get_executor(context, env).execute(
-            cmd, use_exec=self.options.get("use_exec", False)
+            cmd, use_exec=self.spec.options.use_exec
         )
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        try:
-            cls._substitute_env_vars(task_def["expr"].strip(), {})
-        except (ValueError, ExpressionParseError) as error:
-            return f"Task {task_name!r} contains invalid expression: {error}"
-
-        return None
 
     def parse_content(
         self,
@@ -106,7 +119,7 @@ class ExprTask(PoeTask):
         from ..helpers.python import resolve_expression
 
         expression, accessed_vars = self._substitute_env_vars(
-            self.content.strip(), env.to_dict()
+            self.spec.content.strip(), env.to_dict()
         )
 
         expression = resolve_expression(
@@ -124,7 +137,7 @@ class ExprTask(PoeTask):
     @classmethod
     def _substitute_env_vars(cls, content: str, env: Mapping[str, str]):
         """
-        Substitute ${template} references to env vars with a refernece to a python class
+        Substitute ${template} references to env vars with a reference to a python class
         attribute like __env.var, and collect the accessed env vars so we can construct
         that class with the required attributes later.
         """

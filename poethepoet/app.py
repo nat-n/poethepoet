@@ -18,7 +18,7 @@ from .exceptions import ExecutionError, PoeException
 if TYPE_CHECKING:
     from .config import PoeConfig
     from .context import RunContext
-    from .task import PoeTask
+    from .task.base import PoeTask
     from .ui import PoeUi
 
 
@@ -55,6 +55,8 @@ class PoeThePoet:
     cwd: Path
     ui: "PoeUi"
     config: "PoeConfig"
+
+    _task_specs: Optional[Dict[str, "PoeTask.TaskSpec"]] = None
 
     def __init__(
         self,
@@ -99,7 +101,8 @@ class PoeThePoet:
 
         try:
             self.config.load(self.ui["project_root"])
-            self.config.validate()
+            for task_spec in self.task_specs.load_all():
+                task_spec.validate(self.config, self.task_specs)
         except PoeException as error:
             if self.ui["help"]:
                 self.print_help()
@@ -122,8 +125,16 @@ class PoeThePoet:
         else:
             return self.run_task(task) or 0
 
+    @property
+    def task_specs(self):
+        if not self._task_specs:
+            from .task.base import TaskSpecFactory
+
+            self._task_specs = TaskSpecFactory(self.config)
+        return self._task_specs
+
     def resolve_task(self, allow_hidden: bool = False) -> Optional["PoeTask"]:
-        from .task import PoeTask
+        from .task.base import TaskContext
 
         task = tuple(self.ui["task"])
         if not task:
@@ -131,7 +142,7 @@ class PoeThePoet:
             return None
 
         task_name = task[0]
-        if task_name not in self.config.tasks:
+        if task_name not in self.config.task_names:
             self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"))
             return None
 
@@ -143,8 +154,14 @@ class PoeThePoet:
             )
             return None
 
-        return PoeTask.from_config(
-            task_name, config=self.config, ui=self.ui, invocation=task
+        return self.task_specs.get(task_name).create_task(
+            invocation=task,
+            ctx=TaskContext(
+                config=self.config,
+                cwd=str(self.config.project_dir),
+                specs=self.task_specs,
+                ui=self.ui,
+            ),
         )
 
     def run_task(
@@ -154,11 +171,11 @@ class PoeThePoet:
             context = self.get_run_context()
         try:
             return task.run(context=context, extra_args=task.invocation[1:])
-        except PoeException as error:
-            self.print_help(error=error)
-            return 1
         except ExecutionError as error:
             self.ui.print_error(error=error)
+            return 1
+        except PoeException as error:
+            self.print_help(error=error)
             return 1
 
     def run_task_graph(self, task: "PoeTask") -> Optional[int]:

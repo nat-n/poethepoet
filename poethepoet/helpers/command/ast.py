@@ -297,14 +297,11 @@ class Segment(SyntaxNode[ContentNode]):
             return self.__consume_unquoted(chars)
 
     def __consume_single_quoted(self, chars):
-        # pylint: disable=invalid-name
         SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
         self._children.append(SingleQuotedTextCls(chars, self.config))
 
     def __consume_double_quoted(self, chars):
-        # pylint: disable=invalid-name
         DoubleQuotedTextCls = self.get_child_node_cls(DoubleQuotedText)
-        # pylint: disable=invalid-name
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
 
         while next_char := chars.peek():
@@ -329,11 +326,8 @@ class Segment(SyntaxNode[ContentNode]):
         raise ParseError("Unexpected end of input with unmatched double quote")
 
     def __consume_unquoted(self, chars):
-        # pylint: disable=invalid-name
         UnquotedTextCls = self.get_child_node_cls(UnquotedText)
-        # pylint: disable=invalid-name
         GlobCls = self.get_child_node_cls(Glob)
-        # pylint: disable=invalid-name
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
 
         while next_char := chars.peek():
@@ -366,7 +360,6 @@ class Word(SyntaxNode[Segment]):
         return tuple(self._children)
 
     def _parse(self, chars: ParseCursor):
-        # pylint: disable=invalid-name
         SegmentCls = self.get_child_node_cls(Segment)
 
         self._children = []
@@ -395,9 +388,7 @@ class Line(SyntaxNode[Union[Word, Comment]]):
         return ""
 
     def _parse(self, chars: ParseCursor):
-        # pylint: disable=invalid-name
         WordCls = self.get_child_node_cls(Word)
-        # pylint: disable=invalid-name
         CommentCls = self.get_child_node_cls(Comment)
 
         self._children = []
@@ -439,7 +430,6 @@ class Script(SyntaxNode[Line]):
         return tuple(line for line in self._children if line.words)
 
     def _parse(self, chars: ParseCursor):
-        # pylint: disable=invalid-name
         LineCls = self.get_child_node_cls(Line)
 
         self._children = []

@@ -1,13 +1,14 @@
 import shlex
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Sequence
 
-from ..exceptions import PoeException
+from ..exceptions import ConfigValidationError, PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from .base import TaskSpecFactory
 
 
 class CmdTask(PoeTask):
@@ -15,12 +16,34 @@ class CmdTask(PoeTask):
     A task consisting of a reference to a shell command
     """
 
-    content: str
-
     __key__ = "cmd"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
-        "use_exec": bool,
-    }
+
+    class TaskOptions(PoeTask.TaskOptions):
+        use_exec: bool = False
+
+        def validate(self):
+            """
+            Validation rules that don't require any extra context go here.
+            """
+            super().validate()
+            if self.use_exec and self.capture_stdout:
+                raise ConfigValidationError(
+                    "'use_exec' and 'capture_stdout'"
+                    " options cannot be both provided on the same task."
+                )
+
+    class TaskSpec(PoeTask.TaskSpec):
+        content: str
+        options: "CmdTask.TaskOptions"
+
+        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+            """
+            Perform validations on this TaskSpec that apply to a specific task type
+            """
+            if not self.content.strip():
+                raise ConfigValidationError("Task has no content")
+
+    spec: TaskSpec
 
     def _handle_run(
         self,
@@ -45,7 +68,7 @@ class CmdTask(PoeTask):
         self._print_action(shlex.join(cmd), context.dry)
 
         return self._get_executor(context, env).execute(
-            cmd, use_exec=self.options.get("use_exec", False)
+            cmd, use_exec=self.spec.options.get("use_exec", False)
         )
 
     def _resolve_args(self, context: "RunContext", env: "EnvVarsManager"):
@@ -53,7 +76,7 @@ class CmdTask(PoeTask):
         from ..helpers.command.ast_core import ParseError
 
         try:
-            command_lines = parse_poe_cmd(self.content).command_lines
+            command_lines = parse_poe_cmd(self.spec.content).command_lines
         except ParseError as error:
             raise PoeException(
                 f"Couldn't parse command line for task {self.name!r}: {error.args[0]}"
@@ -81,12 +104,3 @@ class CmdTask(PoeTask):
                 result.append(cmd_token)
 
         return result
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        if not task_def["cmd"].strip():
-            return f"Task {task_name!r} has no content"
-
-        return None

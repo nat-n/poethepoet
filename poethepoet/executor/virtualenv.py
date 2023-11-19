@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type
 
-from ..exceptions import PoeException
+from ..exceptions import ConfigValidationError, ExecutionError
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class VirtualenvExecutor(PoeExecutor):
     ) -> int:
         venv = self._resolve_virtualenv()
         error_context = f" using virtualenv {str(venv.path)!r}" if venv else ""
-        raise PoeException(
+        raise ExecutionError(
             f"executable {cmd[0]!r} could not be found{error_context}"
         ) from error
 
@@ -55,7 +55,7 @@ class VirtualenvExecutor(PoeExecutor):
             )
             if venv.valid():
                 return venv
-            raise PoeException(
+            raise ExecutionError(
                 f"Could not find valid virtualenv at configured location: {venv.path}"
             )
 
@@ -67,22 +67,26 @@ class VirtualenvExecutor(PoeExecutor):
         if hidden_venv.valid():
             return hidden_venv
 
-        raise PoeException(
+        raise ExecutionError(
             f"Could not find valid virtualenv at either of: {venv.path} or "
-            f"{hidden_venv.path}"
+            f"{hidden_venv.path}.\n"
+            "You can configure another location as tool.poe.executor.location"
         )
 
     @classmethod
-    def validate_executor_config(cls, config: Dict[str, Any]) -> Optional[str]:
+    def validate_executor_config(cls, config: Dict[str, Any]):
         """
         Validate that location is a string if given and no other options are given.
         """
         if "location" in config and not isinstance(config["location"], str):
-            return (
+            raise ConfigValidationError(
                 "The location option virtualenv executor must be a string not: "
-                f"{config['location']!r}"
+                f"{config['location']!r}",
+                global_option="executor",
             )
         extra_options = set(config.keys()) - {"type", "location"}
         if extra_options:
-            return f"Unexpected keys for executor config: {extra_options!r}"
-        return None
+            raise ConfigValidationError(
+                f"Unexpected keys for executor config: {extra_options!r}",
+                global_option="executor",
+            )

@@ -1,14 +1,15 @@
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple
 
-from ..exceptions import ExpressionParseError
+from ..exceptions import ConfigValidationError, ExpressionParseError
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from .base import TaskSpecFactory
 
 
 class ScriptTask(PoeTask):
@@ -19,10 +20,40 @@ class ScriptTask(PoeTask):
     content: str
 
     __key__ = "script"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
-        "use_exec": bool,
-        "print_result": bool,
-    }
+
+    class TaskOptions(PoeTask.TaskOptions):
+        use_exec: bool = False
+        print_result: bool = False
+
+        def validate(self):
+            super().validate()
+            if self.use_exec and self.capture_stdout:
+                raise ConfigValidationError(
+                    "'use_exec' and 'capture_stdout'"
+                    " options cannot be both provided on the same task."
+                )
+
+    class TaskSpec(PoeTask.TaskSpec):
+        content: str
+        options: "ScriptTask.TaskOptions"
+
+        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+            """
+            Perform validations on this TaskSpec that apply to a specific task type
+            """
+            from ..helpers.python import parse_and_validate
+
+            try:
+                target_module, target_ref = self.content.split(":", 1)
+                if not target_ref.isidentifier():
+                    parse_and_validate(target_ref, call_only=True)
+            except (ValueError, ExpressionParseError):
+                raise ConfigValidationError(
+                    f"Invalid callable reference {self.content!r}\n"
+                    "(expected something like `module:callable` or `module:callable()`)"
+                )
+
+    spec: TaskSpec
 
     def _handle_run(
         self,
@@ -58,7 +89,7 @@ class ScriptTask(PoeTask):
             f" else _m.{function_call};",
         ]
 
-        if self.options.get("print_result"):
+        if self.spec.options.get("print_result"):
             script.append("_r is not None and print(_r);")
 
         # Exactly which python executable to use is usually resolved by the executor
@@ -68,27 +99,8 @@ class ScriptTask(PoeTask):
 
         self._print_action(shlex.join(argv), context.dry)
         return self._get_executor(context, env).execute(
-            cmd, use_exec=self.options.get("use_exec", False)
+            cmd, use_exec=self.spec.options.get("use_exec", False)
         )
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        from ..helpers.python import parse_and_validate
-
-        try:
-            target_module, target_ref = task_def["script"].split(":", 1)
-            if not target_ref.isidentifier():
-                parse_and_validate(target_ref, call_only=True)
-        except (ValueError, ExpressionParseError):
-            return (
-                f"Task {task_name!r} contains invalid callable reference "
-                f"{task_def['script']!r} (expected something like `module:callable`"
-                " or `module:callable()`)"
-            )
-
-        return None
 
     def parse_content(self, args: Optional[Dict[str, Any]]) -> Tuple[str, str]:
         """
@@ -101,10 +113,10 @@ class ScriptTask(PoeTask):
         from ..helpers.python import resolve_expression
 
         try:
-            target_module, target_ref = self.content.strip().split(":", 1)
+            target_module, target_ref = self.spec.content.strip().split(":", 1)
         except ValueError:
             raise ExpressionParseError(
-                f"Invalid task content: {self.content.strip()!r}"
+                f"Invalid task content: {self.spec.content.strip()!r}"
             )
 
         if target_ref.isidentifier():

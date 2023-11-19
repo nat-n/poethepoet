@@ -2,21 +2,17 @@ import re
 from os import environ
 from typing import (
     TYPE_CHECKING,
-    Any,
-    Dict,
     List,
     Optional,
     Sequence,
     Tuple,
-    Type,
     Union,
 )
 
-from ..exceptions import PoeException
+from ..exceptions import ConfigValidationError, PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
-    from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
 
@@ -29,7 +25,44 @@ class ShellTask(PoeTask):
     content: str
 
     __key__ = "shell"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {"interpreter": (str, list)}
+
+    class TaskOptions(PoeTask.TaskOptions):
+        interpreter: Optional[Union[str, list]] = None
+
+        def validate(self):
+            super().validate()
+
+            from ..config import PoeConfig
+
+            valid_interpreters = PoeConfig.KNOWN_SHELL_INTERPRETERS
+
+            if (
+                isinstance(self.interpreter, str)
+                and self.interpreter not in valid_interpreters
+            ):
+                raise ConfigValidationError(
+                    "Invalid value for option 'interpreter',\n"
+                    f"Expected one of {valid_interpreters}"
+                )
+
+            if isinstance(self.interpreter, list):
+                if len(self.interpreter) == 0:
+                    raise ConfigValidationError(
+                        "Invalid value for option 'interpreter',\n"
+                        "Expected at least one item in list."
+                    )
+                for item in self.interpreter:
+                    if item not in valid_interpreters:
+                        raise ConfigValidationError(
+                            f"Invalid item {item!r} in option 'interpreter',\n"
+                            f"Expected one of {valid_interpreters!r}"
+                        )
+
+    class TaskSpec(PoeTask.TaskSpec):
+        content: str
+        options: "ShellTask.TaskOptions"
+
+    spec: TaskSpec
 
     def _handle_run(
         self,
@@ -41,7 +74,9 @@ class ShellTask(PoeTask):
         env.update(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in extra_args):
-            raise PoeException(f"Shell task {self.name!r} does not accept arguments")
+            raise PoeException(
+                f"Shell task {self.spec.name!r} does not accept arguments"
+            )
 
         interpreter_cmd = self.resolve_interpreter_cmd()
         if not interpreter_cmd:
@@ -56,7 +91,7 @@ class ShellTask(PoeTask):
                 message += "Some dependencies may be missing from your system."
             raise PoeException(message)
 
-        content = _unindent_code(self.content).rstrip()
+        content = _unindent_code(self.spec.content).rstrip()
 
         self._print_action(content, context.dry)
 
@@ -65,8 +100,8 @@ class ShellTask(PoeTask):
         )
 
     def _get_interpreter_config(self) -> Tuple[str, ...]:
-        result: Union[str, Tuple[str, ...]] = self.options.get(
-            "interpreter", self._config.shell_interpreter
+        result: Union[str, Tuple[str, ...]] = self.spec.options.get(
+            "interpreter", self.ctx.config.shell_interpreter
         )
         if isinstance(result, str):
             return (result,)
@@ -153,34 +188,6 @@ class ShellTask(PoeTask):
             result = "python"
 
         return result
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        interpreter = task_def.get("interpreter")
-        valid_interpreters = config.KNOWN_SHELL_INTERPRETERS
-
-        if isinstance(interpreter, str) and interpreter not in valid_interpreters:
-            return (
-                "Unsupported value for option `interpreter` for task "
-                f"{task_name!r}. Expected one of {valid_interpreters}"
-            )
-
-        if isinstance(interpreter, list):
-            if len(interpreter) == 0:
-                return (
-                    "Unsupported value for option `interpreter` for task "
-                    f"{task_name!r}. Expected at least one item in list."
-                )
-            for item in interpreter:
-                if item not in valid_interpreters:
-                    return (
-                        "Unsupported item {item!r} in option `interpreter` for task "
-                        f"{task_name!r}. Expected one of {valid_interpreters}"
-                    )
-
-        return None
 
 
 def _unindent_code(python_code: str):

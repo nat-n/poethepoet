@@ -1,8 +1,10 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -10,14 +12,14 @@ from typing import (
     Union,
 )
 
-from ..exceptions import ExecutionError, PoeException
-from .base import PoeTask, TaskContent, TaskInheritance
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from ..config import PoeConfig
+    from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
-    from ..ui import PoeUi
+    from .base import TaskSpecFactory
 
 
 class SequenceTask(PoeTask):
@@ -28,42 +30,102 @@ class SequenceTask(PoeTask):
     content: List[Union[str, Dict[str, Any]]]
 
     __key__ = "sequence"
-    __content_type__: Type = list
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
-        "ignore_fail": (bool, str),
-        "default_item_type": str,
-    }
+    __content_type__: ClassVar[Type] = list
+
+    class TaskOptions(PoeTask.TaskOptions):
+        ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
+        default_item_type: Optional[str] = None
+
+        def validate(self):
+            """
+            Validation rules that don't require any extra context go here.
+            """
+            super().validate()
+            if self.default_item_type is not None and not PoeTask.is_task_type(
+                self.default_item_type, content_type=str
+            ):
+                raise ConfigValidationError(
+                    "Unsupported value for option `default_item_type`,\n"
+                    f"Expected one of {PoeTask.get_task_types(content_type=str)}"
+                )
+
+    class TaskSpec(PoeTask.TaskSpec):
+        content: list
+        options: "SequenceTask.TaskOptions"
+        subtasks: Sequence[PoeTask.TaskSpec]
+
+        def __init__(
+            self,
+            name: str,
+            task_def: Dict[str, Any],
+            factory: "TaskSpecFactory",
+            parent: Optional["PoeTask.TaskSpec"] = None,
+            source: Optional["ConfigPartition"] = None,
+        ):
+            super().__init__(name, task_def, factory, parent, source)
+
+            self.subtasks = []
+            for index, sub_task_def in enumerate(task_def[SequenceTask.__key__]):
+                if not isinstance(sub_task_def, (str, dict, list)):
+                    raise ConfigValidationError(
+                        f"Item #{index} in sequence task should be a value of "
+                        "type: str | dict | list",
+                        task_name=self.name,
+                    )
+
+                subtask_name = (
+                    sub_task_def
+                    if isinstance(sub_task_def, str)
+                    else SequenceTask._subtask_name(name, index)
+                )
+                task_type_key = self.task_type.resolve_task_type(
+                    sub_task_def,
+                    factory.config,
+                    array_item=task_def.get("default_item_type", True),
+                )
+
+                try:
+                    self.subtasks.append(
+                        factory.get(
+                            subtask_name, sub_task_def, task_type_key, parent=self
+                        )
+                    )
+                except PoeException:
+                    raise ConfigValidationError(
+                        f"Failed to interpret subtask #{index} in sequence",
+                        task_name=self.name,
+                    )
+
+        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+            """
+            Perform validations on this TaskSpec that apply to a specific task type
+            """
+            for index, subtask in enumerate(self.subtasks):
+                if subtask.args:
+                    raise ConfigValidationError(
+                        "Unsupported option 'args' for task declared inside sequence"
+                    )
+
+                subtask.validate(config, task_specs)
+
+    spec: TaskSpec
 
     def __init__(
         self,
-        name: str,
-        content: TaskContent,
-        options: Dict[str, Any],
-        ui: "PoeUi",
-        config: "PoeConfig",
+        spec: TaskSpec,
         invocation: Tuple[str, ...],
+        ctx: TaskContext,
         capture_stdout: bool = False,
-        inheritance: Optional[TaskInheritance] = None,
     ):
-        assert capture_stdout is False
-        super().__init__(
-            name, content, options, ui, config, invocation, False, inheritance
-        )
+        assert capture_stdout in (False, None)
+        super().__init__(spec, invocation, ctx)
 
         self.subtasks = [
-            self.from_def(
-                task_def=item,
-                task_name=task_name,
-                config=config,
-                invocation=(task_name,),
-                ui=ui,
-                array_item=self.options.get("default_item_type", True),
-                inheritance=TaskInheritance.from_task(self),
+            task_spec.create_task(
+                invocation=(task_spec.name,),  # FIXME: this looks wrong!
+                ctx=TaskContext.from_task(self),
             )
-            for index, item in enumerate(self.content)
-            for task_name in (
-                item if isinstance(item, str) else self._subtask_name(name, index),
-            )
+            for task_spec in spec.subtasks
         ]
 
     def _handle_run(
@@ -82,13 +144,14 @@ class SequenceTask(PoeTask):
             # Indicate on the global context that there are multiple stages
             context.multistage = True
 
-        ignore_fail = self.options.get("ignore_fail")
+        ignore_fail = self.spec.options.ignore_fail
         non_zero_subtasks: List[str] = list()
         for subtask in self.subtasks:
             task_result = subtask.run(
                 context=context, extra_args=tuple(), parent_env=env
             )
             if task_result and not ignore_fail:
+                print("subtask", subtask, subtask.name)
                 raise ExecutionError(
                     f"Sequence aborted after failed subtask {subtask.name!r}"
                 )
@@ -104,61 +167,3 @@ class SequenceTask(PoeTask):
     @classmethod
     def _subtask_name(cls, task_name: str, index: int):
         return f"{task_name}[{index}]"
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        default_item_type = task_def.get("default_item_type")
-        if default_item_type is not None and not cls.is_task_type(
-            default_item_type, content_type=str
-        ):
-            return (
-                "Unsupported value for option `default_item_type` for task "
-                f"{task_name!r}. Expected one of {cls.get_task_types(content_type=str)}"
-            )
-
-        ignore_fail = task_def.get("ignore_fail")
-        if ignore_fail is not None and ignore_fail not in (
-            True,
-            False,
-            "return_zero",
-            "return_non_zero",
-        ):
-            return (
-                f"Unsupported value for option `ignore_fail` for task {task_name!r}."
-                ' Expected one of (true, false, "return_zero", "return_non_zero")'
-            )
-
-        for index, task_item in enumerate(task_def["sequence"]):
-            if isinstance(task_item, dict):
-                if len(task_item.get("args", tuple())):
-                    return (
-                        "Unsupported option `args` for task declared inside sequence "
-                        f"task {task_name!r}."
-                    )
-
-                subtask_issue = cls.validate_def(
-                    cls._subtask_name(task_name, index),
-                    task_item,
-                    config,
-                    anonymous=True,
-                )
-                if subtask_issue:
-                    return subtask_issue
-
-            else:
-                subtask_issue = cls.validate_def(
-                    cls._subtask_name(task_name, index),
-                    cls.normalize_task_def(
-                        task_item,
-                        config,
-                        array_item=default_item_type or True,
-                    ),
-                    config,
-                    anonymous=True,
-                )
-                if subtask_issue:
-                    return subtask_issue
-
-        return None

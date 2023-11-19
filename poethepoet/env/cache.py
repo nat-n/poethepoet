@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from ..exceptions import ExecutionError
 
@@ -16,19 +16,21 @@ class EnvFileCache:
         self._project_dir = project_dir
         self._ui = ui
 
-    def get(self, envfile_path_str: str) -> Dict[str, str]:
+    def get(self, envfile: Union[str, Path]) -> Dict[str, str]:
         from .parse import parse_env_file
+
+        envfile_path_str = str(envfile)
 
         if envfile_path_str in self._cache:
             return self._cache[envfile_path_str]
 
         result = {}
 
-        envfile_path = self._project_dir.joinpath(Path(envfile_path_str).expanduser())
+        envfile_path = self._project_dir.joinpath(Path(envfile).expanduser())
         if envfile_path.is_file():
             try:
-                with envfile_path.open(encoding="utf-8") as envfile:
-                    result = parse_env_file(envfile.readlines())
+                with envfile_path.open(encoding="utf-8") as envfile_file:
+                    result = parse_env_file(envfile_file.readlines())
             except ValueError as error:
                 message = error.args[0]
                 raise ExecutionError(

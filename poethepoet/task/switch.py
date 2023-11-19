@@ -1,28 +1,29 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Dict,
-    List,
+    Literal,
     MutableMapping,
     Optional,
     Sequence,
     Tuple,
     Type,
     Union,
-    cast,
 )
 
-from ..exceptions import ExecutionError, PoeException
-from .base import PoeTask, TaskContent, TaskInheritance
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from ..config import PoeConfig
+    from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
-    from ..ui import PoeUi
+    from .base import TaskSpecFactory
 
 
 DEFAULT_CASE = "__default__"
+SUBTASK_OPTIONS_BLOCKLIST = ("args", "uses", "deps")
 
 
 class SwitchTask(PoeTask):
@@ -31,65 +32,165 @@ class SwitchTask(PoeTask):
     `switch` subtask.
     """
 
-    content: List[Union[str, Dict[str, Any]]]
-
     __key__ = "switch"
-    __content_type__: Type = list
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {
-        "control": (str, dict),
-        "default": str,
-    }
+    __content_type__: ClassVar[Type] = list
+
+    class TaskOptions(PoeTask.TaskOptions):
+        control: Union[str, dict]
+        default: Literal["pass", "fail"] = "fail"
+
+        @classmethod
+        def normalize(
+            cls,
+            config: Any,
+            strict: bool = True,
+        ):
+            """
+            Perform validations that require access to to the raw config.
+            """
+            if strict and isinstance(config, dict):
+                # Subtasks may not declare certain options
+                for subtask_def in config.get("switch", tuple()):
+                    for banned_option in SUBTASK_OPTIONS_BLOCKLIST:
+                        if banned_option in subtask_def:
+                            if "case" not in subtask_def:
+                                raise ConfigValidationError(
+                                    "Default case includes incompatible option "
+                                    f"{banned_option!r}"
+                                )
+                            raise ConfigValidationError(
+                                f"Case {subtask_def.get('case')!r} includes "
+                                f"incompatible option {banned_option!r}"
+                            )
+
+            return super().normalize(config, strict)
+
+    class TaskSpec(PoeTask.TaskSpec):
+        control_task_spec: PoeTask.TaskSpec
+        case_task_specs: Tuple[Tuple[Tuple[Any, ...], PoeTask.TaskSpec], ...]
+        options: "SwitchTask.TaskOptions"
+
+        def __init__(
+            self,
+            name: str,
+            task_def: Dict[str, Any],
+            factory: "TaskSpecFactory",
+            parent: Optional["PoeTask.TaskSpec"] = None,
+            source: Optional["ConfigPartition"] = None,
+        ):
+            super().__init__(name, task_def, factory, parent, source)
+
+            switch_args = task_def.get("args")
+            control_task_def = task_def["control"]
+
+            if switch_args:
+                if isinstance(control_task_def, str):
+                    control_task_def = {
+                        factory.config.default_task_type: control_task_def
+                    }
+                control_task_def = dict(control_task_def, args=switch_args)
+
+            self.control_task_spec = factory.get(
+                task_name=f"{name}[__control__]", task_def=control_task_def, parent=self
+            )
+
+            case_task_specs = []
+            for switch_item in task_def["switch"]:
+                case_task_def = dict(switch_item, args=switch_args)
+                case = case_task_def.pop("case", DEFAULT_CASE)
+                case_tuple = tuple(case) if isinstance(case, list) else (case,)
+                case_task_index = ",".join(str(value) for value in case_tuple)
+                case_task_specs.append(
+                    (
+                        case_tuple,
+                        factory.get(
+                            task_name=f"{name}[{case_task_index}]",
+                            task_def=case_task_def,
+                            parent=self,
+                        ),
+                    )
+                )
+
+            self.case_task_specs = tuple(case_task_specs)
+
+        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+            from collections import defaultdict
+
+            allowed_control_task_types = ("expr", "cmd", "script")
+            if (
+                self.control_task_spec.task_type.__key__
+                not in allowed_control_task_types
+            ):
+                raise ConfigValidationError(
+                    f"Control task must have a type that is one of "
+                    f"{allowed_control_task_types!r}"
+                )
+
+            cases: MutableMapping[Any, int] = defaultdict(int)
+            for case_keys, case_task_spec in self.case_task_specs:
+                for case_key in case_keys:
+                    cases[case_key] += 1
+
+            # Ensure case keys don't overlap (and only one default case)
+            for case, count in cases.items():
+                if count > 1:
+                    if case is DEFAULT_CASE:
+                        raise ConfigValidationError(
+                            "Switch array includes more than one default case"
+                        )
+                    raise ConfigValidationError(
+                        f"Switch array includes more than one case for {case!r}"
+                    )
+
+            if self.options.default != "fail" and DEFAULT_CASE in cases:
+                raise ConfigValidationError(
+                    "switch tasks should not declare both a default case and the "
+                    "'default' option"
+                )
+
+            # Validate subtask specs
+            self.control_task_spec.validate(config, task_specs)
+            for _, case_task_spec in self.case_task_specs:
+                case_task_spec.validate(config, task_specs)
+
+    spec: TaskSpec
+    control_task: PoeTask
+    switch_tasks: Dict[str, PoeTask]
 
     def __init__(
         self,
-        name: str,
-        content: TaskContent,
-        options: Dict[str, Any],
-        ui: "PoeUi",
-        config: "PoeConfig",
+        spec: TaskSpec,
         invocation: Tuple[str, ...],
+        ctx: TaskContext,
         capture_stdout: bool = False,
-        inheritance: Optional[TaskInheritance] = None,
     ):
-        super().__init__(
-            name, content, options, ui, config, invocation, False, inheritance
-        )
+        super().__init__(spec, invocation, ctx, capture_stdout)
 
-        control_task_name = f"{name}[control]"
+        control_task_name = f"{spec.name}[__control__]"
         control_invocation: Tuple[str, ...] = (control_task_name,)
-        if self.options.get("args"):
-            self.options["control"]["args"] = self.options["args"]
+        options = self.spec.options
+        if options.get("args"):
             control_invocation = (*control_invocation, *invocation[1:])
 
-        self.control_task = self.from_def(
-            task_def=self.options.get("control", ""),
-            task_name=control_task_name,
-            config=config,
+        self.control_task = self.spec.control_task_spec.create_task(
             invocation=control_invocation,
-            ui=ui,
+            ctx=TaskContext.from_task(self),
             capture_stdout=True,
-            inheritance=TaskInheritance.from_task(self),
         )
 
         self.switch_tasks = {}
-        for item in cast(List[Dict[str, Any]], content):
-            task_def = {key: value for key, value in item.items() if key != "case"}
-
-            task_invocation: Tuple[str, ...] = (name,)
-            if self.options.get("args"):
-                task_def["args"] = self.options["args"]
+        for case_keys, case_spec in spec.case_task_specs:
+            task_invocation: Tuple[str, ...] = (f"{spec.name}[{','.join(case_keys)}]",)
+            if options.get("args"):
                 task_invocation = (*task_invocation, *invocation[1:])
 
-            for case_key in self._get_case_keys(item):
-                self.switch_tasks[case_key] = self.from_def(
-                    task_def=task_def,
-                    task_name=f"{name}__{case_key}",
-                    config=config,
-                    invocation=task_invocation,
-                    ui=ui,
-                    capture_stdout=self.options.get("capture_stdout", capture_stdout),
-                    inheritance=TaskInheritance.from_task(self),
-                )
+            case_task = case_spec.create_task(
+                invocation=task_invocation,
+                ctx=TaskContext.from_task(self),
+                capture_stdout=self.capture_stdout,
+            )
+            for case_key in case_keys:
+                self.switch_tasks[case_key] = case_task
 
     def _handle_run(
         self,
@@ -108,7 +209,7 @@ class SwitchTask(PoeTask):
 
         task_result = self.control_task.run(
             context=context,
-            extra_args=extra_args if self.options.get("args") else tuple(),
+            extra_args=(extra_args if self.spec.options.get("args") else tuple()),
             parent_env=env,
         )
         if task_result:
@@ -128,96 +229,20 @@ class SwitchTask(PoeTask):
         )
 
         if case_task is None:
-            if self.options.get("default", "fail") == "pass":
+            if self.spec.options.default == "pass":
                 return 0
             raise ExecutionError(
                 f"Control value {control_task_output!r} did not match any cases in "
                 f"switch task {self.name!r}."
             )
 
-        return case_task.run(context=context, extra_args=extra_args, parent_env=env)
+        result = case_task.run(context=context, extra_args=extra_args, parent_env=env)
 
-    @classmethod
-    def _get_case_keys(cls, task_def: Dict[str, Any]) -> List[Any]:
-        case_value = task_def.get("case", DEFAULT_CASE)
-        if isinstance(case_value, list):
-            return case_value
-        return [case_value]
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        from collections import defaultdict
-
-        control_task_def = task_def.get("control")
-        if not control_task_def:
-            return f"Switch task {task_name!r} has no control task."
-
-        allowed_control_task_types = ("expr", "cmd", "script")
-        if isinstance(control_task_def, dict) and not any(
-            key in control_task_def for key in allowed_control_task_types
-        ):
-            return (
-                f"Control task for {task_name!r} must have a type that is one of "
-                f"{allowed_control_task_types!r}"
+        if self.capture_stdout is True:
+            # The executor saved output for the case task, but we need it to be
+            # registered for this switch task as well
+            context.save_task_output(
+                self.invocation, context.get_task_output(case_task.invocation).encode()
             )
 
-        control_task_issue = PoeTask.validate_def(
-            f"{task_name}[control]", control_task_def, config, anonymous=True
-        )
-        if control_task_issue:
-            return control_task_issue
-
-        cases: MutableMapping[Any, int] = defaultdict(int)
-        for switch_task in task_def["switch"]:
-            for case_key in cls._get_case_keys(switch_task):
-                cases[case_key] += 1
-
-            case_key = switch_task.get("case", DEFAULT_CASE)
-            for invalid_option in ("args", "deps"):
-                if invalid_option in switch_task:
-                    if case_key is DEFAULT_CASE:
-                        return (
-                            f"Default case of switch task {task_name!r} includes "
-                            f"invalid option {invalid_option!r}"
-                        )
-                    return (
-                        f"Case {case_key!r} switch task {task_name!r} include invalid "
-                        f"option {invalid_option!r}"
-                    )
-
-            switch_task_issue = PoeTask.validate_def(
-                f"{task_name}[{case_key}]",
-                switch_task,
-                config,
-                anonymous=True,
-                extra_options=("case",),
-            )
-            if switch_task_issue:
-                return switch_task_issue
-
-        for case, count in cases.items():
-            if count > 1:
-                if case is DEFAULT_CASE:
-                    return (
-                        f"Switch task {task_name!r} includes more than one default case"
-                    )
-                return (
-                    f"Switch task {task_name!r} includes more than one case for "
-                    f"{case!r}"
-                )
-
-        if "default" in task_def:
-            if task_def["default"] not in ("pass", "fail"):
-                return (
-                    f"The 'default' option for switch task {task_name!r} should be one "
-                    "of ('pass', 'fail')"
-                )
-            if DEFAULT_CASE in cases:
-                return (
-                    f"Switch task {task_name!r} should not have both a default case "
-                    f"and the 'default' option."
-                )
-
-        return None
+        return result

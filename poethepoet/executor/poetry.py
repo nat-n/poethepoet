@@ -2,7 +2,7 @@ from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Type
 
-from ..exceptions import PoeException
+from ..exceptions import ExecutionError
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ class PoetryExecutor(PoeExecutor):
 
     @classmethod
     def works_with_context(cls, context: "RunContext") -> bool:
-        if "poetry" not in context.config.project["tool"]:
+        if not context.config.is_poetry_project:
             return False
         return bool(cls._poetry_cmd_from_path())
 
@@ -61,7 +61,7 @@ class PoetryExecutor(PoeExecutor):
     ) -> int:
         poetry_env = self._get_poetry_virtualenv()
         error_context = f" using virtualenv {poetry_env!r}" if poetry_env else ""
-        raise PoeException(
+        raise ExecutionError(
             f"executable {cmd[0]!r} could not be found{error_context}"
         ) from error
 
