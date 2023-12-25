@@ -84,12 +84,12 @@ You can configure poe to use a specific executor by setting
 
 - **auto**: to automatically use the most appropriate of the following executors in order
 - **poetry**: to run tasks in the poetry managed environment
-- **virtualenv**: to run tasks in the indicated virtualenv (or else "./.venv" if present)
+- **virtualenv**: to run tasks in the indicated virtualenv (or else "./.venv" or "./venv" if present)
 - **simple**: to run tasks without doing any specific environment setup
 
 The default behaviour is **auto**.
 
-For example the following configuration will cause poe to ignore the poetry environment
+For example, the following configuration will cause poe to ignore the poetry environment
 (if present), and instead use the virtualenv at the given location relative to the
 parent directory.
 
