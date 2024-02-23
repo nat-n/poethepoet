@@ -117,12 +117,22 @@ class PoetryPlugin(ApplicationPlugin):
             )
 
         if command_prefix == "":
+            # Register a dummy command prefix
+            # to allow cleo to identify commands coming from poe
+            self._register_command(
+                application,
+                "",
+                {"help": "Run poe tasks defined for this project"},
+                "poe",
+            )
             for task_name, task in poe_tasks.items():
                 if task_name in COMMANDS:
                     raise PoePluginException(
                         f"Poe task {task_name!r} conflicts with a poetry command. "
                         "Please rename the task or the configure a command prefix."
                     )
+                # Don't register tasks under the dummy command prefix,
+                # we still want no prefix here
                 self._register_command(application, task_name, task)
         else:
             self._register_command(
@@ -274,7 +284,16 @@ class PoetryPlugin(ApplicationPlugin):
             tokens = io.input._tokens
             task_name_index = _index_of_first_non_option(tokens)
             poe_commands = (prefix,) if prefix else task_names
+            # If the prefix is an empty string, and it's not a poetry command
+            # We need to add the dummy prefix to the command so cleo can identify it
             if (
+                prefix == ""
+                and 0 <= task_name_index < len(tokens)
+                and tokens[task_name_index] not in COMMANDS
+            ):
+                tokens.insert(task_name_index, "poe")
+                tokens.insert(task_name_index, "--")
+            elif (
                 0 <= task_name_index < len(tokens)
                 and tokens[task_name_index] in poe_commands
             ):
