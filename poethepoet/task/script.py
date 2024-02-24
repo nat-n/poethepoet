@@ -1,6 +1,6 @@
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
 
 from ..exceptions import ExpressionParseError
 from .base import PoeTask
@@ -27,20 +27,21 @@ class ScriptTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
         from ..helpers.python import format_class
 
-        named_arg_values = self.get_named_arg_values(env)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
+
+        # TODO: do something about extra_args, error?
 
         target_module, function_call = self.parse_content(named_arg_values)
         function_ref = function_call[: function_call.index("(")]
 
         argv = [
             self.name,
-            *(env.fill_template(token) for token in extra_args),
+            *(env.fill_template(token) for token in self.invocation[1:]),
         ]
 
         # TODO: check whether the project really does use src layout, and don't do

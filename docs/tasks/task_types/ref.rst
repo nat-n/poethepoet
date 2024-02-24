@@ -33,3 +33,9 @@ Available task options
 ----------------------
 
 ``ref`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec``.
+
+
+Passing arguments
+-----------------
+
+By default any arguments passed to a ref task will be forwarded to the referenced task, allowing it to function as a task alias. If named arguments are configured for the ref task then additional arguments can still be passed to the referenced task after ``--`` on the command line.

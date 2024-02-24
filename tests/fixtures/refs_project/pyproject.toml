@@ -10,3 +10,14 @@ ref = "greet lol!"
 
 [tool.poe.tasks.greet-dave]
 ref = "greet-subject --subject dave"
+
+[tool.poe.tasks.apologize]
+cmd  = "echo \"I'm sorry ${name}, ${explain}\""
+args = ["name", "explain"]
+
+[tool.poe.tasks.say-sorry]
+ref = "apologize"
+
+[tool.poe.tasks.sorry-dave]
+ref  = "apologize --name=Dave --explain='${explain}'"
+args = [{ name = "explain", positional = true, multiple = true }]

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
 
 from .base import PoeTask, TaskInheritance
 
@@ -21,7 +21,6 @@ class RefTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
         """
@@ -29,26 +28,34 @@ class RefTask(PoeTask):
         """
         import shlex
 
-        invocation = tuple(shlex.split(env.fill_template(self.content.strip())))
-        extra_args = [*invocation[1:], *extra_args]
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        env.update(named_arg_values)
+
+        ref_invocation = (
+            *(
+                env.fill_template(token)
+                for token in shlex.split(env.fill_template(self.content.strip()))
+            ),
+            *extra_args,
+        )
+
         task = self.from_config(
-            invocation[0],
+            ref_invocation[0],
             self._config,
             self._ui,
-            invocation,
+            invocation=ref_invocation,
             inheritance=TaskInheritance.from_task(self),
         )
 
         if task.has_deps():
-            return self._run_task_graph(task, context, extra_args, env)
+            return self._run_task_graph(task, context, env)
 
-        return task.run(context=context, extra_args=extra_args, parent_env=env)
+        return task.run(context=context, parent_env=env)
 
     def _run_task_graph(
         self,
         task: "PoeTask",
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
         from ..exceptions import ExecutionError
@@ -60,13 +67,9 @@ class RefTask(PoeTask):
             for stage_task in stage:
                 if stage_task == task:
                     # The final sink task gets special treatment
-                    return task.run(
-                        context=context, extra_args=extra_args, parent_env=env
-                    )
+                    return task.run(context=context, parent_env=env)
 
-                task_result = stage_task.run(
-                    context=context, extra_args=stage_task.invocation[1:]
-                )
+                task_result = stage_task.run(context=context)
                 if task_result:
                     raise ExecutionError(
                         f"Task graph aborted after failed task {stage_task.name!r}"

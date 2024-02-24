@@ -298,13 +298,15 @@ class PoeTaskArgs:
 
         return result
 
-    def parse(self, extra_args: Sequence[str]):
-        parsed_args = vars(self.build_parser().parse_args(extra_args))
+    def parse(self, args: Sequence[str]) -> Dict[str, str]:
+        parsed_args = vars(self.build_parser().parse_args(args))
+
         # Ensure positional args are still exposed by name even if they were parsed with
         # alternate identifiers
         for arg in self._args:
             if isinstance(arg.get("positional"), str):
                 parsed_args[arg["name"]] = parsed_args[arg["positional"]]
                 del parsed_args[arg["positional"]]
+
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}
