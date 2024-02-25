@@ -258,6 +258,10 @@ follows:</p>
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">ref</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code>.</p>
 </section>
+<section id="passing-arguments">
+<h2>Passing arguments<a class="headerlink" href="#passing-arguments" title="Permalink to this heading">#</a></h2>
+<p>By default any arguments passed to a ref task will be forwarded to the referenced task, allowing it to function as a task alias. If named arguments are configured for the ref task then additional arguments can still be passed to the referenced task after <code class="docutils literal notranslate"><span class="pre">--</span></code> on the command line.</p>
+</section>
 </section>
 
         </article>
@@ -329,6 +333,7 @@ follows:</p>
             <ul>
 <li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">ref</span></code> tasks</a><ul>
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
+<li><a class="reference internal" href="#passing-arguments">Passing arguments</a></li>
 </ul>
 </li>
 </ul>
