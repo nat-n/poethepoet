@@ -1,0 +1,2 @@
+[tool.poe.tasks]
+included-greeting = "echo 'Greetings from another file!'"

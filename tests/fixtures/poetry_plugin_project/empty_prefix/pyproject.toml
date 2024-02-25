@@ -13,6 +13,7 @@ poe_test_helpers = { path = "../../packages/poe_test_helpers" }
 
 [tool.poe]
 poetry_command = ""
+include = "tasks.toml"
 
 [tool.poe.tasks]
 echo = { cmd = "poe_test_echo", help = "It's like echo"}
