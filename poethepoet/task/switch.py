@@ -5,7 +5,6 @@ from typing import (
     List,
     MutableMapping,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -94,23 +93,18 @@ class SwitchTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
-        named_arg_values = self.get_named_arg_values(env)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
-        if not named_arg_values and any(arg.strip() for arg in extra_args):
+        if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
             raise PoeException(f"Switch task {self.name!r} does not accept arguments")
 
         # Indicate on the global context that there are multiple stages to this task
         context.multistage = True
 
-        task_result = self.control_task.run(
-            context=context,
-            extra_args=extra_args if self.options.get("args") else tuple(),
-            parent_env=env,
-        )
+        task_result = self.control_task.run(context=context, parent_env=env)
         if task_result:
             raise ExecutionError(
                 f"Switch task {self.name!r} aborted after failed control task"
@@ -135,7 +129,7 @@ class SwitchTask(PoeTask):
                 f"switch task {self.name!r}."
             )
 
-        return case_task.run(context=context, extra_args=extra_args, parent_env=env)
+        return case_task.run(context=context, parent_env=env)
 
     @classmethod
     def _get_case_keys(cls, task_def: Dict[str, Any]) -> List[Any]:

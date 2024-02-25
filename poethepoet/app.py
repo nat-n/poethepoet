@@ -153,7 +153,7 @@ class PoeThePoet:
         if context is None:
             context = self.get_run_context()
         try:
-            return task.run(context=context, extra_args=task.invocation[1:])
+            return task.run(context=context)
         except PoeException as error:
             self.print_help(error=error)
             return 1
@@ -175,9 +175,7 @@ class PoeThePoet:
                     return self.run_task(stage_task, context)
 
                 try:
-                    task_result = stage_task.run(
-                        context=context, extra_args=stage_task.invocation[1:]
-                    )
+                    task_result = stage_task.run(context=context)
                     if task_result:
                         raise ExecutionError(
                             f"Task graph aborted after failed task {stage_task.name!r}"
