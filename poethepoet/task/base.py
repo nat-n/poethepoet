@@ -1,5 +1,6 @@
 import re
 import sys
+from os import environ
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -10,7 +11,6 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -65,7 +65,7 @@ class PoeTask(metaclass=MetaPoeTask):
     content: TaskContent
     options: Dict[str, Any]
     inheritance: TaskInheritance
-    named_args: Optional[Dict[str, str]] = None
+    _parsed_args: Optional[Tuple[Dict[str, str], Tuple[str, ...]]] = None
 
     __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
     __content_type__: Type = str
@@ -216,42 +216,49 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return None
 
-    def get_named_arg_values(self, env: "EnvVarsManager") -> Dict[str, str]:
-        try:
-            split_index = self.invocation.index("--")
-            parse_args = self.invocation[1:split_index]
-        except ValueError:
-            parse_args = self.invocation[1:]
+    def get_parsed_arguments(
+        self, env: "EnvVarsManager"
+    ) -> Tuple[Dict[str, str], Tuple[str, ...]]:
+        if self._parsed_args is None:
+            all_args = self.invocation[1:]
 
-        if self.named_args is None:
-            self.named_args = self._parse_named_args(parse_args, env)
+            if args_def := self.options.get("args"):
+                from .args import PoeTaskArgs
 
-        if not self.named_args:
-            return {}
+                try:
+                    split_index = all_args.index("--")
+                    option_args = all_args[:split_index]
+                    extra_args = all_args[split_index + 1 :]
+                except ValueError:
+                    option_args = all_args
+                    extra_args = tuple()
 
-        return self.named_args
+                self._parsed_args = (
+                    PoeTaskArgs(args_def, self.name, self._ui.program_name, env).parse(
+                        option_args
+                    ),
+                    extra_args,
+                )
 
-    def _parse_named_args(
-        self, extra_args: Sequence[str], env: "EnvVarsManager"
-    ) -> Optional[Dict[str, str]]:
-        if args_def := self.options.get("args"):
-            from .args import PoeTaskArgs
+            else:
+                self._parsed_args = ({}, all_args)
 
-            return PoeTaskArgs(args_def, self.name, self._ui.program_name, env).parse(
-                extra_args
-            )
-
-        return None
+        return self._parsed_args
 
     def run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str] = tuple(),
         parent_env: Optional["EnvVarsManager"] = None,
     ) -> int:
         """
         Run this task
         """
+
+        if environ.get("POE_DEBUG"):
+            task_type_key = self.__key__  # type: ignore[attr-defined]
+            print(f" * Running     {task_type_key}:{self.name}")
+            print(f" . Invocation  {self.invocation!r}")
+
         upstream_invocations = self._get_upstream_invocations(context)
 
         if context.dry and upstream_invocations.get("uses", {}):
@@ -265,21 +272,23 @@ class PoeTask(metaclass=MetaPoeTask):
             )
             return 0
 
-        return self._handle_run(
-            context,
-            extra_args,
-            context.get_task_env(
-                parent_env,
-                self.options.get("envfile"),
-                self.options.get("env"),
-                upstream_invocations["uses"],
-            ),
+        task_env = context.get_task_env(
+            parent_env,
+            self.options.get("envfile"),
+            self.options.get("env"),
+            upstream_invocations["uses"],
         )
+
+        if environ.get("POE_DEBUG"):
+            named_arg_values, extra_args = self.get_parsed_arguments(task_env)
+            print(f" . Parsed args {named_arg_values!r}")
+            print(f" . Extra args  {extra_args!r}")
+
+        return self._handle_run(context, task_env)
 
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
         """
@@ -288,11 +297,7 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         raise NotImplementedError
 
-    def _get_executor(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ):
+    def _get_executor(self, context: "RunContext", env: "EnvVarsManager"):
         return context.get_executor(
             self.invocation,
             env,
@@ -335,7 +340,7 @@ class PoeTask(metaclass=MetaPoeTask):
             env = context.get_task_env(
                 None, self.options.get("envfile"), self.options.get("env")
             )
-            env.update(self.get_named_arg_values(env))
+            env.update(self.get_parsed_arguments(env)[0])
 
             self.__upstream_invocations = {
                 "deps": [

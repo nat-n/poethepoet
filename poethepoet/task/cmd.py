@@ -1,5 +1,5 @@
 import shlex
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
 
 from ..exceptions import PoeException
 from .base import PoeTask
@@ -25,22 +25,12 @@ class CmdTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
-        named_arg_values = self.get_named_arg_values(env)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
-        if named_arg_values:
-            # If named arguments are defined then pass only arguments following a double
-            # dash token: `--`
-            try:
-                split_index = extra_args.index("--")
-                extra_args = extra_args[split_index + 1 :]
-            except ValueError:
-                extra_args = tuple()
-
-        cmd = (*self._resolve_args(context, env), *extra_args)
+        cmd = (*self._resolve_commandline(context, env), *extra_args)
 
         self._print_action(shlex.join(cmd), context.dry)
 
@@ -48,7 +38,7 @@ class CmdTask(PoeTask):
             cmd, use_exec=self.options.get("use_exec", False)
         )
 
-    def _resolve_args(self, context: "RunContext", env: "EnvVarsManager"):
+    def _resolve_commandline(self, context: "RunContext", env: "EnvVarsManager"):
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens
         from ..helpers.command.ast_core import ParseError
 

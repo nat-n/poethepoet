@@ -6,7 +6,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -34,13 +33,12 @@ class ShellTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
-        named_arg_values = self.get_named_arg_values(env)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
-        if not named_arg_values and any(arg.strip() for arg in extra_args):
+        if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
             raise PoeException(f"Shell task {self.name!r} does not accept arguments")
 
         interpreter_cmd = self.resolve_interpreter_cmd()

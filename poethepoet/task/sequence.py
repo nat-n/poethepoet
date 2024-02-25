@@ -4,7 +4,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -69,13 +68,12 @@ class SequenceTask(PoeTask):
     def _handle_run(
         self,
         context: "RunContext",
-        extra_args: Sequence[str],
         env: "EnvVarsManager",
     ) -> int:
-        named_arg_values = self.get_named_arg_values(env)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
-        if not named_arg_values and any(arg.strip() for arg in extra_args):
+        if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
 
         if len(self.subtasks) > 1:
@@ -85,9 +83,7 @@ class SequenceTask(PoeTask):
         ignore_fail = self.options.get("ignore_fail")
         non_zero_subtasks: List[str] = list()
         for subtask in self.subtasks:
-            task_result = subtask.run(
-                context=context, extra_args=tuple(), parent_env=env
-            )
+            task_result = subtask.run(context=context, parent_env=env)
             if task_result and not ignore_fail:
                 raise ExecutionError(
                     f"Sequence aborted after failed subtask {subtask.name!r}"
