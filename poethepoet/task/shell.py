@@ -48,7 +48,7 @@ class ShellTask(PoeTask):
                 f"Couldn't locate interpreter executable for {config_value!r} to run "
                 "shell task. "
             )
-            if self._is_windows and config_value in ("posix", "bash"):
+            if self._is_windows and set(config_value).issubset({"posix", "bash"}):
                 message += "Installing Git Bash or using WSL should fix this."
             else:
                 message += "Some dependencies may be missing from your system."
