@@ -125,4 +125,4 @@ Therefore it is generally recommended to use the poe CLI tool directly if you do
 
 .. |poetry_plugin_link| raw:: html
 
-   <a href="https://python-poetry.org/docs/master/plugins/#using-plugins" target="_blank">poetry plugin</a>
+   <a href="https://python-poetry.org/docs/main/plugins/#using-plugins" target="_blank">poetry plugin</a>
