@@ -254,7 +254,7 @@ def run_poetry(use_venv, poe_project_path):
         venv_location,
         [
             ".[poetry_plugin]",
-            "./tests/fixtures/packages/poetry-1.2.1-py3-none-any.whl",
+            "./tests/fixtures/packages/poetry-1.8.2-py3-none-any.whl",
         ],
         require_empty=True,
     ):
