@@ -134,3 +134,40 @@ def test_running_poetry_command_with_hooks(run_poetry, projects):
     assert "THIS IS YOUR ENV!" in result.stdout
     assert "THAT WAS YOUR ENV!" in result.stdout
     # assert result.stderr == ""
+
+
+@pytest.mark.slow()
+@pytest.mark.usefixtures("_setup_poetry_project")
+def test_running_poetry_command_with_hooks_with_directory(run_poetry, projects):
+    result = run_poetry(
+        ["--directory=" + str(projects["poetry_plugin"]), "env", "info"],
+        cwd=projects["poetry_plugin"].parent,
+    )
+    assert "THIS IS YOUR ENV!" in result.stdout
+    assert "THAT WAS YOUR ENV!" in result.stdout
+    # assert result.stderr == ""
+
+
+@pytest.mark.slow()
+@pytest.mark.usefixtures("_setup_poetry_project")
+def test_task_with_cli_dependency_with_directory(run_poetry, projects, is_windows):
+    result = run_poetry(
+        [
+            "--directory=" + str(projects["poetry_plugin"]),
+            "poe",
+            "cow-greet",
+            "yo yo yo",
+        ],
+        cwd=projects["poetry_plugin"].parent,
+    )
+    if is_windows:
+        assert result.stdout.startswith("Poe => cowpy 'yo yo yo'")
+        assert "< yo yo yo >" in result.stdout
+    else:
+        # On POSIX cowpy expects notices its being called as a subprocess and tries
+        # unproductively to take input from stdin
+        assert result.stdout.startswith("Poe => cowpy 'yo yo yo'")
+        assert (
+            "< Cowacter, eyes:default, tongue:False, thoughts:False >" in result.stdout
+        )
+    # assert result.stderr == ""

@@ -56,7 +56,11 @@ class PoeCommand(Command):
         except:  # noqa: E722
             poetry_env_path = None
 
-        cwd = Path().resolve()
+        # Get the cwd from poetry to ensure '--directory subdir' usage
+        try:
+            cwd = application.poetry.pyproject_path
+        except AttributeError:
+            cwd = Path().resolve()
         config = PoeConfig(cwd=cwd)
 
         if io.output.is_quiet():
