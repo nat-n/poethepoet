@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Dict,
     Mapping,
     MutableMapping,
@@ -15,7 +16,7 @@ from typing import (
     Union,
 )
 
-from ..exceptions import ExecutionError, PoeException
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 
 if TYPE_CHECKING:
     from ..context import RunContext
@@ -47,8 +48,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
     working_dir: Optional[Path]
 
-    __executor_types: Dict[str, Type["PoeExecutor"]] = {}
-    __key__: Optional[str] = None
+    __executor_types: ClassVar[Dict[str, Type["PoeExecutor"]]] = {}
+    __key__: ClassVar[Optional[str]] = None
 
     def __init__(
         self,
@@ -57,22 +58,22 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         options: Mapping[str, str],
         env: "EnvVarsManager",
         working_dir: Optional[Path] = None,
-        dry: bool = False,
         capture_stdout: Union[str, bool] = False,
+        dry: bool = False,
     ):
         self.invocation = invocation
         self.context = context
         self.options = options
         self.working_dir = working_dir
         self.env = env
-        self.dry = dry
         self.capture_stdout = (
             Path(self.context.config.project_dir).joinpath(
                 self.env.fill_template(capture_stdout)
             )
-            if isinstance(capture_stdout, str)
-            else capture_stdout
+            if capture_stdout and isinstance(capture_stdout, str)
+            else bool(capture_stdout)
         )
+        self.dry = dry
         self._is_windows = sys.platform == "win32"
 
     @classmethod
@@ -86,15 +87,15 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         context: "RunContext",
         env: "EnvVarsManager",
         working_dir: Optional[Path] = None,
-        dry: bool = False,
         executor_config: Optional[Mapping[str, str]] = None,
         capture_stdout: Union[str, bool] = False,
+        dry: bool = False,
     ) -> "PoeExecutor":
         """"""
         # use task specific executor config or fallback to global
         options = executor_config or context.config.executor
         return cls._resolve_implementation(context, executor_config)(
-            invocation, context, options, env, working_dir, dry, capture_stdout
+            invocation, context, options, env, working_dir, capture_stdout, dry
         )
 
     @classmethod
@@ -109,11 +110,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
         config_executor_type = context.executor_type
         if executor_config:
-            if executor_config["type"] not in cls.__executor_types:
+            executor_type = executor_config["type"]
+            if executor_type not in cls.__executor_types:
                 raise PoeException(
-                    f"Cannot instantiate unknown executor {executor_config['type']!r}"
+                    f"Cannot instantiate unknown executor {executor_type!r}"
                 )
-            return cls.__executor_types[executor_config["type"]]
+            return cls.__executor_types[executor_type]
         elif config_executor_type == "auto":
             for impl in [
                 cls.__executor_types["poetry"],
@@ -180,7 +182,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 return self._handle_file_not_found(cmd, error)
             if error.filename == self.working_dir:
                 raise PoeException(
-                    "The specified working directory does not exists "
+                    "The specified working directory does not exist "
                     f"'{self.working_dir}'"
                 )
             raise
@@ -270,25 +272,40 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         return proc.returncode
 
     @classmethod
-    def validate_config(cls, config: Dict[str, Any]) -> Optional[str]:
+    def validate_config(cls, config: Dict[str, Any]):
+        if "type" not in config:
+            raise ConfigValidationError(
+                "Missing required key 'type' from executor option",
+                global_option="executor",
+            )
+
         executor_type = config["type"]
         if executor_type == "auto":
             extra_options = set(config.keys()) - {"type"}
             if extra_options:
-                return f"Unexpected keys for executor config: {extra_options!r}"
+                raise ConfigValidationError(
+                    f"Unexpected keys for executor config: {extra_options!r}",
+                    global_option="executor",
+                )
+
         elif executor_type not in cls.__executor_types:
-            return f"Unknown executor type: {executor_type!r}"
+            raise ConfigValidationError(
+                f"Unknown executor type: {executor_type!r}",
+                global_option="executor.type",
+            )
+
         else:
-            return cls.__executor_types[executor_type].validate_executor_config(config)
-        return None
+            cls.__executor_types[executor_type].validate_executor_config(config)
 
     @classmethod
-    def validate_executor_config(cls, config: Dict[str, Any]) -> Optional[str]:
+    def validate_executor_config(cls, config: Dict[str, Any]):
         """To be overridden by subclasses if they accept options"""
         extra_options = set(config.keys()) - {"type"}
         if extra_options:
-            return f"Unexpected keys for executor config: {extra_options!r}"
-        return None
+            raise ConfigValidationError(
+                f"Unexpected keys for executor config: {extra_options!r}",
+                global_option="executor",
+            )
 
 
 def _stop_coverage():

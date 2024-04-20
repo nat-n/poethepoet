@@ -19,6 +19,7 @@ def generate_pyproject(tmp_path):
             project_tmpl += "\nignore_fail = true"
         elif not isinstance(ignore_fail, bool):
             project_tmpl += f'\nignore_fail = "{ignore_fail}"'
+
         with open(tmp_path / "pyproject.toml", "w") as fp:
             fp.write(project_tmpl)
 
@@ -62,7 +63,6 @@ def test_invalid_ingore_value(generate_pyproject, run_poe):
     result = run_poe("all_tasks", cwd=project_path)
     assert result.code == 1, "Expected non-zero result"
     assert (
-        "Unsupported value for option `ignore_fail` for task 'all_tasks'."
-        ' Expected one of (true, false, "return_zero", "return_non_zero")'
-        in result.capture
-    )
+        "| Option 'ignore_fail' must be one of "
+        "(True, False, 'return_zero', 'return_non_zero')\n"
+    ) in result.capture

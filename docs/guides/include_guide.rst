@@ -45,7 +45,7 @@ If an included task file itself includes other files, these second order include
 Setting a working directory for included tasks
 ----------------------------------------------
 
-When including files from another location, you can also specify that tasks from that other file should be run from within a specific directory. For example with the following configuration, when tasks imported from my_subproject are run from the root, the task will actually execute as if it had been run from the *my_subproject* subdirectory.
+When including files from another location, you can also specify that tasks from that other file should be run from within a specific directory. For example with the following configuration, when tasks imported from *my_subproject* are run from the root, the task will actually execute as if it had been run from the *my_subproject* subdirectory.
 
 .. code-block:: toml
 
@@ -53,4 +53,13 @@ When including files from another location, you can also specify that tasks from
   path = "my_subproject/pyproject.toml"
   cwd  = "my_subproject"
 
-The cwd option still has the limitation that it cannot be used to specify a directory outside of parent directory of the pyproject.toml file that poe is running with.
+The directory indicated by the ``cwd`` option will also be used as the base directory for global or task level ``envfile`` imports for tasks defined within an included file.
+
+Tasks and config in an included file can access the ``cwd`` value via the ``POE_CONF_DIR`` environment variable. When no ``cwd`` is set on the include then ``POE_CONF_DIR`` refers the to the parent directory of the config file where a task is defined.
+
+You can still specify that an envfile referenced within an included file should be imported relative to the main project root, using the ``POE_ROOT`` environment variable like so:
+
+.. code-block:: toml
+
+  [tool.poe]
+  envfile = "${POE_ROOT}/.env"

@@ -40,29 +40,20 @@ class RunContext:
         self.multistage = multistage
         self.exec_cache = {}
         self.captured_stdout = {}
+
+        # Init root EnvVarsManager
         self.env = EnvVarsManager(self.config, self.ui, base_env=env, cwd=cwd)
+        for config_part in self.config.partitions():
+            self.env.apply_env_config(
+                envfile=config_part.get("envfile", None),
+                config_env=config_part.get("env", None),
+                config_dir=config_part.config_dir,
+                config_working_dir=config_part.cwd,
+            )
 
     @property
     def executor_type(self) -> Optional[str]:
         return self.config.executor["type"]
-
-    def get_task_env(
-        self,
-        parent_env: Optional["EnvVarsManager"],
-        task_envfile: Optional[str],
-        task_env: Optional[Mapping[str, str]],
-        task_uses: Optional[Mapping[str, Tuple[str, ...]]] = None,
-    ) -> "EnvVarsManager":
-        if parent_env is None:
-            parent_env = self.env
-
-        result = parent_env.for_task(task_envfile, task_env)
-
-        # Include env vars from dependencies
-        if task_uses is not None:
-            result.update(self._get_dep_values(task_uses))
-
-        return result
 
     def _get_dep_values(
         self, used_task_invocations: Mapping[str, Tuple[str, ...]]
@@ -104,7 +95,7 @@ class RunContext:
         env: "EnvVarsManager",
         working_dir: Path,
         executor_config: Optional[Mapping[str, str]] = None,
-        capture_stdout: bool = False,
+        capture_stdout: Union[str, bool] = False,
     ) -> "PoeExecutor":
         from .executor import PoeExecutor
 
@@ -113,7 +104,7 @@ class RunContext:
             context=self,
             env=env,
             working_dir=working_dir,
-            dry=self.dry,
             executor_config=executor_config,
             capture_stdout=capture_stdout,
+            dry=self.dry,
         )

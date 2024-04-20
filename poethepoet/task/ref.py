@@ -1,11 +1,13 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING
 
-from .base import PoeTask, TaskInheritance
+from ..exceptions import ConfigValidationError
+from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from .base import TaskSpecFactory
 
 
 class RefTask(PoeTask):
@@ -13,10 +15,47 @@ class RefTask(PoeTask):
     A task consisting of a reference to another task
     """
 
-    content: str
-
     __key__ = "ref"
-    __options__: Dict[str, Union[Type, Tuple[Type, ...]]] = {}
+
+    class TaskOptions(PoeTask.TaskOptions):
+        def validate(self):
+            """
+            Validation rules that don't require any extra context go here.
+            """
+            if self.executor:
+                raise ConfigValidationError(
+                    "Option 'executor' cannot be set on a ref task"
+                )
+            if self.capture_stdout:
+                raise ConfigValidationError(
+                    "Option 'capture_stdout' cannot be set on a ref task"
+                )
+
+    class TaskSpec(PoeTask.TaskSpec):
+        content: str
+        options: "RefTask.TaskOptions"
+
+        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+            """
+            Perform validations on this TaskSpec that apply to a specific task type
+            """
+
+            import shlex
+
+            task_name_ref = shlex.split(self.content)[0]
+
+            if task_name_ref not in task_specs:
+                raise ConfigValidationError(
+                    f"Includes reference to unknown task {task_name_ref!r}"
+                )
+
+            if task_specs.get(task_name_ref).options.get("use_exec", False):
+                raise ConfigValidationError(
+                    f"Illegal reference to task with "
+                    f"'use_exec' set to true: {task_name_ref!r}"
+                )
+
+    spec: TaskSpec
 
     def _handle_run(
         self,
@@ -34,17 +73,13 @@ class RefTask(PoeTask):
         ref_invocation = (
             *(
                 env.fill_template(token)
-                for token in shlex.split(env.fill_template(self.content.strip()))
+                for token in shlex.split(env.fill_template(self.spec.content.strip()))
             ),
             *extra_args,
         )
 
-        task = self.from_config(
-            ref_invocation[0],
-            self._config,
-            self._ui,
-            invocation=ref_invocation,
-            inheritance=TaskInheritance.from_task(self),
+        task = self.ctx.specs.get(ref_invocation[0]).create_task(
+            invocation=ref_invocation, ctx=TaskContext.from_task(self)
         )
 
         if task.has_deps():
@@ -75,34 +110,3 @@ class RefTask(PoeTask):
                         f"Task graph aborted after failed task {stage_task.name!r}"
                     )
         return 0
-
-    @classmethod
-    def _validate_task_def(
-        cls, task_name: str, task_def: Dict[str, Any], config: "PoeConfig"
-    ) -> Optional[str]:
-        """
-        Check the given task definition for validity specific to this task type and
-        return a message describing the first encountered issue if any.
-        """
-
-        # TODO: disallow capture_stdout and executor options?
-
-        import shlex
-
-        task_ref = task_def["ref"]
-        task_name_ref = shlex.split(task_ref)[0]
-
-        if task_name_ref not in config.tasks:
-            return (
-                f"Task {task_name!r} contains reference to unknown task "
-                f"{task_name_ref!r}"
-            )
-
-        referenced_task = config.tasks[task_name_ref]
-        if isinstance(referenced_task, dict) and referenced_task.get("use_exec"):
-            return (
-                f"Invalid task: {task_name!r}. contains illegal reference to task with "
-                f"use_exec set to true: {task_ref!r}"
-            )
-
-        return None

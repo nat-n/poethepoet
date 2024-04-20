@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 
 from .template import apply_envvars_to_template
 
@@ -16,7 +16,7 @@ class EnvVarsManager:
     _vars: Dict[str, str]
     envfiles: "EnvFileCache"
 
-    def __init__(
+    def __init__(  # TODO: check if we still need all these args!
         self,
         config: "PoeConfig",
         ui: Optional["PoeUi"],
@@ -39,73 +39,59 @@ class EnvVarsManager:
             **(base_env or {}),
         }
 
-        if parent_env is None:
-            # Get env vars from envfile(s) referenced in global options
-            global_envfile = self._config.global_envfile
-            if isinstance(global_envfile, str):
-                self._vars.update(self.envfiles.get(global_envfile))
-            elif isinstance(global_envfile, list):
-                for task_envfile_path in global_envfile:
-                    self._vars.update(self.envfiles.get(task_envfile_path))
-
-            # Get env vars from global options
-            self._apply_env_config(self._config.global_env)
-
         self._vars["POE_ROOT"] = str(self._config.project_dir)
 
         self.cwd = str(cwd or os.getcwd())
-        if "POE_PWD" not in self._vars:
-            self._vars["POE_PWD"] = self.cwd
+        if "POE_CWD" not in self._vars:
+            self._vars["POE_CWD"] = self.cwd
+            self._vars["POE_PWD"] = self.cwd  # Deprecated
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         return self._vars.get(key, default)
 
-    def _apply_env_config(
+    def set(self, key: str, value: str):
+        self._vars[key] = value
+
+    def apply_env_config(
         self,
-        config_env: Mapping[str, Union[str, Mapping[str, str]]],
+        envfile: Optional[Union[str, List[str]]],
+        config_env: Optional[Mapping[str, Union[str, Mapping[str, str]]]],
+        config_dir: Path,
+        config_working_dir: Path,
     ):
         """
         Used for including env vars from global or task config.
         If a value is provided as a mapping from `"default"` to `str` then it is only
         used if the associated key doesn't already have a value.
         """
-        for key, value in config_env.items():
+
+        vars_scope = dict(self._vars, POE_CONF_DIR=str(config_dir))
+        if envfile:
+            if isinstance(envfile, str):
+                envfile = [envfile]
+            for envfile_path in envfile:
+                self.update(
+                    self.envfiles.get(
+                        config_working_dir.joinpath(
+                            apply_envvars_to_template(
+                                envfile_path, vars_scope, require_braces=True
+                            )
+                        )
+                    )
+                )
+
+        vars_scope = dict(self._vars, POE_CONF_DIR=str(config_dir))
+        for key, value in (config_env or {}).items():
             if isinstance(value, str):
                 value_str = value
-            elif key not in self._vars:
+            elif key not in vars_scope:
                 value_str = value["default"]
             else:
                 continue
 
             self._vars[key] = apply_envvars_to_template(
-                value_str, self._vars, require_braces=True
+                value_str, vars_scope, require_braces=True
             )
-
-    def for_task(
-        self, task_envfile: Optional[str], task_env: Optional[Mapping[str, str]]
-    ) -> "EnvVarsManager":
-        """
-        Create a copy of self and extend it to include vars for the task.
-        """
-        result = EnvVarsManager(
-            self._config,
-            self._ui,
-            parent_env=self,
-            cwd=self.cwd,
-        )
-
-        # Include env vars from envfile(s) referenced in task options
-        if isinstance(task_envfile, str):
-            result.update(self.envfiles.get(task_envfile))
-        elif isinstance(task_envfile, list):
-            for task_envfile_path in task_envfile:
-                result.update(self.envfiles.get(task_envfile_path))
-
-        # Include env vars from task options
-        if task_env is not None:
-            result._apply_env_config(task_env)
-
-        return result
 
     def update(self, env_vars: Mapping[str, Any]):
         # ensure all values are strings
@@ -119,6 +105,14 @@ class EnvVarsManager:
         self._vars.update(str_vars)
 
         return self
+
+    def clone(self):
+        return EnvVarsManager(
+            config=self._config,
+            ui=self._ui,
+            parent_env=self,
+            cwd=self.cwd,
+        )
 
     def to_dict(self):
         return dict(self._vars)

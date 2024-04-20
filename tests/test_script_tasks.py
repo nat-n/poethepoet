@@ -212,9 +212,11 @@ def test_script_task_bad_type(run_poe_subproc, projects):
         "--greeting=hello",
     )
     assert (
-        "Error: 'datetime' is not a valid type for arg 'greeting' of task 'bad-type'. "
-        "Choose one of {boolean float integer string} \n" in result.capture
-    )
+        "Error: Invalid argument 'greeting' declared in task 'bad-type'\n"
+        "     | Option 'type' must be one of "
+        "('string', 'float', 'integer', 'boolean')\n"
+    ) in result.capture
+
     assert result.stdout == ""
     assert result.stderr == ""
 
@@ -226,9 +228,9 @@ def test_script_task_bad_content(run_poe_subproc, projects):
         "--greeting=hello",
     )
     assert (
-        "Error: Task 'bad-type' contains invalid callable reference "
-        "'dummy_package:main[greeting]' "
-        "(expected something like `module:callable` or `module:callable()`)"
+        "Error: Invalid task 'bad-type'\n"
+        "     | Invalid callable reference 'dummy_package:main[greeting]'\n"
+        "     | (expected something like `module:callable` or `module:callable()`)\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
