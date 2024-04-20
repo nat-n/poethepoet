@@ -93,7 +93,7 @@ def test_interpreter_python(run_poe_subproc):
 
 def test_bad_interpreter_config(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'--root={projects["shells/bad_interpreter"]}',
+        f'-C={projects["shells/bad_interpreter"]}',
         "bad-interpreter",
     )
     assert (
@@ -108,7 +108,7 @@ def test_bad_interpreter_config(run_poe_subproc, projects):
 
 def test_global_interpreter_config(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'--root={projects["shells/shell_interpreter_config"]}',
+        f'-C={projects["shells/shell_interpreter_config"]}',
         "echo_python",
     )
     assert result.capture == "Poe => import sys\nprint(sys.version_info)\n"

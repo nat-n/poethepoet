@@ -114,12 +114,24 @@ class PoeUi:
         )
 
         parser.add_argument(
-            "--root",
+            "-C",
+            "--directory",
             dest="project_root",
             metavar="PATH",
             type=str,
             default=None,
             help="Specify where to find the pyproject.toml",
+        )
+
+        # legacy --root parameter, keep for backwards compatability but help output is
+        # suppressed
+        parser.add_argument(
+            "--root",
+            dest="project_root",
+            metavar="PATH",
+            type=str,
+            default=None,
+            help=argparse.SUPPRESS,
         )
 
         ansi_group = parser.add_mutually_exclusive_group()
@@ -206,7 +218,7 @@ class PoeUi:
                 (
                     "<h2>USAGE</h2>",
                     f"  <u>{self.program_name}</u>"
-                    " [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi]"
+                    " [-h] [-v | -q] [--C PATH] [--ansi | --no-ansi]"
                     " task [task arguments]",
                 )
             )

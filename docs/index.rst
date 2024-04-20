@@ -117,7 +117,7 @@ If no virtualenv is found then poe will run tasks without any special environmen
 Run poe from anywhere
 =====================
 
-By default poe will detect when you're inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the :sh:`--root` option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.
+By default poe will detect when you're inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the :sh:`-C` option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.
 
 In all cases the path to project root (where the pyproject.toml resides) will be available as :sh:`$POE_ROOT` within the command line and process. The variable :sh:`$POE_PWD` contains the original working directory from which poe was run.
 

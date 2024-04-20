@@ -20,7 +20,7 @@ def test_task_envfile_and_default(run_poe_subproc):
 
 def test_multiple_envfiles(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'--root={projects["envfile/multiple_envfiles"]}', "show_me_the_vals"
+        f'-C={projects["envfile/multiple_envfiles"]}', "show_me_the_vals"
     )
 
     assert (
