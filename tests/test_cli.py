@@ -15,6 +15,22 @@ def test_call_no_args(run_poe):
     assert "CONFIGURED TASKS\n  echo" in result.capture, "echo task should be in help"
 
 
+def test_call_with_directory(run_poe, projects):
+    result = run_poe("--directory", str(projects["example"]), cwd=".")
+    assert result.code == 1, "Expected non-zero result"
+    assert result.capture.startswith(
+        "Poe the Poet - A task runner that works well with poetry."
+    ), "Output should start with poe header line"
+    assert (
+        "\nResult: No task specified.\n" in result.capture
+    ), "Output should include status message"
+    assert (
+        "CONFIGURED TASKS\n  echo                 It says what you say"
+        in result.capture
+    ), "echo task should be in help"
+
+
+# Test legacy --root parameter (replaced by -C, --directory)
 def test_call_with_root(run_poe, projects):
     result = run_poe("--root", str(projects["example"]), cwd=".")
     assert result.code == 1, "Expected non-zero result"

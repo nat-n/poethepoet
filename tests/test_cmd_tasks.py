@@ -173,7 +173,7 @@ def test_cmd_task_with_with_glob_arg_and_cwd(
 
 def test_cmd_with_capture_stdout(run_poe_subproc, projects, poe_project_path):
     result = run_poe_subproc(
-        "--root",
+        "-C",
         str(projects["cmds"]),
         "meeseeks",
         project="cmds",

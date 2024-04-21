@@ -33,7 +33,7 @@ def test_customize_config_name_with_json(run_poe, projects, capsys):
     assert result.stderr == ""
 
     result = run_poe(
-        "--root",
+        "-C",
         str(projects["custom_config"]),
         "hello",
         config_name="tasks.json",
