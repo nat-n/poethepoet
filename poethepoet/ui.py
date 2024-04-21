@@ -218,7 +218,7 @@ class PoeUi:
                 (
                     "<h2>USAGE</h2>",
                     f"  <u>{self.program_name}</u>"
-                    " [-h] [-v | -q] [--C PATH] [--ansi | --no-ansi]"
+                    " [-h] [-v | -q] [-C PATH] [--ansi | --no-ansi]"
                     " task [task arguments]",
                 )
             )

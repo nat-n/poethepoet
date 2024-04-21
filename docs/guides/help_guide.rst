@@ -26,7 +26,7 @@ This help text will be displayed alongside the task name in the list of configur
   version 0.25.1
 
   USAGE
-    poe [-h] [-v | -q] [--C PATH] [--ansi | --no-ansi] task [task arguments]
+    poe [-h] [-v | -q] [-C PATH] [--ansi | --no-ansi] task [task arguments]
 
   GLOBAL OPTIONS
     -h, --help            Show this help page and exit
