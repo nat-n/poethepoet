@@ -119,7 +119,7 @@ class PoeUi:
             dest="project_root",
             metavar="PATH",
             type=str,
-            default=None,
+            default=os.environ.get("POE_PROJECT_DIR", None),
             help="Specify where to find the pyproject.toml",
         )
 
@@ -274,7 +274,7 @@ class PoeUi:
             else:
                 result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
 
-        if error and os.environ.get("POE_DEBUG", "0").lower() == "1":
+        if error and os.environ.get("POE_DEBUG", "0") == "1":
             import traceback
 
             result.append("".join(traceback.format_exception(error)).strip())
@@ -308,7 +308,7 @@ class PoeUi:
         for line in self._format_error_lines(error_lines):
             self._print(line)
 
-        if os.environ.get("POE_DEBUG", "0").lower() == "1":
+        if os.environ.get("POE_DEBUG", "0") == "1":
             import traceback
 
             self._print("".join(traceback.format_exception(error)).strip())

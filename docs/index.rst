@@ -7,6 +7,7 @@
    global_options
    tasks/index
    guides/index
+   env_vars
    license
 
 **************************
