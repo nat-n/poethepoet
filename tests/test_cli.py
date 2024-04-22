@@ -25,8 +25,23 @@ def test_call_with_directory(run_poe, projects):
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
     assert (
-        "CONFIGURED TASKS\n  echo                 It says what you say"
-        in result.capture
+        "CONFIGURED TASKS\n"
+        "  echo                 It says what you say" in result.capture
+    ), "echo task should be in help"
+
+
+def test_call_with_directory_set_via_env(run_poe_subproc, projects):
+    result = run_poe_subproc(env={"POE_PROJECT_DIR": str(projects["example"])}, cwd=".")
+    assert result.code == 1, "Expected non-zero result"
+    assert result.capture.startswith(
+        "Poe the Poet - A task runner that works well with poetry."
+    ), "Output should start with poe header line"
+    assert (
+        "\nResult: No task specified.\n" in result.capture
+    ), "Output should include status message"
+    assert (
+        "CONFIGURED TASKS\n"
+        "  echo                 It says what you say" in result.capture
     ), "echo task should be in help"
 
 
@@ -41,8 +56,8 @@ def test_call_with_root(run_poe, projects):
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
     assert (
-        "CONFIGURED TASKS\n  echo                 It says what you say"
-        in result.capture
+        "CONFIGURED TASKS\n"
+        "  echo                 It says what you say" in result.capture
     ), "echo task should be in help"
 
 
