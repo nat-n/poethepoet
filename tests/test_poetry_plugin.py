@@ -106,6 +106,17 @@ def test_running_tasks_without_poe_command_prefix(run_poetry, projects):
 
 @pytest.mark.slow()
 @pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
+def test_poetry_command_from_included_file_with_empty_prefix(run_poetry, projects):
+    result = run_poetry(
+        ["included-greeting"],
+        cwd=projects["poetry_plugin/empty_prefix"].parent,
+    )
+    assert result.stdout.startswith("Poe => echo 'Greetings from another file!'")
+    # assert result.stderr == ""
+
+
+@pytest.mark.slow()
+@pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
 def test_poetry_help_with_poe_command_prefix(run_poetry, projects):
     result = run_poetry([], cwd=projects["poetry_plugin/with_prefix"].parent)
     assert result.stdout.startswith("Poetry (version ")

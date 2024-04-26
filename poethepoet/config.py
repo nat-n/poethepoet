@@ -9,6 +9,7 @@ except ImportError:
 
 from typing import (
     Any,
+    Dict,
     Iterator,
     List,
     Mapping,
@@ -280,9 +281,7 @@ class PoeConfig:
             Path().resolve() if cwd is None else Path(cwd)
         )
         self._project_config = ProjectConfig(
-            {"tool.poe": table or {}},
-            path=self._project_dir.joinpath(config_name),
-            strict=False,
+            {"tool.poe": table or {}}, path=self._project_dir, strict=False
         )
         self._included_config = []
 
@@ -322,7 +321,7 @@ class PoeConfig:
         yield from result
 
     @property
-    def tasks(self) -> Mapping[str, Any]:
+    def tasks(self) -> Dict[str, Any]:
         result = dict(self._project_config.get("tasks", {}))
         for config in self._included_config:
             for task_name, task_def in config.get("tasks", {}).items():
@@ -356,7 +355,7 @@ class PoeConfig:
 
     @property
     def is_poetry_project(self) -> bool:
-        return "poetry" in self._project_config.full_config
+        return "poetry" in self._project_config.full_config.get("tool", {})
 
     @property
     def project_dir(self) -> Path:

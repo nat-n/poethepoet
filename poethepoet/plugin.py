@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from cleo.commands.command import Command
 from cleo.events.console_command_event import ConsoleCommandEvent
@@ -10,6 +10,9 @@ from poetry.console.application import COMMANDS, Application
 from poetry.plugins.application_plugin import ApplicationPlugin
 
 from .exceptions import PoePluginException
+
+if TYPE_CHECKING:
+    from .config import PoeConfig
 
 
 class PoeCommand(Command):
@@ -87,7 +90,7 @@ class PoetryPlugin(ApplicationPlugin):
 
             debug = bool(int(os.environ.get("DEBUG_POE_PLUGIN", "0")))
             print(
-                "error: poethepoet plugin failed to activate."
+                "error: poethepoet plugin encountered an error."
                 + ("" if debug else " Set DEBUG_POE_PLUGIN=1 for details."),
                 file=sys.stderr,
             )
@@ -104,10 +107,10 @@ class PoetryPlugin(ApplicationPlugin):
             # If there's no pyproject.toml then probably that's OK, don't freak out
             return
 
-        command_prefix = poe_config.get("poetry_command", "poe").strip()
+        command_prefix = poe_config._project_config.get("poetry_command").strip()
         PoeCommand.command_prefix = command_prefix
 
-        poe_tasks = poe_config.get("tasks", {})
+        poe_tasks = poe_config.tasks
         self._validate_command_prefix(command_prefix)
 
         if command_prefix in COMMANDS:
@@ -141,33 +144,22 @@ class PoetryPlugin(ApplicationPlugin):
         self._monkey_patch_cleo(command_prefix, list(poe_tasks.keys()))
 
         self._register_command_event_handler(
-            application, poe_config.get("poetry_hooks", {})
+            application, poe_config._project_config.get("poetry_hooks", {})
         )
 
     @classmethod
-    def _get_config(cls, application: Application) -> Dict[str, Any]:
+    def _get_config(cls, application: Application) -> "PoeConfig":
+        from .config import PoeConfig
+
+        # Try respect poetry's '--directory' if set
         try:
-            pyproject = application.poetry.pyproject.data
-        except:  # noqa: E722
-            # Fallback to loading the config again in case of future failure of the
-            # above undocumented API
-            import tomlkit
+            pyproject_dir = application.poetry.pyproject_path.parent
+        except AttributeError:
+            pyproject_dir = None
 
-            from .config import PoeConfig
-
-            # Try respect poetry's '--directory' if set
-            try:
-                pyproject_path = Path(application.poetry.pyproject_path)
-            except AttributeError:
-                pyproject_path = None
-
-            pyproject = tomlkit.loads(
-                Path(
-                    PoeConfig().find_config_file(target_path=pyproject_path)
-                ).read_text()
-            )
-
-        return pyproject.get("tool", {}).get("poe", {})
+        poe_config = PoeConfig(cwd=pyproject_dir)
+        poe_config.load(strict=False)
+        return poe_config
 
     def _validate_command_prefix(self, command_prefix: str):
         if command_prefix and not command_prefix.isalnum():
