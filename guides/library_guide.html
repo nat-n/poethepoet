@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Normally poethepoet would be installed as a tool or poetry plugin, but it can also be used as a library to embed task runner capabilities into another tool. The following script replicates the main..." />
 <meta name="description" content="Normally poethepoet would be installed as a tool or poetry plugin, but it can also be used as a library to embed task runner capabilities into another tool. The following script replicates the main..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Licence" href="../license.html" /><link rel="prev" title="Loading tasks from another file" href="include_guide.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Environment variables" href="../env_vars.html" /><link rel="prev" title="Loading tasks from another file" href="include_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/library_guide.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
@@ -190,6 +190,7 @@
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Using poethepoet as a library</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
 </ul>
 
@@ -258,7 +259,7 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>cwd</strong> (<em>Path</em><em>, </em><em>optional</em>) – The directory that poe should take as the current working directory,
 this determines where to look for a pyproject.toml file, defaults to
-<code class="docutils literal notranslate"><span class="pre">Path(&quot;.&quot;).resolve()</span></code></p></li>
+<code class="docutils literal notranslate"><span class="pre">Path().resolve()</span></code></p></li>
 <li><p><strong>config</strong> (<em>dict</em><em> | </em><em>PoeConfig</em><em>, </em><em>optional</em>) – Either a dictionary with the same schema as a pyproject.toml file, or a
 <a class="reference external" href="https://github.com/nat-n/poethepoet/blob/main/poethepoet/config.py">PoeConfig</a>
 object to use as an alternative to loading config from a file.</p></li>
@@ -282,12 +283,12 @@ outputting help messages, defaults to “poe”</p></li>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../license.html">
+          <a class="next-page" href="../env_vars.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Licence</div>
+                <div class="title">Environment variables</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

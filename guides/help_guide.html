@@ -190,6 +190,7 @@
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
 </ul>
 
@@ -252,20 +253,21 @@
 <p>This help text will be displayed alongside the task name in the list of configured tasks when <code class="docutils literal notranslate"><span class="pre">poe</span></code> is run without specifying a task.</p>
 <div class="highlight-docs notranslate"><div class="highlight"><pre><span></span>$ poe --help
 Poe the Poet - A task runner that works well with poetry.
-version 0.19.0
+version 0.25.1
 
 USAGE
-  poe [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]
+  poe [-h] [-v | -q] [-C PATH] [--ansi | --no-ansi] task [task arguments]
 
 GLOBAL OPTIONS
-  -h, --help     Show this help page and exit
-  --version      Print the version and exit
-  -v, --verbose  Increase command output (repeatable)
-  -q, --quiet    Decrease command output (repeatable)
-  -d, --dry-run  Print the task contents but don&#39;t actually run it
-  --root PATH    Specify where to find the pyproject.toml
-  --ansi         Force enable ANSI output
-  --no-ansi      Force disable ANSI output
+  -h, --help            Show this help page and exit
+  --version             Print the version and exit
+  -v, --verbose         Increase command output (repeatable)
+  -q, --quiet           Decrease command output (repeatable)
+  -d, --dry-run         Print the task contents but don&#39;t actually run it
+  -C PATH, --directory PATH
+                        Specify where to find the pyproject.toml
+  --ansi                Force enable ANSI output
+  --no-ansi             Force disable ANSI output
 
 CONFIGURED TASKS
   test           Run the test suite

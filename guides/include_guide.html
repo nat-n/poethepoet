@@ -190,6 +190,7 @@
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
 </ul>
 
@@ -267,13 +268,19 @@
 </section>
 <section id="setting-a-working-directory-for-included-tasks">
 <h2>Setting a working directory for included tasks<a class="headerlink" href="#setting-a-working-directory-for-included-tasks" title="Permalink to this heading">#</a></h2>
-<p>When including files from another location, you can also specify that tasks from that other file should be run from within a specific directory. For example with the following configuration, when tasks imported from my_subproject are run from the root, the task will actually execute as if it had been run from the <em>my_subproject</em> subdirectory.</p>
+<p>When including files from another location, you can also specify that tasks from that other file should be run from within a specific directory. For example with the following configuration, when tasks imported from <em>my_subproject</em> are run from the root, the task will actually execute as if it had been run from the <em>my_subproject</em> subdirectory.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.include]]</span>
 <span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_subproject/pyproject.toml&quot;</span>
 <span class="n">cwd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_subproject&quot;</span>
 </pre></div>
 </div>
-<p>The cwd option still has the limitation that it cannot be used to specify a directory outside of parent directory of the pyproject.toml file that poe is running with.</p>
+<p>The directory indicated by the <code class="docutils literal notranslate"><span class="pre">cwd</span></code> option will also be used as the base directory for global or task level <code class="docutils literal notranslate"><span class="pre">envfile</span></code> imports for tasks defined within an included file.</p>
+<p>Tasks and config in an included file can access the <code class="docutils literal notranslate"><span class="pre">cwd</span></code> value via the <code class="docutils literal notranslate"><span class="pre">POE_CONF_DIR</span></code> environment variable. When no <code class="docutils literal notranslate"><span class="pre">cwd</span></code> is set on the include then <code class="docutils literal notranslate"><span class="pre">POE_CONF_DIR</span></code> refers the to the parent directory of the config file where a task is defined.</p>
+<p>You can still specify that an envfile referenced within an included file should be imported relative to the main project root, using the <code class="docutils literal notranslate"><span class="pre">POE_ROOT</span></code> environment variable like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_ROOT}/.env&quot;</span>
+</pre></div>
+</div>
 </section>
 </section>
 

@@ -23,20 +23,21 @@ This help text will be displayed alongside the task name in the list of configur
 
   $ poe --help
   Poe the Poet - A task runner that works well with poetry.
-  version 0.19.0
+  version 0.25.1
 
   USAGE
-    poe [-h] [-v | -q] [--root PATH] [--ansi | --no-ansi] task [task arguments]
+    poe [-h] [-v | -q] [-C PATH] [--ansi | --no-ansi] task [task arguments]
 
   GLOBAL OPTIONS
-    -h, --help     Show this help page and exit
-    --version      Print the version and exit
-    -v, --verbose  Increase command output (repeatable)
-    -q, --quiet    Decrease command output (repeatable)
-    -d, --dry-run  Print the task contents but don't actually run it
-    --root PATH    Specify where to find the pyproject.toml
-    --ansi         Force enable ANSI output
-    --no-ansi      Force disable ANSI output
+    -h, --help            Show this help page and exit
+    --version             Print the version and exit
+    -v, --verbose         Increase command output (repeatable)
+    -q, --quiet           Decrease command output (repeatable)
+    -d, --dry-run         Print the task contents but don't actually run it
+    -C PATH, --directory PATH
+                          Specify where to find the pyproject.toml
+    --ansi                Force enable ANSI output
+    --no-ansi             Force disable ANSI output
 
   CONFIGURED TASKS
     test           Run the test suite
