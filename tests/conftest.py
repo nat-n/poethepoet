@@ -377,3 +377,16 @@ def with_virtualenv_and_venv(use_venv, use_virtualenv):
             yield
 
     return with_virtualenv_and_venv
+
+
+@pytest.fixture()
+def temp_pyproject(tmp_path):
+    """Return function which generates pyproject.toml with the given content"""
+
+    def generator(project_tmpl: str):
+        with open(tmp_path / "pyproject.toml", "w") as fp:
+            fp.write(project_tmpl)
+
+        return tmp_path
+
+    return generator

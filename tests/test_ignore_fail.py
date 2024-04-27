@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.fixture()
-def generate_pyproject(tmp_path):
+def generate_pyproject(temp_pyproject):
     """Return function which generates pyproject.toml with a given ignore_fail value."""
 
     def generator(ignore_fail):
@@ -20,10 +20,7 @@ def generate_pyproject(tmp_path):
         elif not isinstance(ignore_fail, bool):
             project_tmpl += f'\nignore_fail = "{ignore_fail}"'
 
-        with open(tmp_path / "pyproject.toml", "w") as fp:
-            fp.write(project_tmpl)
-
-        return tmp_path
+        return temp_pyproject(project_tmpl)
 
     return generator
 
