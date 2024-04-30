@@ -61,3 +61,7 @@ sequence = [
   {script = "os:getcwd()", cwd = ".", print_result = true}
 ]
 cwd = "my_package"
+
+[tool.poe.tasks.setup]
+default_item_type = "cmd"
+sequence = ["./tools/poetry-ci-install.sh"]

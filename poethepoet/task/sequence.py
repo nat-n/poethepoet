@@ -75,7 +75,10 @@ class SequenceTask(PoeTask):
 
                 subtask_name = (
                     sub_task_def
-                    if isinstance(sub_task_def, str)
+                    if (
+                        isinstance(sub_task_def, str)
+                        and (sub_task_def[0].isalpha() or sub_task_def[0] == "_")
+                    )
                     else SequenceTask._subtask_name(name, index)
                 )
                 task_type_key = self.task_type.resolve_task_type(
