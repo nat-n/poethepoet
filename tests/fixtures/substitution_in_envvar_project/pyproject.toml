@@ -1,0 +1,7 @@
+[tool.poe.env]
+BASE_DIR = "/foo"
+SUBDIR = "${BASE_DIR}/bar"
+FILE = "${SUBDIR}/baz"
+
+[tool.poe.tasks.frobnicate]
+expr = "${FILE}"
