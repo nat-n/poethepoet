@@ -2,6 +2,8 @@ import re
 from glob import escape
 from typing import TYPE_CHECKING, Iterator, List, Mapping, Optional, Tuple, cast
 
+from .ast import Comment
+
 if TYPE_CHECKING:
     from .ast import Line, ParseConfig
 
@@ -54,6 +56,10 @@ def resolve_command_tokens(
         return (token, includes_glob)
 
     for word in line:
+        if isinstance(word, Comment):
+            # strip out comments
+            continue
+
         # For each token part indicate whether it is a glob
         token_parts: List[Tuple[str, bool]] = []
         for segment in word:
