@@ -13,7 +13,7 @@ def parse_poe_cmd(source: str, config: Optional["ParseConfig"] = None):
         # Poe cmd task content differs from POSIX command lines in that new lines are
         # ignored (except in comments) and glob patterns are constrained to what the
         # python standard library glob module can support
-        config = ParseConfig(substitute_nodes={Glob: PythonGlob}, line_seperators=";")
+        config = ParseConfig(substitute_nodes={Glob: PythonGlob}, line_separators=";")
 
     return Script(ParseCursor.from_string(source), config)
 

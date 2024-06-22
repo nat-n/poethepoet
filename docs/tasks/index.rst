@@ -10,7 +10,7 @@ A task defined as a string will by default be interpreted as a single command to
   [tool.poe.tasks]
   test = "pytest"
 
-A task defined as an array will by default be interepreted as a :doc:`sequence <task_types/sequence>` of :doc:`references<task_types/ref>` to other tasks.
+A task defined as an array will by default be interpreted as a :doc:`sequence <task_types/sequence>` of :doc:`references<task_types/ref>` to other tasks.
 
 .. code-block:: toml
 

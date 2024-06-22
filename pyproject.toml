@@ -54,7 +54,7 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
   [tool.poe.tasks.format]
-  help     = "Run all formating tools on the code base"
+  help     = "Run all formatting tools on the code base"
   sequence = ["format-ruff", "format-black"]
 
   [tool.poe.tasks.format-ruff]

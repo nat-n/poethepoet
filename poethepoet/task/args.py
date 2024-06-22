@@ -54,7 +54,7 @@ class ArgSpec(PoeOptions):
     @classmethod
     def normalize(cls, args_def: ArgsDef, strict: bool = True):
         """
-        Becuase arguments can be declared with different structures
+        Because arguments can be declared with different structures
         (i.e. dict or list), this function normalizes the input into a list of
         dictionaries with necessary keys.
 
@@ -72,7 +72,7 @@ class ArgSpec(PoeOptions):
                     )
                 elif strict:
                     raise ConfigValidationError(
-                        f"Argument {item!r} has invlaid type, a string or dict is "
+                        f"Argument {item!r} has invalid type, a string or dict is "
                         "expected"
                     )
 
@@ -177,7 +177,7 @@ class ArgSpec(PoeOptions):
 
         if self.multiple is not False and self.type == "boolean":
             raise ConfigValidationError(
-                "Argument with type 'boolean' may not delcare option 'multiple'"
+                "Argument with type 'boolean' may not declare option 'multiple'"
             )
 
 

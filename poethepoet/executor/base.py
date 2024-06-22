@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 class MetaPoeExecutor(type):
     """
-    This metaclass makes all decendents of PoeExecutor (task types) register themselves
+    This metaclass makes all descendents of PoeExecutor (task types) register themselves
     on declaration and validates that they include the expected class attributes.
     """
 

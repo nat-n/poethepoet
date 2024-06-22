@@ -55,7 +55,7 @@ def test_return_non_zero(generate_pyproject, run_poe):
     assert "Subtasks task_1, task_2 returned non-zero exit status" in result.capture
 
 
-def test_invalid_ingore_value(generate_pyproject, run_poe):
+def test_invalid_ignore_value(generate_pyproject, run_poe):
     project_path = generate_pyproject(ignore_fail="invalid_value")
     result = run_poe("all_tasks", cwd=project_path)
     assert result.code == 1, "Expected non-zero result"

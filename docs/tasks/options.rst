@@ -166,5 +166,5 @@ However in certain situations it can be desirable to define a task that is inste
   Note the following limitations with this feature:
 
   1. a task configured in this way may not be referenced by another task
-  2. this does not work on windows becuase of `this issue <https://bugs.python.org/issue19066>`_. On windows a subprocess is always created.
+  2. this does not work on windows because of `this issue <https://bugs.python.org/issue19066>`_. On windows a subprocess is always created.
 
