@@ -1,0 +1,6 @@
+# tasks to be included relative to the git repo root
+
+[tool.poe.tasks]
+did_it_work = "poe_test_echo yes"
+
+has_repo_env_vars2 = "poe_test_echo XXX ${POE_GIT_ROOT} YYY ${POE_GIT_DIR} ZZZ"

@@ -1,3 +1,19 @@
+import pytest
+
+
+@pytest.fixture(scope="session")
+def _init_git_repo(projects):
+    from poethepoet.helpers.git import GitRepo
+
+    repo_path = projects["includes/git_repo/sub_project"].parent.parent
+    repo = GitRepo(repo_path)
+    # Init the git repo for use in tests
+    repo.init()
+    yield
+    # Delete the .git dir so that we don't have to deal with it as a git submodule
+    repo.delete_git_dir()
+
+
 def test_docs_for_include_toml_file(run_poe_subproc):
     result = run_poe_subproc(project="includes")
     assert (
@@ -305,4 +321,56 @@ def test_include_subproject_envfiles_with_cwd_set(
         "TASK_REL_PROC_CWD: task level rel to process cwd\n"
         "TASK_REL_SOURCE_CONFIG: task level rel to source config\n"
     )
+    assert result.stderr == ""
+
+
+@pytest.mark.usefixtures("_init_git_repo")
+def test_include_tasks_from_git_repo(run_poe_subproc, projects):
+    # test task included relative to POE_GIT_ROOT
+    result = run_poe_subproc(
+        "did_it_work", cwd=projects["includes/git_repo/sub_project"]
+    )
+    assert result.capture == "Poe => poe_test_echo yes\n"
+    assert result.stdout == "yes\n"
+    assert result.stderr == ""
+
+    # test task included relative to POE_GIT_DIR
+    result = run_poe_subproc(
+        "did_it_work2", cwd=projects["includes/git_repo/sub_project"]
+    )
+    assert result.capture == "Poe => poe_test_echo yes\n"
+    assert result.stdout == "yes\n"
+    assert result.stderr == ""
+
+
+@pytest.mark.usefixtures("_init_git_repo")
+def test_use_poe_git_vars(run_poe_subproc, projects, is_windows, poe_project_path):
+    result = run_poe_subproc(
+        "has_repo_env_vars", cwd=projects["includes/git_repo/sub_project"]
+    )
+    assert result.capture.startswith("Poe => poe_test_echo XXX")
+    if is_windows:
+        assert result.stdout.endswith(
+            f"XXX {poe_project_path} "
+            f"YYY {poe_project_path}\\tests\\fixtures\\includes_project\\git_repo ZZZ\n"
+        )
+    else:
+        assert result.stdout.endswith(
+            f"XXX {poe_project_path} "
+            f"YYY {poe_project_path}/tests/fixtures/includes_project/git_repo ZZZ\n"
+        )
+    assert result.stderr == ""
+
+
+@pytest.mark.usefixtures("_init_git_repo")
+def test_poe_git_vars_for_task_level_envfile_and_env(
+    run_poe_subproc, projects, poe_project_path
+):
+    result = run_poe_subproc("print_env", cwd=projects["includes/git_repo/sub_project"])
+    assert result.capture.startswith("Poe => poe_test_env")
+    assert "POE_GIT_ROOT=" not in result.stdout
+    assert f"POE_GIT_ROOT_2={poe_project_path}" in result.stdout
+    assert "POE_GIT_DIR=" not in result.stdout
+    assert f"POE_GIT_DIR_2={poe_project_path}" in result.stdout
+    assert "BASE_ENV_LOADED=" in result.stdout
     assert result.stderr == ""
