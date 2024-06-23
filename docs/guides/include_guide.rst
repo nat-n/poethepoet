@@ -63,3 +63,16 @@ You can still specify that an envfile referenced within an included file should 
 
   [tool.poe]
   envfile = "${POE_ROOT}/.env"
+
+
+Including files relative to the git repo
+----------------------------------------
+
+Normally include paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the file to include relative to the root of the git repository, which can be done by referenceing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
+
+.. code-block:: toml
+
+  [tool.poe]
+  include = "${POE_GIT_DIR}/tasks.toml"
+
+See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.

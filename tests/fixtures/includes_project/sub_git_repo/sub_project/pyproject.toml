@@ -1,0 +1,14 @@
+
+[[tool.poe.include]]
+# Can't work out a way to make this scenario actually work without making it too complex
+path = "${POE_GIT_ROOT}/tests/fixtures/includes_project/sub_git_repo/base_tasks.toml"
+
+[[tool.poe.include]]
+path = "${POE_GIT_DIR}/base_tasks2.toml"
+
+[tool.poe.tasks]
+has_repo_env_vars = "poe_test_echo XXX ${POE_GIT_ROOT} YYY ${POE_GIT_DIR} ZZZ"
+
+print_env.cmd = "poe_test_env"
+print_env.envfile = "${POE_GIT_DIR}/base_env"
+print_env.env = { POE_GIT_DIR_2 = "${POE_GIT_DIR}", POE_GIT_ROOT_2 = "${POE_GIT_ROOT}"}

@@ -1,4 +1,5 @@
 import json
+from os import environ
 from pathlib import Path
 from types import MappingProxyType
 
@@ -22,6 +23,8 @@ from typing import (
 
 from .exceptions import ConfigValidationError, PoeException
 from .options import NoValue, PoeOptions
+
+POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
 
 
 class ConfigPartition:
@@ -427,7 +430,7 @@ class PoeConfig:
             if not target_path.exists():
                 raise PoeException(
                     f"Poe could not find a {self._config_name!r} file at the given "
-                    f"location: {target_path!r}"
+                    f"location: {str(target_path)!r}"
                 )
             return target_path
 
@@ -455,11 +458,14 @@ class PoeConfig:
     def _load_includes(self: "PoeConfig", strict: bool = True):
         # Attempt to load each of the included configs
         for include in self._project_config.options.include:
-            include_path = self._project_dir.joinpath(include["path"]).resolve()
+            include_path = self._resolve_include_path(include["path"])
 
             if not include_path.exists():
                 # TODO: print warning in verbose mode, requires access to ui somehow
                 #       Maybe there should be something like a WarningService?
+
+                if POE_DEBUG:
+                    print(f" ! Could not include file from invalid path {include_path}")
                 continue
 
             try:
@@ -476,11 +482,36 @@ class PoeConfig:
                         strict=strict,
                     )
                 )
+                if POE_DEBUG:
+                    print(f"  Included config from {include_path}")
             except (PoeException, KeyError) as error:
                 raise ConfigValidationError(
                     f"Invalid content in included file from {include_path}",
                     filename=str(include_path),
                 ) from error
+
+    def _resolve_include_path(self, include_path: str):
+        from .env.template import apply_envvars_to_template
+
+        available_vars = {"POE_ROOT": str(self._project_dir)}
+
+        if "${POE_GIT_DIR}" in include_path:
+            from .helpers.git import GitRepo
+
+            git_repo = GitRepo(self._project_dir)
+            available_vars["POE_GIT_DIR"] = str(git_repo.path or "")
+
+        if "${POE_GIT_ROOT}" in include_path:
+            from .helpers.git import GitRepo
+
+            git_repo = GitRepo(self._project_dir)
+            available_vars["POE_GIT_ROOT"] = str(git_repo.main_path or "")
+
+        include_path = apply_envvars_to_template(
+            include_path, available_vars, require_braces=True
+        )
+
+        return self._project_dir.joinpath(include_path).resolve()
 
     @staticmethod
     def _read_config_file(path: Path) -> Mapping[str, Any]:

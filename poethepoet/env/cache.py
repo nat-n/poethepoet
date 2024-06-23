@@ -35,7 +35,7 @@ class EnvFileCache:
                 with envfile_path.open(encoding="utf-8") as envfile_file:
                     result = parse_env_file(envfile_file.readlines())
                 if POE_DEBUG:
-                    print(f" - Loaded Envfile from {envfile_path}")
+                    print(f" + Loaded Envfile from {envfile_path}")
             except ValueError as error:
                 message = error.args[0]
                 raise ExecutionError(

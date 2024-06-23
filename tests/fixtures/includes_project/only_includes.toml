@@ -1,2 +1,2 @@
 [tool.poe]
-include = "greet.toml"
+include = "${POE_GIT_ROOT}/tests/fixtures/includes_project/greet.toml"
