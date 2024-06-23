@@ -1,5 +1,5 @@
 """
-This module core a framework for defining heirarchical parser and ASTs.
+This module core a framework for defining hierarchical parser and ASTs.
 See sibling ast module for an example usage.
 """
 
@@ -89,15 +89,15 @@ class ParseCursor:
 
 class ParseConfig:
     substitute_nodes: Dict[Type["AstNode"], Type["AstNode"]]
-    line_seperators: str
+    line_separators: str
 
     def __init__(
         self,
         substitute_nodes: Optional[Dict[Type["AstNode"], Type["AstNode"]]] = None,
-        line_seperators="",
+        line_separators="",
     ):
         self.substitute_nodes = substitute_nodes or {}
-        self.line_seperators = line_seperators
+        self.line_separators = line_separators
 
     def resolve_node_cls(self, klass: Type["AstNode"]) -> Type["AstNode"]:
         return self.substitute_nodes.get(klass, klass)

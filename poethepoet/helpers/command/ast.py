@@ -1,16 +1,16 @@
 # ruff: noqa: N806
 r"""
-This module implements a heirarchical parser and AST along the lines of the
+This module implements a hierarchical parser and AST along the lines of the
 following grammar which is a subset of bash syntax.
 
 script                : line*
 line                  : word* comment?
 word                  : segment*
-segment               : UNQUOTED_CONTENT | single_quoted_sement | double_quoted_sement
+segment               : UNQUOTED_CONTENT | single_quoted_segment | double_quoted_segment
 
-unquoted_sement       : UNQUOTED_CONTENT | param_expansion | glob
-single_quoted_sement  : "'" SINGLE_QUOTED_CONTENT "'"
-double_quoted_sement  : "\"" (DOUBLE_QUOTED_CONTENT | param_expansion) "\""
+unquoted_segment      : UNQUOTED_CONTENT | param_expansion | glob
+single_quoted_segment : "'" SINGLE_QUOTED_CONTENT "'"
+double_quoted_segment : "\"" (DOUBLE_QUOTED_CONTENT | param_expansion) "\""
 
 comment               : /#[^\n\r\f\v]*/
 glob                  : "?" | "*" | "[" /(\!?\]([^\s\]\\]|\\.)*|([^\s\]\\]|\\.)+)*/ "]"
@@ -393,7 +393,7 @@ class Line(SyntaxNode[Union[Word, Comment]]):
 
         self._children = []
         for char in chars:
-            if char in self.config.line_seperators:
+            if char in self.config.line_separators:
                 break
 
             elif char.isspace():
@@ -414,8 +414,8 @@ class Line(SyntaxNode[Union[Word, Comment]]):
 
 class Script(SyntaxNode[Line]):
     def __init__(self, chars: ParseCursor, config: ParseConfig = ParseConfig()):
-        if not config.line_seperators:
-            config.line_seperators = LINE_SEP_CHARS
+        if not config.line_separators:
+            config.line_separators = LINE_SEP_CHARS
         super().__init__(chars, config)
 
     @property
@@ -434,7 +434,7 @@ class Script(SyntaxNode[Line]):
 
         self._children = []
         while next_char := chars.peek():
-            if next_char in self.config.line_seperators:
+            if next_char in self.config.line_separators:
                 chars.take()
                 continue
 

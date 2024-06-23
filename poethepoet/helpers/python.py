@@ -264,7 +264,7 @@ def _apply_substitutions(content: str, subs: List[Substitution]):
     return "".join(segments)
 
 
-# This pattern matches the sequence of chars from the begining of the string that are
+# This pattern matches the sequence of chars from the beginning of the string that are
 # *probably* a valid identifier
 IDENTIFIER_PATTERN = r"[^\s\!-\/\:-\@\[-\^\{-\~`]+"
 

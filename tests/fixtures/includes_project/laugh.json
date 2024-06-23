@@ -9,7 +9,7 @@
         },
         "echo": {
           "shell": "poe_test_echo echo echo echo echo echo echo echo",
-          "help": "This is ignored becuase it's already defined!"
+          "help": "This is ignored because it's already defined!"
         }
       }
     }

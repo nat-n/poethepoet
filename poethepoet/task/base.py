@@ -34,7 +34,7 @@ _TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")
 
 class MetaPoeTask(type):
     """
-    This metaclass makes all decendents of PoeTask (task types) register themselves on
+    This metaclass makes all descendents of PoeTask (task types) register themselves on
     declaration and validates that they include the expected class attributes.
     """
 

@@ -3,7 +3,7 @@ default_greeting = "Hello"
 
 [tool.poe.tasks]
 echo.cmd = "poe_test_echo echo echo"
-echo.help = "This is ignored becuase it's already defined!"
+echo.help = "This is ignored because it's already defined!"
 
 greet = "poe_test_echo $default_greeting"
 

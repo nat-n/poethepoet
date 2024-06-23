@@ -123,7 +123,7 @@ class PoeUi:
             help="Specify where to find the pyproject.toml",
         )
 
-        # legacy --root parameter, keep for backwards compatability but help output is
+        # legacy --root parameter, keep for backwards compatibility but help output is
         # suppressed
         parser.add_argument(
             "--root",

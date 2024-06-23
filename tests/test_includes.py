@@ -84,7 +84,7 @@ def test_docs_for_only_includes(run_poe_subproc, projects):
     )
     assert (
         "CONFIGURED TASKS\n"
-        "  echo           This is ignored becuase it's already defined!\n"  # or not
+        "  echo           This is ignored because it's already defined!\n"  # or not
         "  greet          \n"
         "  greet1         \n"
         "  greet2         Issue a greeting from the Iberian Peninsula\n"
