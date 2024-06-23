@@ -238,19 +238,19 @@ class PoetryPlugin(ApplicationPlugin):
     def _monkey_patch_cleo(self, prefix: str, task_names: List[str]):
         """
         Cleo is quite opinionated about CLI structure and loose about how options are
-        used, and so doesn't currently support invidual commands having their own way of
-        interpreting arguments, and forces them to inherit certain options from the
+        used, and so doesn't currently support individual commands having their own way
+        of interpreting arguments, and forces them to inherit certain options from the
         application. This is a problem for poe which requires that global options are
         provided before the task name, and everything after the task name is interpreted
         ONLY in terms of the task.
 
         This hack monkey-patches internals of Cleo that are invoked directly after
         plugin's are loaded by poetry, and exploits a feature whereby argument and
-        option parsing are effectively disabled following any occurance of a "--" on the
-        command line, but parsing of the command name still works! Thus the solution is
-        to detect when it is a command from this plugin that is about to be executed and
-        insert the "--" token at the start of the tokens list of the ArgvInput instance
-        that the application is about to read the CLI options from.
+        option parsing are effectively disabled following any occurrence of a "--" on
+        the command line, but parsing of the command name still works! Thus the solution
+        is to detect when it is a command from this plugin that is about to be executed
+        and insert the "--" token at the start of the tokens list of the ArgvInput
+        instance that the application is about to read the CLI options from.
 
         Hopefully this doesn't get broken by a future update to poetry or cleo :S
         """

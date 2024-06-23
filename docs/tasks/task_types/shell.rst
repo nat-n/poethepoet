@@ -66,7 +66,7 @@ It is also possible to specify python code as the shell task code as in the foll
 The following interpreter values may be used:
 
 posix
-    This is the default behavoir, equivalent to ``["sh", "bash", "zsh"]``, meaning that poe will try to find sh, and fallback to bash, then zsh.
+    This is the default behavior, equivalent to ``["sh", "bash", "zsh"]``, meaning that poe will try to find sh, and fallback to bash, then zsh.
 sh
     Use the basic posix shell. This is often an alias for either bash or dash depending on the operating system.
 bash

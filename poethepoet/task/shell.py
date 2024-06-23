@@ -151,7 +151,7 @@ class ShellTask(PoeTask):
         elif interpreter == "bash":
             if self._is_windows:
                 # Specifically look for git bash on windows as the preferred option
-                # Don't trust bash from the path becuase it might be a useless decoy
+                # Don't trust bash from the path because it might be a useless decoy
                 result = (
                     which(f"{prog_files}\\Git\\bin\\bash.exe")
                     or which("/bin/bash")

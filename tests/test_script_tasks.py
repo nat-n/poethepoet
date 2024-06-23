@@ -176,11 +176,11 @@ def test_wrong_args_passed(run_poe_subproc):
     assert result.stderr == (f"{base_error} unrecognized arguments: --age 3 2 1\n")
 
     result = run_poe_subproc(
-        "greet-full-args", "--potatoe", project="scripts", env=no_venv
+        "greet-full-args", "--potato", project="scripts", env=no_venv
     )
     assert result.capture == ""
     assert result.stdout == ""
-    assert result.stderr == (f"{base_error} unrecognized arguments: --potatoe\n")
+    assert result.stderr == (f"{base_error} unrecognized arguments: --potato\n")
 
 
 def test_required_args(run_poe_subproc):
@@ -244,7 +244,7 @@ def test_script_with_positional_args(run_poe_subproc):
     assert result.stdout == "help! Santa\n"
     assert result.stderr == ""
 
-    # Ommission of optional positional arg
+    # Omission of optional positional arg
     result = run_poe_subproc(
         "greet-positional", "Santa", project="scripts", env=no_venv
     )
@@ -252,7 +252,7 @@ def test_script_with_positional_args(run_poe_subproc):
     assert result.stdout == "yo Santa\n"
     assert result.stderr == ""
 
-    # Ommission of required positional arg
+    # Omission of required positional arg
     result = run_poe_subproc("greet-positional", project="scripts", env=no_venv)
     assert result.capture == ""
     assert result.stdout == ""

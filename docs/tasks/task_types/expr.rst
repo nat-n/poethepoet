@@ -22,7 +22,7 @@
   `this collection <https://github.com/nat-n/poethepoet/blob/main/poethepoet/helpers/python.py#L13>`_
 - reference the |sys_module_link| module without having to specify it as an import
 - directly access whatever arguments were passed to the task from `sys.argv`
-- referene values of named args as python variables
+- reference values of named args as python variables
 - include environment variables as string values that are injected into the expression
   using the usual templating syntax ``${...}``
 

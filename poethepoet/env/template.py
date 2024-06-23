@@ -29,7 +29,7 @@ _SHELL_VAR_PATTERN_BRACES = re.compile(
 
 class SpyDict(dict):
     """
-    A kind of dict in which the behavior __getitem__ can be overriden.
+    A kind of dict in which the behavior __getitem__ can be overridden.
     """
 
     def __init__(self, content=tuple(), *, getitem_spy=None):
@@ -59,7 +59,7 @@ def apply_envvars_to_template(
     Template in ${environmental} $variables from env as if we were in a shell
 
     Supports escaping of the $ if preceded by an odd number of backslashes, in which
-    case the backslash immediately precending the $ is removed. This is an
+    case the backslash immediately preceding the $ is removed. This is an
     intentionally very limited implementation of escaping semantics for the sake of
     usability.
     """

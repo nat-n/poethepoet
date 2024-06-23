@@ -24,7 +24,7 @@ And the poe documentation can be viewed via:
 
   poetry poe
 
-It is also possible to modify this behavoir, to either have a different command prefix
+It is also possible to modify this behavior, to either have a different command prefix
 or none at all by setting the :toml:`poetry_command` global option in your
 pyproject.toml like so:
 
@@ -44,7 +44,7 @@ invoked simply as:
     Whatever :toml:`tool.poe.poetry_command` is set to must not already exist as a
     poetry command!
 
-    Additionally if setting it to the emtpy string then care must be taken to avoid
+    Additionally if setting it to the empty string then care must be taken to avoid
     defining any poe tasks that conflict with any other built in or plugin provided
     poetry command.
 

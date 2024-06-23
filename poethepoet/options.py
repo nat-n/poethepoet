@@ -115,11 +115,11 @@ class PoeOptions:
                 # Try format expected_type nicely in the error message
                 if not isinstance(expected_type, tuple):
                     expected_type = (expected_type,)
-                formated_type = " | ".join(
+                formatted_type = " | ".join(
                     type_.__name__ for type_ in expected_type if type_ is not type(None)
                 )
                 raise ConfigValidationError(
-                    f"Option {key!r} should have a value of type: {formated_type}",
+                    f"Option {key!r} should have a value of type: {formatted_type}",
                     index=index,
                 )
 

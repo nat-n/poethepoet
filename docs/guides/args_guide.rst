@@ -128,7 +128,7 @@ Named arguments support the following configuration options:
      default = "${AWS_REGION}"
      env.AWS_REGION.default = "eu-central-1"
 
-   As in the above example, this can be combined with setting an :doc:`env value<../tasks/options>` on the task with the ``default`` specifier to get the following precendence of values for the arg:
+   As in the above example, this can be combined with setting an :doc:`env value<../tasks/options>` on the task with the ``default`` specifier to get the following precedence of values for the arg:
 
    1. the value passed on the command line
    2. the value of the variable set on the environment
@@ -151,11 +151,11 @@ Named arguments support the following configuration options:
 
    If set to a number, then the argument will accept *exactly* that number of values.
 
-   For positional aguments, only the last positional argument may have the ``multiple`` option set.
+   For positional arguments, only the last positional argument may have the ``multiple`` option set.
 
    This option is not compatible with arguments with type ``boolean`` since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type "integer" for similar effect.
 
-   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your python function as a list of values. In a cmd task the values can be passed as separate arugments to the task via templating as in the following example.
+   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
 
    .. code-block:: toml
 
