@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from .ui import PoeUi
 
 
-class EnvVarsManager:
+class EnvVarsManager(Mapping):
     _config: "PoeConfig"
     _ui: Optional["PoeUi"]
     _vars: Dict[str, str]
@@ -24,13 +24,14 @@ class EnvVarsManager:
         base_env: Optional[Mapping[str, str]] = None,
         cwd: Optional[Union[Path, str]] = None,
     ):
+        from ..helpers.git import GitRepo
         from .cache import EnvFileCache
 
         self._config = config
         self._ui = ui
         self.envfiles = (
             # Reuse EnvFileCache from parent_env when possible
-            EnvFileCache(Path(config.project_dir), self._ui)
+            EnvFileCache(config.project_dir, self._ui)
             if parent_env is None
             else parent_env.envfiles
         )
@@ -39,14 +40,33 @@ class EnvVarsManager:
             **(base_env or {}),
         }
 
-        self._vars["POE_ROOT"] = str(self._config.project_dir)
+        self._vars["POE_ROOT"] = str(config.project_dir)
 
         self.cwd = str(cwd or os.getcwd())
         if "POE_CWD" not in self._vars:
             self._vars["POE_CWD"] = self.cwd
-            self._vars["POE_PWD"] = self.cwd  # Deprecated
+            self._vars["POE_PWD"] = self.cwd
 
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        self._git_repo = GitRepo(config.project_dir)
+
+    def __getitem__(self, key):
+        return self._vars[key]
+
+    def __iter__(self):
+        return iter(self._vars)
+
+    def __len__(self):
+        return len(self._vars)
+
+    def get(self, key: Any, /, default: Any = None) -> Optional[str]:
+        if key == "POE_GIT_DIR":
+            # This is a special case environment variable that is only set if requested
+            self._vars["POE_GIT_DIR"] = str(self._git_repo.path or "")
+
+        if key == "POE_GIT_ROOT":
+            # This is a special case environment variable that is only set if requested
+            self._vars["POE_GIT_ROOT"] = str(self._git_repo.main_path or "")
+
         return self._vars.get(key, default)
 
     def set(self, key: str, value: str):
@@ -65,7 +85,9 @@ class EnvVarsManager:
         used if the associated key doesn't already have a value.
         """
 
-        vars_scope = dict(self._vars, POE_CONF_DIR=str(config_dir))
+        scoped_env = self.clone()
+        scoped_env.set("POE_CONF_DIR", str(config_dir))
+
         if envfile:
             if isinstance(envfile, str):
                 envfile = [envfile]
@@ -74,23 +96,25 @@ class EnvVarsManager:
                     self.envfiles.get(
                         config_working_dir.joinpath(
                             apply_envvars_to_template(
-                                envfile_path, vars_scope, require_braces=True
+                                envfile_path, scoped_env, require_braces=True
                             )
                         )
                     )
                 )
 
-        vars_scope = dict(self._vars, POE_CONF_DIR=str(config_dir))
+        scoped_env = self.clone()
+        scoped_env.set("POE_CONF_DIR", str(config_dir))
+
         for key, value in (config_env or {}).items():
             if isinstance(value, str):
                 value_str = value
-            elif key not in vars_scope:
+            elif key not in scoped_env:
                 value_str = value["default"]
             else:
                 continue
 
             self._vars[key] = apply_envvars_to_template(
-                value_str, vars_scope, require_braces=True
+                value_str, scoped_env, require_braces=True
             )
 
     def update(self, env_vars: Mapping[str, Any]):
