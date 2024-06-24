@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 
 def test_call_echo_task(run_poe_subproc, projects, esc_prefix, is_windows):
     result = run_poe_subproc("echo", "foo", "!", project="cmds")
@@ -192,3 +194,18 @@ def test_cmd_with_capture_stdout(run_poe_subproc, projects, poe_project_path):
             assert output_file.read() == "I'm Mr. Meeseeks! Look at me!\n"
     finally:
         output_path.unlink()
+
+
+@pytest.mark.parametrize(
+    "testcase",
+    [
+        "multiline_no_comments",
+        "multiline_with_single_last_line_comment",
+        "multiline_with_many_comments",
+    ],
+)
+def test_cmd_multiline(run_poe_subproc, testcase):
+    result = run_poe_subproc(testcase, project="cmds")
+    assert result.capture == "Poe => poe_test_echo first_arg second_arg\n"
+    assert result.stdout == "first_arg second_arg\n"
+    assert result.stderr == ""

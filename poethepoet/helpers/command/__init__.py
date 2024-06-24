@@ -1,6 +1,17 @@
 import re
 from glob import escape
-from typing import TYPE_CHECKING, Iterator, List, Mapping, Optional, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    cast,
+)
+
+from .ast import Comment
 
 if TYPE_CHECKING:
     from .ast import Line, ParseConfig
@@ -19,7 +30,7 @@ def parse_poe_cmd(source: str, config: Optional["ParseConfig"] = None):
 
 
 def resolve_command_tokens(
-    line: "Line",
+    lines: Iterable["Line"],
     env: Mapping[str, str],
     config: Optional["ParseConfig"] = None,
 ) -> Iterator[Tuple[str, bool]]:
@@ -53,48 +64,54 @@ def resolve_command_tokens(
         token_parts.clear()
         return (token, includes_glob)
 
-    for word in line:
-        # For each token part indicate whether it is a glob
-        token_parts: List[Tuple[str, bool]] = []
-        for segment in word:
-            for element in segment:
-                if isinstance(element, ParamExpansion):
-                    param_value = env.get(element.param_name, "")
-                    if not param_value:
-                        continue
-                    if segment.is_quoted:
-                        token_parts.append((env.get(element.param_name, ""), False))
-                    else:
-                        # If the the param expansion it not quoted then:
-                        # - Whitespace inside a substituted param value results in
-                        #  a word break, regardless of quotes or backslashes
-                        # - glob patterns should be evaluated
+    for line in lines:
+        # Ignore line breaks, assuming they're only due to comments
+        for word in line:
+            if isinstance(word, Comment):
+                # strip out comments
+                continue
 
-                        if param_value[0].isspace() and token_parts:
-                            # param_value starts with a word break
-                            yield finalize_token(token_parts)
+            # For each token part indicate whether it is a glob
+            token_parts: List[Tuple[str, bool]] = []
+            for segment in word:
+                for element in segment:
+                    if isinstance(element, ParamExpansion):
+                        param_value = env.get(element.param_name, "")
+                        if not param_value:
+                            continue
+                        if segment.is_quoted:
+                            token_parts.append((env.get(element.param_name, ""), False))
+                        else:
+                            # If the the param expansion it not quoted then:
+                            # - Whitespace inside a substituted param value results in
+                            #  a word break, regardless of quotes or backslashes
+                            # - glob patterns should be evaluated
 
-                        param_words = (
-                            (word, bool(glob_pattern.search(word)))
-                            for word in param_value.split()
-                        )
-
-                        token_parts.append(next(param_words))
-
-                        for param_word in param_words:
-                            if token_parts:
+                            if param_value[0].isspace() and token_parts:
+                                # param_value starts with a word break
                                 yield finalize_token(token_parts)
-                            token_parts.append(param_word)
 
-                        if param_value[-1].isspace() and token_parts:
-                            # param_value ends with a word break
-                            yield finalize_token(token_parts)
+                            param_words = (
+                                (word, bool(glob_pattern.search(word)))
+                                for word in param_value.split()
+                            )
 
-                elif isinstance(element, Glob):
-                    token_parts.append((element.content, True))
+                            token_parts.append(next(param_words))
 
-                else:
-                    token_parts.append((element.content, False))
+                            for param_word in param_words:
+                                if token_parts:
+                                    yield finalize_token(token_parts)
+                                token_parts.append(param_word)
 
-        if token_parts:
-            yield finalize_token(token_parts)
+                            if param_value[-1].isspace() and token_parts:
+                                # param_value ends with a word break
+                                yield finalize_token(token_parts)
+
+                    elif isinstance(element, Glob):
+                        token_parts.append((element.content, True))
+
+                    else:
+                        token_parts.append((element.content, False))
+
+            if token_parts:
+                yield finalize_token(token_parts)

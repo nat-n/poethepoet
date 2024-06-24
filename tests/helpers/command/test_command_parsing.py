@@ -8,13 +8,13 @@ def test_resolve_command_tokens():
         """
     )[0]
 
-    assert list(resolve_command_tokens(line, {"thing2": ""})) == [
+    assert list(resolve_command_tokens([line], {"thing2": ""})) == [
         ("abcdef", False),
         ("*?", True),
     ]
 
     assert list(
-        resolve_command_tokens(line, {"thing1": " space ", "thing2": "s p a c e"})
+        resolve_command_tokens([line], {"thing1": " space ", "thing2": "s p a c e"})
     ) == [
         ("abc", False),
         ("space", False),
@@ -27,7 +27,7 @@ def test_resolve_command_tokens():
     ]
 
     assert list(
-        resolve_command_tokens(line, {"thing1": " space ", "thing2": "s p a c e"})
+        resolve_command_tokens([line], {"thing1": " space ", "thing2": "s p a c e"})
     ) == [
         ("abc", False),
         ("space", False),
@@ -40,7 +40,7 @@ def test_resolve_command_tokens():
     ]
 
     assert list(
-        resolve_command_tokens(line, {"thing1": "x'[!] ]'y", "thing2": "z [foo ? "})
+        resolve_command_tokens([line], {"thing1": "x'[!] ]'y", "thing2": "z [foo ? "})
     ) == [
         ("abcx'[!]", True),
         ("]'ydef", False),
@@ -56,8 +56,24 @@ def test_resolve_command_tokens():
         """
     )[0]
 
-    assert list(resolve_command_tokens(line, {"thing1": r" *\o/", "thing2": ""})) == [
+    assert list(resolve_command_tokens([line], {"thing1": r" *\o/", "thing2": ""})) == [
         (r"ab *\o/* and ? ' *\o/'", False),
         ("${thing1}", False),
         ("", False),
+    ]
+
+    lines = parse_poe_cmd(
+        """
+        # comment
+        one # comment
+        two # comment
+        three # comment
+        # comment
+        """
+    )
+
+    assert list(resolve_command_tokens(lines, {})) == [
+        ("one", False),
+        ("two", False),
+        ("three", False),
     ]

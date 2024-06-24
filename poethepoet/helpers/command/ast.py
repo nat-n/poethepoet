@@ -375,6 +375,8 @@ class Word(SyntaxNode[Segment]):
 
 
 class Line(SyntaxNode[Union[Word, Comment]]):
+    _terminator: str
+
     @property
     def words(self) -> Tuple[Word, ...]:
         if self._children and isinstance(self._children[-1], Comment):
@@ -394,6 +396,7 @@ class Line(SyntaxNode[Union[Word, Comment]]):
         self._children = []
         for char in chars:
             if char in self.config.line_separators:
+                self._terminator = char
                 break
 
             elif char.isspace():
@@ -401,6 +404,7 @@ class Line(SyntaxNode[Union[Word, Comment]]):
 
             elif char == "#":
                 self._children.append(CommentCls(chars, self.config))
+                self._terminator = char
                 return
 
             else:
