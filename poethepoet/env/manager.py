@@ -116,6 +116,7 @@ class EnvVarsManager(Mapping):
             self._vars[key] = apply_envvars_to_template(
                 value_str, scoped_env, require_braces=True
             )
+            scoped_env.set(key, self._vars[key])
 
     def update(self, env_vars: Mapping[str, Any]):
         # ensure all values are strings

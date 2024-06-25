@@ -32,3 +32,23 @@ def test_global_env_templating(temp_pyproject, run_poe_subproc):
     }
     for value in printed_vars.values():
         assert value.endswith(str(project_path)[5:])
+
+
+EXAMPLE_WITH_ENV_COMPOSITION = """
+[tool.poe.env]
+BASE_DIR = "/foo"
+SUBDIR = "${BASE_DIR}/bar"
+FILE = "${SUBDIR}/baz"
+
+[tool.poe.tasks.frobnicate]
+expr = "${FILE}"
+"""
+
+
+def test_substitution_in_envvar(temp_pyproject, run_poe_subproc):
+    project_path = temp_pyproject(EXAMPLE_WITH_ENV_COMPOSITION)
+    result = run_poe_subproc("frobnicate", cwd=project_path)
+
+    assert result.capture == "Poe => ${FILE}\n"
+    assert result.stdout == "/foo/bar/baz\n"
+    assert result.stderr == ""
