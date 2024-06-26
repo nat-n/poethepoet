@@ -293,7 +293,18 @@ not already set like so:</p>
 </pre></div>
 </div>
 </div>
-<p>The envfile global option also accepts a list of env files.</p>
+<p>The envfile global option also accepts a list of env files like so.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;standard.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;local.env&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>In this case the referenced files will be loaded in the given order.</p>
+<p>Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referenceing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/.env&quot;</span>
+</pre></div>
+</div>
+<p>See the documentation on <a class="reference internal" href="env_vars.html#special-variables"><span class="std std-ref">Special variables</span></a> for a full explanation of how these variables work.</p>
 </section>
 <section id="change-the-executor-type">
 <h2>Change the executor type<a class="headerlink" href="#change-the-executor-type" title="Permalink to this heading">#</a></h2>

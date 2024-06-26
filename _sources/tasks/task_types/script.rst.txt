@@ -13,7 +13,7 @@ As in the second example, is it possible to hard code literal arguments to the t
 
 If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called python function via :python:`sys.argv`. If :doc:`args <../options>` are configured for the task then they will be available as python variables.
 
-If the target python function is an async function then it will be exectued with :python:`asyncio.run`.
+If the target python function is an async function then it will be executed with :python:`asyncio.run`.
 
 
 Available task options

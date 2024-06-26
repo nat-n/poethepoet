@@ -310,6 +310,12 @@ above but can also by given a list of such paths like so:</p>
 </pre></div>
 </div>
 <p>In this case the referenced files will be loaded in the given order.</p>
+<p>Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referenceing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/.env&quot;</span>
+</pre></div>
+</div>
+<p>See the documentation on <a class="reference internal" href="../env_vars.html#special-variables"><span class="std std-ref">Special variables</span></a> for a full explanation of how these variables work.</p>
 </section>
 </section>
 <section id="running-a-task-with-a-specific-working-directory">
@@ -358,7 +364,7 @@ above but can also by given a list of such paths like so:</p>
 <p>Note the following limitations with this feature:</p>
 <ol class="arabic simple">
 <li><p>a task configured in this way may not be referenced by another task</p></li>
-<li><p>this does not work on windows becuase of <a class="reference external" href="https://bugs.python.org/issue19066">this issue</a>. On windows a subprocess is always created.</p></li>
+<li><p>this does not work on windows because of <a class="reference external" href="https://bugs.python.org/issue19066">this issue</a>. On windows a subprocess is always created.</p></li>
 </ol>
 </div>
 </section>

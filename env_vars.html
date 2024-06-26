@@ -241,9 +241,17 @@
 <p>The following environment variables are used by Poe the Poet internally, and can be accessed from within configuration and tasks.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_ROOT</span></code>: path to the parent directory of the main tasks file (e.g. pyproject.toml).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">POE_PWD</span></code>: the current working directory of the poe process (unless overriden programmatically).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POE_PWD</span></code>: the current working directory of the poe process (unless overridden programmatically).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_CONF_DIR</span></code>: the path to the parent directory of the config file that defines the running task or the <a class="reference internal" href="guides/include_guide.html#setting-a-working-directory-for-included-tasks"><span class="std std-ref">cwd option</span></a> set when including that config.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_ACTIVE</span></code>: identifies the active PoeExecutor, so that Poe the Poet can tell when it is running recursively.</p></li>
+</ul>
+</section>
+<section id="special-variables">
+<h2>Special variables<a class="headerlink" href="#special-variables" title="Permalink to this heading">#</a></h2>
+<p>The following variables are not set on the environment by default but can be referenced from task configuration as if they were.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code>: path of the git repo that the project is part of. This allows a project in a subdirectory of a monorepo to reference <a class="reference internal" href="guides/include_guide.html#including-files-relative-to-the-git-repo"><span class="std std-ref">includes</span></a> or <a class="reference internal" href="tasks/options.html#loading-environment-variables-from-an-env-file"><span class="std std-ref">envfiles</span></a> relative to the root of the git repo. Note that referencing this variable causes poe to attempt to call the <code class="docutils literal notranslate"><span class="pre">git</span></code> executable which must be available on the path.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code>: just like <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> except that if the project is in a git submodule, then the path will point to the working directory of the main repo above it.</p></li>
 </ul>
 </section>
 <section id="external-environment-variables">
@@ -326,6 +334,7 @@
             <ul>
 <li><a class="reference internal" href="#">Environment variables</a><ul>
 <li><a class="reference internal" href="#internal-environment-variables">Internal Environment variables</a></li>
+<li><a class="reference internal" href="#special-variables">Special variables</a></li>
 <li><a class="reference internal" href="#external-environment-variables">External Environment variables</a></li>
 </ul>
 </li>

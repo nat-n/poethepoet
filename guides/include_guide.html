@@ -282,6 +282,15 @@
 </pre></div>
 </div>
 </section>
+<section id="including-files-relative-to-the-git-repo">
+<h2>Including files relative to the git repo<a class="headerlink" href="#including-files-relative-to-the-git-repo" title="Permalink to this heading">#</a></h2>
+<p>Normally include paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the file to include relative to the root of the git repository, which can be done by referenceing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/tasks.toml&quot;</span>
+</pre></div>
+</div>
+<p>See the documentation on <a class="reference internal" href="../env_vars.html#special-variables"><span class="std std-ref">Special variables</span></a> for a full explanation of how these variables work.</p>
+</section>
 </section>
 
         </article>
@@ -354,6 +363,7 @@
 <li><a class="reference internal" href="#">Loading tasks from another file</a><ul>
 <li><a class="reference internal" href="#including-multiple-files">Including multiple files</a></li>
 <li><a class="reference internal" href="#setting-a-working-directory-for-included-tasks">Setting a working directory for included tasks</a></li>
+<li><a class="reference internal" href="#including-files-relative-to-the-git-repo">Including files relative to the git repo</a></li>
 </ul>
 </li>
 </ul>

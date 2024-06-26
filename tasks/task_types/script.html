@@ -244,7 +244,7 @@
 </div>
 <p>As in the second example, is it possible to hard code literal arguments to the target callable. In fact a subset of python syntax, operators, and globals can be used inline to define the arguments to the function using normal python syntax, including environ (from the os package) to access environment variables that are available to the task.</p>
 <p>If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called python function via <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code>. If <a class="reference internal" href="../options.html"><span class="doc">args</span></a> are configured for the task then they will be available as python variables.</p>
-<p>If the target python function is an async function then it will be exectued with <code class="code highlight python docutils literal highlight-python"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span></code>.</p>
+<p>If the target python function is an async function then it will be executed with <code class="code highlight python docutils literal highlight-python"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span></code>.</p>
 <section id="available-task-options">
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>

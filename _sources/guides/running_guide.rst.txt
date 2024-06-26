@@ -26,7 +26,7 @@ This task can the be run via the poe cli as ``poe test``.
 Run a task with the poe CLI
 ---------------------------
 
-The prefered way to run poe is via the standalone CLI.
+The preferred way to run poe is via the standalone CLI.
 
 .. code-block:: sh
 

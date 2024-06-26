@@ -74,7 +74,23 @@ You can also specify an env file (with bash-like syntax) to load for all tasks l
     [tool.poe]
     envfile = ".env"
 
-The envfile global option also accepts a list of env files.
+The envfile global option also accepts a list of env files like so.
+
+.. code-block:: toml
+
+    [tool.poe]
+    envfile = ["standard.env", "local.env"]
+
+In this case the referenced files will be loaded in the given order.
+
+Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referenceing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
+
+.. code-block:: toml
+
+    [tool.poe]
+    envfile = "${POE_GIT_DIR}/.env"
+
+See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
 
 Change the executor type
 ------------------------
