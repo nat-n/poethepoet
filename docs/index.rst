@@ -122,7 +122,6 @@ By default poe will detect when you're inside a project with a pyproject.toml in
 
 In all cases the path to project root (where the pyproject.toml resides) will be available as :sh:`$POE_ROOT` within the command line and process. The variable :sh:`$POE_PWD` contains the original working directory from which poe was run.
 
-
 .. |poetry_link| raw:: html
 
    <a href="https://python-poetry.org/" target="_blank">poetry</a>
@@ -131,3 +130,4 @@ In all cases the path to project root (where the pyproject.toml resides) will be
 
    <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a>
 
+Using this feature you can also define :doc:`global tasks<./guides/global_tasks>` that are not associated with any particular project.

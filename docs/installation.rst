@@ -107,7 +107,6 @@ Fish
   poe _fish_completion > (brew --prefix)/share/fish/vendor_completions.d/poe.fish
 
 
-
 Supported python versions
 -------------------------
 

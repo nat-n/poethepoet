@@ -1,7 +1,7 @@
 from typing import Any, Iterable, Set
 
 
-def get_zsh_completion_script() -> str:
+def get_zsh_completion_script(name: str = "") -> str:
     """
     A special task accessible via `poe _zsh_completion` that prints a zsh completion
     script for poe generated from the argparses config
@@ -9,6 +9,8 @@ def get_zsh_completion_script() -> str:
     from pathlib import Path
 
     from ..app import PoeThePoet
+
+    name = name or "poe"
 
     # build and interogate the argument parser as the normal cli would
     app = PoeThePoet(cwd=Path().resolve())
@@ -25,6 +27,9 @@ def get_zsh_completion_script() -> str:
     # format the zsh completion script
     args_lines = ["    _arguments -C"]
     for option in global_options:
+        if option.help == "==SUPPRESS==":
+            continue
+
         # help and version are special cases that dont go with other args
         if option.dest in ["help", "version"]:
             options_part = (
@@ -67,20 +72,58 @@ def get_zsh_completion_script() -> str:
 
         args_lines.append(f'"{options_part}[{option.help}]"')
 
-    args_lines.append('"1: :($TASKS)"')
+    args_lines.append('"1: :($tasks)"')
+    args_lines.append('": :($tasks)"')  # needed to complete task after global options
     args_lines.append('"*::arg:->args"')
+
+    target_path_logic = """
+    local DIR_ARGS=("-C" "--directory" "--root")
+
+    local target_path=""
+    local tasks=()
+
+    for ((i=2; i<${#words[@]}; i++)); do
+        # iter arguments passed so far
+        if (( $DIR_ARGS[(Ie)${words[i]}] )); then
+            # arg is one of DIR_ARGS, so the next arg should be the target_path
+            if (( ($i+1) >= ${#words[@]} )); then
+                # this is the last arg, the next one should be path
+                _files
+                return
+            fi
+            target_path="${words[i+1]}"
+            tasks=($(poe _list_tasks $target_path))
+            i=$i+1
+        elif [[ "${words[i]}" != -* ]] then
+            if (( ${#tasks[@]}<1 )); then
+                # get the list of tasks if we didn't already
+                tasks=($(poe _list_tasks $target_path))
+            fi
+            if (( $tasks[(Ie)${words[i]}] )); then
+                # a task has been given so complete with files
+                _files
+                return
+            fi
+        fi
+    done
+
+    if (( ${#tasks[@]}<1 )); then
+        # get the list of tasks if we didn't already
+        tasks=($(poe _list_tasks $target_path))
+    fi
+    """
 
     return "\n".join(
         [
-            "#compdef _poe poe\n",
-            "function _poe {",
+            f"#compdef _{name} {name}\n",
+            f"function _{name} " "{",
+            target_path_logic,
             '    local ALL_EXLC=("-h" "--help" "--version")',
-            "    local TASKS=($(poe _list_tasks))",
             "",
             " \\\n        ".join(args_lines),
             "",
             # Only offer filesystem based autocompletions after a task is specified
-            "    if (($TASKS[(Ie)$line[1]])); then",
+            "    if (($tasks[(Ie)$line[1]])); then",
             "        _files",
             "    fi",
             "}",

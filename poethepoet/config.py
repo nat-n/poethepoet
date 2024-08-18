@@ -372,7 +372,7 @@ class PoeConfig:
 
         config_path = self.find_config_file(
             target_path=Path(target_path) if target_path else None,
-            search_parent=target_path is None,
+            search_parent=not target_path,
         )
         self._project_dir = config_path.parent
 
