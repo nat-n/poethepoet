@@ -3,21 +3,21 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="script tasks" />
+<meta property="og:title" content="Global tasks" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="tasks/task_types/script.html" />
+<meta property="og:url" content="guides/global_tasks.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Script tasks consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example: As in the second example, is it possible to h..." />
-<meta name="description" content="Script tasks consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example: As in the second example, is it possible to h..." />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="shell tasks" href="shell.html" /><link rel="prev" title="cmd tasks" href="cmd.html" />
-        <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/script.html" />
+<meta property="og:description" content="This guide covers how to use poethepoet as a global task runner, for private user level tasks instead of shared project level tasks. Global tasks are available anywhere, and serve a similar purpose..." />
+<meta name="description" content="This guide covers how to use poethepoet as a global task runner, for private user level tasks instead of shared project level tasks. Global tasks are available anywhere, and serve a similar purpose..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Loading tasks from another file" href="include_guide.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/guides/global_tasks.html" />
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
-        <title>script tasks - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+        <title>Global tasks - Poe the Poet</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
     
 
@@ -131,7 +131,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">Poe the Poet</div></a>
+      <a href="../index.html"><div class="brand">Poe the Poet</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -151,48 +151,48 @@
   <aside class="sidebar-drawer">
     <div class="sidebar-container">
       
-      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
   
   <div class="sidebar-logo-container">
-    <img class="sidebar-logo only-light" src="../../_static/poe_logo_x2000.png" alt="Light Logo"/>
-    <img class="sidebar-logo only-dark" src="../../_static/poe_logo_x2000.png" alt="Dark Logo"/>
+    <img class="sidebar-logo only-light" src="../_static/poe_logo_x2000.png" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="../_static/poe_logo_x2000.png" alt="Dark Logo"/>
   </div>
   
   <span class="sidebar-brand-text">Poe the Poet</span>
   
-</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../poetry_plugin.html">Poetry plugin</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../global_options.html">Global options</a></li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Defining tasks</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../options.html">Standard task options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cmd.html">Command tasks</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Script tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="shell.html">Shell tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sequence.html">Sequence tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="expr.html">Expression tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="switch.html">Switch tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ref.html">Reference tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../global_options.html">Global options</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Defining tasks</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/options.html">Standard task options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../guides/index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Guides</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/running_guide.html">Running tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/help_guide.html">Documenting tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/args_guide.html">Configuring CLI arguments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/composition_guide.html">Composing tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/include_guide.html">Loading tasks from another file</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/global_tasks.html">Global tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../guides/library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Guides</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="running_guide.html">Running tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../env_vars.html">Environment variables</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">Licence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
 </ul>
 
 </div>
@@ -213,7 +213,7 @@
         </a>
         <div class="content-icon-container">
           <div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/tasks/task_types/script.rst" title="Edit this page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/global_tasks.rst" title="Edit this page">
     <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
@@ -235,56 +235,36 @@
           </label>
         </div>
         <article role="main">
-          <section id="script-tasks">
-<h1><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks<a class="headerlink" href="#script-tasks" title="Permalink to this heading">#</a></h1>
-<p><strong>Script tasks</strong> consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.assets:fetch&quot;</span>
-<span class="n">fetch-images</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.assets:fetch(only=&#39;images&#39;, log=environ[&#39;LOG_PATH&#39;])&quot;</span>
+          <section id="global-tasks">
+<h1>Global tasks<a class="headerlink" href="#global-tasks" title="Permalink to this heading">#</a></h1>
+<p>This guide covers how to use poethepoet as a global task runner, for private user level tasks instead of shared project level tasks. Global tasks are available anywhere, and serve a similar purpose to shell aliases or scripts on the <code class="docutils literal notranslate"><span class="pre">PATH</span></code> — but as poe tasks.</p>
+<p>There are two steps required to make this work:</p>
+<ol class="arabic simple">
+<li><p>Create a project somewhere central such as <code class="docutils literal notranslate"><span class="pre">~/.poethepoet</span></code> where you define tasks that you want to have globally accessible</p></li>
+<li><p>Configure an alias in your shell’s startup script such as <code class="docutils literal notranslate"><span class="pre">alias</span> <span class="pre">goe=&quot;poe</span> <span class="pre">-C</span> <span class="pre">~/.poethepoet&quot;</span></code>.</p></li>
+</ol>
+<p>The project at <code class="docutils literal notranslate"><span class="pre">~/.poethepoet</span></code> can be a regular poetry project including dependencies or just a file with tasks.</p>
+<p>You can choose any location to define the tasks, and whatever name you like for the global poe alias.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For this to work Poe the Poet must be installed globally such as via pipx or homebrew.</p>
+</div>
+<section id="shell-completions-for-global-tasks">
+<h2>Shell completions for global tasks<a class="headerlink" href="#shell-completions-for-global-tasks" title="Permalink to this heading">#</a></h2>
+<p>If you uze zsh or fish then the usual completion script should just work with your alias (as long as it was created with poethepoet &gt;=0.28.0).</p>
+<p>However for bash you’ll need to generate a new completion script for the alias specifying the alias and the path to you global tasks like so:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># System bash</span>
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>goe<span class="w"> </span>~/.poethepoet<span class="w"> </span>&gt;<span class="w"> </span>/etc/bash_completion.d/goe.bash-completion
+
+<span class="c1"># Homebrew bash</span>
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>goe<span class="w"> </span>~/.poethepoet<span class="w"> </span>&gt;<span class="w"> </span><span class="k">$(</span>brew<span class="w"> </span>--prefix<span class="k">)</span>/etc/bash_completion.d/goe.bash-completion
 </pre></div>
 </div>
-<p>As in the second example, is it possible to hard code literal arguments to the target callable. In fact a subset of python syntax, operators, and globals can be used inline to define the arguments to the function using normal python syntax, including environ (from the os package) to access environment variables that are available to the task.</p>
-<p>If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called python function via <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code>. If <a class="reference internal" href="../options.html"><span class="doc">args</span></a> are configured for the task then they will be available as python variables.</p>
-<p>If the target python function is an async function then it will be executed with <code class="code highlight python docutils literal highlight-python"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span></code>.</p>
-<section id="available-task-options">
-<h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
-<p>The following options are also accepted:</p>
-<dl>
-<dt><strong>print_result</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#output-the-return-value"><span class="std std-ref">📖</span></a></span></dt><dd><p>If true then the return value of the python callable will be output to stdout, unless it is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
-</dd>
-</dl>
-</section>
-<section id="output-the-return-value">
-<h2>Output the return value<a class="headerlink" href="#output-the-return-value" title="Permalink to this heading">#</a></h2>
-<p>Script tasks can be configured to output the return value of the python callable using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.create-secret]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;django.core.management.utils:get_random_secret_key()&quot;</span>
-<span class="n">print_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-</pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These examples assume your global poe alias is <code class="docutils literal notranslate"><span class="pre">goe</span></code>, and your global tasks live at <code class="docutils literal notranslate"><span class="pre">~/.poethepoet</span></code>.</p>
 </div>
-<p>Given the above configuration running the following command would output just the
-generated key.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>-q<span class="w"> </span>create-secret
-</pre></div>
-</div>
-<p>Note that if the return value is None then the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option has no
-effect.</p>
-</section>
-<section id="calling-standard-library-functions">
-<h2>Calling standard library functions<a class="headerlink" href="#calling-standard-library-functions" title="Permalink to this heading">#</a></h2>
-<p>Any python callable accessible via the python path can be referenced, including the
-standard library. This can be useful for ensuring that tasks work across platforms.</p>
-<p>For example, the following task will not always work on windows:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mkdir -p build/assets&quot;</span>
-</pre></div>
-</div>
-<p>whereas the same behaviour can can be reliably achieved like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;os:makedirs(&#39;build/assets&#39;, exist_ok=True)&quot;</span>
-</pre></div>
-</div>
+<p>How to ensure installed bash completions are enabled may vary depending on your system.</p>
 </section>
 </section>
 
@@ -293,23 +273,23 @@ standard library. This can be useful for ensuring that tasks work across platfor
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="shell.html">
+          <a class="next-page" href="library_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title"><code class="docutils literal notranslate"><span class="pre">shell</span></code> tasks</div>
+                <div class="title">Using poethepoet as a library</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="cmd.html">
+          <a class="prev-page" href="include_guide.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title"><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks</div>
+                <div class="title">Loading tasks from another file</div>
                 
               </div>
             </a>
@@ -355,10 +335,8 @@ standard library. This can be useful for ensuring that tasks work across platfor
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks</a><ul>
-<li><a class="reference internal" href="#available-task-options">Available task options</a></li>
-<li><a class="reference internal" href="#output-the-return-value">Output the return value</a></li>
-<li><a class="reference internal" href="#calling-standard-library-functions">Calling standard library functions</a></li>
+<li><a class="reference internal" href="#">Global tasks</a><ul>
+<li><a class="reference internal" href="#shell-completions-for-global-tasks">Shell completions for global tasks</a></li>
 </ul>
 </li>
 </ul>
@@ -370,12 +348,12 @@ standard library. This can be useful for ensuring that tasks work across platfor
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
-    <script src="../../_static/scripts/furo.js"></script>
-    <script src="../../_static/clipboard.min.js"></script>
-    <script src="../../_static/copybutton.js"></script>
+</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/scripts/furo.js"></script>
+    <script src="../_static/clipboard.min.js"></script>
+    <script src="../_static/copybutton.js"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

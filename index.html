@@ -187,6 +187,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/include_guide.html">Loading tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
@@ -300,6 +301,7 @@
 <h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Permalink to this heading">#</a></h2>
 <p>By default poe will detect when you’re inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the <code class="code highlight sh docutils literal highlight-sh">-C</code> option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.</p>
 <p>In all cases the path to project root (where the pyproject.toml resides) will be available as <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_ROOT</span></code> within the command line and process. The variable <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code> contains the original working directory from which poe was run.</p>
+<p>Using this feature you can also define <a class="reference internal" href="guides/global_tasks.html"><span class="doc">global tasks</span></a> that are not associated with any particular project.</p>
 </section>
 </section>
 

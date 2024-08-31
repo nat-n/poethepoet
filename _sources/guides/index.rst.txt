@@ -11,4 +11,5 @@ This section contains guides for using the various features of Poe the Poet.
    args_guide
    composition_guide
    include_guide
+   global_tasks
    library_guide

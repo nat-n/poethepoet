@@ -187,6 +187,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/include_guide.html">Loading tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
@@ -319,11 +320,15 @@ not already set like so:</p>
 <p>The default behaviour is <strong>auto</strong>.</p>
 <p>For example, the following configuration will cause poe to ignore the poetry environment
 (if present), and instead use the virtualenv at the given location relative to the
-parent directory.</p>
+parent directory. If no location is specified for a virtualenv then the default behavior is to use the virtualenv from <code class="docutils literal notranslate"><span class="pre">./venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> if available.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span>
 <span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;virtualenv&quot;</span>
 <span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myvenv&quot;</span>
 </pre></div>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>This global option can be overridden at runtime by providing the <code class="docutils literal notranslate"><span class="pre">--executor</span></code> cli option before the task name with the name of the executor type to use.</p>
 </div>
 </section>
 <section id="change-the-default-shell-interpreter">
