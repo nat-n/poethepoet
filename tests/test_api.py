@@ -3,7 +3,7 @@ import pytest
 
 def test_customize_program_name(run_poe, projects):
     result = run_poe(program_name="boop")
-    assert "USAGE\n  boop [-h]" in result.capture
+    assert "Usage:\n  boop [global options] task" in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
 

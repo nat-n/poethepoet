@@ -145,7 +145,7 @@ def test_running_tasks_with_poe_command_prefix_missing_args(run_poetry, projects
         ["foo"],
         cwd=projects["poetry_plugin/with_prefix"].parent,
     )
-    assert "USAGE\n  poetry foo [-h]" in result.stdout
+    assert "Usage:\n  poetry foo [global options]" in result.stdout
     # assert result.stderr == ""
 
 

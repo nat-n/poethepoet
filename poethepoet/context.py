@@ -51,10 +51,6 @@ class RunContext:
                 config_working_dir=config_part.cwd,
             )
 
-    @property
-    def executor_type(self) -> Optional[str]:
-        return self.config.executor["type"]
-
     def _get_dep_values(
         self, used_task_invocations: Mapping[str, Tuple[str, ...]]
     ) -> Dict[str, str]:
@@ -99,12 +95,18 @@ class RunContext:
     ) -> "PoeExecutor":
         from .executor import PoeExecutor
 
+        if not executor_config:
+            if self.ui["executor"]:
+                executor_config = {"type": self.ui["executor"]}
+            else:
+                executor_config = self.config.executor
+
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
+            executor_config=executor_config,
             env=env,
             working_dir=working_dir,
-            executor_config=executor_config,
             capture_stdout=capture_stdout,
             dry=self.dry,
         )
