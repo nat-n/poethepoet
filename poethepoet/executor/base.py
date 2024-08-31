@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 # TODO: maybe invert the control so the executor is given a task to run?
 
+POE_DEBUG = os.environ.get("POE_DEBUG", "0") == "1"
+
 
 class MetaPoeExecutor(type):
     """
@@ -76,6 +78,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self.dry = dry
         self._is_windows = sys.platform == "win32"
 
+        if POE_DEBUG:
+            print(f" . Initalizing {self.__class__.__name__}")
+
     @classmethod
     def works_with_context(cls, context: "RunContext") -> bool:
         return True
@@ -85,38 +90,28 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         cls,
         invocation: Tuple[str, ...],
         context: "RunContext",
+        executor_config: Mapping[str, str],
         env: "EnvVarsManager",
         working_dir: Optional[Path] = None,
-        executor_config: Optional[Mapping[str, str]] = None,
         capture_stdout: Union[str, bool] = False,
         dry: bool = False,
     ) -> "PoeExecutor":
-        """"""
-        # use task specific executor config or fallback to global
-        options = executor_config or context.config.executor
-        return cls._resolve_implementation(context, executor_config)(
-            invocation, context, options, env, working_dir, capture_stdout, dry
+        """
+        Create an executor.
+        """
+        return cls._resolve_implementation(context, executor_config["type"])(
+            invocation, context, executor_config, env, working_dir, capture_stdout, dry
         )
 
     @classmethod
-    def _resolve_implementation(
-        cls, context: "RunContext", executor_config: Optional[Mapping[str, str]]
-    ):
+    def _resolve_implementation(cls, context: "RunContext", executor_type: str):
         """
         Resolve to an executor class, either as specified in the available config or
         by making some reasonable assumptions based on visible features of the
         environment
         """
 
-        config_executor_type = context.executor_type
-        if executor_config:
-            executor_type = executor_config["type"]
-            if executor_type not in cls.__executor_types:
-                raise PoeException(
-                    f"Cannot instantiate unknown executor {executor_type!r}"
-                )
-            return cls.__executor_types[executor_type]
-        elif config_executor_type == "auto":
+        if executor_type == "auto":
             for impl in [
                 cls.__executor_types["poetry"],
                 cls.__executor_types["virtualenv"],
@@ -126,12 +121,13 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
             # Fallback to not using any particular environment
             return cls.__executor_types["simple"]
+
         else:
-            if config_executor_type not in cls.__executor_types:
+            if executor_type not in cls.__executor_types:
                 raise PoeException(
-                    "Cannot instantiate unknown executor" + repr(config_executor_type)
+                    f"Cannot instantiate unknown executor {executor_type!r}"
                 )
-            return cls.__executor_types[config_executor_type]
+            return cls.__executor_types[executor_type]
 
     def execute(
         self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False

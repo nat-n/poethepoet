@@ -117,3 +117,37 @@ def test_simple_executor(run_poe_subproc):
         f"/tests/fixtures/simple_project/venv/lib/python{PY_V}/site-packages/poe_test_package/__init__.py\n"
     )
     assert result.stderr == ""
+
+
+def test_override_executor(run_poe_subproc, with_virtualenv_and_venv, projects):
+    """
+    This test includes two scenarios
+
+    1. A variation on test_virtualenv_executor_fails_without_venv_dir except that
+       because we force use of the simple executor we don't get the error
+
+    2. A variation on test_virtualenv_executor_activates_venv except that because we
+       force use of the simple executor we don't get the virtual_env
+    """
+
+    # 1.
+    venv_path = projects["venv"].joinpath("myvenv")
+    assert (
+        not venv_path.is_dir()
+    ), f"This test requires the virtualenv not to already exist at {venv_path}!"
+    result = run_poe_subproc("--executor", "simple", "show-env", project="venv")
+    assert (
+        f"Error: Could not find valid virtualenv at configured location: {venv_path}"
+        not in result.capture
+    )
+    assert result.stderr == ""
+
+    # 2.
+    venv_path = projects["venv"].joinpath("myvenv")
+    for _ in with_virtualenv_and_venv(
+        venv_path, ["./tests/fixtures/packages/poe_test_helpers"]
+    ):
+        result = run_poe_subproc("-e", "simple", "show-env", project="venv")
+        assert result.capture == "Poe => poe_test_env\n"
+        assert f"VIRTUAL_ENV={venv_path}" not in result.stdout
+        assert result.stderr == ""

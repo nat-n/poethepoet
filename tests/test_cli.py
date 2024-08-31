@@ -12,7 +12,7 @@ def test_call_no_args(run_poe):
     assert (
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
-    assert "CONFIGURED TASKS\n  echo" in result.capture, "echo task should be in help"
+    assert "Configured tasks:\n  echo" in result.capture, "echo task should be in help"
 
 
 def test_call_with_directory(run_poe, projects):
@@ -25,8 +25,8 @@ def test_call_with_directory(run_poe, projects):
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
     assert (
-        "CONFIGURED TASKS\n"
-        "  echo                 It says what you say" in result.capture
+        "Configured tasks:\n"
+        "  echo                  It says what you say" in result.capture
     ), "echo task should be in help"
 
 
@@ -40,8 +40,8 @@ def test_call_with_directory_set_via_env(run_poe_subproc, projects):
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
     assert (
-        "CONFIGURED TASKS\n"
-        "  echo                 It says what you say" in result.capture
+        "Configured tasks:\n"
+        "  echo                  It says what you say" in result.capture
     ), "echo task should be in help"
 
 
@@ -56,8 +56,8 @@ def test_call_with_root(run_poe, projects):
         "\nResult: No task specified.\n" in result.capture
     ), "Output should include status message"
     assert (
-        "CONFIGURED TASKS\n"
-        "  echo                 It says what you say" in result.capture
+        "Configured tasks:\n"
+        "  echo                  It says what you say" in result.capture
     ), "echo task should be in help"
 
 
@@ -111,7 +111,7 @@ def test_documentation_of_task_named_args(run_poe):
     ), "Output should include status message"
 
     assert re.search(
-        r"CONFIGURED TASKS\n"
+        r"Configured tasks:\n"
         r"  composite_task          \s+\n"
         r"  echo-args               \s+\n"
         r"  static-args-test        \s+\n"

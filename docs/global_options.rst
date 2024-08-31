@@ -107,13 +107,17 @@ The default behaviour is **auto**.
 
 For example, the following configuration will cause poe to ignore the poetry environment
 (if present), and instead use the virtualenv at the given location relative to the
-parent directory.
+parent directory. If no location is specified for a virtualenv then the default behavior is to use the virtualenv from ``./venv`` or ``./.venv`` if available.
 
 .. code-block:: toml
 
   [tool.poe.executor]
   type = "virtualenv"
   location = "myvenv"
+
+.. important::
+
+  This global option can be overridden at runtime by providing the ``--executor`` cli option before the task name with the name of the executor type to use.
 
 Change the default shell interpreter
 ------------------------------------

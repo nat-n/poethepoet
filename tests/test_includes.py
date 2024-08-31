@@ -20,11 +20,11 @@ def _init_git_submodule(projects):
 def test_docs_for_include_toml_file(run_poe_subproc):
     result = run_poe_subproc(project="includes")
     assert (
-        "CONFIGURED TASKS\n"
-        "  echo           says what you say\n"
-        "  greet          \n"
-        "  greet1         \n"
-        "  greet2         Issue a greeting from the Iberian Peninsula\n"
+        "Configured tasks:\n"
+        "  echo                  says what you say\n"
+        "  greet                 \n"
+        "  greet1                \n"
+        "  greet2                Issue a greeting from the Iberian Peninsula\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
@@ -49,7 +49,7 @@ def test_docs_for_multiple_includes(run_poe_subproc, projects):
         f'-C={projects["includes/multiple_includes"]}',
     )
     assert (
-        "CONFIGURED TASKS\n"
+        "Configured tasks:\n"
         "  echo                    says what you say\n"
         "  greet                   \n"
         "  greet1                  \n"
@@ -102,11 +102,11 @@ def test_docs_for_only_includes(run_poe_subproc, projects):
         f'-C={projects["includes/only_includes"]}',
     )
     assert (
-        "CONFIGURED TASKS\n"
-        "  echo           This is ignored because it's already defined!\n"  # or not
-        "  greet          \n"
-        "  greet1         \n"
-        "  greet2         Issue a greeting from the Iberian Peninsula\n"
+        "Configured tasks:\n"
+        "  echo                  This is ignored because it's already defined!\n"
+        "  greet                 \n"
+        "  greet1                \n"
+        "  greet2                Issue a greeting from the Iberian Peninsula\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
@@ -115,14 +115,14 @@ def test_docs_for_only_includes(run_poe_subproc, projects):
 def test_monorepo_contains_only_expected_tasks(run_poe_subproc, projects):
     result = run_poe_subproc(project="monorepo")
     assert result.capture.endswith(
-        "CONFIGURED TASKS\n"
-        "  get_cwd_0      \n"
-        "  get_cwd_1      \n"
-        "  add            \n"
-        "  get_cwd_2      \n"
-        "  subproj3_env   \n"
-        "  get_cwd_3      \n"
-        "  subproj4_env   \n\n\n"
+        "Configured tasks:\n"
+        "  get_cwd_0             \n"
+        "  get_cwd_1             \n"
+        "  add                   \n"
+        "  get_cwd_2             \n"
+        "  subproj3_env          \n"
+        "  get_cwd_3             \n"
+        "  subproj4_env          \n\n\n"
     )
     assert result.stdout == ""
     assert result.stderr == ""
@@ -131,11 +131,11 @@ def test_monorepo_contains_only_expected_tasks(run_poe_subproc, projects):
 def test_monorepo_can_also_include_parent(run_poe_subproc, projects, is_windows):
     result = run_poe_subproc(cwd=projects["monorepo/subproject_2"])
     assert result.capture.endswith(
-        "CONFIGURED TASKS\n"
-        "  add            \n"
-        "  get_cwd_2      \n"
-        "  extra_task     \n"
-        "  get_cwd_0      \n\n\n"
+        "Configured tasks:\n"
+        "  add                   \n"
+        "  get_cwd_2             \n"
+        "  extra_task            \n"
+        "  get_cwd_0             \n\n\n"
     )
     assert result.stdout == ""
     assert result.stderr == ""

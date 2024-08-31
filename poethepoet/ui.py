@@ -123,6 +123,16 @@ class PoeUi:
             help="Specify where to find the pyproject.toml",
         )
 
+        parser.add_argument(
+            "-e",
+            "--executor",
+            dest="executor",
+            metavar="EXECUTOR",
+            type=str,
+            default="",
+            help="Override the default task executor",
+        )
+
         # legacy --root parameter, keep for backwards compatibility but help output is
         # suppressed
         parser.add_argument(
@@ -216,9 +226,9 @@ class PoeUi:
         if verbosity >= 0:
             result.append(
                 (
-                    "<h2>USAGE</h2>",
+                    "<h2>Usage:</h2>",
                     f"  <u>{self.program_name}</u>"
-                    " [-h] [-v | -q] [-C PATH] [--ansi | --no-ansi]"
+                    " [global options]"
                     " task [task arguments]",
                 )
             )
@@ -230,7 +240,7 @@ class PoeUi:
             formatter.add_arguments(action_group._group_actions)
             formatter.end_section()
             result.append(
-                ("<h2>GLOBAL OPTIONS</h2>", *formatter.format_help().split("\n")[1:])
+                ("<h2>Global options:</h2>", *formatter.format_help().split("\n")[1:])
             )
 
             if tasks:
@@ -248,9 +258,9 @@ class PoeUi:
                     )
                     for task, (_, args) in tasks.items()
                 )
-                col_width = max(13, min(30, max_task_len))
+                col_width = max(20, min(30, max_task_len))
 
-                tasks_section = ["<h2>CONFIGURED TASKS</h2>"]
+                tasks_section = ["<h2>Configured tasks:</h2>"]
                 for task, (help_text, args_help) in tasks.items():
                     if task.startswith("_"):
                         continue
