@@ -112,6 +112,7 @@ jobs:
     steps:
       - name: Trigger update of homebrew formula
         run: >
+          sleep 10 # some delay seems to be necessary
           curl -L -X POST
           -H "Accept: application/vnd.github+json"
           -H "Authorization: Bearer ${{ secrets.homebrew_pat }}"
@@ -131,7 +132,7 @@ jobs:
 
     steps:
     - name: Download all the dists
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: python-package-distributions
         path: dist/
