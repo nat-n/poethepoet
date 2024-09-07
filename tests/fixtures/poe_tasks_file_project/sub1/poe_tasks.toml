@@ -1,0 +1,3 @@
+
+[tool.poe.tasks.sub1_poetasks_toml]
+cmd = "poe_test_echo sub1_poetasks_toml"

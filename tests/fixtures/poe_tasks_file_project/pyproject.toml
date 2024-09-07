@@ -1,0 +1,13 @@
+[tool.poe]
+include = [
+  "poe_tasks.toml",
+  "sub1/poe_tasks.toml",
+  "sub1/poe_tasks.yaml",
+  "sub1/poe_tasks.json",
+  "sub2/poe_tasks.yaml",
+  "sub2/poe_tasks.json",
+  "sub3/poe_tasks.json",
+]
+
+[tool.poe.tasks]
+main_pyproject = "poe_test_echo main_pyproject"

@@ -4,7 +4,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/pyversions/poethepoet.svg)](https://pypi.org/project/poethepoet/)
 [![PyPI version](https://img.shields.io/pypi/v/poethepoet.svg)](https://pypi.org/project/poethepoet/)
-[![PyPI version](https://img.shields.io/pypi/dw/poethepoet.svg)](https://pypistats.org/packages/poethepoet)
+[![PyPI version](https://img.shields.io/pypi/dm/poethepoet.svg)](https://pypistats.org/packages/poethepoet)
 [![PyPI version](https://img.shields.io/pypi/l/ansicolortags.svg)](https://github.com/nat-n/poethepoet/blob/doc/init-sphinx/LICENSE)
 
 **A batteries included task runner that works well with [poetry](https://python-poetry.org/).**
@@ -15,8 +15,7 @@
 
 ## Features
 
-
-- ✅ Straight forward [declaration of project tasks in your pyproject.toml](https://poethepoet.natn.io/tasks/index.html)
+- ✅ Straight forward [declaration of project tasks in your pyproject.toml](https://poethepoet.natn.io/tasks/index.html) (or [poe_tasks.toml](https://poethepoet.natn.io/guides/without_poetry.html#usage-without-pyproject-toml))
 
 - ✅ Tasks are run in poetry's virtualenv ([or another env](https://poethepoet.natn.io/index.html#usage-without-poetry) you specify)
 
@@ -40,6 +39,7 @@
 
 - ✅ Can be [used as a library](https://poethepoet.natn.io/guides/library_guide.html) to embed in other tools
 
+- ✅ Also works fine [without poetry](https://poethepoet.natn.io/guides/without_poetry.html)
 
 ## Quick start
 

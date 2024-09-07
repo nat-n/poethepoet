@@ -1,0 +1,6 @@
+{
+  "include": "../sub2/poe_tasks.yaml",
+  "tasks": {
+    "sub3_poetasks_json": "poe_test_echo sub3_poetasks_json"
+  }
+}

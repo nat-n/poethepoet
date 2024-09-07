@@ -43,8 +43,9 @@ class PoeThePoet:
         instead of having to execute poetry in a subprocess to determine this.
     :type poetry_env_path: str, optional
     :param config_name:
-        The name of the file to load tasks and configuration from, defaults to
-        "pyproject.toml"
+        The name of the file to load tasks and configuration from. If not set then poe
+        will search for config by the following file names: pyproject.toml
+        poe_tasks.toml poe_tasks.yaml poe_tasks.json
     :type config_name: str, optional
     :param program_name:
         The name of the program that is being run. This is used primarily when
@@ -64,7 +65,7 @@ class PoeThePoet:
         config: Optional[Union[Mapping[str, Any], "PoeConfig"]] = None,
         output: IO = sys.stdout,
         poetry_env_path: Optional[str] = None,
-        config_name: str = "pyproject.toml",
+        config_name: Optional[str] = None,
         program_name: str = "poe",
     ):
         from .config import PoeConfig

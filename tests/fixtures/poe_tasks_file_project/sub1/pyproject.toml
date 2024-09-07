@@ -1,0 +1,7 @@
+# this pyproject.toml doesn't contain any poe config
+
+[tool.poetry]
+name        = "sub1"
+version     = "0.0.0"
+description = "A task runner that works well with poetry."
+authors     = ["Nat Noordanus <n@noordan.us>"]

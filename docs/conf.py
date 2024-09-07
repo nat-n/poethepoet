@@ -43,7 +43,6 @@ rst_prolog = """
    :language: python
 .. |V| unicode:: ✅ 0xA0 0xA0
    :trim:
-
 """
 
 linkcheck_ignore = [
