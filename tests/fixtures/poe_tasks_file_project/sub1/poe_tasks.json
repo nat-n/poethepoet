@@ -1,0 +1,9 @@
+{
+  "tool": {
+    "poe": {
+      "tasks": {
+        "sub1_poetasks_json": "poe_test_echo sub1_poetasks_json"
+      }
+    }
+  }
+}

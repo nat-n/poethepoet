@@ -1,0 +1,2 @@
+[tasks]
+main_poetasks_toml = "poe_test_echo main_project_poetasks_toml"

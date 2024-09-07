@@ -31,17 +31,15 @@ class ShellTask(PoeTask):
         def validate(self):
             super().validate()
 
-            from ..config import PoeConfig
-
-            valid_interpreters = PoeConfig.KNOWN_SHELL_INTERPRETERS
+            from ..config import KNOWN_SHELL_INTERPRETERS as VALID_INTERPRETERS
 
             if (
                 isinstance(self.interpreter, str)
-                and self.interpreter not in valid_interpreters
+                and self.interpreter not in VALID_INTERPRETERS
             ):
                 raise ConfigValidationError(
                     "Invalid value for option 'interpreter',\n"
-                    f"Expected one of {valid_interpreters}"
+                    f"Expected one of {VALID_INTERPRETERS}"
                 )
 
             if isinstance(self.interpreter, list):
@@ -51,10 +49,10 @@ class ShellTask(PoeTask):
                         "Expected at least one item in list."
                     )
                 for item in self.interpreter:
-                    if item not in valid_interpreters:
+                    if item not in VALID_INTERPRETERS:
                         raise ConfigValidationError(
                             f"Invalid item {item!r} in option 'interpreter',\n"
-                            f"Expected one of {valid_interpreters!r}"
+                            f"Expected one of {VALID_INTERPRETERS!r}"
                         )
 
     class TaskSpec(PoeTask.TaskSpec):
