@@ -278,7 +278,9 @@ class PoeUi:
                             task_arg_help.append(self._align(arg_help_text, col_width))
                         if default:
                             if "\n" in (arg_help_text or ""):
-                                task_arg_help.append("\n    " + self._align(default, 4))
+                                task_arg_help.append(
+                                    self._align(f"\n{default}", col_width, strip=False)
+                                )
                             else:
                                 task_arg_help.append(default)
                         tasks_section.append(" ".join(task_arg_help))
@@ -303,8 +305,9 @@ class PoeUi:
         )
 
     @staticmethod
-    def _align(text: str, width: int) -> str:
-        return text.replace("\n", "\n" + " " * (width + 4)).strip()
+    def _align(text: str, width: int, *, strip: bool = True) -> str:
+        text = text.replace("\n", "\n" + " " * (width + 4))
+        return text.strip() if strip else text
 
     @staticmethod
     def _padr(text: str, width: int):
