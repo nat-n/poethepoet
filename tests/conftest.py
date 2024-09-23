@@ -11,11 +11,15 @@ from subprocess import PIPE, Popen
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional
 
 import pytest
-import tomli
 import virtualenv
 
 from poethepoet.app import PoeThePoet
 from poethepoet.virtualenv import Virtualenv
+
+try:
+    import tomllib as tomli
+except ImportError:
+    import tomli  # type: ignore[no-redef]
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TOML = PROJECT_ROOT.joinpath("pyproject.toml")
@@ -108,8 +112,13 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     shell_cmd_template = (
         'python -c "'
         "{coverage_setup}"
-        "import tomli;"
-        "from poethepoet.app import PoeThePoet;"
+        + (
+            "import tomli;"
+            # ruff: noqa: YTT204
+            if sys.version_info.minor < 11
+            else "import tomllib as tomli;"
+        )
+        + "from poethepoet.app import PoeThePoet;"
         "from pathlib import Path;"
         r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
         "exit(poe([{run_args}]));"
