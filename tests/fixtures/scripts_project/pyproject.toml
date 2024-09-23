@@ -134,6 +134,47 @@ async-task.args = ["a","b"]
     multiple = true
     required = true
 
+  [tool.poe.tasks.multiple-lines-help]
+  script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
+  help = """
+Multilines
+  Creating multi-line documentation for greater detail and inclusion of examples
+"""
+
+    [[tool.poe.tasks.multiple-lines-help.args]]
+    name       = "first"
+    positional = true
+    help =    """
+First positional arg
+  documentation multiline
+"""
+
+    [[tool.poe.tasks.multiple-lines-help.args]]
+    name       = "second"
+    positional = true
+    multiple   = true
+    type       = "integer"
+    help =    """
+Multiple positional arg
+  documentation multiline
+"""
+
+    [[tool.poe.tasks.multiple-lines-help.args]]
+    name     = "widgets"
+    multiple = 2
+    help =    """
+Multiple arg
+  documentation multiline
+"""
+
+    [[tool.poe.tasks.multiple-lines-help.args]]
+    name     = "engines"
+    default = "true"
+    help =    """
+Default arg
+  documentation multiline
+"""
+
 
 [build-system]
 requires = ["poetry>=0.12"]

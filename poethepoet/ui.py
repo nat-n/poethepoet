@@ -265,7 +265,8 @@ class PoeUi:
                     if task.startswith("_"):
                         continue
                     tasks_section.append(
-                        f"  <em>{self._padr(task, col_width)}</em>  {help_text}"
+                        f"  <em>{self._padr(task, col_width)}</em>  "
+                        f"{self._align(help_text, col_width)}"
                     )
                     for options, arg_help_text, default in args_help:
                         formatted_options = ", ".join(str(opt) for opt in options)
@@ -274,9 +275,14 @@ class PoeUi:
                             f"<em3>{self._padr(formatted_options, col_width-1)}</em3>",
                         ]
                         if arg_help_text:
-                            task_arg_help.append(arg_help_text)
+                            task_arg_help.append(self._align(arg_help_text, col_width))
                         if default:
-                            task_arg_help.append(default)
+                            if "\n" in (arg_help_text or ""):
+                                task_arg_help.append(
+                                    self._align(f"\n{default}", col_width, strip=False)
+                                )
+                            else:
+                                task_arg_help.append(default)
                         tasks_section.append(" ".join(task_arg_help))
 
                 result.append(tasks_section)
@@ -297,6 +303,11 @@ class PoeUi:
             + "\n"
             + ("\n" if verbosity >= 0 else "")
         )
+
+    @staticmethod
+    def _align(text: str, width: int, *, strip: bool = True) -> str:
+        text = text.replace("\n", "\n" + " " * (width + 4))
+        return text.strip() if strip else text
 
     @staticmethod
     def _padr(text: str, width: int):

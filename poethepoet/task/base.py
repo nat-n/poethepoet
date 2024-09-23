@@ -183,10 +183,6 @@ class PoeTask(metaclass=MetaPoeTask):
             """
             Validation rules that don't require any extra context go here.
             """
-            if self.help and "\n" in self.help:
-                raise ConfigValidationError(
-                    "Help messages must not contain line breaks"
-                )
 
     class TaskSpec:
         name: str

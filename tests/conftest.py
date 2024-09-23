@@ -56,6 +56,7 @@ def projects():
             ).groups()[0]: path
             for project_key, project_path in projects.items()
             for path in project_path.glob("**/*.toml")
+            if "site-packages" not in str(path)
         }
     )
     return projects
