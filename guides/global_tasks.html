@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="This guide covers how to use poethepoet as a global task runner, for private user level tasks instead of shared project level tasks. Global tasks are available anywhere, and serve a similar purpose..." />
 <meta name="description" content="This guide covers how to use poethepoet as a global task runner, for private user level tasks instead of shared project level tasks. Global tasks are available anywhere, and serve a similar purpose..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Loading tasks from another file" href="include_guide.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Usage without poetry" href="without_poetry.html" /><link rel="prev" title="Loading tasks from another file" href="include_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/global_tasks.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
@@ -188,6 +188,7 @@
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
@@ -241,8 +242,12 @@
 <p>There are two steps required to make this work:</p>
 <ol class="arabic simple">
 <li><p>Create a project somewhere central such as <code class="docutils literal notranslate"><span class="pre">~/.poethepoet</span></code> where you define tasks that you want to have globally accessible</p></li>
-<li><p>Configure an alias in your shell’s startup script such as <code class="docutils literal notranslate"><span class="pre">alias</span> <span class="pre">goe=&quot;poe</span> <span class="pre">-C</span> <span class="pre">~/.poethepoet&quot;</span></code>.</p></li>
+<li><p>Configure an alias in your shell’s startup script such as <code class="docutils literal notranslate"><span class="pre">alias</span> <span class="pre">edgar=&quot;poe</span> <span class="pre">-C</span> <span class="pre">~/.poethepoet&quot;</span></code>.</p></li>
 </ol>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>This document suggests calling your alias <cite>egdar</cite> — because it’s a pun… but you can use any alternative name you fancy.</p>
+</div>
 <p>The project at <code class="docutils literal notranslate"><span class="pre">~/.poethepoet</span></code> can be a regular poetry project including dependencies or just a file with tasks.</p>
 <p>You can choose any location to define the tasks, and whatever name you like for the global poe alias.</p>
 <div class="admonition warning">
@@ -254,15 +259,15 @@
 <p>If you uze zsh or fish then the usual completion script should just work with your alias (as long as it was created with poethepoet &gt;=0.28.0).</p>
 <p>However for bash you’ll need to generate a new completion script for the alias specifying the alias and the path to you global tasks like so:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># System bash</span>
-poe<span class="w"> </span>_bash_completion<span class="w"> </span>goe<span class="w"> </span>~/.poethepoet<span class="w"> </span>&gt;<span class="w"> </span>/etc/bash_completion.d/goe.bash-completion
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>edgar<span class="w"> </span>~/.poethepoet<span class="w"> </span>&gt;<span class="w"> </span>/etc/bash_completion.d/edgar.bash-completion
 
 <span class="c1"># Homebrew bash</span>
-poe<span class="w"> </span>_bash_completion<span class="w"> </span>goe<span class="w"> </span>~/.poethepoet<span class="w"> </span>&gt;<span class="w"> </span><span class="k">$(</span>brew<span class="w"> </span>--prefix<span class="k">)</span>/etc/bash_completion.d/goe.bash-completion
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>edgar<span class="w"> </span>~/.poethepoet<span class="w"> </span>&gt;<span class="w"> </span><span class="k">$(</span>brew<span class="w"> </span>--prefix<span class="k">)</span>/etc/bash_completion.d/edgar.bash-completion
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>These examples assume your global poe alias is <code class="docutils literal notranslate"><span class="pre">goe</span></code>, and your global tasks live at <code class="docutils literal notranslate"><span class="pre">~/.poethepoet</span></code>.</p>
+<p>These examples assume your global poe alias is <code class="docutils literal notranslate"><span class="pre">edgar</span></code>, and your global tasks live at <code class="docutils literal notranslate"><span class="pre">~/.poethepoet</span></code>.</p>
 </div>
 <p>How to ensure installed bash completions are enabled may vary depending on your system.</p>
 </section>
@@ -273,12 +278,12 @@ poe<span class="w"> </span>_bash_completion<span class="w"> </span>goe<span clas
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="library_guide.html">
+          <a class="next-page" href="without_poetry.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Using poethepoet as a library</div>
+                <div class="title">Usage without poetry</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>

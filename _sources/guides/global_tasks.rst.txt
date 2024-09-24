@@ -6,7 +6,11 @@ This guide covers how to use poethepoet as a global task runner, for private use
 There are two steps required to make this work:
 
 1. Create a project somewhere central such as ``~/.poethepoet`` where you define tasks that you want to have globally accessible
-2. Configure an alias in your shell's startup script such as ``alias goe="poe -C ~/.poethepoet"``.
+2. Configure an alias in your shell's startup script such as ``alias edgar="poe -C ~/.poethepoet"``.
+
+.. tip::
+
+  This document suggests calling your alias `egdar` — because it's a pun... but you can use any alternative name you fancy.
 
 The project at ``~/.poethepoet`` can be a regular poetry project including dependencies or just a file with tasks.
 
@@ -27,14 +31,14 @@ However for bash you'll need to generate a new completion script for the alias s
 .. code-block:: bash
 
   # System bash
-  poe _bash_completion goe ~/.poethepoet > /etc/bash_completion.d/goe.bash-completion
+  poe _bash_completion edgar ~/.poethepoet > /etc/bash_completion.d/edgar.bash-completion
 
   # Homebrew bash
-  poe _bash_completion goe ~/.poethepoet > $(brew --prefix)/etc/bash_completion.d/goe.bash-completion
+  poe _bash_completion edgar ~/.poethepoet > $(brew --prefix)/etc/bash_completion.d/edgar.bash-completion
 
 .. note::
 
-  These examples assume your global poe alias is ``goe``, and your global tasks live at ``~/.poethepoet``.
+  These examples assume your global poe alias is ``edgar``, and your global tasks live at ``~/.poethepoet``.
 
 How to ensure installed bash completions are enabled may vary depending on your system.
 

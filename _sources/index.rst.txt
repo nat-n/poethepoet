@@ -26,7 +26,7 @@ Poe the Poet Documentation
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
-.. image:: https://img.shields.io/pypi/dw/poethepoet
+.. image:: https://img.shields.io/pypi/dm/poethepoet
    :target: https://pypistats.org/packages/poethepoet
    :alt: PyPI - Downloads
 
@@ -44,7 +44,7 @@ It provides a simple way to define project tasks within your pyproject.toml, and
 Top features
 ============
 
-|V| Straight forward declaration of project tasks in your pyproject.toml
+|V| Straight forward declaration of project tasks in your pyproject.toml (or :doc:`poe_tasks.toml<./guides/without_poetry>`)
 
 |V| Tasks are run in poetry's virtualenv (or another env you specify)
 
@@ -67,6 +67,8 @@ Top features
 |V| Works with :ref:`.env files<envfile_option>`
 
 |V| Can be :doc:`used as a library<./guides/library_guide>` to embed in other tools
+
+|V| Also works fine :doc:`without poetry<./guides/without_poetry>`
 
 
 Quick start
@@ -105,16 +107,6 @@ Quick start
   If you're using |poetry_link|, then poe will automatically use the poetry managed virtualenv to find executables and python libraries, without needing to use ``poetry run`` or ``poetry shell``.
 
 
-Usage without poetry
-====================
-
-Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the :ref:`tool.poe.executor global option<Change the executor type>`.
-
-By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to use at ``./.venv`` or ``./venv`` relative to the pyproject.toml.
-
-If no virtualenv is found then poe will run tasks without any special environment management.
-
-
 Run poe from anywhere
 =====================
 
@@ -122,12 +114,13 @@ By default poe will detect when you're inside a project with a pyproject.toml in
 
 In all cases the path to project root (where the pyproject.toml resides) will be available as :sh:`$POE_ROOT` within the command line and process. The variable :sh:`$POE_PWD` contains the original working directory from which poe was run.
 
-.. |poetry_link| raw:: html
+Using this feature you can also define :doc:`global tasks<./guides/global_tasks>` that are not associated with any particular project.
 
-   <a href="https://python-poetry.org/" target="_blank">poetry</a>
 
 .. |pipx_link| raw:: html
 
    <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a>
 
-Using this feature you can also define :doc:`global tasks<./guides/global_tasks>` that are not associated with any particular project.
+.. |poetry_link| raw:: html
+
+   <a href="https://python-poetry.org/" target="_blank">poetry</a>

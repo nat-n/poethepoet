@@ -12,4 +12,5 @@ This section contains guides for using the various features of Poe the Poet.
    composition_guide
    include_guide
    global_tasks
+   without_poetry
    library_guide

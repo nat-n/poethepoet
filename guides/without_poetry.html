@@ -3,17 +3,17 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-<meta property="og:title" content="Running tasks" />
+<meta property="og:title" content="Usage without poetry" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="guides/running_guide.html" />
+<meta property="og:url" content="guides/without_poetry.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="An example task: Poe tasks are defined in your pyproject.toml file under tool.poe.tasks The following toml example defines a task called test that consists of the associated command. This task can ..." />
-<meta name="description" content="An example task: Poe tasks are defined in your pyproject.toml file under tool.poe.tasks The following toml example defines a task called test that consists of the associated command. This task can ..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Documenting tasks" href="help_guide.html" /><link rel="prev" title="Guides" href="index.html" />
-        <link rel="canonical" href="http://poethepoet.natn.io/guides/running_guide.html" />
+<meta property="og:description" content="Poe the Poet was originally intended as the missing task runner for. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use wi..." />
+<meta name="description" content="Poe the Poet was originally intended as the missing task runner for. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use wi..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Global tasks" href="global_tasks.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/guides/without_poetry.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
-        <title>Running tasks - Poe the Poet</title>
+        <title>Usage without poetry - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
@@ -182,13 +182,13 @@
 </ul>
 </li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Guides</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Running tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="running_guide.html">Running tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
@@ -214,7 +214,7 @@
         </a>
         <div class="content-icon-container">
           <div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/running_guide.rst" title="Edit this page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/without_poetry.rst" title="Edit this page">
     <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
@@ -236,68 +236,62 @@
           </label>
         </div>
         <article role="main">
-          <section id="running-tasks">
-<h1>Running tasks<a class="headerlink" href="#running-tasks" title="Permalink to this heading">#</a></h1>
-<section id="an-example-task">
-<h2>An example task<a class="headerlink" href="#an-example-task" title="Permalink to this heading">#</a></h2>
-<p>Poe tasks are defined in your <strong>pyproject.toml</strong> file under <code class="docutils literal notranslate"><span class="pre">tool.poe.tasks</span></code></p>
-<p>The following toml example defines a task called <cite>test</cite> that consists of the associated command.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=poethepoet&quot;</span>
+          <section id="usage-without-poetry">
+<h1>Usage without poetry<a class="headerlink" href="#usage-without-poetry" title="Permalink to this heading">#</a></h1>
+<p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the <a class="reference internal" href="../global_options.html#change-the-executor-type"><span class="std std-ref">tool.poe.executor global option</span></a>.</p>
+<p>By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code> section. If it doesn’t then poe looks for a virtualenv to use at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the pyproject.toml.</p>
+<p>If no virtualenv is found then poe will run tasks without any special environment management.</p>
+<section id="usage-without-pyproject-toml">
+<h2>Usage without pyproject.toml<a class="headerlink" href="#usage-without-pyproject-toml" title="Permalink to this heading">#</a></h2>
+<p>When using Poe the Poet outside of a poetry (or other <a href="https://peps.python.org/pep-0518/" target="_blank">PEP 518</a>) project, you can avoid the potential confusion of creating a <cite>pyproject.toml</cite> file and instead name the file <code class="docutils literal notranslate"><span class="pre">poe_tasks.toml</span></code>.</p>
+<section id="usage-with-with-json-or-yaml-instead-of-toml">
+<h3>Usage with with json or yaml instead of toml<a class="headerlink" href="#usage-with-with-json-or-yaml-instead-of-toml" title="Permalink to this heading">#</a></h3>
+<p>As an alternative to toml, poethepoet configuration can also be provided via yaml or json files. When searching for a tasks file to load within a certain directory poe will try the following file names in order:</p>
+<ul class="simple">
+<li><p>pyproject.toml</p></li>
+<li><p>poe_tasks.toml</p></li>
+<li><p>poe_tasks.yaml</p></li>
+<li><p>poe_tasks.json</p></li>
+</ul>
+<p>If <cite>pyproject.toml</cite> exists but does not contain the key prefix <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> then the search continues with <cite>poe_tasks.toml</cite>. If one of the listed <code class="docutils literal notranslate"><span class="pre">poe_tasks.*</span></code> files exist then the search is terminated, even if the file is empty.</p>
+<p>When config is loaded from a file other than <cite>pyproject.toml</cite> the <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> namespace for poe config is optional. So for example the following two poe_tasks.yaml files are equivalent and both valid:</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id1" title="Permalink to this code">#</a></div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">env</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">VAR0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FOO</span>
+
+<span class="nt">tasks</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">show-vars</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">cmd</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;echo</span><span class="nv"> </span><span class="s">$VAR0</span><span class="nv"> </span><span class="s">$VAR1</span><span class="nv"> </span><span class="s">$VAR2&quot;</span>
+<span class="w">    </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">VAR1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAR</span>
+<span class="w">    </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">VAR2</span>
+<span class="w">        </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;--var&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAZ</span>
 </pre></div>
 </div>
-<p>This task can the be run via the poe cli as <code class="docutils literal notranslate"><span class="pre">poe</span> <span class="pre">test</span></code>.</p>
-<div class="admonition hint">
-<p class="admonition-title">Hint</p>
-<p>If your pyproject defines pytest as a dependency with poetry, then poe will run the task with pytest from the poetry managed virtualenv, so you don’t need to explicitly activate the virtualenv via <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">shell</span></code> or <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">run</span></code>.</p>
 </div>
-<p><a class="reference external" href="https://github.com/nat-n/poethepoet/blob/main/pyproject.toml">Click here for a real example</a>.</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">#</a></div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">tool</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">poe</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">VAR0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FOO</span>
+
+<span class="w">    </span><span class="nt">tasks</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">show-vars</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">cmd</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;echo</span><span class="nv"> </span><span class="s">$VAR0</span><span class="nv"> </span><span class="s">$VAR1</span><span class="nv"> </span><span class="s">$VAR2&quot;</span>
+<span class="w">        </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">VAR1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAR</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">VAR2</span>
+<span class="w">            </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;--var&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">            </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAZ</span>
+</pre></div>
+</div>
+</div>
 </section>
-<section id="run-a-task-with-the-poe-cli">
-<h2>Run a task with the poe CLI<a class="headerlink" href="#run-a-task-with-the-poe-cli" title="Permalink to this heading">#</a></h2>
-<p>The preferred way to run poe is via the standalone CLI.</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span><span class="nb">test</span>
-</pre></div>
-</div>
-<p>The above command can only be ran if you’ve <a class="reference internal" href="../installation.html"><span class="doc">installed Poe globally</span></a>, or if you’ve sourced the venv that Poe the Poet is installed in (e.g. using <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">shell</span></code>).</p>
-</section>
-<section id="running-poe-as-a-python-module">
-<h2>Running Poe as a Python module<a class="headerlink" href="#running-poe-as-a-python-module" title="Permalink to this heading">#</a></h2>
-<p>You can also run poe as a python module</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>poethepoet<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
-</pre></div>
-</div>
-</section>
-<section id="running-poe-as-a-poetry-plugin">
-<h2>Running Poe as a Poetry plugin<a class="headerlink" href="#running-poe-as-a-poetry-plugin" title="Permalink to this heading">#</a></h2>
-<p>If you’ve installed it as a <a class="reference internal" href="../poetry_plugin.html"><span class="doc">poetry plugin</span></a> (for poetry &gt;= 1.2), you can run it like so</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>self<span class="w"> </span>add<span class="w"> </span>poethepoet<span class="o">[</span>poetry_plugin<span class="o">]</span>
-poetry<span class="w"> </span>poe<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
-</pre></div>
-</div>
-</section>
-<section id="running-poe-as-a-poetry-dependency">
-<h2>Running Poe as a Poetry dependency<a class="headerlink" href="#running-poe-as-a-poetry-dependency" title="Permalink to this heading">#</a></h2>
-<p>If you’ve installed it as a dev dependency with poetry, you can run it like so</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>add<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>poethepoet
-poetry<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
-</pre></div>
-</div>
-<div class="admonition hint">
-<p class="admonition-title">Hint</p>
-<p>In this case you might want create an alias like <code class="code highlight sh docutils literal highlight-sh"><span class="nb">alias</span><span class="w"> </span><span class="nv">poe</span><span class="o">=</span><span class="s1">&#39;poetry run poe&#39;</span></code>.</p>
-</div>
-</section>
-<section id="passing-arguments">
-<h2>Passing arguments<a class="headerlink" href="#passing-arguments" title="Permalink to this heading">#</a></h2>
-<p>By default additional arguments are passed to the task so</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-v<span class="w"> </span>tests/favorite_test.py
-</pre></div>
-</div>
-<p>will result in the following being run inside poetry’s virtualenv</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>poethepoet<span class="w"> </span>-v<span class="w"> </span>tests/favorite_test.py
-</pre></div>
-</div>
 </section>
 </section>
 
@@ -306,23 +300,23 @@ poetry<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </s
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="help_guide.html">
+          <a class="next-page" href="library_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Documenting tasks</div>
+                <div class="title">Using poethepoet as a library</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="index.html">
+          <a class="prev-page" href="global_tasks.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Guides</div>
+                <div class="title">Global tasks</div>
                 
               </div>
             </a>
@@ -368,13 +362,11 @@ poetry<span class="w"> </span>run<span class="w"> </span>poe<span class="w"> </s
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Running tasks</a><ul>
-<li><a class="reference internal" href="#an-example-task">An example task</a></li>
-<li><a class="reference internal" href="#run-a-task-with-the-poe-cli">Run a task with the poe CLI</a></li>
-<li><a class="reference internal" href="#running-poe-as-a-python-module">Running Poe as a Python module</a></li>
-<li><a class="reference internal" href="#running-poe-as-a-poetry-plugin">Running Poe as a Poetry plugin</a></li>
-<li><a class="reference internal" href="#running-poe-as-a-poetry-dependency">Running Poe as a Poetry dependency</a></li>
-<li><a class="reference internal" href="#passing-arguments">Passing arguments</a></li>
+<li><a class="reference internal" href="#">Usage without poetry</a><ul>
+<li><a class="reference internal" href="#usage-without-pyproject-toml">Usage without pyproject.toml</a><ul>
+<li><a class="reference internal" href="#usage-with-with-json-or-yaml-instead-of-toml">Usage with with json or yaml instead of toml</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

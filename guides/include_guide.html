@@ -188,6 +188,7 @@
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Loading tasks from another file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
@@ -237,7 +238,11 @@
         <article role="main">
           <section id="loading-tasks-from-another-file">
 <h1>Loading tasks from another file<a class="headerlink" href="#loading-tasks-from-another-file" title="Permalink to this heading">#</a></h1>
-<p>There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organise your code in a monorepo, or simply have a lot of tasks and don’t want the pyproject.toml to get too large. This can be achieved by creating a toml or json file including the same structure for tasks as used in pyproject.toml</p>
+<p>There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organise your code in a monorepo, or simply have a lot of tasks and don’t want the pyproject.toml to get too large. This can be achieved by creating a toml, yaml, or json file including the same structure for tasks as used in pyproject.toml</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Imported toml, yaml, or json files are not required to namespace config under <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code>. However if config exists under this structure then it will be used.</p>
+</div>
 <p>For example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pyproject.toml</span>
 

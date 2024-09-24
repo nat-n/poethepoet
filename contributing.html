@@ -188,6 +188,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/include_guide.html">Loading tasks from another file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
@@ -241,47 +242,28 @@
 knowing.</p>
 <section id="reporting-a-bug-requesting-a-feature-asking-a-question">
 <h2>Reporting a bug / requesting a feature / asking a question<a class="headerlink" href="#reporting-a-bug-requesting-a-feature-asking-a-question" title="Permalink to this heading">#</a></h2>
-<p>Go <a class="reference external" href="https://github.com/nat-n/poethepoet/issues">open an issue</a> or
-<a class="reference external" href="https://github.com/nat-n/poethepoet/discussions">start a discussion</a> and
-I’ll probably reply soon.</p>
+<p>Go <a class="reference external" href="https://github.com/nat-n/poethepoet/issues">open an issue</a> or <a class="reference external" href="https://github.com/nat-n/poethepoet/discussions">start a discussion</a> and I’ll probably reply soon.</p>
 </section>
 <section id="contributing-to-the-docs">
 <h2>Contributing to the docs<a class="headerlink" href="#contributing-to-the-docs" title="Permalink to this heading">#</a></h2>
-<p>Just make a PR with your proposed changes targeting the main branch.
-The [documentation website](<a class="reference external" href="https://poethepoet.natn.io/">https://poethepoet.natn.io/</a>) will update once your
-PR is merged.</p>
+<p>Just make a PR with your proposed changes targeting the main branch. The <a class="reference external" href="https://poethepoet.natn.io/">documentation website</a> will update once your PR is merged.</p>
 </section>
 <section id="contributing-code">
 <h2>Contributing code<a class="headerlink" href="#contributing-code" title="Permalink to this heading">#</a></h2>
 <section id="preface">
 <h3>Preface<a class="headerlink" href="#preface" title="Permalink to this heading">#</a></h3>
-<p>If you’re willing to contribute your ideas and effort to making poethepoet
-better, then that’s awesome and I’m grateful. I don’t have all the answers so
-it’s particularly important for this project to benefit from diverse
-perspectives and technical expertise.</p>
-<p>However please be aware that a lot of thought has gone into the architecture of
-poethepoet, and whilst I know it’s not perfect, and I am very interested in
-alternative perspectives, I do have strong (and I hope reasonable) opinions
-about how certain things should work. This particularly applies to naming and
-internal APIs. There is a lot to consider in terms of making sure the tool stays
-simple, flexible, and performant. So please don’t be offended if there is some
-push back.</p>
+<p>If you’re willing to contribute your ideas and effort to making poethepoet better, then that’s awesome and I’m grateful. I don’t have all the answers so it’s particularly important for this project to benefit from diverse perspectives and technical expertise.</p>
+<p>However please be aware that a lot of thought has gone into the architecture of poethepoet, and whilst I know it’s not perfect, and I am very interested in alternative perspectives, I do have strong (and I hope reasonable) opinions about how certain things should work. This particularly applies to naming and internal APIs. There is a lot to consider in terms of making sure the tool stays simple, flexible, and performant. So please don’t be offended if there is some push back.</p>
 </section>
 <section id="development-process">
 <h3>Development process<a class="headerlink" href="#development-process" title="Permalink to this heading">#</a></h3>
 <ol class="arabic simple">
-<li><p>If your planned changes entail non-trivial UI or internal API changes then
-it’s a good idea to bring them up for discussion as a
-<a class="reference external" href="https://github.com/nat-n/poethepoet/issues">GitHub issue</a> first.</p></li>
-<li><p>Fork and clone the repo, and create a feature or bugfix branch off of the
-<em>development</em> branch.</p></li>
-<li><p>Double check that you’re starting from the <em>development</em> branch, and not from
-the the <em>main</em> branch.</p></li>
-<li><p>Run <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">install</span></code> to setup your development environment.
-(<a class="reference external" href="https://python-poetry.org/docs/#installation">install poetry</a>)</p></li>
+<li><p>If your planned changes entail non-trivial UI or internal API changes then it’s a good idea to bring them up for discussion as a <a class="reference external" href="https://github.com/nat-n/poethepoet/issues">GitHub issue</a> first.</p></li>
+<li><p>Fork and clone the repo, and create a feature or bugfix branch off of the <em>development</em> branch.</p></li>
+<li><p>Double check that you’re starting from the <em>development</em> branch, and not from the the <em>main</em> branch.</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">install</span></code> to setup your development environment. (<a class="reference external" href="https://python-poetry.org/docs/#installation">install poetry</a>)</p></li>
 <li><p>Do your code.</p></li>
-<li><p>If you’ve added a feature then before it can be including in a release we
-will need:</p>
+<li><p>If you’ve added a feature then before it can be including in a release we will need:</p>
 <ol class="loweralpha simple">
 <li><p>a feature test along the same lines as the examples in the tests dir,</p></li>
 <li><p>to update documentation.</p></li>
@@ -289,29 +271,26 @@ will need:</p>
 </li>
 </ol>
 <ol class="arabic simple" start="5">
-<li><p>Run <code class="docutils literal notranslate"><span class="pre">poe</span> <span class="pre">check</span></code> to check that you haven’t broken anything that will
-block the CI pipeline.</p></li>
-<li><p>Create a commit with a clear commit message that describes the commit
-contents.</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">poe</span> <span class="pre">check</span></code> to check that you haven’t broken anything that will block the CI pipeline.</p></li>
+<li><p>Create a commit with a clear commit message that describes the commit contents.</p></li>
 <li><p>Open a PR on GitHub.</p></li>
 </ol>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>You can also open a draft PR proposing incomplete changes to recieve feedback.</p>
+</div>
 </section>
 <section id="pull-requests">
 <h3>Pull requests<a class="headerlink" href="#pull-requests" title="Permalink to this heading">#</a></h3>
-<p>There isn’t currently a pull request template, but please try and be descriptive
-about what problem you’re solving and how, and reference related issues.</p>
-<p>In some cases it might be acceptable to merge code to <em>development</em> to make a
-pre-release from it without including full automated tests and documentation.
-However this is a special case, because it blocks further releases from the
-<em>development</em> branch until the tests and docs are there.</p>
+<p>There isn’t currently a pull request template, but please try and be descriptive about what problem you’re solving and how, and reference related issues.</p>
+<p>In some cases it might be acceptable to merge code to <em>development</em> to make a pre-release from it without including full automated tests and documentation.
+However this is a special case, because it blocks further releases from the <em>development</em> branch until the tests and docs are there.</p>
 </section>
 <section id="branching-model">
 <h3>Branching model<a class="headerlink" href="#branching-model" title="Permalink to this heading">#</a></h3>
 <p>This project implements something like git flow.</p>
-<p><em>TL;DR</em> branch off of <em>development</em> for new features, or <em>main</em> for minor bug
-fixes or doc improvements.</p>
-<p>We like to keep a clean history, so squash-rebase merges are preferred for the
-<em>development</em> or <em>main</em> branches.</p>
+<p><em>TL;DR</em> branch off of <em>development</em> for new features, or <em>main</em> for documentation improvements.</p>
+<p>We like to keep a clean history, so squash-rebase merges are preferred for the <em>development</em> or <em>main</em> branches.</p>
 </section>
 <section id="overview-of-branches">
 <h3>Overview of branches<a class="headerlink" href="#overview-of-branches" title="Permalink to this heading">#</a></h3>
@@ -319,8 +298,7 @@ fixes or doc improvements.</p>
 <h4>Historic branches<a class="headerlink" href="#historic-branches" title="Permalink to this heading">#</a></h4>
 <ul class="simple">
 <li><p><strong>main</strong> the primary branch containing released code and up to date docs.</p></li>
-<li><p><strong>development</strong> in progress and pre-released features that are expected to be
-included in a release when ready.</p></li>
+<li><p><strong>development</strong> in progress and pre-released features that are expected to be included in a release when ready.</p></li>
 </ul>
 </section>
 <section id="working-branches">
@@ -361,27 +339,12 @@ git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </
 <li><p>Create a pull request back to <em>main</em>, and one to <em>development</em></p></li>
 </ol>
 </section>
-<section id="how-to-create-pre-release">
-<h3>How to create pre-release<a class="headerlink" href="#how-to-create-pre-release" title="Permalink to this heading">#</a></h3>
-<ol class="arabic simple">
-<li><p>From the head of the <em>development</em> branch, create release commit that
-bumps the version in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and <code class="docutils literal notranslate"><span class="pre">__version__.py</span></code>
-(there’s a test to ensure these are in sync).</p></li>
-<li><p>Create a release (and tag) on GitHub, following the existing
-convention for naming and release notes format, and the GitHub CI
-will do the rest.</p></li>
-</ol>
-</section>
 <section id="how-to-create-release">
 <h3>How to create release<a class="headerlink" href="#how-to-create-release" title="Permalink to this heading">#</a></h3>
 <ol class="arabic simple">
-<li><p>Create a branch off of <em>development</em> like <strong>release/1.0.0</strong> and add a
-commit to bump the version in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and
-<code class="docutils literal notranslate"><span class="pre">__version__.py</span></code>.</p></li>
-<li><p>Merge it into both <em>main</em> and <em>development</em></p></li>
-<li><p>Create a GitHub release from the head of main, following the existing
-convention for naming and release notes format, and the GitHub CI
-will do the rest.</p></li>
+<li><p>From the head of the <em>development</em> branch, create release commit that bumps the version in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and <code class="docutils literal notranslate"><span class="pre">__version__.py</span></code> (there’s a test to ensure these are in sync).</p></li>
+<li><p>Create a release (and tag) on GitHub, following the existing convention for naming and release notes format (use the <em>Generate release notes</em> button as a starting point), and the GitHub CI will do the rest.</p></li>
+<li><p>Unless it is a pre-release then the final step is to merge <em>development</em> into <em>main</em>.</p></li>
 </ol>
 </section>
 </section>
@@ -451,7 +414,6 @@ will do the rest.</p></li>
 </li>
 <li><a class="reference internal" href="#how-to-add-a-new-feature">How to add a new feature</a></li>
 <li><a class="reference internal" href="#how-to-add-a-hot-fix">How to add a hot fix</a></li>
-<li><a class="reference internal" href="#how-to-create-pre-release">How to create pre-release</a></li>
 <li><a class="reference internal" href="#how-to-create-release">How to create release</a></li>
 </ul>
 </li>

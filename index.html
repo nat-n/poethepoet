@@ -188,6 +188,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/include_guide.html">Loading tasks from another file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 </ul>
 </li>
@@ -242,14 +243,14 @@
 <a class="reference external image-reference" href="https://github.com/nat-n/poethepoet"><img alt="GitHub repo" src="https://img.shields.io/github/stars/nat-n/poethepoet?style=social" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/pyversions/poethepoet.svg" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/v/poethepoet.svg" /></a>
-<a class="reference external image-reference" href="https://pypistats.org/packages/poethepoet"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dw/poethepoet" /></a>
+<a class="reference external image-reference" href="https://pypistats.org/packages/poethepoet"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/poethepoet" /></a>
 <a class="reference external image-reference" href="https://github.com/nat-n/poethepoet/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/pypi/l/ansicolortags.svg" /></a>
 <p>Poe the Poet is a batteries included task runner that works well with <a href="https://python-poetry.org/" target="_blank">poetry</a>.</p>
 <p>It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project’s virtual environment.</p>
 <p>“Simple things should be simple, complex things should be possible.” – Alan Kay</p>
 <section id="top-features">
 <h2>Top features<a class="headerlink" href="#top-features" title="Permalink to this heading">#</a></h2>
-<p>✅  Straight forward declaration of project tasks in your pyproject.toml</p>
+<p>✅  Straight forward declaration of project tasks in your pyproject.toml (or <a class="reference internal" href="guides/without_poetry.html"><span class="doc">poe_tasks.toml</span></a>)</p>
 <p>✅  Tasks are run in poetry’s virtualenv (or another env you specify)</p>
 <p>✅  <a class="reference internal" href="installation.html#shell-completion"><span class="std std-ref">Shell completion of task names</span></a> (and global options too for zsh)</p>
 <p>✅  The poe CLI can be used standalone, or as a <a class="reference internal" href="poetry_plugin.html"><span class="doc">plugin for poetry</span></a></p>
@@ -261,6 +262,7 @@
 <p>✅  Tasks can be composed into <a class="reference internal" href="guides/composition_guide.html#sequence-composition"><span class="std std-ref">sequences</span></a> or <a class="reference internal" href="guides/composition_guide.html#graph-composition"><span class="std std-ref">DAGs</span></a></p>
 <p>✅  Works with <a class="reference internal" href="tasks/options.html#envfile-option"><span class="std std-ref">.env files</span></a></p>
 <p>✅  Can be <a class="reference internal" href="guides/library_guide.html"><span class="doc">used as a library</span></a> to embed in other tools</p>
+<p>✅  Also works fine <a class="reference internal" href="guides/without_poetry.html"><span class="doc">without poetry</span></a></p>
 </section>
 <section id="quick-start">
 <h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this heading">#</a></h2>
@@ -290,12 +292,6 @@
 <p class="admonition-title">Hint</p>
 <p>If you’re using <a href="https://python-poetry.org/" target="_blank">poetry</a>, then poe will automatically use the poetry managed virtualenv to find executables and python libraries, without needing to use <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">run</span></code> or <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">shell</span></code>.</p>
 </div>
-</section>
-<section id="usage-without-poetry">
-<h2>Usage without poetry<a class="headerlink" href="#usage-without-poetry" title="Permalink to this heading">#</a></h2>
-<p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the <a class="reference internal" href="global_options.html#change-the-executor-type"><span class="std std-ref">tool.poe.executor global option</span></a>.</p>
-<p>By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code> section. If it doesn’t then poe looks for a virtualenv to use at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the pyproject.toml.</p>
-<p>If no virtualenv is found then poe will run tasks without any special environment management.</p>
 </section>
 <section id="run-poe-from-anywhere">
 <h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Permalink to this heading">#</a></h2>
