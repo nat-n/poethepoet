@@ -31,7 +31,7 @@ class PoeThePoet:
     :type cwd: Path, optional
     :param config:
         Either a dictionary with the same schema as a pyproject.toml file, or a
-        `PoeConfig <https://github.com/nat-n/poethepoet/blob/main/poethepoet/config.py>`_
+        `PoeConfig <https://github.com/nat-n/poethepoet/blob/main/poethepoet/config/config.py>`_
         object to use as an alternative to loading config from a file.
     :type config: dict | PoeConfig, optional
     :param output:
