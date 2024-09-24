@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from typing import Optional
 
 
 # ruff: noqa: N818
 class PoeException(RuntimeError):
-    cause: Optional[str]
+    cause: str | None
 
     def __init__(self, msg, *args):
         self.msg = msg
@@ -20,21 +22,21 @@ class ExpressionParseError(PoeException):
 
 
 class ConfigValidationError(PoeException):
-    context: Optional[str]
-    task_name: Optional[str]
-    index: Optional[int]
-    global_option: Optional[str]
-    filename: Optional[str]
+    context: str | None
+    task_name: str | None
+    index: int | None
+    global_option: str | None
+    filename: str | None
 
     def __init__(
         self,
         msg,
         *args,
-        context: Optional[str] = None,
-        task_name: Optional[str] = None,
-        index: Optional[int] = None,
-        global_option: Optional[str] = None,
-        filename: Optional[str] = None
+        context: str | None = None,
+        task_name: str | None = None,
+        index: int | None = None,
+        global_option: str | None = None,
+        filename: str | None = None
     ):
         super().__init__(msg, *args)
         self.context = context
@@ -45,7 +47,7 @@ class ConfigValidationError(PoeException):
 
 
 class ExecutionError(RuntimeError):
-    cause: Optional[str]
+    cause: str | None
 
     def __init__(self, msg, *args):
         self.msg = msg

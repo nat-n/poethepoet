@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from glob import escape
 from typing import (
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
     from .ast import Line, ParseConfig
 
 
-def parse_poe_cmd(source: str, config: Optional["ParseConfig"] = None):
+def parse_poe_cmd(source: str, config: ParseConfig | None = None):
     from .ast import Glob, ParseConfig, ParseCursor, PythonGlob, Script
 
     if not config:
@@ -30,10 +32,10 @@ def parse_poe_cmd(source: str, config: Optional["ParseConfig"] = None):
 
 
 def resolve_command_tokens(
-    lines: Iterable["Line"],
+    lines: Iterable[Line],
     env: Mapping[str, str],
-    config: Optional["ParseConfig"] = None,
-) -> Iterator[Tuple[str, bool]]:
+    config: ParseConfig | None = None,
+) -> Iterator[tuple[str, bool]]:
     """
     Generates a sequence of tokens, and indicates for each whether it includes glob
     patterns that are not escaped or quoted. In case there are glob patterns in the
@@ -72,7 +74,7 @@ def resolve_command_tokens(
                 continue
 
             # For each token part indicate whether it is a glob
-            token_parts: List[Tuple[str, bool]] = []
+            token_parts: list[tuple[str, bool]] = []
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):

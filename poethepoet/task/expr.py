@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from typing import (
     TYPE_CHECKING,
@@ -32,7 +34,7 @@ class ExprTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         imports: Sequence[str] = tuple()
-        assert_: Union[bool, int] = False
+        assert_: bool | int = False
         use_exec: bool = False
 
         def validate(self):
@@ -45,9 +47,9 @@ class ExprTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "ExprTask.TaskOptions"
+        options: ExprTask.TaskOptions
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -61,8 +63,8 @@ class ExprTask(PoeTask):
 
     def _handle_run(
         self,
-        context: "RunContext",
-        env: "EnvVarsManager",
+        context: RunContext,
+        env: EnvVarsManager,
     ) -> int:
         from ..helpers.python import format_class
 
@@ -102,10 +104,10 @@ class ExprTask(PoeTask):
 
     def parse_content(
         self,
-        args: Optional[Dict[str, Any]],
-        env: "EnvVarsManager",
+        args: dict[str, Any] | None,
+        env: EnvVarsManager,
         imports=Iterable[str],
-    ) -> Tuple[str, Dict[str, str]]:
+    ) -> tuple[str, dict[str, str]]:
         """
         Returns the expression to evaluate and the subset of env vars that it references
 
@@ -146,7 +148,7 @@ class ExprTask(PoeTask):
         # Spy on access to the env, so that instead of replacing template ${keys} with
         # the corresponding value, replace them with a python name and keep track of
         # referenced env vars.
-        accessed_vars: Dict[str, str] = {}
+        accessed_vars: dict[str, str] = {}
 
         def getitem_spy(obj: SpyDict, key: str, value: str):
             accessed_vars[key] = value

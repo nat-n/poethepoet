@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from enum import Enum
 from typing import Iterable, Optional, Sequence
@@ -63,7 +65,7 @@ def parse_env_file(content_lines: Sequence[str]):
     result = {}
     cursor = 0
     state = ParserState.SCAN_VAR_NAME
-    var_name: Optional[str] = ""
+    var_name: str | None = ""
     var_content = []
 
     while cursor < len(content):

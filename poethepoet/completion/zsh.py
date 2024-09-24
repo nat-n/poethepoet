@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Iterable, Set
 
 
@@ -50,7 +52,7 @@ def get_zsh_completion_script(name: str = "") -> str:
             tuple(),
         )
         # collect all option strings that are exclusive with this one
-        excl_option_strings: Set[str] = {
+        excl_option_strings: set[str] = {
             option_string
             for excl_option in excl_options
             for option_string in excl_option.option_strings

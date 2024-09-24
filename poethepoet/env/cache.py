@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
@@ -11,15 +13,15 @@ POE_DEBUG = environ.get("POE_DEBUG", "0") == 1
 
 
 class EnvFileCache:
-    _cache: Dict[str, Dict[str, str]] = {}
-    _ui: Optional["PoeUi"]
+    _cache: dict[str, dict[str, str]] = {}
+    _ui: PoeUi | None
     _project_dir: Path
 
-    def __init__(self, project_dir: Path, ui: Optional["PoeUi"]):
+    def __init__(self, project_dir: Path, ui: PoeUi | None):
         self._project_dir = project_dir
         self._ui = ui
 
-    def get(self, envfile: Union[str, Path]) -> Dict[str, str]:
+    def get(self, envfile: str | Path) -> dict[str, str]:
         from .parse import parse_env_file
 
         envfile_path_str = str(envfile)

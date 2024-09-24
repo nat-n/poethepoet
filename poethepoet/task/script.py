@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import shlex
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
@@ -35,9 +37,9 @@ class ScriptTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "ScriptTask.TaskOptions"
+        options: ScriptTask.TaskOptions
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -57,8 +59,8 @@ class ScriptTask(PoeTask):
 
     def _handle_run(
         self,
-        context: "RunContext",
-        env: "EnvVarsManager",
+        context: RunContext,
+        env: EnvVarsManager,
     ) -> int:
         from ..helpers.python import format_class
 
@@ -103,7 +105,7 @@ class ScriptTask(PoeTask):
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
 
-    def parse_content(self, args: Optional[Dict[str, Any]]) -> Tuple[str, str]:
+    def parse_content(self, args: dict[str, Any] | None) -> tuple[str, str]:
         """
         Returns the module to load, and the function call to execute.
 

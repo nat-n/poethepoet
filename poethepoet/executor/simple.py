@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Dict, Type
 
 from .base import PoeExecutor
@@ -9,4 +11,4 @@ class SimpleExecutor(PoeExecutor):
     """
 
     __key__ = "simple"
-    __options__: Dict[str, Type] = {}
+    __options__: dict[str, type] = {}

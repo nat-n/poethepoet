@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 from typing import IO, TYPE_CHECKING, List, Mapping, Optional, Sequence, Tuple, Union
@@ -33,8 +35,8 @@ STDOUT_ANSI_SUPPORT = guess_ansi_support(sys.stdout)
 
 
 class PoeUi:
-    args: "Namespace"
-    _color: "Pastel"
+    args: Namespace
+    _color: Pastel
 
     def __init__(self, output: IO, program_name: str = "poe"):
         self.output = output
@@ -59,7 +61,7 @@ class PoeUi:
         """Provide easy access to arguments"""
         return getattr(self.args, key, None)
 
-    def build_parser(self) -> "ArgumentParser":
+    def build_parser(self) -> ArgumentParser:
         import argparse
 
         parser = argparse.ArgumentParser(
@@ -175,18 +177,16 @@ class PoeUi:
 
     def print_help(
         self,
-        tasks: Optional[
-            Mapping[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str, str]]]]
-        ] = None,
-        info: Optional[str] = None,
-        error: Optional[PoeException] = None,
+        tasks: Mapping[str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]] | None = None,
+        info: str | None = None,
+        error: PoeException | None = None,
     ):
         # TODO: See if this can be done nicely with a custom HelpFormatter
 
         # Ignore verbosity mode if help flag is set
         verbosity = 0 if self["help"] else self.verbosity
 
-        result: List[Union[str, Sequence[str]]] = []
+        result: list[str | Sequence[str]] = []
         if verbosity >= 0:
             result.append(
                 (
@@ -319,7 +319,7 @@ class PoeUi:
         if verbosity <= self.verbosity:
             self._print(message, end=end)
 
-    def print_error(self, error: Union[PoeException, ExecutionError]):
+    def print_error(self, error: PoeException | ExecutionError):
         error_lines = error.msg.split("\n")
         if error.cause:
             error_lines.append(f"From: {error.cause}")

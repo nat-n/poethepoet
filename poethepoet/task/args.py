@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -23,7 +25,7 @@ from ..options import PoeOptions
 ArgParams = Dict[str, Any]
 ArgsDef = Union[List[str], List[ArgParams], Dict[str, ArgParams]]
 
-arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
+arg_param_schema: dict[str, type | tuple[type, ...]] = {
     "default": (str, int, float, bool),
     "help": str,
     "name": str,
@@ -33,7 +35,7 @@ arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
     "type": str,
     "multiple": (bool, int),
 }
-arg_types: Dict[str, Type] = {
+arg_types: dict[str, type] = {
     "string": str,
     "float": float,
     "integer": int,
@@ -42,14 +44,14 @@ arg_types: Dict[str, Type] = {
 
 
 class ArgSpec(PoeOptions):
-    default: Optional[Union[str, int, float, bool]] = None
+    default: str | int | float | bool | None = None
     help: str = ""
     name: str
-    options: Union[list, tuple]
-    positional: Union[bool, str] = False
+    options: list | tuple
+    positional: bool | str = False
     required: bool = False
     type: Literal["string", "float", "integer", "boolean"] = "string"
-    multiple: Union[bool, int] = False
+    multiple: bool | int = False
 
     @classmethod
     def normalize(cls, args_def: ArgsDef, strict: bool = True):
@@ -91,7 +93,7 @@ class ArgSpec(PoeOptions):
     @classmethod
     def parse(
         cls,
-        source: Union[Mapping[str, Any], list],
+        source: Mapping[str, Any] | list,
         strict: bool = True,
         extra_keys: Sequence[str] = tuple(),
     ):
@@ -122,7 +124,7 @@ class ArgSpec(PoeOptions):
 
     @staticmethod
     def _get_arg_options_list(
-        arg: ArgParams, name: Optional[str] = None, strict: bool = True
+        arg: ArgParams, name: str | None = None, strict: bool = True
     ):
         position = arg.get("positional", False)
         name = name or arg.get("name")
@@ -182,7 +184,7 @@ class ArgSpec(PoeOptions):
 
 
 class PoeTaskArgs:
-    _args: Tuple[ArgSpec, ...]
+    _args: tuple[ArgSpec, ...]
 
     def __init__(self, args_def: ArgsDef, task_name: str):
         self._task_name = task_name
@@ -207,8 +209,8 @@ class PoeTaskArgs:
 
     @classmethod
     def get_help_content(
-        cls, args_def: Optional[ArgsDef]
-    ) -> List[Tuple[Tuple[str, ...], str, str]]:
+        cls, args_def: ArgsDef | None
+    ) -> list[tuple[tuple[str, ...], str, str]]:
         if args_def is None:
             return []
 
@@ -224,8 +226,8 @@ class PoeTaskArgs:
         ]
 
     def build_parser(
-        self, env: "EnvVarsManager", program_name: str
-    ) -> "ArgumentParser":
+        self, env: EnvVarsManager, program_name: str
+    ) -> ArgumentParser:
         import argparse
 
         parser = argparse.ArgumentParser(
@@ -240,7 +242,7 @@ class PoeTaskArgs:
             )
         return parser
 
-    def _get_argument_params(self, arg: ArgSpec, env: "EnvVarsManager"):
+    def _get_argument_params(self, arg: ArgSpec, env: EnvVarsManager):
         default = arg.get("default")
         if isinstance(default, str):
             default = env.fill_template(default)
@@ -276,7 +278,7 @@ class PoeTaskArgs:
 
         return result
 
-    def parse(self, args: Sequence[str], env: "EnvVarsManager", program_name: str):
+    def parse(self, args: Sequence[str], env: EnvVarsManager, program_name: str):
         parsed_args = vars(self.build_parser(env, program_name).parse_args(args))
         # Ensure positional args are still exposed by name even if they were parsed with
         # alternate identifiers

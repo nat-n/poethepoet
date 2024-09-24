@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
@@ -54,18 +56,18 @@ class PoeThePoet:
     """
 
     cwd: Path
-    ui: "PoeUi"
-    config: "PoeConfig"
+    ui: PoeUi
+    config: PoeConfig
 
-    _task_specs: Optional[Dict[str, "PoeTask.TaskSpec"]] = None
+    _task_specs: dict[str, PoeTask.TaskSpec] | None = None
 
     def __init__(
         self,
-        cwd: Optional[Union[Path, str]] = None,
-        config: Optional[Union[Mapping[str, Any], "PoeConfig"]] = None,
+        cwd: Path | str | None = None,
+        config: Mapping[str, Any] | PoeConfig | None = None,
         output: IO = sys.stdout,
-        poetry_env_path: Optional[str] = None,
-        config_name: Optional[str] = None,
+        poetry_env_path: str | None = None,
+        config_name: str | None = None,
         program_name: str = "poe",
     ):
         from .config import PoeConfig
@@ -134,7 +136,7 @@ class PoeThePoet:
             self._task_specs = TaskSpecFactory(self.config)
         return self._task_specs
 
-    def resolve_task(self, allow_hidden: bool = False) -> Optional["PoeTask"]:
+    def resolve_task(self, allow_hidden: bool = False) -> PoeTask | None:
         from .task.base import TaskContext
 
         task = tuple(self.ui["task"])
@@ -167,8 +169,8 @@ class PoeThePoet:
         )
 
     def run_task(
-        self, task: "PoeTask", context: Optional["RunContext"] = None
-    ) -> Optional[int]:
+        self, task: PoeTask, context: RunContext | None = None
+    ) -> int | None:
         if context is None:
             context = self.get_run_context()
         try:
@@ -180,7 +182,7 @@ class PoeThePoet:
             self.print_help(error=error)
             return 1
 
-    def run_task_graph(self, task: "PoeTask") -> Optional[int]:
+    def run_task_graph(self, task: PoeTask) -> int | None:
         from .task.graph import TaskExecutionGraph
 
         context = self.get_run_context(multistage=True)
@@ -207,7 +209,7 @@ class PoeThePoet:
                     return 1
         return 0
 
-    def get_run_context(self, multistage: bool = False) -> "RunContext":
+    def get_run_context(self, multistage: bool = False) -> RunContext:
         from .context import RunContext
 
         result = RunContext(
@@ -226,16 +228,16 @@ class PoeThePoet:
 
     def print_help(
         self,
-        info: Optional[str] = None,
-        error: Optional[Union[str, PoeException]] = None,
+        info: str | None = None,
+        error: str | PoeException | None = None,
     ):
         from .task.args import PoeTaskArgs
 
         if isinstance(error, str):
             error = PoeException(error)
 
-        tasks_help: Dict[
-            str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str, str]]]
+        tasks_help: dict[
+            str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]
         ] = {
             task_name: (
                 (

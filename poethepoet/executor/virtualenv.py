@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type
 
 from ..exceptions import ConfigValidationError, ExecutionError
@@ -14,16 +16,16 @@ class VirtualenvExecutor(PoeExecutor):
     """
 
     __key__ = "virtualenv"
-    __options__: Dict[str, Type] = {"location": str}
+    __options__: dict[str, type] = {"location": str}
 
     @classmethod
-    def works_with_context(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: RunContext) -> bool:
         from ..virtualenv import Virtualenv
 
         return Virtualenv.detect(context.project_dir)
 
     def execute(
-        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+        self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
     ) -> int:
         """
         Execute the given cmd as a subprocess inside the configured virtualenv
@@ -46,7 +48,7 @@ class VirtualenvExecutor(PoeExecutor):
             f"executable {cmd[0]!r} could not be found{error_context}"
         ) from error
 
-    def _resolve_virtualenv(self) -> "Virtualenv":
+    def _resolve_virtualenv(self) -> Virtualenv:
         from ..virtualenv import Virtualenv
 
         if "location" in self.options:
@@ -74,7 +76,7 @@ class VirtualenvExecutor(PoeExecutor):
         )
 
     @classmethod
-    def validate_executor_config(cls, config: Dict[str, Any]):
+    def validate_executor_config(cls, config: dict[str, Any]):
         """
         Validate that location is a string if given and no other options are given.
         """

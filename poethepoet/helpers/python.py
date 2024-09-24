@@ -3,6 +3,8 @@ Helper functions for parsing and manipulating python code, as required by Script
 ExprTask.
 """
 
+from __future__ import annotations
+
 import ast
 import re
 import sys
@@ -84,7 +86,7 @@ def resolve_expression(
     root_node = parse_and_validate(source, call_only, task_type)
     name_nodes = _validate_nodes_and_get_names(root_node, source)
 
-    substitutions: List[Substitution] = []
+    substitutions: list[Substitution] = []
     for node in name_nodes:
         if node.id in arguments:
             substitutions.append(
@@ -137,7 +139,7 @@ def parse_and_validate(
     return root_node
 
 
-def format_class(attrs: Optional[Dict[str, Any]], classname: str = "__args") -> str:
+def format_class(attrs: dict[str, Any] | None, classname: str = "__args") -> str:
     """
     Generates source for a python class with the entries of the given dictionary
     represented as class attributes. Output is a one-liner.
@@ -246,13 +248,13 @@ def _validate_nodes_and_get_names(
             )
 
 
-def _apply_substitutions(content: str, subs: List[Substitution]):
+def _apply_substitutions(content: str, subs: list[Substitution]):
     """
     Returns a copy of content with all of the substitutions applied.
     Uses a single pass for efficiency.
     """
     cursor = 0
-    segments: List[str] = []
+    segments: list[str] = []
 
     for (start, end), replacement in sorted(subs, key=lambda x: x[0][0]):
         in_between = content[cursor:start]
@@ -300,8 +302,7 @@ def _get_name_source_segment(source: str, node: ast.Name):
     and must be valid identifiers. It is expected to be correct in all cases, and
     performant in common cases.
     """
-    if sys.version_info >= (3, 8):
-        return ast.get_source_segment(source, node)
+    return ast.get_source_segment(source, node)
 
     partial_result = (
         re.split(r"(?:\r\n|\r|\n)", source)[node.lineno - 1]

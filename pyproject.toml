@@ -165,6 +165,9 @@ markers = [
 
 
 [tool.ruff]
+target-version = "py38"
+
+[tool.ruff.lint]
 select  = [
   "E",     # error
   "F",     # pyflakes
@@ -196,7 +199,7 @@ ignore  = [
   "PTH123", # builtin-open
   "RUF012", # mutable-class-default
 ]
-fixable = ["E", "F", "I"]
+fixable = ["E", "F", "FA", "I", "UP"]
 
 
 [build-system]

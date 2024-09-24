@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -27,14 +29,14 @@ class SequenceTask(PoeTask):
     A task consisting of a sequence of other tasks
     """
 
-    content: List[Union[str, Dict[str, Any]]]
+    content: list[str | dict[str, Any]]
 
     __key__ = "sequence"
-    __content_type__: ClassVar[Type] = list
+    __content_type__: ClassVar[type] = list
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
-        default_item_type: Optional[str] = None
+        default_item_type: str | None = None
 
         def validate(self):
             """
@@ -51,16 +53,16 @@ class SequenceTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: list
-        options: "SequenceTask.TaskOptions"
+        options: SequenceTask.TaskOptions
         subtasks: Sequence[PoeTask.TaskSpec]
 
         def __init__(
             self,
             name: str,
-            task_def: Dict[str, Any],
-            factory: "TaskSpecFactory",
-            source: "ConfigPartition",
-            parent: Optional["PoeTask.TaskSpec"] = None,
+            task_def: dict[str, Any],
+            factory: TaskSpecFactory,
+            source: ConfigPartition,
+            parent: PoeTask.TaskSpec | None = None,
         ):
             super().__init__(name, task_def, factory, source, parent)
 
@@ -99,7 +101,7 @@ class SequenceTask(PoeTask):
                         task_name=self.name,
                     )
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -116,7 +118,7 @@ class SequenceTask(PoeTask):
     def __init__(
         self,
         spec: TaskSpec,
-        invocation: Tuple[str, ...],
+        invocation: tuple[str, ...],
         ctx: TaskContext,
         capture_stdout: bool = False,
     ):
@@ -132,8 +134,8 @@ class SequenceTask(PoeTask):
 
     def _handle_run(
         self,
-        context: "RunContext",
-        env: "EnvVarsManager",
+        context: RunContext,
+        env: EnvVarsManager,
     ) -> int:
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
@@ -146,7 +148,7 @@ class SequenceTask(PoeTask):
             context.multistage = True
 
         ignore_fail = self.spec.options.ignore_fail
-        non_zero_subtasks: List[str] = list()
+        non_zero_subtasks: list[str] = list()
         for subtask in self.subtasks:
             task_result = subtask.run(context=context, parent_env=env)
             if task_result and not ignore_fail:

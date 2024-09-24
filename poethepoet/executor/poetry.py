@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Type
@@ -16,16 +18,16 @@ class PoetryExecutor(PoeExecutor):
     """
 
     __key__ = "poetry"
-    __options__: Dict[str, Type] = {}
+    __options__: dict[str, type] = {}
 
     @classmethod
-    def works_with_context(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: RunContext) -> bool:
         if not context.config.is_poetry_project:
             return False
         return bool(cls._poetry_cmd_from_path())
 
     def execute(
-        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+        self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
     ) -> int:
         """
         Execute the given cmd as a subprocess inside the poetry managed dev environment

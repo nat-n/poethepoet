@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union
@@ -10,25 +12,25 @@ if TYPE_CHECKING:
 
 
 class RunContext:
-    config: "PoeConfig"
-    ui: "PoeUi"
-    env: "EnvVarsManager"
+    config: PoeConfig
+    ui: PoeUi
+    env: EnvVarsManager
     dry: bool
-    poe_active: Optional[str]
+    poe_active: str | None
     project_dir: Path
     multistage: bool = False
-    exec_cache: Dict[str, Any]
-    captured_stdout: Dict[Tuple[str, ...], str]
+    exec_cache: dict[str, Any]
+    captured_stdout: dict[tuple[str, ...], str]
 
     def __init__(
         self,
-        config: "PoeConfig",
-        ui: "PoeUi",
+        config: PoeConfig,
+        ui: PoeUi,
         env: Mapping[str, str],
         dry: bool,
-        poe_active: Optional[str],
+        poe_active: str | None,
         multistage: bool = False,
-        cwd: Optional[Union[Path, str]] = None,
+        cwd: Path | str | None = None,
     ):
         from .env.manager import EnvVarsManager
 
@@ -52,8 +54,8 @@ class RunContext:
             )
 
     def _get_dep_values(
-        self, used_task_invocations: Mapping[str, Tuple[str, ...]]
-    ) -> Dict[str, str]:
+        self, used_task_invocations: Mapping[str, tuple[str, ...]]
+    ) -> dict[str, str]:
         """
         Get env vars from upstream tasks declared via the uses option.
         """
@@ -62,7 +64,7 @@ class RunContext:
             for var_name, invocation in used_task_invocations.items()
         }
 
-    def save_task_output(self, invocation: Tuple[str, ...], captured_stdout: bytes):
+    def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes):
         """
         Store the stdout data from a task so that it can be reused by other tasks
         """
@@ -76,7 +78,7 @@ class RunContext:
             else:
                 raise
 
-    def get_task_output(self, invocation: Tuple[str, ...]):
+    def get_task_output(self, invocation: tuple[str, ...]):
         """
         Get the stored stdout data from a task so that it can be reused by other tasks
 
@@ -87,12 +89,12 @@ class RunContext:
 
     def get_executor(
         self,
-        invocation: Tuple[str, ...],
-        env: "EnvVarsManager",
+        invocation: tuple[str, ...],
+        env: EnvVarsManager,
         working_dir: Path,
-        executor_config: Optional[Mapping[str, str]] = None,
-        capture_stdout: Union[str, bool] = False,
-    ) -> "PoeExecutor":
+        executor_config: Mapping[str, str] | None = None,
+        capture_stdout: str | bool = False,
+    ) -> PoeExecutor:
         from .executor import PoeExecutor
 
         if not executor_config:

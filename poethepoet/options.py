@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections
 from keyword import iskeyword
 from typing import (
@@ -26,7 +28,7 @@ class PoeOptions:
     A special kind of config object that parses options ...
     """
 
-    __annotations: Dict[str, Type]
+    __annotations: dict[str, type]
 
     def __init__(self, **options: Any):
         for key in self.get_fields():
@@ -61,7 +63,7 @@ class PoeOptions:
     @classmethod
     def parse(
         cls,
-        source: Union[Mapping[str, Any], list],
+        source: Mapping[str, Any] | list,
         strict: bool = True,
         extra_keys: Sequence[str] = tuple(),
     ):
@@ -110,7 +112,7 @@ class PoeOptions:
             return value_type.parse(value, strict=strict)
 
         if strict:
-            expected_type: Union[Type, Tuple[Type, ...]] = cls._type_of(value_type)
+            expected_type: type | tuple[type, ...] = cls._type_of(value_type)
             if not isinstance(value, expected_type):
                 # Try format expected_type nicely in the error message
                 if not isinstance(expected_type, tuple):
@@ -192,7 +194,7 @@ class PoeOptions:
             return type(None) in type_of_attr
         return False
 
-    def update(self, options_dict: Dict[str, Any]):
+    def update(self, options_dict: dict[str, Any]):
         new_options_dict = {}
         for key in self.get_fields().keys():
             if key in options_dict:
@@ -201,11 +203,11 @@ class PoeOptions:
                 new_options_dict[key] = getattr(self, key)
 
     @classmethod
-    def type_of(cls, key: str) -> Optional[Union[Type, Tuple[Type, ...]]]:
+    def type_of(cls, key: str) -> type | tuple[type, ...] | None:
         return cls._type_of(cls.get_annotation(key))
 
     @classmethod
-    def get_annotation(cls, key: str) -> Optional[Type]:
+    def get_annotation(cls, key: str) -> type | None:
         return cls.get_fields().get(cls._resolve_key(key))
 
     @classmethod
@@ -219,9 +221,9 @@ class PoeOptions:
         return key
 
     @classmethod
-    def _type_of(cls, annotation: Any) -> Union[Type, Tuple[Type, ...]]:
+    def _type_of(cls, annotation: Any) -> type | tuple[type, ...]:
         if get_origin(annotation) is Union:
-            result: List[Type] = []
+            result: list[type] = []
             for component in get_args(annotation):
                 component_type = cls._type_of(component)
                 if isinstance(component_type, tuple):
@@ -252,7 +254,7 @@ class PoeOptions:
         return annotation
 
     @classmethod
-    def get_fields(cls) -> Dict[str, Any]:
+    def get_fields(cls) -> dict[str, Any]:
         """
         Recent python versions removed inheritance for __annotations__
         so we have to implement it explicitly

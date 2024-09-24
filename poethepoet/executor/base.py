@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import shutil
 import sys
@@ -48,19 +50,19 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     A base class for poe task executors
     """
 
-    working_dir: Optional[Path]
+    working_dir: Path | None
 
-    __executor_types: ClassVar[Dict[str, Type["PoeExecutor"]]] = {}
-    __key__: ClassVar[Optional[str]] = None
+    __executor_types: ClassVar[dict[str, type[PoeExecutor]]] = {}
+    __key__: ClassVar[str | None] = None
 
     def __init__(
         self,
-        invocation: Tuple[str, ...],
-        context: "RunContext",
+        invocation: tuple[str, ...],
+        context: RunContext,
         options: Mapping[str, str],
-        env: "EnvVarsManager",
-        working_dir: Optional[Path] = None,
-        capture_stdout: Union[str, bool] = False,
+        env: EnvVarsManager,
+        working_dir: Path | None = None,
+        capture_stdout: str | bool = False,
         dry: bool = False,
     ):
         self.invocation = invocation
@@ -82,20 +84,20 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             print(f" . Initalizing {self.__class__.__name__}")
 
     @classmethod
-    def works_with_context(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: RunContext) -> bool:
         return True
 
     @classmethod
     def get(
         cls,
-        invocation: Tuple[str, ...],
-        context: "RunContext",
+        invocation: tuple[str, ...],
+        context: RunContext,
         executor_config: Mapping[str, str],
-        env: "EnvVarsManager",
-        working_dir: Optional[Path] = None,
-        capture_stdout: Union[str, bool] = False,
+        env: EnvVarsManager,
+        working_dir: Path | None = None,
+        capture_stdout: str | bool = False,
         dry: bool = False,
-    ) -> "PoeExecutor":
+    ) -> PoeExecutor:
         """
         Create an executor.
         """
@@ -104,7 +106,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         )
 
     @classmethod
-    def _resolve_implementation(cls, context: "RunContext", executor_type: str):
+    def _resolve_implementation(cls, context: RunContext, executor_type: str):
         """
         Resolve to an executor class, either as specified in the available config or
         by making some reasonable assumptions based on visible features of the
@@ -130,7 +132,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             return cls.__executor_types[executor_type]
 
     def execute(
-        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+        self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
     ) -> int:
         """
         Execute the given cmd.
@@ -148,8 +150,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self,
         cmd: Sequence[str],
         *,
-        input: Optional[bytes] = None,
-        env: Optional[Mapping[str, str]] = None,
+        input: bytes | None = None,
+        env: Mapping[str, str] | None = None,
         shell: bool = False,
         use_exec: bool = False,
     ) -> int:
@@ -192,7 +194,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self,
         cmd: Sequence[str],
         *,
-        env: Optional[Mapping[str, str]] = None,
+        env: Mapping[str, str] | None = None,
     ):
         if self.dry:
             return 0
@@ -215,8 +217,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self,
         cmd: Sequence[str],
         *,
-        input: Optional[bytes] = None,
-        env: Optional[Mapping[str, str]] = None,
+        input: bytes | None = None,
+        env: Mapping[str, str] | None = None,
         shell: bool = False,
     ) -> int:
         import signal
@@ -268,7 +270,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         return proc.returncode
 
     @classmethod
-    def validate_config(cls, config: Dict[str, Any]):
+    def validate_config(cls, config: dict[str, Any]):
         if "type" not in config:
             raise ConfigValidationError(
                 "Missing required key 'type' from executor option",
@@ -294,7 +296,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             cls.__executor_types[executor_type].validate_executor_config(config)
 
     @classmethod
-    def validate_executor_config(cls, config: Dict[str, Any]):
+    def validate_executor_config(cls, config: dict[str, Any]):
         """To be overridden by subclasses if they accept options"""
         extra_options = set(config.keys()) - {"type"}
         if extra_options:

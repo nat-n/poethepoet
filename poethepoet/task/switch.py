@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -32,10 +34,10 @@ class SwitchTask(PoeTask):
     """
 
     __key__ = "switch"
-    __content_type__: ClassVar[Type] = list
+    __content_type__: ClassVar[type] = list
 
     class TaskOptions(PoeTask.TaskOptions):
-        control: Union[str, dict]
+        control: str | dict
         default: Literal["pass", "fail"] = "fail"
 
         @classmethod
@@ -66,16 +68,16 @@ class SwitchTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         control_task_spec: PoeTask.TaskSpec
-        case_task_specs: Tuple[Tuple[Tuple[Any, ...], PoeTask.TaskSpec], ...]
-        options: "SwitchTask.TaskOptions"
+        case_task_specs: tuple[tuple[tuple[Any, ...], PoeTask.TaskSpec], ...]
+        options: SwitchTask.TaskOptions
 
         def __init__(
             self,
             name: str,
-            task_def: Dict[str, Any],
-            factory: "TaskSpecFactory",
-            source: "ConfigPartition",
-            parent: Optional["PoeTask.TaskSpec"] = None,
+            task_def: dict[str, Any],
+            factory: TaskSpecFactory,
+            source: ConfigPartition,
+            parent: PoeTask.TaskSpec | None = None,
         ):
             super().__init__(name, task_def, factory, source, parent)
 
@@ -112,7 +114,7 @@ class SwitchTask(PoeTask):
 
             self.case_task_specs = tuple(case_task_specs)
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             from collections import defaultdict
 
             allowed_control_task_types = ("expr", "cmd", "script")
@@ -154,19 +156,19 @@ class SwitchTask(PoeTask):
 
     spec: TaskSpec
     control_task: PoeTask
-    switch_tasks: Dict[str, PoeTask]
+    switch_tasks: dict[str, PoeTask]
 
     def __init__(
         self,
         spec: TaskSpec,
-        invocation: Tuple[str, ...],
+        invocation: tuple[str, ...],
         ctx: TaskContext,
         capture_stdout: bool = False,
     ):
         super().__init__(spec, invocation, ctx, capture_stdout)
 
         control_task_name = f"{spec.name}[__control__]"
-        control_invocation: Tuple[str, ...] = (control_task_name,)
+        control_invocation: tuple[str, ...] = (control_task_name,)
         options = self.spec.options
         if options.get("args"):
             control_invocation = (*control_invocation, *invocation[1:])
@@ -179,7 +181,7 @@ class SwitchTask(PoeTask):
 
         self.switch_tasks = {}
         for case_keys, case_spec in spec.case_task_specs:
-            task_invocation: Tuple[str, ...] = (f"{spec.name}[{','.join(case_keys)}]",)
+            task_invocation: tuple[str, ...] = (f"{spec.name}[{','.join(case_keys)}]",)
             if options.get("args"):
                 task_invocation = (*task_invocation, *invocation[1:])
 
@@ -193,8 +195,8 @@ class SwitchTask(PoeTask):
 
     def _handle_run(
         self,
-        context: "RunContext",
-        env: "EnvVarsManager",
+        context: RunContext,
+        env: EnvVarsManager,
     ) -> int:
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)

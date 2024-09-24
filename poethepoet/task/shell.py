@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from os import environ
 from typing import (
@@ -26,7 +28,7 @@ class ShellTask(PoeTask):
     __key__ = "shell"
 
     class TaskOptions(PoeTask.TaskOptions):
-        interpreter: Optional[Union[str, list]] = None
+        interpreter: str | list | None = None
 
         def validate(self):
             super().validate()
@@ -57,14 +59,14 @@ class ShellTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "ShellTask.TaskOptions"
+        options: ShellTask.TaskOptions
 
     spec: TaskSpec
 
     def _handle_run(
         self,
-        context: "RunContext",
-        env: "EnvVarsManager",
+        context: RunContext,
+        env: EnvVarsManager,
     ) -> int:
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
@@ -95,15 +97,15 @@ class ShellTask(PoeTask):
             interpreter_cmd, input=content.encode()
         )
 
-    def _get_interpreter_config(self) -> Tuple[str, ...]:
-        result: Union[str, Tuple[str, ...]] = self.spec.options.get(
+    def _get_interpreter_config(self) -> tuple[str, ...]:
+        result: str | tuple[str, ...] = self.spec.options.get(
             "interpreter", self.ctx.config.shell_interpreter
         )
         if isinstance(result, str):
             return (result,)
         return tuple(result)
 
-    def resolve_interpreter_cmd(self) -> Optional[List[str]]:
+    def resolve_interpreter_cmd(self) -> list[str] | None:
         """
         Return a formatted command for the first specified interpreter that can be
         located.
@@ -120,7 +122,7 @@ class ShellTask(PoeTask):
 
         return None
 
-    def _locate_interpreter(self, interpreter: str) -> Optional[str]:
+    def _locate_interpreter(self, interpreter: str) -> str | None:
         from shutil import which
 
         result = None

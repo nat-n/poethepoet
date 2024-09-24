@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
@@ -11,18 +13,18 @@ if TYPE_CHECKING:
 
 
 class EnvVarsManager(Mapping):
-    _config: "PoeConfig"
-    _ui: Optional["PoeUi"]
-    _vars: Dict[str, str]
-    envfiles: "EnvFileCache"
+    _config: PoeConfig
+    _ui: PoeUi | None
+    _vars: dict[str, str]
+    envfiles: EnvFileCache
 
     def __init__(  # TODO: check if we still need all these args!
         self,
-        config: "PoeConfig",
-        ui: Optional["PoeUi"],
-        parent_env: Optional["EnvVarsManager"] = None,
-        base_env: Optional[Mapping[str, str]] = None,
-        cwd: Optional[Union[Path, str]] = None,
+        config: PoeConfig,
+        ui: PoeUi | None,
+        parent_env: EnvVarsManager | None = None,
+        base_env: Mapping[str, str] | None = None,
+        cwd: Path | str | None = None,
     ):
         from ..helpers.git import GitRepo
         from .cache import EnvFileCache
@@ -58,7 +60,7 @@ class EnvVarsManager(Mapping):
     def __len__(self):
         return len(self._vars)
 
-    def get(self, key: Any, /, default: Any = None) -> Optional[str]:
+    def get(self, key: Any, /, default: Any = None) -> str | None:
         if key == "POE_GIT_DIR":
             # This is a special case environment variable that is only set if requested
             self._vars["POE_GIT_DIR"] = str(self._git_repo.path or "")
@@ -74,8 +76,8 @@ class EnvVarsManager(Mapping):
 
     def apply_env_config(
         self,
-        envfile: Optional[Union[str, List[str]]],
-        config_env: Optional[Mapping[str, Union[str, Mapping[str, str]]]],
+        envfile: str | list[str] | None,
+        config_env: Mapping[str, str | Mapping[str, str]] | None,
         config_dir: Path,
         config_working_dir: Path,
     ):
@@ -120,7 +122,7 @@ class EnvVarsManager(Mapping):
 
     def update(self, env_vars: Mapping[str, Any]):
         # ensure all values are strings
-        str_vars: Dict[str, str] = {}
+        str_vars: dict[str, str] = {}
         for key, value in env_vars.items():
             if isinstance(value, list):
                 str_vars[key] = " ".join(str(item) for item in value)
