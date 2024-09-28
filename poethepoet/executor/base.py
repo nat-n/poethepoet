@@ -79,7 +79,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self._is_windows = sys.platform == "win32"
 
         if POE_DEBUG:
-            print(f" . Initalizing {self.__class__.__name__}")
+            print(f" . Initializing {self.__class__.__name__}")
 
     @classmethod
     def works_with_context(cls, context: "RunContext") -> bool:
