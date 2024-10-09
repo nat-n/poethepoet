@@ -10,7 +10,7 @@ There are two steps required to make this work:
 
 .. tip::
 
-  This document suggests calling your alias `egdar` — because it's a pun... but you can use any alternative name you fancy.
+  This document suggests calling your alias `edgar` — because it's a pun... but you can use any alternative name you fancy.
 
 The project at ``~/.poethepoet`` can be a regular poetry project including dependencies or just a file with tasks.
 
