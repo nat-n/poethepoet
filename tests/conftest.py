@@ -51,6 +51,7 @@ def projects():
         re.match(r"^([_\w]+)_project", path.name).groups()[0]: path.resolve()
         for path in base_path.glob("*_project")
     }
+
     projects.update(
         {
             f"{project_key}/"
@@ -100,6 +101,12 @@ class PoeRunResult(NamedTuple):
             f"  stdout=`{self.stdout}`,\n"
             f"  stderr=`{self.stderr}`,\n"
             ")"
+        )
+
+    def assert_no_err(self):
+        # Only stderr output allowed is from poetry creating its venv
+        assert all(
+            line.startswith("Creating virtualenv ") for line in self.stderr.splitlines()
         )
 
 

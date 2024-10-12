@@ -47,6 +47,9 @@ class EnvVarsManager(Mapping):
             self._vars["POE_CWD"] = self.cwd
             self._vars["POE_PWD"] = self.cwd
 
+        if self._ui:
+            self._vars["POE_VERBOSITY"] = str(self._ui.verbosity)
+
         self._git_repo = GitRepo(config.project_dir)
 
     def __getitem__(self, key):

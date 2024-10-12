@@ -175,7 +175,10 @@ Default arg
   documentation multiline
 """
 
+[tool.poe.tasks.check-global-options]
+script = "pkg:echo_script(dry=_dry_run, verbosity=environ['POE_VERBOSITY'])"
 
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
