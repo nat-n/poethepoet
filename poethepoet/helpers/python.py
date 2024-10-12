@@ -6,7 +6,18 @@ ExprTask.
 import ast
 import re
 import sys
-from typing import Any, Collection, Container, Dict, Iterator, List, Optional, Tuple
+from typing import (
+    Any,
+    Collection,
+    Container,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    cast,
+)
 
 from ..exceptions import ExpressionParseError
 
@@ -67,21 +78,77 @@ _ALLOWED_BUILTINS = {
 Substitution = Tuple[Tuple[int, int], str]
 
 
+class FunctionCall(NamedTuple):
+    """
+    Model for a python expression consisting of a function call
+    """
+
+    expression: str
+    function_ref: str
+    referenced_args: Tuple[str, ...] = tuple()
+    referenced_globals: Tuple[str, ...] = tuple()
+
+    @classmethod
+    def parse(
+        cls,
+        source: str,
+        arguments: Container[str],
+        *,
+        args_prefix: str = "__args.",
+        allowed_vars: Container[str] = tuple(),
+    ) -> "FunctionCall":
+        root_node = cast(ast.Call, parse_and_validate(source, True, "script"))
+        name_nodes = _validate_nodes_and_get_names(root_node, source)
+
+        substitutions: List[Substitution] = []
+        referenced_args: List[str] = []
+        referenced_globals: List[str] = []
+        for node in name_nodes:
+            if node.id in arguments:
+                substitutions.append(
+                    (_get_name_node_abs_range(source, node), args_prefix + node.id)
+                )
+                referenced_args.append(node.id)
+            elif node.id in _ALLOWED_BUILTINS or node.id in allowed_vars:
+                referenced_globals.append(node.id)
+            else:
+                raise ExpressionParseError(
+                    "Invalid variable reference in script: "
+                    + _get_name_source_segment(source, node)
+                )
+
+        # Prefix references to arguments with args_prefix
+        expression = _apply_substitutions(source, substitutions)
+
+        ref_parts = []
+        func_node = root_node.func
+        while isinstance(func_node, ast.Attribute):
+            ref_parts.append(func_node.attr)
+            func_node = func_node.value
+        assert isinstance(func_node, ast.Name)
+        function_ref = ".".join((func_node.id, *reversed(ref_parts)))
+
+        return cls(
+            expression=_clean_linebreaks(expression),
+            function_ref=function_ref,
+            referenced_args=tuple(referenced_args),
+            referenced_globals=tuple(referenced_globals),
+        )
+
+
 def resolve_expression(
     source: str,
     arguments: Container[str],
     *,
-    call_only: bool = True,
     args_prefix: str = "__args.",
     allowed_vars: Container[str] = tuple(),
-):
+) -> str:
     """
     Validate function call and substitute references to arguments with their namespaced
     counterparts (e.g. `my_arg` => `__args.my_arg`).
     """
 
-    task_type = "script" if call_only else "expr"
-    root_node = parse_and_validate(source, call_only, task_type)
+    root_node = parse_and_validate(source, False, "expr")
     name_nodes = _validate_nodes_and_get_names(root_node, source)
 
     substitutions: List[Substitution] = []
@@ -92,12 +159,12 @@ def resolve_expression(
             )
         elif node.id not in _ALLOWED_BUILTINS and node.id not in allowed_vars:
             raise ExpressionParseError(
-                f"Invalid variable reference in {task_type}: "
+                "Invalid variable reference in expr: "
                 + _get_name_source_segment(source, node)
             )
 
     # Prefix references to arguments with args_prefix
-    return _apply_substitutions(source, substitutions)
+    return _clean_linebreaks(_apply_substitutions(source, substitutions))
 
 
 def parse_and_validate(
@@ -246,7 +313,7 @@ def _validate_nodes_and_get_names(
             )
 
 
-def _apply_substitutions(content: str, subs: List[Substitution]):
+def _apply_substitutions(content: str, subs: List[Substitution]) -> str:
     """
     Returns a copy of content with all of the substitutions applied.
     Uses a single pass for efficiency.
@@ -319,3 +386,11 @@ def _get_name_source_segment(source: str, node: ast.Name):
         partial_result = partial_result[:-1]
 
     return partial_result
+
+
+def _clean_linebreaks(expression: str):
+    """
+    Strip out any new lines because they can be problematic on windows
+    """
+    expression = re.sub(r"((\r\n|\r|\n) | (\r\n|\r|\n))", " ", expression)
+    return re.sub(r"(\r\n|\r|\n)", " ", expression)
