@@ -51,6 +51,7 @@ def projects():
         re.match(r"^([_\w]+)_project", path.name).groups()[0]: path.resolve()
         for path in base_path.glob("*_project")
     }
+
     projects.update(
         {
             f"{project_key}/"
