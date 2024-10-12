@@ -2,6 +2,10 @@ import re
 
 from poethepoet import __version__
 
+# Setting POETRY_VIRTUALENVS_CREATE stops poetry from creating the virtualenv and
+# spamming about it in stderr
+poetry_vars = {"POETRY_VIRTUALENVS_CREATE": "false"}
+
 
 def test_call_no_args(run_poe):
     result = run_poe()
@@ -94,11 +98,54 @@ def test_version_option(run_poe):
     assert result.stderr == ""
 
 
-def test_dry_run(run_poe_subproc):
+def test_dry_run_cmd(run_poe_subproc):
     result = run_poe_subproc("-d", "show_env")
     assert result.capture == "Poe => poe_test_env\n"
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_dry_run_script(run_poe_subproc):
+    result = run_poe_subproc("-d", "multiple-lines-help", project="scripts")
+    assert result.capture == "Poe => multiple-lines-help\n"
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_pass_dry_run_and_verbosity_to_script(run_poe_subproc):
+    result = run_poe_subproc("check-global-options", project="scripts")
+    assert result.capture == "Poe => check-global-options\n"
+    assert result.stdout == ("args ()\n" "kwargs {'dry': False, 'verbosity': '0'}\n")
+    assert result.stderr == ""
+
+    result = run_poe_subproc("-d", "check-global-options", project="scripts")
+    assert result.capture == "Poe => check-global-options\n"
+    assert result.stdout == ("args ()\n" "kwargs {'dry': True, 'verbosity': '0'}\n")
+    assert result.stderr == ""
+
+    result = run_poe_subproc("-d", "-v", "check-global-options", project="scripts")
+    assert result.capture == "Poe => check-global-options\n"
+    assert result.stdout == ("args ()\n" "kwargs {'dry': True, 'verbosity': '1'}\n")
+    assert result.stderr == ""
+
+    result = run_poe_subproc("-q", "check-global-options", project="scripts")
+    assert result.capture == ""
+    assert result.stdout == ("args ()\n" "kwargs {'dry': False, 'verbosity': '-1'}\n")
+    assert result.stderr == ""
+
+
+def test_poe_env_vars_are_set(run_poe_subproc):
+    result = run_poe_subproc("show_env", env=poetry_vars)
+    assert result.capture == "Poe => poe_test_env\n"
+    for env_var in (
+        "POE_VERBOSITY=0",
+        "POE_CONF_DIR=",
+        "POE_ACTIVE=poetry",
+        "POE_CWD=",
+        "POE_ROOT=",
+        "POE_PWD=",
+    ):
+        assert env_var in result.stdout
 
 
 def test_documentation_of_task_named_args(run_poe):

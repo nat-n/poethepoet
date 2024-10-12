@@ -86,20 +86,23 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
   ]
 
   [tool.poe.tasks.clean]
-  help = "Remove generated files"
-  cmd  = """
-    # multiline commands including comments work too!
-    rm -rf .coverage
-           .mypy_cache
-           .pytest_cache
-           ./**/__pycache__
-           dist
-           htmlcov
-           ./docs/_build
-           ./tests/fixtures/simple_project/venv
-           ./tests/fixtures/venv_project/myvenv
-           ./tests/fixtures/poetry_plugin_project/**/.venv
-           ./tests/temp
+  help   = "Remove generated files"
+  script = """
+    poethepoet.scripts:rm(
+      ".coverage",
+      ".mypy_cache",
+      ".pytest_cache",
+      "./**/__pycache__",
+      "dist",
+      "htmlcov",
+      "./docs/_build",
+      "./tests/fixtures/**/.venv",
+      "./tests/fixtures/simple_project/venv",
+      "./tests/fixtures/venv_project/myvenv",
+      "./tests/temp",
+      verbosity=environ.get('POE_VERBOSITY'),
+      dry_run=_dry_run
+    )
   """
 
   [tool.poe.tasks.test]
@@ -133,6 +136,10 @@ _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
     { cmd = "poetry self add \"${POE_ROOT}[poetry_plugin]\""}
   ]
   ignore_fail = true
+
+  [tool.poe.tasks.env]
+  cmd = "env"
+
 
   [tool.poe.tasks.poe]
   help   = "Execute poe from this repo (useful for testing)"

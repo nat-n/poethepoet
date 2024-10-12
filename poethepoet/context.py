@@ -90,9 +90,18 @@ class RunContext:
         invocation: Tuple[str, ...],
         env: "EnvVarsManager",
         working_dir: Path,
+        *,
         executor_config: Optional[Mapping[str, str]] = None,
         capture_stdout: Union[str, bool] = False,
+        delegate_dry_run: bool = False,
     ) -> "PoeExecutor":
+        """
+        Get an Executor object for use with this invocation.
+
+        if delegate_dry_run is set then the task will always be executed and be
+        entrusted to not have any side effects when the dry-run flag is set.
+        """
+
         from .executor import PoeExecutor
 
         if not executor_config:
@@ -108,5 +117,5 @@ class RunContext:
             env=env,
             working_dir=working_dir,
             capture_stdout=capture_stdout,
-            dry=self.dry,
+            dry=False if delegate_dry_run else self.dry,
         )

@@ -1,12 +1,17 @@
 [tool.poetry]
 name = "dummy-project"
 version = "0.1.0"
+
 description = "dummy-project"
 authors = ["Nat Noordanus <n@natn.me>"]
 
 packages = [
   { include = "dummy_package" }
 ]
+
+[tool.poetry.dependencies]
+poe_test_helpers = { path = "../packages/poe_test_helpers" }
+
 
 [tool.poe]
 env.PLANET = "EARTH"
