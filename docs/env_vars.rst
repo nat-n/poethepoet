@@ -10,7 +10,7 @@ The following environment variables are used by Poe the Poet internally, and can
 - ``POE_PWD``: the current working directory of the poe process (unless overridden programmatically).
 - ``POE_CONF_DIR``: the path to the parent directory of the config file that defines the running task or the :ref:`cwd option<Setting a working directory for included tasks>` set when including that config.
 - ``POE_ACTIVE``: identifies the active PoeExecutor, so that Poe the Poet can tell when it is running recursively.
-
+- ``POE_VERBOSITY``: reflects the current verbosity level. Normally 0 is the default, 1 means more verbose and -1 means less.
 
 Special variables
 -----------------

@@ -485,13 +485,20 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         raise NotImplementedError
 
-    def _get_executor(self, context: "RunContext", env: "EnvVarsManager"):
+    def _get_executor(
+        self,
+        context: "RunContext",
+        env: "EnvVarsManager",
+        *,
+        delegate_dry_run: bool = False,
+    ):
         return context.get_executor(
             self.invocation,
             env,
             working_dir=self.get_working_dir(env),
             executor_config=self.spec.options.get("executor"),
             capture_stdout=self.capture_stdout,
+            delegate_dry_run=delegate_dry_run,
         )
 
     def get_working_dir(

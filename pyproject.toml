@@ -23,7 +23,7 @@ black        = "^23.3.0"
 mypy         = "^1.1.1"
 pytest       = "^7.1.2"
 pytest-cov   = "^3.0.0"
-rstcheck     = { version = "^6.1.2", python = "<4" }
+rstcheck     = { version = "^6.2.4", python = "<4" }
 ruff         = "^0.0.291"
 types-pyyaml = "^6.0.12.20240808"
 
@@ -32,7 +32,7 @@ virtualenv = "^20.14.1"
 poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
 
 [tool.poetry.group.dev.dependencies]
-bpython      = "^0.24"
+bpython = "^0.24"
 
 [tool.poetry.group.docs.dependencies]
 furo                = "^2023.3.27"
@@ -52,91 +52,93 @@ poethepoet = "poethepoet.plugin:PoetryPlugin"
 
 
 [tool.poe.tasks]
-
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
-  [tool.poe.tasks.format]
-  help     = "Run all formatting tools on the code base"
-  sequence = ["format-ruff", "format-black"]
+[tool.poe.tasks.format]
+help     = "Run all formatting tools on the code base"
+sequence = ["format-ruff", "format-black"]
 
-  [tool.poe.tasks.format-ruff]
-  help = "Run ruff fixer on code base"
-  cmd  = "ruff check . --fix-only"
+[tool.poe.tasks.format-ruff]
+help = "Run ruff fixer on code base"
+cmd  = "ruff check . --fix-only"
 
-  [tool.poe.tasks.format-black]
-  help = "Run black on the code base"
-  cmd  = "black ."
+[tool.poe.tasks.format-black]
+help = "Run black on the code base"
+cmd  = "black ."
 
-  [tool.poe.tasks.docs]
-  help = "Build the docs using Sphinx"
-  cmd  = "sphinx-build docs docs/_build"
-  deps = ["_clean_docs"]
+[tool.poe.tasks.docs]
+help = "Build the docs using Sphinx"
+cmd  = "sphinx-build docs docs/_build"
+deps = ["_clean_docs"]
 
-  [tool.poe.tasks.docs-serve]
-  help   = "Serves the docs locally with livereload"
-  script = "docs:serve"
-  cwd    = "./docs"
-  deps   = ["docs"]
+[tool.poe.tasks.docs-serve]
+help   = "Serves the docs locally with livereload"
+script = "docs:serve"
+cwd    = "./docs"
+deps   = ["docs"]
 
-  [tool.poe.tasks.docs-check]
-  help = "Validate rst syntax in the docs"
-  sequence = [
-    { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V" },
-    "docs -b linkcheck"
-  ]
+[tool.poe.tasks.docs-check]
+help = "Validate rst syntax in the docs"
+sequence = [
+  { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V --ignore-directives autofunction" },
+  "docs -b linkcheck"
+]
 
-  [tool.poe.tasks.clean]
-  help = "Remove generated files"
-  cmd  = """
-    # multiline commands including comments work too!
-    rm -rf .coverage
-           .mypy_cache
-           .pytest_cache
-           ./**/__pycache__
-           dist
-           htmlcov
-           ./docs/_build
-           ./tests/fixtures/simple_project/venv
-           ./tests/fixtures/venv_project/myvenv
-           ./tests/fixtures/poetry_plugin_project/**/.venv
-           ./tests/temp
-  """
+[tool.poe.tasks.clean]
+help   = "Remove generated files"
+script = """
+  poethepoet.scripts:rm(
+    ".coverage",
+    ".mypy_cache",
+    ".pytest_cache",
+    "./**/__pycache__",
+    "dist",
+    "htmlcov",
+    "./docs/_build",
+    "./tests/fixtures/**/.venv",
+    "./tests/fixtures/simple_project/venv",
+    "./tests/fixtures/venv_project/myvenv",
+    "./tests/temp",
+    verbosity=environ.get('POE_VERBOSITY'),
+    dry_run=_dry_run
+  )
+"""
 
-  [tool.poe.tasks.test]
-  help = "Run unit and feature tests"
-  cmd  = "pytest"
+[tool.poe.tasks.test]
+help = "Run unit and feature tests"
+cmd  = "pytest"
 
-  [tool.poe.tasks.test-quick]
-  help = "Run unit and feature tests, excluding slow ones"
-  cmd  = "pytest -m 'not slow'"
+[tool.poe.tasks.test-quick]
+help = "Run unit and feature tests, excluding slow ones"
+cmd  = "pytest -m 'not slow'"
 
-  [tool.poe.tasks.types]
-  help = "Run the type checker"
-  cmd  = "mypy poethepoet --ignore-missing-imports"
+[tool.poe.tasks.types]
+help = "Run the type checker"
+cmd  = "mypy poethepoet --ignore-missing-imports"
 
-  [tool.poe.tasks.lint]
-  help = "Run linting tools on the code base"
-  cmd  = "ruff check ."
+[tool.poe.tasks.lint]
+help = "Run linting tools on the code base"
+cmd  = "ruff check ."
 
-  [tool.poe.tasks.style]
-  help = "Validate black code style"
-  cmd  = "black . --check --diff"
+[tool.poe.tasks.style]
+help = "Validate black code style"
+cmd  = "black . --check --diff"
 
-  [tool.poe.tasks.check]
-  help     = "Run all checks on the code base"
-  sequence = ["docs-check", "style", "types", "lint", "test"]
+[tool.poe.tasks.check]
+help     = "Run all checks on the code base"
+sequence = ["docs-check", "style", "types", "lint", "test"]
 
-  [tool.poe.tasks.install-poetry-plugin]
-  help = "Install or update this project as a plugin in poetry"
-  sequence = [
-    { cmd = "poetry self remove poethepoet"},
-    { cmd = "poetry self add \"${POE_ROOT}[poetry_plugin]\""}
-  ]
-  ignore_fail = true
+[tool.poe.tasks.install-poetry-plugin]
+help = "Install or update this project as a plugin in poetry"
+sequence = [
+  { cmd = "poetry self remove poethepoet"},
+  { cmd = "poetry self add \"${POE_ROOT}[poetry_plugin]\""}
+]
+ignore_fail = true
 
-  [tool.poe.tasks.poe]
-  help   = "Execute poe from this repo (useful for testing)"
-  script = "poethepoet:main"
+[tool.poe.tasks.poe]
+help   = "Execute poe from this repo (useful for testing)"
+script = "poethepoet:main"
 
 
 [tool.rstcheck]
