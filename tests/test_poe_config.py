@@ -1,6 +1,6 @@
 # Setting POETRY_VIRTUALENVS_CREATE stops poetry from creating the virtualenv and
-# spamming about it in stdout
-no_venv = {"POETRY_VIRTUALENVS_CREATE": "false"}
+# spamming about it in stderr
+poetry_vars = {"POETRY_VIRTUALENVS_CREATE": "false"}
 
 
 def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
@@ -10,31 +10,33 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
         "nat,",
         r"welcome to " + esc_prefix + "${POE_ROOT}",
         project="scripts",
-        env=no_venv,
+        env=poetry_vars,
     )
     assert (
         result.capture == f"Poe => echo-args nat, 'welcome to {projects['scripts']}'\n"
     )
     assert result.stdout == f"hello nat, welcome to {projects['scripts']}\n"
-    assert result.stderr == ""
+    result.assert_no_err()
 
 
 def test_setting_default_array_item_task_type(run_poe_subproc):
-    result = run_poe_subproc("composite_task", project="scripts", env=no_venv)
+    result = run_poe_subproc(
+        "composite_task", project="scripts", env={"POETRY_VIRTUALENVS_CREATE": "false"}
+    )
     assert (
         result.capture == "Poe => poe_test_echo Hello\nPoe => poe_test_echo 'World!'\n"
     )
     assert result.stdout == "Hello\nWorld!\n"
-    assert result.stderr == ""
+    result.assert_no_err()
 
 
 def test_setting_global_env_vars(run_poe_subproc):
-    result = run_poe_subproc("travel", env=no_venv)
+    result = run_poe_subproc("travel", env=poetry_vars)
     assert (
         result.capture == "Poe => poe_test_echo 'from EARTH to'\nPoe => 'travel[1]'\n"
     )
     assert result.stdout == "from EARTH to\nMARS\n"
-    assert result.stderr == ""
+    result.assert_no_err()
 
 
 def test_setting_default_verbosity(run_poe_subproc, low_verbosity_project_path):
@@ -44,7 +46,7 @@ def test_setting_default_verbosity(run_poe_subproc, low_verbosity_project_path):
     )
     assert result.capture == ""
     assert result.stdout == "Hello there!\n"
-    assert result.stderr == ""
+    result.assert_no_err()
 
 
 def test_override_default_verbosity(run_poe_subproc, low_verbosity_project_path):
@@ -56,7 +58,7 @@ def test_override_default_verbosity(run_poe_subproc, low_verbosity_project_path)
     )
     assert result.capture == "Poe => poe_test_echo Hello 'there!'\n"
     assert result.stdout == "Hello there!\n"
-    assert result.stderr == ""
+    result.assert_no_err()
 
 
 def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_path):
@@ -67,15 +69,11 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
     )
     assert result.capture == "Poe => poe_test_echo Hello 'there!'\n"
     assert result.stdout == "Hello there!\n"
-    assert result.stderr == ""
+    result.assert_no_err()
 
 
 def test_decrease_verbosity(run_poe_subproc):
-    result = run_poe_subproc(
-        "-q",
-        "part1",
-        env=no_venv,
-    )
+    result = run_poe_subproc("-q", "part1", env=poetry_vars)
     assert result.capture == ""
-    assert result.stderr == ""
     assert result.stdout == "Hello\n"
+    result.assert_no_err()

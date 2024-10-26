@@ -68,3 +68,20 @@ whereas the same behaviour can can be reliably achieved like so:
 
   [tool.poe.tasks.build]
   script = "os:makedirs('build/assets', exist_ok=True)"
+
+
+Poe scripts library
+-------------------
+
+Poe the Poet includes the ``poethepoet.scripts`` package including the following functions as convenient cross-platform implementations of common task capabilities.
+These functions can be referenced from script tasks if ``poethepoet`` is available in the project virtual environment.
+
+.. autofunction:: poethepoet.scripts.rm
+
+
+Delegating dry-run behavior to a script
+---------------------------------------
+
+Normally if the ``--dry-run`` global option is passed to the CLI then poe will go through the motions of running the given task, including logging to stdout, without actually running the task.
+
+However it is possible to configure poe to delegate respecting this dry run flag to an invoked script task, by passing it the ``_dry_run`` variable. When this variable is passed as an argument to the python function called within a script task then poe will always call the task, and delegate responsibility to the script for making sure that no side effects occur when run in dry-run mode.

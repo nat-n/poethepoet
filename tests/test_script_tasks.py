@@ -1,4 +1,5 @@
 import difflib
+import sys
 
 no_venv = {"POETRY_VIRTUALENVS_CREATE": "false"}
 
@@ -339,9 +340,9 @@ def test_script_with_multi_value_args(run_poe_subproc):
     # Not enough values for option: 0
     result = run_poe_subproc(
         "multiple-value-args",
-        "--widgets",
         "--engines",
         "v2",
+        "--widgets",
         project="scripts",
         env=no_venv,
     )
@@ -356,20 +357,27 @@ def test_script_with_multi_value_args(run_poe_subproc):
     result = run_poe_subproc(
         "multiple-value-args",
         "bloop",  # without the first arg, dong gets read an positional
+        "--engines",
+        "v2",
         "--widgets",
         "ding",
         "dang",
         "dong",
-        "--engines",
-        "v2",
         project="scripts",
         env=no_venv,
     )
     assert result.capture == ""
     assert result.stdout == ""
-    assert (
-        "poe multiple-value-args: error: unrecognized arguments: dong" in result.stderr
-    )
+    if sys.version_info > (3, 12, 6):
+        assert (
+            "poe multiple-value-args: error: argument second: invalid int value: 'dong'"
+            in result.stderr
+        )
+    else:
+        assert (
+            "poe multiple-value-args: error: unrecognized arguments: dong"
+            in result.stderr
+        )
 
     # wrong type for multiple values
     result = run_poe_subproc(

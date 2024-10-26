@@ -124,7 +124,6 @@ class ExprTask(PoeTask):
         expression = resolve_expression(
             source=expression,
             arguments=set(args or tuple()),
-            call_only=False,
             allowed_vars={"sys", "__env", *imports},
         )
         # Strip out any new lines because they can be problematic on windows
