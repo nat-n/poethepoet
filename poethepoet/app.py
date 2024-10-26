@@ -139,7 +139,10 @@ class PoeThePoet:
 
         task = tuple(self.ui["task"])
         if not task:
-            self.print_help(info="No task specified.")
+            try:
+                self.print_help(info="No task specified.")
+            except PoeException as error:
+                self.print_help(error=error)
             return None
 
         task_name = task[0]
@@ -184,7 +187,12 @@ class PoeThePoet:
         from .task.graph import TaskExecutionGraph
 
         context = self.get_run_context(multistage=True)
-        graph = TaskExecutionGraph(task, context)
+        try:
+            graph = TaskExecutionGraph(task, context)
+        except PoeException as error:
+            self.print_help(error=error)
+            return 1
+
         plan = graph.get_execution_plan()
 
         for stage in plan:
@@ -240,7 +248,9 @@ class PoeThePoet:
             task_name: (
                 (
                     content.get("help", ""),
-                    PoeTaskArgs.get_help_content(content.get("args")),
+                    PoeTaskArgs.get_help_content(
+                        content.get("args"), task_name, suppress_errors=bool(error)
+                    ),
                 )
                 if isinstance(content, dict)
                 else ("", tuple())

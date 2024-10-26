@@ -78,6 +78,10 @@ class ArgSpec(PoeOptions):
 
         elif isinstance(args_def, dict):
             for name, params in args_def.items():
+                if not isinstance(params, dict):
+                    raise ConfigValidationError(
+                        f"Invalid configuration for arg {name!r}, expected dict"
+                    )
                 if strict and "name" in params:
                     raise ConfigValidationError(
                         f"Unexpected 'name' option for argument {name!r}"
@@ -192,22 +196,12 @@ class PoeTaskArgs:
         try:
             return tuple(ArgSpec.parse(args_def))
         except ConfigValidationError as error:
-            if isinstance(error.index, int):
-                if isinstance(args_def, list):
-                    item = args_def[error.index]
-                    if arg_name := (isinstance(item, dict) and item.get("name")):
-                        arg_ref = arg_name
-                elif arg_name := tuple(args_def.keys())[error.index]:
-                    arg_ref = arg_name
-                else:
-                    arg_ref = error.index
-                error.context = f"Invalid argument {arg_ref!r} declared"
-            error.task_name = self._task_name
+            self._enrich_config_error(error, args_def, self._task_name)
             raise
 
     @classmethod
     def get_help_content(
-        cls, args_def: Optional[ArgsDef]
+        cls, args_def: Optional[ArgsDef], task_name: str, suppress_errors: bool = False
     ) -> List[Tuple[Tuple[str, ...], str, str]]:
         if args_def is None:
             return []
@@ -218,10 +212,35 @@ class PoeTaskArgs:
                 return f"[default: {default}]"
             return ""
 
-        return [
-            (arg["options"], arg.get("help", ""), format_default(arg))
-            for arg in ArgSpec.normalize(args_def, strict=False)
-        ]
+        try:
+            return [
+                (arg["options"], arg.get("help", ""), format_default(arg))
+                for arg in ArgSpec.normalize(args_def, strict=False)
+            ]
+        except ConfigValidationError as error:
+            if suppress_errors:
+                return []
+            else:
+                cls._enrich_config_error(error, args_def, task_name)
+                raise
+
+    @staticmethod
+    def _enrich_config_error(
+        error: ConfigValidationError, args_def: ArgsDef, task_name: str
+    ):
+        if isinstance(error.index, int):
+            if isinstance(args_def, list):
+                item = args_def[error.index]
+                if arg_name := (isinstance(item, dict) and item.get("name")):
+                    arg_ref = arg_name
+                else:
+                    arg_ref = error.index
+            elif arg_name := tuple(args_def.keys())[error.index]:
+                arg_ref = arg_name
+            else:
+                arg_ref = error.index
+            error.context = f"Invalid argument {arg_ref!r} declared"
+        error.task_name = task_name
 
     def build_parser(
         self, env: "EnvVarsManager", program_name: str
