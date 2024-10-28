@@ -1,16 +1,6 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Literal, Mapping, Optional, Sequence, Union
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
@@ -20,20 +10,10 @@ if TYPE_CHECKING:
 from ..exceptions import ConfigValidationError
 from ..options import PoeOptions
 
-ArgParams = Dict[str, Any]
-ArgsDef = Union[List[str], List[ArgParams], Dict[str, ArgParams]]
+ArgParams = dict[str, Any]
+ArgsDef = Union[list[str], list[ArgParams], dict[str, ArgParams]]
 
-arg_param_schema: Dict[str, Union[Type, Tuple[Type, ...]]] = {
-    "default": (str, int, float, bool),
-    "help": str,
-    "name": str,
-    "options": (list, tuple),
-    "positional": (bool, str),
-    "required": bool,
-    "type": str,
-    "multiple": (bool, int),
-}
-arg_types: Dict[str, Type] = {
+arg_types: dict[str, type] = {
     "string": str,
     "float": float,
     "integer": int,
@@ -42,13 +22,16 @@ arg_types: Dict[str, Type] = {
 
 
 class ArgSpec(PoeOptions):
+    # ruff: noqa: UP007
     default: Optional[Union[str, int, float, bool]] = None
     help: str = ""
     name: str
-    options: Union[list, tuple]
+    options: Sequence[str]
+    # ruff: noqa: UP007
     positional: Union[bool, str] = False
     required: bool = False
     type: Literal["string", "float", "integer", "boolean"] = "string"
+    # ruff: noqa: UP007
     multiple: Union[bool, int] = False
 
     @classmethod
@@ -95,7 +78,7 @@ class ArgSpec(PoeOptions):
     @classmethod
     def parse(
         cls,
-        source: Union[Mapping[str, Any], list],
+        source: Mapping[str, Any] | list,
         strict: bool = True,
         extra_keys: Sequence[str] = tuple(),
     ):
@@ -126,7 +109,7 @@ class ArgSpec(PoeOptions):
 
     @staticmethod
     def _get_arg_options_list(
-        arg: ArgParams, name: Optional[str] = None, strict: bool = True
+        arg: ArgParams, name: str | None = None, strict: bool = True
     ):
         position = arg.get("positional", False)
         name = name or arg.get("name")
@@ -139,7 +122,7 @@ class ArgSpec(PoeOptions):
             if isinstance(position, str):
                 return [position]
             return [name]
-        return tuple(arg.get("options", (f"--{name}",)))
+        return tuple(arg.get("options", [f"--{name}"]))
 
     def validate(self):
         try:
@@ -186,7 +169,7 @@ class ArgSpec(PoeOptions):
 
 
 class PoeTaskArgs:
-    _args: Tuple[ArgSpec, ...]
+    _args: tuple[ArgSpec, ...]
 
     def __init__(self, args_def: ArgsDef, task_name: str):
         self._task_name = task_name
@@ -201,8 +184,8 @@ class PoeTaskArgs:
 
     @classmethod
     def get_help_content(
-        cls, args_def: Optional[ArgsDef], task_name: str, suppress_errors: bool = False
-    ) -> List[Tuple[Tuple[str, ...], str, str]]:
+        cls, args_def: ArgsDef | None, task_name: str, suppress_errors: bool = False
+    ) -> list[tuple[tuple[str, ...], str, str]]:
         if args_def is None:
             return []
 
@@ -242,9 +225,7 @@ class PoeTaskArgs:
             error.context = f"Invalid argument {arg_ref!r} declared"
         error.task_name = task_name
 
-    def build_parser(
-        self, env: "EnvVarsManager", program_name: str
-    ) -> "ArgumentParser":
+    def build_parser(self, env: EnvVarsManager, program_name: str) -> ArgumentParser:
         import argparse
 
         parser = argparse.ArgumentParser(
@@ -259,7 +240,7 @@ class PoeTaskArgs:
             )
         return parser
 
-    def _get_argument_params(self, arg: ArgSpec, env: "EnvVarsManager"):
+    def _get_argument_params(self, arg: ArgSpec, env: EnvVarsManager):
         default = arg.get("default")
         if isinstance(default, str):
             default = env.fill_template(default)
@@ -295,7 +276,7 @@ class PoeTaskArgs:
 
         return result
 
-    def parse(self, args: Sequence[str], env: "EnvVarsManager", program_name: str):
+    def parse(self, args: Sequence[str], env: EnvVarsManager, program_name: str):
         parsed_args = vars(self.build_parser(env, program_name).parse_args(args))
         # Ensure positional args are still exposed by name even if they were parsed with
         # alternate identifiers
