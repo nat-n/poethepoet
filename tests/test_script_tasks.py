@@ -368,7 +368,7 @@ def test_script_with_multi_value_args(run_poe_subproc):
     )
     assert result.capture == ""
     assert result.stdout == ""
-    if sys.version_info > (3, 12, 6):
+    if (3, 12, 6) < sys.version_info < (3, 13, 0):
         assert (
             "poe multiple-value-args: error: argument second: invalid int value: 'dong'"
             in result.stderr

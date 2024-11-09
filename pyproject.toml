@@ -12,7 +12,7 @@ keywords      = ["automation", "tasks", "task-runner", "plugin", "poetry", "poe"
 classifiers   = ["Topic :: Software Development :: Build Tools"]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9"
 pastel = "^0.2.1"
 tomli  = { version = ">=1.2.2", python = "<3.11" }
 poetry = { version = "^1.0", allow-prereleases = true, optional = true }
