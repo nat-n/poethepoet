@@ -148,17 +148,27 @@ class SequenceTask(PoeTask):
         ignore_fail = self.spec.options.ignore_fail
         non_zero_subtasks: List[str] = list()
         for subtask in self.subtasks:
-            task_result = subtask.run(context=context, parent_env=env)
-            if task_result and not ignore_fail:
-                raise ExecutionError(
-                    f"Sequence aborted after failed subtask {subtask.name!r}"
-                )
+            try:
+                task_result = subtask.run(context=context, parent_env=env)
+            except ExecutionError as error:
+                if ignore_fail:
+                    print("Warning:", error.msg)
+                    non_zero_subtasks.append(subtask.name)
+                else:
+                    raise
+
             if task_result:
+                if not ignore_fail:
+                    raise ExecutionError(
+                        f"Sequence aborted after failed subtask {subtask.name!r}"
+                    )
                 non_zero_subtasks.append(subtask.name)
 
         if non_zero_subtasks and ignore_fail == "return_non_zero":
+            plural = "s" if len(non_zero_subtasks) > 1 else ""
             raise ExecutionError(
-                f"Subtasks {', '.join(non_zero_subtasks)} returned non-zero exit status"
+                f"Subtask{plural} {', '.join(repr(st) for st in non_zero_subtasks)} "
+                "returned non-zero exit status"
             )
         return 0
 
