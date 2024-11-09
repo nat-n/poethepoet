@@ -287,6 +287,44 @@ standard library. This can be useful for ensuring that tasks work across platfor
 </pre></div>
 </div>
 </section>
+<section id="poe-scripts-library">
+<h2>Poe scripts library<a class="headerlink" href="#poe-scripts-library" title="Permalink to this heading">#</a></h2>
+<p>Poe the Poet includes the <code class="docutils literal notranslate"><span class="pre">poethepoet.scripts</span></code> package including the following functions as convenient cross-platform implementations of common task capabilities.
+These functions can be referenced from script tasks if <code class="docutils literal notranslate"><span class="pre">poethepoet</span></code> is available in the project virtual environment.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="poethepoet.scripts.rm">
+<span class="sig-prename descclassname"><span class="pre">poethepoet.scripts.</span></span><span class="sig-name descname"><span class="pre">rm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#poethepoet.scripts.rm" title="Permalink to this definition">#</a></dt>
+<dd><p>This function is intended for use in a script task to delete files and directories
+matching any of the given patterns, as a platform agnostic alternative to
+<code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">[patterns]</span></code></p>
+<p>Example usage:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.clean]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;poethepoet.scripts:rm(&#39;.mypy_cache&#39;, &#39;.pytest_cache&#39;, &#39;./**/__pycache__&#39;)&quot;</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*patterns</strong> – <p>One or more paths to delete.
+<a class="reference external" href="https://docs.python.org/3/library/glob.html">Glob patterns</a> are supported.</p>
+</p></li>
+<li><p><strong>cwd</strong> – The directory relative to which patterns are evaluated. Defaults to <code class="docutils literal notranslate"><span class="pre">.</span></code>.</p></li>
+<li><p><strong>verbosity</strong> – An integer for setting the function’s verbosity. This can be set to
+<code class="docutils literal notranslate"><span class="pre">environ.get('POE_VERBOSITY')</span></code> to match the verbosity of the poe invocation.</p></li>
+<li><p><strong>dry_run</strong> – If true then nothing will be deleted, but output to stdout will be unaffected.
+This can be set to <code class="docutils literal notranslate"><span class="pre">_dry_run</span></code> to make poe delegate dry_run control to the
+function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="delegating-dry-run-behavior-to-a-script">
+<h2>Delegating dry-run behavior to a script<a class="headerlink" href="#delegating-dry-run-behavior-to-a-script" title="Permalink to this heading">#</a></h2>
+<p>Normally if the <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> global option is passed to the CLI then poe will go through the motions of running the given task, including logging to stdout, without actually running the task.</p>
+<p>However it is possible to configure poe to delegate respecting this dry run flag to an invoked script task, by passing it the <code class="docutils literal notranslate"><span class="pre">_dry_run</span></code> variable. When this variable is passed as an argument to the python function called within a script task then poe will always call the task, and delegate responsibility to the script for making sure that no side effects occur when run in dry-run mode.</p>
+</section>
 </section>
 
         </article>
@@ -360,6 +398,11 @@ standard library. This can be useful for ensuring that tasks work across platfor
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
 <li><a class="reference internal" href="#output-the-return-value">Output the return value</a></li>
 <li><a class="reference internal" href="#calling-standard-library-functions">Calling standard library functions</a></li>
+<li><a class="reference internal" href="#poe-scripts-library">Poe scripts library</a><ul>
+<li><a class="reference internal" href="#poethepoet.scripts.rm"><code class="docutils literal notranslate"><span class="pre">rm()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#delegating-dry-run-behavior-to-a-script">Delegating dry-run behavior to a script</a></li>
 </ul>
 </li>
 </ul>
