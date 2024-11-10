@@ -6,11 +6,13 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypedDict,
     Union,
 )
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
+from .primitives import EmptyDict, EnvDefault
 
 KNOWN_SHELL_INTERPRETERS = (
     "posix",
@@ -22,6 +24,14 @@ KNOWN_SHELL_INTERPRETERS = (
     "powershell",  # any version of powershell
     "python",
 )
+
+
+class IncludeItem(TypedDict):
+    path: str
+    cwd: str
+
+
+IncludeItem.__optional_keys__ = frozenset({"cwd"})
 
 
 class ConfigPartition:
@@ -74,9 +84,6 @@ class ConfigPartition:
         return self.options.get(key, default)
 
 
-EmptyDict: Mapping = MappingProxyType({})
-
-
 class ProjectConfig(ConfigPartition):
     is_primary = True
 
@@ -88,10 +95,10 @@ class ProjectConfig(ConfigPartition):
         default_task_type: str = "cmd"
         default_array_task_type: str = "sequence"
         default_array_item_task_type: str = "ref"
-        env: Mapping[str, str] = EmptyDict
+        env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
         envfile: Union[str, Sequence[str]] = tuple()
         executor: Mapping[str, str] = MappingProxyType({"type": "auto"})
-        include: Sequence[str] = tuple()
+        include: Union[str, Sequence[str], Sequence[IncludeItem]] = tuple()
         poetry_command: str = "poe"
         poetry_hooks: Mapping[str, str] = EmptyDict
         shell_interpreter: Union[str, Sequence[str]] = "posix"

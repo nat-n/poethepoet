@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 
+from ..config.primitives import EmptyDict, EnvDefault
 from ..exceptions import ConfigValidationError, PoeException
 from ..options import PoeOptions
 
@@ -173,11 +174,12 @@ class PoeTask(metaclass=MetaPoeTask):
         capture_stdout: Optional[str] = None
         cwd: Optional[str] = None
         deps: Optional[Sequence[str]] = None
-        env: Optional[dict] = None
-        envfile: Optional[Union[str, list]] = None
+        # ruff: noqa: UP007
+        env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
+        envfile: Union[str, Sequence[str]] = tuple()
         executor: Optional[dict] = None
         help: Optional[str] = None
-        uses: Optional[dict] = None
+        uses: Optional[Mapping[str, str]] = None
 
         def validate(self):
             """

@@ -4,6 +4,7 @@ from typing import (
     TYPE_CHECKING,
     List,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -26,7 +27,7 @@ class ShellTask(PoeTask):
     __key__ = "shell"
 
     class TaskOptions(PoeTask.TaskOptions):
-        interpreter: Optional[Union[str, list]] = None
+        interpreter: Optional[Union[str, Sequence[str]]] = None
 
         def validate(self):
             super().validate()
