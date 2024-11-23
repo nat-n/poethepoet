@@ -122,11 +122,14 @@ Named arguments support the following configuration options:
 
    .. code-block:: toml
 
+     [tool.poe.tasks.deploy]
+     cmd = "..."
+     env.AWS_REGION.default = "eu-central-1"
+
      [[tool.poe.tasks.deploy.args]]
      name    = "region"
      help    = "The region to deploy to"
      default = "${AWS_REGION}"
-     env.AWS_REGION.default = "eu-central-1"
 
    As in the above example, this can be combined with setting an :doc:`env value<../tasks/options>` on the task with the ``default`` specifier to get the following precedence of values for the arg:
 

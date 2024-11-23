@@ -111,16 +111,16 @@ class ArgSpec(PoeOptions):
     def _get_arg_options_list(
         arg: ArgParams, name: str | None = None, strict: bool = True
     ):
-        position = arg.get("positional", False)
+        positional = arg.get("positional", False)
         name = name or arg.get("name")
-        if position:
+        if positional:
             if strict and arg.get("options"):
                 raise ConfigValidationError(
                     f"Positional argument {name!r} may not declare options"
                 )
-            # Fill in the options param in a way that makes sesne for argparse
-            if isinstance(position, str):
-                return [position]
+            # Fill in the options param in a way that makes sense for argparse
+            if isinstance(positional, str):
+                return [positional]
             return [name]
         return tuple(arg.get("options", [f"--{name}"]))
 
@@ -152,6 +152,18 @@ class ArgSpec(PoeOptions):
                     "see the following documentation for details "
                     "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
                 )
+        else:
+            for option in self.options:
+                if not option.strip():
+                    raise ConfigValidationError(
+                        "Invalid empty value in CLI options list"
+                    )
+                if option[0] != "-":
+                    suggestion = f"-{option}" if len(option) == 1 else f"--{option}"
+                    raise ConfigValidationError(
+                        f"Invalid CLI option provided {option!r}, did you mean "
+                        f"{suggestion!r}?"
+                    )
 
         if (
             not isinstance(self.multiple, bool)

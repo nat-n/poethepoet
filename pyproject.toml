@@ -37,7 +37,7 @@ bpython = "^0.24"
 [tool.poetry.group.docs.dependencies]
 furo                = "^2023.3.27"
 livereload          = "^2.6.3"
-sphinx              = "^6.1.3"
+sphinx              = "^7.4.7"
 sphinx-copybutton   = "^0.5.1"
 sphinxext-opengraph = "^0.9.0"
 
@@ -80,7 +80,7 @@ deps   = ["docs"]
 [tool.poe.tasks.docs-check]
 help = "Validate rst syntax in the docs"
 sequence = [
-  { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V --ignore-directives autofunction" },
+  { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V --ignore-directives autofunction,include" },
   "docs -b linkcheck"
 ]
 
