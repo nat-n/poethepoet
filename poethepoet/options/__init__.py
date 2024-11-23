@@ -46,6 +46,15 @@ class PoeOptions:
             f"{self.__class__.__name__} has no value for option {name!r}"
         )
 
+    def __str__(self):
+        return (
+            f"{self.__class__.__name__}("
+            + ", ".join(
+                f"{field}={getattr(self, field)!r}" for field in self.get_fields()
+            )
+            + ")"
+        )
+
     @classmethod
     def parse(
         cls,

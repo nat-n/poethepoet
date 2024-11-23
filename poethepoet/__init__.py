@@ -8,12 +8,15 @@ def main():
     from pathlib import Path
 
     if len(sys.argv) > 1 and sys.argv[1].startswith("_"):
-        first_arg = sys.argv[1]
-        second_arg = next(iter(sys.argv[2:]), "")
-        third_arg = next(iter(sys.argv[3:]), "")
+        first_arg = sys.argv[1]  # built in task name
+        second_arg = next(iter(sys.argv[2:]), "")  # config path or poe alias
+        third_arg = next(iter(sys.argv[3:]), "")  # path to alias config for bash
 
         if first_arg in ("_list_tasks", "_describe_tasks"):
-            _list_tasks(target_path=str(Path(second_arg).expanduser().resolve()))
+            target_path = (
+                str(Path(second_arg).expanduser().resolve()) if second_arg else None
+            )
+            _list_tasks(target_path=target_path)
             return
 
         target_path = ""

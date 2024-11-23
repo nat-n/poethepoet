@@ -20,16 +20,20 @@ class EnvFileCache:
         self._ui = ui
 
     def get(self, envfile: Union[str, Path]) -> Dict[str, str]:
+        """
+        Parse, cache, and return the environment variables from the envfile at the
+        given path. The path is used as the cache key.
+        """
         from .parse import parse_env_file
 
-        envfile_path_str = str(envfile)
+        envfile_path = self._project_dir.joinpath(Path(envfile).expanduser()).absolute()
+        envfile_path_str = str(envfile_path)
 
         if envfile_path_str in self._cache:
             return self._cache[envfile_path_str]
 
         result = {}
 
-        envfile_path = self._project_dir.joinpath(Path(envfile).expanduser())
         if envfile_path.is_file():
             try:
                 with envfile_path.open(encoding="utf-8") as envfile_file:
