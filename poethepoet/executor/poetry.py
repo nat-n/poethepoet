@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Optional
 
 from ..exceptions import ExecutionError
 from .base import PoeExecutor
@@ -16,7 +17,7 @@ class PoetryExecutor(PoeExecutor):
     """
 
     __key__ = "poetry"
-    __options__: Dict[str, Type] = {}
+    __options__: dict[str, type] = {}
 
     @classmethod
     def works_with_context(cls, context: "RunContext") -> bool:

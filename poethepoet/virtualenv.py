@@ -1,8 +1,8 @@
 import os
 import shutil
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, Mapping
 
 
 class Virtualenv:
@@ -80,7 +80,7 @@ class Virtualenv:
             )
         )
 
-    def get_env_vars(self, base_env: Mapping[str, str]) -> Dict[str, str]:
+    def get_env_vars(self, base_env: Mapping[str, str]) -> dict[str, str]:
         bin_dir = str(self.bin_dir())
         # Revert path update from existing virtualenv if applicable
         path_var = os.environ.get("_OLD_VIRTUAL_PATH", "") or os.environ.get("PATH", "")

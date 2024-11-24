@@ -1,20 +1,9 @@
 import os
 import shutil
 import sys
+from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 
@@ -50,12 +39,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
     working_dir: Optional[Path]
 
-    __executor_types: ClassVar[Dict[str, Type["PoeExecutor"]]] = {}
+    __executor_types: ClassVar[dict[str, type["PoeExecutor"]]] = {}
     __key__: ClassVar[Optional[str]] = None
 
     def __init__(
         self,
-        invocation: Tuple[str, ...],
+        invocation: tuple[str, ...],
         context: "RunContext",
         options: Mapping[str, str],
         env: "EnvVarsManager",
@@ -88,7 +77,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     @classmethod
     def get(
         cls,
-        invocation: Tuple[str, ...],
+        invocation: tuple[str, ...],
         context: "RunContext",
         executor_config: Mapping[str, str],
         env: "EnvVarsManager",
@@ -268,7 +257,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         return proc.returncode
 
     @classmethod
-    def validate_config(cls, config: Dict[str, Any]):
+    def validate_config(cls, config: dict[str, Any]):
         if "type" not in config:
             raise ConfigValidationError(
                 "Missing required key 'type' from executor option",
@@ -294,7 +283,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             cls.__executor_types[executor_type].validate_executor_config(config)
 
     @classmethod
-    def validate_executor_config(cls, config: Dict[str, Any]):
+    def validate_executor_config(cls, config: dict[str, Any]):
         """To be overridden by subclasses if they accept options"""
         extra_options = set(config.keys()) - {"type"}
         if extra_options:

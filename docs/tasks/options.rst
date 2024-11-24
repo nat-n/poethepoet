@@ -9,23 +9,23 @@ The following options can be configured on your tasks and are not specific to an
 **help** : ``str`` | ``int`` :doc:`📖<../guides/help_guide>`
   Help text to be displayed next to the task name in the documentation when poe is run without specifying a task.
 
-**args** : ``Dict[str, dict]`` | ``List[Union[str, dict]]`` :doc:`📖<../guides/args_guide>`
+**args** : ``dict[str, dict]`` | ``list[Union[str, dict]]`` :doc:`📖<../guides/args_guide>`
   Define CLI options, positional arguments, or flags that this task should accept.
 
-**env** :  ``Dict[str, str]`` :ref:`📖<Setting task specific environment variables>`
+**env** :  ``dict[str, str]`` :ref:`📖<Setting task specific environment variables>`
   A map of environment variables to be set for this task.
 
-**envfile** :  ``str`` | ``List[str]`` :ref:`📖<Loading environment variables from an env file>`
+**envfile** :  ``str`` | ``list[str]`` :ref:`📖<Loading environment variables from an env file>`
   Provide one or more env files to be loaded before running this task.
 
 **cwd** :  ``str`` :ref:`📖<Running a task with a specific working directory>`
   Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the ``pyproject.toml``, or it may be absolute.
   Resolves environment variables in the format ``${VAR_NAME}``.
 
-**deps** :  ``List[str]`` :doc:`📖<../guides/composition_guide>`
+**deps** :  ``list[str]`` :doc:`📖<../guides/composition_guide>`
   A list of task invocations that will be executed before this one.
 
-**uses** :  ``Dict[str, str]`` :doc:`📖<../guides/composition_guide>`
+**uses** :  ``dict[str, str]`` :doc:`📖<../guides/composition_guide>`
   Allows this task to use the output of other tasks which are executed first.
   The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.
 

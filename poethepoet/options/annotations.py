@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import collections
 import sys
+import typing
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import (
     Any,
-    Iterator,
     Literal,
-    Mapping,
-    MutableMapping,
-    Sequence,
+    Optional,
     Union,
     get_args,
     get_origin,
@@ -22,6 +20,22 @@ class TypeAnnotation:
     enforcing pythonic type annotations for PoeOptions.
     """
 
+    @classmethod
+    def get_type_hint_globals(cls):
+        return {
+            "Any": Any,
+            "Optional": Optional,
+            "Mapping": Mapping,
+            "MutableMapping": MutableMapping,
+            "typing.Mapping": typing.Mapping,
+            "typing.MutableMapping": typing.MutableMapping,
+            "Sequence": Sequence,
+            "typing.Sequence": typing.Sequence,
+            "Literal": Literal,
+            "Union": Union,
+            "TypeAnnotation": cls,
+        }
+
     @staticmethod
     def parse(annotation: Any):
         origin = get_origin(annotation)
@@ -33,8 +47,8 @@ class TypeAnnotation:
             dict,
             Mapping,
             MutableMapping,
-            collections.abc.Mapping,
-            collections.abc.MutableMapping,
+            typing.Mapping,
+            typing.MutableMapping,
         ):
             return DictType(annotation)
 
@@ -42,7 +56,7 @@ class TypeAnnotation:
             list,
             tuple,
             Sequence,
-            collections.abc.Sequence,
+            typing.Sequence,
         ):
             return ListType(annotation)
 
@@ -89,7 +103,7 @@ class DictType(TypeAnnotation):
     def __init__(self, annotation: Any):
         super().__init__(annotation)
         if args := get_args(annotation):
-            assert args[0] == str
+            assert args[0] is str
             self._value_type = TypeAnnotation.parse(get_args(annotation)[1])
         else:
             self._value_type = AnyType()

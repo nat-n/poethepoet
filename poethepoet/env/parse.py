@@ -1,6 +1,7 @@
 import re
+from collections.abc import Iterable, Sequence
 from enum import Enum
-from typing import Iterable, Optional, Sequence
+from typing import Optional
 
 
 class ParseError(ValueError):

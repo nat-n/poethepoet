@@ -1,20 +1,11 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Literal,
-    MutableMapping,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
+    from collections.abc import MutableMapping
+
     from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
@@ -32,7 +23,7 @@ class SwitchTask(PoeTask):
     """
 
     __key__ = "switch"
-    __content_type__: ClassVar[Type] = list
+    __content_type__: ClassVar[type] = list
 
     class TaskOptions(PoeTask.TaskOptions):
         control: Union[str, dict]
@@ -66,13 +57,13 @@ class SwitchTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         control_task_spec: PoeTask.TaskSpec
-        case_task_specs: Tuple[Tuple[Tuple[Any, ...], PoeTask.TaskSpec], ...]
+        case_task_specs: tuple[tuple[tuple[Any, ...], PoeTask.TaskSpec], ...]
         options: "SwitchTask.TaskOptions"
 
         def __init__(
             self,
             name: str,
-            task_def: Dict[str, Any],
+            task_def: dict[str, Any],
             factory: "TaskSpecFactory",
             source: "ConfigPartition",
             parent: Optional["PoeTask.TaskSpec"] = None,
@@ -154,19 +145,19 @@ class SwitchTask(PoeTask):
 
     spec: TaskSpec
     control_task: PoeTask
-    switch_tasks: Dict[str, PoeTask]
+    switch_tasks: dict[str, PoeTask]
 
     def __init__(
         self,
         spec: TaskSpec,
-        invocation: Tuple[str, ...],
+        invocation: tuple[str, ...],
         ctx: TaskContext,
         capture_stdout: bool = False,
     ):
         super().__init__(spec, invocation, ctx, capture_stdout)
 
         control_task_name = f"{spec.name}[__control__]"
-        control_invocation: Tuple[str, ...] = (control_task_name,)
+        control_invocation: tuple[str, ...] = (control_task_name,)
         options = self.spec.options
         if options.get("args"):
             control_invocation = (*control_invocation, *invocation[1:])
@@ -179,7 +170,7 @@ class SwitchTask(PoeTask):
 
         self.switch_tasks = {}
         for case_keys, case_spec in spec.case_task_specs:
-            task_invocation: Tuple[str, ...] = (f"{spec.name}[{','.join(case_keys)}]",)
+            task_invocation: tuple[str, ...] = (f"{spec.name}[{','.join(case_keys)}]",)
             if options.get("args"):
                 task_invocation = (*task_invocation, *invocation[1:])
 

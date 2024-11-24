@@ -1,6 +1,7 @@
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from .template import apply_envvars_to_template
 
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 class EnvVarsManager(Mapping):
     _config: "PoeConfig"
     _ui: Optional["PoeUi"]
-    _vars: Dict[str, str]
+    _vars: dict[str, str]
     envfiles: "EnvFileCache"
 
     def __init__(  # TODO: check if we still need all these args!
@@ -77,7 +78,7 @@ class EnvVarsManager(Mapping):
 
     def apply_env_config(
         self,
-        envfile: Optional[Union[str, List[str]]],
+        envfile: Optional[Union[str, list[str]]],
         config_env: Optional[Mapping[str, Union[str, Mapping[str, str]]]],
         config_dir: Path,
         config_working_dir: Path,
@@ -123,7 +124,7 @@ class EnvVarsManager(Mapping):
 
     def update(self, env_vars: Mapping[str, Any]):
         # ensure all values are strings
-        str_vars: Dict[str, str] = {}
+        str_vars: dict[str, str] = {}
         for key, value in env_vars.items():
             if isinstance(value, list):
                 str_vars[key] = " ".join(str(item) for item in value)

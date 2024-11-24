@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import Optional, Tuple
+from typing import Optional
 
 
 class GitRepo:
@@ -55,7 +55,7 @@ class GitRepo:
             return Path(captured_stdout.decode().strip().split("\n")[0])
         return None
 
-    def _exec(self, *args: str) -> Tuple[Popen, bytes]:
+    def _exec(self, *args: str) -> tuple[Popen, bytes]:
         proc = Popen(
             ["git", *args],
             cwd=self._seed_path,

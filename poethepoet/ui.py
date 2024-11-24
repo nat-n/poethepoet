@@ -1,6 +1,7 @@
 import os
 import sys
-from typing import IO, TYPE_CHECKING, List, Mapping, Optional, Sequence, Tuple, Union
+from collections.abc import Mapping, Sequence
+from typing import IO, TYPE_CHECKING, Optional, Union
 
 from .__version__ import __version__
 from .exceptions import ConfigValidationError, ExecutionError, PoeException
@@ -176,7 +177,7 @@ class PoeUi:
     def print_help(
         self,
         tasks: Optional[
-            Mapping[str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str, str]]]]
+            Mapping[str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]]
         ] = None,
         info: Optional[str] = None,
         error: Optional[PoeException] = None,
@@ -186,7 +187,7 @@ class PoeUi:
         # Ignore verbosity mode if help flag is set
         verbosity = 0 if self["help"] else self.verbosity
 
-        result: List[Union[str, Sequence[str]]] = []
+        result: list[Union[str, Sequence[str]]] = []
         if verbosity >= 0:
             result.append(
                 (

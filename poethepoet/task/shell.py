@@ -1,13 +1,7 @@
 import re
+from collections.abc import Sequence
 from os import environ
-from typing import (
-    TYPE_CHECKING,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import ConfigValidationError, PoeException
 from .base import PoeTask
@@ -96,15 +90,15 @@ class ShellTask(PoeTask):
             interpreter_cmd, input=content.encode()
         )
 
-    def _get_interpreter_config(self) -> Tuple[str, ...]:
-        result: Union[str, Tuple[str, ...]] = self.spec.options.get(
+    def _get_interpreter_config(self) -> tuple[str, ...]:
+        result: Union[str, tuple[str, ...]] = self.spec.options.get(
             "interpreter", self.ctx.config.shell_interpreter
         )
         if isinstance(result, str):
             return (result,)
         return tuple(result)
 
-    def resolve_interpreter_cmd(self) -> Optional[List[str]]:
+    def resolve_interpreter_cmd(self) -> Optional[list[str]]:
         """
         Return a formatted command for the first specified interpreter that can be
         located.

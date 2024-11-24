@@ -1,6 +1,6 @@
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import ExecutionError
 
@@ -11,7 +11,7 @@ POE_DEBUG = environ.get("POE_DEBUG", "0") == 1
 
 
 class EnvFileCache:
-    _cache: Dict[str, Dict[str, str]] = {}
+    _cache: dict[str, dict[str, str]] = {}
     _ui: Optional["PoeUi"]
     _project_dir: Path
 
@@ -19,7 +19,7 @@ class EnvFileCache:
         self._project_dir = project_dir
         self._ui = ui
 
-    def get(self, envfile: Union[str, Path]) -> Dict[str, str]:
+    def get(self, envfile: Union[str, Path]) -> dict[str, str]:
         """
         Parse, cache, and return the environment variables from the envfile at the
         given path. The path is used as the cache key.

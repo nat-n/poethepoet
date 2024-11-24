@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from keyword import iskeyword
-from typing import Any, Mapping, Sequence, get_type_hints
+from typing import TYPE_CHECKING, Any, get_type_hints
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 from ..exceptions import ConfigValidationError
 from .annotations import TypeAnnotation
@@ -186,7 +189,9 @@ class PoeOptions:
             annotations = {}
             for base_cls in cls.__bases__:
                 annotations.update(get_type_hints(base_cls))
-            annotations.update(get_type_hints(cls))
+            annotations.update(
+                get_type_hints(cls, globalns=TypeAnnotation.get_type_hint_globals())
+            )
 
             cls.__annotations = {
                 key: TypeAnnotation.parse(type_)

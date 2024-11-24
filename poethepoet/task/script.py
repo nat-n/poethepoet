@@ -1,5 +1,5 @@
 import shlex
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from ..exceptions import ConfigValidationError, ExpressionParseError
 from .base import PoeTask
@@ -108,8 +108,8 @@ class ScriptTask(PoeTask):
         ).execute(cmd, use_exec=self.spec.options.get("use_exec", False))
 
     def parse_content(
-        self, args: Optional[Dict[str, Any]]
-    ) -> Tuple[str, "FunctionCall"]:
+        self, args: Optional[dict[str, Any]]
+    ) -> tuple[str, "FunctionCall"]:
         """
         Returns the module to load, and the function call to execute.
 

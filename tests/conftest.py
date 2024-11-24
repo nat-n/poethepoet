@@ -4,11 +4,12 @@ import shutil
 import sys
 import time
 import venv
+from collections.abc import Mapping
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 import pytest
 import virtualenv
@@ -77,7 +78,7 @@ def high_verbosity_project_path():
     return PROJECT_ROOT.joinpath("tests", "fixtures", "high_verbosity")
 
 
-@pytest.fixture()
+@pytest.fixture
 def temp_file(tmp_path):
     # not using NamedTemporaryFile here because it doesn't work on windows
     tmpfilepath = tmp_path / "tmp_test_file"
@@ -110,7 +111,7 @@ class PoeRunResult(NamedTuple):
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     coverage_setup = (
         "from coverage import Coverage;"
@@ -137,7 +138,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         cwd: Optional[str] = None,
         config: Optional[Mapping[str, Any]] = None,
         coverage: bool = not is_windows,
-        env: Optional[Dict[str, str]] = None,
+        env: Optional[dict[str, str]] = None,
         project: Optional[str] = None,
     ) -> PoeRunResult:
         if cwd is None:
@@ -194,7 +195,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     return run_poe_subproc
 
 
-@pytest.fixture()
+@pytest.fixture
 def run_poe(capsys, projects):
     def run_poe(
         *run_args: str,
@@ -220,7 +221,7 @@ def run_poe(capsys, projects):
     return run_poe
 
 
-@pytest.fixture()
+@pytest.fixture
 def run_poe_main(capsys, projects):
     def run_poe_main(
         *cli_args: str,
@@ -245,7 +246,7 @@ def run_poe_main(capsys, projects):
 def run_poetry(use_venv, poe_project_path):
     venv_location = poe_project_path / "tests" / "temp" / "poetry_venv"
 
-    def run_poetry(args: List[str], cwd: str, env: Optional[Dict[str, str]] = None):
+    def run_poetry(args: list[str], cwd: str, env: Optional[dict[str, str]] = None):
         venv = Virtualenv(venv_location)
 
         cmd = (venv.resolve_executable("python"), "-m", "poetry", *args)
@@ -291,7 +292,7 @@ def esc_prefix(is_windows):
 
 @pytest.fixture(scope="session")
 def install_into_virtualenv():
-    def install_into_virtualenv(location: Path, contents: List[str]):
+    def install_into_virtualenv(location: Path, contents: list[str]):
         venv = Virtualenv(location)
         Popen(
             (venv.resolve_executable("pip"), "install", *contents),
@@ -308,7 +309,7 @@ def use_venv(install_into_virtualenv):
     @contextmanager
     def use_venv(
         location: Path,
-        contents: Optional[List[str]] = None,
+        contents: Optional[list[str]] = None,
         require_empty: bool = False,
     ):
         did_exist = location.is_dir()
@@ -340,7 +341,7 @@ def use_virtualenv(install_into_virtualenv):
     @contextmanager
     def use_virtualenv(
         location: Path,
-        contents: Optional[List[str]] = None,
+        contents: Optional[list[str]] = None,
         require_empty: bool = False,
     ):
         did_exist = location.is_dir()
@@ -385,7 +386,7 @@ def try_rm_dir(location: Path):
 def with_virtualenv_and_venv(use_venv, use_virtualenv):
     def with_virtualenv_and_venv(
         location: Path,
-        contents: Optional[List[str]] = None,
+        contents: Optional[list[str]] = None,
     ):
         with use_venv(location, contents, require_empty=True):
             yield
@@ -396,7 +397,7 @@ def with_virtualenv_and_venv(use_venv, use_virtualenv):
     return with_virtualenv_and_venv
 
 
-@pytest.fixture()
+@pytest.fixture
 def temp_pyproject(tmp_path):
     """Return function which generates pyproject.toml with the given content"""
 

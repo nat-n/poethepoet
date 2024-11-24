@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Set, Tuple
+from typing import TYPE_CHECKING
 
 from ..exceptions import CyclicDependencyError
 
@@ -9,16 +9,16 @@ if TYPE_CHECKING:
 
 class TaskExecutionNode:
     task: "PoeTask"
-    direct_dependants: List["TaskExecutionNode"]
-    direct_dependencies: Set[Tuple[str, ...]]
-    path_dependants: Tuple[str, ...]
+    direct_dependants: list["TaskExecutionNode"]
+    direct_dependencies: set[tuple[str, ...]]
+    path_dependants: tuple[str, ...]
     capture_stdout: bool
 
     def __init__(
         self,
         task: "PoeTask",
-        direct_dependants: List["TaskExecutionNode"],
-        path_dependants: Tuple[str, ...],
+        direct_dependants: list["TaskExecutionNode"],
+        path_dependants: tuple[str, ...],
         capture_stdout: bool = False,
     ):
         self.task = task
@@ -31,7 +31,7 @@ class TaskExecutionNode:
         return not self.task.has_deps()
 
     @property
-    def identifier(self) -> Tuple[str, ...]:
+    def identifier(self) -> tuple[str, ...]:
         return self.task.invocation
 
 
@@ -47,9 +47,9 @@ class TaskExecutionGraph:
 
     _context: "RunContext"
     sink: TaskExecutionNode
-    sources: List[TaskExecutionNode]
-    captured_tasks: Dict[Tuple[str, ...], TaskExecutionNode]
-    uncaptured_tasks: Dict[Tuple[str, ...], TaskExecutionNode]
+    sources: list[TaskExecutionNode]
+    captured_tasks: dict[tuple[str, ...], TaskExecutionNode]
+    uncaptured_tasks: dict[tuple[str, ...], TaskExecutionNode]
 
     def __init__(
         self,
@@ -65,7 +65,7 @@ class TaskExecutionGraph:
         # Build graph
         self._resolve_node_deps(self.sink)
 
-    def get_execution_plan(self) -> List[List["PoeTask"]]:
+    def get_execution_plan(self) -> list[list["PoeTask"]]:
         """
         Derive an execution plan from the DAG in terms of stages consisting of tasks
         that could theoretically be parallelized.
@@ -73,7 +73,7 @@ class TaskExecutionGraph:
         # TODO: if we parallelize tasks then this should be modified to support lazy
         #       scheduling
 
-        stages: List[List[TaskExecutionNode]] = [self.sources]
+        stages: list[list[TaskExecutionNode]] = [self.sources]
         visited = {source.identifier for source in self.sources}
 
         while True:

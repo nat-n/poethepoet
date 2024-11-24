@@ -1,5 +1,5 @@
 import re
-from typing import Mapping
+from collections.abc import Mapping
 
 _SHELL_VAR_PATTERN = re.compile(
     # Matches shell variable patterns, distinguishing escaped examples (to be ignored)
