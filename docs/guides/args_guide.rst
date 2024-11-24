@@ -143,7 +143,7 @@ Named arguments support the following configuration options:
 - **name** : ``str``
    The name of the task. Only applicable when *args* is an array.
 
-- **options** : ``List[str]``
+- **options** : ``list[str]``
    A list of options to accept for this argument, similar to `argsparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then the name of the argument is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
 
 - **positional** : ``bool``

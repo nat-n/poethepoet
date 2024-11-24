@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
+    from collections.abc import Mapping, Sequence
 
     from ..env.manager import EnvVarsManager
 

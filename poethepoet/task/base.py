@@ -1,22 +1,9 @@
 import re
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from os import environ
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Optional, Union
 
 from ..config.primitives import EmptyDict, EnvDefault
 from ..exceptions import ConfigValidationError, PoeException
@@ -59,7 +46,7 @@ TaskDef = Union[str, Mapping[str, Any], Sequence[Union[str, Mapping[str, Any]]]]
 
 
 class TaskSpecFactory:
-    __cache: Dict[str, "PoeTask.TaskSpec"]
+    __cache: dict[str, "PoeTask.TaskSpec"]
     config: "PoeConfig"
 
     def __init__(self, config: "PoeConfig"):
@@ -167,7 +154,7 @@ class TaskContext(NamedTuple):
 
 class PoeTask(metaclass=MetaPoeTask):
     __key__: ClassVar[str]
-    __content_type__: ClassVar[Type] = str
+    __content_type__: ClassVar[type] = str
 
     class TaskOptions(PoeOptions):
         args: Optional[Union[dict, list]] = None
@@ -190,7 +177,7 @@ class PoeTask(metaclass=MetaPoeTask):
         name: str
         content: TaskContent
         options: "PoeTask.TaskOptions"
-        task_type: Type["PoeTask"]
+        task_type: type["PoeTask"]
         source: "ConfigPartition"
         parent: Optional["PoeTask.TaskSpec"] = None
 
@@ -199,7 +186,7 @@ class PoeTask(metaclass=MetaPoeTask):
         def __init__(
             self,
             name: str,
-            task_def: Dict[str, Any],
+            task_def: dict[str, Any],
             factory: TaskSpecFactory,
             source: "ConfigPartition",
             parent: Optional["PoeTask.TaskSpec"] = None,
@@ -210,7 +197,7 @@ class PoeTask(metaclass=MetaPoeTask):
             self.source = source
             self.parent = parent
 
-        def _parse_options(self, task_def: Dict[str, Any]):
+        def _parse_options(self, task_def: dict[str, Any]):
             try:
                 return next(
                     self.task_type.TaskOptions.parse(
@@ -259,7 +246,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
         def create_task(
             self,
-            invocation: Tuple[str, ...],
+            invocation: tuple[str, ...],
             ctx: TaskContext,
             capture_stdout: Union[str, bool] = False,
         ) -> "PoeTask":
@@ -349,17 +336,17 @@ class PoeTask(metaclass=MetaPoeTask):
 
     spec: TaskSpec
     ctx: TaskContext
-    _parsed_args: Optional[Tuple[Dict[str, str], Tuple[str, ...]]] = None
+    _parsed_args: Optional[tuple[dict[str, str], tuple[str, ...]]] = None
 
-    __task_types: ClassVar[Dict[str, Type["PoeTask"]]] = {}
+    __task_types: ClassVar[dict[str, type["PoeTask"]]] = {}
     __upstream_invocations: Optional[
-        Dict[str, Union[List[Tuple[str, ...]], Dict[str, Tuple[str, ...]]]]
+        dict[str, Union[list[tuple[str, ...]], dict[str, tuple[str, ...]]]]
     ] = None
 
     def __init__(
         self,
         spec: TaskSpec,
-        invocation: Tuple[str, ...],
+        invocation: tuple[str, ...],
         ctx: TaskContext,
         capture_stdout: Union[str, bool] = False,
     ):
@@ -374,7 +361,7 @@ class PoeTask(metaclass=MetaPoeTask):
         return self.spec.name
 
     @classmethod
-    def lookup_task_spec_cls(cls, task_key: str) -> Type[TaskSpec]:
+    def lookup_task_spec_cls(cls, task_key: str) -> type[TaskSpec]:
         return cls.__task_types[task_key].TaskSpec
 
     @classmethod
@@ -406,7 +393,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
     def _parse_named_args(
         self, extra_args: Sequence[str], env: "EnvVarsManager"
-    ) -> Optional[Dict[str, str]]:
+    ) -> Optional[dict[str, str]]:
         if task_args := self.spec.args:
             return task_args.parse(extra_args, env, self.ctx.ui.program_name)
 
@@ -414,7 +401,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
     def get_parsed_arguments(
         self, env: "EnvVarsManager"
-    ) -> Tuple[Dict[str, str], Tuple[str, ...]]:
+    ) -> tuple[dict[str, str], tuple[str, ...]]:
         if self._parsed_args is None:
             all_args = self.invocation[1:]
 
@@ -517,7 +504,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
     def iter_upstream_tasks(
         self, context: "RunContext"
-    ) -> Iterator[Tuple[str, "PoeTask"]]:
+    ) -> Iterator[tuple[str, "PoeTask"]]:
         invocations = self._get_upstream_invocations(context)
         for invocation in invocations["deps"]:
             yield ("", self._instantiate_dep(invocation, capture_stdout=False))
@@ -553,7 +540,7 @@ class PoeTask(metaclass=MetaPoeTask):
         return self.__upstream_invocations
 
     def _instantiate_dep(
-        self, invocation: Tuple[str, ...], capture_stdout: bool
+        self, invocation: tuple[str, ...], capture_stdout: bool
     ) -> "PoeTask":
         return self.ctx.specs.get(invocation[0]).create_task(
             invocation=invocation,
@@ -573,7 +560,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
     @classmethod
     def is_task_type(
-        cls, task_def_key: str, content_type: Optional[Type] = None
+        cls, task_def_key: str, content_type: Optional[type] = None
     ) -> bool:
         """
         Checks whether the given key identifies a known task type.
@@ -586,7 +573,7 @@ class PoeTask(metaclass=MetaPoeTask):
         )
 
     @classmethod
-    def get_task_types(cls, content_type: Optional[Type] = None) -> Tuple[str, ...]:
+    def get_task_types(cls, content_type: Optional[type] = None) -> tuple[str, ...]:
         if content_type:
             return tuple(
                 task_type

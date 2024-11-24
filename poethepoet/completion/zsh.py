@@ -1,4 +1,7 @@
-from typing import Any, Iterable, Set
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def get_zsh_completion_script(name: str = "") -> str:
@@ -50,7 +53,7 @@ def get_zsh_completion_script(name: str = "") -> str:
             tuple(),
         )
         # collect all option strings that are exclusive with this one
-        excl_option_strings: Set[str] = {
+        excl_option_strings: set[str] = {
             option_string
             for excl_option in excl_options
             for option_string in excl_option.option_strings

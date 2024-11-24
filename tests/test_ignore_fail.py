@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def generate_pyproject(temp_pyproject):
     def generator(lvl1_ignore_fail=False, lvl2_ignore_fail=False):
         def fmt_ignore_fail(value):

@@ -1,15 +1,6 @@
 import re
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExpressionParseError
 from .base import PoeTask
@@ -102,10 +93,10 @@ class ExprTask(PoeTask):
 
     def parse_content(
         self,
-        args: Optional[Dict[str, Any]],
+        args: Optional[dict[str, Any]],
         env: "EnvVarsManager",
         imports=Iterable[str],
-    ) -> Tuple[str, Dict[str, str]]:
+    ) -> tuple[str, dict[str, str]]:
         """
         Returns the expression to evaluate and the subset of env vars that it references
 
@@ -145,7 +136,7 @@ class ExprTask(PoeTask):
         # Spy on access to the env, so that instead of replacing template ${keys} with
         # the corresponding value, replace them with a python name and keep track of
         # referenced env vars.
-        accessed_vars: Dict[str, str] = {}
+        accessed_vars: dict[str, str] = {}
 
         def getitem_spy(obj: SpyDict, key: str, value: str):
             accessed_vars[key] = value

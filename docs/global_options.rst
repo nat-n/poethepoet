@@ -4,25 +4,25 @@ Global options
 The following options can be set for all tasks in a project directly under ``[tool.poe]``. These are called global options, in contrast with :doc:`task options<tasks/options>`.
 
 
-**env** : ``Dict[str, str]`` :ref:`📖<Global environment variables>`
+**env** : ``dict[str, str]`` :ref:`📖<Global environment variables>`
   Define environment variables to be exposed to all tasks. These can be :ref:`extended on the task level<Setting task specific environment variables>`.
 
-**envfile** : ``str`` | ``List[str]`` :ref:`📖<Global environment variables>`
+**envfile** : ``str`` | ``list[str]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
-**executor** : ``Dict[str, str]`` :ref:`📖<Change the executor type>`
+**executor** : ``dict[str, str]`` :ref:`📖<Change the executor type>`
   Override the default behavior for selecting an executor for tasks in this project.
 
-**include** : ``str`` | ``List[str]`` | ``Dict[str, str]`` :doc:`📖<../guides/include_guide>`
+**include** : ``str`` | ``list[str]`` | ``dict[str, str]`` :doc:`📖<../guides/include_guide>`
   Specify one or more other toml or json files to load tasks from.
 
-**shell_interpreter** : ``str`` | ``List[str]`` :ref:`📖<Change the default shell interpreter>`
+**shell_interpreter** : ``str`` | ``list[str]`` :ref:`📖<Change the default shell interpreter>`
   Change the default interpreter to use for executing :doc:`shell tasks<../tasks/task_types/shell>`.
 
 **poetry_command** : ``str`` :ref:`📖<Configuring the plugin>`
   Change the name of the task poe registers with poetry when used as a plugin.
 
-**poetry_hooks** : ``Dict[str, str]`` :ref:`📖<Hooking into poetry commands>`
+**poetry_hooks** : ``dict[str, str]`` :ref:`📖<Hooking into poetry commands>`
   Register tasks to run automatically before or after other poetry CLI commands.
 
 **verbosity** : ``int``

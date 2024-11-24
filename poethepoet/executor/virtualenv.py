@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Type
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
 from ..exceptions import ConfigValidationError, ExecutionError
 from .base import PoeExecutor
@@ -14,7 +15,7 @@ class VirtualenvExecutor(PoeExecutor):
     """
 
     __key__ = "virtualenv"
-    __options__: Dict[str, Type] = {"location": str}
+    __options__: dict[str, type] = {"location": str}
 
     @classmethod
     def works_with_context(cls, context: "RunContext") -> bool:
@@ -74,7 +75,7 @@ class VirtualenvExecutor(PoeExecutor):
         )
 
     @classmethod
-    def validate_executor_config(cls, config: Dict[str, Any]):
+    def validate_executor_config(cls, config: dict[str, Any]):
         """
         Validate that location is a string if given and no other options are given.
         """

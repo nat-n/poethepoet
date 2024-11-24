@@ -1,14 +1,7 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import MappingProxyType
-from typing import (
-    Any,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    TypedDict,
-    Union,
-)
+from typing import Any, Optional, TypedDict, Union
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
@@ -42,7 +35,7 @@ class ConfigPartition:
     project_dir: Path
     _cwd: Optional[Path]
 
-    ConfigOptions: Type[PoeOptions]
+    ConfigOptions: type[PoeOptions]
     is_primary: bool = False
 
     def __init__(
@@ -115,7 +108,7 @@ class ProjectConfig(ConfigPartition):
                 raise ConfigValidationError("Expected ")
 
             # Normalize include option:
-            # > Union[str, Sequence[str], Mapping[str, str]] => List[dict]
+            # > Union[str, Sequence[str], Mapping[str, str]] => list[dict]
             if "include" in config:
                 includes: Any = []
                 include_option = config.get("include", None)

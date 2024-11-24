@@ -1,16 +1,5 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask, TaskContext
@@ -27,10 +16,10 @@ class SequenceTask(PoeTask):
     A task consisting of a sequence of other tasks
     """
 
-    content: List[Union[str, Dict[str, Any]]]
+    content: list[Union[str, dict[str, Any]]]
 
     __key__ = "sequence"
-    __content_type__: ClassVar[Type] = list
+    __content_type__: ClassVar[type] = list
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
@@ -57,7 +46,7 @@ class SequenceTask(PoeTask):
         def __init__(
             self,
             name: str,
-            task_def: Dict[str, Any],
+            task_def: dict[str, Any],
             factory: "TaskSpecFactory",
             source: "ConfigPartition",
             parent: Optional["PoeTask.TaskSpec"] = None,
@@ -116,7 +105,7 @@ class SequenceTask(PoeTask):
     def __init__(
         self,
         spec: TaskSpec,
-        invocation: Tuple[str, ...],
+        invocation: tuple[str, ...],
         ctx: TaskContext,
         capture_stdout: bool = False,
     ):
@@ -146,7 +135,7 @@ class SequenceTask(PoeTask):
             context.multistage = True
 
         ignore_fail = self.spec.options.ignore_fail
-        non_zero_subtasks: List[str] = list()
+        non_zero_subtasks: list[str] = list()
         for subtask in self.subtasks:
             try:
                 task_result = subtask.run(context=context, parent_env=env)

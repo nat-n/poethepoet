@@ -1,17 +1,8 @@
 import os
 import sys
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import IO, TYPE_CHECKING, Any, Optional, Union
 
 from .exceptions import ExecutionError, PoeException
 
@@ -57,7 +48,7 @@ class PoeThePoet:
     ui: "PoeUi"
     config: "PoeConfig"
 
-    _task_specs: Optional[Dict[str, "PoeTask.TaskSpec"]] = None
+    _task_specs: Optional[dict[str, "PoeTask.TaskSpec"]] = None
 
     def __init__(
         self,
@@ -242,8 +233,8 @@ class PoeThePoet:
         if isinstance(error, str):
             error = PoeException(error)
 
-        tasks_help: Dict[
-            str, Tuple[str, Sequence[Tuple[Tuple[str, ...], str, str]]]
+        tasks_help: dict[
+            str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]
         ] = {
             task_name: (
                 (

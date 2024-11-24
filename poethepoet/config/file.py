@@ -1,11 +1,6 @@
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import (
-    Any,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-)
+from typing import Any, Optional
 
 from ..exceptions import PoeException
 

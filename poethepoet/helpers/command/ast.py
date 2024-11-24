@@ -20,7 +20,8 @@ SINGLE_QUOTED_CONTENT : /[^']+/
 DOUBLE_QUOTED_CONTENT : /([^\$"]|\[\$"])+/
 """
 
-from typing import Iterable, List, Literal, Optional, Tuple, Union, cast
+from collections.abc import Iterable
+from typing import Literal, Optional, Union, cast
 
 from .ast_core import ContentNode, ParseConfig, ParseCursor, ParseError, SyntaxNode
 
@@ -32,7 +33,7 @@ LINE_SEP_CHARS = LINE_BREAK_CHARS + ";"
 
 class SingleQuotedText(ContentNode):
     def _parse(self, chars: ParseCursor):
-        content: List[str] = []
+        content: list[str] = []
         for char in chars:
             if char == "'":
                 self._content = "".join(content)
@@ -44,7 +45,7 @@ class SingleQuotedText(ContentNode):
 
 class DoubleQuotedText(ContentNode):
     def _parse(self, chars: ParseCursor):
-        content: List[str] = []
+        content: list[str] = []
         for char in chars:
             if char == "\\":
                 # backslash is only special if escape is necessary
@@ -63,7 +64,7 @@ class DoubleQuotedText(ContentNode):
 
 class UnquotedText(ContentNode):
     def _parse(self, chars: ParseCursor):
-        content: List[str] = []
+        content: list[str] = []
         for char in chars:
             if char == "\\":
                 # Backslash is always an escape when outside of quotes
@@ -171,7 +172,7 @@ class PythonGlob(Glob):
 
         if char == "[":
             # Match pattern [groups]
-            group_chars: List[str] = []
+            group_chars: list[str] = []
             chars.take()
             for char in chars:
                 if char == "]":
@@ -205,7 +206,7 @@ class ParamExpansion(ContentNode):
     def _parse(self, chars: ParseCursor):
         assert chars.take() == "$"
 
-        param: List[str] = []
+        param: list[str] = []
         if chars.peek() == "{":
             chars.take()
             for char in chars:
@@ -356,7 +357,7 @@ class Segment(SyntaxNode[ContentNode]):
 
 class Word(SyntaxNode[Segment]):
     @property
-    def segments(self) -> Tuple[Segment, ...]:
+    def segments(self) -> tuple[Segment, ...]:
         return tuple(self._children)
 
     def _parse(self, chars: ParseCursor):
@@ -378,7 +379,7 @@ class Line(SyntaxNode[Union[Word, Comment]]):
     _terminator: str
 
     @property
-    def words(self) -> Tuple[Word, ...]:
+    def words(self) -> tuple[Word, ...]:
         if self._children and isinstance(self._children[-1], Comment):
             return tuple(cast(Iterable[Word], self._children[:-1]))
         return tuple(cast(Iterable[Word], self._children))

@@ -19,7 +19,7 @@ def _setup_poetry_project_with_prefix(run_poetry, projects):
     run_poetry(["install"], cwd=projects["poetry_plugin/with_prefix"].parent)
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 def test_poetry_help(run_poetry, projects):
     result = run_poetry([], cwd=projects["poetry_plugin"])
     assert result.stdout.startswith("Poetry (version ")
@@ -33,7 +33,7 @@ def test_poetry_help(run_poetry, projects):
     os.environ.get("GITHUB_ACTIONS", "false") == "true",
     reason="Skipping test the doesn't seem to work in GitHub Actions lately",
 )
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project")
 def test_task_with_cli_dependency(run_poetry, projects, is_windows):
     result = run_poetry(
@@ -58,7 +58,7 @@ def test_task_with_cli_dependency(run_poetry, projects, is_windows):
     os.environ.get("GITHUB_ACTIONS", "false") == "true",
     reason="Skipping test the doesn't seem to work in GitHub Actions lately",
 )
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project")
 def test_task_with_lib_dependency(run_poetry, projects):
     result = run_poetry(["poe", "cow-cheese"], cwd=projects["poetry_plugin"])
@@ -68,7 +68,7 @@ def test_task_with_lib_dependency(run_poetry, projects):
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project")
 def test_task_accepts_any_args(run_poetry, projects):
     result = run_poetry(
@@ -81,7 +81,7 @@ def test_task_accepts_any_args(run_poetry, projects):
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
 def test_poetry_help_without_poe_command_prefix(run_poetry, projects):
     result = run_poetry([], cwd=projects["poetry_plugin/empty_prefix"].parent)
@@ -91,7 +91,7 @@ def test_poetry_help_without_poe_command_prefix(run_poetry, projects):
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
 def test_running_tasks_without_poe_command_prefix(run_poetry, projects):
     result = run_poetry(
@@ -104,7 +104,7 @@ def test_running_tasks_without_poe_command_prefix(run_poetry, projects):
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
 def test_poetry_command_from_included_file_with_empty_prefix(run_poetry, projects):
     result = run_poetry(
@@ -115,7 +115,7 @@ def test_poetry_command_from_included_file_with_empty_prefix(run_poetry, project
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
 def test_poetry_help_with_poe_command_prefix(run_poetry, projects):
     result = run_poetry([], cwd=projects["poetry_plugin/with_prefix"].parent)
@@ -125,7 +125,7 @@ def test_poetry_help_with_poe_command_prefix(run_poetry, projects):
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project_with_prefix")
 def test_running_tasks_with_poe_command_prefix(run_poetry, projects):
     result = run_poetry(
@@ -138,7 +138,7 @@ def test_running_tasks_with_poe_command_prefix(run_poetry, projects):
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project_with_prefix")
 def test_running_tasks_with_poe_command_prefix_missing_args(run_poetry, projects):
     result = run_poetry(
@@ -149,7 +149,7 @@ def test_running_tasks_with_poe_command_prefix_missing_args(run_poetry, projects
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project")
 def test_running_poetry_command_with_hooks(run_poetry, projects):
     result = run_poetry(["env", "info"], cwd=projects["poetry_plugin"])
@@ -158,7 +158,7 @@ def test_running_poetry_command_with_hooks(run_poetry, projects):
     # assert result.stderr == ""
 
 
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project")
 def test_running_poetry_command_with_hooks_with_directory(run_poetry, projects):
     result = run_poetry(
@@ -175,7 +175,7 @@ def test_running_poetry_command_with_hooks_with_directory(run_poetry, projects):
     os.environ.get("GITHUB_ACTIONS", "false") == "true",
     reason="Skipping test the doesn't seem to work in GitHub Actions lately",
 )
-@pytest.mark.slow()
+@pytest.mark.slow
 @pytest.mark.usefixtures("_setup_poetry_project")
 def test_task_with_cli_dependency_with_directory(run_poetry, projects, is_windows):
     result = run_poetry(

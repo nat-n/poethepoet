@@ -5,19 +5,8 @@ ExprTask.
 
 import ast
 import re
-import sys
-from typing import (
-    Any,
-    Collection,
-    Container,
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Tuple,
-    cast,
-)
+from collections.abc import Collection, Container, Iterator
+from typing import Any, NamedTuple, Optional, cast
 
 from ..exceptions import ExpressionParseError
 
@@ -75,7 +64,7 @@ _ALLOWED_BUILTINS = {
 }
 
 
-Substitution = Tuple[Tuple[int, int], str]
+Substitution = tuple[tuple[int, int], str]
 
 
 class FunctionCall(NamedTuple):
@@ -85,8 +74,8 @@ class FunctionCall(NamedTuple):
 
     expression: str
     function_ref: str
-    referenced_args: Tuple[str, ...] = tuple()
-    referenced_globals: Tuple[str, ...] = tuple()
+    referenced_args: tuple[str, ...] = tuple()
+    referenced_globals: tuple[str, ...] = tuple()
 
     @classmethod
     def parse(
@@ -100,9 +89,9 @@ class FunctionCall(NamedTuple):
         root_node = cast(ast.Call, parse_and_validate(source, True, "script"))
         name_nodes = _validate_nodes_and_get_names(root_node, source)
 
-        substitutions: List[Substitution] = []
-        referenced_args: List[str] = []
-        referenced_globals: List[str] = []
+        substitutions: list[Substitution] = []
+        referenced_args: list[str] = []
+        referenced_globals: list[str] = []
         for node in name_nodes:
             if node.id in arguments:
                 substitutions.append(
@@ -114,7 +103,7 @@ class FunctionCall(NamedTuple):
             else:
                 raise ExpressionParseError(
                     "Invalid variable reference in script: "
-                    + _get_name_source_segment(source, node)
+                    f"{ast.get_source_segment(source, node)}"
                 )
 
         # Prefix references to arguments with args_prefix
@@ -151,7 +140,7 @@ def resolve_expression(
     root_node = parse_and_validate(source, False, "expr")
     name_nodes = _validate_nodes_and_get_names(root_node, source)
 
-    substitutions: List[Substitution] = []
+    substitutions: list[Substitution] = []
     for node in name_nodes:
         if node.id in arguments:
             substitutions.append(
@@ -160,7 +149,7 @@ def resolve_expression(
         elif node.id not in _ALLOWED_BUILTINS and node.id not in allowed_vars:
             raise ExpressionParseError(
                 "Invalid variable reference in expr: "
-                + _get_name_source_segment(source, node)
+                f"{ast.get_source_segment(source, node)}"
             )
 
     # Prefix references to arguments with args_prefix
@@ -204,7 +193,7 @@ def parse_and_validate(
     return root_node
 
 
-def format_class(attrs: Optional[Dict[str, Any]], classname: str = "__args") -> str:
+def format_class(attrs: Optional[dict[str, Any]], classname: str = "__args") -> str:
     """
     Generates source for a python class with the entries of the given dictionary
     represented as class attributes. Output is a one-liner.
@@ -313,13 +302,13 @@ def _validate_nodes_and_get_names(
             )
 
 
-def _apply_substitutions(content: str, subs: List[Substitution]) -> str:
+def _apply_substitutions(content: str, subs: list[Substitution]) -> str:
     """
     Returns a copy of content with all of the substitutions applied.
     Uses a single pass for efficiency.
     """
     cursor = 0
-    segments: List[str] = []
+    segments: list[str] = []
 
     for (start, end), replacement in sorted(subs, key=lambda x: x[0][0]):
         in_between = content[cursor:start]
@@ -355,37 +344,6 @@ def _get_name_node_abs_range(source: str, node: ast.Name):
         name_content = name_content[:-1]
 
     return (total_start_chars_offset, total_start_chars_offset + len(name_content))
-
-
-def _get_name_source_segment(source: str, node: ast.Name):
-    """
-    Before python 3.8 the ast module didn't allow for easily identifying the source
-    segment of a node, so this function provides this functionality specifically for
-    name nodes as needed here.
-
-    The fallback logic is specialised for name nodes which cannot span multiple lines
-    and must be valid identifiers. It is expected to be correct in all cases, and
-    performant in common cases.
-    """
-    if sys.version_info >= (3, 8):
-        return ast.get_source_segment(source, node)
-
-    partial_result = (
-        re.split(r"(?:\r\n|\r|\n)", source)[node.lineno - 1]
-        .encode()[node.col_offset :]
-        .decode()
-    )
-
-    # The name probably extends to the first ascii char outside of [a-zA-Z\d_]
-    # regex will always match with valid arguments to this function
-    # type: ignore[union-attr]
-    partial_result = re.match(IDENTIFIER_PATTERN, partial_result).group()
-
-    # This bit is a nasty hack, but probably always gets skipped
-    while not partial_result.isidentifier() and partial_result:
-        partial_result = partial_result[:-1]
-
-    return partial_result
 
 
 def _clean_linebreaks(expression: str):

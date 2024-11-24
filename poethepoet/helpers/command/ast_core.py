@@ -4,18 +4,8 @@ See sibling ast module for an example usage.
 """
 
 from abc import ABC, abstractmethod
-from typing import (
-    IO,
-    Dict,
-    Generic,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    cast,
-)
+from collections.abc import Iterator
+from typing import IO, Generic, Optional, TypeVar, cast
 
 
 class ParseCursor:
@@ -30,7 +20,7 @@ class ParseCursor:
     _line: int
     _position: int
     _source: Iterator[str]
-    _pushback_stack: List[str]
+    _pushback_stack: list[str]
 
     def __init__(self, source: Iterator[str]):
         self._source = source
@@ -88,18 +78,18 @@ class ParseCursor:
 
 
 class ParseConfig:
-    substitute_nodes: Dict[Type["AstNode"], Type["AstNode"]]
+    substitute_nodes: dict[type["AstNode"], type["AstNode"]]
     line_separators: str
 
     def __init__(
         self,
-        substitute_nodes: Optional[Dict[Type["AstNode"], Type["AstNode"]]] = None,
+        substitute_nodes: Optional[dict[type["AstNode"], type["AstNode"]]] = None,
         line_separators="",
     ):
         self.substitute_nodes = substitute_nodes or {}
         self.line_separators = line_separators
 
-    def resolve_node_cls(self, klass: Type["AstNode"]) -> Type["AstNode"]:
+    def resolve_node_cls(self, klass: type["AstNode"]) -> type["AstNode"]:
         return self.substitute_nodes.get(klass, klass)
 
 
@@ -130,17 +120,17 @@ T = TypeVar("T")
 
 
 class SyntaxNode(AstNode, Generic[T]):
-    _children: List[T]
+    _children: list[T]
 
-    def get_child_node_cls(self, node_type: Type[AstNode]) -> Type[T]:
+    def get_child_node_cls(self, node_type: type[AstNode]) -> type[T]:
         """
         Apply Node class substitution for the given node AstNode if specified in
         the ParseConfig.
         """
-        return cast(Type[T], self.config.resolve_node_cls(node_type))
+        return cast(type[T], self.config.resolve_node_cls(node_type))
 
     @property
-    def children(self) -> Tuple["SyntaxNode", ...]:
+    def children(self) -> tuple["SyntaxNode", ...]:
         return tuple(getattr(self, "_children", tuple()))
 
     def pretty(self, indent: int = 0, increment: int = 4):

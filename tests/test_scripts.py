@@ -23,7 +23,7 @@ _test_file_tree = {
 }
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_file_tree_dir(poe_project_path):
     path = poe_project_path / "tests" / "temp" / "rm_test"
     path.mkdir(parents=True, exist_ok=True)
@@ -31,7 +31,7 @@ def test_file_tree_dir(poe_project_path):
     rmtree(path)
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_file_tree_nodes(test_file_tree_dir):
     def _iter_dir(work_dir: Path, items: dict):
         for node_name, content in items.items():
@@ -45,7 +45,7 @@ def test_file_tree_nodes(test_file_tree_dir):
     return tuple(_iter_dir(test_file_tree_dir, _test_file_tree))
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_dir_structure(test_file_tree_dir, test_file_tree_nodes):
     """
     Stage a temporary directory structure full of files so we can delete some of them

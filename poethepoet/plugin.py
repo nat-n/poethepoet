@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 from cleo.commands.command import Command
 from cleo.events.console_command_event import ConsoleCommandEvent
@@ -183,7 +183,7 @@ class PoetryPlugin(ApplicationPlugin):
         )
 
     def _register_command_event_handler(
-        self, application: Application, hooks: Dict[str, str]
+        self, application: Application, hooks: dict[str, str]
     ):
         if not hooks:
             return
@@ -210,7 +210,7 @@ class PoetryPlugin(ApplicationPlugin):
             )
 
     def _get_command_event_handler(
-        self, hooks: Dict[str, str], application: Application
+        self, hooks: dict[str, str], application: Application
     ):
         def command_event_handler(
             event: ConsoleCommandEvent,
@@ -235,7 +235,7 @@ class PoetryPlugin(ApplicationPlugin):
 
         return command_event_handler
 
-    def _monkey_patch_cleo(self, prefix: str, task_names: List[str]):
+    def _monkey_patch_cleo(self, prefix: str, task_names: list[str]):
         """
         Cleo is quite opinionated about CLI structure and loose about how options are
         used, and so doesn't currently support individual commands having their own way
@@ -279,7 +279,7 @@ class PoetryPlugin(ApplicationPlugin):
         cleo.application.Application._run = _run
 
 
-def _index_of_first_non_option(tokens: List[str]):
+def _index_of_first_non_option(tokens: list[str]):
     """
     Find the index of the first token that doesn't start with `-`
     Returns len(tokens) if none is found.

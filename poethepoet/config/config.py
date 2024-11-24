@@ -1,16 +1,7 @@
+from collections.abc import Iterator, Mapping, Sequence
 from os import environ
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, Optional, Union
 
 from ..exceptions import ConfigValidationError, PoeException
 from .file import PoeConfigFile
@@ -21,12 +12,12 @@ POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
 
 class PoeConfig:
     _project_config: ProjectConfig
-    _included_config: List[IncludedConfig]
+    _included_config: list[IncludedConfig]
 
     """
     The filenames to look for when loading config
     """
-    _config_filenames: Tuple[str, ...] = (
+    _config_filenames: tuple[str, ...] = (
         "pyproject.toml",
         "poe_tasks.toml",
         "poe_tasks.yaml",
@@ -61,7 +52,7 @@ class PoeConfig:
 
     def lookup_task(
         self, name: str
-    ) -> Union[Tuple[Mapping[str, Any], ConfigPartition], Tuple[None, None]]:
+    ) -> Union[tuple[Mapping[str, Any], ConfigPartition], tuple[None, None]]:
         task = self._project_config.get("tasks", {}).get(name, None)
         if task is not None:
             return task, self._project_config
@@ -95,7 +86,7 @@ class PoeConfig:
         yield from result
 
     @property
-    def tasks(self) -> Dict[str, Any]:
+    def tasks(self) -> dict[str, Any]:
         result = dict(self._project_config.get("tasks", {}))
         for config in self._included_config:
             for task_name, task_def in config.get("tasks", {}).items():
@@ -117,7 +108,7 @@ class PoeConfig:
         return self._project_config.options.default_array_item_task_type
 
     @property
-    def shell_interpreter(self) -> Tuple[str, ...]:
+    def shell_interpreter(self) -> tuple[str, ...]:
         raw_value = self._project_config.options.shell_interpreter
         if isinstance(raw_value, list):
             return tuple(raw_value)

@@ -1,15 +1,7 @@
 import re
+from collections.abc import Iterable, Iterator, Mapping
 from glob import escape
-from typing import (
-    TYPE_CHECKING,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    cast,
-)
+from typing import TYPE_CHECKING, Optional, cast
 
 from .ast import Comment
 
@@ -33,7 +25,7 @@ def resolve_command_tokens(
     lines: Iterable["Line"],
     env: Mapping[str, str],
     config: Optional["ParseConfig"] = None,
-) -> Iterator[Tuple[str, bool]]:
+) -> Iterator[tuple[str, bool]]:
     """
     Generates a sequence of tokens, and indicates for each whether it includes glob
     patterns that are not escaped or quoted. In case there are glob patterns in the
@@ -72,7 +64,7 @@ def resolve_command_tokens(
                 continue
 
             # For each token part indicate whether it is a glob
-            token_parts: List[Tuple[str, bool]] = []
+            token_parts: list[tuple[str, bool]] = []
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):

@@ -24,7 +24,7 @@ mypy         = "^1.1.1"
 pytest       = "^7.1.2"
 pytest-cov   = "^3.0.0"
 rstcheck     = { version = "^6.2.4", python = "<4" }
-ruff         = "^0.0.291"
+ruff         = "^0.8.0"
 types-pyyaml = "^6.0.12.20240808"
 
 virtualenv = "^20.14.1"
@@ -166,7 +166,7 @@ markers = [
 ]
 
 
-[tool.ruff]
+[tool.ruff.lint]
 select  = [
   "E",     # error
   "F",     # pyflakes
