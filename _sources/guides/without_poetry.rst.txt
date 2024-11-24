@@ -8,6 +8,14 @@ By default poe will run tasks in the poetry managed virtual environment, if the 
 If no virtualenv is found then poe will run tasks without any special environment management.
 
 
+Usage with uv
+-------------
+
+|uv_link| is another popular tool for managing project dependencies with a pyproject.toml file. Since uv works by keeping a virtual environment inside the project directory at ``./.venv`` poethepoet will automatically discover and use uv project dependencies, just like with poetry.
+
+So Poe the Poet also works well with uv.
+
+
 Usage without pyproject.toml
 ----------------------------
 
@@ -62,6 +70,9 @@ When config is loaded from a file other than `pyproject.toml` the ``tool.poe`` n
               options: ["--var"]
               default: BAZ
 
+.. |uv_link| raw:: html
+
+   <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>
 
 .. |poetry_link| raw:: html
 

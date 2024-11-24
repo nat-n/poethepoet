@@ -241,6 +241,11 @@
 <p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the <a class="reference internal" href="../global_options.html#change-the-executor-type"><span class="std std-ref">tool.poe.executor global option</span></a>.</p>
 <p>By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code> section. If it doesn’t then poe looks for a virtualenv to use at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the pyproject.toml.</p>
 <p>If no virtualenv is found then poe will run tasks without any special environment management.</p>
+<section id="usage-with-uv">
+<h2>Usage with uv<a class="headerlink" href="#usage-with-uv" title="Link to this heading">¶</a></h2>
+<p><a href="https://docs.astral.sh/uv/" target="_blank">uv</a> is another popular tool for managing project dependencies with a pyproject.toml file. Since uv works by keeping a virtual environment inside the project directory at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> poethepoet will automatically discover and use uv project dependencies, just like with poetry.</p>
+<p>So Poe the Poet also works well with uv.</p>
+</section>
 <section id="usage-without-pyproject-toml">
 <h2>Usage without pyproject.toml<a class="headerlink" href="#usage-without-pyproject-toml" title="Link to this heading">¶</a></h2>
 <p>When using Poe the Poet outside of a poetry (or other <a href="https://peps.python.org/pep-0518/" target="_blank">PEP 518</a>) project, you can avoid the potential confusion of creating a <cite>pyproject.toml</cite> file and instead name the file <code class="docutils literal notranslate"><span class="pre">poe_tasks.toml</span></code>.</p>
@@ -363,6 +368,7 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Usage without poetry</a><ul>
+<li><a class="reference internal" href="#usage-with-uv">Usage with uv</a></li>
 <li><a class="reference internal" href="#usage-without-pyproject-toml">Usage without pyproject.toml</a><ul>
 <li><a class="reference internal" href="#usage-with-with-json-or-yaml-instead-of-toml">Usage with with json or yaml instead of toml</a></li>
 </ul>
