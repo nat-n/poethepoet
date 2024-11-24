@@ -28,7 +28,7 @@ Available task options
 
 The following options are also accepted:
 
-**interpreter** : ``str`` | ``list[str]`` :ref:`📖<Using a different shell interpreter>`
+**interpreter** : ``str`` | ``List[str]`` :ref:`📖<Using a different shell interpreter>`
   Specify the shell interpreter that this task should execute with, or a list of interpreters in order of preference.
 
 

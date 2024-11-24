@@ -33,7 +33,7 @@ Available task options
 
 The following options are also accepted:
 
-**imports** : ``list[str]`` :ref:`📖<Referencing imported modules in an expression>`
+**imports** : ``List[str]`` :ref:`📖<Referencing imported modules in an expression>`
   A list of modules to import for use in the expression.
 
 **assert** : ``bool`` :ref:`📖<Fail if the expression result is falsey>`
