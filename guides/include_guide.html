@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Loading tasks from another file" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="guides/include_guide.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Global tasks" href="global_tasks.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/include_guide.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Loading tasks from another file - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="loading-tasks-from-another-file">
-<h1>Loading tasks from another file<a class="headerlink" href="#loading-tasks-from-another-file" title="Permalink to this heading">#</a></h1>
+<h1>Loading tasks from another file<a class="headerlink" href="#loading-tasks-from-another-file" title="Link to this heading">¶</a></h1>
 <p>There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organise your code in a monorepo, or simply have a lot of tasks and don’t want the pyproject.toml to get too large. This can be achieved by creating a toml, yaml, or json file including the same structure for tasks as used in pyproject.toml</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -263,7 +263,7 @@
 <p>If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.</p>
 </div>
 <section id="including-multiple-files">
-<h2>Including multiple files<a class="headerlink" href="#including-multiple-files" title="Permalink to this heading">#</a></h2>
+<h2>Including multiple files<a class="headerlink" href="#including-multiple-files" title="Link to this heading">¶</a></h2>
 <p>It’s also possible to include tasks from multiple files by providing a list like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;generated_tasks.json&quot;</span><span class="p">]</span>
@@ -273,7 +273,7 @@
 <p>If an included task file itself includes other files, these second order includes are <strong>not inherited</strong>, so circular includes are not a concern.</p>
 </section>
 <section id="setting-a-working-directory-for-included-tasks">
-<h2>Setting a working directory for included tasks<a class="headerlink" href="#setting-a-working-directory-for-included-tasks" title="Permalink to this heading">#</a></h2>
+<h2>Setting a working directory for included tasks<a class="headerlink" href="#setting-a-working-directory-for-included-tasks" title="Link to this heading">¶</a></h2>
 <p>When including files from another location, you can also specify that tasks from that other file should be run from within a specific directory. For example with the following configuration, when tasks imported from <em>my_subproject</em> are run from the root, the task will actually execute as if it had been run from the <em>my_subproject</em> subdirectory.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.include]]</span>
 <span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_subproject/pyproject.toml&quot;</span>
@@ -289,7 +289,7 @@
 </div>
 </section>
 <section id="including-files-relative-to-the-git-repo">
-<h2>Including files relative to the git repo<a class="headerlink" href="#including-files-relative-to-the-git-repo" title="Permalink to this heading">#</a></h2>
+<h2>Including files relative to the git repo<a class="headerlink" href="#including-files-relative-to-the-git-repo" title="Link to this heading">¶</a></h2>
 <p>Normally include paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the file to include relative to the root of the git repository, which can be done by referenceing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/tasks.toml&quot;</span>
@@ -381,12 +381,12 @@
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
+</div><script src="../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

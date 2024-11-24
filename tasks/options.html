@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Standard task options" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/options.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="cmd tasks" href="task_types/cmd.html" /><link rel="prev" title="Defining tasks" href="index.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/options.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Standard task options - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,9 +237,9 @@
         </div>
         <article role="main">
           <section id="standard-task-options">
-<h1>Standard task options<a class="headerlink" href="#standard-task-options" title="Permalink to this heading">#</a></h1>
+<h1>Standard task options<a class="headerlink" href="#standard-task-options" title="Link to this heading">¶</a></h1>
 <section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">#</a></h2>
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
 <p>The following options can be configured on your tasks and are not specific to any particular task type.</p>
 <dl>
 <dt><strong>help</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code> <a class="reference internal" href="../guides/help_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Help text to be displayed next to the task name in the documentation when poe is run without specifying a task.</p>
@@ -269,7 +269,7 @@ The value is a map where the values are invocations of the other tasks, and the 
 </dl>
 </section>
 <section id="setting-task-specific-environment-variables">
-<h2>Setting task specific environment variables<a class="headerlink" href="#setting-task-specific-environment-variables" title="Permalink to this heading">#</a></h2>
+<h2>Setting task specific environment variables<a class="headerlink" href="#setting-task-specific-environment-variables" title="Link to this heading">¶</a></h2>
 <p>You can specify arbitrary environment variables to be set for a single task by providing the env option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
@@ -278,14 +278,14 @@ The value is a map where the values are invocations of the other tasks, and the 
 </div>
 <p>Notice this example uses deep keys which can be more convenient but aren’t as well supported by some older toml implementations.</p>
 <section id="setting-defaults-for-environment-variables">
-<h3>Setting defaults for environment variables<a class="headerlink" href="#setting-defaults-for-environment-variables" title="Permalink to this heading">#</a></h3>
+<h3>Setting defaults for environment variables<a class="headerlink" href="#setting-defaults-for-environment-variables" title="Link to this heading">¶</a></h3>
 <p>The previous example can be modified to only set the <cite>PORT</cite> variable if it is not already set by replacing the last line with the following:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">env</span><span class="p">.</span><span class="n">PORT</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;9001&quot;</span>
 </pre></div>
 </div>
 </section>
 <section id="templating-environment-variables">
-<h3>Templating environment variables<a class="headerlink" href="#templating-environment-variables" title="Permalink to this heading">#</a></h3>
+<h3>Templating environment variables<a class="headerlink" href="#templating-environment-variables" title="Link to this heading">¶</a></h3>
 <p>It is also possible to reference existing environment variables when defining a new environment variable for a task. This may be useful for aliasing or extending a variable already defined in the host environment, globally in the config, or in a referenced envfile. In the following example the value from $TF_VAR_service_port on the host environment is also made available as $FLASK_RUN_PORT within the task.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;flask run&quot;</span>
@@ -294,7 +294,7 @@ The value is a map where the values are invocations of the other tasks, and the 
 </div>
 </section>
 <section id="loading-environment-variables-from-an-env-file">
-<span id="envfile-option"></span><h3>Loading environment variables from an env file<a class="headerlink" href="#loading-environment-variables-from-an-env-file" title="Permalink to this heading">#</a></h3>
+<span id="envfile-option"></span><h3>Loading environment variables from an env file<a class="headerlink" href="#loading-environment-variables-from-an-env-file" title="Link to this heading">¶</a></h3>
 <p>You can also specify one or more env files (with bash-like syntax) to load per task like so:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># .env</span>
 <span class="nv">STAGE</span><span class="o">=</span>dev
@@ -321,7 +321,7 @@ above but can also by given a list of such paths like so:</p>
 </section>
 </section>
 <section id="running-a-task-with-a-specific-working-directory">
-<h2>Running a task with a specific working directory<a class="headerlink" href="#running-a-task-with-a-specific-working-directory" title="Permalink to this heading">#</a></h2>
+<h2>Running a task with a specific working directory<a class="headerlink" href="#running-a-task-with-a-specific-working-directory" title="Link to this heading">¶</a></h2>
 <p>By default tasks are run from the project root – that is the parent directory of the pyproject.toml file. However if a task needs to be run in another directory then this can be accomplished by using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">cwd</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-client]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;npx ts-node -T ./build.ts&quot;</span>
@@ -338,7 +338,7 @@ above but can also by given a list of such paths like so:</p>
 </div>
 </section>
 <section id="redirect-task-output-to-a-file">
-<h2>Redirect task output to a file<a class="headerlink" href="#redirect-task-output-to-a-file" title="Permalink to this heading">#</a></h2>
+<h2>Redirect task output to a file<a class="headerlink" href="#redirect-task-output-to-a-file" title="Link to this heading">¶</a></h2>
 <p>You can configure poe to redirect the standard output of a task to a file on disk by providing the <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code> option like so.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn ./my_app:run&quot;</span>
@@ -353,7 +353,7 @@ above but can also by given a list of such paths like so:</p>
 </div>
 </section>
 <section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
-<h2>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Permalink to this heading">#</a></h2>
+<h2>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Link to this heading">¶</a></h2>
 <p>Normally tasks are executed as subprocesses of the <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.</p>
 <p>However in certain situations it can be desirable to define a task that is instead executed within the same process via an <em>exec</em> call. <a class="reference internal" href="task_types/cmd.html"><span class="doc">cmd tasks</span></a> and <a class="reference internal" href="task_types/script.html"><span class="doc">script tasks</span></a> tasks can be configured to work this way using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">use_exec</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
@@ -461,12 +461,12 @@ above but can also by given a list of such paths like so:</p>
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
+</div><script src="../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

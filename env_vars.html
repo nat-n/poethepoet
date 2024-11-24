@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Environment variables" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="env_vars.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Licence" href="license.html" /><link rel="prev" title="Using poethepoet as a library" href="guides/library_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/env_vars.html" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Environment variables - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,9 +237,9 @@
         </div>
         <article role="main">
           <section id="environment-variables">
-<h1>Environment variables<a class="headerlink" href="#environment-variables" title="Permalink to this heading">#</a></h1>
+<h1>Environment variables<a class="headerlink" href="#environment-variables" title="Link to this heading">¶</a></h1>
 <section id="internal-environment-variables">
-<h2>Internal Environment variables<a class="headerlink" href="#internal-environment-variables" title="Permalink to this heading">#</a></h2>
+<h2>Internal Environment variables<a class="headerlink" href="#internal-environment-variables" title="Link to this heading">¶</a></h2>
 <p>The following environment variables are used by Poe the Poet internally, and can be accessed from within configuration and tasks.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_ROOT</span></code>: path to the parent directory of the main tasks file (e.g. pyproject.toml).</p></li>
@@ -250,7 +250,7 @@
 </ul>
 </section>
 <section id="special-variables">
-<h2>Special variables<a class="headerlink" href="#special-variables" title="Permalink to this heading">#</a></h2>
+<h2>Special variables<a class="headerlink" href="#special-variables" title="Link to this heading">¶</a></h2>
 <p>The following variables are not set on the environment by default but can be referenced from task configuration as if they were.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code>: path of the git repo that the project is part of. This allows a project in a subdirectory of a monorepo to reference <a class="reference internal" href="guides/include_guide.html#including-files-relative-to-the-git-repo"><span class="std std-ref">includes</span></a> or <a class="reference internal" href="tasks/options.html#loading-environment-variables-from-an-env-file"><span class="std std-ref">envfiles</span></a> relative to the root of the git repo. Note that referencing this variable causes poe to attempt to call the <code class="docutils literal notranslate"><span class="pre">git</span></code> executable which must be available on the path.</p></li>
@@ -258,7 +258,7 @@
 </ul>
 </section>
 <section id="external-environment-variables">
-<h2>External Environment variables<a class="headerlink" href="#external-environment-variables" title="Permalink to this heading">#</a></h2>
+<h2>External Environment variables<a class="headerlink" href="#external-environment-variables" title="Link to this heading">¶</a></h2>
 <p>The following environment variables can be set to modify Poe the Poet’s behavior.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_PROJECT_DIR</span></code>: used as the default value for the <code class="docutils literal notranslate"><span class="pre">--directory</span></code> global argument.</p></li>
@@ -350,12 +350,12 @@
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/scripts/furo.js"></script>
-    <script src="_static/clipboard.min.js"></script>
-    <script src="_static/copybutton.js"></script>
+</div><script src="_static/documentation_options.js?v=d63f172e"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

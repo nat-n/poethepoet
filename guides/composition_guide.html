@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Composing tasks" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="guides/composition_guide.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Loading tasks from another file" href="include_guide.html" /><link rel="prev" title="Configuring CLI arguments" href="args_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/composition_guide.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Composing tasks - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,9 +237,9 @@
         </div>
         <article role="main">
           <section id="composing-tasks">
-<h1>Composing tasks<a class="headerlink" href="#composing-tasks" title="Permalink to this heading">#</a></h1>
+<h1>Composing tasks<a class="headerlink" href="#composing-tasks" title="Link to this heading">¶</a></h1>
 <section id="composing-tasks-into-sequences">
-<span id="sequence-composition"></span><h2>Composing tasks into sequences<a class="headerlink" href="#composing-tasks-into-sequences" title="Permalink to this heading">#</a></h2>
+<span id="sequence-composition"></span><h2>Composing tasks into sequences<a class="headerlink" href="#composing-tasks-into-sequences" title="Link to this heading">¶</a></h2>
 <p>You can compose tasks into a new task that runs them in order by declaring a <a class="reference internal" href="../tasks/task_types/sequence.html"><span class="doc">sequence</span></a> task.</p>
 <p>For example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
@@ -270,7 +270,7 @@
 </div>
 </section>
 <section id="composing-tasks-into-graphs">
-<span id="graph-composition"></span><h2>Composing tasks into graphs<a class="headerlink" href="#composing-tasks-into-graphs" title="Permalink to this heading">#</a></h2>
+<span id="graph-composition"></span><h2>Composing tasks into graphs<a class="headerlink" href="#composing-tasks-into-graphs" title="Link to this heading">¶</a></h2>
 <p>You can define tasks that depend on other tasks, and optionally capture and reuse the output of those tasks, thus defining an execution graph of tasks. This is done by using the <code class="docutils literal notranslate"><span class="pre">deps</span></code> task option, or if you want to capture the output of the upstream task to pass it to the present task then specify the <code class="docutils literal notranslate"><span class="pre">uses</span></code> option, as demonstrated below.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 <span class="n">_website_bucket_name</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
@@ -391,12 +391,12 @@
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
+</div><script src="../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

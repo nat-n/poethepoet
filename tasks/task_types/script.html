@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="script tasks" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/task_types/script.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="shell tasks" href="shell.html" /><link rel="prev" title="cmd tasks" href="cmd.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/script.html" />
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>script tasks - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="script-tasks">
-<h1><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks<a class="headerlink" href="#script-tasks" title="Permalink to this heading">#</a></h1>
+<h1><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks<a class="headerlink" href="#script-tasks" title="Link to this heading">¶</a></h1>
 <p><strong>Script tasks</strong> consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 <span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.assets:fetch&quot;</span>
@@ -248,7 +248,7 @@
 <p>If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called python function via <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code>. If <a class="reference internal" href="../options.html"><span class="doc">args</span></a> are configured for the task then they will be available as python variables.</p>
 <p>If the target python function is an async function then it will be executed with <code class="code highlight python docutils literal highlight-python"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span></code>.</p>
 <section id="available-task-options">
-<h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
+<h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
 <p>The following options are also accepted:</p>
 <dl>
@@ -257,7 +257,7 @@
 </dl>
 </section>
 <section id="output-the-return-value">
-<h2>Output the return value<a class="headerlink" href="#output-the-return-value" title="Permalink to this heading">#</a></h2>
+<h2>Output the return value<a class="headerlink" href="#output-the-return-value" title="Link to this heading">¶</a></h2>
 <p>Script tasks can be configured to output the return value of the python callable using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.create-secret]</span>
 <span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;django.core.management.utils:get_random_secret_key()&quot;</span>
@@ -273,7 +273,7 @@ generated key.</p>
 effect.</p>
 </section>
 <section id="calling-standard-library-functions">
-<h2>Calling standard library functions<a class="headerlink" href="#calling-standard-library-functions" title="Permalink to this heading">#</a></h2>
+<h2>Calling standard library functions<a class="headerlink" href="#calling-standard-library-functions" title="Link to this heading">¶</a></h2>
 <p>Any python callable accessible via the python path can be referenced, including the
 standard library. This can be useful for ensuring that tasks work across platforms.</p>
 <p>For example, the following task will not always work on windows:</p>
@@ -288,12 +288,12 @@ standard library. This can be useful for ensuring that tasks work across platfor
 </div>
 </section>
 <section id="poe-scripts-library">
-<h2>Poe scripts library<a class="headerlink" href="#poe-scripts-library" title="Permalink to this heading">#</a></h2>
+<h2>Poe scripts library<a class="headerlink" href="#poe-scripts-library" title="Link to this heading">¶</a></h2>
 <p>Poe the Poet includes the <code class="docutils literal notranslate"><span class="pre">poethepoet.scripts</span></code> package including the following functions as convenient cross-platform implementations of common task capabilities.
 These functions can be referenced from script tasks if <code class="docutils literal notranslate"><span class="pre">poethepoet</span></code> is available in the project virtual environment.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="poethepoet.scripts.rm">
-<span class="sig-prename descclassname"><span class="pre">poethepoet.scripts.</span></span><span class="sig-name descname"><span class="pre">rm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#poethepoet.scripts.rm" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">poethepoet.scripts.</span></span><span class="sig-name descname"><span class="pre">rm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#poethepoet.scripts.rm" title="Link to this definition">¶</a></dt>
 <dd><p>This function is intended for use in a script task to delete files and directories
 matching any of the given patterns, as a platform agnostic alternative to
 <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">[patterns]</span></code></p>
@@ -321,7 +321,7 @@ function.</p></li>
 
 </section>
 <section id="delegating-dry-run-behavior-to-a-script">
-<h2>Delegating dry-run behavior to a script<a class="headerlink" href="#delegating-dry-run-behavior-to-a-script" title="Permalink to this heading">#</a></h2>
+<h2>Delegating dry-run behavior to a script<a class="headerlink" href="#delegating-dry-run-behavior-to-a-script" title="Link to this heading">¶</a></h2>
 <p>Normally if the <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> global option is passed to the CLI then poe will go through the motions of running the given task, including logging to stdout, without actually running the task.</p>
 <p>However it is possible to configure poe to delegate respecting this dry run flag to an invoked script task, by passing it the <code class="docutils literal notranslate"><span class="pre">_dry_run</span></code> variable. When this variable is passed as an argument to the python function called within a script task then poe will always call the task, and delegate responsibility to the script for making sure that no side effects occur when run in dry-run mode.</p>
 </section>
@@ -414,12 +414,12 @@ function.</p></li>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
-    <script src="../../_static/scripts/furo.js"></script>
-    <script src="../../_static/clipboard.min.js"></script>
-    <script src="../../_static/copybutton.js"></script>
+</div><script src="../../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

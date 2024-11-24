@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Poe the Poet Documentation" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="index.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="installation.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/index.html" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -239,17 +239,22 @@
           <div class="toctree-wrapper compound">
 </div>
 <section id="poe-the-poet-documentation">
-<h1>Poe the Poet Documentation<a class="headerlink" href="#poe-the-poet-documentation" title="Permalink to this heading">#</a></h1>
-<a class="reference external image-reference" href="https://github.com/nat-n/poethepoet"><img alt="GitHub repo" src="https://img.shields.io/github/stars/nat-n/poethepoet?style=social" /></a>
-<a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/pyversions/poethepoet.svg" /></a>
-<a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/v/poethepoet.svg" /></a>
-<a class="reference external image-reference" href="https://pypistats.org/packages/poethepoet"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/poethepoet" /></a>
-<a class="reference external image-reference" href="https://github.com/nat-n/poethepoet/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/pypi/l/ansicolortags.svg" /></a>
+<h1>Poe the Poet Documentation<a class="headerlink" href="#poe-the-poet-documentation" title="Link to this heading">¶</a></h1>
+<a class="reference external image-reference" href="https://github.com/nat-n/poethepoet"><img alt="GitHub repo" src="https://img.shields.io/github/stars/nat-n/poethepoet?style=social" />
+</a>
+<a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/pyversions/poethepoet.svg" />
+</a>
+<a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/v/poethepoet.svg" />
+</a>
+<a class="reference external image-reference" href="https://pypistats.org/packages/poethepoet"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/poethepoet" />
+</a>
+<a class="reference external image-reference" href="https://github.com/nat-n/poethepoet/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/pypi/l/ansicolortags.svg" />
+</a>
 <p>Poe the Poet is a batteries included task runner that works well with <a href="https://python-poetry.org/" target="_blank">poetry</a>.</p>
 <p>It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project’s virtual environment.</p>
 <p>“Simple things should be simple, complex things should be possible.” – Alan Kay</p>
 <section id="top-features">
-<h2>Top features<a class="headerlink" href="#top-features" title="Permalink to this heading">#</a></h2>
+<h2>Top features<a class="headerlink" href="#top-features" title="Link to this heading">¶</a></h2>
 <p>✅  Straight forward declaration of project tasks in your pyproject.toml (or <a class="reference internal" href="guides/without_poetry.html"><span class="doc">poe_tasks.toml</span></a>)</p>
 <p>✅  Tasks are run in poetry’s virtualenv (or another env you specify)</p>
 <p>✅  <a class="reference internal" href="installation.html#shell-completion"><span class="std std-ref">Shell completion of task names</span></a> (and global options too for zsh)</p>
@@ -265,7 +270,7 @@
 <p>✅  Also works fine <a class="reference internal" href="guides/without_poetry.html"><span class="doc">without poetry</span></a></p>
 </section>
 <section id="quick-start">
-<h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this heading">#</a></h2>
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
 <ol class="arabic">
 <li><p>Install the CLI <em>globally</em> from PyPI using <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a> (or via <a class="reference internal" href="installation.html"><span class="doc">another method</span></a>):</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pipx<span class="w"> </span>install<span class="w"> </span>poethepoet
@@ -294,7 +299,7 @@
 </div>
 </section>
 <section id="run-poe-from-anywhere">
-<h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Permalink to this heading">#</a></h2>
+<h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Link to this heading">¶</a></h2>
 <p>By default poe will detect when you’re inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the <code class="code highlight sh docutils literal highlight-sh">-C</code> option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.</p>
 <p>In all cases the path to project root (where the pyproject.toml resides) will be available as <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_ROOT</span></code> within the command line and process. The variable <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code> contains the original working directory from which poe was run.</p>
 <p>Using this feature you can also define <a class="reference internal" href="guides/global_tasks.html"><span class="doc">global tasks</span></a> that are not associated with any particular project.</p>
@@ -352,12 +357,12 @@
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/scripts/furo.js"></script>
-    <script src="_static/clipboard.min.js"></script>
-    <script src="_static/copybutton.js"></script>
+</div><script src="_static/documentation_options.js?v=d63f172e"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

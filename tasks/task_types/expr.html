@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="expr tasks" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/task_types/expr.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="switch tasks" href="switch.html" /><link rel="prev" title="sequence tasks" href="sequence.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/expr.html" />
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>expr tasks - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="expr-tasks">
-<h1><code class="docutils literal notranslate"><span class="pre">expr</span></code> tasks<a class="headerlink" href="#expr-tasks" title="Permalink to this heading">#</a></h1>
+<h1><code class="docutils literal notranslate"><span class="pre">expr</span></code> tasks<a class="headerlink" href="#expr-tasks" title="Link to this heading">¶</a></h1>
 <p><strong>Expr tasks</strong> consist of a single <a class="reference external" href="https://docs.python.org/3/reference/expressions.html">python expression</a>. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print <cite>2</cite> when run:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.trivial-example]</span>
 <span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1 + 1&quot;</span>
@@ -261,7 +261,7 @@ expressions</p></li>
 using the usual templating syntax <code class="docutils literal notranslate"><span class="pre">${...}</span></code></p></li>
 </ul>
 <section id="available-task-options">
-<h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
+<h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">expr</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
 <p>The following options are also accepted:</p>
 <dl>
@@ -272,7 +272,7 @@ using the usual templating syntax <code class="docutils literal notranslate"><sp
 </dl>
 </section>
 <section id="referencing-arguments-and-environment-variables">
-<h2>Referencing arguments and environment variables<a class="headerlink" href="#referencing-arguments-and-environment-variables" title="Permalink to this heading">#</a></h2>
+<h2>Referencing arguments and environment variables<a class="headerlink" href="#referencing-arguments-and-environment-variables" title="Link to this heading">¶</a></h2>
 <p>The expression can reference environment variables using templating syntax as in <a class="reference internal" href="cmd.html"><span class="doc">cmd</span></a> tasks, and named arguments as python variables in scope as in <a class="reference internal" href="script.html"><span class="doc">script</span></a> tasks.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
 <span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;(</span>
@@ -296,7 +296,7 @@ poethepoet-LCpCQf8S-py3.10<span class="w"> </span>is<span class="w"> </span>not<
 <p>Notice that the expression may be formatted over multiple lines, as in normal python code.</p>
 </section>
 <section id="referencing-imported-modules-in-an-expression">
-<h2>Referencing imported modules in an expression<a class="headerlink" href="#referencing-imported-modules-in-an-expression" title="Permalink to this heading">#</a></h2>
+<h2>Referencing imported modules in an expression<a class="headerlink" href="#referencing-imported-modules-in-an-expression" title="Link to this heading">¶</a></h2>
 <p>By default the sys module is available to the expression which allows access to <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> or <code class="docutils literal notranslate"><span class="pre">sys.platform</span></code> among other useful values. However you can also reference any other importable module via the imports option as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.count-hidden]</span>
 <span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Count hidden files or subdirectories&quot;</span>
@@ -306,7 +306,7 @@ poethepoet-LCpCQf8S-py3.10<span class="w"> </span>is<span class="w"> </span>not<
 </div>
 </section>
 <section id="fail-if-the-expression-result-is-falsey">
-<h2>Fail if the expression result is falsey<a class="headerlink" href="#fail-if-the-expression-result-is-falsey" title="Permalink to this heading">#</a></h2>
+<h2>Fail if the expression result is falsey<a class="headerlink" href="#fail-if-the-expression-result-is-falsey" title="Link to this heading">¶</a></h2>
 <p>The expression can be made to behave like an assertion that fails if the result is not truthy by providing the assert option. The task defined in the following example will
 return non-zero if the result is False.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
@@ -317,7 +317,7 @@ return non-zero if the result is False.</p>
 </div>
 </section>
 <section id="referencing-the-result-of-other-tasks-in-an-expression">
-<h2>Referencing the result of other tasks in an expression<a class="headerlink" href="#referencing-the-result-of-other-tasks-in-an-expression" title="Permalink to this heading">#</a></h2>
+<h2>Referencing the result of other tasks in an expression<a class="headerlink" href="#referencing-the-result-of-other-tasks-in-an-expression" title="Link to this heading">¶</a></h2>
 <p>Expr tasks can reference the results of other tasks by leveraging the <a class="reference internal" href="../../guides/composition_guide.html"><span class="doc">uses</span></a> option.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks._get_active_session]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;read_session --format json&quot;</span>
@@ -419,12 +419,12 @@ return non-zero if the result is False.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
-    <script src="../../_static/scripts/furo.js"></script>
-    <script src="../../_static/clipboard.min.js"></script>
-    <script src="../../_static/copybutton.js"></script>
+</div><script src="../../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

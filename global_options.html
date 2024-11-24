@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Global options" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="global_options.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Defining tasks" href="tasks/index.html" /><link rel="prev" title="Poetry plugin" href="poetry_plugin.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/global_options.html" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Global options - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="global-options">
-<h1>Global options<a class="headerlink" href="#global-options" title="Permalink to this heading">#</a></h1>
+<h1>Global options<a class="headerlink" href="#global-options" title="Link to this heading">¶</a></h1>
 <p>The following options can be set for all tasks in a project directly under <code class="docutils literal notranslate"><span class="pre">[tool.poe]</span></code>. These are called global options, in contrast with <a class="reference internal" href="tasks/options.html"><span class="doc">task options</span></a>.</p>
 <dl>
 <dt><strong>env</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#global-environment-variables"><span class="std std-ref">📖</span></a></span></dt><dd><p>Define environment variables to be exposed to all tasks. These can be <a class="reference internal" href="tasks/options.html#setting-task-specific-environment-variables"><span class="std std-ref">extended on the task level</span></a>.</p>
@@ -264,7 +264,7 @@
 </dd>
 </dl>
 <section id="global-environment-variables">
-<h2>Global environment variables<a class="headerlink" href="#global-environment-variables" title="Permalink to this heading">#</a></h2>
+<h2>Global environment variables<a class="headerlink" href="#global-environment-variables" title="Link to this heading">¶</a></h2>
 <p>You can configure environment variables to be set for all poe tasks in the pyproject.toml file by specifying <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">env</span></code> like so</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span>
 <span class="n">VAR1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;FOO&quot;</span>
@@ -282,14 +282,14 @@ not already set like so:</p>
 </div>
 <p>You can also specify an env file (with bash-like syntax) to load for all tasks like so:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">.env</span><a class="headerlink" href="#id1" title="Permalink to this code">#</a></div>
+<div class="code-block-caption"><span class="caption-text">.env</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="nv">STAGE</span><span class="o">=</span>dev
 <span class="w"> </span><span class="nv">PASSWORD</span><span class="o">=</span><span class="s1">&#39;!@#$%^&amp;*(&#39;</span>
 </pre></div>
 </div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">pyproject.toml</span><a class="headerlink" href="#id2" title="Permalink to this code">#</a></div>
+<div class="code-block-caption"><span class="caption-text">pyproject.toml</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="k">[tool.poe]</span>
 <span class="w"> </span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span>
 </pre></div>
@@ -309,7 +309,7 @@ not already set like so:</p>
 <p>See the documentation on <a class="reference internal" href="env_vars.html#special-variables"><span class="std std-ref">Special variables</span></a> for a full explanation of how these variables work.</p>
 </section>
 <section id="change-the-executor-type">
-<h2>Change the executor type<a class="headerlink" href="#change-the-executor-type" title="Permalink to this heading">#</a></h2>
+<h2>Change the executor type<a class="headerlink" href="#change-the-executor-type" title="Link to this heading">¶</a></h2>
 <p>You can configure poe to use a specific executor by setting
 <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poe</span><span class="p">.</span><span class="n">executor</span><span class="p">.</span><span class="n">type</span></code>. Valid values include:</p>
 <ul class="simple">
@@ -333,7 +333,7 @@ parent directory. If no location is specified for a virtualenv then the default 
 </div>
 </section>
 <section id="change-the-default-shell-interpreter">
-<h2>Change the default shell interpreter<a class="headerlink" href="#change-the-default-shell-interpreter" title="Permalink to this heading">#</a></h2>
+<h2>Change the default shell interpreter<a class="headerlink" href="#change-the-default-shell-interpreter" title="Link to this heading">¶</a></h2>
 <p>Normally shell tasks are executed using a posix shell by default (see section for shell
 tasks above). This default can be overridden to something else by setting the
 <em>shell_interpreter</em> global option. In the following example we configure all shell tasks
@@ -356,7 +356,7 @@ to use <em>fish</em> by default.</p>
 </div>
 </section>
 <section id="default-command-verbosity">
-<h2>Default command verbosity<a class="headerlink" href="#default-command-verbosity" title="Permalink to this heading">#</a></h2>
+<h2>Default command verbosity<a class="headerlink" href="#default-command-verbosity" title="Link to this heading">¶</a></h2>
 <p>You can alter the verbosity level for poe commands by passing <code class="code highlight bash docutils literal highlight-bash">--quiet</code> /
 <code class="code highlight bash docutils literal highlight-bash">-q</code> (which decreases verbosity) or <code class="code highlight bash docutils literal highlight-bash">--verbose</code> / <code class="code highlight bash docutils literal highlight-bash">-v</code> (which
 increases verbosity) on the CLI.</p>
@@ -374,7 +374,7 @@ verbosity to <code class="code highlight toml docutils literal highlight-toml"><
 equivalent to setting the verbosity to <code class="code highlight toml docutils literal highlight-toml"><span class="n">0</span></code> and just passing <code class="code highlight bash docutils literal highlight-bash">-v</code>.</p>
 </section>
 <section id="change-the-default-task-type">
-<h2>Change the default task type<a class="headerlink" href="#change-the-default-task-type" title="Permalink to this heading">#</a></h2>
+<h2>Change the default task type<a class="headerlink" href="#change-the-default-task-type" title="Link to this heading">¶</a></h2>
 <p>By default tasks defined as strings are interpreted as shell commands, and script tasks
 require the more verbose table syntax to specify. For example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">my_cmd_task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cmd args&quot;</span>
@@ -393,7 +393,7 @@ pyproject.toml like so:</p>
 </div>
 </section>
 <section id="run-poe-from-anywhere">
-<h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Permalink to this heading">#</a></h2>
+<h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Link to this heading">¶</a></h2>
 <p>By default poe will detect when you’re inside a project with a pyproject.toml in the
 root. However if you want to run it from elsewhere then that is supported by using the
 <code class="code highlight bash docutils literal highlight-bash">-C</code> option to specify an alternate location for the toml file. The task will
@@ -488,12 +488,12 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/scripts/furo.js"></script>
-    <script src="_static/clipboard.min.js"></script>
-    <script src="_static/copybutton.js"></script>
+</div><script src="_static/documentation_options.js?v=d63f172e"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

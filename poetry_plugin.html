@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="./">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Poetry plugin" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="poetry_plugin.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Global options" href="global_options.html" /><link rel="prev" title="Installation" href="installation.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/poetry_plugin.html" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Poetry plugin - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,14 +237,14 @@
         </div>
         <article role="main">
           <section id="poetry-plugin">
-<h1>Poetry plugin<a class="headerlink" href="#poetry-plugin" title="Permalink to this heading">#</a></h1>
+<h1>Poetry plugin<a class="headerlink" href="#poetry-plugin" title="Link to this heading">¶</a></h1>
 <p>Depending on how you manage your python environments you may also wish to use Poe the
 Poet in the form of a <a href="https://python-poetry.org/docs/main/plugins/#using-plugins" target="_blank">poetry plugin</a>.</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>self<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;poethepoet[poetry_plugin]&#39;</span>
 </pre></div>
 </div>
 <section id="configuring-the-plugin">
-<h2>Configuring the plugin<a class="headerlink" href="#configuring-the-plugin" title="Permalink to this heading">#</a></h2>
+<h2>Configuring the plugin<a class="headerlink" href="#configuring-the-plugin" title="Link to this heading">¶</a></h2>
 <p>By default the poetry plugin will register <em>poe</em> as a command prefix so tasks can be
 invoked like:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>poe<span class="w"> </span><span class="o">[</span>task_name<span class="o">]</span><span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span>
@@ -276,7 +276,7 @@ poetry command.</p>
 </div>
 </section>
 <section id="hooking-into-poetry-commands">
-<h2>Hooking into poetry commands<a class="headerlink" href="#hooking-into-poetry-commands" title="Permalink to this heading">#</a></h2>
+<h2>Hooking into poetry commands<a class="headerlink" href="#hooking-into-poetry-commands" title="Link to this heading">¶</a></h2>
 <p>It is also possible to configure a task to be run before or after a specific poetry
 command by declaring the <code class="docutils literal notranslate"><span class="pre">poetry_hooks</span></code> global option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.poetry_hooks]</span>
@@ -309,7 +309,7 @@ to poetry.</p>
 <p>All poetry commands are supported in principle.</p>
 </section>
 <section id="known-limitations">
-<h2>Known limitations<a class="headerlink" href="#known-limitations" title="Permalink to this heading">#</a></h2>
+<h2>Known limitations<a class="headerlink" href="#known-limitations" title="Link to this heading">¶</a></h2>
 <p>Due to how the poetry CLI works (using <a href="https://github.com/python-poetry/cleo" target="_blank">cleo</a> — a
 featureful but highly opinionated CLI framework) there exist a few minor limitations
 to consider when using the Poe the Poet poetry plugin.</p>
@@ -410,12 +410,12 @@ documentation for poetry commands contains only the task names and help text.</p
       
     </aside>
   </div>
-</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/scripts/furo.js"></script>
-    <script src="_static/clipboard.min.js"></script>
-    <script src="_static/copybutton.js"></script>
+</div><script src="_static/documentation_options.js?v=d63f172e"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

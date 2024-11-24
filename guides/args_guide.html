@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Configuring CLI arguments" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="guides/args_guide.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Composing tasks" href="composition_guide.html" /><link rel="prev" title="Documenting tasks" href="help_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/args_guide.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Configuring CLI arguments - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="configuring-cli-arguments">
-<h1>Configuring CLI arguments<a class="headerlink" href="#configuring-cli-arguments" title="Permalink to this heading">#</a></h1>
+<h1>Configuring CLI arguments<a class="headerlink" href="#configuring-cli-arguments" title="Link to this heading">¶</a></h1>
 <p>By default extra arguments passed to the poe CLI following the task name are appended to the end of a <a class="reference internal" href="../tasks/task_types/cmd.html"><span class="doc">cmd task</span></a>, or exposed as <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> in a <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script task</span></a>, but will cause an error for other task types). Alternatively it is possible to define named arguments that a task should accept, which will be documented in the help for that task, and exposed to the task in a way the makes the most sense for that task type.</p>
 <p>In general named arguments can take one of the following three forms:</p>
 <ul class="simple">
@@ -260,11 +260,11 @@
 <p>The value for the named argument is then accessible by name within the task content,
 though exactly how will depend on the type of the task as detailed below.</p>
 <section id="configuration-syntax">
-<h2>Configuration syntax<a class="headerlink" href="#configuration-syntax" title="Permalink to this heading">#</a></h2>
+<h2>Configuration syntax<a class="headerlink" href="#configuration-syntax" title="Link to this heading">¶</a></h2>
 <p>Named arguments are configured by declaring the <code class="docutils literal notranslate"><span class="pre">args</span></code> task option as either an array or
 a sub-table.</p>
 <section id="abbreviated-form">
-<h3>Abbreviated form<a class="headerlink" href="#abbreviated-form" title="Permalink to this heading">#</a></h3>
+<h3>Abbreviated form<a class="headerlink" href="#abbreviated-form" title="Link to this heading">¶</a></h3>
 <p>The array form may contain string items which are interpreted as an option argument with the given name.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
@@ -277,7 +277,7 @@ a sub-table.</p>
 </div>
 </section>
 <section id="array-of-inline-tables">
-<h3>Array of inline tables<a class="headerlink" href="#array-of-inline-tables" title="Permalink to this heading">#</a></h3>
+<h3>Array of inline tables<a class="headerlink" href="#array-of-inline-tables" title="Link to this heading">¶</a></h3>
 <p>Items in the array can also be inline tables to allow for more configuration to be provided to the task like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
@@ -289,7 +289,7 @@ a sub-table.</p>
 </div>
 </section>
 <section id="array-of-tables">
-<h3>Array of tables<a class="headerlink" href="#array-of-tables" title="Permalink to this heading">#</a></h3>
+<h3>Array of tables<a class="headerlink" href="#array-of-tables" title="Link to this heading">¶</a></h3>
 <p>If you want to provide more configuration per argument then the following toml syntax can be used to declare an array of tables with each key on a separate line:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
@@ -314,7 +314,7 @@ a sub-table.</p>
 </div>
 </section>
 <section id="subtable-configuration-syntax">
-<h3>Subtable configuration syntax<a class="headerlink" href="#subtable-configuration-syntax" title="Permalink to this heading">#</a></h3>
+<h3>Subtable configuration syntax<a class="headerlink" href="#subtable-configuration-syntax" title="Link to this heading">¶</a></h3>
 <p>The following toml syntax structure achieves exactly the same result as the previous example but instead of <code class="docutils literal notranslate"><span class="pre">args</span></code> being an array of tables, it is a table of tables like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
@@ -335,17 +335,20 @@ a sub-table.</p>
 </section>
 </section>
 <section id="task-argument-options">
-<h2>Task argument options<a class="headerlink" href="#task-argument-options" title="Permalink to this heading">#</a></h2>
+<h2>Task argument options<a class="headerlink" href="#task-argument-options" title="Link to this heading">¶</a></h2>
 <p>Named arguments support the following configuration options:</p>
 <ul>
 <li><dl>
 <dt><strong>default</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code> | <code class="docutils literal notranslate"><span class="pre">float</span></code> | <code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>The value to use if the argument is not provided. This option has no significance if the <code class="docutils literal notranslate"><span class="pre">required</span></code> option is set to true.</p>
 <p>For string values, environment variables can be referenced using the usual templating syntax as in the following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.deploy.args]]</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.deploy]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
+<span class="n">env</span><span class="p">.</span><span class="n">AWS_REGION</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;eu-central-1&quot;</span>
+
+<span class="k">[[tool.poe.tasks.deploy.args]]</span>
 <span class="n">name</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;region&quot;</span>
 <span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;The region to deploy to&quot;</span>
 <span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${AWS_REGION}&quot;</span>
-<span class="n">env</span><span class="p">.</span><span class="n">AWS_REGION</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;eu-central-1&quot;</span>
 </pre></div>
 </div>
 <p>As in the above example, this can be combined with setting an <a class="reference internal" href="../tasks/options.html"><span class="doc">env value</span></a> on the task with the <code class="docutils literal notranslate"><span class="pre">default</span></code> specifier to get the following precedence of values for the arg:</p>
@@ -404,7 +407,7 @@ a sub-table.</p>
 </ul>
 </section>
 <section id="arguments-for-cmd-and-shell-tasks">
-<h2>Arguments for cmd and shell tasks<a class="headerlink" href="#arguments-for-cmd-and-shell-tasks" title="Permalink to this heading">#</a></h2>
+<h2>Arguments for cmd and shell tasks<a class="headerlink" href="#arguments-for-cmd-and-shell-tasks" title="Link to this heading">¶</a></h2>
 <p>For <a class="reference internal" href="../tasks/task_types/cmd.html"><span class="doc">cmd</span></a> and <a class="reference internal" href="../tasks/task_types/shell.html"><span class="doc">shell</span></a> tasks the values are exposed to the task as environment variables. For example given the following configuration:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.passby]</span>
 <span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
@@ -430,11 +433,11 @@ a sub-table.</p>
 </div>
 </section>
 <section id="arguments-for-script-tasks">
-<h2>Arguments for script tasks<a class="headerlink" href="#arguments-for-script-tasks" title="Permalink to this heading">#</a></h2>
+<h2>Arguments for script tasks<a class="headerlink" href="#arguments-for-script-tasks" title="Link to this heading">¶</a></h2>
 <p>Arguments can be defined for <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script</span></a> tasks in the same way, but how they are exposed to the underlying python function depends on how the script is defined.</p>
 <p>In the following example, since no parenthesis are included for the referenced function, all provided args will be passed to the function as kwargs:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks.build]
-script = &quot;my_app.util:build&quot;, args = [&quot;dest&quot;, &quot;version&quot;]
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_app.util:build&quot;</span><span class="err">,</span><span class="w"> </span><span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;dest&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;version&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>You can also control exactly how values are passed to the python function as demonstrated in the following example:</p>
@@ -445,7 +448,7 @@ script = &quot;my_app.util:build&quot;, args = [&quot;dest&quot;, &quot;version&
 </div>
 </section>
 <section id="arguments-for-sequence-tasks">
-<h2>Arguments for sequence tasks<a class="headerlink" href="#arguments-for-sequence-tasks" title="Permalink to this heading">#</a></h2>
+<h2>Arguments for sequence tasks<a class="headerlink" href="#arguments-for-sequence-tasks" title="Link to this heading">¶</a></h2>
 <p>Arguments can be passed to the tasks referenced from a sequence task as in the following
 example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
@@ -460,7 +463,7 @@ example.</p>
 <p>This works by setting the argument values as environment variables for the subtasks, which can be read at runtime, but also referenced in the task definition as demonstrated in the above example for a <a class="reference internal" href="../tasks/task_types/ref.html"><span class="doc">ref</span></a> task and <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script</span></a> task.</p>
 </section>
 <section id="passing-free-arguments-in-addition-to-named-arguments">
-<h2>Passing free arguments in addition to named arguments<a class="headerlink" href="#passing-free-arguments-in-addition-to-named-arguments" title="Permalink to this heading">#</a></h2>
+<h2>Passing free arguments in addition to named arguments<a class="headerlink" href="#passing-free-arguments-in-addition-to-named-arguments" title="Link to this heading">¶</a></h2>
 <p>If no args are defined for a cmd task then any cli arguments that are provided are simply appended to the command. If named arguments are defined then one can still provide additional free arguments to the command by separating them from the defined arguments with a double dash token <code class="code highlight sh docutils literal highlight-sh">--</code>.</p>
 <p>For example given a task like:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.lint]</span>
@@ -571,12 +574,12 @@ example.</p>
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
+</div><script src="../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

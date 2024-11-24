@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="switch tasks" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/task_types/switch.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="ref tasks" href="ref.html" /><link rel="prev" title="expr tasks" href="expr.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/switch.html" />
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>switch tasks - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="switch-tasks">
-<h1><code class="docutils literal notranslate"><span class="pre">switch</span></code> tasks<a class="headerlink" href="#switch-tasks" title="Permalink to this heading">#</a></h1>
+<h1><code class="docutils literal notranslate"><span class="pre">switch</span></code> tasks<a class="headerlink" href="#switch-tasks" title="Link to this heading">¶</a></h1>
 <p>Much like a switch statement in many programming languages, a switch task consists of a control task and a array of tasks to switch between. The control task is run first, and its output is captured and matched against the case option of each of the items in the switch array to determine which one to run.</p>
 <p>This can be used to define a task that runs a different subtask depending on which platform it is running on like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
@@ -253,7 +253,7 @@
 </div>
 <p>In the above example the control task is an <a class="reference internal" href="expr.html"><span class="doc">expression</span></a> that checks the value of <code class="docutils literal notranslate"><span class="pre">sys.platform</span></code>, and if running on windows it’ll execute <code class="code highlight toml docutils literal highlight-toml"><span class="n">windows_build</span></code>, otherwise it’ll fall back to the default case (i.e. the switch item with no case option defined) and execute <code class="code highlight toml docutils literal highlight-toml"><span class="n">posix_build</span></code>.</p>
 <section id="available-task-options">
-<h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
+<h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">switch</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code>.</p>
 <p>The following options are also accepted:</p>
 <dl>
@@ -264,7 +264,7 @@
 </dl>
 </section>
 <section id="multiple-values-per-case">
-<h2>Multiple values per case<a class="headerlink" href="#multiple-values-per-case" title="Permalink to this heading">#</a></h2>
+<h2>Multiple values per case<a class="headerlink" href="#multiple-values-per-case" title="Link to this heading">¶</a></h2>
 <p>It is also possible to define multiple values for a single case option by providing a
 array of values like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.tasks.build.switch]]</span>
@@ -274,7 +274,7 @@ array of values like so:</p>
 </div>
 </section>
 <section id="don-t-fail-if-there-s-no-match">
-<h2>Don’t fail if there’s no match<a class="headerlink" href="#don-t-fail-if-there-s-no-match" title="Permalink to this heading">#</a></h2>
+<h2>Don’t fail if there’s no match<a class="headerlink" href="#don-t-fail-if-there-s-no-match" title="Link to this heading">¶</a></h2>
 <p>If all tasks in the switch array include a case value, but none of them match the result
 of the control task then by default the switch task will fail. You can instead configure
 the switch task to pass and simply do nothing by providing the ‘default’ option like so:</p>
@@ -289,7 +289,7 @@ the switch task to pass and simply do nothing by providing the ‘default’ opt
 </div>
 </section>
 <section id="switching-on-an-environment-variable">
-<h2>Switching on an environment variable<a class="headerlink" href="#switching-on-an-environment-variable" title="Permalink to this heading">#</a></h2>
+<h2>Switching on an environment variable<a class="headerlink" href="#switching-on-an-environment-variable" title="Link to this heading">¶</a></h2>
 <p>Using an <a class="reference internal" href="expr.html"><span class="doc">expr</span></a> task makes it convenient to run a different task depending on the value of an environment variable as in the following example:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.check_number]</span>
 <span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;int(${BEST_NUMBER}) % 2&quot;</span>
@@ -317,7 +317,7 @@ Poe<span class="w"> </span>&lt;<span class="o">=</span><span class="w"> </span>i
 </div>
 </section>
 <section id="switching-on-a-named-argument">
-<h2>Switching on a named argument<a class="headerlink" href="#switching-on-a-named-argument" title="Permalink to this heading">#</a></h2>
+<h2>Switching on a named argument<a class="headerlink" href="#switching-on-a-named-argument" title="Link to this heading">¶</a></h2>
 <p>You can also run a different task depending on the value of a named argument as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.icecream]</span>
 <span class="n">control</span><span class="p">.</span><span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;flavor&quot;</span>
@@ -429,12 +429,12 @@ Poe<span class="w"> </span>&lt;<span class="o">=</span><span class="w"> </span>f
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
-    <script src="../../_static/scripts/furo.js"></script>
-    <script src="../../_static/clipboard.min.js"></script>
-    <script src="../../_static/copybutton.js"></script>
+</div><script src="../../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

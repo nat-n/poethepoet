@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="sequence tasks" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/task_types/sequence.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="expr tasks" href="expr.html" /><link rel="prev" title="shell tasks" href="shell.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/sequence.html" />
 
-    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>sequence tasks - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="sequence-tasks">
-<h1><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks<a class="headerlink" href="#sequence-tasks" title="Permalink to this heading">#</a></h1>
+<h1><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks<a class="headerlink" href="#sequence-tasks" title="Link to this heading">¶</a></h1>
 <p>A <strong>Sequence task</strong> is defined by an array of other tasks to be run one after the other.</p>
 <p>The array items can be sub-tables that declare inline tasks, or strings <a class="reference internal" href="ref.html"><span class="doc">referencing</span></a> to other tasks.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
@@ -254,7 +254,7 @@
 </div>
 <p>By default the contents of the array are interpreted as references to other tasks (actually an inline <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> task). However, this behaviour can be altered by setting the global <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_array_item_task_type</span></code> option to the name of another task type such as <code class="docutils literal notranslate"><span class="pre">&quot;cmd&quot;</span></code>, or by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option locally on the sequence task.</p>
 <section id="available-task-options">
-<h2>Available task options<a class="headerlink" href="#available-task-options" title="Permalink to this heading">#</a></h2>
+<h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code>.</p>
 <p>The following options are also accepted:</p>
 <dl>
@@ -265,7 +265,7 @@
 </dl>
 </section>
 <section id="continue-sequence-on-task-failure">
-<h2>Continue sequence on task failure<a class="headerlink" href="#continue-sequence-on-task-failure" title="Permalink to this heading">#</a></h2>
+<h2>Continue sequence on task failure<a class="headerlink" href="#continue-sequence-on-task-failure" title="Link to this heading">¶</a></h2>
 <p>A failure (non-zero result) will result in the rest of the tasks in the sequence not
 being executed, unless the <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option is set on the task to
 <code class="code highlight toml docutils literal highlight-toml"><span class="n">true</span></code> or <code class="code highlight toml docutils literal highlight-toml"><span class="s2">&quot;return_zero&quot;</span></code> like so:</p>
@@ -284,7 +284,7 @@ option to the <code class="code highlight toml docutils literal highlight-toml">
 </div>
 </section>
 <section id="changing-the-default-item-type">
-<h2>Changing the default item type<a class="headerlink" href="#changing-the-default-item-type" title="Permalink to this heading">#</a></h2>
+<h2>Changing the default item type<a class="headerlink" href="#changing-the-default-item-type" title="Link to this heading">¶</a></h2>
 <p>If you want strings in the array to be interpreted as a task type other than <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> you may specify then <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">release</span><span class="p">.</span><span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">  </span><span class="s2">&quot;devtasks:run_tests(all=True)&quot;</span><span class="p">,</span>
@@ -296,7 +296,7 @@ option to the <code class="code highlight toml docutils literal highlight-toml">
 </div>
 </section>
 <section id="sequence-task-as-an-array-of-tables">
-<h2>Sequence task as an array of tables<a class="headerlink" href="#sequence-task-as-an-array-of-tables" title="Permalink to this heading">#</a></h2>
+<h2>Sequence task as an array of tables<a class="headerlink" href="#sequence-task-as-an-array-of-tables" title="Link to this heading">¶</a></h2>
 <p>When declaring more complex sequences the following syntax is often preferred.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 
@@ -324,7 +324,7 @@ option to the <code class="code highlight toml docutils literal highlight-toml">
 </div>
 </section>
 <section id="sequence-task-as-an-array-of-inline-tables">
-<h2>Sequence task as an array of inline tables<a class="headerlink" href="#sequence-task-as-an-array-of-inline-tables" title="Permalink to this heading">#</a></h2>
+<h2>Sequence task as an array of inline tables<a class="headerlink" href="#sequence-task-as-an-array-of-inline-tables" title="Link to this heading">¶</a></h2>
 <p>In some simpler cases a more succinct syntax may be preferred, missing strings (for ref tasks) and inline tables for other task types like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 
@@ -422,12 +422,12 @@ option to the <code class="code highlight toml docutils literal highlight-toml">
       
     </aside>
   </div>
-</div><script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
-    <script src="../../_static/scripts/furo.js"></script>
-    <script src="../../_static/clipboard.min.js"></script>
-    <script src="../../_static/copybutton.js"></script>
+</div><script src="../../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

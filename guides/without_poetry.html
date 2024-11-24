@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Usage without poetry" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="guides/without_poetry.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Global tasks" href="global_tasks.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/without_poetry.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Usage without poetry - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,15 +237,15 @@
         </div>
         <article role="main">
           <section id="usage-without-poetry">
-<h1>Usage without poetry<a class="headerlink" href="#usage-without-poetry" title="Permalink to this heading">#</a></h1>
+<h1>Usage without poetry<a class="headerlink" href="#usage-without-poetry" title="Link to this heading">¶</a></h1>
 <p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the <a class="reference internal" href="../global_options.html#change-the-executor-type"><span class="std std-ref">tool.poe.executor global option</span></a>.</p>
 <p>By default poe will run tasks in the poetry managed virtual environment, if the pyproject.toml contains a <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code> section. If it doesn’t then poe looks for a virtualenv to use at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the pyproject.toml.</p>
 <p>If no virtualenv is found then poe will run tasks without any special environment management.</p>
 <section id="usage-without-pyproject-toml">
-<h2>Usage without pyproject.toml<a class="headerlink" href="#usage-without-pyproject-toml" title="Permalink to this heading">#</a></h2>
+<h2>Usage without pyproject.toml<a class="headerlink" href="#usage-without-pyproject-toml" title="Link to this heading">¶</a></h2>
 <p>When using Poe the Poet outside of a poetry (or other <a href="https://peps.python.org/pep-0518/" target="_blank">PEP 518</a>) project, you can avoid the potential confusion of creating a <cite>pyproject.toml</cite> file and instead name the file <code class="docutils literal notranslate"><span class="pre">poe_tasks.toml</span></code>.</p>
 <section id="usage-with-with-json-or-yaml-instead-of-toml">
-<h3>Usage with with json or yaml instead of toml<a class="headerlink" href="#usage-with-with-json-or-yaml-instead-of-toml" title="Permalink to this heading">#</a></h3>
+<h3>Usage with with json or yaml instead of toml<a class="headerlink" href="#usage-with-with-json-or-yaml-instead-of-toml" title="Link to this heading">¶</a></h3>
 <p>As an alternative to toml, poethepoet configuration can also be provided via yaml or json files. When searching for a tasks file to load within a certain directory poe will try the following file names in order:</p>
 <ul class="simple">
 <li><p>pyproject.toml</p></li>
@@ -256,7 +256,7 @@
 <p>If <cite>pyproject.toml</cite> exists but does not contain the key prefix <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> then the search continues with <cite>poe_tasks.toml</cite>. If one of the listed <code class="docutils literal notranslate"><span class="pre">poe_tasks.*</span></code> files exist then the search is terminated, even if the file is empty.</p>
 <p>When config is loaded from a file other than <cite>pyproject.toml</cite> the <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> namespace for poe config is optional. So for example the following two poe_tasks.yaml files are equivalent and both valid:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id1" title="Permalink to this code">#</a></div>
+<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">env</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">VAR0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FOO</span>
 
@@ -273,7 +273,7 @@
 </div>
 </div>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id2" title="Permalink to this code">#</a></div>
+<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">tool</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">poe</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">env</span><span class="p">:</span>
@@ -378,12 +378,12 @@
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
+</div><script src="../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');

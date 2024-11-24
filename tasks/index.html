@@ -1,8 +1,8 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="">
+<html class="no-js" lang="en" data-content_root="../">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Defining tasks" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/index.html" />
@@ -12,12 +12,12 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Standard task options" href="options.html" /><link rel="prev" title="Global options" href="../global_options.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/index.html" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 6.2.1 and Furo 2023.09.10 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
         <title>Defining tasks - Poe the Poet</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
-    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
     
     
 
@@ -237,7 +237,7 @@
         </div>
         <article role="main">
           <section id="defining-tasks">
-<h1>Defining tasks<a class="headerlink" href="#defining-tasks" title="Permalink to this heading">#</a></h1>
+<h1>Defining tasks<a class="headerlink" href="#defining-tasks" title="Link to this heading">¶</a></h1>
 <p>Poe the Poet supports several ways of defining tasks under <code class="code highlight toml docutils literal highlight-toml"><span class="k">[tool.poe.tasks]</span></code>, trading off simplicity against configurability. Furthermore toml syntax supports both more terse or more expressive alternative ways of writing the same thing, see the guide on <a class="reference internal" href="../guides/toml_guide.html"><span class="doc">Using toml syntax</span></a> for details.</p>
 <p>A task defined as a string will by default be interpreted as a single command to be executed without a shell (aka a <a class="reference internal" href="task_types/cmd.html"><span class="doc">cmd task</span></a>).</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
@@ -262,8 +262,8 @@
 </pre></div>
 </div>
 <p>This implies that you can also define tasks of other types on a single line, like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>[tool.poe.tasks]
-tunnel.shell = &quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot; } # (posix) shell based task
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">tunnel</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w"> </span><span class="err">}</span><span class="w"> </span><span class="c1"># (posix) shell based task</span>
 </pre></div>
 </div>
 <p><a class="reference internal" href="options.html"><span class="doc">Some options</span></a> are applicable to all tasks, whereas other are only applicable to <a class="reference internal" href="#types-of-task"><span class="std std-ref">specific types of tasks</span></a>.</p>
@@ -272,7 +272,7 @@ tunnel.shell = &quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot; } # (po
 <p>Top level tasks are defined as members of <code class="code highlight toml docutils literal highlight-toml"><span class="k">[tool.poe.tasks]</span></code>, but sometimes tasks can be defined as children of other tasks, for example as items within a <a class="reference internal" href="task_types/sequence.html"><span class="doc">sequence</span></a> task, or as the <code class="docutils literal notranslate"><span class="pre">control</span></code> or <code class="docutils literal notranslate"><span class="pre">case</span></code> roles with a <a class="reference internal" href="task_types/sequence.html"><span class="doc">switch</span></a> task.</p>
 </div>
 <section id="types-of-task">
-<h2>Types of task<a class="headerlink" href="#types-of-task" title="Permalink to this heading">#</a></h2>
+<h2>Types of task<a class="headerlink" href="#types-of-task" title="Link to this heading">¶</a></h2>
 <p>You can define seven different types of task:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="task_types/cmd.html"><span class="doc">Command tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">cmd</span></code> : for simple commands that are executed as a subprocess without a shell</p></li>
@@ -368,12 +368,12 @@ tunnel.shell = &quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot; } # (po
       
     </aside>
   </div>
-</div><script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-    <script src="../_static/scripts/furo.js"></script>
-    <script src="../_static/clipboard.min.js"></script>
-    <script src="../_static/copybutton.js"></script>
+</div><script src="../_static/documentation_options.js?v=d63f172e"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
     <script>
         (function(){
             var plausible_script = document.createElement('script');
