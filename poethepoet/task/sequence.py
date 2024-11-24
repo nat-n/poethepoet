@@ -37,6 +37,10 @@ class SequenceTask(PoeTask):
                     "Unsupported value for option `default_item_type`,\n"
                     f"Expected one of {PoeTask.get_task_types(content_type=str)}"
                 )
+            if self.capture_stdout is not None:
+                raise ConfigValidationError(
+                    "Unsupported option for sequence task `capture_stdout`"
+                )
 
     class TaskSpec(PoeTask.TaskSpec):
         content: list
