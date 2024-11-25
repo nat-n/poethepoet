@@ -24,7 +24,7 @@ By default the contents of the array are interpreted as references to other task
 Available task options
 ----------------------
 
-``sequence`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec``.
+``sequence`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec`` and ``capture_stdout``.
 
 The following options are also accepted:
 

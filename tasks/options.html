@@ -244,18 +244,18 @@
 <dl>
 <dt><strong>help</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code> <a class="reference internal" href="../guides/help_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Help text to be displayed next to the task name in the documentation when poe is run without specifying a task.</p>
 </dd>
-<dt><strong>args</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">dict]</span></code> | <code class="docutils literal notranslate"><span class="pre">List[Union[str,</span> <span class="pre">dict]]</span></code> <a class="reference internal" href="../guides/args_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Define CLI options, positional arguments, or flags that this task should accept.</p>
+<dt><strong>args</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">dict]</span></code> | <code class="docutils literal notranslate"><span class="pre">list[Union[str,</span> <span class="pre">dict]]</span></code> <a class="reference internal" href="../guides/args_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Define CLI options, positional arguments, or flags that this task should accept.</p>
 </dd>
-<dt><strong>env</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#setting-task-specific-environment-variables"><span class="std std-ref">📖</span></a></span></dt><dd><p>A map of environment variables to be set for this task.</p>
+<dt><strong>env</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#setting-task-specific-environment-variables"><span class="std std-ref">📖</span></a></span></dt><dd><p>A map of environment variables to be set for this task.</p>
 </dd>
-<dt><strong>envfile</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">List[str]</span></code> <a class="reference internal" href="#loading-environment-variables-from-an-env-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Provide one or more env files to be loaded before running this task.</p>
+<dt><strong>envfile</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">list[str]</span></code> <a class="reference internal" href="#loading-environment-variables-from-an-env-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Provide one or more env files to be loaded before running this task.</p>
 </dd>
 <dt><strong>cwd</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#running-a-task-with-a-specific-working-directory"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, or it may be absolute.
 Resolves environment variables in the format <code class="docutils literal notranslate"><span class="pre">${VAR_NAME}</span></code>.</p>
 </dd>
-<dt><strong>deps</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">List[str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>A list of task invocations that will be executed before this one.</p>
+<dt><strong>deps</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list[str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>A list of task invocations that will be executed before this one.</p>
 </dd>
-<dt><strong>uses</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Allows this task to use the output of other tasks which are executed first.
+<dt><strong>uses</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="../guides/composition_guide.html"><span class="doc">📖</span></a></span></dt><dd><p>Allows this task to use the output of other tasks which are executed first.
 The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.</p>
 </dd>
 <dt><strong>capture_stdout</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#redirect-task-output-to-a-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Causes the task output to be redirected to a file with the given path.</p>
@@ -461,7 +461,7 @@ above but can also by given a list of such paths like so:</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d63f172e"></script>
+</div><script src="../_static/documentation_options.js?v=72479337"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

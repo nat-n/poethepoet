@@ -255,7 +255,7 @@
 <p>By default the contents of the array are interpreted as references to other tasks (actually an inline <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> task). However, this behaviour can be altered by setting the global <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_array_item_task_type</span></code> option to the name of another task type such as <code class="docutils literal notranslate"><span class="pre">&quot;cmd&quot;</span></code>, or by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option locally on the sequence task.</p>
 <section id="available-task-options">
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code> and <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code>.</p>
 <p>The following options are also accepted:</p>
 <dl>
 <dt><strong>ignore_fail</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#continue-sequence-on-task-failure"><span class="std std-ref">📖</span></a></span></dt><dd><p>If true then the failure (or non-zero return value) of one task in the sequence does not abort the sequence.</p>
@@ -422,7 +422,7 @@ option to the <code class="code highlight toml docutils literal highlight-toml">
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=d63f172e"></script>
+</div><script src="../../_static/documentation_options.js?v=72479337"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
