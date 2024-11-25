@@ -228,7 +228,7 @@ class IncludedConfig(ConfigPartition):
         Options supported directly under tool.poe in included config files
         """
 
-        env: Mapping[str, str] = EmptyDict
+        env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
         envfile: Union[str, Sequence[str]] = tuple()
         tasks: Mapping[str, Any] = EmptyDict
 

@@ -1,4 +1,7 @@
 # tasks to be included relative to the git repo root
 
+tool.poe.env.foo.default = "bar"
+
+
 [tool.poe.tasks]
 did_it_work2 = "poe_test_echo yes"
