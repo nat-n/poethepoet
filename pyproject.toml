@@ -81,7 +81,8 @@ deps   = ["docs"]
 help = "Validate rst syntax in the docs"
 sequence = [
   { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V --ignore-directives autofunction,include" },
-  "docs -b linkcheck"
+  # TODO: re-enable link checking once img.shields.io is back up
+  # "docs -b linkcheck"
 ]
 
 [tool.poe.tasks.clean]
