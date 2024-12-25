@@ -6,9 +6,19 @@ class PoeException(RuntimeError):
     cause: Optional[str]
 
     def __init__(self, msg, *args):
+        super().__init__(msg, *args)
         self.msg = msg
-        self.cause = args[0].args[0] if args else None
-        self.args = (msg, *args)
+
+        if args:
+            cause = args[0]
+            position_clause = (
+                f", near line {cause.line}, position {cause.position}."
+                if getattr(cause, "has_position", False)
+                else "."
+            )
+            self.cause = cause.args[0] + position_clause
+        else:
+            self.cause = None
 
 
 class CyclicDependencyError(PoeException):
@@ -34,7 +44,7 @@ class ConfigValidationError(PoeException):
         task_name: Optional[str] = None,
         index: Optional[int] = None,
         global_option: Optional[str] = None,
-        filename: Optional[str] = None
+        filename: Optional[str] = None,
     ):
         super().__init__(msg, *args)
         self.context = context

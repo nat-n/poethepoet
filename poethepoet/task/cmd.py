@@ -69,14 +69,14 @@ class CmdTask(PoeTask):
             command_lines = parse_poe_cmd(self.spec.content).command_lines
         except ParseError as error:
             raise PoeException(
-                f"Couldn't parse command line for task {self.name!r}: {error.args[0]}"
-            ) from error
+                f"Couldn't parse command line for task {self.name!r}", error
+            )
 
         if not command_lines:
             raise PoeException(
                 f"Invalid cmd task {self.name!r} does not include any command lines"
             )
-        if any(line._terminator == ";" for line in command_lines[:-1]):
+        if any(line.terminator == ";" for line in command_lines[:-1]):
             # lines terminated by a line break or comment are implicitly joined
             raise PoeException(
                 f"Invalid cmd task {self.name!r} includes multiple command lines"

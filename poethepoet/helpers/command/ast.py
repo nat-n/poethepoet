@@ -1,29 +1,28 @@
-# ruff: noqa: N806
+# ruff: noqa: N806, UP007
 r"""
-This module implements a hierarchical parser and AST along the lines of the
-following grammar which is a subset of bash syntax.
+This module implements a hierarchical parser and AST for a subset of bash syntax
+including:
 
-script                : line*
-line                  : word* comment?
-word                  : segment*
-segment               : UNQUOTED_CONTENT | single_quoted_segment | double_quoted_segment
-
-unquoted_segment      : UNQUOTED_CONTENT | param_expansion | glob
-single_quoted_segment : "'" SINGLE_QUOTED_CONTENT "'"
-double_quoted_segment : "\"" (DOUBLE_QUOTED_CONTENT | param_expansion) "\""
-
-comment               : /#[^\n\r\f\v]*/
-glob                  : "?" | "*" | "[" /(\!?\]([^\s\]\\]|\\.)*|([^\s\]\\]|\\.)+)*/ "]"
-
-UNQUOTED_CONTENT      : /[^\s;#*?[$]+/
-SINGLE_QUOTED_CONTENT : /[^']+/
-DOUBLE_QUOTED_CONTENT : /([^\$"]|\[\$"])+/
+- line breaks and comments
+- single or double quotes and character escaping
+- basic glob patterns (python style glob patterns also supported)
+- basic parameter expansion
+- parameter expansion operators: `:+` and `:-`
 """
+
+from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import Literal, Optional, Union, cast
 
-from .ast_core import ContentNode, ParseConfig, ParseCursor, ParseError, SyntaxNode
+from .ast_core import (
+    AnnotatedContentNode,
+    ContentNode,
+    ParseConfig,
+    ParseCursor,
+    ParseError,
+    SyntaxNode,
+)
 
 PARAM_INIT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
 PARAM_CHARS = PARAM_INIT_CHARS + "0123456789"
@@ -40,7 +39,9 @@ class SingleQuotedText(ContentNode):
                 return
             content.append(char)
         else:
-            raise ParseError("Unexpected end of input with unmatched single quote")
+            raise ParseError(
+                "Unexpected end of input with unmatched single quote", chars
+            )
 
 
 class DoubleQuotedText(ContentNode):
@@ -63,6 +64,8 @@ class DoubleQuotedText(ContentNode):
 
 
 class UnquotedText(ContentNode):
+    _break_chars = "'\";#$?*["
+
     def _parse(self, chars: ParseCursor):
         content: list[str] = []
         for char in chars:
@@ -77,7 +80,7 @@ class UnquotedText(ContentNode):
                 content.append(escaped_char)
                 continue
 
-            elif char.isspace() or char in "'\";#$?*[":
+            elif char.isspace() or char in self._break_chars:
                 chars.pushback(char)
                 break
 
@@ -198,10 +201,14 @@ class PythonGlob(Glob):
             self._cancelled = True
 
 
-class ParamExpansion(ContentNode):
+class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
     @property
     def param_name(self) -> str:
         return self._content
+
+    @property
+    def operation(self) -> Optional[ParamOperation]:
+        return self._annotation
 
     def _parse(self, chars: ParseCursor):
         assert chars.take() == "$"
@@ -218,6 +225,14 @@ class ParamExpansion(ContentNode):
                     return
 
                 if param:
+                    if char == ":":
+                        ParamOperationCls: type = self.get_child_node_cls(
+                            ParamOperation
+                        )
+                        chars.pushback(char)
+                        self._annotation = ParamOperationCls(chars, self.config)
+                        continue
+
                     if char not in PARAM_CHARS:
                         raise ParseError(
                             "Bad substitution: Illegal character in parameter name "
@@ -236,7 +251,14 @@ class ParamExpansion(ContentNode):
                         f"{char!r}",
                         chars,
                     )
-            raise ParseError("Unexpected end of input, expected closing '}' after '${'")
+            raise ParseError(
+                "Unexpected end of input, expected closing '}' after '${'", chars
+            )
+
+        elif chars.peek() is None:
+            # End of input means no param expansion
+            chars.pushback("$")
+            self._cancelled = True
 
         else:
             for char in chars:
@@ -291,17 +313,17 @@ class Segment(SyntaxNode[ContentNode]):
         self._children = []
 
         if self._quote_char == "'":
-            return self.__consume_single_quoted(chars)
+            return self._consume_single_quoted(chars)
         elif self._quote_char == '"':
-            return self.__consume_double_quoted(chars)
+            return self._consume_double_quoted(chars)
         else:
-            return self.__consume_unquoted(chars)
+            return self._consume_unquoted(chars)
 
-    def __consume_single_quoted(self, chars):
+    def _consume_single_quoted(self, chars):
         SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
         self._children.append(SingleQuotedTextCls(chars, self.config))
 
-    def __consume_double_quoted(self, chars):
+    def _consume_double_quoted(self, chars):
         DoubleQuotedTextCls = self.get_child_node_cls(DoubleQuotedText)
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
 
@@ -324,9 +346,9 @@ class Segment(SyntaxNode[ContentNode]):
             else:
                 self._children.append(DoubleQuotedTextCls(chars, self.config))
 
-        raise ParseError("Unexpected end of input with unmatched double quote")
+        raise ParseError("Unexpected end of input with unmatched double quote", chars)
 
-    def __consume_unquoted(self, chars):
+    def _consume_unquoted(self, chars):
         UnquotedTextCls = self.get_child_node_cls(UnquotedText)
         GlobCls = self.get_child_node_cls(Glob)
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
@@ -353,6 +375,108 @@ class Segment(SyntaxNode[ContentNode]):
 
             else:
                 self._children.append(UnquotedTextCls(chars, self.config))
+
+
+class WhitespaceText(ContentNode):
+    """
+    Capture unquoted whitespace strings as a single space
+    """
+
+    def _parse(self, chars: ParseCursor):
+        if chars.peek().isspace():
+            self._content = " "
+
+        while char := chars.take():
+            if not char.isspace():
+                chars.pushback(char)
+                break
+
+
+class ParamArgumentUnquotedText(UnquotedText):
+    """
+    Just like UnquotedText except that it may include chars in `;#`, but not `}`
+    """
+
+    _break_chars = "'\"$}"
+
+
+class ParamArgumentSegment(Segment):
+    """
+    Just like Segment except that :
+    - it may include unquoted whitespace or chars in `;#`, but not `}`
+    - glob characters `*?[` are not recognised as special
+    """
+
+    def _consume_unquoted(self, chars):
+        UnquotedTextCls = self.get_child_node_cls(ParamArgumentUnquotedText)
+        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
+        WhitespaceTextCls = self.get_child_node_cls(WhitespaceText)
+
+        while next_char := chars.peek():
+            if next_char in "'\"}":
+                return
+
+            elif next_char.isspace():
+                self._children.append(WhitespaceTextCls(chars, self.config))
+
+            elif next_char == "$":
+                if param_node := ParamExpansionCls(chars, self.config):
+                    self._children.append(param_node)
+                else:
+                    # Hack: escape the $ to make it acceptable as unquoted text
+                    chars.pushback("\\")
+                    self._children.append(UnquotedTextCls(chars, self.config))
+
+            else:
+                self._children.append(UnquotedTextCls(chars, self.config))
+
+
+class ParamArgument(SyntaxNode[ParamArgumentSegment]):
+    @property
+    def segments(self) -> tuple[ParamArgumentSegment, ...]:
+        return tuple(self._children)
+
+    def _parse(self, chars: ParseCursor):
+        SegmentCls = self.get_child_node_cls(ParamArgumentSegment)
+
+        self._children = []
+
+        while next_char := chars.peek():
+            if next_char == "}":
+                return
+            self._children.append(SegmentCls(chars, self.config))
+
+
+class ParamOperation(AnnotatedContentNode[ParamArgument]):
+    _content: Literal[":-", ":+"]
+
+    @property
+    def operator(self) -> Literal[":-", ":+"]:
+        return self._content
+
+    @property
+    def argument(self) -> ParamArgument:
+        assert self._annotation
+        return self._annotation
+
+    def _parse(self, chars: ParseCursor):
+        ParamArgumentCls = self.get_child_node_cls(ParamArgument)
+
+        op_chars = (chars.take(), chars.take())
+        if None in op_chars:
+            raise ParseError(
+                "Unexpected end of input in param expansion, expected '}'",
+                chars,
+            )
+
+        self._content = op_chars[0] + op_chars[1]
+        if self._content not in (":-", ":+"):
+            raise ParseError(
+                f"Bad substitution: Unsupported operator {self._content!r}",
+                chars,
+            )
+
+        self._annotation = ParamArgumentCls(chars, self.config)
 
 
 class Word(SyntaxNode[Segment]):
@@ -389,6 +513,10 @@ class Line(SyntaxNode[Union[Word, Comment]]):
         if self._children and isinstance(self._children[-1], Comment):
             return self._children[-1].comment
         return ""
+
+    @property
+    def terminator(self):
+        return self._terminator
 
     def _parse(self, chars: ParseCursor):
         WordCls = self.get_child_node_cls(Word)

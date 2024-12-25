@@ -31,7 +31,7 @@ def resolve_command_tokens(
     patterns that are not escaped or quoted. In case there are glob patterns in the
     token, any escaped glob characters will have been escaped with [].
     """
-    from .ast import Glob, ParamExpansion, ParseConfig, PythonGlob
+    from .ast import Glob, ParamArgument, ParamExpansion, ParseConfig, PythonGlob
 
     if not config:
         config = ParseConfig(substitute_nodes={Glob: PythonGlob})
@@ -56,6 +56,34 @@ def resolve_command_tokens(
         token_parts.clear()
         return (token, includes_glob)
 
+    def resolve_param_argument(argument: ParamArgument, env: Mapping[str, str]):
+        token_parts = []
+        for segment in argument.segments:
+            for element in segment:
+                if isinstance(element, ParamExpansion):
+                    token_parts.append(resolve_param_value(element, env))
+                else:
+                    token_parts.append(element.content)
+
+        return "".join(token_parts)
+
+    def resolve_param_value(element: ParamExpansion, env: Mapping[str, str]):
+        param_value = env.get(element.param_name, "")
+
+        if element.operation:
+            if param_value:
+                if element.operation.operator == ":+":
+                    # apply 'alternate value' operation
+                    param_value = resolve_param_argument(
+                        element.operation.argument, env
+                    )
+
+            elif element.operation.operator == ":-":
+                # apply 'default value' operation
+                param_value = resolve_param_argument(element.operation.argument, env)
+
+        return param_value
+
     for line in lines:
         # Ignore line breaks, assuming they're only due to comments
         for word in line:
@@ -63,16 +91,19 @@ def resolve_command_tokens(
                 # strip out comments
                 continue
 
-            # For each token part indicate whether it is a glob
             token_parts: list[tuple[str, bool]] = []
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):
-                        param_value = env.get(element.param_name, "")
+                        param_value = resolve_param_value(element, env)
                         if not param_value:
+                            # Empty param value has no effect
                             continue
                         if segment.is_quoted:
-                            token_parts.append((env.get(element.param_name, ""), False))
+                            token_parts.append((param_value, False))
+                        elif param_value.isspace():
+                            # collapse whitespace value
+                            token_parts.append((" ", False))
                         else:
                             # If the the param expansion it not quoted then:
                             # - Whitespace inside a substituted param value results in
