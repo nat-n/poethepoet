@@ -31,9 +31,6 @@ virtualenv = "^20.14.1"
 
 poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
 
-[tool.poetry.group.dev.dependencies]
-bpython = "^0.24"
-
 [tool.poetry.group.docs.dependencies]
 furo                = "^2023.3.27"
 livereload          = "^2.6.3"

@@ -29,7 +29,7 @@ jobs:
           cache: poetry
 
       - name: Install dependencies
-        run: poetry --ansi install --without dev
+        run: poetry --ansi install
 
       - name: Check code formatting
         run: poetry --ansi run poe style
@@ -63,7 +63,7 @@ jobs:
           cache: poetry
 
       - name: Install dependencies
-        run: poetry --ansi install --without dev --without docs
+        run: poetry --ansi install --without docs
 
       - name: Run tests
         run: poetry --ansi run pytest -v --color=yes
