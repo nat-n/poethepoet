@@ -23,7 +23,7 @@ jobs:
           cache: poetry
 
       - name: Install dependencies
-        run: poetry install --without dev --without ci
+        run: poetry install --without ci
 
       - name: Build sphinx documentation website
         run: poetry run poe docs
