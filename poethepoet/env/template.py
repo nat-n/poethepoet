@@ -56,7 +56,7 @@ def apply_envvars_to_template(
     content: str, env: Mapping[str, str], require_braces=False
 ) -> str:
     """
-    Template in ${environmental} $variables from env as if we were in a shell
+    Template in ${environment} $variables from env as if we were in a shell
 
     Supports escaping of the $ if preceded by an odd number of backslashes, in which
     case the backslash immediately preceding the $ is removed. This is an

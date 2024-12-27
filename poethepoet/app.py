@@ -20,28 +20,38 @@ class PoeThePoet:
         this determines where to look for a pyproject.toml file, defaults to
         ``Path().resolve()``
     :type cwd: Path, optional
+
     :param config:
         Either a dictionary with the same schema as a pyproject.toml file, or a
         `PoeConfig <https://github.com/nat-n/poethepoet/blob/main/poethepoet/config/config.py>`_
         object to use as an alternative to loading config from a file.
     :type config: dict | PoeConfig, optional
+
     :param output:
         A stream for the application to write its own output to, defaults to sys.stdout
     :type output: IO, optional
+
     :param poetry_env_path:
         The path to the poetry virtualenv. If provided then it is used by the
         `PoetryExecutor <https://github.com/nat-n/poethepoet/blob/main/poethepoet/executor/poetry.py>`_,
         instead of having to execute poetry in a subprocess to determine this.
     :type poetry_env_path: str, optional
+
     :param config_name:
         The name of the file to load tasks and configuration from. If not set then poe
         will search for config by the following file names: pyproject.toml
         poe_tasks.toml poe_tasks.yaml poe_tasks.json
     :type config_name: str, optional
+
     :param program_name:
         The name of the program that is being run. This is used primarily when
         outputting help messages, defaults to "poe"
     :type program_name: str, optional
+
+    :param env:
+        Optionally provide an alternative base environment for tasks to run with.
+        If no mapping is provided then ``os.environ`` is used.
+    :type env: dict, optional
     """
 
     cwd: Path
@@ -58,6 +68,7 @@ class PoeThePoet:
         poetry_env_path: Optional[str] = None,
         config_name: Optional[str] = None,
         program_name: str = "poe",
+        env: Optional[Mapping[str, str]] = None,
     ):
         from .config import PoeConfig
         from .ui import PoeUi
@@ -75,6 +86,7 @@ class PoeThePoet:
         )
         self.ui = PoeUi(output=output, program_name=program_name)
         self._poetry_env_path = poetry_env_path
+        self._env = env if env is not None else os.environ
 
     def __call__(self, cli_args: Sequence[str], internal: bool = False) -> int:
         """
@@ -212,9 +224,9 @@ class PoeThePoet:
         result = RunContext(
             config=self.config,
             ui=self.ui,
-            env=os.environ,
+            env=self._env,
             dry=self.ui["dry_run"],
-            poe_active=os.environ.get("POE_ACTIVE"),
+            poe_active=self._env.get("POE_ACTIVE"),
             multistage=multistage,
             cwd=self.cwd,
         )

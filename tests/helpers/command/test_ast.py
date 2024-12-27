@@ -107,6 +107,195 @@ def test_parse_params():
     assert tree.lines[14] == ((("a", "xx1", "? a", "yy2", "b a", "$? ", "z"),),)
 
 
+def test_parse_param_operators():
+    tree = parse_poe_cmd(
+        """
+        0${x}B
+        1${x:+foo}B
+        2${x:-bar}B
+        3${x:+$foo1}B
+        4${x:-a${bar2}b}B
+        5${x:- a ${bar} b }B
+        6${x:- a ${bar:+ $incepted + 1'"'"';#" } b }B
+        7${x:++}B
+        8${x:-$}B
+        9${x:- }B
+        10${x:-}B
+        11${x:-(#);?[t]*.ok}B
+        12${x:-?[t]*.ok}B
+        13${x:-
+        split\\  \\ \
+        lines
+        '  '
+        !
+        }B
+        """,
+        config=ParseConfig(),
+    )
+    print(tree.pretty())
+    assert len(tree.lines) == 14
+    assert tree.lines[0].words[0].segments[0] == ("0", "x", "B")
+    assert tree.lines[1].words[0].segments[0] == (
+        "1",
+        (
+            "x",
+            (
+                ":+",
+                (("foo",),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[2].words[0].segments[0] == (
+        "2",
+        (
+            "x",
+            (
+                ":-",
+                (("bar",),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[3].words[0].segments[0] == (
+        "3",
+        (
+            "x",
+            (
+                ":+",
+                ((("foo1",),),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[4].words[0].segments[0] == (
+        "4",
+        (
+            "x",
+            (
+                ":-",
+                (("a", ("bar2",), "b"),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[5].words[0].segments[0] == (
+        "5",
+        (
+            "x",
+            (
+                ":-",
+                ((" ", "a", " ", ("bar",), " ", "b", " "),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[6].words[0].segments[0] == (
+        "6",
+        (
+            "x",
+            (
+                ":-",
+                (
+                    (
+                        " ",
+                        "a",
+                        " ",
+                        (
+                            "bar",
+                            (
+                                ":+",
+                                (
+                                    (" ", ("incepted",), " ", "+", " ", "1"),
+                                    ('"',),
+                                    ("';#",),
+                                    (" ",),
+                                ),
+                            ),
+                        ),
+                        " ",
+                        "b",
+                        " ",
+                    ),
+                ),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[7].words[0].segments[0] == (
+        "7",
+        (
+            "x",
+            (
+                ":+",
+                (("+",),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[8].words[0].segments[0] == (
+        "8",
+        (
+            "x",
+            (
+                ":-",
+                (("$",),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[9].words[0].segments[0] == (
+        "9",
+        (
+            "x",
+            (
+                ":-",
+                ((" ",),),
+            ),
+        ),
+        "B",
+    )
+    assert tree.lines[10].words[0].segments[0] == (
+        "10",
+        (
+            "x",
+            (":-", tuple()),
+        ),
+        "B",
+    )
+    assert tree.lines[11].words[0].segments[0] == (
+        "11",
+        (
+            "x",
+            (":-", (("(#);?[t]*.ok",),)),
+        ),
+        "B",
+    )
+    assert tree.lines[12].words[0].segments[0] == (
+        "12",
+        (
+            "x",
+            (":-", (("?[t]*.ok",),)),
+        ),
+        "B",
+    )
+    assert tree.lines[13].words[0].segments[0] == (
+        "13",
+        (
+            "x",
+            (
+                ":-",
+                (
+                    (" ", "split ", " ", " ", " ", "lines", " "),
+                    ("  ",),
+                    (" ", "!", " "),
+                ),
+            ),
+        ),
+        "B",
+    )
+
+
 def test_invalid_param_expansion():
     with pytest.raises(ParseError) as excinfo:
         parse_poe_cmd("""${}""", config=ParseConfig())

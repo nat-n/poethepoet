@@ -204,6 +204,7 @@ def run_poe(capsys, projects):
         project: Optional[str] = None,
         config_name="pyproject.toml",
         program_name="poe",
+        env: Optional[Mapping[str, str]] = None,
     ) -> PoeRunResult:
         cwd = projects.get(project, cwd)
         output_capture = StringIO()
@@ -213,6 +214,7 @@ def run_poe(capsys, projects):
             output=output_capture,
             config_name=config_name,
             program_name=program_name,
+            env=env,
         )
         result = poe(run_args)
         output_capture.seek(0)
