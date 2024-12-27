@@ -26,6 +26,7 @@ It is important to understand that ``cmd`` tasks are executed without a shell (t
 
 .. _ref_env_vars:
 
+
 Referencing environment variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -48,6 +49,29 @@ Parameter expansion can also can be disabled by escaping the $ with a backslash 
 
   [tool.poe.tasks]
   greet = "echo Hello \\$USER"  # the backslash itself needs escaping for the toml parser
+
+
+Parameter expansion operators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When referencing an environment variable in a cmd task you can use the ``:-`` operator from bash to specify a *default value*, to be used in case the variable is unset. Similarly the ``:+`` operator can be used to specify an *alternate value* to use in place of the environment variable if it *is* set.
+
+In the following example, if ``AWS_REGION`` has a value then it will be used, otherwise ``us-east-1`` will be used as a fallback.
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  tables = "aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}"
+
+The ``:+`` or *alternate value* operator is especially useful in cases such as the following where you might want to control whether some CLI options are passed to the command.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.aws-identity]
+  cmd = "aws sts get-caller-identity ${ARN_ONLY:+ --no-cli-pager --output text --query 'Arn'}"
+  args = [{ name = "ARN_ONLY", options = ["--arn-only"], type = "boolean" }]
+
+In this example we declare a boolean argument with no default, so if the ``--arn-only`` flag is provided to the task then three additional CLI options will be included in the task content.
 
 
 Glob expansion
@@ -78,7 +102,7 @@ Here's an example of task using a recursive glob pattern:
 
 .. seealso::
 
-  Much like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.
+  Just like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.
 
 
 .. |glob_link| raw:: html

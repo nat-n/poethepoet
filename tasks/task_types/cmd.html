@@ -272,6 +272,22 @@ Hello<span class="w"> </span>nat
 </pre></div>
 </div>
 </section>
+<section id="parameter-expansion-operators">
+<h3>Parameter expansion operators<a class="headerlink" href="#parameter-expansion-operators" title="Link to this heading">¶</a></h3>
+<p>When referencing an environment variable in a cmd task you can use the <code class="docutils literal notranslate"><span class="pre">:-</span></code> operator from bash to specify a <em>default value</em>, to be used in case the variable is unset. Similarly the <code class="docutils literal notranslate"><span class="pre">:+</span></code> operator can be used to specify an <em>alternate value</em> to use in place of the environment variable if it <em>is</em> set.</p>
+<p>In the following example, if <code class="docutils literal notranslate"><span class="pre">AWS_REGION</span></code> has a value then it will be used, otherwise <code class="docutils literal notranslate"><span class="pre">us-east-1</span></code> will be used as a fallback.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">tables</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}&quot;</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">:+</span></code> or <em>alternate value</em> operator is especially useful in cases such as the following where you might want to control whether some CLI options are passed to the command.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.aws-identity]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;aws sts get-caller-identity ${ARN_ONLY:+ --no-cli-pager --output text --query &#39;Arn&#39;}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;ARN_ONLY&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--arn-only&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
+<p>In this example we declare a boolean argument with no default, so if the <code class="docutils literal notranslate"><span class="pre">--arn-only</span></code> flag is provided to the task then three additional CLI options will be included in the task content.</p>
+</section>
 <section id="glob-expansion">
 <h3>Glob expansion<a class="headerlink" href="#glob-expansion" title="Link to this heading">¶</a></h3>
 <p>Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. The supported glob syntax is that of the <a href="https://docs.python.org/3/library/glob.html" target="_blank">python standard library glob module</a>, which differs from bash in that square bracket patterns don’t support character classes, don’t break on whitespace, and don’t allow escaping of contained characters.</p>
@@ -294,7 +310,7 @@ Hello<span class="w"> </span>nat
 </div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>Much like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.</p>
+<p>Just like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.</p>
 </div>
 </section>
 </section>
@@ -371,6 +387,7 @@ Hello<span class="w"> </span>nat
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
 <li><a class="reference internal" href="#shell-like-features">Shell like features</a><ul>
 <li><a class="reference internal" href="#referencing-environment-variables">Referencing environment variables</a></li>
+<li><a class="reference internal" href="#parameter-expansion-operators">Parameter expansion operators</a></li>
 <li><a class="reference internal" href="#glob-expansion">Glob expansion</a></li>
 </ul>
 </li>
@@ -385,7 +402,7 @@ Hello<span class="w"> </span>nat
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=72479337"></script>
+</div><script src="../../_static/documentation_options.js?v=4440c9c5"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
