@@ -245,7 +245,7 @@ def run_poe_main(capsys, projects):
 
 
 @pytest.fixture(scope="session")
-def run_poetry(use_venv, poe_project_path):
+def run_poetry(use_venv, poe_project_path, version: str = "2.0.0"):
     venv_location = poe_project_path / "tests" / "temp" / "poetry_venv"
 
     def run_poetry(args: list[str], cwd: str, env: Optional[dict[str, str]] = None):
@@ -275,7 +275,7 @@ def run_poetry(use_venv, poe_project_path):
         venv_location,
         [
             ".[poetry_plugin]",
-            "./tests/fixtures/packages/poetry-1.8.2-py3-none-any.whl",
+            f"./tests/fixtures/packages/poetry-{version}-py3-none-any.whl",
         ],
         require_empty=True,
     ):
