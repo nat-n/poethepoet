@@ -15,7 +15,7 @@ classifiers   = ["Topic :: Software Development :: Build Tools"]
 python = ">=3.9"
 pastel = "^0.2.1"
 tomli  = { version = ">=1.2.2", python = "<3.11" }
-poetry = { version = "^1.0", allow-prereleases = true, optional = true }
+poetry = { version = ">=1.0,<3.0", python = "<4", optional = true }
 pyyaml = "^6.0.2"
 
 [tool.poetry.group.ci.dependencies]
