@@ -1,22 +1,32 @@
-[tool.poetry]
-name          = "poethepoet"
-version       = "0.32.1"
-description   = "A task runner that works well with poetry."
-authors       = ["Nat Noordanus <n@noordan.us>"]
-readme        = "README.md"
-license       = "MIT"
-repository    = "https://github.com/nat-n/poethepoet"
-homepage      = "https://github.com/nat-n/poethepoet"
-documentation = "https://poethepoet.natn.io/"
-keywords      = ["automation", "tasks", "task-runner", "plugin", "poetry", "poe"]
-classifiers   = ["Topic :: Software Development :: Build Tools"]
+[project]
+name            = "poethepoet"
+version         = "0.32.1"
+description     = "A task runner that works well with poetry."
+authors         = [{ name = "Nat Noordanus", email = "n@noordan.us>" }]
+readme          = "README.md"
+license         = "MIT"
+repository      = "https://github.com/nat-n/poethepoet"
+homepage        = "https://github.com/nat-n/poethepoet"
+documentation   = "https://poethepoet.natn.io/"
+keywords        = ["automation", "tasks", "task-runner", "plugin", "poetry", "poe"]
+classifiers     = ["Topic :: Software Development :: Build Tools"]
+requires-python = ">=3.9"
 
-[tool.poetry.dependencies]
-python = ">=3.9"
-pastel = "^0.2.1"
-tomli  = { version = ">=1.2.2", python = "<3.11" }
-poetry = { version = ">=1.0,<3.0", python = "<4", optional = true }
-pyyaml = "^6.0.2"
+dependencies = [
+  "pastel (>=0.2.1,<0.3.0)",
+  "tomli  (>=1.2.2) ; python_version < '3.11'",
+  "pyyaml (>=6.0.2,<7.0)"
+]
+
+[project.optional-dependencies]
+poetry_plugin = ["poetry (>=1.2.0,<3.0.0) ; python_version < '4.0'"]
+
+[project.entry-points."poetry.application.plugin"]
+poethepoet = "poethepoet.plugin:PoetryPlugin"
+
+[project.scripts]
+poe = "poethepoet:main"
+
 
 [tool.poetry.group.ci.dependencies]
 black        = "^23.3.0"
@@ -37,15 +47,6 @@ livereload          = "^2.6.3"
 sphinx              = "^7.4.7"
 sphinx-copybutton   = "^0.5.1"
 sphinxext-opengraph = "^0.9.0"
-
-[tool.poetry.extras]
-poetry_plugin = ["poetry"]
-
-[tool.poetry.scripts]
-poe = "poethepoet:main"
-
-[tool.poetry.plugins."poetry.application.plugin"]
-poethepoet = "poethepoet.plugin:PoetryPlugin"
 
 
 [tool.poe.tasks]
@@ -78,8 +79,7 @@ deps   = ["docs"]
 help = "Validate rst syntax in the docs"
 sequence = [
   { cmd  = "rstcheck -r docs --ignore-roles bash,toml,sh,python --ignore-substitutions V --ignore-directives autofunction,include" },
-  # TODO: re-enable link checking once img.shields.io is back up
-  # "docs -b linkcheck"
+  "docs -b linkcheck"
 ]
 
 [tool.poe.tasks.clean]
