@@ -1,0 +1,21 @@
+[project]
+name = "uv-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+# We need to have an empty table here to ensure that the tool is recognized
+
+[tool.poe.tasks]
+show-version = "test_print_version"
+test-package-version.script = "scripts:test_package_version"
+test-package-exec-version.script = "scripts:test_package_exec_version"
+show-env = "poe_test_env"
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
