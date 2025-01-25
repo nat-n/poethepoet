@@ -68,7 +68,7 @@
 
 If you're using poetry, then poe will automatically use CLI tools and libraries from your poetry managed virtualenv without you having to run `poetry run` or `poetry shell`
 
-Poe can also be [used without poetry](https://poethepoet.natn.io/index.html#usage-without-poetry).
+Poe can also be [used without poetry](https://poethepoet.natn.io/guides/without_poetry.html).
 
 ## Contributing
 
