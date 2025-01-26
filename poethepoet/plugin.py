@@ -154,7 +154,7 @@ class PoetryPlugin(ApplicationPlugin):
         # Try respect poetry's '--directory' if set
         try:
             pyproject_dir = application.poetry.pyproject_path.parent
-        except AttributeError:
+        except (AttributeError, RuntimeError):
             pyproject_dir = None
 
         poe_config = PoeConfig(cwd=pyproject_dir)
