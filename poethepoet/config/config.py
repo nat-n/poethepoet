@@ -120,9 +120,14 @@ class PoeConfig:
 
     @property
     def is_poetry_project(self) -> bool:
-        return (
-            self._project_config.path.name == "pyproject.toml"
-            and "poetry" in self._project_config.full_config.get("tool", {})
+        full_config = self._project_config.full_config
+        return self._project_config.path.name == "pyproject.toml" and (
+            "poetry" in full_config.get("tool", {})
+            or (
+                # Fallback required to work out of the box with some poetry 2.0 projects
+                full_config.get("build-system", {}).get("build-backend", "")
+                == "poetry.core.masonry.api"
+            )
         )
 
     @property
