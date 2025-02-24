@@ -52,7 +52,7 @@ class PoetryExecutor(PoeExecutor):
 
         # Run this task with `poetry run`
         return self._execute_cmd(
-            (self._poetry_cmd(), "run", *cmd),
+            (self._poetry_cmd(), "--no-plugins", "run", *cmd),
             input=input,
             use_exec=use_exec,
         )
@@ -88,7 +88,7 @@ class PoetryExecutor(PoeExecutor):
 
             exec_cache["poetry_virtualenv"] = (
                 Popen(
-                    (self._poetry_cmd(), "env", "info", "-p"),
+                    (self._poetry_cmd(), "--no-plugins", "env", "info", "-p"),
                     stdout=PIPE,
                     cwd=self.context.config.project_dir,
                     env=clean_env,

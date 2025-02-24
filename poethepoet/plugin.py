@@ -1,23 +1,26 @@
-from pathlib import Path
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from cleo.commands.command import Command
-from cleo.events.console_command_event import ConsoleCommandEvent
 from cleo.events.console_events import COMMAND, TERMINATE
-from cleo.events.event_dispatcher import EventDispatcher
-from cleo.io.io import IO
 from poetry.console.application import COMMANDS, Application
 from poetry.plugins.application_plugin import ApplicationPlugin
 
 from .exceptions import PoePluginException
 
 if TYPE_CHECKING:
+    from cleo.events.console_command_event import ConsoleCommandEvent
+    from cleo.events.event_dispatcher import EventDispatcher
+    from cleo.io.io import IO
+
     from .config import PoeConfig
 
 
 class PoeCommand(Command):
     prefix: str
     command_prefix: str = "poe"
+    poe_config: PoeConfig
 
     def __init__(self):
         super().__init__()
@@ -45,9 +48,10 @@ class PoeCommand(Command):
             raise SystemExit(task_status)
 
     @classmethod
-    def get_poe(cls, application: Application, io: IO):
+    def get_poe(
+        cls, application: Application, io: IO, poe_config: PoeConfig | None = None
+    ):
         from .app import PoeThePoet
-        from .config import PoeConfig
 
         try:
             from poetry.utils.env import EnvManager
@@ -56,23 +60,17 @@ class PoeCommand(Command):
         except:  # noqa: E722
             poetry_env_path = None
 
-        # Get the cwd from poetry to ensure '--directory subdir' usage
-        try:
-            cwd = application.poetry.pyproject_path
-        except AttributeError:
-            cwd = Path().resolve()
-        config = PoeConfig(cwd=cwd)
+        poe_config = poe_config or cls.poe_config
 
         if io.output.is_quiet():
-            config._baseline_verbosity = -1
+            poe_config._baseline_verbosity = -1
         elif io.is_very_verbose():
-            config._baseline_verbosity = 2
+            poe_config._baseline_verbosity = 2
         elif io.is_verbose():
-            config._baseline_verbosity = 1
+            poe_config._baseline_verbosity = 1
 
         return PoeThePoet(
-            cwd=cwd,
-            config=config,
+            config=poe_config,
             output=io.output.stream,
             poetry_env_path=poetry_env_path,
             program_name=f"poetry {cls.command_prefix}",
@@ -126,10 +124,11 @@ class PoetryPlugin(ApplicationPlugin):
                         f"Poe task {task_name!r} conflicts with a poetry command. "
                         "Please rename the task or the configure a command prefix."
                     )
-                self._register_command(application, task_name, task)
+                self._register_command(application, poe_config, task_name, task)
         else:
             self._register_command(
                 application,
+                poe_config,
                 "",
                 {"help": "Run poe tasks defined for this project"},
                 command_prefix,
@@ -138,23 +137,23 @@ class PoetryPlugin(ApplicationPlugin):
                 if task_name.startswith("_"):
                     continue
                 self._register_command(
-                    application, task_name, task, f"{command_prefix} "
+                    application, poe_config, task_name, task, f"{command_prefix} "
                 )
 
         self._monkey_patch_cleo(command_prefix, list(poe_tasks.keys()))
 
         self._register_command_event_handler(
-            application, poe_config._project_config.get("poetry_hooks", {})
+            application, poe_config._project_config.get("poetry_hooks", {}), poe_config
         )
 
     @classmethod
-    def _get_config(cls, application: Application) -> "PoeConfig":
+    def _get_config(cls, application: Application) -> PoeConfig:
         from .config import PoeConfig
 
         # Try respect poetry's '--directory' if set
         try:
             pyproject_dir = application.poetry.pyproject_path.parent
-        except (AttributeError, RuntimeError):
+        except AttributeError:
             pyproject_dir = None
 
         poe_config = PoeConfig(cwd=pyproject_dir)
@@ -169,7 +168,12 @@ class PoetryPlugin(ApplicationPlugin):
             )
 
     def _register_command(
-        self, application: Application, task_name: str, task: Any, prefix: str = ""
+        self,
+        application: Application,
+        poe_config: PoeConfig,
+        task_name: str,
+        task: Any,
+        prefix: str = "",
     ):
         command_name = prefix + task_name
         task_help = task.get("help", "") if isinstance(task, dict) else ""
@@ -178,12 +182,17 @@ class PoetryPlugin(ApplicationPlugin):
             type(
                 (task_name or prefix).replace("-", "").capitalize() + "Command",
                 (PoeCommand,),
-                {"name": command_name, "description": task_help, "prefix": prefix},
+                {
+                    "name": command_name,
+                    "description": task_help,
+                    "prefix": prefix,
+                    "poe_config": poe_config,
+                },
             ),
         )
 
     def _register_command_event_handler(
-        self, application: Application, hooks: dict[str, str]
+        self, application: Application, hooks: dict[str, str], poe_config: PoeConfig
     ):
         if not hooks:
             return
@@ -201,16 +210,16 @@ class PoetryPlugin(ApplicationPlugin):
         if pre_hooks:
             application.event_dispatcher.add_listener(
                 COMMAND,
-                self._get_command_event_handler(pre_hooks, application),
+                self._get_command_event_handler(pre_hooks, application, poe_config),
             )
         if post_hooks:
             application.event_dispatcher.add_listener(
                 TERMINATE,
-                self._get_command_event_handler(post_hooks, application),
+                self._get_command_event_handler(post_hooks, application, poe_config),
             )
 
     def _get_command_event_handler(
-        self, hooks: dict[str, str], application: Application
+        self, hooks: dict[str, str], application: Application, poe_config: PoeConfig
     ):
         def command_event_handler(
             event: ConsoleCommandEvent,
@@ -223,7 +232,7 @@ class PoetryPlugin(ApplicationPlugin):
 
             import shlex
 
-            task_status = PoeCommand.get_poe(application, event.io)(
+            task_status = PoeCommand.get_poe(application, event.io, poe_config)(
                 cli_args=shlex.split(task), internal=True
             )
 
@@ -281,10 +290,17 @@ class PoetryPlugin(ApplicationPlugin):
 
 def _index_of_first_non_option(tokens: list[str]):
     """
-    Find the index of the first token that doesn't start with `-`
+    Find the index of the first token that doesn't start with `-`, and isn't directly
+    preceded by either `--project` or `--directory`.
+
     Returns len(tokens) if none is found.
     """
-    return next(
-        (index for index, token in enumerate(tokens) if token[0] != "-"),
-        len(tokens),
-    )
+
+    options_with_args = ("--project", "--directory")
+    previous_token = ""
+    for index, token in enumerate(tokens):
+        if token[0] != "-" and previous_token not in options_with_args:
+            return index
+        previous_token = token
+    else:
+        return len(tokens)
