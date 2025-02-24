@@ -244,11 +244,14 @@ def run_poe_main(capsys, projects):
     return run_poe_main
 
 
-@pytest.fixture(scope="session")
-def run_poetry(use_venv, poe_project_path, version: str = "2.0.0"):
-    venv_location = poe_project_path / "tests" / "temp" / "poetry_venv"
+def run_poetry(use_venv, poe_project_path, version):
+    venv_location = poe_project_path / "tests" / "temp" / f"poetry_venv_{version}"
 
-    def run_poetry(args: list[str], cwd: str, env: Optional[dict[str, str]] = None):
+    def run_poetry(
+        args: list[str],
+        cwd: str,
+        env: Optional[dict[str, str]] = None,
+    ):
         venv = Virtualenv(venv_location)
 
         cmd = (venv.resolve_executable("python"), "-m", "poetry", *args)
@@ -280,6 +283,16 @@ def run_poetry(use_venv, poe_project_path, version: str = "2.0.0"):
         require_empty=True,
     ):
         yield run_poetry
+
+
+@pytest.fixture(scope="session")
+def run_poetry_1(use_venv, poe_project_path):
+    yield from run_poetry(use_venv, poe_project_path, version="1.8.2")
+
+
+@pytest.fixture(scope="session")
+def run_poetry_2(use_venv, poe_project_path):
+    yield from run_poetry(use_venv, poe_project_path, version="2.0.0")
 
 
 @pytest.fixture(scope="session")

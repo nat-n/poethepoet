@@ -177,9 +177,14 @@ class PoeConfig:
                 break
 
         else:
-            raise PoeException(
-                f"No poe configuration found from location {target_path}"
-            )
+            if target_path is not None:
+                raise PoeException(
+                    f"No poe configuration found from location {target_path}"
+                )
+            else:
+                raise PoeException(
+                    f"No poe configuration found from location {self._project_dir}"
+                )
 
         self._load_includes(strict=strict)
 

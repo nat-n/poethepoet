@@ -129,7 +129,7 @@ sequence = ["docs-check", "style", "types", "lint", "test"]
 [tool.poe.tasks.install-poetry-plugin]
 help = "Install or update this project as a plugin in poetry"
 sequence = [
-  { cmd = "poetry self remove poethepoet"},
+  { cmd = "poetry --no-plugins self remove poethepoet"},
   { cmd = "poetry self add \"${POE_ROOT}[poetry_plugin]\""}
 ]
 ignore_fail = true
