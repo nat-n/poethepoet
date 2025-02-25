@@ -104,7 +104,7 @@ class ScriptTask(PoeTask):
 
         self._print_action(shlex.join(argv), context.dry)
         return self._get_executor(
-            context, env, delegate_dry_run=has_dry_run_ref
+            context, env, delegate_dry_run=has_dry_run_ref, resolve_python=True
         ).execute(cmd, use_exec=self.spec.options.get("use_exec", False))
 
     def parse_content(

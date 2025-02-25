@@ -48,8 +48,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         context: "RunContext",
         options: Mapping[str, str],
         env: "EnvVarsManager",
+        *,
         working_dir: Optional[Path] = None,
         capture_stdout: Union[str, bool] = False,
+        resolve_python: bool = False,
         dry: bool = False,
     ):
         self.invocation = invocation
@@ -64,6 +66,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             if capture_stdout and isinstance(capture_stdout, str)
             else bool(capture_stdout)
         )
+        self._should_resolve_python = resolve_python
         self.dry = dry
         self._is_windows = sys.platform == "win32"
 
@@ -83,13 +86,21 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         env: "EnvVarsManager",
         working_dir: Optional[Path] = None,
         capture_stdout: Union[str, bool] = False,
+        resolve_python: bool = False,
         dry: bool = False,
     ) -> "PoeExecutor":
         """
         Create an executor.
         """
         return cls._resolve_implementation(context, executor_config["type"])(
-            invocation, context, executor_config, env, working_dir, capture_stdout, dry
+            invocation=invocation,
+            context=context,
+            options=executor_config,
+            env=env,
+            working_dir=working_dir,
+            capture_stdout=capture_stdout,
+            resolve_python=resolve_python,
+            dry=dry,
         )
 
     @classmethod
@@ -125,12 +136,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         Execute the given cmd.
         """
 
-        # Attempt to explicitly resolve the target executable, because we can't count
-        # on the OS to do this consistently.
-        resolved_executable = shutil.which(cmd[0])
-        if resolved_executable:
-            cmd = (resolved_executable, *cmd[1:])
-
+        cmd = (self._resolve_executable(cmd[0]), *cmd[1:])
         return self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
     def _execute_cmd(
@@ -255,6 +261,23 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         signal.signal(signal.SIGINT, old_sigint_handler)
 
         return proc.returncode
+
+    def _resolve_executable(self, executable: str):
+        if self._should_resolve_python and executable == "python":
+            if python := shutil.which("python"):
+                return python
+            if python := shutil.which("python3"):
+                return python
+            if POE_DEBUG:
+                print(
+                    " ! Could not resolve python or python3 from the path, "
+                    "falling back to sys.executable"
+                )
+            return sys.executable
+
+        # Attempt to explicitly resolve the target executable, because we can't
+        # count on the OS to do this consistently.
+        return shutil.which(executable) or executable
 
     @classmethod
     def validate_config(cls, config: dict[str, Any]):

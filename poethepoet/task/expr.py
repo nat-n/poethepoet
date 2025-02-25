@@ -87,7 +87,7 @@ class ExprTask(PoeTask):
         cmd = ("python", "-c", "".join(script))
 
         self._print_action(self.spec.content.strip(), context.dry)
-        return self._get_executor(context, env).execute(
+        return self._get_executor(context, env, resolve_python=True).execute(
             cmd, use_exec=self.spec.options.use_exec
         )
 
