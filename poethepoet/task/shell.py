@@ -86,9 +86,9 @@ class ShellTask(PoeTask):
 
         self._print_action(content, context.dry)
 
-        return self._get_executor(context, env).execute(
-            interpreter_cmd, input=content.encode()
-        )
+        return self._get_executor(
+            context, env, resolve_python=interpreter_cmd == "python"
+        ).execute(interpreter_cmd, input=content.encode())
 
     def _get_interpreter_config(self) -> tuple[str, ...]:
         result: Union[str, tuple[str, ...]] = self.spec.options.get(

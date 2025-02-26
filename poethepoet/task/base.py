@@ -479,6 +479,7 @@ class PoeTask(metaclass=MetaPoeTask):
         context: "RunContext",
         env: "EnvVarsManager",
         *,
+        resolve_python: bool = False,
         delegate_dry_run: bool = False,
     ):
         return context.get_executor(
@@ -487,6 +488,7 @@ class PoeTask(metaclass=MetaPoeTask):
             working_dir=self.get_working_dir(env),
             executor_config=self.spec.options.get("executor"),
             capture_stdout=self.capture_stdout,
+            resolve_python=resolve_python,
             delegate_dry_run=delegate_dry_run,
         )
 

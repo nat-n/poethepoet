@@ -94,6 +94,7 @@ class RunContext:
         *,
         executor_config: Optional[Mapping[str, str]] = None,
         capture_stdout: Union[str, bool] = False,
+        resolve_python: bool = False,
         delegate_dry_run: bool = False,
     ) -> "PoeExecutor":
         """
@@ -118,5 +119,6 @@ class RunContext:
             env=env,
             working_dir=working_dir,
             capture_stdout=capture_stdout,
+            resolve_python=resolve_python,
             dry=False if delegate_dry_run else self.dry,
         )

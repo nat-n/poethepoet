@@ -48,6 +48,7 @@ class PoetryExecutor(PoeExecutor):
 
         if self._virtualenv_creation_disabled():
             # There's no poetry env, and there isn't going to be
+            cmd = (self._resolve_executable(cmd[0]), *cmd[1:])
             return self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
         # Run this task with `poetry run`
