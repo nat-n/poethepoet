@@ -103,12 +103,14 @@ class PoeThePoet:
             self.ui.print_version()
             return 0
 
+        should_display_help = self.ui["help"] != Ellipsis
+
         try:
             self.config.load(target_path=self.ui["project_root"])
             for task_spec in self.task_specs.load_all():
                 task_spec.validate(self.config, self.task_specs)
         except PoeException as error:
-            if self.ui["help"]:
+            if should_display_help:
                 self.print_help()
                 return 0
             self.print_help(error=error)
@@ -116,7 +118,7 @@ class PoeThePoet:
 
         self.ui.set_default_verbosity(self.config.verbosity)
 
-        if self.ui["help"]:
+        if should_display_help:
             self.print_help()
             return 0
 

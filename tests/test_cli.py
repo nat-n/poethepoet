@@ -148,6 +148,31 @@ def test_poe_env_vars_are_set(run_poe_subproc):
         assert env_var in result.stdout
 
 
+def test_documentation_of_single_task_with_no_help_or_args(run_poe):
+    result = run_poe("-h", "echo-args", project="scripts")
+    assert result.capture == (
+        "\n"
+        "Usage:\n"
+        "  poe [global options] echo-args [named arguments] -- [free arguments]\n"
+        "\n\n"
+    )
+
+
+def test_documentation_of_single_task_with_help_and_args(run_poe):
+    result = run_poe("--help", "greet-strict", project="scripts")
+    assert result.capture == (
+        "\n"
+        "Description:\n"
+        "  All arguments are required\n\n"
+        "Usage:\n"
+        "  poe [global options] greet-strict [named arguments] -- [free arguments]\n\n"
+        "Named arguments:\n"
+        "  --greeting          this one is required [default: ${DOES}n't ${STUFF}]\n"
+        "  --name              and this one is required\n"
+        "\n\n"
+    )
+
+
 def test_documentation_of_task_named_args(run_poe):
     result = run_poe(project="scripts")
     assert result.capture.startswith(
