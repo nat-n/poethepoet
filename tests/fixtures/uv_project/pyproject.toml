@@ -1,0 +1,24 @@
+[project]
+name = "uv-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "poe-test-helpers",
+    "poe-test-package",
+]
+
+[tool.uv.sources]
+poe-test-helpers = { path = "../packages/poe_test_helpers" }
+poe-test-package = { path = "../packages/poe_test_package" }
+
+[tool.poe.tasks]
+show-version = "test_print_version"
+script-task.script = "uv_project:hello"
+show-env = "poe_test_env"
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -131,6 +131,15 @@ class PoeConfig:
         )
 
     @property
+    def is_uv_project(self) -> bool:
+        # Note: That it can happen that a uv managed project has no uv config
+        #       In this case, this check would fail.
+        return (
+            self._project_config.path.name == "pyproject.toml"
+            and "uv" in self._project_config.full_config.get("tool", {})
+        )
+
+    @property
     def project_dir(self) -> Path:
         return self._project_dir
 

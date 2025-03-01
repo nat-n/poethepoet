@@ -114,6 +114,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         if executor_type == "auto":
             for impl in [
                 cls.__executor_types["poetry"],
+                cls.__executor_types["uv"],
                 cls.__executor_types["virtualenv"],
             ]:
                 if impl.works_with_context(context):
