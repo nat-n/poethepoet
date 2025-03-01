@@ -4,15 +4,18 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "poe-test-helpers",
+    "poe-test-package",
+]
 
-[tool.uv]
-# We need to have an empty table here to ensure that the tool is recognized
+[tool.uv.sources]
+poe-test-helpers = { path = "../packages/poe_test_helpers" }
+poe-test-package = { path = "../packages/poe_test_package" }
 
 [tool.poe.tasks]
 show-version = "test_print_version"
-test-package-version.script = "scripts:test_package_version"
-test-package-exec-version.script = "scripts:test_package_exec_version"
+script-task.script = "uv_project:hello"
 show-env = "poe_test_env"
 
 

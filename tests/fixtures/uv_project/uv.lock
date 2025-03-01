@@ -1,0 +1,27 @@
+version = 1
+requires-python = ">=3.12"
+
+[[package]]
+name = "poe-test-helpers"
+version = "0.2.0"
+source = { directory = "../packages/poe_test_helpers" }
+
+[[package]]
+name = "poe-test-package"
+version = "0.0.99"
+source = { directory = "../packages/poe_test_package" }
+
+[[package]]
+name = "uv-project"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "poe-test-helpers" },
+    { name = "poe-test-package" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "poe-test-helpers", directory = "../packages/poe_test_helpers" },
+    { name = "poe-test-package", directory = "../packages/poe_test_package" },
+]

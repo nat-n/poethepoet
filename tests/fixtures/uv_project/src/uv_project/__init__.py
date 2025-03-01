@@ -1,2 +1,5 @@
+import poe_test_package
+
+
 def hello() -> str:
-    return "Hello from uv-project!"
+    print("Hello from uv-project", poe_test_package.__version__)

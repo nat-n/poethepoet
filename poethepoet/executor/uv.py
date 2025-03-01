@@ -32,9 +32,15 @@ class UvExecutor(PoeExecutor):
         We simply use `uv run`, which handles the virtualenv and other setup for us.
         """
 
+        uv_run_options = []
+        if self.context.ui.verbosity > 0:
+            uv_run_options.append("-v")
+        elif self.context.ui.verbosity < 0:
+            uv_run_options.append("-q")
+
         # Run this task with `uv run`
         return self._execute_cmd(
-            (self._uv_cmd(), "run", *cmd),
+            (self._uv_cmd(), "run", *uv_run_options, *cmd),
             input=input,
             use_exec=use_exec,
         )
