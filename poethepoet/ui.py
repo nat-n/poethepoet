@@ -74,9 +74,10 @@ class PoeUi:
             "-h",
             "--help",
             dest="help",
-            action="store_true",
-            default=False,
-            help="Show this help page and exit",
+            metavar="TASK",
+            nargs="?",
+            default=...,
+            help="Show this help page and exit, optionally supply a task.",
         )
 
         parser.add_argument(
@@ -185,10 +186,12 @@ class PoeUi:
         # TODO: See if this can be done nicely with a custom HelpFormatter
 
         # Ignore verbosity mode if help flag is set
-        verbosity = 0 if self["help"] else self.verbosity
+        help_flag_set = self["help"] is None
+        help_single_task = self["help"] if isinstance(self["help"], str) else None
+        verbosity = 0 if help_flag_set else self.verbosity
 
         result: list[Union[str, Sequence[str]]] = []
-        if verbosity >= 0:
+        if verbosity >= 0 and not help_single_task:
             result.append(
                 (
                     "Poe the Poet - A task runner that works well with poetry.",
@@ -200,31 +203,15 @@ class PoeUi:
             result.append(f"{f'<em2>Result: {info}</em2>'}")
 
         if error:
-            # TODO: send this to stderr instead?
-            error_lines = []
-            if isinstance(error, ConfigValidationError):
-                if error.task_name:
-                    if error.context:
-                        error_lines.append(
-                            f"{error.context} in task {error.task_name!r}"
-                        )
-                    else:
-                        error_lines.append(f"Invalid task {error.task_name!r}")
-                    if error.filename:
-                        error_lines[-1] += f" in file {error.filename}"
-                elif error.global_option:
-                    error_lines.append(f"Invalid global option {error.global_option!r}")
-                    if error.filename:
-                        error_lines[-1] += f" in file {error.filename}"
-            error_lines.extend(error.msg.split("\n"))
-            if error.cause:
-                error_lines.append(error.cause)
-            if error.__cause__:
-                error_lines.append(f"From: {error.__cause__!r}")
+            result.append(self._format_poe_error(error))
 
-            result.append(self._format_error_lines(error_lines))
+        if tasks and help_single_task:
+            help_text, args_help = tasks[help_single_task]
+            result.append(
+                self._format_single_task_help(help_single_task, help_text, args_help)
+            )
 
-        if verbosity >= 0:
+        elif verbosity >= 0:
             result.append(
                 (
                     "<h2>Usage:</h2>",
@@ -269,22 +256,9 @@ class PoeUi:
                         f"  <em>{self._padr(task, col_width)}</em>  "
                         f"{self._align(help_text, col_width)}"
                     )
-                    for options, arg_help_text, default in args_help:
-                        formatted_options = ", ".join(str(opt) for opt in options)
-                        task_arg_help = [
-                            "   ",
-                            f"<em3>{self._padr(formatted_options, col_width-1)}</em3>",
-                        ]
-                        if arg_help_text:
-                            task_arg_help.append(self._align(arg_help_text, col_width))
-                        if default:
-                            if "\n" in (arg_help_text or ""):
-                                task_arg_help.append(
-                                    self._align(f"\n{default}", col_width, strip=False)
-                                )
-                            else:
-                                task_arg_help.append(default)
-                        tasks_section.append(" ".join(task_arg_help))
+                    tasks_section.extend(
+                        self._format_args_help(args_help, col_width, indent=3)
+                    )
 
                 result.append(tasks_section)
 
@@ -304,6 +278,79 @@ class PoeUi:
             + "\n"
             + ("\n" if verbosity >= 0 else "")
         )
+
+    def _format_poe_error(self, error: PoeException) -> tuple[str, ...]:
+        error_lines = []
+        if isinstance(error, ConfigValidationError):
+            if error.task_name:
+                if error.context:
+                    error_lines.append(f"{error.context} in task {error.task_name!r}")
+                else:
+                    error_lines.append(f"Invalid task {error.task_name!r}")
+                if error.filename:
+                    error_lines[-1] += f" in file {error.filename}"
+            elif error.global_option:
+                error_lines.append(f"Invalid global option {error.global_option!r}")
+                if error.filename:
+                    error_lines[-1] += f" in file {error.filename}"
+        error_lines.extend(error.msg.split("\n"))
+        if error.cause:
+            error_lines.append(error.cause)
+        if error.__cause__:
+            error_lines.append(f"From: {error.__cause__!r}")
+
+        return self._format_error_lines(error_lines)
+
+    def _format_single_task_help(
+        self,
+        task_name: str,
+        help_text: str,
+        args_help: Sequence[tuple[tuple[str, ...], str, str]],
+    ):
+        result = [""]
+        if help_text:
+            result.append(f"<h2>Description:</h2>\n  {help_text.strip()}\n")
+
+        # TODO: usage guidance should really depend on task type and configuration
+        result.extend(
+            (
+                "<h2>Usage:</h2>",
+                f"  <u>{self.program_name}</u>"
+                " [global options]"
+                f" <em>{task_name}</em> [named arguments] -- [free arguments]",
+                "",
+            )
+        )
+
+        if args_help:
+            col_width = max(20, min(30, len(task_name)))
+            result.append("<h2>Named arguments:</h2>")
+            result.extend(self._format_args_help(args_help, col_width))
+
+        return "\n".join(result).rstrip()
+
+    def _format_args_help(
+        self,
+        args_help: Sequence[tuple[tuple[str, ...], str, str]],
+        col_width: int,
+        indent: int = 1,
+    ):
+        for options, arg_help_text, default in args_help:
+            formatted_options = ", ".join(str(opt) for opt in options)
+            task_arg_help = [
+                " " * indent,
+                f"<em3>{self._padr(formatted_options, col_width-1)}</em3>",
+            ]
+            if arg_help_text:
+                task_arg_help.append(self._align(arg_help_text, col_width))
+            if default:
+                if "\n" in (arg_help_text or ""):
+                    task_arg_help.append(
+                        self._align(f"\n{default}", col_width, strip=False)
+                    )
+                else:
+                    task_arg_help.append(default)
+            yield " ".join(task_arg_help)
 
     @staticmethod
     def _align(text: str, width: int, *, strip: bool = True) -> str:
@@ -335,7 +382,7 @@ class PoeUi:
 
             self._print("".join(traceback.format_exception(error)).strip())
 
-    def _format_error_lines(self, lines: Sequence[str]):
+    def _format_error_lines(self, lines: Sequence[str]) -> tuple[str, ...]:
         return (
             f"<error>Error: {lines[0]}</error>",
             *(f"<error>     | {line}</error>" for line in lines[1:]),
