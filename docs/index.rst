@@ -18,7 +18,7 @@ Poe the Poet Documentation
    :target: https://github.com/nat-n/poethepoet
    :alt: GitHub repo
 
-.. image:: https://img.shields.io/pypi/pyversions/poethepoet.svg
+.. image:: https://img.shields.io/badge/python-3.9%20%E2%80%93%203.13-blue
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
@@ -34,7 +34,7 @@ Poe the Poet Documentation
    :target: https://github.com/nat-n/poethepoet/blob/main/LICENSE
    :alt: MIT
 
-Poe the Poet is a batteries included task runner that works well with |poetry_link|.
+Poe the Poet is a batteries included task runner that works well with |poetry_link| or with :ref:`uv<Usage with uv>`.
 
 It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project's virtual environment.
 
