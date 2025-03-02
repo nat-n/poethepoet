@@ -142,7 +142,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -230,7 +230,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -241,15 +241,18 @@
 <p>You can add help text to your tasks by adding the <code class="docutils literal notranslate"><span class="pre">help</span></code> option to the task definition, like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
 <span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run the test suite&quot;</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=poethepoet&quot;</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=poethepoet&quot;</span>
 
 <span class="k">[tool.poe.tasks.serve]</span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run the app in debug mode&quot;</span>
+<span class="n">help</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run the app in debug mode&quot;</span>
 <span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_app.service:run(debug=True)&quot;</span>
 
 <span class="k">[tool.poe.tasks.tunnel]</span>
-<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Create an SSH tunnel to the production server&quot;</span>
-<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span>
+<span class="n">help</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Create an SSH tunnel to the production server&quot;</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$prod_host:8080 $prod_host &amp;&quot;</span>
+<span class="n">args</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;prod_host&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Hostname of the production server&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;myapp.com&quot;</span><span class="p">}</span>
+<span class="p">]</span>
 </pre></div>
 </div>
 <p>This help text will be displayed alongside the task name in the list of configured tasks when <code class="docutils literal notranslate"><span class="pre">poe</span></code> is run without specifying a task.</p>
@@ -257,26 +260,46 @@
 Poe the Poet - A task runner that works well with poetry.
 version 0.25.1
 
-USAGE
-  poe [-h] [-v | -q] [-C PATH] [--ansi | --no-ansi] task [task arguments]
+Usage:
+  poe [global options] task [task arguments]
 
-GLOBAL OPTIONS
-  -h, --help            Show this help page and exit
+Global options:
+  -h [TASK], --help [TASK]
+                        Show this help page and exit, optionally supply a task.
   --version             Print the version and exit
   -v, --verbose         Increase command output (repeatable)
   -q, --quiet           Decrease command output (repeatable)
   -d, --dry-run         Print the task contents but don&#39;t actually run it
   -C PATH, --directory PATH
                         Specify where to find the pyproject.toml
+  -e EXECUTOR, --executor EXECUTOR
+                        Override the default task executor
   --ansi                Force enable ANSI output
   --no-ansi             Force disable ANSI output
 
-CONFIGURED TASKS
+Configured tasks:
   test           Run the test suite
   serve          Run the app in debug mode
   tunnel         Create an SSH tunnel to the production server
+    --prod_host  Hostname of the production server [default: myapp.com]
 </pre></div>
 </div>
+<section id="display-help-for-a-single-task">
+<h2>Display help for a single task<a class="headerlink" href="#display-help-for-a-single-task" title="Link to this heading">¶</a></h2>
+<p>Passing the <code class="docutils literal notranslate"><span class="pre">--help</span></code> option normally has the same effect as running poe with no arguments. However you can also supply the name of a task to display documentation for just that task.</p>
+<div class="highlight-docs notranslate"><div class="highlight"><pre><span></span>$ poe --help tunnel
+
+Description:
+  Create an SSH tunnel to the production server
+
+Usage:
+  poe [global options] tunnel [named arguments] -- [free arguments]
+
+Named arguments:
+  --prod_host    Hostname of the production server [default: myapp.com]
+</pre></div>
+</div>
+</section>
 </section>
 
         </article>
@@ -334,13 +357,32 @@ CONFIGURED TASKS
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Documenting tasks</a><ul>
+<li><a class="reference internal" href="#display-help-for-a-single-task">Display help for a single task</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=d7c0c7b6"></script>
+</div><script src="../_static/documentation_options.js?v=3595839c"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
