@@ -100,6 +100,7 @@ You can configure poe to use a specific executor by setting
 
 - **auto**: to automatically use the most appropriate of the following executors in order
 - **poetry**: to run tasks in the poetry managed environment
+- **uv**: to run tasks in an uv environment
 - **virtualenv**: to run tasks in the indicated virtualenv (or else "./.venv" or "./venv" if present)
 - **simple**: to run tasks without doing any specific environment setup
 
