@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from .base import PoeExecutor
@@ -49,7 +48,7 @@ class UvExecutor(PoeExecutor):
     def _uv_cmd(cls):
         from_path = cls._uv_cmd_from_path()
         if from_path:
-            return str(Path(from_path).resolve())
+            return from_path
 
         return "uv"
 
