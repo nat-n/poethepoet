@@ -1,29 +1,16 @@
 [project]
-name = "uv-project"
+name = "uv-sub-project"
 version = "0.1.0"
 description = "Add your description here"
-readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "poe-test-helpers",
-    "poe-test-package",
-]
 
-[tool.uv.sources]
-poe-test-helpers = { path = "../packages/poe_test_helpers" }
-poe-test-package = { path = "../packages/poe_test_package" }
-
-[tool.poe.tasks]
-show-version = "test_print_version"
-script-task.script = "uv_project:hello"
-show-env.cmd = "poe_test_env"
+[tool.uv]
 
 [tool.poe.tasks.test-cwd]
 shell = """
 echo UV_RUN_RECURSION_DEPTH: $UV_RUN_RECURSION_DEPTH
 echo VIRTUAL_ENV: $VIRTUAL_ENV
 echo pwd: $(pwd)
-echo env "$(env)"
 """
 cwd   = "${workdir}"
 args  = [

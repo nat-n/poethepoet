@@ -87,6 +87,7 @@ help   = "Remove generated files"
 script = """
   poethepoet.scripts:rm(
     ".coverage",
+    ".ruff_cache",
     ".mypy_cache",
     ".pytest_cache",
     "./**/__pycache__",
