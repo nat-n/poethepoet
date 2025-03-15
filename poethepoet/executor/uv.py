@@ -37,6 +37,11 @@ class UvExecutor(PoeExecutor):
         elif self.context.ui.verbosity < 0:
             uv_run_options.append("-q")
 
+        if self.working_dir:
+            # Explicitly set the working directory and project directory for uv
+            uv_run_options.append(f"--directory={self.working_dir}")
+            uv_run_options.append(f"--project={self.context.config.project_dir}")
+
         # Run this task with `uv run`
         return self._execute_cmd(
             (self._uv_cmd(), "run", *uv_run_options, *cmd),
@@ -46,8 +51,7 @@ class UvExecutor(PoeExecutor):
 
     @classmethod
     def _uv_cmd(cls):
-        from_path = cls._uv_cmd_from_path()
-        if from_path:
+        if from_path := cls._uv_cmd_from_path():
             return from_path
 
         return "uv"

@@ -57,7 +57,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self.invocation = invocation
         self.context = context
         self.options = options
-        self.working_dir = working_dir
+        self.working_dir = working_dir.resolve() if working_dir else None
         self.env = env
         self.capture_stdout = (
             Path(self.context.config.project_dir).joinpath(
