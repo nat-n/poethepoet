@@ -1,14 +1,14 @@
 import shlex
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError, ExpressionParseError
+from ..helpers.script import parse_script_reference
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
-    from ..helpers.python import FunctionCall
     from .base import TaskSpecFactory
 
 
@@ -65,9 +65,13 @@ class ScriptTask(PoeTask):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
-        # TODO: do something about extra_args, error?
+        # TODO: do something about extra_args, like raise an error?
 
-        target_module, function_call = self.parse_content(named_arg_values)
+        target_module, function_call = parse_script_reference(
+            self.spec.content,
+            named_arg_values,
+            allowed_vars={"sys", "os", "environ", "_dry_run"},
+        )
         function_ref = function_call.function_ref
 
         argv = [
@@ -84,8 +88,8 @@ class ScriptTask(PoeTask):
         script = [
             "import asyncio,os,sys;",
             "from inspect import iscoroutinefunction as _c;",
-            "from os import environ;",
             "from importlib import import_module as _i;",
+            "environ = os.environ;",
             f"_dry_run = {'True' if dry_run else 'False'};" if has_dry_run_ref else "",
             f"sys.argv = {argv!r}; sys.path.append('src');",
             f"{format_class(named_arg_values)}",
@@ -106,36 +110,3 @@ class ScriptTask(PoeTask):
         return self._get_executor(
             context, env, delegate_dry_run=has_dry_run_ref, resolve_python=True
         ).execute(cmd, use_exec=self.spec.options.get("use_exec", False))
-
-    def parse_content(
-        self, args: Optional[dict[str, Any]]
-    ) -> tuple[str, "FunctionCall"]:
-        """
-        Returns the module to load, and the function call to execute.
-
-        Will raise an exception if the function call contains invalid syntax or
-        references variables that are not in scope.
-        """
-
-        from ..helpers.python import FunctionCall
-
-        try:
-            target_module, target_ref = self.spec.content.strip().split(":", 1)
-        except ValueError:
-            raise ExpressionParseError(
-                f"Invalid task content: {self.spec.content.strip()!r}"
-            )
-
-        if target_ref.isidentifier():
-            if args:
-                function_call = FunctionCall(f"{target_ref}(**({args}))", target_ref)
-            else:
-                function_call = FunctionCall(f"{target_ref}()", target_ref)
-        else:
-            function_call = FunctionCall.parse(
-                source=target_ref,
-                arguments=set(args or tuple()),
-                allowed_vars={"sys", "os", "environ", "_dry_run"},
-            )
-
-        return target_module, function_call

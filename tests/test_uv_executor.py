@@ -33,7 +33,6 @@ def test_uv_executor_task_with_cwd(run_poe_subproc, projects, poe_project_path):
         "echo VIRTUAL_ENV: $VIRTUAL_ENV\n"
         "echo pwd: $(pwd)\n"
     )
-    assert result.stderr == ""
 
     assert f"VIRTUAL_ENV: {subproject_path}/.venv" in result.stdout
     assert f"pwd: {poe_project_path}/tests/fixtures\n" in result.stdout

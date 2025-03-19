@@ -3,9 +3,9 @@ from os import environ
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from ..exceptions import ConfigValidationError, PoeException
+from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
 from .file import PoeConfigFile
-from .partition import ConfigPartition, IncludedConfig, ProjectConfig
+from .partition import ConfigPartition, IncludedConfig, PackagedConfig, ProjectConfig
 
 POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
 
@@ -13,6 +13,7 @@ POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
 class PoeConfig:
     _project_config: ProjectConfig
     _included_config: list[IncludedConfig]
+    _packaged_config: list[PackagedConfig]
 
     """
     The filenames to look for when loading config
@@ -31,6 +32,10 @@ class PoeConfig:
     This can be overridden, for example to align with poetry
     """
     _baseline_verbosity: int = 0
+    """
+    A global cache of raw configs derived from task packages
+    """
+    _packaged_config_cache: dict[tuple[str, ...], dict] = {}
 
     def __init__(
         self,
@@ -49,6 +54,7 @@ class PoeConfig:
             {"tool.poe": table or {}}, path=self._project_dir, strict=False
         )
         self._included_config = []
+        self._packaged_config = []
 
     def lookup_task(
         self, name: str
@@ -57,7 +63,7 @@ class PoeConfig:
         if task is not None:
             return task, self._project_config
 
-        for include in reversed(self._included_config):
+        for include in reversed((*self._packaged_config, *self._included_config)):
             task = include.get("tasks", {}).get(name, None)
             if task is not None:
                 return task, include
@@ -65,11 +71,14 @@ class PoeConfig:
         return None, None
 
     def partitions(self, included_first=True) -> Iterator[ConfigPartition]:
-        if not included_first:
-            yield self._project_config
-        yield from self._included_config
         if included_first:
+            yield from self._packaged_config
+            yield from self._included_config
             yield self._project_config
+        else:
+            yield self._project_config
+            yield from self._included_config
+            yield from self._packaged_config
 
     @property
     def executor(self) -> Mapping[str, Any]:
@@ -78,7 +87,7 @@ class PoeConfig:
     @property
     def task_names(self) -> Iterator[str]:
         result = list(self._project_config.get("tasks", {}).keys())
-        for config_part in self._included_config:
+        for config_part in self._included_config + self._packaged_config:
             for task_name in config_part.get("tasks", {}).keys():
                 # Don't use a set to dedup because we want to preserve task order
                 if task_name not in result:
@@ -88,8 +97,8 @@ class PoeConfig:
     @property
     def tasks(self) -> dict[str, Any]:
         result = dict(self._project_config.get("tasks", {}))
-        for config in self._included_config:
-            for task_name, task_def in config.get("tasks", {}).items():
+        for config_part in self._included_config + self._packaged_config:
+            for task_name, task_def in config_part.get("tasks", {}).items():
                 if task_name in result:
                     continue
                 result[task_name] = task_def
@@ -196,8 +205,87 @@ class PoeConfig:
                 )
 
         self._load_includes(strict=strict)
+        self._load_packages(strict=strict)
 
-    def _load_includes(self: "PoeConfig", strict: bool = True):
+    def _load_packages(self, strict: bool = True):
+        if not self._project_config.options.task_packages:
+            return
+
+        import json
+
+        from ..helpers.script import parse_script_reference
+
+        # Attempt to load tasks from each of the task_packages
+        for script_reference in self._project_config.options.task_packages:
+            try:
+                # TODO: explicitly expose some env vars?
+
+                target_module, function_call = parse_script_reference(script_reference)
+            except ExpressionParseError:
+                raise
+
+            # TODO: print stuff for POE_DEBUG
+
+            invocation = ("$task_package$", script_reference)
+
+            if invocation not in self._packaged_config_cache:
+                from ..context import InitializationContext
+                from ..env.manager import EnvVarsManager
+
+                context = InitializationContext(config=self)
+                env = EnvVarsManager(self)  # TODO: craft an env
+                executor = context.get_executor(
+                    invocation=invocation,
+                    env=env,
+                    working_dir=self._project_dir,
+                    capture_stdout=True,
+                    resolve_python=True,
+                )
+
+                script = (
+                    "import os,sys;"
+                    "environ=os.environ;"
+                    "from importlib import import_module as _i;"
+                    f"sys.path.append('src');"
+                    f"_m = _i('{target_module}');"
+                    f"print(_m.{function_call.expression});"
+                )
+                try:
+                    executor.execute(("python", "-c", script))
+                except Exception:
+                    raise
+
+                try:
+                    script_result = context.get_task_output(invocation)
+                except Exception:
+                    raise
+
+                try:
+                    self._packaged_config_cache[invocation] = json.loads(script_result)
+                except Exception:
+                    raise
+
+            try:
+                from importlib.util import find_spec
+
+                spec = find_spec(target_module)
+                if not spec or not spec.origin:
+                    raise PoeException("TODO: write error message")
+
+                self._packaged_config.append(
+                    PackagedConfig(
+                        full_config=self._packaged_config_cache[invocation],
+                        path=Path(spec.origin),
+                        project_dir=self._project_dir,
+                        strict=strict,
+                    )
+                )
+            except (PoeException, KeyError) as error:
+                raise ConfigValidationError(
+                    f"Invalid content in loaded config from {target_module}"
+                ) from error
+
+    def _load_includes(self, strict: bool = True):
         # Attempt to load each of the included configs
         for include in self._project_config.options.include:
             include_path = self._resolve_include_path(include["path"])
@@ -221,7 +309,7 @@ class PoeConfig:
                         path=config_file.path,
                         project_dir=self._project_dir,
                         cwd=(
-                            self.project_dir.joinpath(include["cwd"]).resolve()
+                            self._project_dir.joinpath(include["cwd"]).resolve()
                             if include.get("cwd")
                             else None
                         ),

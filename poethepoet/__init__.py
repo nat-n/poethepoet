@@ -73,3 +73,9 @@ def _list_tasks(target_path: str = ""):
     except Exception:
         # this happens if there's no pyproject.toml present
         pass
+
+
+def tasks():
+    import json
+
+    return json.dumps({"tool.poe": {"tasks": {"boop": "echo boop"}}})

@@ -49,6 +49,9 @@ sphinx-copybutton   = "^0.5.1"
 sphinxext-opengraph = "^0.9.0"
 
 
+[tool.poe]
+task_packages = "poethepoet:tasks"
+
 [tool.poe.tasks]
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 

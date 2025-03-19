@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import os
 import shutil
 import sys
-from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 
 if TYPE_CHECKING:
-    from ..context import RunContext
+    from collections.abc import Mapping, MutableMapping, Sequence
+
+    from ..context import ContextProtocol
     from ..env.manager import EnvVarsManager
 
 
@@ -37,20 +40,21 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     A base class for poe task executors
     """
 
-    working_dir: Optional[Path]
+    working_dir: Path | None
 
-    __executor_types: ClassVar[dict[str, type["PoeExecutor"]]] = {}
-    __key__: ClassVar[Optional[str]] = None
+    __executor_types: ClassVar[dict[str, type[PoeExecutor]]] = {}
+    __key__: ClassVar[str | None] = None
 
     def __init__(
         self,
         invocation: tuple[str, ...],
-        context: "RunContext",
+        context: ContextProtocol,
         options: Mapping[str, str],
-        env: "EnvVarsManager",
+        env: EnvVarsManager,
         *,
-        working_dir: Optional[Path] = None,
-        capture_stdout: Union[str, bool] = False,
+        project_dir: Path | None = None,
+        working_dir: Path | None = None,
+        capture_stdout: str | bool = False,
         resolve_python: bool = False,
         dry: bool = False,
     ):
@@ -60,7 +64,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self.working_dir = working_dir.resolve() if working_dir else None
         self.env = env
         self.capture_stdout = (
-            Path(self.context.config.project_dir).joinpath(
+            Path(project_dir or self.working_dir or ".").joinpath(
                 self.env.fill_template(capture_stdout)
             )
             if capture_stdout and isinstance(capture_stdout, str)
@@ -74,21 +78,21 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             print(f" . Initializing {self.__class__.__name__}")
 
     @classmethod
-    def works_with_context(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: ContextProtocol) -> bool:
         return True
 
     @classmethod
     def get(
         cls,
         invocation: tuple[str, ...],
-        context: "RunContext",
+        context: ContextProtocol,
         executor_config: Mapping[str, str],
-        env: "EnvVarsManager",
-        working_dir: Optional[Path] = None,
-        capture_stdout: Union[str, bool] = False,
+        env: EnvVarsManager,
+        working_dir: Path | None = None,
+        capture_stdout: str | bool = False,
         resolve_python: bool = False,
         dry: bool = False,
-    ) -> "PoeExecutor":
+    ) -> PoeExecutor:
         """
         Create an executor.
         """
@@ -97,6 +101,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             context=context,
             options=executor_config,
             env=env,
+            project_dir=context.config.project_dir,
             working_dir=working_dir,
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
@@ -104,7 +109,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         )
 
     @classmethod
-    def _resolve_implementation(cls, context: "RunContext", executor_type: str):
+    def _resolve_implementation(cls, context: ContextProtocol, executor_type: str):
         """
         Resolve to an executor class, either as specified in the available config or
         by making some reasonable assumptions based on visible features of the
@@ -131,7 +136,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             return cls.__executor_types[executor_type]
 
     def execute(
-        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+        self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
     ) -> int:
         """
         Execute the given cmd.
@@ -144,8 +149,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self,
         cmd: Sequence[str],
         *,
-        input: Optional[bytes] = None,
-        env: Optional[Mapping[str, str]] = None,
+        input: bytes | None = None,
+        env: Mapping[str, str] | None = None,
         shell: bool = False,
         use_exec: bool = False,
     ) -> int:
@@ -188,7 +193,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self,
         cmd: Sequence[str],
         *,
-        env: Optional[Mapping[str, str]] = None,
+        env: Mapping[str, str] | None = None,
     ):
         if self.dry:
             return 0
@@ -211,8 +216,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self,
         cmd: Sequence[str],
         *,
-        input: Optional[bytes] = None,
-        env: Optional[Mapping[str, str]] = None,
+        input: bytes | None = None,
+        env: Mapping[str, str] | None = None,
         shell: bool = False,
     ) -> int:
         import signal

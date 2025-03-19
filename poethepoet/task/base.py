@@ -402,6 +402,13 @@ class PoeTask(metaclass=MetaPoeTask):
     def get_parsed_arguments(
         self, env: "EnvVarsManager"
     ) -> tuple[dict[str, str], tuple[str, ...]]:
+        """
+        Returns a dict of parsed arguments, and a list extra arguments.
+
+        If no args are defined for the task then all arguments are "extra",
+        otherwise its only arguments passed after a `--`.
+        """
+
         if self._parsed_args is None:
             all_args = self.invocation[1:]
 
