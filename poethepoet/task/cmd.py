@@ -53,13 +53,14 @@ class CmdTask(PoeTask):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
+        executor = self._get_executor(context, env)
+        env.update({"POE_ACTIVE": executor.__key__})
+
         cmd = (*self._resolve_commandline(context, env), *extra_args)
 
         self._print_action(shlex.join(cmd), context.dry)
 
-        return self._get_executor(context, env).execute(
-            cmd, use_exec=self.spec.options.get("use_exec", False)
-        )
+        return executor.execute(cmd, use_exec=self.spec.options.get("use_exec", False))
 
     def _resolve_commandline(self, context: "RunContext", env: "EnvVarsManager"):
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens

@@ -19,6 +19,15 @@ KNOWN_SHELL_INTERPRETERS = (
 )
 
 
+class IncludeScriptItem(TypedDict):
+    script: str
+    cwd: str
+    executor: Union[str, dict]
+
+
+IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
+
+
 class IncludeItem(TypedDict):
     path: str
     cwd: str
@@ -32,7 +41,7 @@ class ConfigPartition:
     full_config: Mapping[str, Any]
     poe_options: Mapping[str, Any]
     path: Path
-    project_dir: Path
+    _project_dir: Path
     _cwd: Optional[Path]
 
     ConfigOptions: type[PoeOptions]
@@ -63,11 +72,11 @@ class ConfigPartition:
         self.full_config = full_config
         self.path = path
         self._cwd = cwd
-        self.project_dir = project_dir or self.path.parent
+        self._project_dir = project_dir or self.path.parent
 
     @property
     def cwd(self):
-        return self._cwd or self.project_dir
+        return self._cwd or self._project_dir
 
     @property
     def config_dir(self):
@@ -92,6 +101,7 @@ class ProjectConfig(ConfigPartition):
         envfile: Union[str, Sequence[str]] = tuple()
         executor: Mapping[str, str] = MappingProxyType({"type": "auto"})
         include: Union[str, Sequence[str], Sequence[IncludeItem]] = tuple()
+        include_script: Union[str, Sequence[Union[str, IncludeScriptItem]]] = tuple()
         poetry_command: str = "poe"
         poetry_hooks: Mapping[str, str] = EmptyDict
         shell_interpreter: Union[str, Sequence[str]] = "posix"
@@ -109,35 +119,34 @@ class ProjectConfig(ConfigPartition):
 
             # Normalize include option:
             # > Union[str, Sequence[str], Mapping[str, str]] => list[dict]
-            if "include" in config:
-                includes: Any = []
-                include_option = config.get("include", None)
+            if includes := config.get("include"):
+                if isinstance(includes, (dict, str)):
+                    includes = [includes]
+                if isinstance(includes, list):
+                    config["include"] = [
+                        {"path": item} if isinstance(item, str) else item
+                        for item in includes
+                    ]
 
-                if isinstance(include_option, (dict, str)):
-                    include_option = [include_option]
-
-                if isinstance(include_option, list):
-                    valid_keys = {"path", "cwd"}
-                    for include in include_option:
-                        if isinstance(include, str):
-                            includes.append({"path": include})
-                        elif (
-                            isinstance(include, dict)
-                            and include.get("path")
-                            and set(include.keys()) <= valid_keys
-                        ):
-                            includes.append(include)
-                        else:
-                            raise ConfigValidationError(
-                                f"Invalid item for the include option {include!r}",
-                                global_option="include",
-                            )
-                else:
-                    # Something is wrong, let option validation handle it
-                    includes = include_option
-
-                config = {**config, "include": includes}
-
+            # Normalize include_script option:
+            # > Union[str, Sequence[str], Sequence[IncludeScriptItem]]
+            #       => list[IncludeScriptItem]
+            if include_script := config.get("include_script"):
+                config["include_script"] = []
+                if not isinstance(include_script, list):
+                    include_script = [include_script]
+                for item in include_script:
+                    if isinstance(item, str):
+                        config["include_script"].append({"script": item})
+                    elif isinstance(executor_config := item.get("executor"), str):
+                        config["include_script"].append(
+                            {
+                                "script": item["script"],
+                                "executor": {"type": executor_config},
+                            }
+                        )
+                    else:
+                        config["include_script"].append(item)
             yield config
 
         def validate(self):
@@ -204,6 +213,11 @@ class ProjectConfig(ConfigPartition):
             # Validate executor config
             PoeExecutor.validate_config(self.executor)
 
+            # Validate include_script executor configs
+            for include_script in self.include_script:
+                if executor := include_script.get("executor"):
+                    PoeExecutor.validate_config(executor)
+
         @classmethod
         def validate_env(cls, env: Mapping[str, str]):
             # Validate env value
@@ -226,6 +240,26 @@ class IncludedConfig(ConfigPartition):
     class ConfigOptions(PoeOptions):
         """
         Options supported directly under tool.poe in included config files
+        """
+
+        env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
+        envfile: Union[str, Sequence[str]] = tuple()
+        tasks: Mapping[str, Any] = EmptyDict
+
+        def validate(self):
+            """
+            Validation rules that don't require any extra context go here.
+            """
+            super().validate()
+
+            # Apply same validation to env option as for the main config
+            ProjectConfig.ConfigOptions.validate_env(self.env)
+
+
+class PackagedConfig(ConfigPartition):
+    class ConfigOptions(PoeOptions):
+        """
+        Options supported directly under tool.poe in config generated by a function call
         """
 
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict

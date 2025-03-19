@@ -199,6 +199,9 @@ ignore  = [
 ]
 fixable = ["E", "F", "I"]
 
+[tool.uv.workspace]
+members = ["tests/fixtures/task_package"]
+
 
 [build-system]
 requires      = ["poetry-core>=2.0.0,<3.0.0"]

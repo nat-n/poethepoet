@@ -10,15 +10,13 @@ There are some scenarios where one might wish to define tasks outside of pyproje
 For example:
 
 .. code-block:: toml
-
-  # pyproject.toml
+  :caption: ./pyproject.toml
 
   [tool.poe]
   include = "modules/acme_common/shared_tasks.toml" # include tasks from a git submodule
 
 .. code-block:: toml
-
-  # acme_common/shared_tasks.toml
+  :caption: ./modules/acme_common/shared_tasks.toml
 
   [tool.poe.tasks.build-image]
   cmd = "docker build"
@@ -26,9 +24,17 @@ For example:
 Imported files may also specify environment variables via
 ``tool.poe.envfile`` or entries for ``tool.poe.env``.
 
-.. tip::
+.. warning::
 
   If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.
+
+
+Including tasks from a python package
+-------------------------------------
+
+You can also include tasks from a python function originating either within the current project or from a dependency. This makes it much easier to share tasks across projects by distributing them as a python package, or to dynamically generate tasks depending on the context.
+
+For more details see the :doc:`include_scripts<../guides/packaged_tasks>` global option.
 
 
 Including multiple files

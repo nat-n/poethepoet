@@ -1,11 +1,14 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
-    from ..context import RunContext
+    from collections.abc import Sequence
+
+    from ..context import ContextProtocol
     from ..virtualenv import Virtualenv
 
 
@@ -18,13 +21,13 @@ class VirtualenvExecutor(PoeExecutor):
     __options__: dict[str, type] = {"location": str}
 
     @classmethod
-    def works_with_context(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: ContextProtocol) -> bool:
         from ..virtualenv import Virtualenv
 
-        return Virtualenv.detect(context.project_dir)
+        return Virtualenv.detect(context.config.project_dir)
 
     def execute(
-        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+        self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
     ) -> int:
         """
         Execute the given cmd as a subprocess inside the configured virtualenv
@@ -47,24 +50,24 @@ class VirtualenvExecutor(PoeExecutor):
             f"executable {cmd[0]!r} could not be found{error_context}"
         ) from error
 
-    def _resolve_virtualenv(self) -> "Virtualenv":
+    def _resolve_virtualenv(self) -> Virtualenv:
         from ..virtualenv import Virtualenv
 
+        project_dir = self.context.config.project_dir
+
         if "location" in self.options:
-            venv = Virtualenv(
-                self.context.project_dir.joinpath(self.options["location"])
-            )
+            venv = Virtualenv(project_dir.joinpath(self.options["location"]))
             if venv.valid():
                 return venv
             raise ExecutionError(
                 f"Could not find valid virtualenv at configured location: {venv.path}"
             )
 
-        venv = Virtualenv(self.context.project_dir.joinpath("venv"))
+        venv = Virtualenv(project_dir.joinpath("venv"))
         if venv.valid():
             return venv
 
-        hidden_venv = Virtualenv(self.context.project_dir.joinpath(".venv"))
+        hidden_venv = Virtualenv(project_dir.joinpath(".venv"))
         if hidden_venv.valid():
             return hidden_venv
 

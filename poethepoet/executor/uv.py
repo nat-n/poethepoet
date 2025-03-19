@@ -1,10 +1,13 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
-    from ..context import RunContext
+    from collections.abc import Sequence
+
+    from ..context import ContextProtocol
 
 
 class UvExecutor(PoeExecutor):
@@ -17,13 +20,13 @@ class UvExecutor(PoeExecutor):
     __options__: dict[str, type] = {}
 
     @classmethod
-    def works_with_context(cls, context: "RunContext") -> bool:
+    def works_with_context(cls, context: ContextProtocol) -> bool:
         if not context.config.is_uv_project:
             return False
         return bool(cls._uv_cmd_from_path())
 
     def execute(
-        self, cmd: Sequence[str], input: Optional[bytes] = None, use_exec: bool = False
+        self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
     ) -> int:
         """
         Execute the given cmd as a subprocess inside the uv managed dev environment.
@@ -32,9 +35,9 @@ class UvExecutor(PoeExecutor):
         """
 
         uv_run_options = []
-        if self.context.ui.verbosity > 0:
+        if self.context.ui and self.context.ui.verbosity > 0:
             uv_run_options.append("-v")
-        elif self.context.ui.verbosity < 0:
+        elif self.context.ui and self.context.ui.verbosity < 0:
             uv_run_options.append("-q")
 
         if self.working_dir:

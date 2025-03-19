@@ -46,7 +46,7 @@ Top features
 
 |V| Straight forward declaration of project tasks in your pyproject.toml (or :doc:`poe_tasks.toml<./guides/without_poetry>`)
 
-|V| Tasks are run in poetry's virtualenv (or another env you specify)
+|V| Tasks are run in poetry, or uv's virtualenv (or another env you specify)
 
 |V| :ref:`Shell completion of task names<shell_completion>` (and global options too for zsh)
 
@@ -56,7 +56,7 @@ Top features
 
 |V| Concise commands with extra arguments passed to the task :sh:`poe [options] task [task_args]`
 
-|V| Easily :doc:`define CLI arguments<./guides/args_guide>` for your tasks
+|V| Easily :doc:`declare named CLI arguments<./guides/args_guide>` for your tasks
 
 |V| Tasks can specify and :ref:`reference environment variables<ref_env_vars>`, even without a shell
 
@@ -68,7 +68,9 @@ Top features
 
 |V| Can be :doc:`used as a library<./guides/library_guide>` to embed in other tools
 
-|V| Also works fine :doc:`without poetry<./guides/without_poetry>`
+|V| Tasks can be :doc:`defined in python packages<./guides/packaged_tasks>` for ease of reuse across projects
+
+|V| Also works fine as a :doc:`general purpose task runner<./guides/without_poetry>`
 
 
 Quick start
@@ -104,13 +106,13 @@ Quick start
 
 .. hint::
 
-  If you're using |poetry_link|, then poe will automatically use the poetry managed virtualenv to find executables and python libraries, without needing to use ``poetry run`` or ``poetry shell``.
+  If you're using |poetry_link| or |uv_link|, then poe will automatically use the managed virtualenv to find executables and python libraries, without needing to use ``poetry run``/``uv run``.
 
 
 Run poe from anywhere
 =====================
 
-By default poe will detect when you're inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the :sh:`-C` option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.
+By default poe will detect when you're inside a project with a pyproject.toml or poe_tasks file in the root. However if you want to run it from elsewhere then that is supported by using the :sh:`-C/--directory` option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.
 
 In all cases the path to project root (where the pyproject.toml resides) will be available as :sh:`$POE_ROOT` within the command line and process. The variable :sh:`$POE_PWD` contains the original working directory from which poe was run.
 
@@ -124,3 +126,7 @@ Using this feature you can also define :doc:`global tasks<./guides/global_tasks>
 .. |poetry_link| raw:: html
 
    <a href="https://python-poetry.org/" target="_blank">poetry</a>
+
+.. |uv_link| raw:: html
+
+   <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>
