@@ -1,3 +1,5 @@
+# ruff: noqa: ERA001
+
 import re
 from collections.abc import Mapping
 

@@ -1,5 +1,3 @@
-# import shutil
-
 import pytest
 
 
@@ -329,15 +327,6 @@ def test_include_subproject_envfiles_with_cwd_set(
 
 @pytest.mark.usefixtures("_init_git_submodule")
 def test_include_tasks_from_git_repo(run_poe_subproc, projects):
-    # Can't find a sane way to properly test POE_GIT_ROOT :(
-    # test task included relative to POE_GIT_ROOT
-    # result = run_poe_subproc(
-    #     "did_it_work", cwd=projects["includes/sub_git_repo/sub_project"]
-    # )
-    # assert result.capture == "Poe => poe_test_echo yes\n"
-    # assert result.stdout == "yes\n"
-    # assert result.stderr == ""
-
     # test task included relative to POE_GIT_DIR
     result = run_poe_subproc(
         "did_it_work2", cwd=projects["includes/sub_git_repo/sub_project"]
@@ -356,14 +345,12 @@ def test_use_poe_git_vars(run_poe_subproc, projects, is_windows, poe_project_pat
     if is_windows:
         assert result.stdout.endswith(
             # Can't find a sane way to properly test POE_GIT_ROOT :(
-            # f"XXX {poe_project_path} "
             f"YYY {poe_project_path}\\tests\\fixtures\\includes_project\\sub_git_repo "
             "ZZZ\n"
         )
     else:
         assert result.stdout.endswith(
             # Can't find a sane way to properly test POE_GIT_ROOT :(
-            # f"XXX {poe_project_path} "
             f"YYY {poe_project_path}/tests/fixtures/includes_project/sub_git_repo "
             "ZZZ\n"
         )

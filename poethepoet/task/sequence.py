@@ -96,7 +96,7 @@ class SequenceTask(PoeTask):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
-            for index, subtask in enumerate(self.subtasks):
+            for subtask in self.subtasks:
                 if subtask.args:
                     raise ConfigValidationError(
                         "Unsupported option 'args' for task declared inside sequence"

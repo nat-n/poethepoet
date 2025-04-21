@@ -31,7 +31,6 @@ def test_poetry_help(run_poetry_2, projects):
     assert result.stdout.startswith("Poetry (version ")
     assert "poe cow-greet" in result.stdout
     assert re.search(r"\n  poe echo\s+It's like echo\n", result.stdout)
-    # assert result.stderr == ""
 
 
 # TODO: re-enable this test
@@ -56,7 +55,6 @@ def test_task_with_cli_dependency(run_poetry_2, projects, is_windows):
         assert (
             "< Cowacter, eyes:default, tongue:False, thoughts:False >" in result.stdout
         )
-    # assert result.stderr == ""
 
 
 # TODO: re-enable this test
@@ -71,7 +69,6 @@ def test_task_with_lib_dependency(run_poetry_2, projects):
     assert result.stdout == (
         "Poe => from cowpy import cow; print(list(cow.COWACTERS)[5])\ncheese\n"
     )
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -84,7 +81,6 @@ def test_task_accepts_any_args(run_poetry_2, projects):
     assert result.stdout == (
         "Poe => poe_test_echo --lol=:D --version --help\n--lol=:D --version --help\n"
     )
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -94,7 +90,6 @@ def test_poetry_help_without_poe_command_prefix(run_poetry_2, projects):
     assert result.stdout.startswith("Poetry (version ")
     assert "\n  cow-greet" in result.stdout
     assert "\n  echo               It's like echo\n" in result.stdout
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -107,7 +102,6 @@ def test_running_tasks_without_poe_command_prefix(run_poetry_2, projects):
     assert result.stdout == (
         "Poe => poe_test_echo --lol=:D --version --help\n--lol=:D --version --help\n"
     )
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -118,7 +112,6 @@ def test_poetry_command_from_included_file_with_empty_prefix(run_poetry_2, proje
         cwd=projects["poetry_plugin/empty_prefix"].parent,
     )
     assert result.stdout.startswith("Poe => echo 'Greetings from another file!'")
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -128,7 +121,6 @@ def test_poetry_help_with_poe_command_prefix(run_poetry_2, projects):
     assert result.stdout.startswith("Poetry (version ")
     assert "\n  foo cow-greet" in result.stdout
     assert "\n  foo echo           It's like echo\n" in result.stdout
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -141,7 +133,6 @@ def test_running_tasks_with_poe_command_prefix(run_poetry_2, projects):
     assert result.stdout == (
         "Poe => poe_test_echo --lol=:D --version --help\n--lol=:D --version --help\n"
     )
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -152,7 +143,6 @@ def test_running_tasks_with_poe_command_prefix_missing_args(run_poetry_2, projec
         cwd=projects["poetry_plugin/with_prefix"].parent,
     )
     assert "Usage:\n  poetry foo [global options]" in result.stdout
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -161,7 +151,6 @@ def test_running_poetry_command_with_hooks(run_poetry_2, projects):
     result = run_poetry_2(["env", "info"], cwd=projects["poetry_plugin"])
     assert "THIS IS YOUR ENV!" in result.stdout
     assert "THAT WAS YOUR ENV!" in result.stdout
-    # assert result.stderr == ""
 
 
 @pytest.mark.slow
@@ -173,7 +162,6 @@ def test_running_poetry_command_with_hooks_with_directory(run_poetry_2, projects
     )
     assert "THIS IS YOUR ENV!" in result.stdout
     assert "THAT WAS YOUR ENV!" in result.stdout
-    # assert result.stderr == ""
 
 
 # TODO: re-enable this test
@@ -203,4 +191,3 @@ def test_task_with_cli_dependency_with_directory(run_poetry_2, projects, is_wind
         assert (
             "< Cowacter, eyes:default, tongue:False, thoughts:False >" in result.stdout
         )
-    # assert result.stderr == ""

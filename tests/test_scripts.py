@@ -73,7 +73,7 @@ def test_rm_dry_mode(test_dir_structure, capsys, test_file_tree_nodes):
     assert captured.out == ("Deleting paths matching './**/__pycache__'\n")
     assert captured.err == ""
 
-    for path, content in test_file_tree_nodes:
+    for path, _ in test_file_tree_nodes:
         assert path.exists()
 
 
@@ -84,7 +84,7 @@ def test_rm_deletion(test_dir_structure, capsys, test_file_tree_nodes):
     assert captured.out == ("Deleting paths matching './**/__pycache__'\n")
     assert captured.err == ""
 
-    for path, content in test_file_tree_nodes:
+    for path, _ in test_file_tree_nodes:
         if any(
             name in str(path)
             for name in ("__pycache__", ".mypy_cache", ".pytest_cache")
@@ -101,7 +101,7 @@ def test_rm_dry_mode_quiet(test_dir_structure, capsys, test_file_tree_nodes):
     assert captured.out == ""
     assert captured.err == ""
 
-    for path, content in test_file_tree_nodes:
+    for path, _ in test_file_tree_nodes:
         assert path.exists()
 
 
@@ -131,7 +131,7 @@ def test_rm_dry_mode_verbose(
         )
     assert captured.err == ""
 
-    for path, content in test_file_tree_nodes:
+    for path, _ in test_file_tree_nodes:
         assert path.exists()
 
 
@@ -142,7 +142,7 @@ def test_rm_no_patterns_verbose(test_dir_structure, capsys, test_file_tree_nodes
     assert captured.out == ""
     assert captured.err == ""
 
-    for path, content in test_file_tree_nodes:
+    for path, _ in test_file_tree_nodes:
         assert path.exists()
 
 
@@ -153,7 +153,7 @@ def test_rm_innert_patterns(test_dir_structure, capsys, test_file_tree_nodes):
     assert captured.out == ""
     assert captured.err == ""
 
-    for path, content in test_file_tree_nodes:
+    for path, _ in test_file_tree_nodes:
         assert path.exists()
 
 
@@ -167,5 +167,5 @@ def test_rm_innert_patterns_verbose(test_dir_structure, capsys, test_file_tree_n
     )
     assert captured.err == ""
 
-    for path, content in test_file_tree_nodes:
+    for path, _ in test_file_tree_nodes:
         assert path.exists()

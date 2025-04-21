@@ -5,7 +5,7 @@ See sibling ast module for an example usage.
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import IO, Generic, Optional, TypeVar, cast
+from typing import IO, Generic, Optional, TypeVar, Union, cast
 
 
 class ParseCursor:
@@ -119,8 +119,8 @@ class ParseConfig:
 class AstNode(ABC):
     _cancelled: bool = False
 
-    def __init__(self, chars: ParseCursor, config: ParseConfig = ParseConfig()):
-        self.config = config
+    def __init__(self, chars: ParseCursor, config: Union[ParseConfig, None] = None):
+        self.config = config = config or ParseConfig()
         self._parse(chars)
 
     @abstractmethod

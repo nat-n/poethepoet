@@ -117,7 +117,7 @@ class SwitchTask(PoeTask):
                 )
 
             cases: MutableMapping[Any, int] = defaultdict(int)
-            for case_keys, case_task_spec in self.case_task_specs:
+            for case_keys, _ in self.case_task_specs:
                 for case_key in case_keys:
                     cases[case_key] += 1
 

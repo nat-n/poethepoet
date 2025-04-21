@@ -278,8 +278,8 @@ class AnyType(TypeAnnotation):
 
 
 class NoneType(TypeAnnotation):
-    def __init__(self, annotation: Any = type(None)):
-        super().__init__(annotation)
+    def __init__(self, annotation: Any = None):
+        super().__init__(annotation or type(None))
 
     def __str__(self):
         return "None"

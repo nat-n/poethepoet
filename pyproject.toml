@@ -1,8 +1,8 @@
 [project]
 name            = "poethepoet"
 version         = "0.34.0"
-description     = "A task runner that works well with poetry."
-authors         = [{ name = "Nat Noordanus", email = "n@noordan.us>" }]
+description     = "A task runner that works well with poetry and uv."
+authors         = [{ name = "Nat Noordanus", email = "n@noordan.us" }]
 readme          = "README.md"
 license         = "MIT"
 repository      = "https://github.com/nat-n/poethepoet"
@@ -36,8 +36,7 @@ pytest-cov   = "^3.0.0"
 rstcheck     = { version = "^6.2.4", python = "<4" }
 ruff         = "^0.8.0"
 types-pyyaml = "^6.0.12.20240808"
-
-virtualenv = "^20.14.1"
+virtualenv   = "^20.14.1"
 
 poe_test_helpers = { path = "./tests/fixtures/packages/poe_test_helpers" }
 
@@ -172,7 +171,9 @@ select  = [
   "I",     # isort
   "W",     # warning
   "N",     # pep8-naming
+  "B",     # flake8-bugbear
   "UP",    # pyupgrade
+  "ERA",   # eradicate
   "YTT",   # flake8-2020
   "ASYNC", # flake8-async
   "C4",    # flake8-comprehensions
@@ -196,6 +197,7 @@ ignore  = [
   "PTH109", # os-getcwd
   "PTH123", # builtin-open
   "RUF012", # mutable-class-default
+  "B904",   # raise-without-from-inside-except
 ]
 fixable = ["E", "F", "I"]
 

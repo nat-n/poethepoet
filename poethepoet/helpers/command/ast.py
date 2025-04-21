@@ -149,6 +149,7 @@ class Glob(ContentNode):
 
         else:
             # This should not happen
+            # ruff: noqa: B011
             assert False
             self._cancelled = True
 
@@ -197,6 +198,7 @@ class PythonGlob(Glob):
 
         else:
             # This should not happen
+            # ruff: noqa: B011
             assert False
             self._cancelled = True
 
@@ -546,7 +548,8 @@ class Line(SyntaxNode[Union[Word, Comment]]):
 
 
 class Script(SyntaxNode[Line]):
-    def __init__(self, chars: ParseCursor, config: ParseConfig = ParseConfig()):
+    def __init__(self, chars: ParseCursor, config: Union[ParseConfig, None] = None):
+        config = config or ParseConfig()
         if not config.line_separators:
             config.line_separators = LINE_SEP_CHARS
         super().__init__(chars, config)
