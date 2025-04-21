@@ -164,6 +164,8 @@ The TaskCollection instance is callable such that it can be referenced directly 
   [tool.poe]
   include_script = "my_tasks:tasks"
 
+See here for a |example_tasks_link| of creating a TaskCollection.
+
 
 Decorating functions as script tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -219,3 +221,7 @@ The above example is equivalent to the following toml based configuration:
 .. |poethepoet_tasks_link| raw:: html
 
    <a href="https://github.com/nat-n/poethepoet-tasks" target="_blank">poethepoet-tasks</a>
+
+.. |example_tasks_link| raw:: html
+
+   <a href="https://github.com/nat-n/poethepoet-tasks/blob/main/src/poethepoet_tasks/tasks.py" target="_blank">real world example</a>
