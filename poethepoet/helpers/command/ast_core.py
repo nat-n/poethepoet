@@ -124,16 +124,19 @@ class AstNode(ABC):
         self._parse(chars)
 
     @abstractmethod
-    def _parse(self, chars: ParseCursor): ...
+    def _parse(self, chars: ParseCursor):
+        ...
 
     @abstractmethod
-    def pretty(self, indent: int = 0, increment: int = 4): ...
+    def pretty(self, indent: int = 0, increment: int = 4):
+        ...
 
     def __bool__(self):
         return not self._cancelled
 
     @abstractmethod
-    def __len__(self): ...
+    def __len__(self):
+        ...
 
 
 T = TypeVar("T", bound=AstNode)

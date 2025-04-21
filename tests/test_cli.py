@@ -11,7 +11,7 @@ def test_call_no_args(run_poe):
     result = run_poe()
 
     assert result.capture.startswith(
-        "Poe the Poet - A task runner that works well with poetry."
+        f"Poe the Poet (version {__version__})"
     ), "Output should start with poe header line"
     assert (
         "\nResult: No task specified.\n" in result.capture
@@ -23,7 +23,7 @@ def test_call_with_directory(run_poe, projects):
     result = run_poe("--directory", str(projects["example"]), cwd=".")
     assert result.code == 1, "Expected non-zero result"
     assert result.capture.startswith(
-        "Poe the Poet - A task runner that works well with poetry."
+        f"Poe the Poet (version {__version__})"
     ), "Output should start with poe header line"
     assert (
         "\nResult: No task specified.\n" in result.capture
@@ -38,7 +38,7 @@ def test_call_with_directory_set_via_env(run_poe_subproc, projects):
     result = run_poe_subproc(env={"POE_PROJECT_DIR": str(projects["example"])}, cwd=".")
     assert result.code == 1, "Expected non-zero result"
     assert result.capture.startswith(
-        "Poe the Poet - A task runner that works well with poetry."
+        f"Poe the Poet (version {__version__})"
     ), "Output should start with poe header line"
     assert (
         "\nResult: No task specified.\n" in result.capture
@@ -54,7 +54,7 @@ def test_call_with_root(run_poe, projects):
     result = run_poe("--root", str(projects["example"]), cwd=".")
     assert result.code == 1, "Expected non-zero result"
     assert result.capture.startswith(
-        "Poe the Poet - A task runner that works well with poetry."
+        f"Poe the Poet (version {__version__})"
     ), "Output should start with poe header line"
     assert (
         "\nResult: No task specified.\n" in result.capture
@@ -176,7 +176,7 @@ def test_documentation_of_single_task_with_help_and_args(run_poe):
 def test_documentation_of_task_named_args(run_poe):
     result = run_poe(project="scripts")
     assert result.capture.startswith(
-        "Poe the Poet - A task runner that works well with poetry."
+        f"Poe the Poet (version {__version__})"
     ), "Output should start with poe header line"
     assert (
         "\nResult: No task specified.\n" in result.capture
