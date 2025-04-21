@@ -4,65 +4,111 @@ Installation
 Installing Poe the Poet
 -----------------------
 
-There are a few ways to install Poe the Poet:
+There are a few ways to install Poe the Poet depending on your preferences.
 
-1. Install the CLI globally using |pipx_link| *(recommended)*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Install the CLI globally *(recommended)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following methods will make the ``poe`` executable available anywhere on your system.
+
+With |pipx_link|
+""""""""""""""""
 
 .. code-block:: sh
 
   pipx install poethepoet
 
-Or using pip:
+
+With |uv_link|
+""""""""""""""
 
 .. code-block:: sh
 
-  pip install poethepoet
+  uv tool install poethepoet
 
-The ``poe`` executable will then be available anywhere in your system.
-
-2. Install the CLI globally using |brew_link|
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The ``poe`` CLI is also available as a |formula_link| to be installed globally:
+With |brew_link|
+""""""""""""""""
 
 .. code-block:: sh
 
   brew tap nat-n/poethepoet
   brew install nat-n/poethepoet/poethepoet
 
-3. Install Poe the Poet as a poetry plugin
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+See the |formula_link|.
+
+With pip
+""""""""
+
+Of course you can also install it with pip – assuming your current python environment is global.
+
+.. code-block:: sh
+
+  pip install poethepoet
+
+2. Install poethepoet as a :doc:`poetry plugin<poetry_plugin>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can install the poethepoet poetry plugin globally like so:
 
 .. code-block:: sh
 
   poetry self add 'poethepoet[poetry_plugin]'
 
-It'll then be available as the :sh:`poetry poe` command anywhere in your system.
-
-See the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
-
-
-4. Install Poe the Poet into your poetry project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Or add it to poetry on a per project basis by adding the following to your *pyproject.toml*:
 
 .. code-block:: sh
 
+  [tool.poetry.requires-plugins]
+  poethepoet = { version = "~0.34.0", extras = ["poetry_plugin"]}
+
+See the |poetry_plugin_link| for more installation options, or see the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
+
+
+3. Install poethepoet into your project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With poetry
+"""""""""""
+
+.. code-block:: sh
+  :caption: Add poethepoet as a dev dependency
+
   poetry add --group dev poethepoet
 
-The :sh:`poe` executable will then be available when inside a :sh:`poetry shell` or as :sh:`poetry run poe`.
+.. code-block:: sh
+  :caption: And run it
+
+  poetry run poe
+
+With uv
+"""""""
+
+.. code-block:: sh
+  :caption: Add poethepoet as a dev dependency
+
+  uv add --dev poethepoet
+
+.. code-block:: sh
+  :caption: And run it
+
+  uv run poe
+
+.. _shell_completion:
 
 .. tip::
 
-  If you prefer not to install poe globally, then you might want to create for yourself an alias such like :sh:`alias poe="poetry run poe"` or :sh:`alias poe="poetry poe"`, which should enable you to still benefit from tab completion.
+  If you prefer *not* to install the poe CLI globally, then you can still benefit from shell completions if you create an appropriate alias in your shell, such as one of:
 
-.. _shell_completion:
+  - :sh:`alias poe="poetry run poe"`
+  - :sh:`alias poe="poetry poe"`
+  - :sh:`alias poe="uv run poe"`
 
 Enable tab completion for your shell
 ------------------------------------
 
 Poe comes with tab completion scripts for bash, zsh, and fish to save you keystrokes.
 How to install them will depend on your shell setup.
+
 
 Zsh
 ~~~
@@ -77,9 +123,10 @@ Zsh
   mkdir -p ~/.zfunc/
   poe _zsh_completion > ~/.zfunc/_poe
 
-.. note::
+.. tip::
 
   You'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to :sh:`compinit` to the end of your zshrc file.
+
 
 Bash
 ~~~~
@@ -94,6 +141,7 @@ Bash
 
 
 How to ensure installed bash completions are enabled may vary depending on your system.
+
 
 Fish
 ~~~~
@@ -118,6 +166,10 @@ macOS, linux and windows.
 
    <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a>
 
+.. |uv_link| raw:: html
+
+   <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>
+
 .. |brew_link| raw:: html
 
    <a href="https://brew.sh/" target="_blank">homebrew</a>
@@ -125,4 +177,8 @@ macOS, linux and windows.
 .. |formula_link| raw:: html
 
    <a href="https://github.com/nat-n/homebrew-poethepoet" target="_blank">homebrew formula</a>
+
+.. |poetry_plugin_link| raw:: html
+
+   <a href="https://python-poetry.org/docs/main/plugins/#using-plugins" target="_blank">poetry docs</a>
 

@@ -87,6 +87,10 @@ With ``include_scripts`` you can reuse common tasks in each new project by depen
 
 See the docs for |poethepoet_tasks_link| for details of how you can include just a specific subset of available tasks.
 
+.. tip::
+
+  When you add a dev dependency on a *tasks package* like *poethepoet-tasks* you also automatically get all the other dev dependencies that it requires, e.g. ruff, pytest, etc. *poethepoet-tasks* also comes with config for ruff with opinionated defaults.
+
 
 Create your own tasks package
 -----------------------------
@@ -160,6 +164,8 @@ The TaskCollection instance is callable such that it can be referenced directly 
   [tool.poe]
   include_script = "my_tasks:tasks"
 
+See here for a |example_tasks_link| of creating a TaskCollection.
+
 
 Decorating functions as script tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -215,3 +221,7 @@ The above example is equivalent to the following toml based configuration:
 .. |poethepoet_tasks_link| raw:: html
 
    <a href="https://github.com/nat-n/poethepoet-tasks" target="_blank">poethepoet-tasks</a>
+
+.. |example_tasks_link| raw:: html
+
+   <a href="https://github.com/nat-n/poethepoet-tasks/blob/main/src/poethepoet_tasks/tasks.py" target="_blank">real world example</a>

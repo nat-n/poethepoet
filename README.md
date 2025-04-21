@@ -69,9 +69,9 @@
   ...
   ```
 
-If you're using poetry, then poe will automatically use CLI tools and libraries from your poetry managed virtualenv without you having to run `poetry run` or `poetry shell`
+If you're using poetry or uv, then poe will automatically use CLI tools and libraries from your project's virtualenv without you having to run `poetry run` / `uv run`
 
-Poe can also be [used without poetry](https://poethepoet.natn.io/guides/without_poetry.html).
+Poe can also be [used as a general purpose task runner](https://poethepoet.natn.io/guides/without_poetry.html).
 
 ## Contributing
 
