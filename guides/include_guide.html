@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
 <meta name="description" content="There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between project..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Global tasks" href="global_tasks.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Loading tasks from a python package" href="packaged_tasks.html" /><link rel="prev" title="Composing tasks" href="composition_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/include_guide.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
@@ -187,6 +187,7 @@
 <li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Loading tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packaged_tasks.html">Loading tasks from a python package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
@@ -244,24 +245,31 @@
 <p>Imported toml, yaml, or json files are not required to namespace config under <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code>. However if config exists under this structure then it will be used.</p>
 </div>
 <p>For example:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pyproject.toml</span>
-
-<span class="k">[tool.poe]</span>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">./pyproject.toml</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;modules/acme_common/shared_tasks.toml&quot;</span><span class="w"> </span><span class="c1"># include tasks from a git submodule</span>
 </pre></div>
 </div>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># acme_common/shared_tasks.toml</span>
-
-<span class="k">[tool.poe.tasks.build-image]</span>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">./modules/acme_common/shared_tasks.toml</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build-image]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;docker build&quot;</span>
 </pre></div>
 </div>
+</div>
 <p>Imported files may also specify environment variables via
 <code class="docutils literal notranslate"><span class="pre">tool.poe.envfile</span></code> or entries for <code class="docutils literal notranslate"><span class="pre">tool.poe.env</span></code>.</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
 <p>If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.</p>
 </div>
+<section id="including-tasks-from-a-python-package">
+<h2>Including tasks from a python package<a class="headerlink" href="#including-tasks-from-a-python-package" title="Link to this heading">¶</a></h2>
+<p>You can also include tasks from a python function originating either within the current project or from a dependency. This makes it much easier to share tasks across projects by distributing them as a python package, or to dynamically generate tasks depending on the context.</p>
+<p>For more details see the <a class="reference internal" href="packaged_tasks.html"><span class="doc">include_scripts</span></a> global option.</p>
+</section>
 <section id="including-multiple-files">
 <h2>Including multiple files<a class="headerlink" href="#including-multiple-files" title="Link to this heading">¶</a></h2>
 <p>It’s also possible to include tasks from multiple files by providing a list like so:</p>
@@ -304,12 +312,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="global_tasks.html">
+          <a class="next-page" href="packaged_tasks.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Global tasks</div>
+                <div class="title">Loading tasks from a python package</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -367,6 +375,7 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Loading tasks from another file</a><ul>
+<li><a class="reference internal" href="#including-tasks-from-a-python-package">Including tasks from a python package</a></li>
 <li><a class="reference internal" href="#including-multiple-files">Including multiple files</a></li>
 <li><a class="reference internal" href="#setting-a-working-directory-for-included-tasks">Setting a working directory for included tasks</a></li>
 <li><a class="reference internal" href="#including-files-relative-to-the-git-repo">Including files relative to the git repo</a></li>

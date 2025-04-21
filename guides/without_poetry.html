@@ -187,6 +187,7 @@
 <li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packaged_tasks.html">Loading tasks from a python package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
@@ -260,7 +261,7 @@
 <li><p>poe_tasks.json</p></li>
 </ul>
 <p>If <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> exists but does not contain the key prefix <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> then the search continues with <cite>poe_tasks.toml</cite>. If one of the listed <code class="docutils literal notranslate"><span class="pre">poe_tasks.*</span></code> files exist then the search is terminated, even if the file is empty.</p>
-<p>When config is loaded from a file other than <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> the <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> namespace for poe config is optional. So for example the following two poe_tasks.yaml files are equivalent and both valid:</p>
+<p>When config is loaded from a file other than <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> the <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> namespace for poe config is optional. So for example the following two <code class="docutils literal notranslate"><span class="pre">poe_tasks.yaml</span></code> files are equivalent and both valid:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">env</span><span class="p">:</span>

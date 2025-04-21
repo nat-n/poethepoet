@@ -13,8 +13,11 @@ The following options can be set for all tasks in a project directly under ``[to
 **executor** : ``dict[str, str]`` :ref:`📖<Change the executor type>`
   Override the default behavior for selecting an executor for tasks in this project.
 
-**include** : ``str`` | ``list[str]`` | ``dict[str, str]`` :doc:`📖<../guides/include_guide>`
+**include** : ``str`` | ``dict[str, str]`` | ``list[str | dict[str, str]]`` | :doc:`📖<../guides/include_guide>`
   Specify one or more other toml or json files to load tasks from.
+
+**include_script** : ``str`` | ``dict[str, str]`` | ``list[str | dict[str, str]]`` :doc:`📖<../guides/packaged_tasks>`
+  Load dynamically generated tasks from one or more python functions. This is similar to the :doc:`include global option<../guides/include_guide>`, except instead of providing paths to config files, one can reference python functions that generate task config, using the same syntax as for :doc:`script tasks<../tasks/task_types/script>`.
 
 **shell_interpreter** : ``str`` | ``list[str]`` :ref:`📖<Change the default shell interpreter>`
   Change the default interpreter to use for executing :doc:`shell tasks<../tasks/task_types/shell>`.

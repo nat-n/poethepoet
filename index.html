@@ -187,6 +187,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/args_guide.html">Configuring CLI arguments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/composition_guide.html">Composing tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/include_guide.html">Loading tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/packaged_tasks.html">Loading tasks from a python package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
@@ -256,18 +257,19 @@
 <section id="top-features">
 <h2>Top features<a class="headerlink" href="#top-features" title="Link to this heading">¶</a></h2>
 <p>✅  Straight forward declaration of project tasks in your pyproject.toml (or <a class="reference internal" href="guides/without_poetry.html"><span class="doc">poe_tasks.toml</span></a>)</p>
-<p>✅  Tasks are run in poetry’s virtualenv (or another env you specify)</p>
+<p>✅  Tasks are run in poetry, or uv’s virtualenv (or another env you specify)</p>
 <p>✅  <a class="reference internal" href="installation.html#shell-completion"><span class="std std-ref">Shell completion of task names</span></a> (and global options too for zsh)</p>
 <p>✅  The poe CLI can be used standalone, or as a <a class="reference internal" href="poetry_plugin.html"><span class="doc">plugin for poetry</span></a></p>
 <p>✅  Tasks can be <a class="reference internal" href="tasks/task_types/cmd.html"><span class="doc">commands</span></a>, <a class="reference internal" href="tasks/task_types/shell.html"><span class="doc">shell scripts</span></a>, <a class="reference internal" href="tasks/task_types/expr.html"><span class="doc">python expressions</span></a>, or references to <a class="reference internal" href="tasks/task_types/script.html"><span class="doc">python functions</span></a></p>
 <p>✅  Concise commands with extra arguments passed to the task <code class="code highlight sh docutils literal highlight-sh">poe<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span>task<span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span></code></p>
-<p>✅  Easily <a class="reference internal" href="guides/args_guide.html"><span class="doc">define CLI arguments</span></a> for your tasks</p>
+<p>✅  Easily <a class="reference internal" href="guides/args_guide.html"><span class="doc">declare named CLI arguments</span></a> for your tasks</p>
 <p>✅  Tasks can specify and <a class="reference internal" href="tasks/task_types/cmd.html#ref-env-vars"><span class="std std-ref">reference environment variables</span></a>, even without a shell</p>
 <p>✅  Tasks are <a class="reference internal" href="guides/help_guide.html"><span class="doc">self documenting</span></a>, with optional help messages (just run <code class="code highlight sh docutils literal highlight-sh">poe</code> with no arguments)</p>
 <p>✅  Tasks can be composed into <a class="reference internal" href="guides/composition_guide.html#sequence-composition"><span class="std std-ref">sequences</span></a> or <a class="reference internal" href="guides/composition_guide.html#graph-composition"><span class="std std-ref">DAGs</span></a></p>
 <p>✅  Works with <a class="reference internal" href="tasks/options.html#envfile-option"><span class="std std-ref">.env files</span></a></p>
 <p>✅  Can be <a class="reference internal" href="guides/library_guide.html"><span class="doc">used as a library</span></a> to embed in other tools</p>
-<p>✅  Also works fine <a class="reference internal" href="guides/without_poetry.html"><span class="doc">without poetry</span></a></p>
+<p>✅  Tasks can be <a class="reference internal" href="guides/packaged_tasks.html"><span class="doc">defined in python packages</span></a> for ease of reuse across projects</p>
+<p>✅  Also works fine as a <a class="reference internal" href="guides/without_poetry.html"><span class="doc">general purpose task runner</span></a></p>
 </section>
 <section id="quick-start">
 <h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
@@ -295,12 +297,12 @@
 </ol>
 <div class="admonition hint">
 <p class="admonition-title">Hint</p>
-<p>If you’re using <a href="https://python-poetry.org/" target="_blank">poetry</a>, then poe will automatically use the poetry managed virtualenv to find executables and python libraries, without needing to use <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">run</span></code> or <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">shell</span></code>.</p>
+<p>If you’re using <a href="https://python-poetry.org/" target="_blank">poetry</a> or <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>, then poe will automatically use the managed virtualenv to find executables and python libraries, without needing to use <code class="docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">run</span></code>/<code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code>.</p>
 </div>
 </section>
 <section id="run-poe-from-anywhere">
 <h2>Run poe from anywhere<a class="headerlink" href="#run-poe-from-anywhere" title="Link to this heading">¶</a></h2>
-<p>By default poe will detect when you’re inside a project with a pyproject.toml in the root. However if you want to run it from elsewhere then that is supported by using the <code class="code highlight sh docutils literal highlight-sh">-C</code> option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.</p>
+<p>By default poe will detect when you’re inside a project with a pyproject.toml or poe_tasks file in the root. However if you want to run it from elsewhere then that is supported by using the <code class="code highlight sh docutils literal highlight-sh">-C/--directory</code> option to specify an alternate location for the toml file. The task will run with the given location as the current working directory.</p>
 <p>In all cases the path to project root (where the pyproject.toml resides) will be available as <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_ROOT</span></code> within the command line and process. The variable <code class="code highlight sh docutils literal highlight-sh"><span class="nv">$POE_PWD</span></code> contains the original working directory from which poe was run.</p>
 <p>Using this feature you can also define <a class="reference internal" href="guides/global_tasks.html"><span class="doc">global tasks</span></a> that are not associated with any particular project.</p>
 </section>
