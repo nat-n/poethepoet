@@ -1,0 +1,19 @@
+version = 1
+revision = 1
+requires-python = ">=3.9"
+
+[[package]]
+name = "include-scripts"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "poe-test-helpers" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "poe-test-helpers", directory = "../packages/poe_test_helpers" }]
+
+[[package]]
+name = "poe-test-helpers"
+version = "0.2.0"
+source = { directory = "../packages/poe_test_helpers" }

@@ -17,7 +17,7 @@
 
 - ✅ Straight forward [declaration of project tasks in your pyproject.toml](https://poethepoet.natn.io/tasks/index.html) (or [poe_tasks.toml](https://poethepoet.natn.io/guides/without_poetry.html#usage-without-pyproject-toml))
 
-- ✅ Tasks are run in poetry's virtualenv ([or another env](https://poethepoet.natn.io/index.html#usage-without-poetry) you specify)
+- ✅ Tasks are run in poetry or uv's virtualenv ([or another env](https://poethepoet.natn.io/index.html#usage-without-poetry) you specify)
 
 - ✅ [Shell completion of task names](https://poethepoet.natn.io/installation.html#shell-completion) (and global options too for zsh)
 
@@ -27,7 +27,7 @@
 
 - ✅ Concise commands with extra arguments passed to the task `poe [options] task [task_args]`
 
-- ✅ Easily [define CLI arguments](https://poethepoet.natn.io/guides/args_guide.html) for your tasks
+- ✅ Easily [declare named CLI arguments](https://poethepoet.natn.io/guides/args_guide.html) for your tasks
 
 - ✅ Tasks can specify and [reference environment variables](https://poethepoet.natn.io/tasks/task_types/cmd.html#ref-env-vars), even without a shell
 
@@ -39,7 +39,10 @@
 
 - ✅ Can be [used as a library](https://poethepoet.natn.io/guides/library_guide.html) to embed in other tools
 
-- ✅ Also works fine [without poetry](https://poethepoet.natn.io/guides/without_poetry.html)
+- ✅ Tasks can be [defined in python packages](https://poethepoet.natn.io/guides/packaged_tasks.html) for ease of reuse across projects
+
+- ✅ Also works fine as a [general purpose task runner](https://poethepoet.natn.io/guides/without_poetry.html)
+
 
 ## Quick start
 

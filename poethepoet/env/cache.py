@@ -7,7 +7,7 @@ from ..exceptions import ExecutionError
 if TYPE_CHECKING:
     from .ui import PoeUi
 
-POE_DEBUG = environ.get("POE_DEBUG", "0") == 1
+POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
 
 
 class EnvFileCache:

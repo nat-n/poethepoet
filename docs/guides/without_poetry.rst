@@ -36,7 +36,7 @@ As an alternative to toml, poethepoet configuration can also be provided via yam
 
 If ``pyproject.toml`` exists but does not contain the key prefix ``tool.poe`` then the search continues with `poe_tasks.toml`. If one of the listed ``poe_tasks.*`` files exist then the search is terminated, even if the file is empty.
 
-When config is loaded from a file other than ``pyproject.toml`` the ``tool.poe`` namespace for poe config is optional. So for example the following two poe_tasks.yaml files are equivalent and both valid:
+When config is loaded from a file other than ``pyproject.toml`` the ``tool.poe`` namespace for poe config is optional. So for example the following two ``poe_tasks.yaml`` files are equivalent and both valid:
 
 .. code-block:: yaml
   :caption: poe_tasks.yaml

@@ -3,9 +3,9 @@ from os import environ
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from ..exceptions import ConfigValidationError, PoeException
+from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
 from .file import PoeConfigFile
-from .partition import ConfigPartition, IncludedConfig, ProjectConfig
+from .partition import ConfigPartition, IncludedConfig, PackagedConfig, ProjectConfig
 
 POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
 
@@ -13,6 +13,7 @@ POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
 class PoeConfig:
     _project_config: ProjectConfig
     _included_config: list[IncludedConfig]
+    _packaged_config: list[PackagedConfig]
 
     """
     The filenames to look for when loading config
@@ -31,6 +32,10 @@ class PoeConfig:
     This can be overridden, for example to align with poetry
     """
     _baseline_verbosity: int = 0
+    """
+    A global cache of raw configs derived from task packages
+    """
+    _packaged_config_cache: dict[tuple[str, ...], dict] = {}
 
     def __init__(
         self,
@@ -49,6 +54,7 @@ class PoeConfig:
             {"tool.poe": table or {}}, path=self._project_dir, strict=False
         )
         self._included_config = []
+        self._packaged_config = []
 
     def lookup_task(
         self, name: str
@@ -57,7 +63,7 @@ class PoeConfig:
         if task is not None:
             return task, self._project_config
 
-        for include in reversed(self._included_config):
+        for include in reversed((*self._packaged_config, *self._included_config)):
             task = include.get("tasks", {}).get(name, None)
             if task is not None:
                 return task, include
@@ -65,11 +71,14 @@ class PoeConfig:
         return None, None
 
     def partitions(self, included_first=True) -> Iterator[ConfigPartition]:
-        if not included_first:
-            yield self._project_config
-        yield from self._included_config
         if included_first:
+            yield from self._packaged_config
+            yield from self._included_config
             yield self._project_config
+        else:
+            yield self._project_config
+            yield from self._included_config
+            yield from self._packaged_config
 
     @property
     def executor(self) -> Mapping[str, Any]:
@@ -78,7 +87,7 @@ class PoeConfig:
     @property
     def task_names(self) -> Iterator[str]:
         result = list(self._project_config.get("tasks", {}).keys())
-        for config_part in self._included_config:
+        for config_part in self._included_config + self._packaged_config:
             for task_name in config_part.get("tasks", {}).keys():
                 # Don't use a set to dedup because we want to preserve task order
                 if task_name not in result:
@@ -88,8 +97,8 @@ class PoeConfig:
     @property
     def tasks(self) -> dict[str, Any]:
         result = dict(self._project_config.get("tasks", {}))
-        for config in self._included_config:
-            for task_name, task_def in config.get("tasks", {}).items():
+        for config_part in self._included_config + self._packaged_config:
+            for task_name, task_def in config_part.get("tasks", {}).items():
                 if task_name in result:
                     continue
                 result[task_name] = task_def
@@ -123,20 +132,21 @@ class PoeConfig:
         full_config = self._project_config.full_config
         return self._project_config.path.name == "pyproject.toml" and (
             "poetry" in full_config.get("tool", {})
+            # Fallbacks required to work out of the box with some poetry 2.0 projects
             or (
-                # Fallback required to work out of the box with some poetry 2.0 projects
                 full_config.get("build-system", {}).get("build-backend", "")
                 == "poetry.core.masonry.api"
             )
+            or self._project_config.path.parent.joinpath("poetry.lock").is_file()
         )
 
     @property
     def is_uv_project(self) -> bool:
         # Note: That it can happen that a uv managed project has no uv config
         #       In this case, this check would fail.
-        return (
-            self._project_config.path.name == "pyproject.toml"
-            and "uv" in self._project_config.full_config.get("tool", {})
+        return self._project_config.path.name == "pyproject.toml" and (
+            "uv" in self._project_config.full_config.get("tool", {})
+            or self._project_config.path.parent.joinpath("uv.lock").is_file()
         )
 
     @property
@@ -196,8 +206,128 @@ class PoeConfig:
                 )
 
         self._load_includes(strict=strict)
+        self._load_packages(strict=strict)
 
-    def _load_includes(self: "PoeConfig", strict: bool = True):
+    def _load_packages(self, strict: bool = True):
+        if not self._project_config.options.include_script:
+            return
+
+        import json
+
+        from ..helpers.script import parse_script_reference
+
+        def handle_error(msg: str, error: Union[Exception, None] = None):
+            if strict:
+                if error:
+                    raise PoeException(msg) from error
+                else:
+                    raise PoeException(msg)
+            elif POE_DEBUG:
+                print(" !", msg)
+
+        # Attempt to load tasks from each of the include_script
+        for include_script in self._project_config.options.include_script:
+            try:
+                target_module, function_call = parse_script_reference(
+                    include_script["script"], allowed_vars={"os", "sys", "environ"}
+                )
+            except ExpressionParseError as error:
+                raise PoeException(
+                    "Invalid configuration for include_script"
+                ) from error
+
+            invocation = ("$include_script$", include_script["script"])
+
+            if invocation not in self._packaged_config_cache:
+                from ..context import InitializationContext
+                from ..env.manager import EnvVarsManager
+
+                context = InitializationContext(config=self)
+                env = EnvVarsManager(self, base_env=environ)
+                executor = context.get_executor(
+                    invocation=invocation,
+                    env=env,
+                    working_dir=self._project_dir,
+                    executor_config=include_script.get("executor"),
+                    capture_stdout=True,
+                    resolve_python=True,
+                )
+
+                script = (
+                    "import os,sys,json;"
+                    "environ=os.environ;"
+                    "from importlib import import_module as _i;"
+                    f"sys.path.append('src');"
+                    "_o=sys.stdout;sys.stdout=sys.stderr;"
+                    f"_m = _i('{target_module}');"
+                    "sys.stdout=_o;"
+                    f"print(json.dumps(_m.{function_call.expression}));"
+                )
+                try:
+                    if POE_DEBUG:
+                        print(f" . Executing script for include_script {script!r}")
+                    subproc_code = executor.execute(("python", "-c", script))
+                except Exception as error:
+                    handle_error(
+                        "subprocess execution failed for configured include_script"
+                        f" {include_script['script']!r}",
+                        error,
+                    )
+                    continue
+
+                if subproc_code != 0:
+                    handle_error(
+                        "include_script subprocess returned non-zero for "
+                        f" {include_script['script']!r}",
+                    )
+                    continue
+
+                script_result = context.get_task_output(invocation)
+
+                try:
+                    parsed_result = json.loads(script_result)
+                    if isinstance(parsed_result, str):
+                        parsed_result = json.loads(parsed_result)
+                    self._packaged_config_cache[invocation] = parsed_result
+                except json.decoder.JSONDecodeError as error:
+                    handle_error(
+                        "Return value from include_script script must be valid json",
+                        error,
+                    )
+                    continue
+
+            try:
+                config_json = dict(self._packaged_config_cache[invocation])
+                config_path = Path(
+                    config_json.pop("config_path", self._project_config.path)
+                )
+                if config_json.get("tool", {}).get("poe"):
+                    pass
+                elif tool_poe := config_json.get("tool.poe"):
+                    config_json = {"tool": {"poe": tool_poe}}
+                else:
+                    config_json = {"tool": {"poe": config_json}}
+
+                if include_cwd := include_script.get("cwd"):
+                    config_cwd = self._project_dir.joinpath(include_cwd).resolve()
+                else:
+                    config_cwd = None
+
+                self._packaged_config.append(
+                    PackagedConfig(
+                        full_config=config_json,
+                        path=config_path,
+                        project_dir=self._project_dir,
+                        cwd=config_cwd,
+                        strict=strict,
+                    )
+                )
+            except (PoeException, KeyError) as error:
+                raise ConfigValidationError(
+                    f"Invalid content in loaded config from {target_module}"
+                ) from error
+
+    def _load_includes(self, strict: bool = True):
         # Attempt to load each of the included configs
         for include in self._project_config.options.include:
             include_path = self._resolve_include_path(include["path"])
@@ -221,7 +351,7 @@ class PoeConfig:
                         path=config_file.path,
                         project_dir=self._project_dir,
                         cwd=(
-                            self.project_dir.joinpath(include["cwd"]).resolve()
+                            self._project_dir.joinpath(include["cwd"]).resolve()
                             if include.get("cwd")
                             else None
                         ),
