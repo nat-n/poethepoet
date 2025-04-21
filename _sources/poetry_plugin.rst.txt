@@ -1,12 +1,26 @@
 Poetry plugin
 =============
 
-Depending on how you manage your python environments you may also wish to use Poe the
-Poet in the form of a |poetry_plugin_link|.
+The poethpoet poetry plugin offers tighter integration with the poetry CLI.
+
+Installation
+------------
+
+You can install the poethepoet poetry plugin globally like so:
 
 .. code-block:: sh
 
   poetry self add 'poethepoet[poetry_plugin]'
+
+Or add it to poetry on a per project basis by adding the following to your *pyproject.toml*:
+
+.. code-block:: sh
+
+  [tool.poetry.requires-plugins]
+  poethepoet = { version = "~0.34.0", extras = ["poetry_plugin"]}
+
+See the |poetry_plugin_link| for more installation options, or see the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
+
 
 Configuring the plugin
 ----------------------
@@ -114,7 +128,6 @@ to consider when using the Poe the Poet poetry plugin.
 Therefore it is generally recommended to use the poe CLI tool directly if you don't mind having it installed onto your path.
 
 
-
 .. |cleo_link| raw:: html
 
    <a href="https://github.com/python-poetry/cleo" target="_blank">cleo</a>
@@ -125,4 +138,4 @@ Therefore it is generally recommended to use the poe CLI tool directly if you do
 
 .. |poetry_plugin_link| raw:: html
 
-   <a href="https://python-poetry.org/docs/main/plugins/#using-plugins" target="_blank">poetry plugin</a>
+   <a href="https://python-poetry.org/docs/plugins/#using-plugins" target="_blank">poetry plugin</a>

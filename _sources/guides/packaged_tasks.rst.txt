@@ -87,6 +87,10 @@ With ``include_scripts`` you can reuse common tasks in each new project by depen
 
 See the docs for |poethepoet_tasks_link| for details of how you can include just a specific subset of available tasks.
 
+.. tip::
+
+  When you add a dev dependency on a *tasks package* like *poethepoet-tasks* you also automatically get all the other dev dependencies that it requires, e.g. ruff, pytest, etc. *poethepoet-tasks* also comes with config for ruff with opinionated defaults.
+
 
 Create your own tasks package
 -----------------------------

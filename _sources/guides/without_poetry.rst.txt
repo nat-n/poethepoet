@@ -1,19 +1,17 @@
 Usage without poetry
 ====================
 
-Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it works just as well with any other kind of virtualenv, or simply as a general purpose way to define handy tasks for use within a certain directory structure! This behaviour is configurable via the :ref:`tool.poe.executor global option<Change the executor type>`.
+Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it also works great with |uv_link|, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurable via the :ref:`tool.poe.executor global option<Change the executor type>`.
 
-By default poe will run tasks in the poetry managed virtual environment, if the ``pyproject.toml`` contains a :toml:`tool.poetry` section. If it doesn't then poe looks for a virtualenv to use at ``./.venv`` or ``./venv`` relative to the ``pyproject.toml``.
+By default poe will run tasks in your project's virtual environment. Poe will deduce what kind of project is present by detecting tool specific tables in ``pyproject.toml`` such as :toml:`tool.poetry`, lock files such as ``uv.lock``, or a virtualenv at ``./.venv`` or ``./venv`` relative to the ``pyproject.toml``. If no virtualenv is found then poe will run tasks without any special environment management.
 
-If no virtualenv is found then poe will run tasks without any special environment management.
+Poe the Poet can also be used as a :doc:`global task runner<./global_tasks>`, scoped to your system rather than any particular project, like shell aliases by sweeter.
 
 
 Usage with uv
 -------------
 
-|uv_link| is another popular tool for managing project dependencies with a ``pyproject.toml`` file. If the ``pyproject.toml`` contains a ``[tool.uv]`` table then Poe the Poet will recognise this and activate the UvExecutor to execute tasks using ``uv run``.
-
-Additionally since uv works by keeping a virtual environment inside the project directory at ``./.venv`` poethepoet will automatically discover and use project dependencies, even if the ``[tool.uv]`` table is absent from the ``pyproject.toml``.
+|uv_link| is another popular tool for managing project dependencies with a ``pyproject.toml`` file. If the ``pyproject.toml`` contains a ``[tool.uv]`` table, or the project directory contains a ``uv.lock`` files then Poe the Poet will recognise this and activate the UvExecutor to execute tasks using ``uv run``.
 
 So Poe the Poet also works well with uv.
 

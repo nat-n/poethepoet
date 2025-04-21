@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="poetry_plugin.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Depending on how you manage your python environments you may also wish to use Poe the Poet in the form of a. Configuring the plugin: By default the poetry plugin will register poe as a command pref..." />
-<meta name="description" content="Depending on how you manage your python environments you may also wish to use Poe the Poet in the form of a. Configuring the plugin: By default the poetry plugin will register poe as a command pref..." />
+<meta property="og:description" content="The poethpoet poetry plugin offers tighter integration with the poetry CLI. Installation: You can install the poethepoet poetry plugin globally like so: Or add it to poetry on a per project basis b..." />
+<meta name="description" content="The poethpoet poetry plugin offers tighter integration with the poetry CLI. Installation: You can install the poethepoet poetry plugin globally like so: Or add it to poetry on a per project basis b..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Global options" href="global_options.html" /><link rel="prev" title="Installation" href="installation.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/poetry_plugin.html" />
 
@@ -239,11 +239,20 @@
         <article role="main">
           <section id="poetry-plugin">
 <h1>Poetry plugin<a class="headerlink" href="#poetry-plugin" title="Link to this heading">¶</a></h1>
-<p>Depending on how you manage your python environments you may also wish to use Poe the
-Poet in the form of a <a href="https://python-poetry.org/docs/main/plugins/#using-plugins" target="_blank">poetry plugin</a>.</p>
+<p>The poethpoet poetry plugin offers tighter integration with the poetry CLI.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<p>You can install the poethepoet poetry plugin globally like so:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>self<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;poethepoet[poetry_plugin]&#39;</span>
 </pre></div>
 </div>
+<p>Or add it to poetry on a per project basis by adding the following to your <em>pyproject.toml</em>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>tool.poetry.requires-plugins<span class="o">]</span>
+<span class="nv">poethepoet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nv">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;~0.34.0&quot;</span>,<span class="w"> </span><span class="nv">extras</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span><span class="s2">&quot;poetry_plugin&quot;</span><span class="o">]}</span>
+</pre></div>
+</div>
+<p>See the <a href="https://python-poetry.org/docs/plugins/#using-plugins" target="_blank">poetry plugin</a> for more installation options, or see the <a class="reference internal" href="#"><span class="doc">poetry plugin docs</span></a> for more details about this option.</p>
+</section>
 <section id="configuring-the-plugin">
 <h2>Configuring the plugin<a class="headerlink" href="#configuring-the-plugin" title="Link to this heading">¶</a></h2>
 <p>By default the poetry plugin will register <em>poe</em> as a command prefix so tasks can be
@@ -397,6 +406,7 @@ documentation for poetry commands contains only the task names and help text.</p
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Poetry plugin</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
 <li><a class="reference internal" href="#configuring-the-plugin">Configuring the plugin</a></li>
 <li><a class="reference internal" href="#hooking-into-poetry-commands">Hooking into poetry commands</a></li>
 <li><a class="reference internal" href="#known-limitations">Known limitations</a></li>
@@ -411,7 +421,7 @@ documentation for poetry commands contains only the task names and help text.</p
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=91ed0785"></script>
+</div><script src="_static/documentation_options.js?v=bbce7252"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

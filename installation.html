@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="installation.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Installing Poe the Poet: There are a few ways to install Poe the Poet: 1. Install the CLI globally using(recommended): Or using pip: The poe executable will then be available anywhere in your syste..." />
-<meta name="description" content="Installing Poe the Poet: There are a few ways to install Poe the Poet: 1. Install the CLI globally using(recommended): Or using pip: The poe executable will then be available anywhere in your syste..." />
+<meta property="og:description" content="Installing Poe the Poet: There are a few ways to install Poe the Poet depending on your preferences. 1. Install the CLI globally(recommended): The following methods will make the poe executable ava..." />
+<meta name="description" content="Installing Poe the Poet: There are a few ways to install Poe the Poet depending on your preferences. 1. Install the CLI globally(recommended): The following methods will make the poe executable ava..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Poetry plugin" href="poetry_plugin.html" /><link rel="prev" title="Poe the Poet Documentation" href="index.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/installation.html" />
 
@@ -241,48 +241,96 @@
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
 <section id="installing-poe-the-poet">
 <h2>Installing Poe the Poet<a class="headerlink" href="#installing-poe-the-poet" title="Link to this heading">¶</a></h2>
-<p>There are a few ways to install Poe the Poet:</p>
-<section id="install-the-cli-globally-using-pipx-link-recommended">
-<h3>1. Install the CLI globally using <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a> <em>(recommended)</em><a class="headerlink" href="#install-the-cli-globally-using-pipx-link-recommended" title="Link to this heading">¶</a></h3>
+<p>There are a few ways to install Poe the Poet depending on your preferences.</p>
+<section id="install-the-cli-globally-recommended">
+<h3>1. Install the CLI globally <em>(recommended)</em><a class="headerlink" href="#install-the-cli-globally-recommended" title="Link to this heading">¶</a></h3>
+<p>The following methods will make the <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable available anywhere on your system.</p>
+<section id="with-pipx-link">
+<h4>With <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a><a class="headerlink" href="#with-pipx-link" title="Link to this heading">¶</a></h4>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pipx<span class="w"> </span>install<span class="w"> </span>poethepoet
 </pre></div>
 </div>
-<p>Or using pip:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>poethepoet
+</section>
+<section id="with-uv-link">
+<h4>With <a href="https://docs.astral.sh/uv/" target="_blank">uv</a><a class="headerlink" href="#with-uv-link" title="Link to this heading">¶</a></h4>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>poethepoet
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable will then be available anywhere in your system.</p>
 </section>
-<section id="install-the-cli-globally-using-brew-link">
-<h3>2. Install the CLI globally using <a href="https://brew.sh/" target="_blank">homebrew</a><a class="headerlink" href="#install-the-cli-globally-using-brew-link" title="Link to this heading">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">poe</span></code> CLI is also available as a <a href="https://github.com/nat-n/homebrew-poethepoet" target="_blank">homebrew formula</a> to be installed globally:</p>
+<section id="with-brew-link">
+<h4>With <a href="https://brew.sh/" target="_blank">homebrew</a><a class="headerlink" href="#with-brew-link" title="Link to this heading">¶</a></h4>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>tap<span class="w"> </span>nat-n/poethepoet
 brew<span class="w"> </span>install<span class="w"> </span>nat-n/poethepoet/poethepoet
 </pre></div>
 </div>
+<p>See the <a href="https://github.com/nat-n/homebrew-poethepoet" target="_blank">homebrew formula</a>.</p>
 </section>
-<section id="install-poe-the-poet-as-a-poetry-plugin">
-<h3>3. Install Poe the Poet as a poetry plugin<a class="headerlink" href="#install-poe-the-poet-as-a-poetry-plugin" title="Link to this heading">¶</a></h3>
+<section id="with-pip">
+<h4>With pip<a class="headerlink" href="#with-pip" title="Link to this heading">¶</a></h4>
+<p>Of course you can also install it with pip – assuming your current python environment is global.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>poethepoet
+</pre></div>
+</div>
+</section>
+</section>
+<section id="install-poethepoet-as-a-poetry-plugin">
+<h3>2. Install poethepoet as a <a class="reference internal" href="poetry_plugin.html"><span class="doc">poetry plugin</span></a><a class="headerlink" href="#install-poethepoet-as-a-poetry-plugin" title="Link to this heading">¶</a></h3>
+<p>You can install the poethepoet poetry plugin globally like so:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>self<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;poethepoet[poetry_plugin]&#39;</span>
 </pre></div>
 </div>
-<p>It’ll then be available as the <code class="code highlight sh docutils literal highlight-sh">poetry<span class="w"> </span>poe</code> command anywhere in your system.</p>
-<p>See the <a class="reference internal" href="poetry_plugin.html"><span class="doc">poetry plugin docs</span></a> for more details about this option.</p>
+<p>Or add it to poetry on a per project basis by adding the following to your <em>pyproject.toml</em>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="o">[</span>tool.poetry.requires-plugins<span class="o">]</span>
+<span class="nv">poethepoet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="nv">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;~0.34.0&quot;</span>,<span class="w"> </span><span class="nv">extras</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span><span class="s2">&quot;poetry_plugin&quot;</span><span class="o">]}</span>
+</pre></div>
+</div>
+<p>See the <a href="https://python-poetry.org/docs/main/plugins/#using-plugins" target="_blank">poetry docs</a> for more installation options, or see the <a class="reference internal" href="poetry_plugin.html"><span class="doc">poetry plugin docs</span></a> for more details about this option.</p>
 </section>
-<section id="install-poe-the-poet-into-your-poetry-project">
-<h3>4. Install Poe the Poet into your poetry project<a class="headerlink" href="#install-poe-the-poet-into-your-poetry-project" title="Link to this heading">¶</a></h3>
+<section id="install-poethepoet-into-your-project">
+<h3>3. Install poethepoet into your project<a class="headerlink" href="#install-poethepoet-into-your-project" title="Link to this heading">¶</a></h3>
+<section id="with-poetry">
+<h4>With poetry<a class="headerlink" href="#with-poetry" title="Link to this heading">¶</a></h4>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Add poethepoet as a dev dependency</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>add<span class="w"> </span>--group<span class="w"> </span>dev<span class="w"> </span>poethepoet
 </pre></div>
 </div>
-<p>The <code class="code highlight sh docutils literal highlight-sh">poe</code> executable will then be available when inside a <code class="code highlight sh docutils literal highlight-sh">poetry<span class="w"> </span>shell</code> or as <code class="code highlight sh docutils literal highlight-sh">poetry<span class="w"> </span>run<span class="w"> </span>poe</code>.</p>
-<div class="admonition tip">
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">And run it</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poetry<span class="w"> </span>run<span class="w"> </span>poe
+</pre></div>
+</div>
+</div>
+</section>
+<section id="with-uv">
+<h4>With uv<a class="headerlink" href="#with-uv" title="Link to this heading">¶</a></h4>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Add poethepoet as a dev dependency</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>add<span class="w"> </span>--dev<span class="w"> </span>poethepoet
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">And run it</span><a class="headerlink" href="#id4" title="Link to this code">¶</a></div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>poe
+</pre></div>
+</div>
+</div>
+<div class="admonition tip" id="shell-completion">
 <p class="admonition-title">Tip</p>
-<p>If you prefer not to install poe globally, then you might want to create for yourself an alias such like <code class="code highlight sh docutils literal highlight-sh"><span class="nb">alias</span><span class="w"> </span><span class="nv">poe</span><span class="o">=</span><span class="s2">&quot;poetry run poe&quot;</span></code> or <code class="code highlight sh docutils literal highlight-sh"><span class="nb">alias</span><span class="w"> </span><span class="nv">poe</span><span class="o">=</span><span class="s2">&quot;poetry poe&quot;</span></code>, which should enable you to still benefit from tab completion.</p>
+<p>If you prefer <em>not</em> to install the poe CLI globally, then you can still benefit from shell completions if you create an appropriate alias in your shell, such as one of:</p>
+<ul class="simple">
+<li><p><code class="code highlight sh docutils literal highlight-sh"><span class="nb">alias</span><span class="w"> </span><span class="nv">poe</span><span class="o">=</span><span class="s2">&quot;poetry run poe&quot;</span></code></p></li>
+<li><p><code class="code highlight sh docutils literal highlight-sh"><span class="nb">alias</span><span class="w"> </span><span class="nv">poe</span><span class="o">=</span><span class="s2">&quot;poetry poe&quot;</span></code></p></li>
+<li><p><code class="code highlight sh docutils literal highlight-sh"><span class="nb">alias</span><span class="w"> </span><span class="nv">poe</span><span class="o">=</span><span class="s2">&quot;uv run poe&quot;</span></code></p></li>
+</ul>
 </div>
 </section>
 </section>
+</section>
 <section id="enable-tab-completion-for-your-shell">
-<span id="shell-completion"></span><h2>Enable tab completion for your shell<a class="headerlink" href="#enable-tab-completion-for-your-shell" title="Link to this heading">¶</a></h2>
+<h2>Enable tab completion for your shell<a class="headerlink" href="#enable-tab-completion-for-your-shell" title="Link to this heading">¶</a></h2>
 <p>Poe comes with tab completion scripts for bash, zsh, and fish to save you keystrokes.
 How to install them will depend on your shell setup.</p>
 <section id="zsh">
@@ -296,8 +344,8 @@ mkdir<span class="w"> </span>-p<span class="w"> </span>~/.zfunc/
 poe<span class="w"> </span>_zsh_completion<span class="w"> </span>&gt;<span class="w"> </span>~/.zfunc/_poe
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
 <p>You’ll need to start a new shell for the new completion script to be loaded. If it still doesn’t work try adding a call to <code class="code highlight sh docutils literal highlight-sh">compinit</code> to the end of your zshrc file.</p>
 </div>
 </section>
@@ -399,10 +447,19 @@ macOS, linux and windows.</p>
             <ul>
 <li><a class="reference internal" href="#">Installation</a><ul>
 <li><a class="reference internal" href="#installing-poe-the-poet">Installing Poe the Poet</a><ul>
-<li><a class="reference internal" href="#install-the-cli-globally-using-pipx-link-recommended">1. Install the CLI globally using <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a> <em>(recommended)</em></a></li>
-<li><a class="reference internal" href="#install-the-cli-globally-using-brew-link">2. Install the CLI globally using <a href="https://brew.sh/" target="_blank">homebrew</a></a></li>
-<li><a class="reference internal" href="#install-poe-the-poet-as-a-poetry-plugin">3. Install Poe the Poet as a poetry plugin</a></li>
-<li><a class="reference internal" href="#install-poe-the-poet-into-your-poetry-project">4. Install Poe the Poet into your poetry project</a></li>
+<li><a class="reference internal" href="#install-the-cli-globally-recommended">1. Install the CLI globally <em>(recommended)</em></a><ul>
+<li><a class="reference internal" href="#with-pipx-link">With <a href="https://pypa.github.io/pipx/" target="_blank">pipx</a></a></li>
+<li><a class="reference internal" href="#with-uv-link">With <a href="https://docs.astral.sh/uv/" target="_blank">uv</a></a></li>
+<li><a class="reference internal" href="#with-brew-link">With <a href="https://brew.sh/" target="_blank">homebrew</a></a></li>
+<li><a class="reference internal" href="#with-pip">With pip</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#install-poethepoet-as-a-poetry-plugin">2. Install poethepoet as a <span class="xref std std-doc">poetry plugin</span></a></li>
+<li><a class="reference internal" href="#install-poethepoet-into-your-project">3. Install poethepoet into your project</a><ul>
+<li><a class="reference internal" href="#with-poetry">With poetry</a></li>
+<li><a class="reference internal" href="#with-uv">With uv</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference internal" href="#enable-tab-completion-for-your-shell">Enable tab completion for your shell</a><ul>
@@ -423,7 +480,7 @@ macOS, linux and windows.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=91ed0785"></script>
+</div><script src="_static/documentation_options.js?v=bbce7252"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
