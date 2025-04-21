@@ -13,6 +13,13 @@ Usage with uv
 
 |uv_link| is another popular tool for managing project dependencies with a ``pyproject.toml`` file. If the ``pyproject.toml`` contains a ``[tool.uv]`` table, or the project directory contains a ``uv.lock`` files then Poe the Poet will recognise this and activate the UvExecutor to execute tasks using ``uv run``.
 
+In case your uv project doesn't have a lockfile or any uv specific config, you can still force poe to use the uv executor like so:
+
+.. code-block:: toml
+
+  [tool.poe]
+  executor.type = "uv"
+
 So Poe the Poet also works well with uv.
 
 

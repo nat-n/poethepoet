@@ -245,6 +245,11 @@
 <section id="usage-with-uv">
 <h2>Usage with uv<a class="headerlink" href="#usage-with-uv" title="Link to this heading">¶</a></h2>
 <p><a href="https://docs.astral.sh/uv/" target="_blank">uv</a> is another popular tool for managing project dependencies with a <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file. If the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> contains a <code class="docutils literal notranslate"><span class="pre">[tool.uv]</span></code> table, or the project directory contains a <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> files then Poe the Poet will recognise this and activate the UvExecutor to execute tasks using <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code>.</p>
+<p>In case your uv project doesn’t have a lockfile or any uv specific config, you can still force poe to use the uv executor like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">executor</span><span class="p">.</span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span>
+</pre></div>
+</div>
 <p>So Poe the Poet also works well with uv.</p>
 </section>
 <section id="usage-without-pyproject-toml">
