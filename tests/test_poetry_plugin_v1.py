@@ -121,6 +121,7 @@ def test_poetry_help_with_poe_command_prefix(run_poetry_1, projects):
     assert result.stdout.startswith("Poetry (version ")
     assert "\n  foo cow-greet" in result.stdout
     assert "\n  foo echo           It's like echo\n" in result.stdout
+    assert "_secret_task" not in result.stdout
 
 
 @pytest.mark.slow

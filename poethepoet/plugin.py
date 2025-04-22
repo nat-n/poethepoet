@@ -124,6 +124,8 @@ class PoetryPlugin(ApplicationPlugin):
                         f"Poe task {task_name!r} conflicts with a poetry command. "
                         "Please rename the task or the configure a command prefix."
                     )
+                if task_name.startswith("_"):
+                    continue
                 self._register_command(application, poe_config, task_name, task)
         else:
             self._register_command(
