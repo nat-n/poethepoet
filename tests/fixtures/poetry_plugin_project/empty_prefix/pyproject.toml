@@ -18,6 +18,7 @@ include = "tasks.toml"
 [tool.poe.tasks]
 echo = { cmd = "poe_test_echo", help = "It's like echo"}
 cow-greet = "cowpy 'good day sir!'"
+_secret_task = "foo"
 
 [build-system]
 requires      = ["poetry-core"]

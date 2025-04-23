@@ -5,7 +5,7 @@ description = "A project that uses poetry as a plugin."
 authors     = ["Nat Noordanus <n@natn.me>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
 
 [tool.poetry.dev-dependencies]
 cowpy = { path = "../../packages/cowpy-1.1.5-py3-none-any.whl" }
@@ -17,6 +17,7 @@ poetry_command = "foo"
 [tool.poe.tasks]
 echo = { cmd = "poe_test_echo", help = "It's like echo"}
 cow-greet = "cowpy 'good day sir!'"
+_secret_task = "foo"
 
 [build-system]
 requires      = ["poetry-core"]
