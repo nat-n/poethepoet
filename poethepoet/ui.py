@@ -65,7 +65,7 @@ class PoeUi:
 
         parser = argparse.ArgumentParser(
             prog=self.program_name,
-            description="Poe the Poet: A task runner that works well with poetry.",
+            description="Poe the Poet: A task runner that works well with poetry or uv",
             add_help=False,
             allow_abbrev=False,
         )
@@ -192,12 +192,7 @@ class PoeUi:
 
         result: list[Union[str, Sequence[str]]] = []
         if verbosity >= 0 and not help_single_task:
-            result.append(
-                (
-                    "Poe the Poet - A task runner that works well with poetry.",
-                    f"version <em>{__version__}</em>",
-                )
-            )
+            result.append((f"<h2>Poe the Poet</h2> (version <em>{__version__}</em>)",))
 
         if info:
             result.append(f"{f'<em2>Result: {info}</em2>'}")
