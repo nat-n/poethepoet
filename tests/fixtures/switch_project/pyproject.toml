@@ -26,11 +26,11 @@ args = [{ name = "override", default = "" }]
 control.expr = "int(${FOO_VAR}) % 2"
 
   [[tool.poe.tasks.var_dependent.switch]]
-  case = "0"
+  case = 0 # case value is interpreted as string even if it isn't
   expr = "f'{${FOO_VAR}} is even'"
 
   [[tool.poe.tasks.var_dependent.switch]]
-  case = "1"
+  case = 1
   shell = "import sys, os; print(os.environ['FOO_VAR'], 'is odd')"
   interpreter = "python"
 
