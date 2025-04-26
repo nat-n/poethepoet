@@ -106,9 +106,8 @@ class PoetryExecutor(PoeExecutor):
 
     @classmethod
     def _poetry_cmd(cls):
-        from_path = cls._poetry_cmd_from_path()
-        if from_path:
-            return str(Path(from_path).resolve())
+        if from_path := cls._poetry_cmd_from_path():
+            return from_path
 
         return "poetry"
 
