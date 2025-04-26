@@ -252,7 +252,7 @@ class PoeThePoet:
         ] = {
             task_name: (
                 (
-                    content.get("help", ""),
+                    str(content.get("help", "")),
                     PoeTaskArgs.get_help_content(
                         content.get("args"), task_name, suppress_errors=bool(error)
                     ),
