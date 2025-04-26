@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
@@ -87,25 +87,32 @@ class ArgSpec(PoeOptions):
         Override parse function to perform validations that require considering all
         argument declarations at once.
         """
-        result = tuple(super().parse(source, strict, extra_keys))
+        try:
+            result = tuple(super().parse(source, strict, extra_keys))
+        except ConfigValidationError as error:
+            PoeTaskArgs._enrich_config_error(error, cast(ArgsDef, source))
+            raise
 
         if strict:
             arg_names = set()
             positional_multiple = None
             for arg in result:
                 if arg.name in arg_names:
-                    raise ConfigValidationError(f"Duplicate argument name {arg.name!r}")
+                    raise ConfigValidationError(
+                        f"Duplicate argument name {arg.name!r}",
+                        context=f"Invalid argument {arg.name!r} declared",
+                    )
                 arg_names.add(arg.name)
 
                 if arg.positional:
                     if positional_multiple:
                         raise ConfigValidationError(
                             f"Only the last positional arg of task may accept"
-                            f" multiple values (not {positional_multiple!r})."
+                            f" multiple values (not {positional_multiple!r}).",
+                            context=f"Invalid argument {arg.name!r} declared",
                         )
                     if arg.multiple:
                         positional_multiple = arg.name
-
         yield from result
 
     @staticmethod
@@ -222,7 +229,7 @@ class PoeTaskArgs:
 
     @staticmethod
     def _enrich_config_error(
-        error: ConfigValidationError, args_def: ArgsDef, task_name: str
+        error: ConfigValidationError, args_def: ArgsDef, task_name: str = ""
     ):
         if isinstance(error.index, int):
             if isinstance(args_def, list):
@@ -236,7 +243,8 @@ class PoeTaskArgs:
             else:
                 arg_ref = error.index
             error.context = f"Invalid argument {arg_ref!r} declared"
-        error.task_name = task_name
+        if task_name:
+            error.task_name = task_name
 
     def build_parser(self, env: EnvVarsManager, program_name: str) -> ArgumentParser:
         import argparse
