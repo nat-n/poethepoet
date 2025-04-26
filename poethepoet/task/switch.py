@@ -88,8 +88,12 @@ class SwitchTask(PoeTask):
             for switch_item in task_def["switch"]:
                 case_task_def = dict(switch_item, args=switch_args)
                 case = case_task_def.pop("case", DEFAULT_CASE)
-                case_tuple = tuple(case) if isinstance(case, list) else (case,)
-                case_task_index = ",".join(str(value) for value in case_tuple)
+                case_tuple = (
+                    tuple(str(value) for value in case)
+                    if isinstance(case, list)
+                    else (str(case),)
+                )
+                case_task_index = ",".join(case_tuple)
                 case_task_specs.append(
                     (
                         case_tuple,
