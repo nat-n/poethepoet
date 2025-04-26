@@ -329,6 +329,12 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"option set: {dep_task_name!r}"
                         )
 
+            if self.options.args:
+                from .args import ArgSpec
+
+                for _ in ArgSpec.parse(self.options.args):
+                    pass
+
         def _task_validations(self, config: "PoeConfig", task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type

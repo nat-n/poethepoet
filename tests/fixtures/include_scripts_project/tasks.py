@@ -14,7 +14,7 @@ def tasks1(task_suffix: str = ""):
                 "help": "Checking that we can pass an arg",
                 "args": [
                     {
-                        "name ": "ARG_VAR",
+                        "name": "ARG_VAR",
                         "options": ["--something"],
                         "help": "This is the arg",
                     }
