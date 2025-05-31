@@ -74,6 +74,15 @@ class PoeCommand(Command):
             output=io.output.stream,
             poetry_env_path=poetry_env_path,
             program_name=f"poetry {cls.command_prefix}",
+            # Suppress global CLI options on poe that don't work as a poetry plugin
+            suppress_args=(
+                "help",
+                "version",
+                "verbosity",
+                "project_root",
+                "legacy_project_root",
+                "ansi",
+            ),
         )
 
 
@@ -304,5 +313,5 @@ def _index_of_first_non_option(tokens: list[str]):
         if token[0] != "-" and previous_token not in options_with_args:
             return index
         previous_token = token
-    else:
-        return len(tokens)
+
+    return len(tokens)
