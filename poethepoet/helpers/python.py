@@ -3,10 +3,14 @@ Helper functions for parsing and manipulating python code, as required by Script
 ExprTask.
 """
 
+from __future__ import annotations
+
 import ast
 import re
-from collections.abc import Collection, Container, Iterator
-from typing import Any, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, Container, Iterator
 
 from ..exceptions import ExpressionParseError
 
@@ -84,8 +88,8 @@ class FunctionCall(NamedTuple):
         arguments: Container[str],
         *,
         args_prefix: str = "__args.",
-        allowed_vars: Container[str] = tuple(),
-    ) -> "FunctionCall":
+        allowed_vars: Container[str] | None = None,
+    ) -> FunctionCall:
         root_node = cast(ast.Call, parse_and_validate(source, True, "script"))
         name_nodes = _validate_nodes_and_get_names(root_node, source)
 
@@ -98,7 +102,11 @@ class FunctionCall(NamedTuple):
                     (_get_name_node_abs_range(source, node), args_prefix + node.id)
                 )
                 referenced_args.append(node.id)
-            elif node.id in _ALLOWED_BUILTINS or node.id in allowed_vars:
+            elif (
+                node.id in _ALLOWED_BUILTINS
+                or allowed_vars is None
+                or node.id in allowed_vars
+            ):
                 referenced_globals.append(node.id)
             else:
                 raise ExpressionParseError(
@@ -193,7 +201,7 @@ def parse_and_validate(
     return root_node
 
 
-def format_class(attrs: Optional[dict[str, Any]], classname: str = "__args") -> str:
+def format_class(attrs: dict[str, Any] | None, classname: str = "__args") -> str:
     """
     Generates source for a python class with the entries of the given dictionary
     represented as class attributes. Output is a one-liner.

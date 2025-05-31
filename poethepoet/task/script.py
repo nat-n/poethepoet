@@ -1,7 +1,7 @@
 import shlex
 from typing import TYPE_CHECKING
 
-from ..exceptions import ConfigValidationError, ExpressionParseError
+from ..exceptions import ConfigValidationError
 from ..helpers.script import parse_script_reference
 from .base import PoeTask
 
@@ -41,16 +41,15 @@ class ScriptTask(PoeTask):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
-            from ..helpers.python import parse_and_validate
 
-            try:
-                target_module, target_ref = self.content.split(":", 1)
-                if not target_ref.isidentifier():
-                    parse_and_validate(target_ref, call_only=True)
-            except (ValueError, ExpressionParseError):
+            from ..helpers.script import validate_script_or_module_reference
+
+            validate_script_or_module_reference(self.content)
+
+            if ":" not in self.content and self.args:
                 raise ConfigValidationError(
-                    f"Invalid callable reference {self.content!r}\n"
-                    "(expected something like `module:callable` or `module:callable()`)"
+                    "Script task referencing a module (instead of a function) cannot "
+                    "declare arguments."
                 )
 
     spec: TaskSpec
@@ -66,6 +65,9 @@ class ScriptTask(PoeTask):
         env.update(named_arg_values)
 
         # TODO: do something about extra_args, like raise an error?
+
+        if ":" not in self.spec.content:
+            return self._run_module(context, env)
 
         target_module, function_call = parse_script_reference(
             self.spec.content,
@@ -110,3 +112,24 @@ class ScriptTask(PoeTask):
         return self._get_executor(
             context, env, delegate_dry_run=has_dry_run_ref, resolve_python=True
         ).execute(cmd, use_exec=self.spec.options.get("use_exec", False))
+
+    def _run_module(
+        self,
+        context: "RunContext",
+        env: "EnvVarsManager",
+    ):
+        """
+        Execute the python module referenced by the task content
+        """
+
+        argv = [
+            *(env.fill_template(token) for token in self.invocation[1:]),
+        ]
+        cmd = ("python", "-m", self.spec.content, *argv)
+
+        action_summary = self.name + (f" {shlex.join(argv)}" if argv else "")
+        self._print_action(action_summary, context.dry)
+
+        return self._get_executor(context, env, resolve_python=True).execute(
+            cmd, use_exec=self.spec.options.get("use_exec", False)
+        )
