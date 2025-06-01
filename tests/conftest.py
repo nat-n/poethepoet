@@ -216,9 +216,11 @@ def run_poe(capsys, projects):
             program_name=program_name,
             env=env,
         )
-        result = poe(run_args)
+        result_code = poe(run_args)
         output_capture.seek(0)
-        return PoeRunResult(result, cwd, output_capture.read(), *capsys.readouterr())
+        return PoeRunResult(
+            result_code, cwd, output_capture.read(), *capsys.readouterr()
+        )
 
     return run_poe
 
@@ -237,9 +239,15 @@ def run_poe_main(capsys, projects):
         prev_cwd = os.getcwd()
         os.chdir(cwd)
         sys.argv = ("poe", *cli_args)
-        result = main()
-        os.chdir(prev_cwd)
-        return PoeRunResult(result, cwd, "", *capsys.readouterr())
+        try:
+            main()
+            result = PoeRunResult(0, cwd, "", *capsys.readouterr())
+        except SystemExit as error:
+            result = PoeRunResult(error.args[0], cwd, "", *capsys.readouterr())
+        finally:
+            os.chdir(prev_cwd)
+        print(result)
+        return result
 
     return run_poe_main
 

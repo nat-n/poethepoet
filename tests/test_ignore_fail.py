@@ -101,9 +101,7 @@ def test_nested_lvl2_return_non_zero(generate_pyproject, run_poe):
     assert "task 1 error" in result.capture, "Expected first task in log"
     assert "task 2 error" not in result.capture, "Expected task 2 to be skipped"
     assert "task 3 success" in result.capture, "Expected third task in log"
-    assert (
-        "Warning: Sequence aborted after failed subtask 'task_1'" in result.stdout
-    )  # TODO log warnings to capture
+    assert "Warning: Sequence aborted after failed subtask 'task_1'" in result.capture
     assert "Error: Subtask 'lvl1_seq' returned non-zero exit status" in result.capture
 
 
@@ -118,8 +116,6 @@ def test_nested_both_return_non_zero(generate_pyproject, run_poe):
     assert "task 3 success" in result.capture, "Expected third task in log"
     assert (
         "Warning: Subtasks 'task_1', 'task_2' returned non-zero exit status"
-        in result.stdout
-    )  # TODO log warnings to capture
-    assert (
-        "Error: Subtask 'lvl1_seq' returned non-zero exit status" in result.capture
-    )  # TODO log warnings to capture
+        in result.capture
+    )
+    assert "Error: Subtask 'lvl1_seq' returned non-zero exit status" in result.capture

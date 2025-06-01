@@ -157,30 +157,40 @@ def test_wrong_args_passed(run_poe_subproc):
     result = run_poe_subproc(
         "greet-full-args", "--age=lol", project="scripts", env=no_venv
     )
-    assert result.capture == ""
-    assert result.stdout == ""
-    assert result.stderr == (
+    assert result.capture == (
         f"{base_error} argument --age/-a: invalid int value: 'lol'\n"
+        "Error: Invalid arguments for task 'greet-full-args'\n"
     )
+    assert result.stdout == ""
+    assert result.stderr == ""
 
     result = run_poe_subproc("greet-full-args", "--age", project="scripts", env=no_venv)
-    assert result.capture == ""
+    assert result.capture == (
+        f"{base_error} argument --age/-a: expected one argument\n"
+        "Error: Invalid arguments for task 'greet-full-args'\n"
+    )
     assert result.stdout == ""
-    assert result.stderr == (f"{base_error} argument --age/-a: expected one argument\n")
+    assert result.stderr == ""
 
     result = run_poe_subproc(
         "greet-full-args", "--age 3 2 1", project="scripts", env=no_venv
     )
-    assert result.capture == ""
+    assert result.capture == (
+        f"{base_error} unrecognized arguments: --age 3 2 1\n"
+        "Error: Invalid arguments for task 'greet-full-args'\n"
+    )
     assert result.stdout == ""
-    assert result.stderr == (f"{base_error} unrecognized arguments: --age 3 2 1\n")
+    assert result.stderr == ""
 
     result = run_poe_subproc(
         "greet-full-args", "--potato", project="scripts", env=no_venv
     )
-    assert result.capture == ""
+    assert result.capture == (
+        f"{base_error} unrecognized arguments: --potato\n"
+        "Error: Invalid arguments for task 'greet-full-args'\n"
+    )
     assert result.stdout == ""
-    assert result.stderr == (f"{base_error} unrecognized arguments: --potato\n")
+    assert result.stderr == ""
 
 
 def test_required_args(run_poe_subproc):
@@ -197,11 +207,12 @@ def test_required_args(run_poe_subproc):
     assert result.stderr == ""
 
     result = run_poe_subproc("greet-strict", project="scripts", env=no_venv)
-    assert result.capture == ""
+    assert result.stderr == ""
     assert result.stdout == ""
-    assert result.stderr == (
+    assert result.capture == (
         "usage: poe greet-strict --greeting GREETING --name NAME\npoe greet-strict: "
         "error: the following arguments are required: --greeting, --name\n"
+        "Error: Invalid arguments for task 'greet-strict'\n"
     )
 
 
@@ -254,23 +265,25 @@ def test_script_with_positional_args(run_poe_subproc):
 
     # Omission of required positional arg
     result = run_poe_subproc("greet-positional", project="scripts", env=no_venv)
-    assert result.capture == ""
-    assert result.stdout == ""
-    assert result.stderr == (
+    assert result.capture == (
         "usage: poe greet-positional [--upper] [greeting] user\n"
         "poe greet-positional: error: the following arguments are required: user\n"
+        "Error: Invalid arguments for task 'greet-positional'\n"
     )
+    assert result.stdout == ""
+    assert result.stderr == ""
 
     # Too many positional args
     result = run_poe_subproc(
         "greet-positional", "plop", "plop", "plop", project="scripts", env=no_venv
     )
-    assert result.capture == ""
-    assert result.stdout == ""
-    assert result.stderr == (
+    assert result.capture == (
         "usage: poe greet-positional [--upper] [greeting] user\n"
         "poe greet-positional: error: unrecognized arguments: plop\n"
+        "Error: Invalid arguments for task 'greet-positional'\n"
     )
+    assert result.stdout == ""
+    assert result.stderr == ""
 
 
 def test_script_with_positional_args_and_options(run_poe_subproc):
@@ -345,12 +358,12 @@ def test_script_with_multi_value_args(run_poe_subproc):
         project="scripts",
         env=no_venv,
     )
-    assert result.capture == ""
-    assert result.stdout == ""
     assert (
         "poe multiple-value-args: error: argument --widgets: expected 2 arguments"
-        in result.stderr
+        in result.capture
     )
+    assert result.stdout == ""
+    assert result.stderr == ""
 
     # Too many values for option: 3
     result = run_poe_subproc(
@@ -365,15 +378,15 @@ def test_script_with_multi_value_args(run_poe_subproc):
         project="scripts",
         env=no_venv,
     )
-    assert result.capture == ""
-    assert result.stdout == ""
     # accomodate difference in argparse output between python versions
     assert (
         "poe multiple-value-args: error: argument second: invalid int value: 'dong'"
-        in result.stderr
+        in result.capture
     ) or (
-        "poe multiple-value-args: error: unrecognized arguments: dong" in result.stderr
+        "poe multiple-value-args: error: unrecognized arguments: dong" in result.capture
     )
+    assert result.stdout == ""
+    assert result.stderr == ""
 
     # wrong type for multiple values
     result = run_poe_subproc(
@@ -385,12 +398,12 @@ def test_script_with_multi_value_args(run_poe_subproc):
         project="scripts",
         env=no_venv,
     )
-    assert result.capture == ""
-    assert result.stdout == ""
     assert (
         "poe multiple-value-args: error: argument second: invalid int value: 'wrong'"
-        in result.stderr
+        in result.capture
     )
+    assert result.stdout == ""
+    assert result.stderr == ""
 
 
 def test_async_script_task(run_poe_subproc, projects):

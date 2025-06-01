@@ -35,9 +35,9 @@ class UvExecutor(PoeExecutor):
         """
 
         uv_run_options = []
-        if self.context.ui and self.context.ui.verbosity > 0:
+        if self._io.verbosity > 0:
             uv_run_options.append("-v")
-        elif self.context.ui and self.context.ui.verbosity < 0:
+        elif self._io.verbosity < 0:
             uv_run_options.append("-q")
 
         if self.working_dir:

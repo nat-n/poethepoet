@@ -160,7 +160,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     run_poe_subproc, projects, is_windows
 ):
     result = run_poe_subproc("get_cwd_0", project="monorepo")
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
     else:
@@ -168,7 +168,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     assert result.stderr == ""
 
     result = run_poe_subproc("get_cwd_1", project="monorepo")
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
     else:
@@ -176,7 +176,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     assert result.stderr == ""
 
     result = run_poe_subproc("get_cwd_2", project="monorepo")
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith(
             "\\tests\\fixtures\\monorepo_project\\subproject_2\n"
@@ -191,7 +191,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         "get_cwd_3",
         cwd=projects["example"],
     )
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\example_project\n")
     else:
@@ -331,7 +331,7 @@ def test_include_tasks_from_git_repo(run_poe_subproc, projects):
     result = run_poe_subproc(
         "did_it_work2", cwd=projects["includes/sub_git_repo/sub_project"]
     )
-    assert result.capture == "Poe => poe_test_echo yes\n"
+    assert "Poe => poe_test_echo yes\n" in result.capture
     assert result.stdout == "yes\n"
     assert result.stderr == ""
 
@@ -341,7 +341,7 @@ def test_use_poe_git_vars(run_poe_subproc, projects, is_windows, poe_project_pat
     result = run_poe_subproc(
         "has_repo_env_vars", cwd=projects["includes/sub_git_repo/sub_project"]
     )
-    assert result.capture.startswith("Poe => poe_test_echo XXX")
+    assert "Poe => poe_test_echo XXX" in result.capture
     if is_windows:
         assert result.stdout.endswith(
             # Can't find a sane way to properly test POE_GIT_ROOT :(
@@ -364,7 +364,7 @@ def test_poe_git_vars_for_task_level_envfile_and_env(
     result = run_poe_subproc(
         "print_env", cwd=projects["includes/sub_git_repo/sub_project"]
     )
-    assert result.capture.startswith("Poe => poe_test_env")
+    assert "Poe => poe_test_env\n" in result.capture
     assert "POE_GIT_ROOT=" not in result.stdout
     assert f"POE_GIT_ROOT_2={poe_project_path}" in result.stdout
     assert "POE_GIT_DIR=" not in result.stdout

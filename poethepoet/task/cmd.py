@@ -68,13 +68,12 @@ class CmdTask(PoeTask):
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
 
-        if result != 0 and self.__passed_unmatched_glob and self.ctx.ui.verbosity >= 0:
+        if result != 0 and self.__passed_unmatched_glob:
             # We made a breaking change in 0.36.0 to pass through glob patterns with no
             # matches. If this might have been the cause of the failure, we print a
             # warning with a link.
-            print(
-                "Warning:",
-                "Task failure may be related to a breaking change in "
+            self.ctx.io.print_warning(
+                "Poe task failure may be related to a breaking change in "
                 "poethepoet 0.36.0 in the default handling of unmatched glob patterns. "
                 "More details: https://github.com/nat-n/poethepoet/discussions/314",
             )

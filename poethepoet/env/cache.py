@@ -1,23 +1,20 @@
-from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 from ..exceptions import ExecutionError
 
 if TYPE_CHECKING:
-    from .ui import PoeUi
-
-POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
+    from ..io import PoeIO
 
 
 class EnvFileCache:
     _cache: dict[str, dict[str, str]] = {}
-    _ui: Optional["PoeUi"]
+    _io: "PoeIO"
     _project_dir: Path
 
-    def __init__(self, project_dir: Path, ui: Optional["PoeUi"]):
+    def __init__(self, project_dir: Path, io: "PoeIO"):
         self._project_dir = project_dir
-        self._ui = ui
+        self._io = io
 
     def get(self, envfile: Union[str, Path]) -> dict[str, str]:
         """
@@ -38,8 +35,7 @@ class EnvFileCache:
             try:
                 with envfile_path.open(encoding="utf-8") as envfile_file:
                     result = parse_env_file(envfile_file.readlines())
-                if POE_DEBUG:
-                    print(f" + Loaded Envfile from {envfile_path}")
+                self._io.print_debug(f" + Loaded Envfile from {envfile_path}")
             except ValueError as error:
                 message = error.args[0]
                 raise ExecutionError(
@@ -48,14 +44,9 @@ class EnvFileCache:
                 ) from error
 
         else:
-            if POE_DEBUG:
-                print(f" ! Envfile not found at {envfile_path}")
-
-            if self._ui is not None:
-                self._ui.print_msg(
-                    f"Warning: Poe failed to locate envfile at {envfile_path_str!r}",
-                    verbosity=1,
-                )
+            self._io.print_warning(
+                f"Poe failed to locate envfile at {envfile_path_str!r}"
+            )
 
         self._cache[envfile_path_str] = result
         return result

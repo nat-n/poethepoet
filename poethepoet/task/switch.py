@@ -66,9 +66,10 @@ class SwitchTask(PoeTask):
             task_def: dict[str, Any],
             factory: "TaskSpecFactory",
             source: "ConfigPartition",
+            *,
             parent: Optional["PoeTask.TaskSpec"] = None,
         ):
-            super().__init__(name, task_def, factory, source, parent)
+            super().__init__(name, task_def, factory, source, parent=parent)
 
             switch_args = task_def.get("args")
             control_task_def = task_def["control"]
@@ -168,7 +169,7 @@ class SwitchTask(PoeTask):
 
         self.control_task = self.spec.control_task_spec.create_task(
             invocation=control_invocation,
-            ctx=TaskContext.from_task(self),
+            ctx=TaskContext.from_task(self, self.spec),
             capture_stdout=True,
         )
 
@@ -180,7 +181,7 @@ class SwitchTask(PoeTask):
 
             case_task = case_spec.create_task(
                 invocation=task_invocation,
-                ctx=TaskContext.from_task(self),
+                ctx=TaskContext.from_task(self, case_spec),
                 capture_stdout=self.capture_stdout,
             )
             for case_key in case_keys:

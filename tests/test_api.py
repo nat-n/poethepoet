@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_customize_program_name(run_poe, projects):
     result = run_poe(program_name="boop")
     assert "Usage:\n  boop [global options] task" in result.capture
@@ -9,13 +6,13 @@ def test_customize_program_name(run_poe, projects):
 
 
 def test_bad_args_doc_with_custom_program_name(run_poe, projects, capsys):
-    with pytest.raises(SystemExit):
-        result = run_poe("async-task", "--fail", program_name="boop", project="scripts")
-    result = capsys.readouterr()
-    assert result.out == ""
-    assert result.err == (
+    result = run_poe("async-task", "--fail", program_name="boop", project="scripts")
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert result.capture == (
         "usage: boop async-task [--a A] [--b B]\n"
         "boop async-task: error: unrecognized arguments: --fail\n"
+        "Error: Invalid arguments for task 'async-task'\n"
     )
 
 

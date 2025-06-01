@@ -78,8 +78,9 @@ class RefTask(PoeTask):
             *extra_args,
         )
 
-        task = self.ctx.specs.get(ref_invocation[0]).create_task(
-            invocation=ref_invocation, ctx=TaskContext.from_task(self)
+        task_spec = self.ctx.specs.get(ref_invocation[0])
+        task = task_spec.create_task(
+            invocation=ref_invocation, ctx=TaskContext.from_task(self, task_spec)
         )
 
         if task.has_deps():

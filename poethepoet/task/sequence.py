@@ -53,9 +53,10 @@ class SequenceTask(PoeTask):
             task_def: dict[str, Any],
             factory: "TaskSpecFactory",
             source: "ConfigPartition",
+            *,
             parent: Optional["PoeTask.TaskSpec"] = None,
         ):
-            super().__init__(name, task_def, factory, source, parent)
+            super().__init__(name, task_def, factory, source, parent=parent)
 
             self.subtasks = []
             for index, sub_task_def in enumerate(task_def[SequenceTask.__key__]):
@@ -97,7 +98,7 @@ class SequenceTask(PoeTask):
             Perform validations on this TaskSpec that apply to a specific task type
             """
             for subtask in self.subtasks:
-                if subtask.args:
+                if subtask.has_args:
                     raise ConfigValidationError(
                         "Unsupported option 'args' for task declared inside sequence"
                     )
@@ -118,7 +119,7 @@ class SequenceTask(PoeTask):
         self.subtasks = [
             task_spec.create_task(
                 invocation=(self._subtask_name(task_spec.name, index),),
-                ctx=TaskContext.from_task(self),
+                ctx=TaskContext.from_task(self, task_spec),
             )
             for index, task_spec in enumerate(spec.subtasks)
         ]
@@ -139,13 +140,14 @@ class SequenceTask(PoeTask):
             context.multistage = True
 
         ignore_fail = self.spec.options.ignore_fail
-        non_zero_subtasks: list[str] = list()
+        non_zero_subtasks: list[str] = []
         for subtask in self.subtasks:
+            task_result = None
             try:
                 task_result = subtask.run(context=context, parent_env=env)
             except ExecutionError as error:
                 if ignore_fail:
-                    print("Warning:", error.msg)
+                    self.ctx.io.print_warning(error.msg, message_verbosity=0)
                     non_zero_subtasks.append(subtask.name)
                 else:
                     raise
