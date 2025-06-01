@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Optional, Union
 
 from ..config.primitives import EmptyDict, EnvDefault
 from ..exceptions import ConfigValidationError, PoeException
+from ..io import PoeIO
 from ..options import PoeOptions
 
 if TYPE_CHECKING:
@@ -48,10 +49,12 @@ TaskDef = Union[str, Mapping[str, Any], Sequence[Union[str, Mapping[str, Any]]]]
 class TaskSpecFactory:
     __cache: dict[str, "PoeTask.TaskSpec"]
     config: "PoeConfig"
+    io: PoeIO
 
-    def __init__(self, config: "PoeConfig"):
+    def __init__(self, config: "PoeConfig", io: PoeIO):
         self.__cache = {}
         self.config = config
+        self.io = io
 
     def __contains__(self, other) -> bool:
         return other in self.__cache
@@ -98,6 +101,7 @@ class TaskSpecFactory:
             factory=self,
             source=source,
             parent=parent,
+            io=self.io,
         )
 
     def load_all(self):
@@ -139,8 +143,13 @@ class TaskContext(NamedTuple):
 
     config: "PoeConfig"
     cwd: str
+    io: "PoeIO"
     ui: "PoeUi"
     specs: "TaskSpecFactory"
+
+    @property
+    def verbosity(self) -> int:
+        return self.io.verbosity
 
     @classmethod
     def from_task(cls, parent_task: "PoeTask"):
@@ -148,6 +157,7 @@ class TaskContext(NamedTuple):
             config=parent_task.ctx.config,
             cwd=str(parent_task.spec.options.get("cwd", parent_task.ctx.cwd)),
             specs=parent_task.ctx.specs,
+            io=PoeIO(parent=parent_task.ctx.io),
             ui=parent_task.ctx.ui,
         )
 
@@ -167,6 +177,7 @@ class PoeTask(metaclass=MetaPoeTask):
         executor: Optional[dict] = None
         help: Optional[str] = None
         uses: Optional[Mapping[str, str]] = None
+        verbosity: Optional[int] = None
 
         def validate(self):
             """
@@ -180,6 +191,7 @@ class PoeTask(metaclass=MetaPoeTask):
         task_type: type["PoeTask"]
         source: "ConfigPartition"
         parent: Optional["PoeTask.TaskSpec"] = None
+        _io: "PoeIO"
 
         _args: Optional["PoeTaskArgs"] = None
 
@@ -189,6 +201,8 @@ class PoeTask(metaclass=MetaPoeTask):
             task_def: dict[str, Any],
             factory: TaskSpecFactory,
             source: "ConfigPartition",
+            *,
+            io: "PoeIO",
             parent: Optional["PoeTask.TaskSpec"] = None,
         ):
             self.name = name
@@ -196,6 +210,7 @@ class PoeTask(metaclass=MetaPoeTask):
             self.options = self._parse_options(task_def)
             self.source = source
             self.parent = parent
+            self._io = io
 
         def _parse_options(self, task_def: dict[str, Any]):
             try:
@@ -219,7 +234,7 @@ class PoeTask(metaclass=MetaPoeTask):
             task_envfile = self.options.get("envfile")
             task_env = self.options.get("env")
 
-            result = parent_env.clone()
+            result = parent_env.clone(io=self._io)
 
             # Include env vars from outputs of upstream dependencies
             if uses_values:
@@ -240,7 +255,7 @@ class PoeTask(metaclass=MetaPoeTask):
             from .args import PoeTaskArgs
 
             if not self._args and self.options.args:
-                self._args = PoeTaskArgs(self.options.args, self.name)
+                self._args = PoeTaskArgs(self.options.args, self.name, io=self._io)
 
             return self._args
 
@@ -446,10 +461,10 @@ class PoeTask(metaclass=MetaPoeTask):
         Run this task
         """
 
-        if environ.get("POE_DEBUG"):
+        if self.ctx.io.is_debug_enabled:
             task_type_key = self.__key__  # type: ignore[attr-defined]
-            print(f" * Running     {task_type_key}:{self.name}")
-            print(f" . Invocation  {self.invocation!r}")
+            self.ctx.io.print_debug(f" * Running     {task_type_key}:{self.name}")
+            self.ctx.io.print_debug(f" . Invocation  {self.invocation!r}")
 
         upstream_invocations = self._get_upstream_invocations(context)
 
@@ -469,10 +484,10 @@ class PoeTask(metaclass=MetaPoeTask):
             context._get_dep_values(upstream_invocations["uses"]),
         )
 
-        if environ.get("POE_DEBUG"):
+        if self.ctx.io.is_debug_enabled:
             named_arg_values, extra_args = self.get_parsed_arguments(task_env)
-            print(f" . Parsed args {named_arg_values!r}")
-            print(f" . Extra args  {extra_args!r}")
+            self.ctx.io.print_debug(f" . Parsed args {named_arg_values!r}")
+            self.ctx.io.print_debug(f" . Extra args  {extra_args!r}")
 
         return self._handle_run(context, task_env)
 
@@ -503,6 +518,7 @@ class PoeTask(metaclass=MetaPoeTask):
             capture_stdout=self.capture_stdout,
             resolve_python=resolve_python,
             delegate_dry_run=delegate_dry_run,
+            io=self.ctx.io,
         )
 
     def get_working_dir(
@@ -557,12 +573,19 @@ class PoeTask(metaclass=MetaPoeTask):
     def _instantiate_dep(
         self, invocation: tuple[str, ...], capture_stdout: bool
     ) -> "PoeTask":
-        return self.ctx.specs.get(invocation[0]).create_task(
+        task_spec = self.ctx.specs.get(invocation[0])
+        return task_spec.create_task(
             invocation=invocation,
             ctx=TaskContext(
                 config=self.ctx.config,
                 cwd=str(self.ctx.config.project_dir),
                 specs=self.ctx.specs,
+                io=PoeIO(
+                    parent=self.ctx.io,
+                    baseline_verbosity=task_spec.options.get(
+                        "verbosity", self.ctx.io.verbosity
+                    ),
+                ),
                 ui=self.ctx.ui,
             ),
             capture_stdout=capture_stdout,
@@ -603,8 +626,9 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         min_verbosity = -1 if dry else 0
         arrow = "??" if unresolved else "<=" if self.capture_stdout else "=>"
-        self.ctx.ui.print_msg(
-            f"<hl>Poe {arrow}</hl> <action>{action}</action>", min_verbosity
+        self.ctx.io.print_error(
+            f"<hl>Poe {arrow}</hl> <action>{action}</action>",
+            message_verbosity=min_verbosity,
         )
 
     class Error(Exception):

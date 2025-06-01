@@ -98,10 +98,10 @@ class ProjectConfig(ConfigPartition):
         default_array_task_type: str = "sequence"
         default_array_item_task_type: str = "ref"
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = tuple()
+        envfile: Union[str, Sequence[str]] = ()
         executor: Mapping[str, str] = MappingProxyType({"type": "auto"})
-        include: Union[str, Sequence[str], Sequence[IncludeItem]] = tuple()
-        include_script: Union[str, Sequence[Union[str, IncludeScriptItem]]] = tuple()
+        include: Union[str, Sequence[str], Sequence[IncludeItem]] = ()
+        include_script: Union[str, Sequence[Union[str, IncludeScriptItem]]] = ()
         poetry_command: str = "poe"
         poetry_hooks: Mapping[str, str] = EmptyDict
         shell_interpreter: Union[str, Sequence[str]] = "posix"
@@ -202,10 +202,10 @@ class ProjectConfig(ConfigPartition):
                         )
 
             # Validate default verbosity.
-            if self.verbosity < -1 or self.verbosity > 2:
+            if self.verbosity < -2 or self.verbosity > 2:
                 raise ConfigValidationError(
                     f"Invalid value for option 'verbosity': {self.verbosity!r},\n"
-                    "Expected value be between -1 and 2."
+                    "Expected value be between -2 and 2."
                 )
 
             self.validate_env(self.env)

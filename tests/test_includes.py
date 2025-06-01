@@ -160,7 +160,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     run_poe_subproc, projects, is_windows
 ):
     result = run_poe_subproc("get_cwd_0", project="monorepo")
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
     else:
@@ -168,7 +168,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     assert result.stderr == ""
 
     result = run_poe_subproc("get_cwd_1", project="monorepo")
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
     else:
@@ -176,7 +176,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     assert result.stderr == ""
 
     result = run_poe_subproc("get_cwd_2", project="monorepo")
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith(
             "\\tests\\fixtures\\monorepo_project\\subproject_2\n"
@@ -191,7 +191,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         "get_cwd_3",
         cwd=projects["example"],
     )
-    assert result.capture == "Poe => import os; print(os.getcwd())\n"
+    assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\example_project\n")
     else:

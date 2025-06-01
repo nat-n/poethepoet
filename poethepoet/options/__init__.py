@@ -134,7 +134,7 @@ class PoeOptions:
         This is the most tolerant way to fetch a config value using the following
         strategies in priority order:
 
-          1. Get the config value
+          1. Get the config value if it was set explicitly
           2. Return the default value provided as an argument
           3. Return the default value declared for this field
           4. Return the zero value for the type of this field

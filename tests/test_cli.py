@@ -69,7 +69,7 @@ def test_call_unknown_task(run_poe):
     result = run_poe("not_a_task")
     assert result.code == 1, "Expected non-zero result"
     assert (
-        "Error: Unrecognised task 'not_a_task'" in result.capture
+        "Error: Unrecognized task 'not_a_task'" in result.capture
     ), "Output should include error message"
 
 
