@@ -183,12 +183,15 @@ class PoeUi:
         info: Optional[str] = None,
         error: Optional[PoeException] = None,
     ):
-        # TODO: See if this can be done nicely with a custom HelpFormatter
-
         # Ignore verbosity mode if help flag is set
         help_flag_set = self["help"] is None
         help_single_task = self["help"] if isinstance(self["help"], str) else None
         verbosity = 0 if help_flag_set else self.verbosity
+
+        # If there's no error and verbosity wasn't explicitly decreased for this call,
+        # then ensure we still print help
+        if not error and self.verbosity < 0 and not self["decrease_verbosity"]:
+            verbosity = 0
 
         result: list[Union[str, Sequence[str]]] = []
         if verbosity >= 0 and not help_single_task:
