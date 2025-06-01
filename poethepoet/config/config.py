@@ -330,7 +330,7 @@ class PoeConfig:
     def _load_includes(self, strict: bool = True):
         # Attempt to load each of the included configs
         for include in self._project_config.options.include:
-            include_path = self._resolve_include_path(include["path"])
+            include_path = self.resolve_git_path(include["path"])
 
             if not include_path.exists():
                 # TODO: print warning in verbose mode, requires access to ui somehow
@@ -366,25 +366,30 @@ class PoeConfig:
                     filename=str(include_path),
                 ) from error
 
-    def _resolve_include_path(self, include_path: str):
+    def resolve_git_path(self, resource_path: str):
+        """
+        Resolve a path within the project that may contain POE_ROOT, POE_GIT_DIR, or
+        POE_GIT_ROOT variables.
+        """
+
         from ..env.template import apply_envvars_to_template
 
         available_vars = {"POE_ROOT": str(self._project_dir)}
 
-        if "${POE_GIT_DIR}" in include_path:
+        if "${POE_GIT_DIR}" in resource_path:
             from ..helpers.git import GitRepo
 
             git_repo = GitRepo(self._project_dir)
             available_vars["POE_GIT_DIR"] = str(git_repo.path or "")
 
-        if "${POE_GIT_ROOT}" in include_path:
+        if "${POE_GIT_ROOT}" in resource_path:
             from ..helpers.git import GitRepo
 
             git_repo = GitRepo(self._project_dir)
             available_vars["POE_GIT_ROOT"] = str(git_repo.main_path or "")
 
-        include_path = apply_envvars_to_template(
-            include_path, available_vars, require_braces=True
+        resource_path = apply_envvars_to_template(
+            resource_path, available_vars, require_braces=True
         )
 
-        return self._project_dir.joinpath(include_path).resolve()
+        return self._project_dir.joinpath(resource_path).resolve()

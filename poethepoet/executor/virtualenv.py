@@ -56,7 +56,10 @@ class VirtualenvExecutor(PoeExecutor):
         project_dir = self.context.config.project_dir
 
         if "location" in self.options:
-            venv = Virtualenv(project_dir.joinpath(self.options["location"]))
+            venv_location = self.context.config.resolve_git_path(
+                self.options["location"]
+            )
+            venv = Virtualenv(project_dir.joinpath(venv_location))
             if venv.valid():
                 return venv
             raise ExecutionError(
