@@ -129,7 +129,8 @@ If the virtualenv location is a relative path then it is resolved relative to th
 
 .. important::
 
-  This global option can be overridden at runtime by providing the ``--executor`` cli option before the task name with the name of the executor type to use.
+  You can also configure the executor :ref:`at the task level<Change the executor type>`, which will have higher precedence.
+  Alternatively you can override the executor type at runtime by passing the ``--executor`` CLI option (before the task name) with the name of the executor to use.
 
 Change the default shell interpreter
 ------------------------------------

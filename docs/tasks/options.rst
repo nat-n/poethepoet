@@ -32,6 +32,9 @@ The following options can be configured on your tasks and are not specific to an
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.
 
+**executor** : ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
+  Specify that this task should be executed with a specific executor.
+
 **use_exec** : ``bool`` :ref:`📖<Defining tasks that run via exec instead of a subprocess>`
   Specify that this task should be executed in the same process, instead of as a subprocess.
 
@@ -154,6 +157,20 @@ The ``capture_stdout`` option supports referencing environment variables. For ex
 .. warning::
 
   The ``capture_stdout`` is incompatible with the ``use_exec`` option, and tasks that declare it cannot be referenced by another task via the ``uses`` option.
+
+
+Configure the executor for a task
+---------------------------------
+
+You can specify a default executor for a task by providing the ``executor`` option like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd      = "gunicorn ./my_app:run"
+    executor = { type = "virtualenv", location = "./server.venv" }
+
+This works exactly like the the global option to :ref:`change the executor type<Change the executor type>` except it only impacts the one task.
 
 
 Defining tasks that run via exec instead of a subprocess
