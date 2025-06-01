@@ -62,14 +62,7 @@ class PoeCommand(Command):
 
         poe_config = poe_config or cls.poe_config
 
-        if io.output.is_quiet():
-            poe_config._baseline_verbosity = -1
-        elif io.is_very_verbose():
-            poe_config._baseline_verbosity = 2
-        elif io.is_verbose():
-            poe_config._baseline_verbosity = 1
-
-        return PoeThePoet(
+        poe = PoeThePoet(
             config=poe_config,
             output=io.output.stream,
             poetry_env_path=poetry_env_path,
@@ -84,6 +77,15 @@ class PoeCommand(Command):
                 "ansi",
             ),
         )
+
+        if io.output.is_quiet():
+            poe.modify_verbosity(-1)
+        elif io.is_verbose():
+            poe.modify_verbosity(1)
+        elif io.is_very_verbose():
+            poe.modify_verbosity(2)
+
+        return poe
 
 
 class PoetryPlugin(ApplicationPlugin):

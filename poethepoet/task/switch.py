@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..io import PoeIO
     from .base import TaskSpecFactory
 
 
@@ -66,9 +67,11 @@ class SwitchTask(PoeTask):
             task_def: dict[str, Any],
             factory: "TaskSpecFactory",
             source: "ConfigPartition",
+            *,
+            io: "PoeIO",
             parent: Optional["PoeTask.TaskSpec"] = None,
         ):
-            super().__init__(name, task_def, factory, source, parent)
+            super().__init__(name, task_def, factory, source, io=io, parent=parent)
 
             switch_args = task_def.get("args")
             control_task_def = task_def["control"]
