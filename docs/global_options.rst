@@ -119,6 +119,14 @@ parent directory. If no location is specified for a virtualenv then the default 
   type = "virtualenv"
   location = "myvenv"
 
+If the virtualenv location is a relative path then it is resolved relative to the project root (the parent directory of the pyproject.toml file. However in a monorepo project it may also be defined relative to the git repo root by templating :ref:`these  special environment variables<Special variables>` like so:
+
+.. code-block:: toml
+
+  [tool.poe.executor]
+  type = "virtualenv"
+  location = "${POE_GIT_DIR}/myvenv"
+
 .. important::
 
   This global option can be overridden at runtime by providing the ``--executor`` cli option before the task name with the name of the executor type to use.
