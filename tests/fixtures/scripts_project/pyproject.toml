@@ -4,9 +4,7 @@ version = "0.1.0"
 description = "scripts-project"
 authors = ["Nat Noordanus <n@natn.me>"]
 
-packages = [
-  { include = "pkg" }
-]
+packages = [{ include = "pkg" }]
 
 [tool.poe]
 default_task_type = "script"
@@ -29,148 +27,148 @@ static-args-test = """
 """
 
 # For testing that deep module scope references work & use_exec works with script tasks
-call_attrs.script   = "pkg:Scripts.Deep.fun(0)"
+call_attrs.script = "pkg:Scripts.Deep.fun(0)"
 call_attrs.use_exec = true
 
 greet = "pkg:greet"
 
 async-task.script = "pkg:async_task"
-async-task.args = ["a","b"]
+async-task.args = ["a", "b"]
 
-  [tool.poe.tasks.print-script-result]
-  script       = "pkg:get_random_number"
-  print_result = true
+[tool.poe.tasks.print-script-result]
+script = "pkg:get_random_number"
+print_result = true
 
-  [tool.poe.tasks.dont-print-script-result]
-  script = "pkg:get_random_number"
+[tool.poe.tasks.dont-print-script-result]
+script = "pkg:get_random_number"
 
-  [tool.poe.tasks.greet-passed-args]
-  # weird formatting is intentional
-  script = """
+[tool.poe.tasks.greet-passed-args]
+# weird formatting is intentional
+script = """
     pkg:greet(
       greeting, user,
       dêƒäült='👋', optional=optional,
       upper=upper)"""
-  args = ["greeting", "user", "optional", "upper"]
+args = ["greeting", "user", "optional", "upper"]
 
-  [tool.poe.tasks.greet-full-args]
-  script = "pkg:greet(greeting, user, upper=(not not upper), fvar=user_height, ivar=age)"
+[tool.poe.tasks.greet-full-args]
+script = "pkg:greet(greeting, user, upper=(not not upper), fvar=user_height, ivar=age)"
 
-    [tool.poe.tasks.greet-full-args.args.greeting]
-    options = ["--greeting", "-g"]
-    type = "string"
-    default = "hi"
+[tool.poe.tasks.greet-full-args.args.greeting]
+options = ["--greeting", "-g"]
+type = "string"
+default = "hi"
 
-    [tool.poe.tasks.greet-full-args.args.user]
-    # defaults to string if no type given
+[tool.poe.tasks.greet-full-args.args.user]
+# defaults to string if no type given
 
-    [tool.poe.tasks.greet-full-args.args.upper]
-    default = false
-    type = "boolean"
+[tool.poe.tasks.greet-full-args.args.upper]
+default = false
+type = "boolean"
 
-    [tool.poe.tasks.greet-full-args.args.age]
-    options = ["--age", "-a"]
-    type = "integer"
+[tool.poe.tasks.greet-full-args.args.age]
+options = ["--age", "-a"]
+type = "integer"
 
-    [tool.poe.tasks.greet-full-args.args.user_height]
-    options = ["--height", "-h"]
-    type = "float"
-    help = "The user's height in meters"
+[tool.poe.tasks.greet-full-args.args.user_height]
+options = ["--height", "-h"]
+type = "float"
+help = "The user's height in meters"
 
-  [tool.poe.tasks.greet-strict]
-  script = "pkg:greet(greeting, user=name)"
-  help   = "All arguments are required"
-  env    = { DOES = "does", STUFF = "matter" }
+[tool.poe.tasks.greet-strict]
+script = "pkg:greet(greeting, user=name)"
+help = "All arguments are required"
+env = { DOES = "does", STUFF = "matter" }
 
-    [tool.poe.tasks.greet-strict.args.greeting]
-    default = "${DOES}n't ${STUFF}"
-    required = true
-    help = "this one is required"
+[tool.poe.tasks.greet-strict.args.greeting]
+default = "${DOES}n't ${STUFF}"
+required = true
+help = "this one is required"
 
-    [tool.poe.tasks.greet-strict.args.name]
-    required = true
-    help = "and this one is required"
+[tool.poe.tasks.greet-strict.args.name]
+required = true
+help = "and this one is required"
 
-  [tool.poe.tasks.greet-positional]
-  script = "pkg:greet(greeting, user=username, upper=uppercase)"
-  env.DEFAULT_GREETING.default = "yo"
+[tool.poe.tasks.greet-positional]
+script = "pkg:greet(greeting, user=username, upper=uppercase)"
+env.DEFAULT_GREETING.default = "yo"
 
-    [[tool.poe.tasks.greet-positional.args]]
-    name = "greeting"
-    positional = true
-    default = "${DEFAULT_GREETING}"
-    help = "this one is required"
+[[tool.poe.tasks.greet-positional.args]]
+name = "greeting"
+positional = true
+default = "${DEFAULT_GREETING}"
+help = "this one is required"
 
-    [[tool.poe.tasks.greet-positional.args]]
-    name = "username"
-    positional = "user"
-    required = true
-    help = "and this one is required"
+[[tool.poe.tasks.greet-positional.args]]
+name = "username"
+positional = "user"
+required = true
+help = "and this one is required"
 
-    [[tool.poe.tasks.greet-positional.args]]
-    name = "uppercase"
-    options = ["--upper"]
-    type = "boolean"
+[[tool.poe.tasks.greet-positional.args]]
+name = "uppercase"
+options = ["--upper"]
+type = "boolean"
 
-  [tool.poe.tasks.multiple-value-args]
-  script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
+[tool.poe.tasks.multiple-value-args]
+script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
 
-    [[tool.poe.tasks.multiple-value-args.args]]
-    name       = "first"
-    positional = true
+[[tool.poe.tasks.multiple-value-args.args]]
+name = "first"
+positional = true
 
-    [[tool.poe.tasks.multiple-value-args.args]]
-    name       = "second"
-    positional = true
-    multiple   = true
-    type       = "integer"
+[[tool.poe.tasks.multiple-value-args.args]]
+name = "second"
+positional = true
+multiple = true
+type = "integer"
 
-    [[tool.poe.tasks.multiple-value-args.args]]
-    name     = "widgets"
-    multiple = 2
+[[tool.poe.tasks.multiple-value-args.args]]
+name = "widgets"
+multiple = 2
 
-    [[tool.poe.tasks.multiple-value-args.args]]
-    name     = "engines"
-    multiple = true
-    required = true
+[[tool.poe.tasks.multiple-value-args.args]]
+name = "engines"
+multiple = true
+required = true
 
-  [tool.poe.tasks.multiple-lines-help]
-  script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
-  help = """
+[tool.poe.tasks.multiple-lines-help]
+script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
+help = """
 Multilines
   Creating multi-line documentation for greater detail and inclusion of examples
 """
 
-    [[tool.poe.tasks.multiple-lines-help.args]]
-    name       = "first"
-    positional = true
-    help =    """
+[[tool.poe.tasks.multiple-lines-help.args]]
+name = "first"
+positional = true
+help = """
 First positional arg
   documentation multiline
 """
 
-    [[tool.poe.tasks.multiple-lines-help.args]]
-    name       = "second"
-    positional = true
-    multiple   = true
-    type       = "integer"
-    help =    """
+[[tool.poe.tasks.multiple-lines-help.args]]
+name = "second"
+positional = true
+multiple = true
+type = "integer"
+help = """
 Multiple positional arg
   documentation multiline
 """
 
-    [[tool.poe.tasks.multiple-lines-help.args]]
-    name     = "widgets"
-    multiple = 2
-    help =    """
+[[tool.poe.tasks.multiple-lines-help.args]]
+name = "widgets"
+multiple = 2
+help = """
 Multiple arg
   documentation multiline
 """
 
-    [[tool.poe.tasks.multiple-lines-help.args]]
-    name     = "engines"
-    default = "true"
-    help =    """
+[[tool.poe.tasks.multiple-lines-help.args]]
+name = "engines"
+default = "true"
+help = """
 Default arg
   documentation multiline
 """
@@ -178,7 +176,9 @@ Default arg
 [tool.poe.tasks.check-global-options]
 script = "pkg:echo_script(dry=_dry_run, verbosity=environ['POE_VERBOSITY'])"
 
+[tool.poe.tasks.module-as-task]
+script = "pkg"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
-

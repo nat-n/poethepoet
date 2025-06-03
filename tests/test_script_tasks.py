@@ -404,3 +404,12 @@ def test_async_script_task(run_poe_subproc, projects):
     assert result.capture == "Poe => async-task --a=foo --b=bar\n"
     assert result.stdout == "I'm an async task! () {'a': 'foo', 'b': 'bar'}\n"
     assert result.stderr == ""
+
+
+def test_call_module_as_task(run_poe_subproc):
+    result = run_poe_subproc(
+        "module-as-task", "--foo", "cheese", project="scripts", env=no_venv
+    )
+    assert result.capture == "Poe => module-as-task --foo cheese\n"
+    assert result.stdout == "Thanks for the args! ['--foo', 'cheese']\n"
+    assert result.stderr == ""

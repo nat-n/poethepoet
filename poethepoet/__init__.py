@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .__version__ import __version__
 
 __all__ = ["__version__", "main"]
@@ -56,7 +58,7 @@ def main():
         raise SystemExit(result)
 
 
-def _list_tasks(target_path: str = ""):
+def _list_tasks(target_path: Optional[str] = None):
     """
     A special task accessible via `poe _list_tasks` for use in shell completion
 

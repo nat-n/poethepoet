@@ -56,3 +56,45 @@ def parse_script_reference(
         )
 
     return target_module, function_call
+
+
+def validate_script_or_module_reference(content: str) -> None:
+    """
+    Validates a script or module reference string.
+
+    Args:
+        content (str): The script or module reference string to validate.
+        parsed_args (dict[str, Any]): A dictionary of parsed arguments that may be
+            referenced in the function call.
+        allowed_vars (Container[str]): A collection of variable names that may be
+            referenced within the function call.
+
+    Raises:
+        ConfigValidationError: If the content is not a valid script or module reference.
+    """
+    from ..exceptions import ConfigValidationError
+
+    try:
+        target_module, target_ref = content.strip().split(":", 1)
+    except ValueError:
+        target_module = content.strip()
+        target_ref = None
+
+    if not all(part.isidentifier() for part in target_module.split(".")):
+        reference_type = "module" if target_ref is None else "callable"
+        raise ConfigValidationError(
+            f"Invalid module name in {reference_type} reference {content!r}"
+        )
+
+    if target_ref is None or target_ref.isidentifier():
+        return
+
+    try:
+        from ..helpers.python import FunctionCall
+
+        FunctionCall.parse(source=target_ref, arguments=set())
+    except (ValueError, ExpressionParseError):
+        raise ConfigValidationError(
+            f"Invalid callable reference {content!r}\n"
+            "(expected something like `module:callable` or `module:callable()`)"
+        )
