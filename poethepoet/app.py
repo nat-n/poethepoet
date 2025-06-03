@@ -52,6 +52,11 @@ class PoeThePoet:
         Optionally provide an alternative base environment for tasks to run with.
         If no mapping is provided then ``os.environ`` is used.
     :type env: dict, optional
+
+    :param suppress_args:
+        A sequence of identifiers for global arguments that should not be displayed in
+        the help message.
+    :type suppress_args: Sequence[str], optional
     """
 
     cwd: Path
@@ -69,6 +74,7 @@ class PoeThePoet:
         config_name: Optional[str] = None,
         program_name: str = "poe",
         env: Optional[Mapping[str, str]] = None,
+        suppress_args: Sequence[str] = ("legacy_project_root",),
     ):
         from .config import PoeConfig
         from .ui import PoeUi
@@ -84,7 +90,9 @@ class PoeThePoet:
             if isinstance(config, PoeConfig)
             else PoeConfig(cwd=self.cwd, table=config, config_name=config_name)
         )
-        self.ui = PoeUi(output=output, program_name=program_name)
+        self.ui = PoeUi(
+            output=output, program_name=program_name, suppress_args=suppress_args
+        )
         self._poetry_env_path = poetry_env_path
         self._env = env if env is not None else os.environ
 
