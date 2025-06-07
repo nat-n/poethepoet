@@ -95,7 +95,7 @@ class ExprTask(PoeTask):
         self,
         args: Optional[dict[str, Any]],
         env: "EnvVarsManager",
-        imports=Iterable[str],
+        imports: Iterable[str],
     ) -> tuple[str, dict[str, str]]:
         """
         Returns the expression to evaluate and the subset of env vars that it references

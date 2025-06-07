@@ -1,7 +1,7 @@
 Poetry plugin
 =============
 
-The poethpoet poetry plugin offers tighter integration with the poetry CLI.
+The poethepoet poetry plugin offers tighter integration with the poetry CLI.
 
 Installation
 ------------
