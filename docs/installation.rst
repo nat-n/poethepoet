@@ -59,7 +59,7 @@ Or add it to poetry on a per project basis by adding the following to your *pypr
 .. code-block:: sh
 
   [tool.poetry.requires-plugins]
-  poethepoet = { version = "~0.34.0", extras = ["poetry_plugin"]}
+  poethepoet = { version = "~0.35.0", extras = ["poetry_plugin"]}
 
 See the |poetry_plugin_link| for more installation options, or see the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
 

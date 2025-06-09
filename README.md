@@ -56,7 +56,7 @@
 
   ```toml
   [tool.poetry.requires-plugins]
-  poethepoet = ">=0.34"
+  poethepoet = ">=0.35"
   ```
 
 2. Define some tasks in your **pyproject.toml**
