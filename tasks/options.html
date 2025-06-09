@@ -261,6 +261,8 @@ The value is a map where the values are invocations of the other tasks, and the 
 </dd>
 <dt><strong>capture_stdout</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#redirect-task-output-to-a-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Causes the task output to be redirected to a file with the given path.</p>
 </dd>
+<dt><strong>executor</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#configure-the-executor-for-a-task"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed with a specific executor.</p>
+</dd>
 <dt><strong>use_exec</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed in the same process, instead of as a subprocess.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
@@ -313,7 +315,7 @@ above but can also by given a list of such paths like so:</p>
 </pre></div>
 </div>
 <p>In this case the referenced files will be loaded in the given order.</p>
-<p>Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referenceing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
+<p>Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referencing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/.env&quot;</span>
 </pre></div>
@@ -352,6 +354,16 @@ above but can also by given a list of such paths like so:</p>
 <p class="admonition-title">Warning</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code> is incompatible with the <code class="docutils literal notranslate"><span class="pre">use_exec</span></code> option, and tasks that declare it cannot be referenced by another task via the <code class="docutils literal notranslate"><span class="pre">uses</span></code> option.</p>
 </div>
+</section>
+<section id="configure-the-executor-for-a-task">
+<h2>Configure the executor for a task<a class="headerlink" href="#configure-the-executor-for-a-task" title="Link to this heading">¶</a></h2>
+<p>You can specify a default executor for a task by providing the <code class="docutils literal notranslate"><span class="pre">executor</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn ./my_app:run&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;virtualenv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;./server.venv&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This works exactly like the the global option to <a class="reference internal" href="../global_options.html#change-the-executor-type"><span class="std std-ref">change the executor type</span></a> except it only impacts the one task.</p>
 </section>
 <section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
 <h2>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Link to this heading">¶</a></h2>
@@ -450,6 +462,7 @@ above but can also by given a list of such paths like so:</p>
 </li>
 <li><a class="reference internal" href="#running-a-task-with-a-specific-working-directory">Running a task with a specific working directory</a></li>
 <li><a class="reference internal" href="#redirect-task-output-to-a-file">Redirect task output to a file</a></li>
+<li><a class="reference internal" href="#configure-the-executor-for-a-task">Configure the executor for a task</a></li>
 <li><a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess">Defining tasks that run via exec instead of a subprocess</a></li>
 </ul>
 </li>
@@ -462,7 +475,7 @@ above but can also by given a list of such paths like so:</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=bbce7252"></script>
+</div><script src="../_static/documentation_options.js?v=ca1b380b"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

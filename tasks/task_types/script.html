@@ -248,6 +248,15 @@
 <p>As in the second example, is it possible to hard code literal arguments to the target callable. In fact a subset of python syntax, operators, and globals can be used inline to define the arguments to the function using normal python syntax, including environ (from the os package) to access environment variables that are available to the task.</p>
 <p>If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called python function via <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code>. If <a class="reference internal" href="../options.html"><span class="doc">args</span></a> are configured for the task then they will be available as python variables.</p>
 <p>If the target python function is an async function then it will be executed with <code class="code highlight python docutils literal highlight-python"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span></code>.</p>
+<section id="run-a-main-module-as-a-script-task">
+<h2>Run a <code class="docutils literal notranslate"><span class="pre">__main__</span></code> module as a script task<a class="headerlink" href="#run-a-main-module-as-a-script-task" title="Link to this heading">¶</a></h2>
+<p>A script task may reference a package instead of a specific callable, in which case the package’s <code class="docutils literal notranslate"><span class="pre">__main__.py</span></code> module will be executed as a script task. This is useful for running a package that has been designed to be run as a script.</p>
+<p>For example, the following task will run the <code class="docutils literal notranslate"><span class="pre">http.server</span></code> module as a script task, which will start a simple HTTP server. Any command line arguments passed to the task will be forwarded to the script.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;http.server&quot;</span>
+</pre></div>
+</div>
+</section>
 <section id="available-task-options">
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
@@ -396,6 +405,7 @@ function.</p></li>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks</a><ul>
+<li><a class="reference internal" href="#run-a-main-module-as-a-script-task">Run a <code class="docutils literal notranslate"><span class="pre">__main__</span></code> module as a script task</a></li>
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
 <li><a class="reference internal" href="#output-the-return-value">Output the return value</a></li>
 <li><a class="reference internal" href="#calling-standard-library-functions">Calling standard library functions</a></li>
@@ -415,7 +425,7 @@ function.</p></li>
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=bbce7252"></script>
+</div><script src="../../_static/documentation_options.js?v=ca1b380b"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

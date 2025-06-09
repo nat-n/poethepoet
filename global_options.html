@@ -331,9 +331,16 @@ parent directory. If no location is specified for a virtualenv then the default 
 <span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myvenv&quot;</span>
 </pre></div>
 </div>
+<p>If the virtualenv location is a relative path then it is resolved relative to the project root (the parent directory of the pyproject.toml file. However in a monorepo project it may also be defined relative to the git repo root by templating <a class="reference internal" href="env_vars.html#special-variables"><span class="std std-ref">these  special environment variables</span></a> like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span>
+<span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;virtualenv&quot;</span>
+<span class="n">location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/myvenv&quot;</span>
+</pre></div>
+</div>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>This global option can be overridden at runtime by providing the <code class="docutils literal notranslate"><span class="pre">--executor</span></code> cli option before the task name with the name of the executor type to use.</p>
+<p>You can also configure the executor <a class="reference internal" href="#change-the-executor-type"><span class="std std-ref">at the task level</span></a>, which will have higher precedence.
+Alternatively you can override the executor type at runtime by passing the <code class="docutils literal notranslate"><span class="pre">--executor</span></code> CLI option (before the task name) with the name of the executor to use.</p>
 </div>
 </section>
 <section id="change-the-default-shell-interpreter">
@@ -492,7 +499,7 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=bbce7252"></script>
+</div><script src="_static/documentation_options.js?v=ca1b380b"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

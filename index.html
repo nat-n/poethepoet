@@ -284,6 +284,21 @@
 <span class="n">test</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest --cov=my_app&quot;</span><span class="w">                         </span><span class="c1"># a simple command task</span>
 <span class="n">serve</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_app.service:run(debug=True)&quot;</span><span class="w">              </span><span class="c1"># python script based task</span>
 <span class="n">tunnel</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w">   </span><span class="c1"># (posix) shell based task</span>
+
+<span class="c1"># A more complete example with documentation and named arguments</span>
+<span class="k">[tool.poe.tasks.count-incomplete]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Count incomplete tasks in DynamoDB&quot;</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">aws dynamodb scan --table-name tasks</span>
+<span class="s2">                  --select &quot;COUNT&quot;</span>
+<span class="s2">                  --filter-expression &quot;status &gt;= :status&quot;</span>
+<span class="s2">                  --expression-attribute-values &#39;{&quot;:status&quot;:{&quot;S&quot;:&quot;incomplete&quot;}}&#39;</span>
+<span class="s2">                  --no-cli-pager</span>
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">   </span><span class="c1"># Allow $AWS_REGION to be overridden with a CLI option when calling the task</span>
+<span class="w">   </span><span class="p">{</span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;AWS_REGION&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--region&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-r&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${AWS_REGION}&quot;</span><span class="p">}</span>
+<span class="p">]</span>
 </pre></div>
 </div>
 <p><a class="reference external" href="https://github.com/nat-n/poethepoet/blob/main/pyproject.toml">Click here for a real example</a>.</p>
@@ -359,7 +374,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=bbce7252"></script>
+</div><script src="_static/documentation_options.js?v=ca1b380b"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

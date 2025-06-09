@@ -24,7 +24,7 @@ You can choose any location to define the tasks, and whatever name you like for 
 Shell completions for global tasks
 ----------------------------------
 
-If you uze zsh or fish then the usual completion script should just work with your alias (as long as it was created with poethepoet >=0.28.0).
+If you use zsh or fish then the usual completion script should just work with your alias (as long as it was created with poethepoet >=0.28.0).
 
 However for bash you'll need to generate a new completion script for the alias specifying the alias and the path to you global tasks like so:
 

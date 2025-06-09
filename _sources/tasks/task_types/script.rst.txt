@@ -16,6 +16,19 @@ If extra arguments are passed to task on the command line (and no CLI args are d
 If the target python function is an async function then it will be executed with :python:`asyncio.run`.
 
 
+Run a ``__main__`` module as a script task
+------------------------------------------
+
+A script task may reference a package instead of a specific callable, in which case the package's ``__main__.py`` module will be executed as a script task. This is useful for running a package that has been designed to be run as a script.
+
+For example, the following task will run the ``http.server`` module as a script task, which will start a simple HTTP server. Any command line arguments passed to the task will be forwarded to the script.
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  fetch-assets.script = "http.server"
+
+
 Available task options
 ----------------------
 
