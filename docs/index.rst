@@ -93,6 +93,21 @@ Quick start
    serve.script = "my_app.service:run(debug=True)"              # python script based task
    tunnel.shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &"   # (posix) shell based task
 
+   # A more complete example with documentation and named arguments
+   [tool.poe.tasks.count-incomplete]
+   help = "Count incomplete tasks in DynamoDB"
+   cmd  = """
+   aws dynamodb scan --table-name tasks
+                     --select "COUNT"
+                     --filter-expression "status >= :status"
+                     --expression-attribute-values '{":status":{"S":"incomplete"}}'
+                     --no-cli-pager
+   """
+   args = [
+      # Allow $AWS_REGION to be overridden with a CLI option when calling the task
+      {name = "AWS_REGION", options = ["--region", "-r"], default = "${AWS_REGION}"}
+   ]
+
   `Click here for a real example <https://github.com/nat-n/poethepoet/blob/main/pyproject.toml>`_.
 
 3.

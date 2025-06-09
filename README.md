@@ -46,10 +46,17 @@
 
 ## Quick start
 
-1. Install the Poe the Poet via [pipx](https://pypa.github.io/pipx/) or [another method](https://poethepoet.natn.io/installation.html).
+1. Install the Poe the Poet globally via [pipx](https://pypa.github.io/pipx/) or [another method](https://poethepoet.natn.io/installation.html).
 
   ```sh
   pipx install poethepoet
+  ```
+
+  Or add it as a poetry project plugin:
+
+  ```toml
+  [tool.poetry.requires-plugins]
+  poethepoet = ">=0.34"
   ```
 
 2. Define some tasks in your **pyproject.toml**
@@ -59,6 +66,21 @@
   test         = "pytest --cov=my_app"                         # a simple command task
   serve.script = "my_app.service:run(debug=True)"              # python script based task
   tunnel.shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &"   # (posix) shell based task
+
+  # A more complete example with documentation and named arguments
+  [tool.poe.tasks.count-incomplete]
+  help = "Count incomplete tasks in DynamoDB"
+  cmd  = """
+  aws dynamodb scan --table-name tasks
+                    --select "COUNT"
+                    --filter-expression "status >= :status"
+                    --expression-attribute-values '{":status":{"S":"incomplete"}}'
+                    --no-cli-pager
+  """
+  args = [
+    # Allow $AWS_REGION to be overridden with a CLI option when calling the task
+    {name = "AWS_REGION", options = ["--region", "-r"], default = "${AWS_REGION}"}
+  ]
   ```
 
 3. Run your tasks via the CLI
