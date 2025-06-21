@@ -141,6 +141,16 @@ class ShellTask(PoeTask):
             if result is None and self._is_windows:
                 result = which(f"{prog_files}\\Git\\bin\\sh.exe")
 
+            if result is None and (git_path_str := which("git")) is not None:
+                # git installation may be non-defualt library path to allow for 
+                # non-admin git-cli installation. In this case the posix shell
+                # can be located relative to the git executable.
+                from pathlib import Path
+
+                git_path = Path(git_path_str)
+                sh_path = git_path.parent.parent / "bin" / "sh.exe"
+                result = str(sh_path) if sh_path.exists() else None
+
         elif interpreter == "bash":
             if self._is_windows:
                 # Specifically look for git bash on windows as the preferred option
