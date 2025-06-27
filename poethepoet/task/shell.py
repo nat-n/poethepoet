@@ -142,7 +142,7 @@ class ShellTask(PoeTask):
                 result = which(f"{prog_files}\\Git\\bin\\sh.exe")
 
                 if result is None and (git_path_str := which("git")) is not None:
-                    # Check if sh.exe can be found relative to the git executable 
+                    # Check if sh.exe can be found relative to the git executable
                     # in case git is installed at a non-standard location.
                     git_path = Path(git_path_str)
                     if (sh_path := git_path.parent.parent / "bin" / "sh.exe").exists():
