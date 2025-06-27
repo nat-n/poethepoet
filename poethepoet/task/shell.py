@@ -1,6 +1,7 @@
 import re
 from collections.abc import Sequence
 from os import environ
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import ConfigValidationError, PoeException
