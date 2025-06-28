@@ -1,6 +1,7 @@
 import re
 from collections.abc import Sequence
 from os import environ
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import ConfigValidationError, PoeException
@@ -141,6 +142,12 @@ class ShellTask(PoeTask):
             if result is None and self._is_windows:
                 result = which(f"{prog_files}\\Git\\bin\\sh.exe")
 
+                if result is None and (git_path_str := which("git")) is not None:
+                    # Check if sh.exe can be found relative to the git executable
+                    # in case git is installed at a non-standard location.
+                    git_path = Path(git_path_str)
+                    if (sh_path := git_path.parent.parent / "bin" / "sh.exe").exists():
+                        result = str(sh_path)
         elif interpreter == "bash":
             if self._is_windows:
                 # Specifically look for git bash on windows as the preferred option
