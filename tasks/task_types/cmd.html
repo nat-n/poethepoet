@@ -251,6 +251,11 @@
 <section id="available-task-options">
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
+<p>The following options are also accepted:</p>
+<dl>
+<dt><strong>empty_glob</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Literal[&quot;pass&quot;,</span> <span class="pre">&quot;null&quot;,</span> <span class="pre">&quot;fail&quot;]</span></code> <a class="reference internal" href="#glob-expansion"><span class="std std-ref">📖</span></a></span></dt><dd><p>Determines how to handle glob patterns with no matches. The default is <code class="docutils literal notranslate"><span class="pre">&quot;pass&quot;</span></code>, which causes unmatched patterns to be passed through to the command (just like in bash). Setting it to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> will replace an unmatched pattern with nothing, and setting it to <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> will cause the task to fail with an error if there are no matches.</p>
+</dd>
+</dl>
 </section>
 <section id="shell-like-features">
 <h2>Shell like features<a class="headerlink" href="#shell-like-features" title="Link to this heading">¶</a></h2>
@@ -291,14 +296,16 @@ Hello<span class="w"> </span>nat
 </section>
 <section id="glob-expansion">
 <h3>Glob expansion<a class="headerlink" href="#glob-expansion" title="Link to this heading">¶</a></h3>
-<p>Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. The supported glob syntax is that of the <a href="https://docs.python.org/3/library/glob.html" target="_blank">python standard library glob module</a>, which differs from bash in that square bracket patterns don’t support character classes, don’t break on whitespace, and don’t allow escaping of contained characters.</p>
-<p>Glob patterns are evaluated relative to the working directory of the task, and if there are no matches then the pattern is expanded to nothing.</p>
-<p>Here’s an example of task using a recursive glob pattern:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">clean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<p>Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. Glob patterns are evaluated relative to the working directory of the task.</p>
+<p>The supported glob syntax is that of the <a href="https://docs.python.org/3/library/glob.html" target="_blank">python standard library glob module</a>, which differs from bash in that square bracket patterns don’t support character classes, don’t break on whitespace, and don’t allow escaping of contained characters.</p>
+<p>If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">empty_glob</span></code> option to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code>. If set to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> then the pattern will be replaced with nothing (similar to how bash behaves with the <a href="https://www.gnu.org/software/bash/manual/html_node/Filename-Expansion.html" target="_blank">nullglob option</a> is set), and if set to <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> then a glob pattern with no matches will cause the task execution will fail with an error.</p>
+<p>The following task uses glob patterns to specify all <code class="docutils literal notranslate"><span class="pre">.pyc</span></code> files and <code class="docutils literal notranslate"><span class="pre">__pycache__</span></code> directories in the project in the project for removal, and thanks to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">empty_glob</span></code> options it will succeed even if there are no matches since no arguments will be passed to the <code class="docutils literal notranslate"><span class="pre">rm</span></code> command.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.clean]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">rm -rf ./**/*.pyc</span>
 <span class="s2">       ./**/__pycache__    # this will match all __pycache__ dirs in the project</span>
 <span class="s2">&quot;&quot;&quot;</span>
+<span class="n">empty_glob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;null&quot;</span>
 </pre></div>
 </div>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>poe<span class="w"> </span>clean
@@ -309,8 +316,8 @@ Hello<span class="w"> </span>nat
 <p class="admonition-title">See also</p>
 <p>Notice that this example also demonstrates that comments and excess whitespace (including new lines) are ignored, without needing to escape new lines.</p>
 </div>
-<div class="admonition seealso">
-<p class="admonition-title">See also</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
 <p>Just like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.</p>
 </div>
 </section>
@@ -403,7 +410,7 @@ Hello<span class="w"> </span>nat
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=ca1b380b"></script>
+</div><script src="../../_static/documentation_options.js?v=5864e6e0"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

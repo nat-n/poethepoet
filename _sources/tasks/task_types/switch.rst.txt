@@ -30,7 +30,7 @@ The following options are also accepted:
 **control** : ``str`` | ``dict``
   A **required** inline definition for a task to be executed to get the value that will determine which case task to run.
 
-**default** : ``Literal["pass"]`` | ``Literal["fail"]`` :ref:`📖<Don't fail if there's no match>`
+**default** : ``Literal["pass", "fail"]`` :ref:`📖<Don't fail if there's no match>`
   Setting ``default =  "pass"`` will make the task succeed even if no case was matched to the value and there was no default case.
 
 
