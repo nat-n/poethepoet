@@ -513,7 +513,7 @@ class PoeTask(metaclass=MetaPoeTask):
         working_dir = Path(cwd_option)
 
         if not working_dir.is_absolute():
-            working_dir = self.ctx.config.project_dir / working_dir
+            working_dir = self.ctx.config.project_dir.joinpath(working_dir).resolve()
 
         return working_dir
 

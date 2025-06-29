@@ -209,3 +209,35 @@ def test_cmd_multiline(run_poe_subproc, testcase):
     assert result.capture == "Poe => poe_test_echo first_arg second_arg\n"
     assert result.stdout == "first_arg second_arg\n"
     assert result.stderr == ""
+
+
+def test_cmd_with_empty_glob_pass(run_poe_subproc, is_windows):
+    result = run_poe_subproc("try-globs-pass", project="cmds")
+    assert result.capture.startswith("Poe => poe_test_echo ")
+    if is_windows:
+        assert result.capture.endswith("tests\\fixtures\\cmds_project' - 'n*thing'\n")
+        assert result.stdout.endswith("tests\\fixtures\\cmds_project - n*thing\n")
+    else:
+        assert result.capture.endswith("tests/fixtures/cmds_project - 'n*thing'\n")
+        assert result.stdout.endswith("tests/fixtures/cmds_project - n*thing\n")
+    assert result.stderr == ""
+
+
+def test_cmd_with_empty_glob_null(run_poe_subproc, is_windows):
+    result = run_poe_subproc("try-globs-null", project="cmds")
+    assert result.capture.startswith("Poe => poe_test_echo ")
+    if is_windows:
+        assert result.capture.endswith("tests\\fixtures\\cmds_project' -\n")
+        assert result.stdout.endswith("tests\\fixtures\\cmds_project -\n")
+    else:
+        assert result.capture.endswith("tests/fixtures/cmds_project -\n")
+        assert result.stdout.endswith("tests/fixtures/cmds_project -\n")
+    assert result.stderr == ""
+
+
+def test_cmd_with_empty_glob_fail(run_poe_subproc, is_windows):
+    result = run_poe_subproc("try-globs-fail", project="cmds")
+    assert result.capture.startswith(
+        "Error: Glob pattern 'n*thing' did not match any files in working directory"
+    )
+    assert result.stderr == ""

@@ -28,21 +28,35 @@ args = ["formal-greeting", "subject"]
 
 [tool.poe.tasks.surfin-bird]
 cmd = "poe_test_echo $WORD is the word"
-env = { WORD = "${SOME_INPUT_VAR}"}
+env = { WORD = "${SOME_INPUT_VAR}" }
 
 [tool.poe.tasks.multiple-value-arg]
 cmd = "poe_test_echo \"first: ${first} second: ${second}\""
 
-  [[tool.poe.tasks.multiple-value-arg.args]]
-  name       = "first"
-  positional = true
+[[tool.poe.tasks.multiple-value-arg.args]]
+name = "first"
+positional = true
 
-  [[tool.poe.tasks.multiple-value-arg.args]]
-  name       = "second"
-  positional = true
-  multiple   = true
-  type       = "integer"
+[[tool.poe.tasks.multiple-value-arg.args]]
+name = "second"
+positional = true
+multiple = true
+type = "integer"
 
 [tool.poe.tasks.meeseeks]
-cmd            = """poe_test_echo "I'm Mr. Meeseeks! Look at me!" """
+cmd = """poe_test_echo "I'm Mr. Meeseeks! Look at me!" """
 capture_stdout = "${POE_PWD}/message.txt"
+
+[tool.poe.tasks.try-globs-pass]
+cmd = """poe_test_echo cmds_pro* - n*thing"""
+cwd = ".."
+
+[tool.poe.tasks.try-globs-null]
+cmd = """poe_test_echo cmds_pro* - n*thing"""
+empty_glob = "null"
+cwd = ".."
+
+[tool.poe.tasks.try-globs-fail]
+cmd = """poe_test_echo cmds_pro* - n*thing"""
+empty_glob = "fail"
+cwd = ".."
