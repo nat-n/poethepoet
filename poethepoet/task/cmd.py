@@ -1,7 +1,7 @@
 import shlex
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
-from ..exceptions import ConfigValidationError, PoeException
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
@@ -18,8 +18,12 @@ class CmdTask(PoeTask):
 
     __key__ = "cmd"
 
+    # Track if we encountered a glob pattern when parsing the command line
+    __passed_unmatched_glob = False
+
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False
+        empty_glob: Literal["pass", "null", "fail"] = "pass"
 
         def validate(self):
             """
@@ -60,11 +64,28 @@ class CmdTask(PoeTask):
 
         self._print_action(shlex.join(cmd), context.dry)
 
-        return executor.execute(cmd, use_exec=self.spec.options.get("use_exec", False))
+        result = executor.execute(
+            cmd, use_exec=self.spec.options.get("use_exec", False)
+        )
+
+        if result != 0 and self.__passed_unmatched_glob and self.ctx.ui.verbosity >= 0:
+            # We made a breaking change in 0.36.0 to pass through glob patterns with no
+            # matches. If this might have been the cause of the failure, we print a
+            # warning with a link.
+            print(
+                "Warning:",
+                "Task failure may be related to a breaking change in "
+                "poethepoet 0.36.0 in the default handling of unmatched glob patterns. "
+                "More details: https://github.com/nat-n/poethepoet/discussions/314",
+            )
+
+        return result
 
     def _resolve_commandline(self, context: "RunContext", env: "EnvVarsManager"):
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens
         from ..helpers.command.ast_core import ParseError
+
+        self.__passed_unmatched_glob = False
 
         try:
             command_lines = parse_poe_cmd(self.spec.content).command_lines
@@ -89,7 +110,18 @@ class CmdTask(PoeTask):
         for cmd_token, has_glob in resolve_command_tokens(command_lines, env):
             if has_glob:
                 # Resolve glob pattern from the working directory
-                result.extend([str(match) for match in working_dir.glob(cmd_token)])
+                if matches := [str(match) for match in working_dir.glob(cmd_token)]:
+                    result.extend(matches)
+                elif self.spec.options.empty_glob == "fail":
+                    raise ExecutionError(
+                        f"Glob pattern {cmd_token!r} did not match any files in "
+                        f"working directory {working_dir!s}"
+                    )
+                elif self.spec.options.empty_glob == "pass":
+                    # If the glob pattern does not match any files, we just pass it
+                    # through as is
+                    self.__passed_unmatched_glob = True
+                    result.append(cmd_token)
             else:
                 result.append(cmd_token)
 

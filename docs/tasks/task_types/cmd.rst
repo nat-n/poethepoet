@@ -18,6 +18,11 @@ Available task options
 
 ``cmd`` tasks support all of the :doc:`standard task options <../options>`.
 
+The following options are also accepted:
+
+**empty_glob** : ``Literal["pass", "null", "fail"]`` :ref:`📖<Glob expansion>`
+  Determines how to handle glob patterns with no matches. The default is ``"pass"``, which causes unmatched patterns to be passed through to the command (just like in bash). Setting it to ``"null"`` will replace an unmatched pattern with nothing, and setting it to ``"fail"`` will cause the task to fail with an error if there are no matches.
+
 
 Shell like features
 -------------------
@@ -77,19 +82,22 @@ In this example we declare a boolean argument with no default, so if the ``--arn
 Glob expansion
 ~~~~~~~~~~~~~~
 
-Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. The supported glob syntax is that of the |glob_link|, which differs from bash in that square bracket patterns don't support character classes, don't break on whitespace, and don't allow escaping of contained characters.
+Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. Glob patterns are evaluated relative to the working directory of the task.
 
-Glob patterns are evaluated relative to the working directory of the task, and if there are no matches then the pattern is expanded to nothing.
+The supported glob syntax is that of the |glob_link|, which differs from bash in that square bracket patterns don't support character classes, don't break on whitespace, and don't allow escaping of contained characters.
 
-Here's an example of task using a recursive glob pattern:
+If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the :toml:`empty_glob` option to ``"null"`` or ``"fail"``. If set to ``"null"`` then the pattern will be replaced with nothing (similar to how bash behaves with the |nullglob_link| is set), and if set to ``"fail"`` then a glob pattern with no matches will cause the task execution will fail with an error.
+
+The following task uses glob patterns to specify all ``.pyc`` files and ``__pycache__`` directories in the project in the project for removal, and thanks to the :toml:`empty_glob` options it will succeed even if there are no matches since no arguments will be passed to the ``rm`` command.
 
 .. code-block:: toml
 
-  [tool.poe.tasks]
-  clean = """
+  [tool.poe.tasks.clean]
+  cmd = """
   rm -rf ./**/*.pyc
          ./**/__pycache__    # this will match all __pycache__ dirs in the project
   """
+  empty_glob = "null"
 
 .. code-block:: sh
 
@@ -100,7 +108,7 @@ Here's an example of task using a recursive glob pattern:
 
   Notice that this example also demonstrates that comments and excess whitespace (including new lines) are ignored, without needing to escape new lines.
 
-.. seealso::
+.. tip::
 
   Just like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.
 
@@ -108,3 +116,7 @@ Here's an example of task using a recursive glob pattern:
 .. |glob_link| raw:: html
 
    <a href="https://docs.python.org/3/library/glob.html" target="_blank">python standard library glob module</a>
+
+.. |nullglob_link| raw:: html
+
+   <a href="https://www.gnu.org/software/bash/manual/html_node/Filename-Expansion.html" target="_blank">nullglob option</a>
