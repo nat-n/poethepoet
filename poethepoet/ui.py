@@ -380,8 +380,17 @@ class PoeUi:
             return text
         return text + " " * (width - len(text))
 
-    def print_msg(self, message: str, verbosity=0, end="\n"):
-        if verbosity <= self.verbosity:
+    def print_msg(
+        self,
+        message: str,
+        verbosity: int = 0,
+        end: str = "\n",
+        override_verbosity: int | None = None,
+    ):
+        reference_verbosity = (
+            self.verbosity if override_verbosity is None else override_verbosity
+        )
+        if verbosity <= reference_verbosity:
             self._print(message, end=end)
 
     def print_error(self, error: Union[PoeException, ExecutionError]):

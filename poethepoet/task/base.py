@@ -167,6 +167,7 @@ class PoeTask(metaclass=MetaPoeTask):
         executor: Optional[dict] = None
         help: Optional[str] = None
         uses: Optional[Mapping[str, str]] = None
+        verbosity: Optional[int] = None
 
         def validate(self):
             """
@@ -601,10 +602,12 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         Print the action taken by a task just before executing it.
         """
-        min_verbosity = -1 if dry else 0
+        message_verbosity = -1 if dry else 0
         arrow = "??" if unresolved else "<=" if self.capture_stdout else "=>"
         self.ctx.ui.print_msg(
-            f"<hl>Poe {arrow}</hl> <action>{action}</action>", min_verbosity
+            f"<hl>Poe {arrow}</hl> <action>{action}</action>",
+            verbosity=message_verbosity,
+            override_verbosity=self.spec.options.get("verbosity"),
         )
 
     class Error(Exception):
