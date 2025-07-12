@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..io import PoeIO
     from .base import TaskSpecFactory
 
 
@@ -53,9 +54,11 @@ class SequenceTask(PoeTask):
             task_def: dict[str, Any],
             factory: "TaskSpecFactory",
             source: "ConfigPartition",
+            *,
+            io: "PoeIO",
             parent: Optional["PoeTask.TaskSpec"] = None,
         ):
-            super().__init__(name, task_def, factory, source, parent)
+            super().__init__(name, task_def, factory, source, io=io, parent=parent)
 
             self.subtasks = []
             for index, sub_task_def in enumerate(task_def[SequenceTask.__key__]):
@@ -145,7 +148,7 @@ class SequenceTask(PoeTask):
                 task_result = subtask.run(context=context, parent_env=env)
             except ExecutionError as error:
                 if ignore_fail:
-                    print("Warning:", error.msg)
+                    self.ctx.io.print_warning(error.msg)
                     non_zero_subtasks.append(subtask.name)
                 else:
                     raise
