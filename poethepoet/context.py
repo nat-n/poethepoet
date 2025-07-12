@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
+
+from .io import PoeIO
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -14,22 +16,16 @@ if TYPE_CHECKING:
     from .ui import PoeUi
 
 
-from typing import Protocol
-
-
 class ContextProtocol(Protocol):
     config: PoeConfig
     exec_cache: dict[str, Any]
     ui: PoeUi | None
 
-    def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes):
-        ...
+    def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes): ...
 
-    def has_task_output(self, invocation: tuple[str, ...]) -> bool:
-        ...
+    def has_task_output(self, invocation: tuple[str, ...]) -> bool: ...
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str:
-        ...
+    def get_task_output(self, invocation: tuple[str, ...]) -> str: ...
 
     def get_executor(
         self,
@@ -41,8 +37,8 @@ class ContextProtocol(Protocol):
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
-    ) -> PoeExecutor:
-        ...
+        io: PoeIO | None = None,
+    ) -> PoeExecutor: ...
 
 
 class RunContext:
@@ -75,7 +71,7 @@ class RunContext:
         self._task_outputs = TaskOutputCache()
 
         # Init root EnvVarsManager
-        self.env = EnvVarsManager(self.config, self.ui, base_env=env, cwd=cwd)
+        self.env = EnvVarsManager(self.config, self.ui.io, base_env=env, cwd=cwd)
         for config_part in self.config.partitions():
             self.env.apply_env_config(
                 envfile=config_part.get("envfile", None),
@@ -114,6 +110,7 @@ class RunContext:
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
+        io: PoeIO | None = None,
     ) -> PoeExecutor:
         """
         Get an Executor object for use with this invocation.
@@ -125,8 +122,7 @@ class RunContext:
         from .executor import PoeExecutor
 
         if not executor_config:
-            assert self.ui
-            if self.ui["executor"]:
+            if self.ui and self.ui["executor"]:
                 executor_config = {"type": self.ui["executor"]}
             else:
                 executor_config = self.config.executor
@@ -140,6 +136,7 @@ class RunContext:
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
             dry=False if delegate_dry_run else self.dry,
+            io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
         )
 
 
@@ -172,6 +169,7 @@ class InitializationContext:
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
+        io: PoeIO | None = None,
     ) -> PoeExecutor:
         """
         Get an Executor object for use with this invocation.
@@ -195,6 +193,7 @@ class InitializationContext:
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
             dry=False,
+            io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
         )
 
 
