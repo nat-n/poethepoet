@@ -1,4 +1,6 @@
 from collections.abc import Sequence
+from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
+from os import environ
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
@@ -11,14 +13,17 @@ if TYPE_CHECKING:
     from .base import TaskSpecFactory
 
 
-class SequenceTask(PoeTask):
+POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
+
+
+class ParallelTask(PoeTask):
     """
-    A task consisting of a sequence of other tasks
+    A task consisting of multiple tasks that run in parallel
     """
 
     content: list[Union[str, dict[str, Any]]]
 
-    __key__ = "sequence"
+    __key__ = "parallel"
     __content_type__: ClassVar[type] = list
 
     class TaskOptions(PoeTask.TaskOptions):
@@ -39,12 +44,12 @@ class SequenceTask(PoeTask):
                 )
             if self.capture_stdout is not None:
                 raise ConfigValidationError(
-                    "Unsupported option for sequence task `capture_stdout`"
+                    "Unsupported option for parallel task `capture_stdout`"
                 )
 
     class TaskSpec(PoeTask.TaskSpec):
         content: list
-        options: "SequenceTask.TaskOptions"
+        options: "ParallelTask.TaskOptions"
         subtasks: Sequence[PoeTask.TaskSpec]
 
         def __init__(
@@ -58,10 +63,10 @@ class SequenceTask(PoeTask):
             super().__init__(name, task_def, factory, source, parent)
 
             self.subtasks = []
-            for index, sub_task_def in enumerate(task_def[SequenceTask.__key__]):
+            for index, sub_task_def in enumerate(task_def[ParallelTask.__key__]):
                 if not isinstance(sub_task_def, (str, dict, list)):
                     raise ConfigValidationError(
-                        f"Item #{index} in sequence task should be a value of "
+                        f"Item #{index} in parallel task should be a value of "
                         "type: str | dict | list",
                         task_name=self.name,
                     )
@@ -72,7 +77,7 @@ class SequenceTask(PoeTask):
                         isinstance(sub_task_def, str)
                         and (sub_task_def[0].isalpha() or sub_task_def[0] == "_")
                     )
-                    else SequenceTask._subtask_name(name, index)
+                    else ParallelTask._subtask_name(name, index)
                 )
                 task_type_key = self.task_type.resolve_task_type(
                     sub_task_def,
@@ -88,7 +93,7 @@ class SequenceTask(PoeTask):
                     )
                 except PoeException:
                     raise ConfigValidationError(
-                        f"Failed to interpret subtask #{index} in sequence",
+                        f"Failed to interpret subtask #{index} in parallel",
                         task_name=self.name,
                     )
 
@@ -99,7 +104,7 @@ class SequenceTask(PoeTask):
             for subtask in self.subtasks:
                 if subtask.args:
                     raise ConfigValidationError(
-                        "Unsupported option 'args' for task declared inside sequence"
+                        "Unsupported option 'args' for task declared inside parallel"
                     )
 
                 subtask.validate(config, task_specs)
@@ -132,32 +137,17 @@ class SequenceTask(PoeTask):
         env.update(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
-            raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
+            raise PoeException(f"Parallel task {self.name!r} does not accept arguments")
 
         if len(self.subtasks) > 1:
             # Indicate on the global context that there are multiple stages
             context.multistage = True
 
         ignore_fail = self.spec.options.ignore_fail
-        non_zero_subtasks: list[str] = list()
-        for subtask in self.subtasks:
-            task_result = None
-            try:
-                task_result = subtask.run(context=context, parent_env=env)
-            except ExecutionError as error:
-                if ignore_fail:
-                    print("Warning:", error.msg)
-                    non_zero_subtasks.append(subtask.name)
-                else:
-                    raise
 
-            if task_result:
-                if not ignore_fail:
-                    raise ExecutionError(
-                        f"Sequence aborted after failed subtask {subtask.name!r}"
-                    )
-                non_zero_subtasks.append(subtask.name)
+        non_zero_subtasks = self._run_subtasks(context, env, ignore_fail)
 
+        # Handle any failed subtasks
         if non_zero_subtasks and ignore_fail == "return_non_zero":
             plural = "s" if len(non_zero_subtasks) > 1 else ""
             raise ExecutionError(
@@ -165,6 +155,86 @@ class SequenceTask(PoeTask):
                 "returned non-zero exit status"
             )
         return 0
+
+    def _run_subtasks(
+        self,
+        context: "RunContext",
+        env: "EnvVarsManager",
+        ignore_fail: Literal["return_zero", "return_non_zero"] | bool,
+    ):
+        non_zero_subtasks: list[str] = []
+        subtask_futures: dict[PoeTask, Future] = {}
+        with ThreadPoolExecutor() as executor:
+            for subtask in self.subtasks:
+                task_result = None
+
+                if POE_DEBUG:
+                    print(f" . Starting subtask {subtask.name!r}")
+
+                subtask_futures[subtask] = executor.submit(
+                    self._run_subtask,
+                    subtask=subtask,
+                    context=context,
+                    env=env,
+                    ignore_fail=ignore_fail,
+                )
+
+            all_done = False
+            while not all_done:  # Wait for all subtasks to complete
+                all_done = True
+
+                # Wait one second for the first task in each loop run,
+                # then check the others for results
+                # This avoids 100% CPU usage by polling task results
+                # all the time and exits early if any subtask failed.
+                first_subtask = True
+
+                for subtask, future in subtask_futures.items():
+                    if not first_subtask and not future.done():
+                        all_done = False
+                        continue
+                    first_subtask = False
+
+                    try:
+                        task_result = future.result(timeout=1)
+                    except TimeoutError:
+                        all_done = False
+                        continue
+
+                    if POE_DEBUG:
+                        print(
+                            f" . Subtask {subtask.name!r} finished with {task_result}"
+                        )
+
+                    if task_result:
+                        if not ignore_fail:
+                            executor.shutdown(wait=False, cancel_futures=True)
+                            raise ExecutionError(
+                                "Parallel task run aborted after failed subtask "+
+                            f"{subtask.name!r}"
+                            )
+                        non_zero_subtasks.append(subtask.name)
+
+        return non_zero_subtasks
+
+    @staticmethod
+    def _run_subtask(
+        subtask: "PoeTask",
+        context: "RunContext",
+        env: "EnvVarsManager",
+        ignore_fail: Literal["return_zero", "return_non_zero"] | bool,
+    ) -> int:
+        try:
+            task_result = subtask.run(context=context, parent_env=env)
+        except ExecutionError as error:
+            if ignore_fail:
+                print("Warning:", error.msg)
+                return 0
+            else:
+                print("Error:", error.msg)
+                return -1
+
+        return task_result
 
     @classmethod
     def _subtask_name(cls, task_name: str, index: int):

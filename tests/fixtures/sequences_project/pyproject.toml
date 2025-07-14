@@ -65,3 +65,19 @@ cwd = "my_package"
 [tool.poe.tasks.setup]
 default_item_type = "cmd"
 sequence = ["./tools/poetry-ci-install.sh"]
+
+# Tasks to test parallel execution
+[tool.poe.tasks.mypy]
+cmd = "poe_test_echo 'Running mypy'"
+
+[tool.poe.tasks.pylint]
+cmd = "poe_test_echo 'Running pylint'"
+
+[tool.poe.tasks.pytest]
+cmd = "poe_test_echo 'Running pytest'"
+
+[tool.poe.tasks.test_parallel]
+parallel = ["mypy", "pylint"]
+
+[tool.poe.tasks.test_mixed]
+sequence = ["test_parallel", "pytest"]
