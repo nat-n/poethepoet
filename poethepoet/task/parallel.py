@@ -210,8 +210,8 @@ class ParallelTask(PoeTask):
                         if not ignore_fail:
                             executor.shutdown(wait=False, cancel_futures=True)
                             raise ExecutionError(
-                                "Parallel task run aborted after failed subtask "+
-                            f"{subtask.name!r}"
+                                "Parallel task run aborted after failed subtask "
+                                + f"{subtask.name!r}"
                             )
                         non_zero_subtasks.append(subtask.name)
 
