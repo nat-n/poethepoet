@@ -47,7 +47,7 @@ This implies that you can also define tasks of other types on a single line, lik
 Types of task
 -------------
 
-You can define seven different types of task:
+You can define eight different types of task:
 
 - :doc:`Command tasks <task_types/cmd>` :code:`cmd` : for simple commands that are executed as a subprocess without a shell
 
@@ -56,6 +56,8 @@ You can define seven different types of task:
 - :doc:`Shell tasks<task_types/shell>` :code:`shell` : for scripts to be executed with via an external interpreter (such as sh).
 
 - :doc:`Sequence tasks<task_types/sequence>` :code:`sequence` : for composing multiple tasks into a sequence
+
+- :doc:`Parallel tasks<task_types/parallel>` :code:`parallel` : for running multiple tasks concurrently
 
 - :doc:`Expression tasks<task_types/expr>` :code:`expr` : which consist of a python expression to evaluate
 
@@ -72,6 +74,7 @@ You can define seven different types of task:
    Script tasks<task_types/script>
    Shell tasks<task_types/shell>
    Sequence tasks<task_types/sequence>
+   Parallel tasks<task_types/parallel>
    Expression tasks<task_types/expr>
    Switch tasks<task_types/switch>
    Reference tasks<task_types/ref>

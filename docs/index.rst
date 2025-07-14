@@ -58,7 +58,7 @@ Top features
 
 |V| Tasks are :doc:`self documenting<./guides/help_guide>`, with optional help messages (just run :sh:`poe` with no arguments)
 
-|V| Tasks can be composed into :ref:`sequences<sequence_composition>` or :ref:`DAGs<graph_composition>`
+|V| Tasks can be composed into :ref:`sequences<sequence_composition>`, :ref:`parallel tasks<parallel_composition>` or :ref:`DAGs<graph_composition>`
 
 |V| Works with :ref:`.env files<envfile_option>`
 

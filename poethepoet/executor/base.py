@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import sys
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -248,13 +249,16 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
         proc = Popen(cmd, **popen_kwargs)
 
-        # signal pass through
-        def handle_sigint(signum, _frame):
-            # sigint is not handled on windows
-            signum = signal.CTRL_C_EVENT if self._is_windows else signum
-            proc.send_signal(signum)
+        # Only set up signal handling in the main thread
+        old_sigint_handler = None
+        if threading.current_thread() is threading.main_thread():
+            # signal pass through
+            def handle_sigint(signum, _frame):
+                # sigint is not handled on windows
+                signum = signal.CTRL_C_EVENT if self._is_windows else signum
+                proc.send_signal(signum)
 
-        old_sigint_handler = signal.signal(signal.SIGINT, handle_sigint)
+            old_sigint_handler = signal.signal(signal.SIGINT, handle_sigint)
 
         # send data to the subprocess and wait for it to finish
         (captured_stdout, _) = proc.communicate(input)
@@ -262,8 +266,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         if self.capture_stdout is True:
             self.context.save_task_output(self.invocation, captured_stdout)
 
-        # restore signal handler
-        signal.signal(signal.SIGINT, old_sigint_handler)
+        # restore signal handler if we set one
+        if old_sigint_handler is not None:
+            signal.signal(signal.SIGINT, old_sigint_handler)
 
         return proc.returncode
 

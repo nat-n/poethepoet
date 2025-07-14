@@ -39,6 +39,26 @@ And here's an example that uses the *sequence* task type explicitly in a task de
 
     See :doc:`sequence tasks<../tasks/task_types/sequence>` specifics for more information on the :code:`sequence` task type.
 
+.. _parallel_composition:
+
+Composing tasks to run in parallel
+----------------------------------
+
+You can compose tasks to run in parallel using the `parallel` keyword. Parallel tasks will run concurrently.
+
+For example:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.lint]
+  parallel = ["mypy", "pylint"]
+
+  [tool.poe.tasks.test]
+  sequence = [
+    { parallel = ["mypy", "pylint"] },
+    "pytest"
+  ]
+
 .. _graph_composition:
 
 Composing tasks into graphs
