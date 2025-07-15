@@ -160,7 +160,7 @@ class ParallelTask(PoeTask):
         self,
         context: "RunContext",
         env: "EnvVarsManager",
-        ignore_fail: Literal["return_zero", "return_non_zero"] | bool,
+        ignore_fail: Union[Literal["return_zero", "return_non_zero"], bool],
     ):
         non_zero_subtasks: list[str] = []
         subtask_futures: dict[PoeTask, Future] = {}
@@ -222,7 +222,7 @@ class ParallelTask(PoeTask):
         subtask: "PoeTask",
         context: "RunContext",
         env: "EnvVarsManager",
-        ignore_fail: Literal["return_zero", "return_non_zero"] | bool,
+        ignore_fail: Union[Literal["return_zero", "return_non_zero"], bool],
     ) -> int:
         try:
             task_result = subtask.run(context=context, parent_env=env)
