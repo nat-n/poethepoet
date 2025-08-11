@@ -1,13 +1,14 @@
 from collections.abc import Iterator, Mapping, Sequence
 from os import environ
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
 from .file import PoeConfigFile
 from .partition import ConfigPartition, IncludedConfig, PackagedConfig, ProjectConfig
 
-POE_DEBUG = environ.get("POE_DEBUG", "0") == "1"
+if TYPE_CHECKING:
+    from ..io import PoeIO
 
 
 class PoeConfig:
@@ -29,10 +30,6 @@ class PoeConfig:
     """
     _project_dir: Path
     """
-    This can be overridden, for example to align with poetry
-    """
-    _baseline_verbosity: int = 0
-    """
     A global cache of raw configs derived from task packages
     """
     _packaged_config_cache: dict[tuple[str, ...], dict] = {}
@@ -42,6 +39,7 @@ class PoeConfig:
         cwd: Optional[Union[Path, str]] = None,
         table: Optional[Mapping[str, Any]] = None,
         config_name: Optional[Union[str, Sequence[str]]] = None,
+        io: Optional["PoeIO"] = None,
     ):
         if config_name is not None:
             if isinstance(config_name, str):
@@ -55,6 +53,13 @@ class PoeConfig:
         )
         self._included_config = []
         self._packaged_config = []
+
+        if io:
+            self._io = io
+        else:
+            from ..io import PoeIO
+
+            self._io = PoeIO.get_default_io()
 
     def lookup_task(
         self, name: str
@@ -125,7 +130,7 @@ class PoeConfig:
 
     @property
     def verbosity(self) -> int:
-        return self._project_config.get("verbosity", self._baseline_verbosity)
+        return self._project_config.get("verbosity", 0)
 
     @property
     def is_poetry_project(self) -> bool:
@@ -222,8 +227,8 @@ class PoeConfig:
                     raise PoeException(msg) from error
                 else:
                     raise PoeException(msg)
-            elif POE_DEBUG:
-                print(" !", msg)
+            elif self._io:
+                self._io.print_debug(f" ! {msg}")
 
         # Attempt to load tasks from each of the include_script
         for include_script in self._project_config.options.include_script:
@@ -251,6 +256,7 @@ class PoeConfig:
                     executor_config=include_script.get("executor"),
                     capture_stdout=True,
                     resolve_python=True,
+                    io=self._io,
                 )
 
                 script = (
@@ -264,8 +270,10 @@ class PoeConfig:
                     f"print(json.dumps(_m.{function_call.expression}));"
                 )
                 try:
-                    if POE_DEBUG:
-                        print(f" . Executing script for include_script {script!r}")
+                    if self._io:
+                        self._io.print_debug(
+                            f" . Executing script for include_script {script!r}"
+                        )
                     subproc_code = executor.execute(("python", "-c", script))
                 except Exception as error:
                     handle_error(
@@ -333,11 +341,11 @@ class PoeConfig:
             include_path = self.resolve_git_path(include["path"])
 
             if not include_path.exists():
-                # TODO: print warning in verbose mode, requires access to ui somehow
-                #       Maybe there should be something like a WarningService?
-
-                if POE_DEBUG:
-                    print(f" ! Could not include file from invalid path {include_path}")
+                if self._io:
+                    self._io.print_warning(
+                        f"Poe could not include file from invalid path {include_path}",
+                        message_verbosity=0,
+                    )
                 continue
 
             try:
@@ -358,8 +366,8 @@ class PoeConfig:
                         strict=strict,
                     )
                 )
-                if POE_DEBUG:
-                    print(f"  Included config from {include_path}")
+                if self._io:
+                    self._io.print_debug(f"  Included config from {include_path}")
             except (PoeException, KeyError) as error:
                 raise ConfigValidationError(
                     f"Invalid content in included file from {include_path}",

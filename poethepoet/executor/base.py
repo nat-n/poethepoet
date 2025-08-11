@@ -13,16 +13,12 @@ if TYPE_CHECKING:
 
     from ..context import ContextProtocol
     from ..env.manager import EnvVarsManager
-
-
-# TODO: maybe invert the control so the executor is given a task to run?
-
-POE_DEBUG = os.environ.get("POE_DEBUG", "0") == "1"
+    from ..io import PoeIO
 
 
 class MetaPoeExecutor(type):
     """
-    This metaclass makes all descendents of PoeExecutor (task types) register themselves
+    This metaclass makes all descendants of PoeExecutor (task types) register themselves
     on declaration and validates that they include the expected class attributes.
     """
 
@@ -57,6 +53,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         dry: bool = False,
+        io: PoeIO,
     ):
         self.invocation = invocation
         self.context = context
@@ -73,9 +70,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self._should_resolve_python = resolve_python
         self.dry = dry
         self._is_windows = sys.platform == "win32"
-
-        if POE_DEBUG:
-            print(f" . Initializing {self.__class__.__name__}")
+        self._io = io
+        io.print_debug(f" . Initializing {self.__class__.__name__}")
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:
@@ -88,10 +84,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         context: ContextProtocol,
         executor_config: Mapping[str, str],
         env: EnvVarsManager,
+        *,
         working_dir: Path | None = None,
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         dry: bool = False,
+        io: PoeIO,
     ) -> PoeExecutor:
         """
         Create an executor.
@@ -106,6 +104,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
             dry=dry,
+            io=io,
         )
 
     @classmethod
@@ -274,11 +273,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 return python
             if python := shutil.which("python3"):
                 return python
-            if POE_DEBUG:
-                print(
-                    " ! Could not resolve python or python3 from the path, "
-                    "falling back to sys.executable"
-                )
+            self._io.print_debug(
+                " ! Could not resolve python or python3 from the path, "
+                "falling back to sys.executable"
+            )
             return sys.executable
 
         # Attempt to explicitly resolve the target executable, because we can't

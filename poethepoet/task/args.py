@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+import os
+from contextlib import redirect_stderr
+from typing import IO, TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
     from collections.abc import Mapping, Sequence
 
     from ..env.manager import EnvVarsManager
+    from ..io import PoeIO
 
-from ..exceptions import ConfigValidationError
+from ..exceptions import ConfigValidationError, ExecutionError
 from ..options import PoeOptions
 
 ArgParams = dict[str, Any]
@@ -191,9 +194,10 @@ class ArgSpec(PoeOptions):
 class PoeTaskArgs:
     _args: tuple[ArgSpec, ...]
 
-    def __init__(self, args_def: ArgsDef, task_name: str):
+    def __init__(self, args_def: ArgsDef, task_name: str, io: PoeIO):
         self._task_name = task_name
         self._args = self._parse_args_def(args_def)
+        self._io = io
 
     def _parse_args_def(self, args_def: ArgsDef):
         try:
@@ -298,7 +302,21 @@ class PoeTaskArgs:
         return result
 
     def parse(self, args: Sequence[str], env: EnvVarsManager, program_name: str):
-        parsed_args = vars(self.build_parser(env, program_name).parse_args(args))
+        error_stream = (
+            self._io.error_output
+            if self._io.verbosity > -3
+            else cast(IO[str], os.devnull)
+        )
+        with redirect_stderr(error_stream):
+            try:
+                parsed_args = vars(
+                    self.build_parser(env, program_name).parse_args(args)
+                )
+            except SystemExit as error:
+                raise ExecutionError(
+                    f"Invalid arguments for task {self._task_name!r}"
+                ) from error
+
         # Ensure positional args are still exposed by name even if they were parsed with
         # alternate identifiers
         for arg in self._args:

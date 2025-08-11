@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
     from .config import PoeConfig
     from .context import RunContext
+    from .io import PoeIO
     from .task.base import PoeTask, TaskSpecFactory
     from .ui import PoeUi
 
@@ -72,7 +73,7 @@ class PoeThePoet:
         self,
         cwd: Path | str | None = None,
         config: Mapping[str, Any] | PoeConfig | None = None,
-        output: IO = sys.stdout,
+        output: PoeIO | IO = sys.stdout,
         poetry_env_path: str | None = None,
         config_name: str | None = None,
         program_name: str = "poe",
@@ -80,6 +81,7 @@ class PoeThePoet:
         suppress_args: Sequence[str] = ("legacy_project_root",),
     ):
         from .config import PoeConfig
+        from .io import PoeIO
         from .ui import PoeUi
 
         self.cwd = Path(cwd) if cwd else Path().resolve()
@@ -88,13 +90,32 @@ class PoeThePoet:
             config_name = self.cwd.name
             self.cwd = self.cwd.parent
 
-        self.config = (
-            config
-            if isinstance(config, PoeConfig)
-            else PoeConfig(cwd=self.cwd, table=config, config_name=config_name)
+        self.io = (
+            PoeIO(
+                parent=output,
+                make_default=True,
+            )
+            if isinstance(output, PoeIO)
+            else PoeIO(
+                output=output,
+                error=output,
+                make_default=True,
+            )
         )
+
+        if isinstance(config, PoeConfig):
+            self.config = config
+            self.config._io = self.io
+        else:
+            self.config = PoeConfig(
+                cwd=self.cwd, table=config, config_name=config_name, io=self.io
+            )
+        self.io.configure(baseline=self.config.verbosity)
+
         self.ui = PoeUi(
-            output=output, program_name=program_name, suppress_args=suppress_args
+            io=self.io,
+            program_name=program_name,
+            suppress_args=suppress_args,
         )
         self._poetry_env_path = poetry_env_path
         self._env = env if env is not None else os.environ
@@ -118,6 +139,7 @@ class PoeThePoet:
 
         try:
             self.config.load(target_path=self.ui["project_root"])
+            self.io.configure(baseline=self.config.verbosity)
             for task_spec in self.task_specs.load_all():
                 task_spec.validate(self.config, self.task_specs)
         except PoeException as error:
@@ -126,8 +148,6 @@ class PoeThePoet:
                 return 0
             self.print_help(error=error)
             return 1
-
-        self.ui.set_default_verbosity(self.config.verbosity)
 
         if should_display_help:
             self.print_help()
@@ -138,9 +158,16 @@ class PoeThePoet:
             return 1
 
         if task.has_deps():
-            return self.run_task_graph(task) or 0
+            return self._run_task_graph(task) or 0
         else:
             return self.run_task(task) or 0
+
+    def modify_verbosity(self, offset: int):
+        """
+        Set the offset by which the verbosity level will be modified in all contexts.
+        This is an alternative to using the `-v` and `-q` flags on the CLI.
+        """
+        self.io.configure(offset=offset)
 
     @property
     def task_specs(self):
@@ -151,6 +178,7 @@ class PoeThePoet:
         return self._task_specs
 
     def resolve_task(self, allow_hidden: bool = False) -> PoeTask | None:
+        from .io import PoeIO
         from .task.base import TaskContext
 
         task = tuple(self.ui["task"])
@@ -163,7 +191,7 @@ class PoeThePoet:
 
         task_name = task[0]
         if task_name not in self.config.task_names:
-            self.print_help(error=PoeException(f"Unrecognised task {task_name!r}"))
+            self.print_help(error=PoeException(f"Unrecognized task {task_name!r}"))
             return None
 
         if task_name.startswith("_") and not allow_hidden:
@@ -175,15 +203,19 @@ class PoeThePoet:
             return None
 
         task_spec = self.task_specs.get(task_name)
-        return task_spec.create_task(
-            invocation=task,
-            ctx=TaskContext(
-                config=self.config,
-                cwd=str(task_spec.source.cwd),
-                specs=self.task_specs,
-                ui=self.ui,
+        task_context = TaskContext(
+            config=self.config,
+            cwd=str(task_spec.source.cwd),
+            specs=self.task_specs,
+            ui=self.ui,
+            io=PoeIO(
+                parent=self.io,
+                baseline_verbosity=task_spec.options.get(
+                    "verbosity", self.io._baseline_verbosity
+                ),
             ),
         )
+        return task_spec.create_task(invocation=task, ctx=task_context)
 
     def run_task(self, task: PoeTask, context: RunContext | None = None) -> int | None:
         if context is None:
@@ -197,7 +229,7 @@ class PoeThePoet:
             self.print_help(error=error)
             return 1
 
-    def run_task_graph(self, task: PoeTask) -> int | None:
+    def _run_task_graph(self, task: PoeTask) -> int | None:
         from .task.graph import TaskExecutionGraph
 
         context = self.get_run_context(multistage=True)

@@ -35,6 +35,9 @@ The following options can be configured on your tasks and are not specific to an
 **executor** : ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
   Specify that this task should be executed with a specific executor.
 
+**verbosity** : ``int`` :ref:`📖<Configure task level verbosity>`
+  Specify the verbosity level for this task, from -2 (least verbose) to 2 (most verbose), overriding the project level verbosity setting, which defaults to 0.
+
 **use_exec** : ``bool`` :ref:`📖<Defining tasks that run via exec instead of a subprocess>`
   Specify that this task should be executed in the same process, instead of as a subprocess.
 
@@ -173,6 +176,41 @@ You can specify a default executor for a task by providing the ``executor`` opti
 This works exactly like the the global option to :ref:`change the executor type<Change the executor type>` except it only impacts the one task.
 
 
+Configure task level verbosity
+------------------------------
+
+You can specify the verbosity level for a task by providing the :toml:`verbosity` option like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.credentials]
+    cmd       = "aws secretsmanager get-secret-value --secret-id creds --query 'SecretString'"
+    verbosity = -1
+
+This overrides the project level verbosity setting, which defaults to 0. The verbosity level can be set to an integer from -2 (least verbose) to 2 (most verbose).
+
+Passing the ``-v`` or ``-q`` global options (before the task name on the command line) will override increment or decrement all verbosity levels.
+
+
+Verbosity levels
+~~~~~~~~~~~~~~~~
+
+The verbosity level is an integer, where positive values increase the verbosity of the output, and negative values decrease it. The levels are as follows:
+
+- -3 : suppress all output, including errors
+- -2 : suppress warning messages
+- -1 : suppress info messages such as those describing which tasks are being run
+- 0 : standard verbosity
+- 1 : some extra details in output
+- 2 : more extra details in output
+- 3 : debug output referencing poethepoet internals (similar to setting ``POE_DEBUG=1``)
+
+Note that the verbosity level only applies to output from poethepoet itself, and does not impact the output of the tasks being run.
+
+Inline tasks (such as those defined within a sequence task) inherit the verbosity level of their parent task, unless they explicitly override it.
+
+The verbosity modifying global cli options may be provided multiple times to increment or decrement the verbosity level by 1 for each occurrence. For example, running ``poe -qq test`` will run the ``test`` task with a verbosity level of -2 relative to the baseline otherwise specified for the project or task.
+
 Defining tasks that run via exec instead of a subprocess
 --------------------------------------------------------
 
@@ -192,4 +230,3 @@ However in certain situations it can be desirable to define a task that is inste
 
   1. a task configured in this way may not be referenced by another task
   2. this does not work on windows because of `this issue <https://bugs.python.org/issue19066>`_. On windows a subprocess is always created.
-

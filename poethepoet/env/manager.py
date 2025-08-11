@@ -4,26 +4,26 @@ import os
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+from ..io import PoeIO
 from .template import apply_envvars_to_template
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from ..config import PoeConfig
     from .cache import EnvFileCache
-    from .config import PoeConfig
-    from .ui import PoeUi
 
 
 class EnvVarsManager(Mapping):
     _config: PoeConfig
-    _ui: PoeUi | None
+    _io: PoeIO
     _vars: dict[str, str]
     envfiles: EnvFileCache
 
-    def __init__(  # TODO: check if we still need all these args!
+    def __init__(
         self,
         config: PoeConfig,
-        ui: PoeUi | None = None,
+        io: PoeIO | None = None,
         parent_env: EnvVarsManager | None = None,
         base_env: Mapping[str, str] | None = None,
         cwd: Path | str | None = None,
@@ -32,10 +32,10 @@ class EnvVarsManager(Mapping):
         from .cache import EnvFileCache
 
         self._config = config
-        self._ui = ui
+        self._io = io or PoeIO.get_default_io()
         self.envfiles = (
             # Reuse EnvFileCache from parent_env when possible
-            EnvFileCache(config.project_dir, self._ui)
+            EnvFileCache(config.project_dir, self._io)
             if parent_env is None
             else parent_env.envfiles
         )
@@ -51,8 +51,8 @@ class EnvVarsManager(Mapping):
             self._vars["POE_CWD"] = self.cwd
             self._vars["POE_PWD"] = self.cwd
 
-        if self._ui:
-            self._vars["POE_VERBOSITY"] = str(self._ui.verbosity)
+        if self._io:
+            self._vars["POE_VERBOSITY"] = str(self._io.verbosity)
 
         self._git_repo = GitRepo(config.project_dir)
 
@@ -138,10 +138,10 @@ class EnvVarsManager(Mapping):
 
         return self
 
-    def clone(self):
+    def clone(self, io: PoeIO | None = None) -> EnvVarsManager:
         return EnvVarsManager(
             config=self._config,
-            ui=self._ui,
+            io=io or self._io,
             parent_env=self,
             cwd=self.cwd,
         )

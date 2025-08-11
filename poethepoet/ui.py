@@ -1,33 +1,15 @@
 import os
 import sys
 from collections.abc import Mapping, Sequence
-from typing import IO, TYPE_CHECKING, Optional, Union
+from contextlib import redirect_stderr
+from typing import TYPE_CHECKING, Optional, Union
 
 from .__version__ import __version__
 from .exceptions import ConfigValidationError, ExecutionError, PoeException
+from .io import PoeIO, guess_ansi_support
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-
-    from pastel import Pastel
-
-
-def guess_ansi_support(file):
-    if os.environ.get("NO_COLOR", "0")[0] != "0":
-        # https://no-color.org/
-        return False
-
-    if (
-        os.environ.get("GITHUB_ACTIONS", "false") == "true"
-        and "PYTEST_CURRENT_TEST" not in os.environ
-    ):
-        return True
-
-    return (
-        (sys.platform != "win32" or "ANSICON" in os.environ)
-        and hasattr(file, "isatty")
-        and file.isatty()
-    )
 
 
 STDOUT_ANSI_SUPPORT = guess_ansi_support(sys.stdout)
@@ -35,32 +17,16 @@ STDOUT_ANSI_SUPPORT = guess_ansi_support(sys.stdout)
 
 class PoeUi:
     args: "Namespace"
-    _color: "Pastel"
 
     def __init__(
         self,
-        output: IO,
+        io: PoeIO,
         program_name: str = "poe",
         suppress_args: Sequence[str] = ("legacy_project_root",),
     ):
-        self.output = output
+        self.io = io
         self.program_name = program_name
-        self._init_colors()
         self.suppress_args = set(suppress_args)
-
-    def _init_colors(self):
-        from pastel import Pastel
-
-        self._color = Pastel(guess_ansi_support(self.output))
-        self._color.add_style("u", "default", options="underline")
-        self._color.add_style("hl", "light_gray")
-        self._color.add_style("em", "cyan")
-        self._color.add_style("em2", "cyan", options="italic")
-        self._color.add_style("em3", "blue")
-        self._color.add_style("h2", "default", options="bold")
-        self._color.add_style("h2-dim", "default", options="dark")
-        self._color.add_style("action", "light_blue")
-        self._color.add_style("error", "light_red", options="bold")
 
     def __getitem__(self, key: str):
         """Provide easy access to arguments"""
@@ -107,7 +73,7 @@ class PoeUi:
             dest="increase_verbosity",
             action="count",
             default=0,
-            help=maybe_suppress("verbosity", "Increase command output (repeatable)"),
+            help=maybe_suppress("verbosity", "Increase output (repeatable)"),
         )
 
         parser.add_argument(
@@ -116,7 +82,7 @@ class PoeUi:
             dest="decrease_verbosity",
             action="count",
             default=0,
-            help=maybe_suppress("verbosity", "Decrease command output (repeatable)"),
+            help=maybe_suppress("verbosity", "Decrease output (repeatable)"),
         )
 
         parser.add_argument(
@@ -187,12 +153,17 @@ class PoeUi:
 
     def parse_args(self, cli_args: Sequence[str]):
         self.parser = self.build_parser()
-        self.args = self.parser.parse_args(cli_args)
-        self.verbosity: int = self["increase_verbosity"] - self["decrease_verbosity"]
-        self._color.with_colors(self.args.ansi)
 
-    def set_default_verbosity(self, default_verbosity: int):
-        self.verbosity += default_verbosity
+        with redirect_stderr(self.io.error_output):
+            self.args = self.parser.parse_args(cli_args)
+
+        self.io.configure(ansi_enabled=self.args.ansi)
+        self.io.configure(
+            offset=(self.args.increase_verbosity - self.args.decrease_verbosity),
+            # Only respect verbosity modifier CLI flags if verbosity_offset is not
+            # already set (e.g. by a plugin)
+            dont_override=True,
+        )
 
     def print_help(
         self,
@@ -205,21 +176,21 @@ class PoeUi:
         # Ignore verbosity mode if help flag is set
         help_flag_set = self["help"] is None
         help_single_task = self["help"] if isinstance(self["help"], str) else None
-        verbosity = 0 if help_flag_set else self.verbosity
+        verbosity = 0 if help_flag_set else self.io.verbosity
 
         # If there's no error and verbosity wasn't explicitly decreased for this call,
         # then ensure we still print help
-        if not error and self.verbosity < 0 and not self["decrease_verbosity"]:
-            verbosity = 0
+        if not error and not self.io.verbosity_offset_was_set:
+            verbosity = min(0, self.io.verbosity)
 
         result: list[Union[str, Sequence[str]]] = []
         if verbosity >= 0 and not help_single_task:
             result.append((f"<h2>Poe the Poet</h2> (version <em>{__version__}</em>)",))
 
-        if info:
+        if info and verbosity >= -2:
             result.append(f"{f'<em2>Result: {info}</em2>'}")
 
-        if error:
+        if error and verbosity >= -2:
             result.append(self._format_poe_error(error))
 
         if tasks and help_single_task:
@@ -228,72 +199,78 @@ class PoeUi:
                 self._format_single_task_help(help_single_task, help_text, args_help)
             )
 
-        elif verbosity >= 0:
-            result.append(
-                (
-                    "<h2>Usage:</h2>",
-                    f"  <u>{self.program_name}</u>"
-                    " [global options]"
-                    " task [task arguments]",
+        else:
+            if verbosity >= 0:
+                result.append(
+                    (
+                        "<h2>Usage:</h2>",
+                        f"  <u>{self.program_name}</u>"
+                        " [global options]"
+                        " task [task arguments]",
+                    )
                 )
-            )
 
-            # Use argparse for optional args
-            formatter = self.parser.formatter_class(prog=self.parser.prog)
-            action_group = self.parser._action_groups[1]
-            formatter.start_section(action_group.title)
-            formatter.add_arguments(action_group._group_actions)
-            formatter.end_section()
-            result.append(
-                ("<h2>Global options:</h2>", *formatter.format_help().split("\n")[1:])
-            )
+                # Use argparse for optional args
+                formatter = self.parser.formatter_class(prog=self.parser.prog)
+                action_group = self.parser._action_groups[1]
+                formatter.start_section(action_group.title)
+                formatter.add_arguments(action_group._group_actions)
+                formatter.end_section()
+                result.append(
+                    (
+                        "<h2>Global options:</h2>",
+                        *formatter.format_help().split("\n")[1:],
+                    )
+                )
 
-            if tasks:
-                max_task_len = max(
-                    max(
-                        len(task),
+            if verbosity >= -1:
+                if tasks:
+                    max_task_len = max(
                         max(
-                            [
-                                len(", ".join(str(opt) for opt in opts))
-                                for (opts, _, _) in args
-                            ]
-                            or (0,)
+                            len(task),
+                            max(
+                                [
+                                    len(", ".join(str(opt) for opt in opts))
+                                    for (opts, _, _) in args
+                                ]
+                                or (0,)
+                            )
+                            + 2,
                         )
-                        + 2,
+                        for task, (_, args) in tasks.items()
                     )
-                    for task, (_, args) in tasks.items()
-                )
-                col_width = max(20, min(30, max_task_len))
+                    col_width = max(20, min(30, max_task_len))
 
-                tasks_section = ["<h2>Configured tasks:</h2>"]
-                for task, (help_text, args_help) in tasks.items():
-                    if task.startswith("_"):
-                        continue
-                    tasks_section.append(
-                        f"  <em>{self._padr(task, col_width)}</em>  "
-                        f"{self._align(help_text, col_width)}"
-                    )
-                    tasks_section.extend(
-                        self._format_args_help(args_help, col_width, indent=3)
-                    )
+                    tasks_section = ["<h2>Configured tasks:</h2>"]
+                    for task, (help_text, args_help) in tasks.items():
+                        if task.startswith("_"):
+                            continue
+                        tasks_section.append(
+                            f"  <em>{self._padr(task, col_width)}</em>  "
+                            f"{self._align(help_text, col_width)}"
+                        )
+                        tasks_section.extend(
+                            self._format_args_help(args_help, col_width, indent=3)
+                        )
 
-                result.append(tasks_section)
+                    result.append(tasks_section)
 
-            else:
-                result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
+                else:
+                    result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
 
-        if error and os.environ.get("POE_DEBUG", "0") == "1":
+        if error and self.io.is_debug_enabled():
             import traceback
 
             result.append("".join(traceback.format_exception(error)).strip())
 
-        self._print(
+        self.io.print(
             "\n\n".join(
                 section if isinstance(section, str) else "\n".join(section).strip("\n")
                 for section in result
             )
             + "\n"
-            + ("\n" if verbosity >= 0 else "")
+            + ("\n" if verbosity >= 0 else ""),
+            message_verbosity=-2,
         )
 
     def _format_poe_error(self, error: PoeException) -> tuple[str, ...]:
@@ -313,7 +290,7 @@ class PoeUi:
         error_lines.extend(error.msg.split("\n"))
         if error.cause:
             error_lines.append(error.cause)
-        if error.__cause__:
+        if error.__cause__ and not isinstance(error.__cause__, SystemExit):
             error_lines.append(f"From: {error.__cause__!r}")
 
         return self._format_error_lines(error_lines)
@@ -328,7 +305,6 @@ class PoeUi:
         if help_text:
             result.append(f"<h2>Description:</h2>\n  {help_text.strip()}\n")
 
-        # TODO: usage guidance should really depend on task type and configuration
         result.extend(
             (
                 "<h2>Usage:</h2>",
@@ -380,24 +356,20 @@ class PoeUi:
             return text
         return text + " " * (width - len(text))
 
-    def print_msg(self, message: str, verbosity=0, end="\n"):
-        if verbosity <= self.verbosity:
-            self._print(message, end=end)
-
     def print_error(self, error: Union[PoeException, ExecutionError]):
         error_lines = error.msg.split("\n")
         if error.cause:
             error_lines.append(f"From: {error.cause}")
-        if error.__cause__:
+        if error.__cause__ and not isinstance(error.__cause__, SystemExit):
             error_lines.append(f"From: {error.__cause__!r}")
 
         for line in self._format_error_lines(error_lines):
-            self._print(line)
+            self.io.print_error(line)
 
-        if os.environ.get("POE_DEBUG", "0") == "1":
+        if self.io.is_debug_enabled():
             import traceback
 
-            self._print("".join(traceback.format_exception(error)).strip())
+            self.io.print_debug("".join(traceback.format_exception(error)).strip())
 
     def _format_error_lines(self, lines: Sequence[str]) -> tuple[str, ...]:
         return (
@@ -406,11 +378,8 @@ class PoeUi:
         )
 
     def print_version(self):
-        if self.verbosity >= 0:
+        if self.io.verbosity >= 0:
             result = f"Poe the Poet - version: <em>{__version__}</em>\n"
         else:
             result = f"{__version__}\n"
-        self._print(result)
-
-    def _print(self, message: str, *, end: str = "\n"):
-        print(self._color.colorize(message), end=end, file=self.output, flush=True)
+        self.io.print(result, message_verbosity=-2)

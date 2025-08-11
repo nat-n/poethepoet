@@ -46,7 +46,7 @@ class ScriptTask(PoeTask):
 
             validate_script_or_module_reference(self.content)
 
-            if ":" not in self.content and self.args:
+            if ":" not in self.content and self.has_args:
                 raise ConfigValidationError(
                     "Script task referencing a module (instead of a function) cannot "
                     "declare arguments."
