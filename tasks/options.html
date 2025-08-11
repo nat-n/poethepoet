@@ -263,6 +263,8 @@ The value is a map where the values are invocations of the other tasks, and the 
 </dd>
 <dt><strong>executor</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#configure-the-executor-for-a-task"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed with a specific executor.</p>
 </dd>
+<dt><strong>verbosity</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code> <a class="reference internal" href="#configure-task-level-verbosity"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify the verbosity level for this task, from -2 (least verbose) to 2 (most verbose), overriding the project level verbosity setting, which defaults to 0.</p>
+</dd>
 <dt><strong>use_exec</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed in the same process, instead of as a subprocess.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
@@ -365,6 +367,33 @@ above but can also by given a list of such paths like so:</p>
 </div>
 <p>This works exactly like the the global option to <a class="reference internal" href="../global_options.html#change-the-executor-type"><span class="std std-ref">change the executor type</span></a> except it only impacts the one task.</p>
 </section>
+<section id="configure-task-level-verbosity">
+<h2>Configure task level verbosity<a class="headerlink" href="#configure-task-level-verbosity" title="Link to this heading">¶</a></h2>
+<p>You can specify the verbosity level for a task by providing the <code class="code highlight toml docutils literal highlight-toml"><span class="n">verbosity</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.credentials]</span>
+<span class="n">cmd</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;aws secretsmanager get-secret-value --secret-id creds --query &#39;SecretString&#39;&quot;</span>
+<span class="n">verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span>
+</pre></div>
+</div>
+<p>This overrides the project level verbosity setting, which defaults to 0. The verbosity level can be set to an integer from -2 (least verbose) to 2 (most verbose).</p>
+<p>Passing the <code class="docutils literal notranslate"><span class="pre">-v</span></code> or <code class="docutils literal notranslate"><span class="pre">-q</span></code> global options (before the task name on the command line) will override increment or decrement all verbosity levels.</p>
+<section id="verbosity-levels">
+<h3>Verbosity levels<a class="headerlink" href="#verbosity-levels" title="Link to this heading">¶</a></h3>
+<p>The verbosity level is an integer, where positive values increase the verbosity of the output, and negative values decrease it. The levels are as follows:</p>
+<ul class="simple">
+<li><p>-3 : suppress all output, including errors</p></li>
+<li><p>-2 : suppress warning messages</p></li>
+<li><p>-1 : suppress info messages such as those describing which tasks are being run</p></li>
+<li><p>0 : standard verbosity</p></li>
+<li><p>1 : some extra details in output</p></li>
+<li><p>2 : more extra details in output</p></li>
+<li><p>3 : debug output referencing poethepoet internals (similar to setting <code class="docutils literal notranslate"><span class="pre">POE_DEBUG=1</span></code>)</p></li>
+</ul>
+<p>Note that the verbosity level only applies to output from poethepoet itself, and does not impact the output of the tasks being run.</p>
+<p>Inline tasks (such as those defined within a sequence task) inherit the verbosity level of their parent task, unless they explicitly override it.</p>
+<p>The verbosity modifying global cli options may be provided multiple times to increment or decrement the verbosity level by 1 for each occurrence. For example, running <code class="docutils literal notranslate"><span class="pre">poe</span> <span class="pre">-qq</span> <span class="pre">test</span></code> will run the <code class="docutils literal notranslate"><span class="pre">test</span></code> task with a verbosity level of -2 relative to the baseline otherwise specified for the project or task.</p>
+</section>
+</section>
 <section id="defining-tasks-that-run-via-exec-instead-of-a-subprocess">
 <h2>Defining tasks that run via exec instead of a subprocess<a class="headerlink" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess" title="Link to this heading">¶</a></h2>
 <p>Normally tasks are executed as subprocesses of the <code class="docutils literal notranslate"><span class="pre">poe</span></code> executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.</p>
@@ -463,6 +492,10 @@ above but can also by given a list of such paths like so:</p>
 <li><a class="reference internal" href="#running-a-task-with-a-specific-working-directory">Running a task with a specific working directory</a></li>
 <li><a class="reference internal" href="#redirect-task-output-to-a-file">Redirect task output to a file</a></li>
 <li><a class="reference internal" href="#configure-the-executor-for-a-task">Configure the executor for a task</a></li>
+<li><a class="reference internal" href="#configure-task-level-verbosity">Configure task level verbosity</a><ul>
+<li><a class="reference internal" href="#verbosity-levels">Verbosity levels</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#defining-tasks-that-run-via-exec-instead-of-a-subprocess">Defining tasks that run via exec instead of a subprocess</a></li>
 </ul>
 </li>
@@ -475,7 +508,7 @@ above but can also by given a list of such paths like so:</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=5864e6e0"></script>
+</div><script src="../_static/documentation_options.js?v=29b1acb9"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

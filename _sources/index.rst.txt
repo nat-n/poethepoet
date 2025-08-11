@@ -26,10 +26,6 @@ Poe the Poet Documentation
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
-.. image:: https://img.shields.io/pypi/dm/poethepoet
-   :target: https://pypistats.org/packages/poethepoet
-   :alt: PyPI - Downloads
-
 .. image:: https://img.shields.io/pypi/l/ansicolortags.svg
    :target: https://github.com/nat-n/poethepoet/blob/main/LICENSE
    :alt: MIT
