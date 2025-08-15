@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from ..executor.result import PoeExecutionResult
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
@@ -124,11 +125,11 @@ class SequenceTask(PoeTask):
             for index, task_spec in enumerate(spec.subtasks)
         ]
 
-    def _handle_run(
+    async def _handle_run(
         self,
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+    ) -> PoeExecutionResult:
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
@@ -144,7 +145,7 @@ class SequenceTask(PoeTask):
         for subtask in self.subtasks:
             task_result = None
             try:
-                task_result = subtask.run(context=context, parent_env=env)
+                task_result = await subtask.run(context=context, parent_env=env)
             except ExecutionError as error:
                 if ignore_fail:
                     self.ctx.io.print_warning(error.msg, message_verbosity=0)
@@ -152,7 +153,7 @@ class SequenceTask(PoeTask):
                 else:
                     raise
 
-            if task_result:
+            if task_result and task_result.non_zero_exit_code:
                 if not ignore_fail:
                     raise ExecutionError(
                         f"Sequence aborted after failed subtask {subtask.name!r}"
@@ -165,7 +166,7 @@ class SequenceTask(PoeTask):
                 f"Subtask{plural} {', '.join(repr(st) for st in non_zero_subtasks)} "
                 "returned non-zero exit status"
             )
-        return 0
+        return PoeExecutionResult()
 
     @classmethod
     def _subtask_name(cls, task_name: str, index: int):

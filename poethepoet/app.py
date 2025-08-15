@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 
 from .exceptions import ExecutionError, PoeException
+from .helpers.eventloop import run_async
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -135,10 +136,13 @@ class PoeThePoet:
             self.ui.print_version()
             return 0
 
+        return run_async(self._call(internal))
+
+    async def _call(self, internal: bool = False) -> int:
         should_display_help = self.ui["help"] != Ellipsis
 
         try:
-            self.config.load(target_path=self.ui["project_root"])
+            await self.config.load(target_path=self.ui["project_root"])
             self.io.configure(baseline=self.config.verbosity)
             for task_spec in self.task_specs.load_all():
                 task_spec.validate(self.config, self.task_specs)
@@ -158,9 +162,9 @@ class PoeThePoet:
             return 1
 
         if task.has_deps():
-            return self._run_task_graph(task) or 0
+            return await self._run_task_graph(task) or 0
         else:
-            return self.run_task(task) or 0
+            return await self._run_task(task) or 0
 
     def modify_verbosity(self, offset: int):
         """
@@ -217,11 +221,13 @@ class PoeThePoet:
         )
         return task_spec.create_task(invocation=task, ctx=task_context)
 
-    def run_task(self, task: PoeTask, context: RunContext | None = None) -> int | None:
+    async def _run_task(
+        self, task: PoeTask, context: RunContext | None = None
+    ) -> int | None:
         if context is None:
             context = self.get_run_context()
         try:
-            return task.run(context=context)
+            return (await task.run(context=context)).returncode
         except ExecutionError as error:
             self.ui.print_error(error=error)
             return 1
@@ -229,7 +235,7 @@ class PoeThePoet:
             self.print_help(error=error)
             return 1
 
-    def _run_task_graph(self, task: PoeTask) -> int | None:
+    async def _run_task_graph(self, task: PoeTask) -> int | None:
         from .task.graph import TaskExecutionGraph
 
         context = self.get_run_context(multistage=True)
@@ -245,11 +251,11 @@ class PoeThePoet:
             for stage_task in stage:
                 if stage_task == task:
                     # The final sink task gets special treatment
-                    return self.run_task(stage_task, context)
+                    return await self._run_task(stage_task, context)
 
                 try:
-                    task_result = stage_task.run(context=context)
-                    if task_result:
+                    task_result = await stage_task.run(context=context)
+                    if task_result.non_zero_exit_code:
                         raise ExecutionError(
                             f"Task graph aborted after failed task {stage_task.name!r}"
                         )
@@ -299,7 +305,7 @@ class PoeThePoet:
                     ),
                 )
                 if isinstance(content, dict)
-                else ("", tuple())
+                else ("", ())
             )
             for task_name, content in self.config.tasks.items()
         }

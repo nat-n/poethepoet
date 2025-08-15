@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
 import sys
-import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from .result import PoeExecutionResult
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, MutableMapping, Sequence
@@ -135,17 +136,17 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
             return cls.__executor_types[executor_type]
 
-    def execute(
+    async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> int:
+    ) -> PoeExecutionResult:
         """
         Execute the given cmd.
         """
 
         cmd = (self._resolve_executable(cmd[0]), *cmd[1:])
-        return self._execute_cmd(cmd, input=input, use_exec=use_exec)
+        return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
-    def _execute_cmd(
+    async def _execute_cmd(
         self,
         cmd: Sequence[str],
         *,
@@ -153,7 +154,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         env: Mapping[str, str] | None = None,
         shell: bool = False,
         use_exec: bool = False,
-    ) -> int:
+    ) -> PoeExecutionResult:
         """
         Execute the given cmd either as a subprocess or use exec to replace the current
         process. Using exec supports fewer options, and doesn't work on windows.
@@ -173,10 +174,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     # execvpe doesn't work properly on windows so we just don't go there
                     return self._exec(cmd, env=env)
 
-            return self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
+            return await self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
         except FileNotFoundError as error:
             if error.filename == cmd[0]:
-                return self._handle_file_not_found(cmd, error)
+                await self._handle_file_not_found(cmd, error)
+                # unreachable due to raise in _handle_file_not_found
             if error.filename == self.working_dir:
                 raise PoeException(
                     "The specified working directory does not exist "
@@ -184,9 +186,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
             raise
 
-    def _handle_file_not_found(
+    async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
-    ) -> int:
+    ):
         raise PoeException(f"executable {cmd[0]!r} could not be found") from error
 
     def _exec(
@@ -194,9 +196,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         cmd: Sequence[str],
         *,
         env: Mapping[str, str] | None = None,
-    ):
+    ) -> PoeExecutionResult:
         if self.dry:
-            return 0
+            return PoeExecutionResult()
 
         # Beware: this is the point of no return!
 
@@ -212,20 +214,23 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
         os.execvpe(cmd[0], tuple(cmd), exec_env)
 
-    def _exec_via_subproc(
+    async def _exec_via_subproc(
         self,
         cmd: Sequence[str],
         *,
         input: bytes | None = None,
         env: Mapping[str, str] | None = None,
         shell: bool = False,
-    ) -> int:
+    ) -> PoeExecutionResult:
         import signal
-        from subprocess import PIPE, Popen
+        from subprocess import PIPE
 
         if self.dry:
-            return 0
-        popen_kwargs: MutableMapping[str, Any] = {"shell": shell}
+            # A dry run doesn't execute the command, so we just return a dummy process
+            return PoeExecutionResult(
+                await asyncio.create_subprocess_exec(sys.executable, "-c", "")
+            )
+        popen_kwargs: MutableMapping[str, Any] = {}
         popen_kwargs["env"] = dict(
             (self.env.to_dict() if env is None else env), POE_ACTIVE=self.__key__
         )
@@ -233,7 +238,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             popen_kwargs["stdin"] = PIPE
         if self.capture_stdout:
             if isinstance(self.capture_stdout, Path):
-                # ruff: noqa: SIM115
+                # ruff: noqa: SIM115, ASYNC230
                 popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
             else:
                 popen_kwargs["stdout"] = PIPE
@@ -247,30 +252,31 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         # TODO: exclude the subprocess from coverage more gracefully
         _stop_coverage()
 
-        proc = Popen(cmd, **popen_kwargs)
+        if shell:
+            proc = await asyncio.create_subprocess_shell("".join(cmd), **popen_kwargs)
+        else:
+            proc = await asyncio.create_subprocess_exec(*cmd, **popen_kwargs)
 
-        # Only set up signal handling in the main thread
-        old_sigint_handler = None
-        if threading.current_thread() is threading.main_thread():
-            # signal pass through
-            def handle_sigint(signum, _frame):
-                # sigint is not handled on windows
-                signum = signal.CTRL_C_EVENT if self._is_windows else signum
-                proc.send_signal(signum)
+        # FIXME: make sure signal handling works within async processing
 
-            old_sigint_handler = signal.signal(signal.SIGINT, handle_sigint)
+        # signal pass through
+        def handle_sigint(signum, _frame):
+            # sigint is not handled on windows
+            signum = signal.CTRL_C_EVENT if self._is_windows else signum
+            proc.send_signal(signum)
+
+        old_sigint_handler = signal.signal(signal.SIGINT, handle_sigint)
 
         # send data to the subprocess and wait for it to finish
-        (captured_stdout, _) = proc.communicate(input)
+        (captured_stdout, _) = await proc.communicate(input)
+
+        # restore signal handler if we set one
+        signal.signal(signal.SIGINT, old_sigint_handler)
 
         if self.capture_stdout is True:
             self.context.save_task_output(self.invocation, captured_stdout)
 
-        # restore signal handler if we set one
-        if old_sigint_handler is not None:
-            signal.signal(signal.SIGINT, old_sigint_handler)
-
-        return proc.returncode
+        return PoeExecutionResult(proc)
 
     def _resolve_executable(self, executable: str):
         if self._should_resolve_python and executable == "python":

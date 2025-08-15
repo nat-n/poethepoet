@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
 from ..exceptions import ConfigValidationError, PoeException
+from ..executor.result import PoeExecutionResult
 from .base import PoeTask
 
 if TYPE_CHECKING:
@@ -57,11 +58,11 @@ class ShellTask(PoeTask):
 
     spec: TaskSpec
 
-    def _handle_run(
+    async def _handle_run(
         self,
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+    ) -> PoeExecutionResult:
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
@@ -87,7 +88,7 @@ class ShellTask(PoeTask):
 
         self._print_action(content, context.dry)
 
-        return self._get_executor(
+        return await self._get_executor(
             context, env, resolve_python=interpreter_cmd == "python"
         ).execute(interpreter_cmd, input=content.encode())
 

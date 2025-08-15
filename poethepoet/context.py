@@ -21,11 +21,14 @@ class ContextProtocol(Protocol):
     exec_cache: dict[str, Any]
     ui: PoeUi | None
 
-    def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes): ...
+    def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes):
+        ...
 
-    def has_task_output(self, invocation: tuple[str, ...]) -> bool: ...
+    def has_task_output(self, invocation: tuple[str, ...]) -> bool:
+        ...
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str: ...
+    def get_task_output(self, invocation: tuple[str, ...]) -> str:
+        ...
 
     def get_executor(
         self,
@@ -38,7 +41,8 @@ class ContextProtocol(Protocol):
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
         io: PoeIO | None = None,
-    ) -> PoeExecutor: ...
+    ) -> PoeExecutor:
+        ...
 
 
 class RunContext:

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional, 
 
 from ..config.primitives import EmptyDict, EnvDefault
 from ..exceptions import ConfigValidationError, PoeException
+from ..executor.result import PoeExecutionResult
 from ..io import PoeIO
 from ..options import PoeOptions
 
@@ -447,11 +448,11 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return self._parsed_args
 
-    def run(
+    async def run(
         self,
         context: "RunContext",
         parent_env: Optional["EnvVarsManager"] = None,
-    ) -> int:
+    ) -> PoeExecutionResult:
         """
         Run this task
         """
@@ -472,7 +473,7 @@ class PoeTask(metaclass=MetaPoeTask):
                 dry=True,
                 unresolved=True,
             )
-            return 0
+            return PoeExecutionResult()
 
         task_env = self.spec.get_task_env(
             parent_env or context.env,
@@ -485,13 +486,13 @@ class PoeTask(metaclass=MetaPoeTask):
             self.ctx.io.print_debug(f" . Parsed args {named_arg_values!r}")
             self.ctx.io.print_debug(f" . Extra args  {extra_args!r}")
 
-        return self._handle_run(context, task_env)
+        return await self._handle_run(context, task_env)
 
-    def _handle_run(
+    async def _handle_run(
         self,
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+    ) -> PoeExecutionResult:
         """
         This method must be implemented by a subclass and return a single executor
         result.

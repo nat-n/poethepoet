@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
-from .base import PoeExecutor
+from .base import PoeExecutionResult, PoeExecutor
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -26,22 +26,22 @@ class VirtualenvExecutor(PoeExecutor):
 
         return Virtualenv.detect(context.config.project_dir)
 
-    def execute(
+    async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> int:
+    ) -> PoeExecutionResult:
         """
         Execute the given cmd as a subprocess inside the configured virtualenv
         """
         venv = self._resolve_virtualenv()
 
-        return self._execute_cmd(
+        return await self._execute_cmd(
             (venv.resolve_executable(cmd[0]), *cmd[1:]),
             input=input,
             env=venv.get_env_vars(self.env.to_dict()),
             use_exec=use_exec,
         )
 
-    def _handle_file_not_found(
+    async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
     ) -> int:
         venv = self._resolve_virtualenv()

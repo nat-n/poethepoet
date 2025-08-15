@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from ..executor.result import PoeExecutionResult
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
@@ -187,11 +188,11 @@ class SwitchTask(PoeTask):
             for case_key in case_keys:
                 self.switch_tasks[case_key] = case_task
 
-    def _handle_run(
+    async def _handle_run(
         self,
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+    ) -> PoeExecutionResult:
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
@@ -201,8 +202,8 @@ class SwitchTask(PoeTask):
         # Indicate on the global context that there are multiple stages to this task
         context.multistage = True
 
-        task_result = self.control_task.run(context=context, parent_env=env)
-        if task_result:
+        task_result = await self.control_task.run(context=context, parent_env=env)
+        if task_result.non_zero_exit_code:
             raise ExecutionError(
                 f"Switch task {self.name!r} aborted after failed control task"
             )
@@ -211,7 +212,7 @@ class SwitchTask(PoeTask):
             self._print_action(
                 "unresolved case for switch task", dry=True, unresolved=True
             )
-            return 0
+            return PoeExecutionResult()
 
         control_task_output = context.get_task_output(self.control_task.invocation)
         case_task = self.switch_tasks.get(
@@ -220,13 +221,13 @@ class SwitchTask(PoeTask):
 
         if case_task is None:
             if self.spec.options.default == "pass":
-                return 0
+                return PoeExecutionResult()
             raise ExecutionError(
                 f"Control value {control_task_output!r} did not match any cases in "
                 f"switch task {self.name!r}."
             )
 
-        result = case_task.run(context=context, parent_env=env)
+        result = await case_task.run(context=context, parent_env=env)
 
         if self.capture_stdout is True:
             # The executor saved output for the case task, but we need it to be

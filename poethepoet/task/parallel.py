@@ -224,8 +224,18 @@ class ParallelTask(PoeTask):
         env: "EnvVarsManager",
         ignore_fail: Union[Literal["return_zero", "return_non_zero"], bool],
     ) -> int:
+        import asyncio
+
         try:
-            task_result = subtask.run(context=context, parent_env=env)
+            # Create a new event loop for this thread since we're in a thread pool
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                task_result = loop.run_until_complete(
+                    subtask.run(context=context, parent_env=env)
+                )
+            finally:
+                loop.close()
         except ExecutionError as error:
             if ignore_fail:
                 print("Warning:", error.msg)
@@ -234,7 +244,7 @@ class ParallelTask(PoeTask):
                 print("Error:", error.msg)
                 return -1
 
-        return task_result
+        return task_result.returncode
 
     @classmethod
     def _subtask_name(cls, task_name: str, index: int):

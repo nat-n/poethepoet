@@ -2,6 +2,7 @@ import shlex
 from typing import TYPE_CHECKING, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from ..executor.result import PoeExecutionResult
 from .base import PoeTask
 
 if TYPE_CHECKING:
@@ -49,11 +50,11 @@ class CmdTask(PoeTask):
 
     spec: TaskSpec
 
-    def _handle_run(
+    async def _handle_run(
         self,
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+    ) -> PoeExecutionResult:
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
@@ -64,11 +65,11 @@ class CmdTask(PoeTask):
 
         self._print_action(shlex.join(cmd), context.dry)
 
-        result = executor.execute(
+        result = await executor.execute(
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
 
-        if result != 0 and self.__passed_unmatched_glob:
+        if result.non_zero_exit_code and self.__passed_unmatched_glob:
             # We made a breaking change in 0.36.0 to pass through glob patterns with no
             # matches. If this might have been the cause of the failure, we print a
             # warning with a link.

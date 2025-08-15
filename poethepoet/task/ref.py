@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError
+from ..executor.result import PoeExecutionResult
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
@@ -57,11 +58,11 @@ class RefTask(PoeTask):
 
     spec: TaskSpec
 
-    def _handle_run(
+    async def _handle_run(
         self,
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+    ) -> PoeExecutionResult:
         """
         Lookup and delegate to the referenced task
         """
@@ -84,16 +85,16 @@ class RefTask(PoeTask):
         )
 
         if task.has_deps():
-            return self._run_task_graph(task, context, env)
+            return await self._run_task_graph(task, context, env)
 
-        return task.run(context=context, parent_env=env)
+        return await task.run(context=context, parent_env=env)
 
-    def _run_task_graph(
+    async def _run_task_graph(
         self,
         task: "PoeTask",
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+    ) -> PoeExecutionResult:
         from ..exceptions import ExecutionError
         from .graph import TaskExecutionGraph
 
@@ -103,11 +104,11 @@ class RefTask(PoeTask):
             for stage_task in stage:
                 if stage_task == task:
                     # The final sink task gets special treatment
-                    return task.run(context=context, parent_env=env)
+                    return await task.run(context=context, parent_env=env)
 
-                task_result = stage_task.run(context=context)
-                if task_result:
+                task_result = await stage_task.run(context=context)
+                if task_result.non_zero_exit_code:
                     raise ExecutionError(
                         f"Task graph aborted after failed task {stage_task.name!r}"
                     )
-        return 0
+        return PoeExecutionResult()
