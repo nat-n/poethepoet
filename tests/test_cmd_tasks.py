@@ -235,7 +235,7 @@ def test_cmd_with_empty_glob_null(run_poe_subproc, is_windows):
     assert result.stderr == ""
 
 
-def test_cmd_with_empty_glob_fail(run_poe_subproc, is_windows):
+def test_cmd_with_empty_glob_fail(run_poe_subproc):
     result = run_poe_subproc("try-globs-fail", project="cmds")
     assert result.capture.startswith(
         "Error: Glob pattern 'n*thing' did not match any files in working directory"

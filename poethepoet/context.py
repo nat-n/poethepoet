@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import re
+from contextlib import asynccontextmanager, contextmanager
 from typing import TYPE_CHECKING, Any, Protocol
 
 from .io import PoeIO
+from .shutdown import ShutdownManager
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
     from collections.abc import Mapping
     from pathlib import Path
 
@@ -20,6 +24,7 @@ class ContextProtocol(Protocol):
     config: PoeConfig
     exec_cache: dict[str, Any]
     ui: PoeUi | None
+    enable_output_streaming: bool
 
     def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes):
         ...
@@ -52,7 +57,8 @@ class RunContext:
     env: EnvVarsManager
     dry: bool
     poe_active: str | None
-    multistage: bool = False
+    multistage: bool = False  # FIXME: check if this is used anywhere!
+    enable_output_streaming: bool = False
 
     def __init__(
         self,
@@ -63,6 +69,7 @@ class RunContext:
         poe_active: str | None,
         multistage: bool = False,
         cwd: Path | str | None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
     ):
         from .env.manager import EnvVarsManager
 
@@ -73,6 +80,8 @@ class RunContext:
         self.multistage = multistage
         self.exec_cache = {}
         self._task_outputs = TaskOutputCache()
+        self._loop = loop or asyncio.get_event_loop()
+        self._shutdown_manager = ShutdownManager(self._loop, self.ui.io)
 
         # Init root EnvVarsManager
         self.env = EnvVarsManager(self.config, self.ui.io, base_env=env, cwd=cwd)
@@ -83,6 +92,76 @@ class RunContext:
                 config_dir=config_part.config_dir,
                 config_working_dir=config_part.cwd,
             )
+
+    def create_task(self, coro: Any, *, name: str | None = None) -> asyncio.Task[Any]:
+        """
+        Create a task that is tracked by the shutdown manager
+        """
+        task = self._loop.create_task(coro, name=name)
+        self._shutdown_manager.tasks.add(task)
+        return task
+
+    @classmethod
+    @asynccontextmanager
+    async def scope(
+        cls,
+        config: PoeConfig,
+        ui: PoeUi,
+        env: Mapping[str, str],
+        dry: bool,
+        poe_active: str | None,
+        multistage: bool = False,
+        cwd: Path | str | None = None,
+    ):
+        """
+        Context manager to create a RunContext for the duration of the context
+        """
+
+        context = cls(
+            config=config,
+            ui=ui,
+            env=env,
+            dry=dry,
+            poe_active=poe_active,
+            multistage=multistage,
+            cwd=cwd,
+            loop=asyncio.get_running_loop(),
+        )
+
+        scope_task = asyncio.current_task()
+        assert scope_task is not None
+        scope_task.set_name("RunContextScope")
+        context._shutdown_manager.tasks.add(scope_task)
+
+        try:
+            context._shutdown_manager.install_handler()
+            yield context
+        finally:
+            context._shutdown_manager.restore_handler()
+
+    def register_subprocess(self, proc: Process):
+        self._shutdown_manager.processes.add(proc)
+
+    @contextmanager
+    def output_streaming(self, enabled: bool = True):
+        """
+        When output streaming is enabled, all otherwise free task output to stdout will
+        be captured by the executor, so that the calling task can process it as it
+        arrives.
+
+        If enabled is False, or a output streaming is already active, then this context
+        manager will have no effect. Only the root-most context manager is responsible
+        for disabling output streaming at the end.
+        """
+        if not enabled or self.enable_output_streaming:
+            # Reentrant mode
+            yield
+            return
+        self.enable_output_streaming = True
+        try:
+            yield
+        finally:
+            self.enable_output_streaming = False
 
     def _get_dep_values(
         self, used_task_invocations: Mapping[str, tuple[str, ...]]
@@ -147,6 +226,7 @@ class RunContext:
 class InitializationContext:
     exec_cache: dict[str, Any]
     ui: PoeUi | None = None
+    enable_output_streaming: bool = False
 
     def __init__(self, config: PoeConfig):
         self._captured_stdout: dict[tuple[str, ...], str] = {}

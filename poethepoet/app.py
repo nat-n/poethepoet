@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 
@@ -9,7 +11,7 @@ from .exceptions import ExecutionError, PoeException
 from .helpers.eventloop import run_async
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import AsyncIterator, Mapping, Sequence
 
     from .config import PoeConfig
     from .context import RunContext
@@ -136,7 +138,10 @@ class PoeThePoet:
             self.ui.print_version()
             return 0
 
-        return run_async(self._call(internal))
+        try:
+            return run_async(self._call(internal))
+        except asyncio.CancelledError:
+            return 1
 
     async def _call(self, internal: bool = False) -> int:
         should_display_help = self.ui["help"] != Ellipsis
@@ -162,9 +167,8 @@ class PoeThePoet:
             return 1
 
         if task.has_deps():
-            return await self._run_task_graph(task) or 0
-        else:
-            return await self._run_task(task) or 0
+            return await self._run_task_graph(task)
+        return await self._run_task(task)
 
     def modify_verbosity(self, offset: int):
         """
@@ -221,56 +225,66 @@ class PoeThePoet:
         )
         return task_spec.create_task(invocation=task, ctx=task_context)
 
-    async def _run_task(
-        self, task: PoeTask, context: RunContext | None = None
-    ) -> int | None:
-        if context is None:
-            context = self.get_run_context()
-        try:
-            return (await task.run(context=context)).returncode
-        except ExecutionError as error:
-            self.ui.print_error(error=error)
-            return 1
-        except PoeException as error:
-            self.print_help(error=error)
-            return 1
+    async def _run_task(self, task: PoeTask, context: RunContext | None = None) -> int:
+        async with self.run_context(existing=context) as context:
+            try:
+                task_run = await task.run(context=context)
+                await task_run.wait(suppress_errors=False)
+                return task_run.return_code or 0
+            except ExecutionError as error:
+                self.ui.print_error(error=error)
+                return 1
+            except PoeException as error:
+                self.print_help(error=error)
+                return 1
 
-    async def _run_task_graph(self, task: PoeTask) -> int | None:
+    async def _run_task_graph(self, task: PoeTask) -> int:
         from .task.graph import TaskExecutionGraph
 
-        context = self.get_run_context(multistage=True)
-        try:
-            graph = TaskExecutionGraph(task, context)
-        except PoeException as error:
-            self.print_help(error=error)
-            return 1
+        async with self.run_context(multistage=True) as context:
+            try:
+                graph = TaskExecutionGraph(task, context)
+            except PoeException as error:
+                self.print_help(error=error)
+                return 1
 
-        plan = graph.get_execution_plan()
+            plan = graph.get_execution_plan()
 
-        for stage in plan:
-            for stage_task in stage:
-                if stage_task == task:
-                    # The final sink task gets special treatment
-                    return await self._run_task(stage_task, context)
+            for stage in plan:
+                for stage_task in stage:
+                    if stage_task == task:
+                        # The final sink task gets special treatment
+                        return await self._run_task(stage_task, context)
 
-                try:
-                    task_result = await stage_task.run(context=context)
-                    if task_result.non_zero_exit_code:
-                        raise ExecutionError(
-                            f"Task graph aborted after failed task {stage_task.name!r}"
-                        )
-                except PoeException as error:
-                    self.print_help(error=error)
-                    return 1
-                except ExecutionError as error:
-                    self.ui.print_error(error=error)
-                    return 1
+                    try:
+                        task_run = await stage_task.run(context=context)
+                        await task_run.wait(suppress_errors=False)
+                        if task_run.has_failure:
+                            raise ExecutionError(
+                                "Task graph aborted after failed task "
+                                f"{stage_task.name!r}"
+                            )
+                    except PoeException as error:
+                        self.print_help(error=error)
+                        return 1
+                    except ExecutionError as error:
+                        self.ui.print_error(error=error)
+                        return 1
         return 0
 
-    def get_run_context(self, multistage: bool = False) -> RunContext:
+    @asynccontextmanager
+    async def run_context(
+        self,
+        multistage: bool = False,
+        existing: RunContext | None = None,
+    ) -> AsyncIterator[RunContext]:
         from .context import RunContext
 
-        result = RunContext(
+        if existing is not None:
+            yield existing
+            return
+
+        async with RunContext.scope(
             config=self.config,
             ui=self.ui,
             env=self._env,
@@ -278,11 +292,12 @@ class PoeThePoet:
             poe_active=self._env.get("POE_ACTIVE"),
             multistage=multistage,
             cwd=self.cwd,
-        )
-        if self._poetry_env_path:
-            # This allows the PoetryExecutor to use the venv from poetry directly
-            result.exec_cache["poetry_virtualenv"] = self._poetry_env_path
-        return result
+        ) as context:
+            if self._poetry_env_path:
+                # This allows the PoetryExecutor to use the venv from poetry directly
+                # this is used by the poetry plugin
+                context.exec_cache["poetry_virtualenv"] = self._poetry_env_path
+            yield context
 
     def print_help(
         self,

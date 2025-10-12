@@ -1,0 +1,9 @@
+
+[tool.poe.tasks]
+sleep_sort = [
+  { cmd = "poe_test_delayed_echo 50 50" },
+  { cmd = "poe_test_delayed_echo 10 10" },
+  { cmd = "poe_test_delayed_echo 30 30" },
+  { cmd = "poe_test_delayed_echo 40 40" },
+  { cmd = "poe_test_delayed_echo 20 20" },
+]

@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
-from .base import PoeExecutionResult, PoeExecutor
+from .base import PoeExecutor
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
@@ -28,7 +29,7 @@ class VirtualenvExecutor(PoeExecutor):
 
     async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> PoeExecutionResult:
+    ) -> Process:
         """
         Execute the given cmd as a subprocess inside the configured virtualenv
         """
@@ -43,7 +44,7 @@ class VirtualenvExecutor(PoeExecutor):
 
     async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
-    ) -> int:
+    ):
         venv = self._resolve_virtualenv()
         error_context = f" using virtualenv {str(venv.path)!r}" if venv else ""
         raise ExecutionError(

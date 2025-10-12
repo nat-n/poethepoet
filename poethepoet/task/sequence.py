@@ -1,14 +1,15 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
-from ..executor.result import PoeExecutionResult
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
 
@@ -24,7 +25,7 @@ class SequenceTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
-        default_item_type: Optional[str] = None
+        default_item_type: Union[str, None] = None
 
         def validate(self):
             """
@@ -46,7 +47,7 @@ class SequenceTask(PoeTask):
     class TaskSpec(PoeTask.TaskSpec):
         content: list
         options: "SequenceTask.TaskOptions"
-        subtasks: Sequence[PoeTask.TaskSpec]
+        subtasks: "Sequence[PoeTask.TaskSpec]"
 
         def __init__(
             self,
@@ -55,7 +56,7 @@ class SequenceTask(PoeTask):
             factory: "TaskSpecFactory",
             source: "ConfigPartition",
             *,
-            parent: Optional["PoeTask.TaskSpec"] = None,
+            parent: Union["PoeTask.TaskSpec", None] = None,
         ):
             super().__init__(name, task_def, factory, source, parent=parent)
 
@@ -107,6 +108,7 @@ class SequenceTask(PoeTask):
                 subtask.validate(config, task_specs)
 
     spec: TaskSpec
+    _subtasks: "Sequence[PoeTask]"
 
     def __init__(
         self,
@@ -117,7 +119,7 @@ class SequenceTask(PoeTask):
     ):
         assert capture_stdout in (False, None)
         super().__init__(spec, invocation, ctx)
-        self.subtasks = [
+        self._subtasks: Sequence[PoeTask] = [
             task_spec.create_task(
                 invocation=(self._subtask_name(task_spec.name, index),),
                 ctx=TaskContext.from_task(self, task_spec),
@@ -126,47 +128,51 @@ class SequenceTask(PoeTask):
         ]
 
     async def _handle_run(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ) -> PoeExecutionResult:
+        self, context: "RunContext", env: "EnvVarsManager", task_state: "PoeTaskRun"
+    ):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
             raise PoeException(f"Sequence task {self.name!r} does not accept arguments")
 
-        if len(self.subtasks) > 1:
+        if len(self._subtasks) > 1:
             # Indicate on the global context that there are multiple stages
             context.multistage = True
 
         ignore_fail = self.spec.options.ignore_fail
-        non_zero_subtasks: list[str] = []
-        for subtask in self.subtasks:
-            task_result = None
+        if ignore_fail in (True, "return_zero"):
+            task_state.ignore_failure()
+
+        non_zero_subtasks = []
+        for subtask in self._subtasks:
+            subtask_run: Union[PoeTaskRun, None] = None
             try:
-                task_result = await subtask.run(context=context, parent_env=env)
+                subtask_run = await subtask.run(context=context, parent_env=env)
+                await task_state.add_child(subtask_run)
+                await subtask_run.wait(suppress_errors=False)
             except ExecutionError as error:
                 if ignore_fail:
                     self.ctx.io.print_warning(error.msg, message_verbosity=0)
-                    non_zero_subtasks.append(subtask.name)
                 else:
                     raise
 
-            if task_result and task_result.non_zero_exit_code:
+            if not subtask_run or subtask_run.has_failure:
                 if not ignore_fail:
                     raise ExecutionError(
                         f"Sequence aborted after failed subtask {subtask.name!r}"
                     )
                 non_zero_subtasks.append(subtask.name)
 
+        await task_state.finalize()
+
         if non_zero_subtasks and ignore_fail == "return_non_zero":
+            task_state.force_failure()
             plural = "s" if len(non_zero_subtasks) > 1 else ""
             raise ExecutionError(
                 f"Subtask{plural} {', '.join(repr(st) for st in non_zero_subtasks)} "
                 "returned non-zero exit status"
             )
-        return PoeExecutionResult()
 
     @classmethod
     def _subtask_name(cls, task_name: str, index: int):
