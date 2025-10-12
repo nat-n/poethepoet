@@ -39,7 +39,6 @@ And here's an example that uses the *sequence* task type explicitly in a task de
 
     See :doc:`sequence tasks<../tasks/task_types/sequence>` specifics for more information on the :code:`sequence` task type.
 
-.. _parallel_composition:
 
 Composing tasks to run in parallel
 ----------------------------------
