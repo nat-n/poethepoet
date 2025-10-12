@@ -167,7 +167,6 @@ ignore_messages  = [
   "Hyperlink target \"envfile-option\" is not referenced.",
   "Hyperlink target \"ref-env-vars\" is not referenced.",
   "Hyperlink target \"sequence-composition\" is not referenced.",
-  "Hyperlink target \"parallel-composition\" is not referenced.",
   "Hyperlink target \"graph-composition\" is not referenced.",
   "No directive entry for \"autoclass\" in module \"docutils.parsers.rst.languages.en\""
 ]

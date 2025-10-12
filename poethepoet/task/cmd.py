@@ -2,7 +2,7 @@ import shlex
 from typing import TYPE_CHECKING, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
-from ..executor.result import PoeExecutionResult
+from ..executor.task_run import PoeTaskRun
 from .base import PoeTask
 
 if TYPE_CHECKING:
@@ -51,10 +51,8 @@ class CmdTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ) -> PoeExecutionResult:
+        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+    ):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
@@ -65,11 +63,13 @@ class CmdTask(PoeTask):
 
         self._print_action(shlex.join(cmd), context.dry)
 
-        result = await executor.execute(
+        process = await executor.execute(
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
+        await task_state.add_process(self.name, process, finalize=True)
 
-        if result.non_zero_exit_code and self.__passed_unmatched_glob:
+        await process.wait()
+        if process.returncode != 0 and self.__passed_unmatched_glob:
             # We made a breaking change in 0.36.0 to pass through glob patterns with no
             # matches. If this might have been the cause of the failure, we print a
             # warning with a link.
@@ -78,8 +78,6 @@ class CmdTask(PoeTask):
                 "poethepoet 0.36.0 in the default handling of unmatched glob patterns. "
                 "More details: https://github.com/nat-n/poethepoet/discussions/314",
             )
-
-        return result
 
     def _resolve_commandline(self, context: "RunContext", env: "EnvVarsManager"):
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens

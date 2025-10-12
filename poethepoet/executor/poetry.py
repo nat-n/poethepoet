@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ..exceptions import ExecutionError
-from .base import PoeExecutionResult, PoeExecutor
+from .base import PoeExecutor
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
@@ -31,7 +32,7 @@ class PoetryExecutor(PoeExecutor):
 
     async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> PoeExecutionResult:
+    ) -> Process:
         """
         Execute the given cmd as a subprocess inside the poetry managed dev environment
         """
@@ -71,7 +72,7 @@ class PoetryExecutor(PoeExecutor):
             f"executable {cmd[0]!r} could not be found{error_context}"
         ) from error
 
-    async def _get_poetry_virtualenv(self, force: bool = True):
+    async def _get_poetry_virtualenv(self):
         """
         Ask poetry where it put the virtualenv for this project.
         Invoking poetry is relatively expensive so cache the result
@@ -82,7 +83,7 @@ class PoetryExecutor(PoeExecutor):
 
         exec_cache = self.context.exec_cache
 
-        if force and "poetry_virtualenv" not in exec_cache:
+        if "poetry_virtualenv" not in exec_cache:
             from subprocess import PIPE
 
             # Need to make sure poetry isn't influenced by whatever virtualenv is

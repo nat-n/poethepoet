@@ -2,7 +2,7 @@ import shlex
 from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError
-from ..executor.result import PoeExecutionResult
+from ..executor.task_run import PoeTaskRun
 from ..helpers.script import parse_script_reference
 from .base import PoeTask
 
@@ -56,10 +56,8 @@ class ScriptTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ) -> PoeExecutionResult:
+        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+    ):
         from ..helpers.python import format_class
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
@@ -68,7 +66,7 @@ class ScriptTask(PoeTask):
         # TODO: do something about extra_args, like raise an error?
 
         if ":" not in self.spec.content:
-            return await self._run_module(context, env)
+            return await self._run_module(context, env, task_state)
 
         target_module, function_call = parse_script_reference(
             self.spec.content,
@@ -110,15 +108,17 @@ class ScriptTask(PoeTask):
         cmd = ("python", "-c", "".join(script))
 
         self._print_action(shlex.join(argv), context.dry)
-        return await self._get_executor(
+        executor = self._get_executor(
             context, env, delegate_dry_run=has_dry_run_ref, resolve_python=True
-        ).execute(cmd, use_exec=self.spec.options.get("use_exec", False))
+        )
+        process = await executor.execute(
+            cmd, use_exec=self.spec.options.get("use_exec", False)
+        )
+        await task_state.add_process(self.name, process, finalize=True)
 
     async def _run_module(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ) -> PoeExecutionResult:
+        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+    ):
         """
         Execute the python module referenced by the task content
         """
@@ -131,6 +131,8 @@ class ScriptTask(PoeTask):
         action_summary = self.name + (f" {shlex.join(argv)}" if argv else "")
         self._print_action(action_summary, context.dry)
 
-        return await self._get_executor(context, env, resolve_python=True).execute(
+        executor = self._get_executor(context, env, resolve_python=True)
+        process = await executor.execute(
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
+        await task_state.add_process(self.name, process, finalize=True)

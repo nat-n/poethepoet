@@ -288,7 +288,8 @@ class PoeConfig:
                         self._io.print_debug(
                             f" . Executing script for include_script {script!r}"
                         )
-                    subproc_result = await executor.execute(("python", "-c", script))
+                    subproc = await executor.execute(("python", "-c", script))
+                    await subproc.wait()
                 except Exception as error:
                     handle_error(
                         "subprocess execution failed for configured include_script"
@@ -297,13 +298,14 @@ class PoeConfig:
                     )
                     continue
 
-                if subproc_result.non_zero_exit_code:
+                if subproc.returncode != 0:
                     handle_error(
                         "include_script subprocess returned non-zero for "
                         f" {include_script['script']!r}",
                     )
                     continue
 
+                # TODO: get the actual output from the subprocess directly?
                 script_result = context.get_task_output(invocation)
 
                 try:

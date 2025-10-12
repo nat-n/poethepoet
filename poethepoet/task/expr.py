@@ -3,7 +3,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExpressionParseError
-from ..executor import PoeExecutionResult
+from ..executor.task_run import PoeTaskRun
 from .base import PoeTask
 
 if TYPE_CHECKING:
@@ -52,10 +52,8 @@ class ExprTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ) -> PoeExecutionResult:
+        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+    ):
         from ..helpers.python import format_class
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
@@ -88,9 +86,9 @@ class ExprTask(PoeTask):
         cmd = ("python", "-c", "".join(script))
 
         self._print_action(self.spec.content.strip(), context.dry)
-        return await self._get_executor(context, env, resolve_python=True).execute(
-            cmd, use_exec=self.spec.options.use_exec
-        )
+        executor = self._get_executor(context, env, resolve_python=True)
+        process = await executor.execute(cmd, use_exec=self.spec.options.use_exec)
+        await task_state.add_process(self.name, process, finalize=True)
 
     def parse_content(
         self,
