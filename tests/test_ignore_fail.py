@@ -119,3 +119,81 @@ def test_nested_both_return_non_zero(generate_pyproject, run_poe):
         in result.capture
     )
     assert "Error: Subtask 'lvl1_seq' returned non-zero exit status" in result.capture
+
+
+def test_ignore_fail_true_on_single_task(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.fail]
+        shell = "exit 7"
+        ignore_fail = true
+        """
+    )
+
+    result = run_poe("fail", cwd=project_path)
+
+    assert result.code == 0, "Expected non-zero exit to be ignored"
+
+
+def test_ignore_fail_specific_exit_code(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.allowed]
+        shell = "exit 4"
+        ignore_fail = 4
+
+        [tool.poe.tasks.blocked]
+        shell = "exit 5"
+        ignore_fail = 4
+        """
+    )
+
+    allowed_result = run_poe("allowed", cwd=project_path)
+    blocked_result = run_poe("blocked", cwd=project_path)
+
+    assert allowed_result.code == 0, "Expected configured exit code to be ignored"
+    assert blocked_result.code == 5, "Expected unexpected exit code to bubble up"
+
+
+def test_ignore_fail_multiple_exit_codes(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.fail]
+        shell = "exit 6"
+        ignore_fail = [5, 6]
+        """
+    )
+
+    result = run_poe("fail", cwd=project_path)
+
+    assert result.code == 0, "Expected listed exit code to be ignored"
+
+
+def test_ignore_fail_return_zero_alias(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.fail]
+        shell = "exit 9"
+        ignore_fail = "return_zero"
+        """
+    )
+
+    result = run_poe("fail", cwd=project_path)
+
+    assert result.code == 0, "Expected alias value to suppress failures"
+
+
+def test_ignore_fail_execution_error_warning(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.globfail]
+        cmd = "echo __poe_missing__*.txt"
+        empty_glob = "fail"
+        ignore_fail = true
+        """
+    )
+
+    result = run_poe("globfail", cwd=project_path)
+
+    assert result.code == 0, "Expected ExecutionError to be ignored"
+    assert "Warning: Glob pattern '__poe_missing__*.txt' did not match" in result.capture

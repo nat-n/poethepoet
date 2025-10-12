@@ -29,6 +29,9 @@ The following options can be configured on your tasks and are not specific to an
   Allows this task to use the output of other tasks which are executed first.
   The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.
 
+**ignore_fail** : ``bool`` | ``int`` | ``list[int]``
+  Causes poe to treat certain task failures as success. When set to ``true`` (or the legacy value ``"return_zero"``) any non-zero exit code or :class:`~poethepoet.exceptions.ExecutionError` raised by the task is suppressed and the task reports success. When set to an integer or list of integers, only matching exit codes are suppressed and all others propagate normally.
+
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional, Union
 
 from ..config.primitives import EmptyDict, EnvDefault
-from ..exceptions import ConfigValidationError, PoeException
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..io import PoeIO
 from ..options import PoeOptions
 
@@ -170,6 +170,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
     class TaskOptions(PoeOptions):
         args: Optional[Union[dict, list]] = None
+        ignore_fail: Union[Literal[True, False, "return_zero"], int, Sequence[int]] = False
         capture_stdout: Optional[str] = None
         cwd: Optional[str] = None
         deps: Optional[Sequence[str]] = None
@@ -485,7 +486,35 @@ class PoeTask(metaclass=MetaPoeTask):
             self.ctx.io.print_debug(f" . Parsed args {named_arg_values!r}")
             self.ctx.io.print_debug(f" . Extra args  {extra_args!r}")
 
-        return self._handle_run(context, task_env)
+        ignore_fail_option = self.spec.options.ignore_fail
+
+        ignore_all_failures = ignore_fail_option in (True, "return_zero")
+        ignored_exit_codes: Optional[set[int]] = None
+
+        if isinstance(ignore_fail_option, Sequence) and not isinstance(
+            ignore_fail_option, (str, bytes)
+        ):
+            ignored_exit_codes = {int(code) for code in ignore_fail_option}
+        elif isinstance(ignore_fail_option, int):
+            ignored_exit_codes = {int(ignore_fail_option)}
+
+        try:
+            result = self._handle_run(context, task_env)
+        except ExecutionError as error:
+            if ignore_all_failures:
+                self.ctx.io.print_warning(error.msg, message_verbosity=0)
+                return 0
+
+            raise
+
+        if result != 0:
+            if ignore_all_failures:
+                return 0
+
+            if ignored_exit_codes is not None and result in ignored_exit_codes:
+                return 0
+
+        return result
 
     def _handle_run(
         self,
