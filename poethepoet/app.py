@@ -247,6 +247,9 @@ class PoeThePoet:
             except PoeException as error:
                 self.print_help(error=error)
                 return 1
+            except ExecutionError as error:
+                self.ui.print_error(error=error)
+                return 1
 
             plan = graph.get_execution_plan()
 
