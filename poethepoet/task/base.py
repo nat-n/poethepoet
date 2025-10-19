@@ -490,7 +490,7 @@ class PoeTask(metaclass=MetaPoeTask):
             self.name,
             functools.partial(self._handle_run, context, task_env),
         )
-        context._shutdown_manager.tasks.add(task_state.asyncio_task)
+        context.register_async_task(task_state.asyncio_task)
         task_state.add_new_process_callback(
             lambda name, process: context.register_subprocess(process)
         )

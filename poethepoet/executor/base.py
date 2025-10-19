@@ -144,7 +144,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         Execute the given cmd.
         """
 
-        cmd = (self._resolve_executable(cmd[0]), *cmd[1:])
+        cmd = (*self._resolve_executable(cmd[0]), *cmd[1:])
         return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
     async def _execute_cmd(
@@ -291,18 +291,25 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     def _resolve_executable(self, executable: str):
         if self._should_resolve_python and executable == "python":
             if python := shutil.which("python"):
-                return python
-            if python := shutil.which("python3"):
-                return python
-            self._io.print_debug(
-                " ! Could not resolve python or python3 from the path, "
-                "falling back to sys.executable"
-            )
-            return sys.executable
+                yield python
+            elif python3 := shutil.which("python3"):
+                yield python3
+            else:
+                self._io.print_debug(
+                    " ! Could not resolve python or python3 from the path, "
+                    "falling back to sys.executable"
+                )
+                yield sys.executable
 
-        # Attempt to explicitly resolve the target executable, because we can't
-        # count on the OS to do this consistently.
-        return shutil.which(executable) or executable
+            if self.context.enable_output_streaming and not isinstance(
+                self.capture_stdout, Path
+            ):
+                # Force python subprocesses to be unbuffered mode
+                yield "-u"
+        else:
+            # Attempt to explicitly resolve the target executable, because we can't
+            # count on the OS to do this consistently.
+            yield shutil.which(executable) or executable
 
     @classmethod
     def validate_config(cls, config: dict[str, Any]):

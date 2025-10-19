@@ -53,7 +53,7 @@ class PoetryExecutor(PoeExecutor):
 
         if self._virtualenv_creation_disabled():
             # There's no poetry env, and there isn't going to be
-            cmd = (self._resolve_executable(cmd[0]), *cmd[1:])
+            cmd = (*self._resolve_executable(cmd[0]), *cmd[1:])
             return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
         # Run this task with `poetry run`
@@ -65,7 +65,7 @@ class PoetryExecutor(PoeExecutor):
 
     async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
-    ) -> int:
+    ):
         poetry_env = await self._get_poetry_virtualenv()
         error_context = f" using virtualenv {poetry_env!r}" if poetry_env else ""
         raise ExecutionError(

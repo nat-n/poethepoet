@@ -23,7 +23,7 @@ def run_async(func: Coroutine[Any, Any, T]) -> T:
         return asyncio.run(func)
 
 
-async def async_noop(result=None):
+async def async_noop(result=None, *args, **kwargs) -> Any:
     return result
 
 

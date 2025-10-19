@@ -31,7 +31,7 @@ def test_mixed_sequence_task(run_poe_subproc):
     result = run_poe_subproc("test_mixed", project="sequences")
 
     # Check that the tasks ran in the expected order (parallel tasks first, then
-    # equential)
+    # sequential)
     # To ensure parallel tasks start before sequential, check the indices of their
     # "Running" messages.
     mypy_start_index = result.stdout.find("Running mypy")

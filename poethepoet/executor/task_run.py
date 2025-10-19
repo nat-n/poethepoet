@@ -44,10 +44,10 @@ class PoeTaskRun:
     def __init__(
         self,
         name: str,
-        task_content: Callable[[PoeTaskRun], Coroutine] = async_noop,
+        task_callable: Callable[[PoeTaskRun], Coroutine] = async_noop,
     ):
         self.name = name
-        self.asyncio_task = asyncio.create_task(task_content(self), name=self.name)
+        self.asyncio_task = asyncio.create_task(task_callable(self), name=self.name)
         self.asyncio_task.add_done_callback(
             lambda event: asyncio.create_task(self.finalize())
         )

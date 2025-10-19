@@ -93,7 +93,9 @@ class RunContext:
                 config_working_dir=config_part.cwd,
             )
 
-    def create_task(self, coro: Any, *, name: str | None = None) -> asyncio.Task[Any]:
+    def track_async_task(
+        self, coro: Any, *, name: str | None = None
+    ) -> asyncio.Task[Any]:
         """
         Create a task that is tracked by the shutdown manager
         """
@@ -142,26 +144,26 @@ class RunContext:
     def register_subprocess(self, proc: Process):
         self._shutdown_manager.processes.add(proc)
 
+    def register_async_task(self, task: asyncio.Task[Any]):
+        self._shutdown_manager.tasks.add(task)
+
     @contextmanager
     def output_streaming(self, enabled: bool = True):
         """
         When output streaming is enabled, all otherwise free task output to stdout will
         be captured by the executor, so that the calling task can process it as it
         arrives.
-
-        If enabled is False, or a output streaming is already active, then this context
-        manager will have no effect. Only the root-most context manager is responsible
-        for disabling output streaming at the end.
         """
-        if not enabled or self.enable_output_streaming:
+        if enabled == self.enable_output_streaming:
             # Reentrant mode
             yield
             return
-        self.enable_output_streaming = True
+        outer_value = self.enable_output_streaming
+        self.enable_output_streaming = enabled
         try:
             yield
         finally:
-            self.enable_output_streaming = False
+            self.enable_output_streaming = outer_value
 
     def _get_dep_values(
         self, used_task_invocations: Mapping[str, tuple[str, ...]]
