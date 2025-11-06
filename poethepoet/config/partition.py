@@ -5,7 +5,7 @@ from typing import Any, Literal, TypedDict
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from .primitives import EmptyDict, EnvDefault
+from .primitives import EmptyDict, EnvDefault, EnvfileOption
 
 KNOWN_SHELL_INTERPRETERS = (
     "posix",
@@ -98,7 +98,7 @@ class ProjectConfig(ConfigPartition):
         default_array_task_type: str = "sequence"
         default_array_item_task_type: str = "ref"
         env: Mapping[str, str | EnvDefault] = EmptyDict
-        envfile: str | Sequence[str] = ()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         executor: Mapping[str, str | Sequence[str] | bool] | str = MappingProxyType(
             {"type": "auto"}
         )
@@ -245,7 +245,7 @@ class IncludedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
-        envfile: str | Sequence[str] = tuple()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         tasks: Mapping[str, Any] = EmptyDict
 
         def validate(self):
@@ -265,7 +265,7 @@ class PackagedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
-        envfile: str | Sequence[str] = tuple()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         tasks: Mapping[str, Any] = EmptyDict
 
         def validate(self):

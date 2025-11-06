@@ -85,6 +85,26 @@ The envfile global option also accepts a list of env files like so.
 
 In this case the referenced files will be loaded in the given order.
 
+If you want poe to attempt to load an envfile only when it exists, you can use the
+table form of the option and place that path under ``optional``. Missing optional
+envfiles are skipped without producing a warning.
+
+.. code-block:: toml
+
+    [tool.poe.envfile]
+    optional = ".env"
+
+You can combine optional and expected envfiles. The following configuration keeps the
+project-wide ``shared.env`` mandatory while allowing a developer-local ``local.env``
+to be absent without noise. Using :toml:`envfile = ".env"` remains equivalent to
+setting :toml:`envfile.expect = ".env"` explicitly.
+
+.. code-block:: toml
+
+    [tool.poe.envfile]
+    expect = ["shared.env"]
+    optional = ["local.env"]
+
 Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referenceing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
 
 .. code-block:: toml

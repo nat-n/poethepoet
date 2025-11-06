@@ -5,7 +5,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional, Union
 
-from ..config.primitives import EmptyDict, EnvDefault
+from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
 from ..exceptions import ConfigValidationError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
@@ -176,7 +176,7 @@ class PoeTask(metaclass=MetaPoeTask):
         deps: Sequence[str] | None = None
         # ruff: noqa: UP007
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = ()
+        envfile: Union[str, Sequence[str], EnvfileOption] = ()
         executor: Mapping[str, str | Sequence[str] | bool] | str | None = None
         help: str | None = None
         uses: Mapping[str, str] | None = None
