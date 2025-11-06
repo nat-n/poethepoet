@@ -1,0 +1,5 @@
+[tool.poe]
+envfile.optional = ".env"
+
+[tool.poe.tasks.print-var]
+cmd = '''python -c "import os; print(os.getenv('FROM_ENV', 'missing'))"'''

@@ -16,7 +16,7 @@ class EnvFileCache:
         self._project_dir = project_dir
         self._io = io
 
-    def get(self, envfile: Union[str, Path]) -> dict[str, str]:
+    def get(self, envfile: Union[str, Path], *, optional: bool = False) -> dict[str, str]:
         """
         Parse, cache, and return the environment variables from the envfile at the
         given path. The path is used as the cache key.
@@ -44,9 +44,14 @@ class EnvFileCache:
                 ) from error
 
         else:
-            self._io.print_warning(
-                f"Poe failed to locate envfile at {envfile_path_str!r}"
-            )
+            if optional:
+                self._io.print_debug(
+                    f" - Optional envfile not found at {envfile_path_str!r}"
+                )
+            else:
+                self._io.print_warning(
+                    f"Poe failed to locate envfile at {envfile_path_str!r}"
+                )
 
         self._cache[envfile_path_str] = result
         return result

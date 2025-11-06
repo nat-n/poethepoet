@@ -1,11 +1,35 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Iterable
 
 from ..io import PoeIO
 from .template import apply_envvars_to_template
+
+
+def _coerce_envfile_list(value: str | Sequence[str] | None) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    return list(value)
+
+
+def _iter_envfile_specs(envfile_option: Any) -> Iterable[tuple[str, bool]]:
+    seen: set[str] = set()
+
+    def add_values(values: str | Sequence[str] | None, optional: bool):
+        for entry in _coerce_envfile_list(values):
+            if entry not in seen:
+                seen.add(entry)
+                yield entry, optional
+
+    if isinstance(envfile_option, Mapping):
+        yield from add_values(envfile_option.get("expect"), optional=False)
+        yield from add_values(envfile_option.get("optional"), optional=True)
+    else:
+        yield from add_values(envfile_option, optional=False)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -81,7 +105,7 @@ class EnvVarsManager(Mapping):
 
     def apply_env_config(
         self,
-        envfile: str | list[str] | None,
+        envfile: str | list[str] | Mapping[str, str | Sequence[str]] | None,
         config_env: Mapping[str, str | Mapping[str, str]] | None,
         config_dir: Path,
         config_working_dir: Path,
@@ -96,17 +120,14 @@ class EnvVarsManager(Mapping):
         scoped_env.set("POE_CONF_DIR", str(config_dir))
 
         if envfile:
-            if isinstance(envfile, str):
-                envfile = [envfile]
-            for envfile_path in envfile:
-                self.update(
-                    self.envfiles.get(
-                        config_working_dir.joinpath(
-                            apply_envvars_to_template(
-                                envfile_path, scoped_env, require_braces=True
-                            )
-                        )
+            for envfile_path, is_optional in _iter_envfile_specs(envfile):
+                resolved_envfile = config_working_dir.joinpath(
+                    apply_envvars_to_template(
+                        envfile_path, scoped_env, require_braces=True
                     )
+                )
+                self.update(
+                    self.envfiles.get(resolved_envfile, optional=is_optional)
                 )
 
         scoped_env = self.clone()
