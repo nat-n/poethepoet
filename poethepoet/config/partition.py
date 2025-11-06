@@ -5,7 +5,7 @@ from typing import Any, Literal, Optional, TypedDict, Union
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from .primitives import EmptyDict, EnvDefault
+from .primitives import EmptyDict, EnvDefault, EnvfileOption
 
 KNOWN_SHELL_INTERPRETERS = (
     "posix",
@@ -98,7 +98,7 @@ class ProjectConfig(ConfigPartition):
         default_array_task_type: str = "sequence"
         default_array_item_task_type: str = "ref"
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = ()
+        envfile: Union[str, Sequence[str], EnvfileOption] = ()
         executor: Mapping[str, str] = MappingProxyType({"type": "auto"})
         include: Union[str, Sequence[str], Sequence[IncludeItem]] = ()
         include_script: Union[str, Sequence[Union[str, IncludeScriptItem]]] = ()
@@ -243,7 +243,7 @@ class IncludedConfig(ConfigPartition):
         """
 
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = tuple()
+        envfile: Union[str, Sequence[str], EnvfileOption] = tuple()
         tasks: Mapping[str, Any] = EmptyDict
 
         def validate(self):
@@ -263,7 +263,7 @@ class PackagedConfig(ConfigPartition):
         """
 
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = tuple()
+        envfile: Union[str, Sequence[str], EnvfileOption] = tuple()
         tasks: Mapping[str, Any] = EmptyDict
 
         def validate(self):

@@ -4,7 +4,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional, Union
 
-from ..config.primitives import EmptyDict, EnvDefault
+from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
 from ..exceptions import ConfigValidationError, PoeException
 from ..io import PoeIO
 from ..options import PoeOptions
@@ -175,7 +175,7 @@ class PoeTask(metaclass=MetaPoeTask):
         deps: Optional[Sequence[str]] = None
         # ruff: noqa: UP007
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = tuple()
+        envfile: Union[str, Sequence[str], EnvfileOption] = tuple()
         executor: Optional[dict] = None
         help: Optional[str] = None
         uses: Optional[Mapping[str, str]] = None
