@@ -132,10 +132,15 @@ If the virtualenv location is a relative path then it is resolved relative to th
   You can also configure the executor :ref:`at the task level<Change the executor type>`, which will have higher precedence.
   Alternatively you can override the executor type at runtime by passing the ``--executor`` CLI option (before the task name) with the name of the executor to use.
 
-UV Executor run options
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Executor run options
+^^^^^^^^^^^^^^^^^^^^
 
-When using the **uv** executor, you can pass additional command-line options to ``uv run`` using the ``run_options`` configuration. This allows you to customize how uv executes your tasks.
+When using the **uv** or **poetry** executors, you can pass additional command-line options to ``uv run`` or ``poetry run`` using the ``run_options`` configuration.
+
+UV Executor
+~~~~~~~~~~~
+
+For the **uv** executor, you can pass options to customize how uv executes your tasks:
 
 .. code-block:: toml
 
@@ -143,17 +148,11 @@ When using the **uv** executor, you can pass additional command-line options to 
   type = "uv"
   run_options = ["--isolated"]
 
-Common use cases include:
+Common use cases for uv include:
 
 - Isolated environments: ``--isolated`` to prevent accessing global packages
 - Python version selection: ``--python 3.11`` to use a specific Python version
 - Additional dependencies: ``--with httpx --with pytest`` to add packages on-the-fly
-
-You can also set ``run_options`` at the task level using the ``executor_run_options`` task option, or override them via the CLI using ``--executor-run-options``. Options are merged with the following priority (lowest to highest):
-
-1. Global ``executor.run_options`` from config
-2. Task-level ``executor_run_options``
-3. CLI ``--executor-run-options``
 
 Example with task-level options:
 
@@ -171,6 +170,44 @@ Example with task-level options:
   executor_run_options = ["--isolated", "--python", "3.12"]
 
 This feature enables you to replace tools like tox by creating task variants for different Python versions or environments. See the :doc:`../guides/tox_replacement_guide` for a detailed guide on replacing tox.
+
+Poetry Executor
+~~~~~~~~~~~~~~~
+
+For the **poetry** executor, you can pass options to ``poetry run``:
+
+.. code-block:: toml
+
+  [tool.poe.executor]
+  type = "poetry"
+  run_options = ["--no-ansi"]
+
+Common use cases for poetry include:
+
+- Disable ANSI colors: ``--no-ansi`` to disable colored output
+- Dry run: ``--dry-run`` to see what would be executed without running
+
+Example with task-level options:
+
+.. code-block:: toml
+
+  [tool.poe.executor]
+  type = "poetry"
+
+  [tool.poe.tasks.test-no-color]
+  cmd = "pytest tests"
+  executor_run_options = ["--no-ansi"]
+
+Option Priority
+~~~~~~~~~~~~~~~
+
+You can set ``run_options`` at three levels:
+
+1. Global ``executor.run_options`` in ``[tool.poe.executor]``
+2. Task-level ``executor_run_options`` in task definitions
+3. CLI ``--executor-run-options`` flag
+
+Options are merged with the following priority (lowest to highest), meaning CLI options have the highest priority and will be added after all other options.
 
 Change the default shell interpreter
 ------------------------------------

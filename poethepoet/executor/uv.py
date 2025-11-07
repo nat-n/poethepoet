@@ -37,10 +37,7 @@ class UvExecutor(PoeExecutor):
         We simply use `uv run`, which handles the virtualenv and other setup for us.
         """
 
-        uv_run_options = []
-
-        # Add run_options from executor config
-        uv_run_options.extend(self.options.get("run_options", []))
+        uv_run_options = self.options.get("run_options", [])
 
         if self._io.verbosity > 0:
             uv_run_options.append("-v")

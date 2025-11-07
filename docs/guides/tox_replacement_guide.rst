@@ -25,7 +25,7 @@ Install both uv and Poe the Poet:
     curl -LsSf https://astral.sh/uv/install.sh | sh
 
     # Install Poe the Poet
-    pipx install poethepoet
+    uv tool install poethepoet
 
 Basic Migration
 ---------------
@@ -224,7 +224,7 @@ Replace tox in your GitHub Actions workflow:
             run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
           - name: Install Poe the Poet
-            run: pipx install poethepoet
+            run: uv tool install poethepoet
 
           - name: Run tests
             run: poe test-all
@@ -239,7 +239,7 @@ GitLab CI
       before_script:
         - curl -LsSf https://astral.sh/uv/install.sh | sh
         - export PATH="$HOME/.cargo/bin:$PATH"
-        - pipx install poethepoet
+        - uv tool install poethepoet
       script:
         - poe test-all
 
@@ -263,7 +263,7 @@ Here's a quick comparison of common tox features and their Poe + uv equivalents:
      - ``executor_run_options = ["--isolated"]``
    * - Install dependencies
      - ``deps = pytest``
-     - Managed by uv from ``pyproject.toml``
+     - Managed by uv from ``pyproject.toml`` or passed to run_options ``["--with", "pytest"]``
    * - Run commands
      - ``commands = pytest``
      - ``cmd = "pytest"``

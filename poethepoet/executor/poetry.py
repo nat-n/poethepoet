@@ -23,6 +23,9 @@ class PoetryExecutor(PoeExecutor):
 
     __key__ = "poetry"
 
+    class ExecutorOptions(PoeExecutor.ExecutorOptions):
+        run_options: list[str] | None = None
+
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:
         if not context.config.is_poetry_project:
@@ -55,9 +58,11 @@ class PoetryExecutor(PoeExecutor):
             cmd = (*self._resolve_executable(cmd[0]), *cmd[1:])
             return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
-        # Run this task with `poetry run`
+        # Run this task with `poetry run` and other options
+        run_options = ["--no-plugins", "run", *self.options.get("run_options", [])]
+
         return await self._execute_cmd(
-            (self._poetry_cmd(), "--no-plugins", "run", *cmd),
+            (self._poetry_cmd(), *run_options, *cmd),
             input=input,
             use_exec=use_exec,
         )

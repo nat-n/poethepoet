@@ -14,6 +14,7 @@ poe_test_helpers = { path = "../packages/poe_test_helpers" }
 [tool.poe]
 env.PLANET = "EARTH"
 env.DEST = "MARS"
+executor.type = "poetry"
 
 
 [tool.poe.tasks.echo]
@@ -50,6 +51,9 @@ composite_task.sequence = [
 ]
 # env var is inherited by subtask
 composite_task.env = { SMILEY = ":)" }
+
+test-poetry-run-options.cmd = "python -c \"print('poetry run options test')\""
+test-poetry-run-options.executor_run_options = ["--no-ansi"]
 
 also_composite_task = ["composite_task"]
 
