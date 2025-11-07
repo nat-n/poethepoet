@@ -99,7 +99,7 @@ class ProjectConfig(ConfigPartition):
         default_array_item_task_type: str = "ref"
         env: Mapping[str, str | EnvDefault] = EmptyDict
         envfile: str | Sequence[str] = ()
-        executor: Mapping[str, str] = MappingProxyType({"type": "auto"})
+        executor: Mapping[str, str | Sequence[str]] = MappingProxyType({"type": "auto"})
         include: str | Sequence[str] | Sequence[IncludeItem] = ()
         include_script: str | Sequence[str | IncludeScriptItem] = ()
         poetry_command: str = "poe"

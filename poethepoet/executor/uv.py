@@ -19,6 +19,9 @@ class UvExecutor(PoeExecutor):
 
     __key__ = "uv"
 
+    class ExecutorOptions(PoeExecutor.ExecutorOptions):
+        run_options: list[str] | None = None
+
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:
         if not context.config.is_uv_project:
@@ -35,6 +38,10 @@ class UvExecutor(PoeExecutor):
         """
 
         uv_run_options = []
+
+        # Add run_options from executor config
+        uv_run_options.extend(self.options.get("run_options", []))
+
         if self._io.verbosity > 0:
             uv_run_options.append("-v")
         elif self._io.verbosity < 0:

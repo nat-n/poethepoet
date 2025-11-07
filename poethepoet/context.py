@@ -191,6 +191,7 @@ class RunContext:
         working_dir: Path,
         *,
         executor_config: Mapping[str, str] | None = None,
+        executor_run_options: list[str] | None = None,
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
@@ -210,6 +211,22 @@ class RunContext:
                 executor_config = {"type": self.ui["executor"]}
             else:
                 executor_config = self.config.executor
+
+        # Make a copy to avoid modifying the original
+        executor_config = dict(executor_config)
+
+        # Merge task-level executor_run_options
+        if executor_run_options:
+            existing_run_options = executor_config.get("run_options", [])
+            executor_config["run_options"] = [*existing_run_options, *executor_run_options]
+
+        # Merge CLI-provided executor_run_options (highest priority)
+        if self.ui and self.ui["executor_run_options"]:
+            import shlex
+
+            cli_run_options = shlex.split(self.ui["executor_run_options"])
+            existing_run_options = executor_config.get("run_options", [])
+            executor_config["run_options"] = [*existing_run_options, *cli_run_options]
 
         return PoeExecutor.get(
             invocation=invocation,

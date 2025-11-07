@@ -21,8 +21,7 @@ class VirtualenvExecutor(PoeExecutor):
     __key__ = "virtualenv"
 
     class ExecutorOptions(PoeExecutor.ExecutorOptions):
-        type: str
-        location: Union[str, None] = None  # noqa: UP007
+        location: str | None = None
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:

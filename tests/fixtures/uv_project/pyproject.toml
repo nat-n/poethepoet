@@ -13,6 +13,9 @@ dependencies = [
 poe-test-helpers = { path = "../packages/poe_test_helpers" }
 poe-test-package = { path = "../packages/poe_test_package" }
 
+[tool.poe]
+executor.type = "uv"
+
 [tool.poe.tasks]
 show-version = "test_print_version"
 script-task.script = "uv_project:hello"
@@ -29,6 +32,13 @@ cwd   = "${workdir}"
 args  = [
     { name = "workdir", positional = true }
 ]
+
+[tool.poe.tasks.test-global-run-options]
+cmd = "python -c \"print('global run options test')\""
+
+[tool.poe.tasks.test-task-run-options]
+cmd = "python -c \"print('task level options')\""
+executor_run_options = ["--no-sync"]
 
 [build-system]
 requires = ["hatchling"]

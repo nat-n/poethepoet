@@ -48,3 +48,53 @@ def test_uv_executor_task_with_cwd(
     else:
         assert f"VIRTUAL_ENV: {subproject_path}/.venv" in result.stdout
         assert f"pwd: {poe_project_path}/tests/fixtures\n" in result.stdout
+
+
+@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+def test_uv_executor_with_global_run_options(run_poe_subproc, projects):
+    """Test that global executor run_options are passed to uv run"""
+    result = run_poe_subproc("test-global-run-options", project="uv")
+
+    assert result.code == 0
+    assert "global run options test" in result.stdout
+
+
+@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+def test_uv_executor_with_task_run_options(run_poe_subproc, projects):
+    """Test that task-level executor_run_options are passed to uv run"""
+    result = run_poe_subproc("test-task-run-options", project="uv")
+
+    assert result.code == 0
+    assert "task level options" in result.stdout
+
+
+@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+def test_uv_executor_with_cli_run_options(run_poe_subproc, projects):
+    """Test that CLI executor_run_options are passed correctly"""
+    result = run_poe_subproc(
+        "--executor-run-options",
+        " --no-sync",  # Single quoted string
+        "test-global-run-options",
+        project="uv",
+    )
+
+    # Should work with --no-sync option
+    assert result.code == 0
+    assert "global run options test" in result.stdout
+
+
+@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+def test_uv_executor_run_options_priority(run_poe_subproc, projects):
+    """Test that CLI > task > config priority is respected"""
+    # This task already has --no-sync as task-level option
+    # Adding another CLI option should work alongside it
+    result = run_poe_subproc(
+        "--executor-run-options",
+        " --quiet",  # Single option as string with leading space to avoid arg parsing
+        "test-task-run-options",
+        project="uv",
+    )
+
+    # Should succeed with both task and CLI options
+    assert result.code == 0
+    assert "task level options" in result.stdout

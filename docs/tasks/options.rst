@@ -35,6 +35,9 @@ The following options can be configured on your tasks and are not specific to an
 **executor** : ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
   Specify that this task should be executed with a specific executor.
 
+**executor_run_options** : ``list[str]`` :ref:`Passing options to the UV executor<Passing options to the UV executor>`
+  For the UV executor, specify additional command-line options to pass to ``uv run``.
+
 **verbosity** : ``int`` :ref:`📖<Configure task level verbosity>`
   Specify the verbosity level for this task, from -2 (least verbose) to 2 (most verbose), overriding the project level verbosity setting, which defaults to 0.
 
@@ -176,6 +179,28 @@ You can specify a default executor for a task by providing the ``executor`` opti
     executor = { type = "virtualenv", location = "./server.venv" }
 
 This works exactly like the the global option to :ref:`change the executor type<Change the executor type>` except it only impacts the one task.
+
+
+Passing options to the UV executor
+-----------------------------------
+
+When using the **uv** executor, you can pass additional command-line options to ``uv run`` at the task level using the ``executor_run_options`` option:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.test-py311]
+    cmd = "pytest tests"
+    executor_run_options = ["--isolated", "--python", "3.11"]
+
+    [tool.poe.tasks.test-py312]
+    cmd = "pytest tests"
+    executor_run_options = ["--isolated", "--python", "3.12"]
+
+This allows you to create task variants for different Python versions or environments, effectively replacing tools like tox.
+
+The ``executor_run_options`` are merged with any global ``executor.run_options`` configured for the project. Task-level options are appended after global options. You can further override these at runtime using the ``--executor-run-options`` CLI flag.
+
+For more details on UV executor run options, see :ref:`UV Executor run options<UV Executor run options>`.
 
 
 Configure task level verbosity
