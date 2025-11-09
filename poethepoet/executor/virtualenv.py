@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Union
 
-from ..exceptions import ConfigValidationError, ExecutionError
+from ..exceptions import ExecutionError
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
@@ -18,7 +18,10 @@ class VirtualenvExecutor(PoeExecutor):
     """
 
     __key__ = "virtualenv"
-    __options__: dict[str, type] = {"location": str}
+
+    class ExecutorOptions(PoeExecutor.ExecutorOptions):
+        type: str
+        location: Union[str, None] = None  # noqa: UP007
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:
@@ -55,13 +58,12 @@ class VirtualenvExecutor(PoeExecutor):
 
         project_dir = self.context.config.project_dir
 
-        if "location" in self.options:
-            venv_location = self.context.config.resolve_git_path(
-                self.options["location"]
-            )
+        if location := self.options.get("location"):
+            venv_location = self.context.config.resolve_git_path(location)
             venv = Virtualenv(project_dir.joinpath(venv_location))
             if venv.valid():
                 return venv
+
             raise ExecutionError(
                 f"Could not find valid virtualenv at configured location: {venv.path}"
             )
@@ -79,21 +81,3 @@ class VirtualenvExecutor(PoeExecutor):
             f"{hidden_venv.path}.\n"
             "You can configure another location as tool.poe.executor.location"
         )
-
-    @classmethod
-    def validate_executor_config(cls, config: dict[str, Any]):
-        """
-        Validate that location is a string if given and no other options are given.
-        """
-        if "location" in config and not isinstance(config["location"], str):
-            raise ConfigValidationError(
-                "The location option virtualenv executor must be a string not: "
-                f"{config['location']!r}",
-                global_option="executor",
-            )
-        extra_options = set(config.keys()) - {"type", "location"}
-        if extra_options:
-            raise ConfigValidationError(
-                f"Unexpected keys for executor config: {extra_options!r}",
-                global_option="executor",
-            )

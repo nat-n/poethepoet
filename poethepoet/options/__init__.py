@@ -4,7 +4,7 @@ from keyword import iskeyword
 from typing import TYPE_CHECKING, Any, get_type_hints
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterator, Mapping, Sequence
 
 from ..exceptions import ConfigValidationError
 from .annotations import TypeAnnotation
@@ -64,7 +64,7 @@ class PoeOptions:
         source: Mapping[str, Any] | list,
         strict: bool = True,
         extra_keys: Sequence[str] = tuple(),
-    ):
+    ) -> Iterator[PoeOptions]:
         config_keys = {
             key[:-1] if key.endswith("_") and iskeyword(key[:-1]) else key: type_
             for key, type_ in cls.get_fields().items()
@@ -121,6 +121,9 @@ class PoeOptions:
         config: Any,
         strict: bool = True,
     ):
+        """
+        This may be overridden by subclasses
+        """
         if isinstance(config, (list, tuple)):
             yield from config
         else:

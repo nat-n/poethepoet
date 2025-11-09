@@ -20,7 +20,6 @@ class PoetryExecutor(PoeExecutor):
     """
 
     __key__ = "poetry"
-    __options__: dict[str, type] = {}
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:

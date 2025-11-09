@@ -17,7 +17,6 @@ class UvExecutor(PoeExecutor):
     """
 
     __key__ = "uv"
-    __options__: dict[str, type] = {}
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:
