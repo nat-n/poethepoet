@@ -7,4 +7,3 @@ class SimpleExecutor(PoeExecutor):
     """
 
     __key__ = "simple"
-    __options__: dict[str, type] = {}

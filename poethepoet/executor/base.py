@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from ..options import PoeOptions
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, MutableMapping, Sequence
@@ -27,7 +28,7 @@ class MetaPoeExecutor(type):
         if cls.__name__ == "PoeExecutor":
             return
         assert isinstance(getattr(cls, "__key__", None), str)
-        assert isinstance(getattr(cls, "__options__", None), dict)
+        assert issubclass(getattr(cls, "ExecutorOptions", None), PoeOptions)
         PoeExecutor._PoeExecutor__executor_types[cls.__key__] = cls
 
 
@@ -41,11 +42,14 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     __executor_types: ClassVar[dict[str, type[PoeExecutor]]] = {}
     __key__: ClassVar[str | None] = None
 
+    class ExecutorOptions(PoeOptions):
+        type: str
+
     def __init__(
         self,
         invocation: tuple[str, ...],
         context: ContextProtocol,
-        options: Mapping[str, str],
+        options: PoeExecutor.ExecutorOptions,
         env: EnvVarsManager,
         *,
         project_dir: Path | None = None,
@@ -94,10 +98,13 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         """
         Create an executor.
         """
-        return cls._resolve_implementation(context, executor_config["type"])(
+        executor_cls = cls._resolve_implementation(context, executor_config["type"])
+        executor_options = next(executor_cls.ExecutorOptions.parse(executor_config))
+
+        return executor_cls(
             invocation=invocation,
             context=context,
-            options=executor_config,
+            options=executor_options,
             env=env,
             project_dir=context.config.project_dir,
             working_dir=working_dir,
@@ -307,17 +314,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             )
 
         else:
-            cls.__executor_types[executor_type].validate_executor_config(config)
-
-    @classmethod
-    def validate_executor_config(cls, config: dict[str, Any]):
-        """To be overridden by subclasses if they accept options"""
-        extra_options = set(config.keys()) - {"type"}
-        if extra_options:
-            raise ConfigValidationError(
-                f"Unexpected keys for executor config: {extra_options!r}",
-                global_option="executor",
-            )
+            cls.__executor_types[executor_type].ExecutorOptions.parse(config)
 
 
 def _stop_coverage():
