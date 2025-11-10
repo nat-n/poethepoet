@@ -114,7 +114,7 @@ class ScriptTask(PoeTask):
         process = await executor.execute(
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
-        await task_state.add_process(self.name, process, finalize=True)
+        await task_state.add_process(process, finalize=True)
 
     async def _run_module(
         self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
@@ -135,4 +135,4 @@ class ScriptTask(PoeTask):
         process = await executor.execute(
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
-        await task_state.add_process(self.name, process, finalize=True)
+        await task_state.add_process(process, finalize=True)

@@ -84,9 +84,13 @@ class RefTask(PoeTask):
 
         if task.has_deps():
             await self._run_task_graph(task, context, env, task_state)
-        else:
-            await task_state.add_child(await task.run(context=context, parent_env=env))
+            await task_state.finalize()
+            return
+
+        child_task = await task.run(context=context, parent_env=env)
+        await task_state.add_child(child_task)
         await task_state.finalize()
+        await child_task.wait(suppress_errors=False)
 
     async def _run_task_graph(
         self,

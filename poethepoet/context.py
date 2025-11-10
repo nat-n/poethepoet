@@ -153,15 +153,18 @@ class RunContext:
         When output streaming is enabled, all otherwise free task output to stdout will
         be captured by the executor, so that the calling task can process it as it
         arrives.
+
+        Yields True if the mode was changed, False otherwise.
         """
         if enabled == self.enable_output_streaming:
             # Reentrant mode
-            yield
+            yield False
             return
+
         outer_value = self.enable_output_streaming
         self.enable_output_streaming = enabled
         try:
-            yield
+            yield True
         finally:
             self.enable_output_streaming = outer_value
 

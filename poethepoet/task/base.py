@@ -1,7 +1,7 @@
-import functools
 import re
 import sys
 from collections.abc import Iterator, Mapping, Sequence
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional, Union
 
@@ -486,14 +486,9 @@ class PoeTask(metaclass=MetaPoeTask):
             self.ctx.io.print_debug(f" . Parsed args {named_arg_values!r}")
             self.ctx.io.print_debug(f" . Extra args  {extra_args!r}")
 
-        task_state = PoeTaskRun(
-            self.name,
-            functools.partial(self._handle_run, context, task_env),
-        )
+        task_state = PoeTaskRun(self.name, partial(self._handle_run, context, task_env))
         context.register_async_task(task_state.asyncio_task)
-        task_state.add_new_process_callback(
-            lambda name, process: context.register_subprocess(process)
-        )
+        task_state.add_new_process_callback(context.register_subprocess)
 
         return task_state
 

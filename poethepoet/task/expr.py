@@ -88,7 +88,7 @@ class ExprTask(PoeTask):
         self._print_action(self.spec.content.strip(), context.dry)
         executor = self._get_executor(context, env, resolve_python=True)
         process = await executor.execute(cmd, use_exec=self.spec.options.use_exec)
-        await task_state.add_process(self.name, process, finalize=True)
+        await task_state.add_process(process, finalize=True)
 
     def parse_content(
         self,

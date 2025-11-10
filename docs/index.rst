@@ -34,7 +34,7 @@ Poe the Poet is a batteries included task runner that works well with |poetry_li
 
 It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project's virtual environment.
 
-"Simple things should be simple, complex things should be possible." – Alan Kay
+`"Simple things should be simple, complex things should be possible." --  Alan Kay`
 
 
 Top features

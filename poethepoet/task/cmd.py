@@ -66,7 +66,7 @@ class CmdTask(PoeTask):
         process = await executor.execute(
             cmd, use_exec=self.spec.options.get("use_exec", False)
         )
-        await task_state.add_process(self.name, process, finalize=True)
+        await task_state.add_process(process, finalize=True)
 
         await process.wait()
         if process.returncode != 0 and self.__passed_unmatched_glob:

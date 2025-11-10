@@ -31,7 +31,7 @@ class ShutdownManager:
         self._shutdown_worker: asyncio.Task | None = None
 
     def shutdown(self, signum=None, frame=None):
-        self._io.print_debug("! Termination requested with signal: '%s'", signum or "")
+        self._io.print_debug(" ! Termination requested with signal: '%s'", signum or "")
         if signum is signal.SIGTERM:
             self._urgency += max(1, 3 - self._urgency)
         else:
@@ -56,11 +56,14 @@ class ShutdownManager:
 
     def _shutdown(self):
         self._io.print_debug(
-            "! Shutdown triggered %s: requesting subprocesses to end", self._urgency
+            " ! Shutdown triggered level %s: commencing cleanup", self._urgency
         )
         if self._is_windows:
             for proc in tuple(self.processes):
                 if proc.returncode is None:
+                    self._io.print_debug(
+                        " ! Sending CTRL_BREAK_EVENT to subprocess %s", proc.pid
+                    )
                     proc.send_signal(signal.CTRL_BREAK_EVENT)
                 else:
                     self.processes.discard(proc)
@@ -68,22 +71,26 @@ class ShutdownManager:
             for proc in tuple(self.processes):
                 if proc.returncode is None:
                     with contextlib.suppress(ProcessLookupError):
+                        self._io.print_debug(
+                            " ! Sending SIGINT to subprocess group %s", proc.pid
+                        )
                         os.killpg(os.getpgid(proc.pid), signal.SIGINT)
                 else:
                     self.processes.discard(proc)
 
         if not self.processes:
-            self._io.print_debug("! Cleaning up tasks")
+            self._io.print_debug(" ! Cleaning up tasks")
             # Clean up async tasks if there are no more subprocesses
             for task in tuple(self.tasks):
                 if task.done():
                     self.tasks.discard(task)
                 else:
+                    self._io.print_debug(" ! Cancelling task: %s", task.get_name())
                     task.cancel()
 
         if self._urgency >= 3:
             self._io.print_debug(
-                "! Forceful shutdown triggered: terminating subprocesses"
+                " ! Forceful shutdown triggered: terminating subprocesses"
             )
             # Tell subprocesses to terminate
             if self._is_windows:
@@ -103,7 +110,7 @@ class ShutdownManager:
                             os.killpg(os.getpgid(proc.pid), 9)
 
         if self._urgency >= 4:
-            self._io.print_debug("! Forceful shutdown triggered: killing subprocesses")
+            self._io.print_debug(" ! Forceful shutdown triggered: killing subprocesses")
             # Kill subprocesses with extreme prejudice
             if self._is_windows:
                 while self.processes:

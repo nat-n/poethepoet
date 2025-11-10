@@ -77,11 +77,15 @@ class SequenceTask(PoeTask):
                     )
                     else SequenceTask._subtask_name(name, index)
                 )
-                task_type_key = self.task_type.resolve_task_type(
-                    sub_task_def,
-                    factory.config,
-                    array_item=task_def.get("default_item_type", True),
-                )
+                if isinstance(sub_task_def, list):
+                    # Nested array interpreted as parallel task
+                    task_type_key: Union[str, None] = "parallel"
+                else:
+                    task_type_key = self.task_type.resolve_task_type(
+                        sub_task_def,
+                        factory.config,
+                        array_item=task_def.get("default_item_type", True),
+                    )
 
                 try:
                     self.subtasks.append(
@@ -89,11 +93,11 @@ class SequenceTask(PoeTask):
                             subtask_name, sub_task_def, task_type_key, parent=self
                         )
                     )
-                except PoeException:
+                except PoeException as error:
                     raise ConfigValidationError(
                         f"Failed to interpret subtask #{index} in sequence",
                         task_name=self.name,
-                    )
+                    ) from error
 
         def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
             """
@@ -155,7 +159,9 @@ class SequenceTask(PoeTask):
                 if ignore_fail:
                     self.ctx.io.print_warning(error.msg, message_verbosity=0)
                 else:
-                    raise
+                    raise ExecutionError(
+                        f"Sequence aborted after failed subtask {subtask.name!r}"
+                    ) from error
 
             if not subtask_run or subtask_run.has_failure:
                 if not ignore_fail:

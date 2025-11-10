@@ -236,8 +236,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             popen_kwargs["stdin"] = PIPE
         if self.capture_stdout or self.context.enable_output_streaming:
             if isinstance(self.capture_stdout, Path):
-                # ruff: noqa: SIM115, ASYNC230
-                popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
+                if self.capture_stdout in (Path("/dev/null"), Path("NUL")):
+                    popen_kwargs["stdout"] = subprocess.DEVNULL
+                else:
+                    # ruff: noqa: SIM115, ASYNC230
+                    popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
             else:
                 popen_kwargs["stdout"] = PIPE
 

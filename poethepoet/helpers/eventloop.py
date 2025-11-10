@@ -63,7 +63,10 @@ async def async_iter_merge(
             with contextlib.suppress(asyncio.CancelledError):
                 await queue.put((idx, _SENTINEL))
 
-    pump_tasks = [asyncio.create_task(pump(idx, it)) for idx, it in enumerate(iters)]
+    pump_tasks = [
+        asyncio.create_task(pump(idx, it), name=f"async_iter_merge:pump:{idx}")
+        for idx, it in enumerate(iters)
+    ]
     finished: set[int] = set()
 
     if generator:
@@ -71,9 +74,18 @@ async def async_iter_merge(
         async def meta_pump(meta_src: AsyncIterable[AsyncIterable[T]]) -> None:
             async for src in meta_src:
                 iters.append(src.__aiter__())  # type: ignore[call-arg]
-                pump_tasks.append(asyncio.create_task(pump(len(iters) - 1, iters[-1])))
+                pump_tasks.append(
+                    asyncio.create_task(
+                        pump(len(iters) - 1, iters[-1]),
+                        name=f"async_iter_merge:meta_pump:pump:{len(iters) - 1}",
+                    )
+                )
 
-        pump_tasks.append(asyncio.create_task(meta_pump(generator)))
+        pump_tasks.append(
+            asyncio.create_task(
+                meta_pump(generator), name="async_iter_merge:meta_pump}"
+            )
+        )
 
     try:
         while len(finished) < len(iters):
@@ -102,3 +114,74 @@ async def async_iter_merge(
             if getattr(it, "aclose", None):
                 with contextlib.suppress(BaseException):
                     await it.aclose()  # type: ignore[attr-defined]
+
+
+class DynamicTaskSet:
+    """
+    This is a python <3.11 compatible approximation of asyncio.TaskGroup
+    TODO: Replace with asyncio.TaskGroup when we drop support for python <3.11
+    """
+
+    def __init__(self, *, cancel_on_error: bool = True):
+        self._tasks: set[asyncio.Task] = set()
+        self._cancel_on_error = cancel_on_error
+        self._first_exception: BaseException | None = None
+        self._closed = False
+
+    def __len__(self):
+        return len(self._tasks)
+
+    def __iter__(self):
+        return iter(self._tasks)
+
+    async def __aenter__(self):
+        return self
+
+    def create_task(self, coro: Coroutine, name: str) -> asyncio.Task:
+        if self._closed:
+            raise RuntimeError("Cannot create task in closed DynamicTaskSet")
+        task = asyncio.create_task(coro, name=name)
+        self._tasks.add(task)
+
+        def _done(task: asyncio.Task):
+            self._tasks.discard(task)
+            if (
+                self._cancel_on_error
+                and not task.cancelled()
+                and (exception := task.exception()) is not None
+                and self._first_exception is None
+            ):
+                self._first_exception = exception
+                self.close()
+
+        task.add_done_callback(_done)
+        return task
+
+    def _cancel_all(self):
+        for task in list(self._tasks):
+            task.cancel()
+
+    async def wait(self):
+        while self._tasks:
+            await asyncio.wait(self._tasks, return_when=asyncio.FIRST_COMPLETED)
+
+    def exception(self) -> BaseException | None:
+        return self._first_exception
+
+    def close(self):
+        self._cancel_all()
+        self._closed = True
+
+    async def __aexit__(self, et, ev, tb):
+        try:
+            await self.wait()
+        except asyncio.CancelledError:
+            self._cancel_all()
+            raise
+        finally:
+            # Ensure cleanup of remaining tasks
+            if self._cancel_on_error:
+                self._cancel_all()
+            await asyncio.gather(*self._tasks, return_exceptions=True)
+        if self._first_exception and et is None:
+            raise self._first_exception

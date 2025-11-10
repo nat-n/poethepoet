@@ -69,6 +69,10 @@ sphinx-copybutton   = "^0.5.1"
 sphinxext-opengraph = "^0.9.0"
 
 
+
+[tool.poetry.group.dev.dependencies]
+pytest-retry = "^1.7.0"
+
 [tool.poe.tasks]
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 

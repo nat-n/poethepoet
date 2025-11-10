@@ -1,50 +1,411 @@
-def test_nested_array_as_parallel_task(run_poe_subproc, esc_prefix):
-    """
-    Test that a nested array in a sequence is interpreted as a parallel task.
-
-    The composite_task in sequences_project has a nested array that should now
-    be interpreted as a parallel task.
-    """
-    result = run_poe_subproc("composite_task", project="sequences")
-
-    # The output should contain the commands for part1 and _part2 in parallel,
-    # followed by the command for the third task
-    assert "Poe => poe_test_echo Hello" in result.capture
-    assert "Poe => poe_test_echo 'World!'" in result.capture
-    assert "Poe => poe_test_echo ':)!'" in result.capture
-
-    # The stdout should contain the output from all tasks
-    assert "Hello" in result.stdout
-    assert "World!" in result.stdout
-    assert ":)!" in result.stdout
-
-    # There should be no errors
-    assert result.stderr == ""
+# ruff: noqa: E501
+import pytest
 
 
-def test_mixed_sequence_task(run_poe_subproc):
-    """
-    This should run mypy and pylint in parallel, then pytest after they complete.
-    """
+def test_parallel_task_parallelism(run_poe_subproc):
+    result = run_poe_subproc("--ansi", "sleep_sort", project="parallel")
 
-    # Create a simple task that just echoes its name to simulate a real command
-    result = run_poe_subproc("test_mixed", project="sequences")
+    assert result.capture_lines == [
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 150 150\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 0 0\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 200 200\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 100 100\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 50 50\x1b[0m",
+    ]
+    assert result.stdout == (
+        "\x1b[32msleep_sort[1]\x1b[0m | 0\n"
+        "\x1b[35msleep_sort[4]\x1b[0m | 50\n"
+        "\x1b[34msleep_sort[3]\x1b[0m | 100\n"
+        "\x1b[31msleep_sort[0]\x1b[0m | 150\n"
+        "\x1b[33msleep_sort[2]\x1b[0m | 200\n"
+    )
 
-    # Check that the tasks ran in the expected order (parallel tasks first, then
-    # sequential)
-    # To ensure parallel tasks start before sequential, check the indices of their
-    # "Running" messages.
-    mypy_start_index = result.stdout.find("Running mypy")
-    pylint_start_index = result.stdout.find("Running pylint")
-    pytest_start_index = result.stdout.find("Running pytest")
 
-    # Ensure all start messages are found
-    assert mypy_start_index != -1
-    assert pylint_start_index != -1
-    assert pytest_start_index != -1
+def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
+    result = run_poe_subproc("parallel_with_stdout_capture", project="parallel")
 
-    # Ensure that both mypy and pylint "Running" messages appear before pytest's
-    # "Running" message.
-    # This implies they started before pytest.
-    assert mypy_start_index < pytest_start_index
-    assert pylint_start_index < pytest_start_index
+    assert result.capture_lines == [
+        "Poe => poe_test_echo '1 going to stdout 1'",
+        "Poe <= poe_test_echo '2 going to file'",
+        "Poe <= poe_test_echo '3 going to the void'",
+        "Poe => poe_test_echo '4 going to stdout 4'",
+    ]
+    assert result.stdout == (
+        "parallel_with_s… | 1 going to stdout 1\n"
+        "parallel_with_s… | 4 going to stdout 4\n"
+    )
+    with tests_temp_dir.joinpath("captured2.txt").open("r") as f:
+        assert f.read() == "2 going to file\n"
+
+
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+def test_sequence_in_parallel_task(run_poe_subproc):
+    result = run_poe_subproc("parallel_of_sequences", project="parallel")
+
+    assert result.capture_lines == [
+        "Poe => poe_test_delayed_echo 100 para1",
+        "Poe => poe_test_delayed_echo 30 seq1",
+        "Poe => poe_test_echo seq2",
+    ]
+    assert result.stdout == (
+        "parallel_of_seq… | seq1\n"
+        "parallel_of_seq… | seq2\n"
+        "parallel_of_seq… | para1\n"
+    )
+
+
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+def test_parallel_in_sequence_task(run_poe_subproc):
+    result = run_poe_subproc("sequence_of_parallels", project="parallel")
+
+    assert result.capture_lines == [
+        "Poe => poe_test_delayed_echo 100 seq1",
+        "Poe => poe_test_delayed_echo 30 para1",
+        "Poe => poe_test_echo para2",
+    ]
+    assert result.stdout == (
+        "seq1\n" "sequence_of_par… | para2\n" "sequence_of_par… | para1\n"
+    )
+
+
+def test_customize_parallel_task_prefix(run_poe_subproc):
+    result = run_poe_subproc(
+        "--ansi",
+        "custom_prefix_task",
+        project="parallel",
+    )
+    assert result.stdout == (
+        "\x1b[31m[0 : custom_prefix_task[0]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
+        "\x1b[32m[1 : custom_prefix_task[1]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
+        "\x1b[33m[2 : custom_prefix_task[2]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
+        "\x1b[34m[3 : custom_prefix_task[3]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
+        "\x1b[35m[4 : custom_prefix_task[4]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
+        "\x1b[36m[5 : custom_prefix_task[5]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
+        "\x1b[31m[6 : custom_prefix_task[6]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
+    )
+
+
+@pytest.fixture
+def generate_pyproject(temp_pyproject):
+    def generator(
+        seq1_ignore_fail=False,
+        seq2_ignore_fail=False,
+        para1_ignore_fail=False,
+        para2_ignore_fail=False,
+    ):
+        def fmt_ignore_fail(value):
+            if value is True:
+                return "ignore_fail = true"
+            elif isinstance(value, str):
+                return f'ignore_fail = "{value}"'
+            else:
+                return ""
+
+        project_tmpl = f"""
+            [tool.poe.tasks]
+            fast_success = "echo 'Great success!'"
+            slow_success = "poe_test_delayed_echo 80 'Eventual success!'"
+            slow_fail = "poe_test_fail 50 22"
+            fast_fail.shell = "echo 'failing fast with error'; exit 1;"
+
+            [tool.poe.tasks.lvl1_seq]
+            help = "A sequence including a failing task"
+            sequence = ["fast_success", "fast_fail", "fast_success"]
+            {fmt_ignore_fail(seq1_ignore_fail)}
+
+            [tool.poe.tasks.lvl1_para]
+            help = "A parallel including a failing task"
+            parallel = [
+                "slow_success", "fast_success", "fast_fail", "fast_success", "lvl1_seq"
+            ]
+            {fmt_ignore_fail(para1_ignore_fail)}
+
+            [tool.poe.tasks.lvl2_seq]
+            help = "A sequence including a failing parallel task"
+            sequence = ["fast_success", "lvl1_para", "fast_success"]
+            {fmt_ignore_fail(seq2_ignore_fail)}
+
+            [tool.poe.tasks.lvl2_para]
+            parallel = ["slow_success", "lvl2_seq", "fast_success"]
+            {fmt_ignore_fail(para2_ignore_fail)}
+        """
+
+        return temp_pyproject(project_tmpl)
+
+    return generator
+
+
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
+    project_path = generate_pyproject()
+
+    result = run_poe_subproc("lvl1_seq", cwd=project_path)
+    assert result.capture == (
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Error: Sequence aborted after failed subtask 'fast_fail'\n"
+    )
+    assert result.stdout == ("Great success!\n" "failing fast with error\n")
+    assert result.code == 1
+
+    result = run_poe_subproc("lvl1_para", cwd=project_path)
+    assert result.capture == (
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'\n"
+    )
+    assert result.stdout.startswith(
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        # "fast_success | Great success!\n" # fast_success from lvl1_seq might get there
+    )
+    assert result.code == 1
+
+    result = run_poe_subproc("lvl2_seq", cwd=project_path)
+    assert result.capture == (
+        "Poe => echo 'Great success!'\n"
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Error: Sequence aborted after failed subtask 'lvl1_para'\n"
+        "     | From: ExecutionError(\"Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'\")\n"
+    )
+
+    assert result.stdout.startswith(
+        "Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        # "fast_success | Great success!\n" # fast_success from lvl1_seq might get there
+    )
+    assert result.code == 1
+
+    result = run_poe_subproc("lvl2_para", cwd=project_path)
+    assert result.capture == (
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Warning: Parallel subtask 'lvl2_seq' failed with exception: Sequence aborted after failed subtask 'lvl1_para'\n"
+        "Error: Parallel task 'lvl2_para' aborted after failed subtask 'lvl2_seq'\n"
+    )
+    assert result.stdout == (
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+    )
+    assert result.code == 1
+
+
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
+    project_path = generate_pyproject(
+        seq1_ignore_fail=True,
+        seq2_ignore_fail=True,
+        para1_ignore_fail=True,
+        para2_ignore_fail=True,
+    )
+
+    result = run_poe_subproc("lvl1_seq", cwd=project_path)
+    assert result.capture == (
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+    )
+    assert result.stdout == (
+        "Great success!\n" "failing fast with error\n" "Great success!\n"
+    )
+    assert result.code == 0
+
+    result = run_poe_subproc("lvl1_para", cwd=project_path)
+    assert result.capture == (
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+    )
+    assert result.stdout == (
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "slow_success | Eventual success!\n"
+    )
+    assert result.code == 0
+
+    result = run_poe_subproc("lvl2_seq", cwd=project_path)
+    assert result.capture == (
+        "Poe => echo 'Great success!'\n"
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+    )
+    assert result.stdout == (
+        "Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "slow_success | Eventual success!\n"
+        "Great success!\n"
+    )
+    assert result.code == 0
+
+    result = run_poe_subproc("lvl2_para", cwd=project_path)
+    assert result.capture == (
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+    )
+    assert result.stdout == (
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "slow_success | Eventual success!\n"
+        "slow_success | Eventual success!\n"
+        "fast_success | Great success!\n"
+    )
+    assert result.code == 0
+
+
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproject):
+    project_path = generate_pyproject(
+        seq1_ignore_fail=True,
+        seq2_ignore_fail=True,
+        para1_ignore_fail="return_non_zero",
+        para2_ignore_fail=True,
+    )
+
+    result = run_poe_subproc("lvl1_para", cwd=project_path)
+    assert result.capture == (
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+        "Error: Subtask 'fast_fail' returned non-zero exit status\n"
+    )
+    assert result.stdout == (
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "slow_success | Eventual success!\n"
+    )
+    assert result.code == 1
+
+    result = run_poe_subproc("lvl2_seq", cwd=project_path)
+    assert result.capture == (
+        "Poe => echo 'Great success!'\n"
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+        "Warning: Subtask 'fast_fail' returned non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+    )
+    assert result.stdout == (
+        "Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "slow_success | Eventual success!\n"
+        "Great success!\n"
+    )
+    assert result.code == 0
+
+    result = run_poe_subproc("lvl2_para", cwd=project_path)
+    assert result.capture == (
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => poe_test_delayed_echo 80 'Eventual success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'Great success!'\n"
+        "Poe => echo 'failing fast with error'; exit 1;\n"
+        "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+        "Warning: Subtask 'fast_fail' returned non-zero exit status\n"
+        "Poe => echo 'Great success!'\n"
+    )
+    assert result.stdout == (
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
+        "fast_success | Great success!\n"
+        "slow_success | Eventual success!\n"
+        "slow_success | Eventual success!\n"
+        "fast_success | Great success!\n"
+    )
+    assert result.code == 0

@@ -23,7 +23,7 @@ except ImportError:
     import tomli  # type: ignore[no-redef]
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PROJECT_TOML = PROJECT_ROOT.joinpath("pyproject.toml")
+PROJECT_TOML = PROJECT_ROOT / "pyproject.toml"
 
 
 @pytest.fixture(scope="session")
@@ -40,6 +40,11 @@ def pyproject():
 @pytest.fixture(scope="session")
 def poe_project_path():
     return PROJECT_ROOT
+
+
+@pytest.fixture(scope="session")
+def tests_temp_dir():
+    return PROJECT_ROOT / "tests" / "temp"
 
 
 @pytest.fixture(scope="session")
@@ -111,6 +116,14 @@ class PoeTestRunResult(NamedTuple):
         assert all(
             line.startswith("Creating virtualenv ") for line in self.stderr.splitlines()
         )
+
+    @property
+    def capture_lines(self):
+        return self.capture.strip().splitlines()
+
+    @property
+    def output_lines(self):
+        return self.stdout.strip().splitlines()
 
 
 @pytest.fixture

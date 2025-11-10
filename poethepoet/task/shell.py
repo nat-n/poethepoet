@@ -90,7 +90,7 @@ class ShellTask(PoeTask):
             context, env, resolve_python=interpreter_cmd == "python"
         )
         process = await executor.execute(interpreter_cmd, input=content.encode())
-        await task_state.add_process(self.name, process, finalize=True)
+        await task_state.add_process(process, finalize=True)
 
     def _get_interpreter_config(self) -> tuple[str, ...]:
         result: Union[str, tuple[str, ...]] = self.spec.options.get(
