@@ -44,7 +44,9 @@ def poe_project_path():
 
 @pytest.fixture(scope="session")
 def tests_temp_dir():
-    return PROJECT_ROOT / "tests" / "temp"
+    result = PROJECT_ROOT / "tests" / "temp"
+    result.mkdir(parents=True, exist_ok=True)
+    return result
 
 
 @pytest.fixture(scope="session")

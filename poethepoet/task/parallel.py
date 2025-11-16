@@ -283,7 +283,7 @@ class ParallelTask(PoeTask):
                     prefix=prefix_content,
                     color_start=self.colors.start(ansi_enabled),
                     color_end=self.colors.end(ansi_enabled),
-                ).encode(sys.stdout.encoding or "utf-8", errors="replace")
+                ).encode("utf-8", errors="replace")
             else:
                 prefix = b""
         except Exception as error:

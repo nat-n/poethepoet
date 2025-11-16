@@ -3,11 +3,11 @@ words-of-wisdom = "poe_test_echo \"Let it be\""
 
 [tool.poe.tasks.sleep_sort]
 parallel = [
-  { cmd = "poe_test_delayed_echo 150 150" },
+  { cmd = "poe_test_delayed_echo 300 300" },
   { cmd = "poe_test_delayed_echo 0 0" },
+  { cmd = "poe_test_delayed_echo 400 400" },
   { cmd = "poe_test_delayed_echo 200 200" },
   { cmd = "poe_test_delayed_echo 100 100" },
-  { cmd = "poe_test_delayed_echo 50 50" },
 ]
 
 [tool.poe.tasks.custom_prefix_task]
@@ -26,9 +26,9 @@ prefix_template = "{color_start}{prefix}{color_end} "
 
 [tool.poe.tasks.parallel_of_sequences]
 parallel = [
-  { cmd = "poe_test_delayed_echo 100 para1" },
+  { cmd = "poe_test_delayed_echo 150 para1" },
   [
-    { cmd = "poe_test_delayed_echo 30 seq1" },
+    { cmd = "poe_test_delayed_echo 60 seq1" },
     { cmd = "poe_test_echo seq2" },
   ],
 ]
