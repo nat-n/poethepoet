@@ -89,7 +89,7 @@ def _list_tasks(target_path: Optional[str] = None):
         from .config import PoeConfig
 
         config = PoeConfig()
-        config.load(target_path, strict=False)
+        config.load_sync(target_path, strict=False)
         task_names = (task for task in config.task_names if task and task[0] != "_")
         print(" ".join(task_names))
     except Exception:

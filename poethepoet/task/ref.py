@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError
+from ..executor.task_run import PoeTaskRun
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
@@ -57,11 +58,9 @@ class RefTask(PoeTask):
 
     spec: TaskSpec
 
-    def _handle_run(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ) -> int:
+    async def _handle_run(
+        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+    ):
         """
         Lookup and delegate to the referenced task
         """
@@ -84,16 +83,22 @@ class RefTask(PoeTask):
         )
 
         if task.has_deps():
-            return self._run_task_graph(task, context, env)
+            await self._run_task_graph(task, context, env, task_state)
+            await task_state.finalize()
+            return
 
-        return task.run(context=context, parent_env=env)
+        child_task = await task.run(context=context, parent_env=env)
+        await task_state.add_child(child_task)
+        await task_state.finalize()
+        await child_task.wait(suppress_errors=False)
 
-    def _run_task_graph(
+    async def _run_task_graph(
         self,
         task: "PoeTask",
         context: "RunContext",
         env: "EnvVarsManager",
-    ) -> int:
+        task_state: PoeTaskRun,
+    ):
         from ..exceptions import ExecutionError
         from .graph import TaskExecutionGraph
 
@@ -103,11 +108,16 @@ class RefTask(PoeTask):
             for stage_task in stage:
                 if stage_task == task:
                     # The final sink task gets special treatment
-                    return task.run(context=context, parent_env=env)
+                    return await task_state.add_child(
+                        await task.run(context=context, parent_env=env)
+                    )
 
-                task_result = stage_task.run(context=context)
-                if task_result:
+                dep_task = await stage_task.run(context=context)
+                await task_state.add_child(dep_task)
+                await dep_task.wait()
+                if dep_task.has_failure:
                     raise ExecutionError(
                         f"Task graph aborted after failed task {stage_task.name!r}"
                     )
-        return 0
+        # This should not be possible to reach
+        raise ExecutionError("Task graph did not contain the expected sink task")

@@ -1,11 +1,13 @@
 import re
 import sys
 from collections.abc import Iterator, Mapping, Sequence
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional, Union
 
 from ..config.primitives import EmptyDict, EnvDefault
 from ..exceptions import ConfigValidationError, PoeException
+from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
 from ..options import PoeOptions
 
@@ -41,7 +43,6 @@ class MetaPoeTask(type):
 
 
 TaskContent = Union[str, Sequence[Union[str, Mapping[str, Any]]]]
-
 TaskDef = Union[str, Mapping[str, Any], Sequence[Union[str, Mapping[str, Any]]]]
 
 
@@ -447,11 +448,11 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return self._parsed_args
 
-    def run(
+    async def run(
         self,
         context: "RunContext",
         parent_env: Optional["EnvVarsManager"] = None,
-    ) -> int:
+    ) -> PoeTaskRun:
         """
         Run this task
         """
@@ -472,7 +473,7 @@ class PoeTask(metaclass=MetaPoeTask):
                 dry=True,
                 unresolved=True,
             )
-            return 0
+            return await PoeTaskRun(self.name).finalize()
 
         task_env = self.spec.get_task_env(
             parent_env or context.env,
@@ -485,16 +486,18 @@ class PoeTask(metaclass=MetaPoeTask):
             self.ctx.io.print_debug(f" . Parsed args {named_arg_values!r}")
             self.ctx.io.print_debug(f" . Extra args  {extra_args!r}")
 
-        return self._handle_run(context, task_env)
+        task_state = PoeTaskRun(self.name, partial(self._handle_run, context, task_env))
+        context.register_async_task(task_state.asyncio_task)
+        task_state.add_new_process_callback(context.register_subprocess)
 
-    def _handle_run(
-        self,
-        context: "RunContext",
-        env: "EnvVarsManager",
-    ) -> int:
+        return task_state
+
+    async def _handle_run(
+        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+    ):
         """
-        This method must be implemented by a subclass and return a single executor
-        result.
+        This method must be implemented by a subclass and is expected to mutate the
+        supplied task_state.
         """
         raise NotImplementedError
 
@@ -623,6 +626,9 @@ class PoeTask(metaclass=MetaPoeTask):
         min_verbosity = -1 if dry else 0
         arrow = "??" if unresolved else "<=" if self.capture_stdout else "=>"
         self.ctx.io.print_poe_action(arrow, action, message_verbosity=min_verbosity)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}:{self.name} at {hex(id(self))}>"
 
     class Error(Exception):
         pass

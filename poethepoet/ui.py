@@ -261,7 +261,11 @@ class PoeUi:
         if error and self.io.is_debug_enabled():
             import traceback
 
-            result.append("".join(traceback.format_exception(error)).strip())
+            result.append(
+                "".join(
+                    traceback.format_exception(type(error), error, error.__traceback__)
+                ).strip()
+            )
 
         self.io.print(
             "\n\n".join(
@@ -369,7 +373,11 @@ class PoeUi:
         if self.io.is_debug_enabled():
             import traceback
 
-            self.io.print_debug("".join(traceback.format_exception(error)).strip())
+            self.io.print_debug(
+                "".join(
+                    traceback.format_exception(type(error), error, error.__traceback__)
+                ).strip()
+            )
 
     def _format_error_lines(self, lines: Sequence[str]) -> tuple[str, ...]:
         return (

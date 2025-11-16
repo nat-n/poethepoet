@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -8,6 +9,7 @@ from ..exceptions import ExecutionError
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
@@ -27,21 +29,21 @@ class PoetryExecutor(PoeExecutor):
             return False
         return bool(cls._poetry_cmd_from_path())
 
-    def execute(
+    async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> int:
+    ) -> Process:
         """
         Execute the given cmd as a subprocess inside the poetry managed dev environment
         """
 
-        poetry_env = self._get_poetry_virtualenv()
+        poetry_env = await self._get_poetry_virtualenv()
 
         if poetry_env:
             from ..virtualenv import Virtualenv
 
             # Execute the task in the virtualenv from poetry
             venv = Virtualenv(Path(poetry_env))
-            return self._execute_cmd(
+            return await self._execute_cmd(
                 (venv.resolve_executable(cmd[0]), *cmd[1:]),
                 input=input,
                 env=venv.get_env_vars(self.env.to_dict()),
@@ -50,26 +52,26 @@ class PoetryExecutor(PoeExecutor):
 
         if self._virtualenv_creation_disabled():
             # There's no poetry env, and there isn't going to be
-            cmd = (self._resolve_executable(cmd[0]), *cmd[1:])
-            return self._execute_cmd(cmd, input=input, use_exec=use_exec)
+            cmd = (*self._resolve_executable(cmd[0]), *cmd[1:])
+            return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
         # Run this task with `poetry run`
-        return self._execute_cmd(
+        return await self._execute_cmd(
             (self._poetry_cmd(), "--no-plugins", "run", *cmd),
             input=input,
             use_exec=use_exec,
         )
 
-    def _handle_file_not_found(
+    async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
-    ) -> int:
-        poetry_env = self._get_poetry_virtualenv()
+    ):
+        poetry_env = await self._get_poetry_virtualenv()
         error_context = f" using virtualenv {poetry_env!r}" if poetry_env else ""
         raise ExecutionError(
             f"executable {cmd[0]!r} could not be found{error_context}"
         ) from error
 
-    def _get_poetry_virtualenv(self, force: bool = True):
+    async def _get_poetry_virtualenv(self):
         """
         Ask poetry where it put the virtualenv for this project.
         Invoking poetry is relatively expensive so cache the result
@@ -80,8 +82,8 @@ class PoetryExecutor(PoeExecutor):
 
         exec_cache = self.context.exec_cache
 
-        if force and "poetry_virtualenv" not in exec_cache:
-            from subprocess import PIPE, Popen
+        if "poetry_virtualenv" not in exec_cache:
+            from subprocess import PIPE
 
             # Need to make sure poetry isn't influenced by whatever virtualenv is
             # currently active
@@ -89,17 +91,18 @@ class PoetryExecutor(PoeExecutor):
             clean_env.pop("VIRTUAL_ENV", None)
             clean_env["PYTHONIOENCODING"] = "utf-8"
 
-            exec_cache["poetry_virtualenv"] = (
-                Popen(
-                    (self._poetry_cmd(), "--no-plugins", "env", "info", "-p"),
-                    stdout=PIPE,
-                    cwd=self.context.config.project_dir,
-                    env=clean_env,
-                )
-                .communicate()[0]
-                .decode()
-                .strip()
+            proc = await asyncio.create_subprocess_exec(
+                self._poetry_cmd(),
+                "--no-plugins",
+                "env",
+                "info",
+                "-p",
+                stdout=PIPE,
+                cwd=self.context.config.project_dir,
+                env=clean_env,
             )
+            outputs = await proc.communicate()
+            exec_cache["poetry_virtualenv"] = outputs[0].decode().strip()
 
         return exec_cache.get("poetry_virtualenv")
 

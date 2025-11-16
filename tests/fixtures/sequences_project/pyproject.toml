@@ -4,16 +4,17 @@ part1 = "poe_test_echo 'Hello'"
 _part2.cmd = "poe_test_echo ${SUBJECT}!"
 _part2.env = { SUBJECT = "World" }
 composite_task.sequence = [
-  ["part1", "_part2"],
-  # wrapping in arrays means we can have different types of task in the sequence
-  [{cmd = """poe_test_echo "${SMILEY}!" """}]
+  "part1",
+  "_part2",
+  { cmd = """poe_test_echo "${SMILEY}!" """ },
 ]
 # env var is inherited by subtask
 composite_task.env = { SMILEY = ":)" }
 
-also_composite_task = [["composite_task"]] # sequence in a sequence
-
-greet-multiple.sequence = ["my_package:main(environ.get('cat'))", "my_package:main(environ['mouse'])"]
+greet-multiple.sequence = [
+  "my_package:main(environ.get('cat'))",
+  "my_package:main(environ['mouse'])",
+]
 greet-multiple.default_item_type = "script"
 greet-multiple.env = { cat = "Tom" }
 greet-multiple.args = ["mouse"]
@@ -21,47 +22,67 @@ greet-multiple.args = ["mouse"]
 
 travel = [
   { cmd = "poe_test_echo 'from $PLANET to'" },
-  { script = "my_package:print_var('DEST')" }
+  { script = "my_package:print_var('DEST')" },
 ]
 
 
 [tool.poe.tasks.say]
-cmd  = "poe_test_echo ${thing}"
+cmd = "poe_test_echo ${thing}"
 args = ["thing"]
 
 [tool.poe.tasks.multiple-value-arg]
-sequence = [{ cmd = "poe_test_echo first: ${first}" }, { cmd = ' poe_test_echo second: "${second}"' }, { ref = "say --thing ${thing}" }]
-env      = {thing = "Done."}
+sequence = [
+  { cmd = "poe_test_echo first: ${first}" },
+  { cmd = ' poe_test_echo second: "${second}"' },
+  { ref = "say --thing ${thing}" },
+]
+env = { thing = "Done." }
 
-  [[tool.poe.tasks.multiple-value-arg.args]]
-  name       = "first"
-  positional = true
+[[tool.poe.tasks.multiple-value-arg.args]]
+name = "first"
+positional = true
 
-  [[tool.poe.tasks.multiple-value-arg.args]]
-  name       = "second"
-  positional = true
-  multiple   = true
-  type       = "integer"
+[[tool.poe.tasks.multiple-value-arg.args]]
+name = "second"
+positional = true
+multiple = true
+type = "integer"
 
 
 [tool.poe.tasks.cwd_once]
-expr    = "os.getcwd()"
+expr = "os.getcwd()"
 imports = ["os"]
 
 [tool.poe.tasks.cwd_elsewhere]
-expr    = "os.getcwd()"
+expr = "os.getcwd()"
 imports = ["os"]
-cwd     = "${POE_ROOT}"
+cwd = "${POE_ROOT}"
 
 [tool.poe.tasks.all_cwd]
 sequence = [
   "cwd_once",
   "cwd_elsewhere",
-  {script = "os:getcwd()", print_result = true},
-  {script = "os:getcwd()", cwd = ".", print_result = true}
+  { script = "os:getcwd()", print_result = true },
+  { script = "os:getcwd()", cwd = ".", print_result = true },
 ]
 cwd = "my_package"
 
 [tool.poe.tasks.setup]
 default_item_type = "cmd"
 sequence = ["./tools/poetry-ci-install.sh"]
+
+[tool.poe.tasks.sequential_parallel]
+sequence = [
+  { cmd = "poe_test_echo First" },
+  [
+    { cmd = "poe_test_delayed_echo 50 second 50" },
+    { cmd = "poe_test_delayed_echo 0 second 0" },
+    { cmd = "poe_test_delayed_echo 100 second 100" },
+  ],
+  [
+    { cmd = "poe_test_delayed_echo 50 third 50" },
+    { cmd = "poe_test_delayed_echo 0 third 0" },
+    { cmd = "poe_test_delayed_echo 100 third 100" },
+  ],
+  { cmd = "poe_test_echo Last" },
+]

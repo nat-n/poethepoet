@@ -35,7 +35,7 @@ The following options can be set for all tasks in a project directly under ``[to
   When a task is declared as a string (instead of a table), then it is interpreted as the default task type, which will be ``"cmd"`` unless otherwise specified.
 
 **default_array_task_type** : ``str``
-  When a task is declared as an array (instead of a table), then it is interpreted as the default array task type, which will be ``"sequence"`` unless otherwise specified. Currently the sequence task type is the only one that can be defined as an array.
+  When a task is declared as an array (instead of a table), then it is interpreted as the default array task type, which will be ``"sequence"`` unless otherwise specified. Valid options are ``"sequence"`` or ``"parallel"``.
 
 **default_array_item_task_type** : ``"cmd" | "expr" | "ref" | "script" | "shell"``
   When a task is declared as a string inside an array (e.g. inline in a sequence task), then it is interpreted as the default array item task type, which will be ``"ref"`` unless otherwise specified.

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -10,6 +12,7 @@ from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..options import PoeOptions
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
     from collections.abc import Mapping, MutableMapping, Sequence
 
     from ..context import ContextProtocol
@@ -141,17 +144,17 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
             return cls.__executor_types[executor_type]
 
-    def execute(
+    async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> int:
+    ) -> Process:
         """
         Execute the given cmd.
         """
 
-        cmd = (self._resolve_executable(cmd[0]), *cmd[1:])
-        return self._execute_cmd(cmd, input=input, use_exec=use_exec)
+        cmd = (*self._resolve_executable(cmd[0]), *cmd[1:])
+        return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
-    def _execute_cmd(
+    async def _execute_cmd(
         self,
         cmd: Sequence[str],
         *,
@@ -159,7 +162,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         env: Mapping[str, str] | None = None,
         shell: bool = False,
         use_exec: bool = False,
-    ) -> int:
+    ) -> Process:
         """
         Execute the given cmd either as a subprocess or use exec to replace the current
         process. Using exec supports fewer options, and doesn't work on windows.
@@ -177,12 +180,13 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     raise ExecutionError("Cannot exec task that requires shell!")
                 if not self._is_windows:
                     # execvpe doesn't work properly on windows so we just don't go there
-                    return self._exec(cmd, env=env)
+                    self._exec(cmd, env=env)
 
-            return self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
+            return await self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
         except FileNotFoundError as error:
             if error.filename == cmd[0]:
-                return self._handle_file_not_found(cmd, error)
+                await self._handle_file_not_found(cmd, error)
+                # unreachable due to raise in _handle_file_not_found
             if error.filename == self.working_dir:
                 raise PoeException(
                     "The specified working directory does not exist "
@@ -190,9 +194,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
             raise
 
-    def _handle_file_not_found(
+    async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
-    ) -> int:
+    ):
         raise PoeException(f"executable {cmd[0]!r} could not be found") from error
 
     def _exec(
@@ -202,7 +206,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         env: Mapping[str, str] | None = None,
     ):
         if self.dry:
-            return 0
+            return
 
         # Beware: this is the point of no return!
 
@@ -218,29 +222,32 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
         os.execvpe(cmd[0], tuple(cmd), exec_env)
 
-    def _exec_via_subproc(
+    async def _exec_via_subproc(
         self,
         cmd: Sequence[str],
         *,
         input: bytes | None = None,
         env: Mapping[str, str] | None = None,
         shell: bool = False,
-    ) -> int:
-        import signal
-        from subprocess import PIPE, Popen
+    ) -> Process:
+        from subprocess import PIPE
 
         if self.dry:
-            return 0
-        popen_kwargs: MutableMapping[str, Any] = {"shell": shell}
+            # A dry run doesn't execute the command, so we just return a dummy process
+            return await asyncio.create_subprocess_exec(sys.executable, "-c", "")
+        popen_kwargs: MutableMapping[str, Any] = {}
         popen_kwargs["env"] = dict(
             (self.env.to_dict() if env is None else env), POE_ACTIVE=self.__key__
         )
         if input is not None:
             popen_kwargs["stdin"] = PIPE
-        if self.capture_stdout:
+        if self.capture_stdout or self.context.enable_output_streaming:
             if isinstance(self.capture_stdout, Path):
-                # ruff: noqa: SIM115
-                popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
+                if self.capture_stdout in (Path("/dev/null"), Path("NUL")):
+                    popen_kwargs["stdout"] = subprocess.DEVNULL
+                else:
+                    # ruff: noqa: SIM115, ASYNC230
+                    popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
             else:
                 popen_kwargs["stdout"] = PIPE
 
@@ -250,45 +257,69 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         if self.working_dir is not None:
             popen_kwargs["cwd"] = self.working_dir
 
+        if self._is_windows:
+            popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+        else:
+            popen_kwargs["start_new_session"] = True
+
         # TODO: exclude the subprocess from coverage more gracefully
         _stop_coverage()
 
-        proc = Popen(cmd, **popen_kwargs)
+        if shell:
+            proc = await asyncio.create_subprocess_shell("".join(cmd), **popen_kwargs)
+        else:
+            proc = await asyncio.create_subprocess_exec(*cmd, **popen_kwargs)
 
-        # signal pass through
-        def handle_sigint(signum, _frame):
-            # sigint is not handled on windows
-            signum = signal.CTRL_C_EVENT if self._is_windows else signum
-            proc.send_signal(signum)
-
-        old_sigint_handler = signal.signal(signal.SIGINT, handle_sigint)
-
-        # send data to the subprocess and wait for it to finish
-        (captured_stdout, _) = proc.communicate(input)
+        if input is not None:
+            # TODO: Track the write task so we can cancel it if needed, and prevent GC
+            #       from cleaning it up too early
+            asyncio.create_task(self._pass_input_to_proc(proc, input))  # noqa: RUF006
 
         if self.capture_stdout is True:
+            captured_stdout = await proc.stdout.read() if proc.stdout else b""
             self.context.save_task_output(self.invocation, captured_stdout)
 
-        # restore signal handler
-        signal.signal(signal.SIGINT, old_sigint_handler)
+        return proc
 
-        return proc.returncode
+    async def _pass_input_to_proc(self, proc: Process, input: bytes):
+        if not proc.stdin:
+            return
+        try:
+            proc.stdin.write(input)
+            await proc.stdin.drain()
+        except Exception:
+            pass
+        finally:
+            try:
+                proc.stdin.close()
+                await proc.stdin.wait_closed()
+            except Exception as error:
+                self._io.print_warning(
+                    f"Exception while closing stdin for {proc.pid}: {error}"
+                )
 
     def _resolve_executable(self, executable: str):
         if self._should_resolve_python and executable == "python":
             if python := shutil.which("python"):
-                return python
-            if python := shutil.which("python3"):
-                return python
-            self._io.print_debug(
-                " ! Could not resolve python or python3 from the path, "
-                "falling back to sys.executable"
-            )
-            return sys.executable
+                yield python
+            elif python3 := shutil.which("python3"):
+                yield python3
+            else:
+                self._io.print_debug(
+                    " ! Could not resolve python or python3 from the path, "
+                    "falling back to sys.executable"
+                )
+                yield sys.executable
 
-        # Attempt to explicitly resolve the target executable, because we can't
-        # count on the OS to do this consistently.
-        return shutil.which(executable) or executable
+            if self.context.enable_output_streaming and not isinstance(
+                self.capture_stdout, Path
+            ):
+                # Force python subprocesses to be unbuffered mode
+                yield "-u"
+        else:
+            # Attempt to explicitly resolve the target executable, because we can't
+            # count on the OS to do this consistently.
+            yield shutil.which(executable) or executable
 
     @classmethod
     def validate_config(cls, config: dict[str, Any]):

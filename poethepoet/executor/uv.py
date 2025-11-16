@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
@@ -24,9 +25,9 @@ class UvExecutor(PoeExecutor):
             return False
         return bool(cls._uv_cmd_from_path())
 
-    def execute(
+    async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> int:
+    ) -> Process:
         """
         Execute the given cmd as a subprocess inside the uv managed dev environment.
 
@@ -45,7 +46,7 @@ class UvExecutor(PoeExecutor):
             uv_run_options.append(f"--project={self.context.config.project_dir}")
 
         # Run this task with `uv run`
-        return self._execute_cmd(
+        return await self._execute_cmd(
             (self._uv_cmd(), "run", *uv_run_options, *cmd),
             input=input,
             use_exec=use_exec,

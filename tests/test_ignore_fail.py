@@ -86,7 +86,7 @@ def test_nested_without_ignore(generate_pyproject, run_poe):
 
 def test_nested_lvl1_return_non_zero(generate_pyproject, run_poe):
     project_path = generate_pyproject(lvl1_ignore_fail="return_non_zero")
-    result = run_poe("lvl2_seq", cwd=project_path)
+    result = run_poe("lvl1_seq", cwd=project_path)
     assert result.code == 1, "Expected non-zero result"
     assert "task 1 error" in result.capture, "Expected first task in log"
     assert "task 2 error" in result.capture, "Expected second task in log"

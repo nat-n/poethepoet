@@ -6,6 +6,7 @@ from ..exceptions import ExecutionError
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
+    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
@@ -29,24 +30,24 @@ class VirtualenvExecutor(PoeExecutor):
 
         return Virtualenv.detect(context.config.project_dir)
 
-    def execute(
+    async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> int:
+    ) -> Process:
         """
         Execute the given cmd as a subprocess inside the configured virtualenv
         """
         venv = self._resolve_virtualenv()
 
-        return self._execute_cmd(
+        return await self._execute_cmd(
             (venv.resolve_executable(cmd[0]), *cmd[1:]),
             input=input,
             env=venv.get_env_vars(self.env.to_dict()),
             use_exec=use_exec,
         )
 
-    def _handle_file_not_found(
+    async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
-    ) -> int:
+    ):
         venv = self._resolve_virtualenv()
         error_context = f" using virtualenv {str(venv.path)!r}" if venv else ""
         raise ExecutionError(

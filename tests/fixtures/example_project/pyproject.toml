@@ -5,9 +5,7 @@ version = "0.1.0"
 description = "dummy-project"
 authors = ["Nat Noordanus <n@natn.me>"]
 
-packages = [
-  { include = "dummy_package" }
-]
+packages = [{ include = "dummy_package" }]
 
 [tool.poetry.dependencies]
 poe_test_helpers = { path = "../packages/poe_test_helpers" }
@@ -29,7 +27,7 @@ show_env = "poe_test_env"
 greet = { script = "dummy_package:main" }
 greet-shouty = { script = "dummy_package:main(upper=True)" }
 
-count =  { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
+count = { shell = "echo 1 && echo 2 && echo $(python -c 'print(1 + 2)')" }
 also_echo = { ref = "echo" }
 
 # Dotted key syntax for tasks with multiple keys specified
@@ -48,19 +46,22 @@ _part2.env = { SUBJECT = "World" }
 composite_task.sequence = [
   ["part1", "_part2"],
   # wrapping in arrays means we can have different types of task in the sequence
-  [{cmd = """poe_test_echo "${SMILEY}!" """}]
+  [{ cmd = """poe_test_echo "${SMILEY}!" """ }],
 ]
 # env var is inherited by subtask
 composite_task.env = { SMILEY = ":)" }
 
 also_composite_task = ["composite_task"]
 
-greet-multiple.sequence = ["dummy_package:main('Tom')", "dummy_package:main('Jerry')"]
+greet-multiple.sequence = [
+  "dummy_package:main('Tom')",
+  "dummy_package:main('Jerry')",
+]
 greet-multiple.default_item_type = "script"
 
 travel = [
   { cmd = """poe_test_echo "from $PLANET to" """ },
-  { script = "dummy_package:print_var('DEST')" }
+  { script = "dummy_package:print_var('DEST')" },
 ]
 
 

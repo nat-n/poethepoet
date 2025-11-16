@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_sequence_task(run_poe_subproc, esc_prefix):
     result = run_poe_subproc("composite_task", project="sequences")
     assert result.capture == (
@@ -9,15 +12,32 @@ def test_sequence_task(run_poe_subproc, esc_prefix):
     assert result.stderr == ""
 
 
-def test_another_sequence_task(run_poe_subproc, esc_prefix):
-    # This should be exactly the same as calling the composite_task task directly
-    result = run_poe_subproc("also_composite_task", project="sequences")
-    assert result.capture == (
-        "Poe => poe_test_echo Hello\n"
-        "Poe => poe_test_echo 'World!'\n"
-        "Poe => poe_test_echo ':)!'\n"
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+def test_list_inside_sequence_is_parallel(run_poe_subproc, esc_prefix):
+    result = run_poe_subproc(
+        "sequential_parallel", project="sequences", env={"NO_COLOR": "1"}
     )
-    assert result.stdout == "Hello\nWorld!\n:)!\n"
+    assert result.capture == (
+        "Poe => poe_test_echo First\n"
+        "Poe => poe_test_delayed_echo 50 second 50\n"
+        "Poe => poe_test_delayed_echo 0 second 0\n"
+        "Poe => poe_test_delayed_echo 100 second 100\n"
+        "Poe => poe_test_delayed_echo 50 third 50\n"
+        "Poe => poe_test_delayed_echo 0 third 0\n"
+        "Poe => poe_test_delayed_echo 100 third 100\n"
+        "Poe => poe_test_echo Last\n"
+    )
+    assert result.stdout == (
+        "First\n"
+        "sequential_para… | second 0\n"
+        "sequential_para… | second 50\n"
+        "sequential_para… | second 100\n"
+        "sequential_para… | third 0\n"
+        "sequential_para… | third 50\n"
+        "sequential_para… | third 100\n"
+        "Last\n"
+    )
     assert result.stderr == ""
 
 

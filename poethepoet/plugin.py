@@ -170,7 +170,7 @@ class PoetryPlugin(ApplicationPlugin):
             pyproject_dir = None
 
         poe_config = PoeConfig(cwd=pyproject_dir)
-        poe_config.load(strict=False)
+        poe_config.load_sync(strict=False)
         return poe_config
 
     def _validate_command_prefix(self, command_prefix: str):

@@ -23,7 +23,7 @@ except ImportError:
     import tomli  # type: ignore[no-redef]
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PROJECT_TOML = PROJECT_ROOT.joinpath("pyproject.toml")
+PROJECT_TOML = PROJECT_ROOT / "pyproject.toml"
 
 
 @pytest.fixture(scope="session")
@@ -40,6 +40,11 @@ def pyproject():
 @pytest.fixture(scope="session")
 def poe_project_path():
     return PROJECT_ROOT
+
+
+@pytest.fixture(scope="session")
+def tests_temp_dir():
+    return PROJECT_ROOT / "tests" / "temp"
 
 
 @pytest.fixture(scope="session")
@@ -86,7 +91,8 @@ def temp_file(tmp_path):
     return tmpfilepath
 
 
-class PoeRunResult(NamedTuple):
+class PoeTestRunResult(NamedTuple):
+    invocation: tuple[str, ...]
     code: int
     path: str
     capture: str
@@ -95,7 +101,8 @@ class PoeRunResult(NamedTuple):
 
     def __str__(self):
         return (
-            "PoeRunResult(\n"
+            "PoeTestRunResult(\n"
+            f"  invocation={self.invocation},\n"
             f"  code={self.code!r},\n"
             f"  path={self.path},\n"
             f"  capture=`{self.capture}`,\n"
@@ -109,6 +116,14 @@ class PoeRunResult(NamedTuple):
         assert all(
             line.startswith("Creating virtualenv ") for line in self.stderr.splitlines()
         )
+
+    @property
+    def capture_lines(self):
+        return self.capture.strip().splitlines()
+
+    @property
+    def output_lines(self):
+        return self.stdout.strip().splitlines()
 
 
 @pytest.fixture
@@ -140,7 +155,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         coverage: bool = not is_windows,
         env: Optional[dict[str, str]] = None,
         project: Optional[str] = None,
-    ) -> PoeRunResult:
+    ) -> PoeTestRunResult:
         if cwd is None:
             cwd = projects.get(project, projects["example"])
 
@@ -182,7 +197,8 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
                 output_file.read().decode(errors="ignore").replace("\r\n", "\n")
             )
 
-        result = PoeRunResult(
+        result = PoeTestRunResult(
+            invocation=run_args,
             code=poeproc.returncode,
             path=cwd,
             capture=captured_output,
@@ -205,7 +221,7 @@ def run_poe(capsys, projects):
         config_name="pyproject.toml",
         program_name="poe",
         env: Optional[Mapping[str, str]] = None,
-    ) -> PoeRunResult:
+    ) -> PoeTestRunResult:
         cwd = projects.get(project, cwd)
         output_capture = StringIO()
         poe = PoeThePoet(
@@ -218,8 +234,8 @@ def run_poe(capsys, projects):
         )
         result_code = poe(run_args)
         output_capture.seek(0)
-        return PoeRunResult(
-            result_code, cwd, output_capture.read(), *capsys.readouterr()
+        return PoeTestRunResult(
+            run_args, result_code, cwd, output_capture.read(), *capsys.readouterr()
         )
 
     return run_poe
@@ -232,7 +248,7 @@ def run_poe_main(capsys, projects):
         cwd: str = projects["example"],
         config: Optional[Mapping[str, Any]] = None,
         project: Optional[str] = None,
-    ) -> PoeRunResult:
+    ) -> PoeTestRunResult:
         cwd = projects.get(project, cwd)
         from poethepoet import main
 
@@ -241,9 +257,11 @@ def run_poe_main(capsys, projects):
         sys.argv = ("poe", *cli_args)
         try:
             main()
-            result = PoeRunResult(0, cwd, "", *capsys.readouterr())
+            result = PoeTestRunResult(cli_args, 0, cwd, "", *capsys.readouterr())
         except SystemExit as error:
-            result = PoeRunResult(error.args[0], cwd, "", *capsys.readouterr())
+            result = PoeTestRunResult(
+                cli_args, error.args[0], cwd, "", *capsys.readouterr()
+            )
         finally:
             os.chdir(prev_cwd)
         print(result)
@@ -272,7 +290,8 @@ def run_poetry(use_venv, poe_project_path, version):
             cwd=cwd,
         )
         poetry_out, poetry_err = poetry_proc.communicate()
-        result = PoeRunResult(
+        result = PoeTestRunResult(
+            invocation=tuple(args),
             code=poetry_proc.returncode,
             path=cwd,
             capture="",

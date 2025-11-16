@@ -1,0 +1,51 @@
+[tool.poe.tasks]
+words-of-wisdom = "poe_test_echo \"Let it be\""
+
+[tool.poe.tasks.sleep_sort]
+parallel = [
+  { cmd = "poe_test_delayed_echo 150 150" },
+  { cmd = "poe_test_delayed_echo 0 0" },
+  { cmd = "poe_test_delayed_echo 200 200" },
+  { cmd = "poe_test_delayed_echo 100 100" },
+  { cmd = "poe_test_delayed_echo 50 50" },
+]
+
+[tool.poe.tasks.custom_prefix_task]
+parallel = [
+  { cmd = "poe_test_echo \"I'm Mr. Meeseeks! Look at me!\"" },
+  { cmd = "poe_test_echo \"I'm Mr. Meeseeks! Look at me!\"" },
+  { cmd = "poe_test_echo \"I'm Mr. Meeseeks! Look at me!\"" },
+  { cmd = "poe_test_echo \"I'm Mr. Meeseeks! Look at me!\"" },
+  { cmd = "poe_test_echo \"I'm Mr. Meeseeks! Look at me!\"" },
+  { cmd = "poe_test_echo \"I'm Mr. Meeseeks! Look at me!\"" },
+  { cmd = "poe_test_echo \"I'm Mr. Meeseeks! Look at me!\"" },
+]
+prefix = "[{index} : {name}]"
+prefix_max = 32
+prefix_template = "{color_start}{prefix}{color_end} "
+
+[tool.poe.tasks.parallel_of_sequences]
+parallel = [
+  { cmd = "poe_test_delayed_echo 100 para1" },
+  [
+    { cmd = "poe_test_delayed_echo 30 seq1" },
+    { cmd = "poe_test_echo seq2" },
+  ],
+]
+
+[tool.poe.tasks.sequence_of_parallels]
+sequence = [
+  { cmd = "poe_test_delayed_echo 100 seq1" },
+  [
+    { cmd = "poe_test_delayed_echo 30 para1" },
+    { cmd = "poe_test_echo para2" },
+  ],
+]
+
+[tool.poe.tasks.parallel_with_stdout_capture]
+parallel = [
+  { cmd = "poe_test_echo \"1 going to stdout 1\"" },
+  { cmd = "poe_test_echo \"2 going to file\"", capture_stdout = "../../temp/captured2.txt" },
+  { cmd = "poe_test_echo \"3 going to the void\"", capture_stdout = "/dev/null" },
+  { cmd = "poe_test_echo \"4 going to stdout 4\"" },
+]

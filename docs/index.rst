@@ -34,7 +34,7 @@ Poe the Poet is a batteries included task runner that works well with |poetry_li
 
 It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project's virtual environment.
 
-"Simple things should be simple, complex things should be possible." – Alan Kay
+`"Simple things should be simple, complex things should be possible." --  Alan Kay`
 
 
 Top features
@@ -58,7 +58,7 @@ Top features
 
 |V| Tasks are :doc:`self documenting<./guides/help_guide>`, with optional help messages (just run :sh:`poe` with no arguments)
 
-|V| Tasks can be composed into :ref:`sequences<sequence_composition>` or :ref:`DAGs<graph_composition>`
+|V| Tasks can be composed to run in :ref:`sequence<sequence_composition>`, in :ref:`parallel<Composing tasks to run in parallel>`, or as a :ref:`DAG<graph_composition>`
 
 |V| Works with :ref:`.env files<envfile_option>`
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
+from ..helpers.eventloop import run_async
 from .file import PoeConfigFile
 from .partition import ConfigPartition, IncludedConfig, PackagedConfig, ProjectConfig
 
@@ -158,7 +159,20 @@ class PoeConfig:
     def project_dir(self) -> Path:
         return self._project_dir
 
-    def load(self, target_path: Optional[Union[Path, str]] = None, strict: bool = True):
+    def load_sync(
+        self, target_path: Optional[Union[Path, str]] = None, strict: bool = True
+    ):
+        """
+        Load the config from the given path or the current working directory.
+        If strict is false then some errors in the config structure are tolerated.
+        Safe to call from both sync and async contexts.
+        """
+
+        return run_async(self.load(target_path=target_path, strict=strict))
+
+    async def load(
+        self, target_path: Optional[Union[Path, str]] = None, strict: bool = True
+    ):
         """
         target_path is the path to a file or directory for loading config
         If strict is false then some errors in the config structure are tolerated
@@ -211,9 +225,9 @@ class PoeConfig:
                 )
 
         self._load_includes(strict=strict)
-        self._load_packages(strict=strict)
+        await self._load_packages(strict=strict)
 
-    def _load_packages(self, strict: bool = True):
+    async def _load_packages(self, strict: bool = True):
         if not self._project_config.options.include_script:
             return
 
@@ -274,7 +288,8 @@ class PoeConfig:
                         self._io.print_debug(
                             f" . Executing script for include_script {script!r}"
                         )
-                    subproc_code = executor.execute(("python", "-c", script))
+                    subproc = await executor.execute(("python", "-c", script))
+                    await subproc.wait()
                 except Exception as error:
                     handle_error(
                         "subprocess execution failed for configured include_script"
@@ -283,13 +298,14 @@ class PoeConfig:
                     )
                     continue
 
-                if subproc_code != 0:
+                if subproc.returncode != 0:
                     handle_error(
                         "include_script subprocess returned non-zero for "
                         f" {include_script['script']!r}",
                     )
                     continue
 
+                # TODO: get the actual output from the subprocess directly?
                 script_result = context.get_task_output(invocation)
 
                 try:
