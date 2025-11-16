@@ -1,23 +1,22 @@
 import shutil
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import Optional
 
 
 class GitRepo:
     def __init__(self, seed_path: Path):
         self._seed_path = seed_path
-        self._path: Optional[Path] = None
-        self._main_path: Optional[Path] = None
+        self._path: Path | None = None
+        self._main_path: Path | None = None
 
     @property
-    def path(self) -> Optional[Path]:
+    def path(self) -> Path | None:
         if self._path is None:
             self._path = self._resolve_path()
         return self._path
 
     @property
-    def main_path(self) -> Optional[Path]:
+    def main_path(self) -> Path | None:
         if self._main_path is None:
             self._main_path = self._resolve_main_path()
         return self._main_path
@@ -28,7 +27,7 @@ class GitRepo:
     def delete_git_dir(self):
         shutil.rmtree(self._seed_path.joinpath(".git"))
 
-    def _resolve_path(self) -> Optional[Path]:
+    def _resolve_path(self) -> Path | None:
         """
         Resolve the path of this git repo
         """
@@ -43,7 +42,7 @@ class GitRepo:
             return Path(longest_line)
         return None
 
-    def _resolve_main_path(self) -> Optional[Path]:
+    def _resolve_main_path(self) -> Path | None:
         """
         Resolve the path of this git repo, unless this repo is a git submodule,
         then resolve the path of the main git repo.

@@ -2,8 +2,9 @@
 
 <img alt="Poe the Poet" src="https://raw.githubusercontent.com/nat-n/poethepoet/main/docs/_static/poe_logo_x2000.png" height="200" width="200" align="left"/>
 
-[![Python versions](https://img.shields.io/badge/python-3.9%20%E2%80%93%203.13-blue)](https://pypi.org/project/poethepoet/)
+[![Python versions](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)](https://pypi.org/project/poethepoet/)
 [![PyPI version](https://img.shields.io/pypi/v/poethepoet.svg)](https://pypi.org/project/poethepoet/)
+[![Download stats](https://img.shields.io/pypi/dm/poethepoet.svg)](https://pypistats.org/packages/poethepoet)
 [![License](https://img.shields.io/pypi/l/ansicolortags.svg)](https://github.com/nat-n/poethepoet/blob/doc/init-sphinx/LICENSE)
 
 **A batteries included task runner that works well with [poetry](https://python-poetry.org/) or [uv](https://docs.astral.sh/uv/).**

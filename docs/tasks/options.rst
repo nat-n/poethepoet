@@ -161,7 +161,6 @@ The ``capture_stdout`` option supports referencing environment variables. For ex
 
   The ``capture_stdout`` is incompatible with the ``use_exec`` option, and tasks that declare it cannot be referenced by another task via the ``uses`` option.
 
-
 The value ``/dev/null`` or ``NUL`` may be used to discard all output from the task.
 
 

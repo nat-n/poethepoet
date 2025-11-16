@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from contextlib import redirect_stderr
-from typing import IO, TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import IO, TYPE_CHECKING, Any, Literal, Union, cast
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
@@ -27,7 +27,7 @@ arg_types: dict[str, type] = {
 
 class ArgSpec(PoeOptions):
     # ruff: noqa: UP007
-    default: Optional[Union[str, int, float, bool]] = None
+    default: Union[str, int, float, bool] | None = None
     help: str = ""
     name: str
     options: Sequence[str]
@@ -93,7 +93,7 @@ class ArgSpec(PoeOptions):
         try:
             result = tuple(super().parse(source, strict, extra_keys))
         except ConfigValidationError as error:
-            PoeTaskArgs._enrich_config_error(error, cast(ArgsDef, source))
+            PoeTaskArgs._enrich_config_error(error, cast("ArgsDef", source))
             raise
 
         if strict:
@@ -305,7 +305,7 @@ class PoeTaskArgs:
         error_stream = (
             self._io.error_output
             if self._io.verbosity > -3
-            else cast(IO[str], os.devnull)
+            else cast("IO[str]", os.devnull)
         )
         with redirect_stderr(error_stream):
             try:

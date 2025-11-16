@@ -12,8 +12,7 @@ def test_sequence_task(run_poe_subproc, esc_prefix):
     assert result.stderr == ""
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_list_inside_sequence_is_parallel(run_poe_subproc, esc_prefix):
     result = run_poe_subproc(
         "sequential_parallel", project="sequences", env={"NO_COLOR": "1"}

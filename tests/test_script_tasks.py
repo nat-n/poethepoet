@@ -218,7 +218,7 @@ def test_required_args(run_poe_subproc):
 
 def test_script_task_bad_type(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["scripts/bad_type"]}',
+        f"-C={projects['scripts/bad_type']}",
         "bad-type",
         "--greeting=hello",
     )
@@ -234,7 +234,7 @@ def test_script_task_bad_type(run_poe_subproc, projects):
 
 def test_script_task_bad_content(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["scripts/bad_content"]}',
+        f"-C={projects['scripts/bad_content']}",
         "bad-content",
         "--greeting=hello",
     )

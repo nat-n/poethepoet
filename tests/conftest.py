@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
 from subprocess import PIPE, Popen
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import pytest
 import virtualenv
@@ -130,7 +130,7 @@ class PoeTestRunResult(NamedTuple):
 def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
     coverage_setup = (
         "from coverage import Coverage;"
-        rf'Coverage(data_file=r\"{PROJECT_ROOT.joinpath(".coverage")}\").start();'
+        rf"Coverage(data_file=r\"{PROJECT_ROOT.joinpath('.coverage')}\").start();"
     )
     shell_cmd_template = (
         'python -c "'
@@ -150,11 +150,11 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
 
     def run_poe_subproc(
         *run_args: str,
-        cwd: Optional[str] = None,
-        config: Optional[Mapping[str, Any]] = None,
+        cwd: str | None = None,
+        config: Mapping[str, Any] | None = None,
         coverage: bool = not is_windows,
-        env: Optional[dict[str, str]] = None,
-        project: Optional[str] = None,
+        env: dict[str, str] | None = None,
+        project: str | None = None,
     ) -> PoeTestRunResult:
         if cwd is None:
             cwd = projects.get(project, projects["example"])
@@ -216,11 +216,11 @@ def run_poe(capsys, projects):
     def run_poe(
         *run_args: str,
         cwd: str = projects["example"],
-        config: Optional[Mapping[str, Any]] = None,
-        project: Optional[str] = None,
+        config: Mapping[str, Any] | None = None,
+        project: str | None = None,
         config_name="pyproject.toml",
         program_name="poe",
-        env: Optional[Mapping[str, str]] = None,
+        env: Mapping[str, str] | None = None,
     ) -> PoeTestRunResult:
         cwd = projects.get(project, cwd)
         output_capture = StringIO()
@@ -246,8 +246,8 @@ def run_poe_main(capsys, projects):
     def run_poe_main(
         *cli_args: str,
         cwd: str = projects["example"],
-        config: Optional[Mapping[str, Any]] = None,
-        project: Optional[str] = None,
+        config: Mapping[str, Any] | None = None,
+        project: str | None = None,
     ) -> PoeTestRunResult:
         cwd = projects.get(project, cwd)
         from poethepoet import main
@@ -276,7 +276,7 @@ def run_poetry(use_venv, poe_project_path, version):
     def run_poetry(
         args: list[str],
         cwd: str,
-        env: Optional[dict[str, str]] = None,
+        env: dict[str, str] | None = None,
     ):
         venv = Virtualenv(venv_location)
 
@@ -351,7 +351,7 @@ def use_venv(install_into_virtualenv):
     @contextmanager
     def use_venv(
         location: Path,
-        contents: Optional[list[str]] = None,
+        contents: list[str] | None = None,
         require_empty: bool = False,
     ):
         did_exist = location.is_dir()
@@ -383,7 +383,7 @@ def use_virtualenv(install_into_virtualenv):
     @contextmanager
     def use_virtualenv(
         location: Path,
-        contents: Optional[list[str]] = None,
+        contents: list[str] | None = None,
         require_empty: bool = False,
     ):
         did_exist = location.is_dir()
@@ -428,7 +428,7 @@ def try_rm_dir(location: Path):
 def with_virtualenv_and_venv(use_venv, use_virtualenv):
     def with_virtualenv_and_venv(
         location: Path,
-        contents: Optional[list[str]] = None,
+        contents: list[str] | None = None,
     ):
         with use_venv(location, contents, require_empty=True):
             yield

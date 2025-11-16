@@ -12,8 +12,7 @@ including:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Literal, Union, cast
 
 from .ast_core import (
     AnnotatedContentNode,
@@ -23,6 +22,10 @@ from .ast_core import (
     ParseError,
     SyntaxNode,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 
 PARAM_INIT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
 PARAM_CHARS = PARAM_INIT_CHARS + "0123456789"
@@ -209,7 +212,7 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
         return self._content
 
     @property
-    def operation(self) -> Optional[ParamOperation]:
+    def operation(self) -> ParamOperation | None:
         return self._annotation
 
     def _parse(self, chars: ParseCursor):
@@ -296,7 +299,7 @@ class Comment(ContentNode):
 
 
 class Segment(SyntaxNode[ContentNode]):
-    _quote_char: Optional[Literal['"', "'"]]
+    _quote_char: Literal['"', "'"] | None
 
     @property
     def is_quoted(self) -> bool:
@@ -507,8 +510,8 @@ class Line(SyntaxNode[Union[Word, Comment]]):
     @property
     def words(self) -> tuple[Word, ...]:
         if self._children and isinstance(self._children[-1], Comment):
-            return tuple(cast(Iterable[Word], self._children[:-1]))
-        return tuple(cast(Iterable[Word], self._children))
+            return tuple(cast("Iterable[Word]", self._children[:-1]))
+        return tuple(cast("Iterable[Word]", self._children))
 
     @property
     def comment(self) -> str:

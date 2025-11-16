@@ -2,7 +2,7 @@ import re
 from collections.abc import Sequence
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError, PoeException
 from ..executor.task_run import PoeTaskRun
@@ -23,7 +23,7 @@ class ShellTask(PoeTask):
     __key__ = "shell"
 
     class TaskOptions(PoeTask.TaskOptions):
-        interpreter: Optional[Union[str, Sequence[str]]] = None
+        interpreter: str | Sequence[str] | None = None
 
         def validate(self):
             super().validate()
@@ -61,7 +61,7 @@ class ShellTask(PoeTask):
     async def _handle_run(
         self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
     ):
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
@@ -93,14 +93,14 @@ class ShellTask(PoeTask):
         await task_state.add_process(process, finalize=True)
 
     def _get_interpreter_config(self) -> tuple[str, ...]:
-        result: Union[str, tuple[str, ...]] = self.spec.options.get(
+        result: str | tuple[str, ...] = self.spec.options.get(
             "interpreter", self.ctx.config.shell_interpreter
         )
         if isinstance(result, str):
             return (result,)
         return tuple(result)
 
-    def resolve_interpreter_cmd(self) -> Optional[list[str]]:
+    def resolve_interpreter_cmd(self) -> list[str] | None:
         """
         Return a formatted command for the first specified interpreter that can be
         located.
@@ -117,7 +117,7 @@ class ShellTask(PoeTask):
 
         return None
 
-    def _locate_interpreter(self, interpreter: str) -> Optional[str]:
+    def _locate_interpreter(self, interpreter: str) -> str | None:
         from shutil import which
 
         result = None
@@ -208,15 +208,5 @@ def _unindent_code(python_code: str):
 
     prefix = " " * indent
     return "\n".join(
-        _remove_prefix(line, prefix)
-        for line in re.split(r"(?:\r\n|\r|\n)", python_code)
+        line.removeprefix(prefix) for line in re.split(r"(?:\r\n|\r|\n)", python_code)
     )
-
-
-def _remove_prefix(text: str, prefix: str):
-    """
-    When we drop support for python <3.9 then str.removeprefix can be used
-    """
-    if text.startswith(prefix):
-        return text[len(prefix) :]
-    return text

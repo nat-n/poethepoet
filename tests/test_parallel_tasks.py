@@ -2,8 +2,7 @@
 import pytest
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_parallel_task_parallelism(run_poe_subproc):
     result = run_poe_subproc("--ansi", "sleep_sort", project="parallel")
 
@@ -23,8 +22,7 @@ def test_parallel_task_parallelism(run_poe_subproc):
     )
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
     result = run_poe_subproc("parallel_with_stdout_capture", project="parallel")
 
@@ -42,8 +40,7 @@ def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
         assert f.read() == "2 going to file\n"
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_sequence_in_parallel_task(run_poe_subproc):
     result = run_poe_subproc("parallel_of_sequences", project="parallel")
 
@@ -53,14 +50,11 @@ def test_sequence_in_parallel_task(run_poe_subproc):
         "Poe => poe_test_echo seq2",
     ]
     assert result.stdout == (
-        "parallel_of_seq… | seq1\n"
-        "parallel_of_seq… | seq2\n"
-        "parallel_of_seq… | para1\n"
+        "parallel_of_seq… | seq1\nparallel_of_seq… | seq2\nparallel_of_seq… | para1\n"
     )
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_parallel_in_sequence_task(run_poe_subproc):
     result = run_poe_subproc("sequence_of_parallels", project="parallel")
 
@@ -70,7 +64,7 @@ def test_parallel_in_sequence_task(run_poe_subproc):
         "Poe => poe_test_echo para2",
     ]
     assert result.stdout == (
-        "seq1\n" "sequence_of_par… | para2\n" "sequence_of_par… | para1\n"
+        "seq1\nsequence_of_par… | para2\nsequence_of_par… | para1\n"
     )
 
 
@@ -141,8 +135,7 @@ def generate_pyproject(temp_pyproject):
     return generator
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
     project_path = generate_pyproject()
 
@@ -152,7 +145,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
         "Poe => echo 'failing fast with error'; exit 1;\n"
         "Error: Sequence aborted after failed subtask 'fast_fail'\n"
     )
-    assert result.stdout == ("Great success!\n" "failing fast with error\n")
+    assert result.stdout == ("Great success!\nfailing fast with error\n")
     assert result.code == 1
 
     result = run_poe_subproc("lvl1_para", cwd=project_path)
@@ -223,8 +216,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
     assert result.code == 1
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
     project_path = generate_pyproject(
         seq1_ignore_fail=True,
@@ -240,7 +232,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
         "Poe => echo 'Great success!'\n"
     )
     assert result.stdout == (
-        "Great success!\n" "failing fast with error\n" "Great success!\n"
+        "Great success!\nfailing fast with error\nGreat success!\n"
     )
     assert result.code == 0
 
@@ -323,8 +315,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
     assert result.code == 0
 
 
-# @pytest.mark.flaky(reruns=2)
-@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
+@pytest.mark.flaky(reruns=2)
 def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproject):
     project_path = generate_pyproject(
         seq1_ignore_fail=True,

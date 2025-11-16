@@ -18,14 +18,14 @@ class SequenceTask(PoeTask):
     A task consisting of a sequence of other tasks
     """
 
-    content: list[Union[str, dict[str, Any]]]
+    content: list[str | dict[str, Any]]
 
     __key__ = "sequence"
     __content_type__: ClassVar[type] = list
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
-        default_item_type: Union[str, None] = None
+        default_item_type: str | None = None
 
         def validate(self):
             """
@@ -79,7 +79,7 @@ class SequenceTask(PoeTask):
                 )
                 if isinstance(sub_task_def, list):
                     # Nested array interpreted as parallel task
-                    task_type_key: Union[str, None] = "parallel"
+                    task_type_key: str | None = "parallel"
                 else:
                     task_type_key = self.task_type.resolve_task_type(
                         sub_task_def,
@@ -134,7 +134,7 @@ class SequenceTask(PoeTask):
     async def _handle_run(
         self, context: "RunContext", env: "EnvVarsManager", task_state: "PoeTaskRun"
     ):
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
@@ -150,7 +150,7 @@ class SequenceTask(PoeTask):
 
         non_zero_subtasks = []
         for subtask in self._subtasks:
-            subtask_run: Union[PoeTaskRun, None] = None
+            subtask_run: PoeTaskRun | None = None
             try:
                 subtask_run = await subtask.run(context=context, parent_env=env)
                 await task_state.add_child(subtask_run)

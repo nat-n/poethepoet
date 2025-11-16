@@ -3,17 +3,15 @@ name = "include-scripts"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = [
-    "poe-test-helpers",
-]
+requires-python = ">=3.10"
+dependencies = ["poe-test-helpers"]
 
 [tool.poe]
 include_script = [
   "tasks:tasks1",
-  { script = "tasks:tasks1(task_suffix='-again')", executor = "simple"},
+  { script = "tasks:tasks1(task_suffix='-again')", executor = "simple" },
   "include_scripts:tasks2",
-  { script = "tasks:tasks1(task_suffix='-more')", executor = { type = "virtualenv", location = ".venv" }, cwd = "src"},
+  { script = "tasks:tasks1(task_suffix='-more')", executor = { type = "virtualenv", location = ".venv" }, cwd = "src" },
 ]
 
 [tool.uv.sources]

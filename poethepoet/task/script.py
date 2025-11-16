@@ -60,7 +60,7 @@ class ScriptTask(PoeTask):
     ):
         from ..helpers.python import format_class
 
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
         # TODO: do something about extra_args, like raise an error?

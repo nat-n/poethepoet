@@ -21,7 +21,7 @@ def tasks1(task_suffix: str = ""):
                 ],
             },
             f"script-executor{task_suffix}": (
-                f"poe_test_echo build_time:{poe_executor}, " "run_time:${POE_ACTIVE}"
+                f"poe_test_echo build_time:{poe_executor}, run_time:${{POE_ACTIVE}}"
             ),
             f"cwd{task_suffix}": "poe_test_pwd",
             f"confdir{task_suffix}": "poe_test_echo POE_CONF_DIR=${POE_CONF_DIR}",

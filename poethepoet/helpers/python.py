@@ -90,7 +90,7 @@ class FunctionCall(NamedTuple):
         args_prefix: str = "__args.",
         allowed_vars: Container[str] | None = None,
     ) -> FunctionCall:
-        root_node = cast(ast.Call, parse_and_validate(source, True, "script"))
+        root_node = cast("ast.Call", parse_and_validate(source, True, "script"))
         name_nodes = _validate_nodes_and_get_names(root_node, source)
 
         substitutions: list[Substitution] = []

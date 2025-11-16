@@ -47,7 +47,7 @@ class ParallelTask(PoeTask):
     A task consisting of multiple tasks that run in parallel
     """
 
-    content: list[Union[str, dict[str, Any]]]
+    content: list[str | dict[str, Any]]
 
     __key__ = "parallel"
     __content_type__: ClassVar[type] = list
@@ -56,8 +56,8 @@ class ParallelTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
-        default_item_type: Union[str, None] = None
-        prefix: Union[str, Literal[False]] = "{name}"
+        default_item_type: str | None = None
+        prefix: str | Literal[False] = "{name}"
         prefix_max: int = 16
         prefix_template: str = "{color_start}{prefix}{color_end} | "
 
@@ -125,7 +125,7 @@ class ParallelTask(PoeTask):
                     )
                 except PoeException as error:
                     raise ConfigValidationError(
-                        f"Failed to interpret subtask #{index+1} in parallel",
+                        f"Failed to interpret subtask #{index + 1} in parallel",
                         task_name=self.name,
                     ) from error
 
@@ -163,7 +163,7 @@ class ParallelTask(PoeTask):
     async def _handle_run(
         self, context: "RunContext", env: "EnvVarsManager", task_state: "PoeTaskRun"
     ):
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
@@ -185,7 +185,7 @@ class ParallelTask(PoeTask):
 
         with context.output_streaming(enabled=True) as streaming_enabled:
             for subtask in self._subtasks:
-                subtask_run: Union[PoeTaskRun, None] = None
+                subtask_run: PoeTaskRun | None = None
                 try:
                     subtask_run = await subtask.run(context=context, parent_env=env)
                     await task_state.add_child(subtask_run)

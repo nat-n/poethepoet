@@ -81,7 +81,7 @@ def test_switch_default_fail(run_poe_subproc):
 def test_switch_dry_run(run_poe_subproc):
     result = run_poe_subproc("-d", "var_dependent", project="switch")
     assert result.capture == (
-        "Poe <= int(${FOO_VAR}) % 2\n" "Poe ?? unresolved case for switch task\n"
+        "Poe <= int(${FOO_VAR}) % 2\nPoe ?? unresolved case for switch task\n"
     )
     assert result.stdout == ""
     assert result.stderr == ""
@@ -90,7 +90,7 @@ def test_switch_dry_run(run_poe_subproc):
 def test_switch_in_in_graph(run_poe_subproc):
     result = run_poe_subproc("switcher_user", project="switch")
     assert result.capture == (
-        "Poe <= 42\n" "Poe <= echo matched\n" "Poe => echo switched=matched\n"
+        "Poe <= 42\nPoe <= echo matched\nPoe => echo switched=matched\n"
     )
     assert result.stdout == "switched=matched\n"
     assert result.stderr == ""
@@ -124,7 +124,7 @@ def test_switch_multivalue_case(run_poe_subproc):
 
 def test_switch_capture_out(run_poe_subproc, projects):
     result = run_poe_subproc("capture_out", project="switch")
-    assert result.capture == ("Poe <= 43\n" "Poe <= echo default\n")
+    assert result.capture == ("Poe <= 43\nPoe <= echo default\n")
     assert result.stdout == ""
     assert result.stderr == ""
 

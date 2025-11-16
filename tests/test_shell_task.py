@@ -30,10 +30,7 @@ def test_multiline_non_default_type_task(run_poe_subproc):
         '  turned upside down" ||\npoe_test_echo "bam bam baaam bam"\n'
     )
     assert result.stdout == (
-        "this is the story\n"
-        "all about how\n"
-        "my life got flipped;\n"
-        "  turned upside down\n"
+        "this is the story\nall about how\nmy life got flipped;\n  turned upside down\n"
     )
     assert result.stderr == ""
 
@@ -93,7 +90,7 @@ def test_interpreter_python(run_poe_subproc):
 
 def test_bad_interpreter_config(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["shells/bad_interpreter"]}',
+        f"-C={projects['shells/bad_interpreter']}",
         "bad-interpreter",
     )
     assert (
@@ -108,7 +105,7 @@ def test_bad_interpreter_config(run_poe_subproc, projects):
 
 def test_global_interpreter_config(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["shells/shell_interpreter_config"]}',
+        f"-C={projects['shells/shell_interpreter_config']}",
         "echo_python",
     )
     assert result.capture == "Poe => import sys\nprint(sys.version_info)\n"

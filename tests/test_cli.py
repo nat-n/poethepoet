@@ -115,22 +115,22 @@ def test_dry_run_script(run_poe_subproc):
 def test_pass_dry_run_and_verbosity_to_script(run_poe_subproc):
     result = run_poe_subproc("check-global-options", project="scripts")
     assert result.capture == "Poe => check-global-options\n"
-    assert result.stdout == ("args ()\n" "kwargs {'dry': False, 'verbosity': '0'}\n")
+    assert result.stdout == ("args ()\nkwargs {'dry': False, 'verbosity': '0'}\n")
     assert result.stderr == ""
 
     result = run_poe_subproc("-d", "check-global-options", project="scripts")
     assert result.capture == "Poe => check-global-options\n"
-    assert result.stdout == ("args ()\n" "kwargs {'dry': True, 'verbosity': '0'}\n")
+    assert result.stdout == ("args ()\nkwargs {'dry': True, 'verbosity': '0'}\n")
     assert result.stderr == ""
 
     result = run_poe_subproc("-d", "-v", "check-global-options", project="scripts")
     assert result.capture == "Poe => check-global-options\n"
-    assert result.stdout == ("args ()\n" "kwargs {'dry': True, 'verbosity': '1'}\n")
+    assert result.stdout == ("args ()\nkwargs {'dry': True, 'verbosity': '1'}\n")
     assert result.stderr == ""
 
     result = run_poe_subproc("-q", "check-global-options", project="scripts")
     assert result.capture == ""
-    assert result.stdout == ("args ()\n" "kwargs {'dry': False, 'verbosity': '-1'}\n")
+    assert result.stdout == ("args ()\nkwargs {'dry': False, 'verbosity': '-1'}\n")
     assert result.stderr == ""
 
 

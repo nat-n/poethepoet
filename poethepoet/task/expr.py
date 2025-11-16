@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExpressionParseError
 from ..executor.task_run import PoeTaskRun
@@ -24,7 +24,7 @@ class ExprTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         imports: Sequence[str] = tuple()
-        assert_: Union[bool, int] = False
+        assert_: bool | int = False
         use_exec: bool = False
 
         def validate(self):
@@ -44,7 +44,6 @@ class ExprTask(PoeTask):
             Perform validations on this TaskSpec that apply to a specific task type
             """
             try:
-                # ruff: noqa: E501
                 self.task_type._substitute_env_vars(self.content.strip(), {})  # type: ignore[attr-defined]
             except (ValueError, ExpressionParseError) as error:
                 raise ConfigValidationError(f"Invalid expression: {error}")
@@ -56,7 +55,7 @@ class ExprTask(PoeTask):
     ):
         from ..helpers.python import format_class
 
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
         imports = self.spec.options.imports
@@ -68,7 +67,7 @@ class ExprTask(PoeTask):
         ]
 
         script = [
-            f"import sys;" f"sys.path.append('src');" f"sys.argv = {argv!r};",
+            f"import sys;sys.path.append('src');sys.argv = {argv!r};",
             (f"import {', '.join(imports)}; " if imports else ""),
             f"{format_class(named_arg_values)}",
             f"{format_class(env_values, classname='__env')}",
@@ -92,7 +91,7 @@ class ExprTask(PoeTask):
 
     def parse_content(
         self,
-        args: Optional[dict[str, Any]],
+        args: dict[str, Any] | None,
         env: "EnvVarsManager",
         imports: Iterable[str],
     ) -> tuple[str, dict[str, str]]:
