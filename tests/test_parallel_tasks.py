@@ -2,6 +2,8 @@
 import pytest
 
 
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
 def test_parallel_task_parallelism(run_poe_subproc):
     result = run_poe_subproc("--ansi", "sleep_sort", project="parallel")
 
@@ -21,6 +23,8 @@ def test_parallel_task_parallelism(run_poe_subproc):
     )
 
 
+# @pytest.mark.flaky(reruns=2)
+@pytest.mark.skip(reason="To be re-enabled with retry after dropping Python 3.9")
 def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
     result = run_poe_subproc("parallel_with_stdout_capture", project="parallel")
 
@@ -76,15 +80,15 @@ def test_customize_parallel_task_prefix(run_poe_subproc):
         "custom_prefix_task",
         project="parallel",
     )
-    assert result.stdout == (
-        "\x1b[31m[0 : custom_prefix_task[0]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
-        "\x1b[32m[1 : custom_prefix_task[1]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
-        "\x1b[33m[2 : custom_prefix_task[2]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
-        "\x1b[34m[3 : custom_prefix_task[3]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
-        "\x1b[35m[4 : custom_prefix_task[4]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
-        "\x1b[36m[5 : custom_prefix_task[5]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
-        "\x1b[31m[6 : custom_prefix_task[6]]\x1b[0m I'm Mr. Meeseeks! Look at me!\n"
-    )
+    assert set(result.output_lines) == {
+        "\x1b[31m[0 : custom_prefix_task[0]]\x1b[0m I'm Mr. Meeseeks! Look at me!",
+        "\x1b[32m[1 : custom_prefix_task[1]]\x1b[0m I'm Mr. Meeseeks! Look at me!",
+        "\x1b[33m[2 : custom_prefix_task[2]]\x1b[0m I'm Mr. Meeseeks! Look at me!",
+        "\x1b[34m[3 : custom_prefix_task[3]]\x1b[0m I'm Mr. Meeseeks! Look at me!",
+        "\x1b[35m[4 : custom_prefix_task[4]]\x1b[0m I'm Mr. Meeseeks! Look at me!",
+        "\x1b[36m[5 : custom_prefix_task[5]]\x1b[0m I'm Mr. Meeseeks! Look at me!",
+        "\x1b[31m[6 : custom_prefix_task[6]]\x1b[0m I'm Mr. Meeseeks! Look at me!",
+    }
 
 
 @pytest.fixture

@@ -75,14 +75,14 @@ sequence = ["./tools/poetry-ci-install.sh"]
 sequence = [
   { cmd = "poe_test_echo First" },
   [
-    { cmd = "poe_test_delayed_echo 25 second 25" },
-    { cmd = "poe_test_delayed_echo 0 second 0" },
     { cmd = "poe_test_delayed_echo 50 second 50" },
+    { cmd = "poe_test_delayed_echo 0 second 0" },
+    { cmd = "poe_test_delayed_echo 100 second 100" },
   ],
   [
-    { cmd = "poe_test_delayed_echo 25 third 25" },
-    { cmd = "poe_test_delayed_echo 0 third 0" },
     { cmd = "poe_test_delayed_echo 50 third 50" },
+    { cmd = "poe_test_delayed_echo 0 third 0" },
+    { cmd = "poe_test_delayed_echo 100 third 100" },
   ],
   { cmd = "poe_test_echo Last" },
 ]
