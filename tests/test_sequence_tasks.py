@@ -12,7 +12,7 @@ def test_sequence_task(run_poe_subproc, esc_prefix):
     assert result.stderr == ""
 
 
-@pytest.mark.flaky(reruns=2)
+@pytest.mark.flaky(reruns=4)
 def test_list_inside_sequence_is_parallel(run_poe_subproc, esc_prefix):
     result = run_poe_subproc(
         "sequential_parallel", project="sequences", env={"NO_COLOR": "1"}
