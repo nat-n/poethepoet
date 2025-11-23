@@ -118,6 +118,18 @@ class PoeUi:
             help=maybe_suppress("executor", "Override the default task executor"),
         )
 
+        parser.add_argument(
+            "--executor-run-options",
+            dest="executor_run_options",
+            metavar="OPTIONS",
+            type=str,
+            default="",
+            help=maybe_suppress(
+                "executor_run_options",
+                "Pass additional options to the executor (e.g., for uv: '--isolated --python 3.11')",
+            ),
+        )
+
         # legacy --root parameter, keep for backwards compatibility but help output is
         # suppressed
         parser.add_argument(

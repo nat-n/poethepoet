@@ -211,6 +211,19 @@ class RunContext:
             else:
                 executor_config = self.config.executor
 
+        # Merge CLI-provided executor_run_options (highest priority)
+        if self.ui and self.ui["executor_run_options"]:
+            import shlex
+
+            cli_run_options = shlex.split(self.ui["executor_run_options"])
+            existing_run_options = executor_config.get("run_options", [])
+
+            # FIXME: align types
+            executor_config = { # type: ignore
+                **executor_config,
+                "run_options": [*existing_run_options, *cli_run_options],
+            }
+
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
