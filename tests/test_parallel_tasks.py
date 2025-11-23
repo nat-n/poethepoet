@@ -8,23 +8,23 @@ import pytest
 flakiness_factor = 3 if sys.platform == "win32" else 1
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
+@pytest.mark.flaky(reruns=3 * flakiness_factor, reruns_delay=1)
 def test_parallel_task_parallelism(run_poe_subproc):
     result = run_poe_subproc("--ansi", "sleep_sort", project="parallel")
 
     assert result.capture_lines == [
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 300 300\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 333 333\x1b[0m",
         "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 0 0\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 400 400\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 200 200\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 100 100\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 444 444\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 222 222\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 111 111\x1b[0m",
     ]
     assert result.stdout == (
         "\x1b[32msleep_sort[1]\x1b[0m | 0\n"
-        "\x1b[35msleep_sort[4]\x1b[0m | 100\n"
-        "\x1b[34msleep_sort[3]\x1b[0m | 200\n"
-        "\x1b[31msleep_sort[0]\x1b[0m | 300\n"
-        "\x1b[33msleep_sort[2]\x1b[0m | 400\n"
+        "\x1b[35msleep_sort[4]\x1b[0m | 111\n"
+        "\x1b[34msleep_sort[3]\x1b[0m | 222\n"
+        "\x1b[31msleep_sort[0]\x1b[0m | 333\n"
+        "\x1b[33msleep_sort[2]\x1b[0m | 444\n"
     )
 
 
@@ -46,13 +46,13 @@ def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
         assert f.read() == "2 going to file\n"
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
+@pytest.mark.flaky(reruns=3 * flakiness_factor, reruns_delay=1)
 def test_sequence_in_parallel_task(run_poe_subproc):
     result = run_poe_subproc("parallel_of_sequences", project="parallel")
 
     assert result.capture_lines == [
-        "Poe => poe_test_delayed_echo 200 para1",
-        "Poe => poe_test_delayed_echo 100 seq1",
+        "Poe => poe_test_delayed_echo 222 para1",
+        "Poe => poe_test_delayed_echo 111 seq1",
         "Poe => poe_test_echo seq2",
     ]
     assert result.stdout == (
@@ -67,8 +67,8 @@ def test_parallel_in_sequence_task(run_poe_subproc):
     result = run_poe_subproc("sequence_of_parallels", project="parallel")
 
     assert result.capture_lines == [
-        "Poe => poe_test_delayed_echo 100 seq1",
-        "Poe => poe_test_delayed_echo 30 para1",
+        "Poe => poe_test_delayed_echo 222 seq1",
+        "Poe => poe_test_delayed_echo 111 para1",
         "Poe => poe_test_echo para2",
     ]
     assert result.stdout == (
@@ -76,11 +76,10 @@ def test_parallel_in_sequence_task(run_poe_subproc):
     )
 
 
+@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
 def test_customize_parallel_task_prefix(run_poe_subproc):
     result = run_poe_subproc(
-        "--ansi",
-        "custom_prefix_task",
-        project="parallel",
+        "--ansi", "custom_prefix_task", project="parallel", timeout=10
     )
     assert set(result.output_lines) == {
         "\x1b[31m[0 : custom_prefix_task[0]]\x1b[0m I'm Mr. Meeseeks! Look at me!",

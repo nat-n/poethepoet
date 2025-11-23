@@ -157,6 +157,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         coverage: bool = not is_windows,
         env: dict[str, str] | None = None,
         project: str | None = None,
+        timeout: int = 60,
     ) -> PoeTestRunResult:
         if cwd is None:
             cwd = projects.get(project, projects["example"])
@@ -192,7 +193,7 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         poeproc = Popen(
             shell_cmd, shell=True, stdout=PIPE, stderr=PIPE, env=subproc_env
         )
-        task_out, task_err = poeproc.communicate()
+        task_out, task_err = poeproc.communicate(timeout=timeout)
 
         with temp_file.open("rb") as output_file:
             captured_output = (

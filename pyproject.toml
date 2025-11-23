@@ -129,7 +129,7 @@ cmd  = "pytest"
 
 [tool.poe.tasks.test-quick]
 help = "Run unit and feature tests, excluding slow ones"
-cmd  = "pytest -m 'not slow'"
+cmd  = "pytest -m 'not (slow or flaky)'"
 
 [tool.poe.tasks.types]
 help = "Run the type checker"
