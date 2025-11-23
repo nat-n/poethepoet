@@ -59,10 +59,12 @@ class PoetryExecutor(PoeExecutor):
             return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
         # Run this task with `poetry run` and other options
-        run_options = ["--no-plugins", "run", *self.options.get("run_options", [])]
+        poetry_options = [
+            "--no-plugins", *self.options.get("run_options", [])
+        ]
 
         return await self._execute_cmd(
-            (self._poetry_cmd(), *run_options, *cmd),
+            (self._poetry_cmd(), *poetry_options, "run", *cmd),
             input=input,
             use_exec=use_exec,
         )

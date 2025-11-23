@@ -178,7 +178,6 @@ class PoeTask(metaclass=MetaPoeTask):
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
         envfile: Union[str, Sequence[str]] = tuple()
         executor: dict | None = None
-        executor_run_options: Optional[Sequence[str]] = None
         help: str | None = None
         uses: Mapping[str, str] | None = None
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None
@@ -510,35 +509,11 @@ class PoeTask(metaclass=MetaPoeTask):
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
     ):
-        executor_config = self.spec.options.get("executor")
-
-        # Merge executor_run_options from task into executor config
-        executor_run_options = self.spec.options.get("executor_run_options")
-        if executor_run_options:
-            if executor_config is None:
-                executor_config = None  # Let context.get_executor handle it
-            else:
-                # Make a copy to avoid modifying the original
-                executor_config = dict(executor_config)
-
-            # Merge run_options if we have a config dict to work with
-            if executor_config is not None:
-                existing_run_options = executor_config.get("run_options", [])
-                executor_config["run_options"] = [
-                    *existing_run_options,
-                    *executor_run_options,
-                ]
-
-        # If we only have executor_run_options but no executor config, pass None
-        # and let context.get_executor merge the run_options
         return context.get_executor(
             self.invocation,
             env,
             working_dir=self.get_working_dir(env),
-            executor_config=executor_config,
-            executor_run_options=(
-                executor_run_options if executor_config is None else None
-            ),
+            executor_config=self.spec.options.get("executor"),
             capture_stdout=self.capture_stdout,
             resolve_python=resolve_python,
             delegate_dry_run=delegate_dry_run,
