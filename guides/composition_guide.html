@@ -176,6 +176,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/shell.html">Shell tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/parallel.html">Parallel tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/expr.html">Expression tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/switch.html">Switch tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
@@ -268,6 +269,35 @@
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p>See <a class="reference internal" href="../tasks/task_types/sequence.html"><span class="doc">sequence tasks</span></a> specifics for more information on the <code class="code docutils literal notranslate"><span class="pre">sequence</span></code> task type.</p>
+</div>
+</section>
+<section id="composing-tasks-to-run-in-parallel">
+<h2>Composing tasks to run in parallel<a class="headerlink" href="#composing-tasks-to-run-in-parallel" title="Link to this heading">¶</a></h2>
+<p>You can compose tasks to run concurrently using the <a class="reference internal" href="../tasks/task_types/parallel.html"><span class="doc">parallel</span></a> task type.</p>
+<p>For example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.lint]</span>
+<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mypy&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pylint&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Sequence and parallel tasks can also be combined, by default a list inside a sequence is interpreted as parallel task. For example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.check-code]</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">[</span><span class="s2">&quot;mypy&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pylint&quot;</span><span class="p">],</span><span class="w"> </span><span class="c1"># First these two tasks run in parallel</span>
+<span class="w">  </span><span class="s2">&quot;pytest&quot;</span><span class="w">            </span><span class="c1"># then this task runs after both complete</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Similarly a list inside a parallel task is interpreted as sequence task. For example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.check-code]</span>
+<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;mypy&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;pylint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="p">[</span><span class="w"> </span><span class="c1"># These tasks will run in sequence, concurrently with the others</span>
+<span class="w">    </span><span class="s2">&quot;build-deps&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;pytest&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">]</span>
+</pre></div>
 </div>
 </section>
 <section id="composing-tasks-into-graphs">
@@ -380,6 +410,7 @@
             <ul>
 <li><a class="reference internal" href="#">Composing tasks</a><ul>
 <li><a class="reference internal" href="#composing-tasks-into-sequences">Composing tasks into sequences</a></li>
+<li><a class="reference internal" href="#composing-tasks-to-run-in-parallel">Composing tasks to run in parallel</a></li>
 <li><a class="reference internal" href="#composing-tasks-into-graphs">Composing tasks into graphs</a></li>
 </ul>
 </li>
@@ -392,7 +423,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=29b1acb9"></script>
+</div><script src="../_static/documentation_options.js?v=9fa2033d"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

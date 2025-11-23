@@ -176,6 +176,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/shell.html">Shell tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/task_types/parallel.html">Parallel tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/expr.html">Expression tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/switch.html">Switch tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/ref.html">Reference tasks</a></li>
@@ -261,7 +262,7 @@
 </dd>
 <dt><strong>default_task_type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">&quot;cmd&quot;</span> <span class="pre">|</span> <span class="pre">&quot;expr&quot;</span> <span class="pre">|</span> <span class="pre">&quot;ref&quot;</span> <span class="pre">|</span> <span class="pre">&quot;script&quot;</span> <span class="pre">|</span> <span class="pre">&quot;shell&quot;</span></code></span></dt><dd><p>When a task is declared as a string (instead of a table), then it is interpreted as the default task type, which will be <code class="docutils literal notranslate"><span class="pre">&quot;cmd&quot;</span></code> unless otherwise specified.</p>
 </dd>
-<dt><strong>default_array_task_type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>When a task is declared as an array (instead of a table), then it is interpreted as the default array task type, which will be <code class="docutils literal notranslate"><span class="pre">&quot;sequence&quot;</span></code> unless otherwise specified. Currently the sequence task type is the only one that can be defined as an array.</p>
+<dt><strong>default_array_task_type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>When a task is declared as an array (instead of a table), then it is interpreted as the default array task type, which will be <code class="docutils literal notranslate"><span class="pre">&quot;sequence&quot;</span></code> unless otherwise specified. Valid options are <code class="docutils literal notranslate"><span class="pre">&quot;sequence&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;parallel&quot;</span></code>.</p>
 </dd>
 <dt><strong>default_array_item_task_type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">&quot;cmd&quot;</span> <span class="pre">|</span> <span class="pre">&quot;expr&quot;</span> <span class="pre">|</span> <span class="pre">&quot;ref&quot;</span> <span class="pre">|</span> <span class="pre">&quot;script&quot;</span> <span class="pre">|</span> <span class="pre">&quot;shell&quot;</span></code></span></dt><dd><p>When a task is declared as a string inside an array (e.g. inline in a sequence task), then it is interpreted as the default array item task type, which will be <code class="docutils literal notranslate"><span class="pre">&quot;ref&quot;</span></code> unless otherwise specified.</p>
 </dd>
@@ -499,7 +500,7 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=29b1acb9"></script>
+</div><script src="_static/documentation_options.js?v=9fa2033d"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

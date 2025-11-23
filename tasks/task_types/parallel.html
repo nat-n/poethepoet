@@ -3,17 +3,17 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta property="og:title" content="script tasks" />
+<meta property="og:title" content="parallel tasks" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="tasks/task_types/script.html" />
+<meta property="og:url" content="tasks/task_types/parallel.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Script tasks consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example: As in the second example, is it possible to h..." />
-<meta name="description" content="Script tasks consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example: As in the second example, is it possible to h..." />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="shell tasks" href="shell.html" /><link rel="prev" title="cmd tasks" href="cmd.html" />
-        <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/script.html" />
+<meta property="og:description" content="A Parallel task is defined by an array of other tasks to be run concurrently. By default the contents of the array are interpreted as references to other tasks (actually an inline ref task). Howeve..." />
+<meta name="description" content="A Parallel task is defined by an array of other tasks to be run concurrently. By default the contents of the array are interpreted as references to other tasks (actually an inline ref task). Howeve..." />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="expr tasks" href="expr.html" /><link rel="prev" title="sequence tasks" href="sequence.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/parallel.html" />
 
     <link rel="shortcut icon" href="../../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
-        <title>script tasks - Poe the Poet</title>
+        <title>parallel tasks - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -173,10 +173,10 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../index.html">Defining tasks</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Defining tasks</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../options.html">Standard task options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cmd.html">Command tasks</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="shell.html">Shell tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sequence.html">Sequence tasks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="parallel.html">Parallel tasks</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Parallel tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="expr.html">Expression tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="switch.html">Switch tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ref.html">Reference tasks</a></li>
@@ -216,7 +216,7 @@
         </a>
         <div class="content-icon-container">
           <div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/tasks/task_types/script.rst" title="Edit this page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/tasks/task_types/parallel.rst" title="Edit this page">
     <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
@@ -238,103 +238,118 @@
           </label>
         </div>
         <article role="main">
-          <section id="script-tasks">
-<h1><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks<a class="headerlink" href="#script-tasks" title="Link to this heading">¶</a></h1>
-<p><strong>Script tasks</strong> consist of a reference to a python callable to import and execute, and optionally values or expressions to pass as arguments, for example:</p>
+          <section id="parallel-tasks">
+<h1><code class="docutils literal notranslate"><span class="pre">parallel</span></code> tasks<a class="headerlink" href="#parallel-tasks" title="Link to this heading">¶</a></h1>
+<p>A <strong>Parallel task</strong> is defined by an array of other tasks to be run concurrently.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.assets:fetch&quot;</span>
-<span class="n">fetch-images</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;my_pkg.assets:fetch(only=&#39;images&#39;, log=environ[&#39;LOG_PATH&#39;])&quot;</span>
+<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mypy&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pylint&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>As in the second example, is it possible to hard code literal arguments to the target callable. In fact a subset of python syntax, operators, and globals can be used inline to define the arguments to the function using normal python syntax, including environ (from the os package) to access environment variables that are available to the task.</p>
-<p>If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called python function via <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code>. If <a class="reference internal" href="../options.html"><span class="doc">args</span></a> are configured for the task then they will be available as python variables.</p>
-<p>If the target python function is an async function then it will be executed with <code class="code highlight python docutils literal highlight-python"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span></code>.</p>
-<section id="run-a-main-module-as-a-script-task">
-<h2>Run a <code class="docutils literal notranslate"><span class="pre">__main__</span></code> module as a script task<a class="headerlink" href="#run-a-main-module-as-a-script-task" title="Link to this heading">¶</a></h2>
-<p>A script task may reference a package instead of a specific callable, in which case the package’s <code class="docutils literal notranslate"><span class="pre">__main__.py</span></code> module will be executed as a script task. This is useful for running a package that has been designed to be run as a script.</p>
-<p>For example, the following task will run the <code class="docutils literal notranslate"><span class="pre">http.server</span></code> module as a script task, which will start a simple HTTP server. Any command line arguments passed to the task will be forwarded to the script.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;http.server&quot;</span>
-</pre></div>
-</div>
-</section>
+<p>By default the contents of the array are interpreted as references to other tasks (actually an inline <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> task). However, this behaviour can be altered by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option locally on the parallel task.</p>
+<p>Subtask outputs are streamed to the console as they arrive with a prefix identifying the task.</p>
 <section id="available-task-options">
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">parallel</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code> and <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code>.</p>
 <p>The following options are also accepted:</p>
 <dl>
-<dt><strong>print_result</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#output-the-return-value"><span class="std std-ref">📖</span></a></span></dt><dd><p>If true then the return value of the python callable will be output to stdout, unless it is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<dt><strong>ignore_fail</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">str</span></code> <span class="xref std std-ref">📖</span></span></dt><dd><p>If true then the failure (or non-zero return value) of one task in the parallel group does not abort the execution.</p>
+</dd>
+<dt><strong>default_item_type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="sequence.html#changing-the-default-item-type"><span class="std std-ref">📖</span></a></span></dt><dd><p>Change the task type that is applied to string array items in this parallel group.</p>
+</dd>
+<dt><strong>prefix</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#customize-output-prefixing"><span class="std std-ref">📖</span></a></span></dt><dd><p>Set the prefix applied to each line of output from subtasks. By default this is the task name.</p>
+</dd>
+<dt><strong>prefix_max</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#customize-output-prefixing"><span class="std std-ref">📖</span></a></span></dt><dd><p>Set the maximum width of the prefix. Longer prefixes will be truncated. Default is 16 characters.</p>
+</dd>
+<dt><strong>prefix_template</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#customize-output-prefixing"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specifies a template for how the prefix is applied after truncating it to the prefix_max length. The default prefix_template is <code class="docutils literal notranslate"><span class="pre">{color_start}{prefix}{color_end}</span> <span class="pre">|</span></code></p>
 </dd>
 </dl>
 </section>
-<section id="output-the-return-value">
-<h2>Output the return value<a class="headerlink" href="#output-the-return-value" title="Link to this heading">¶</a></h2>
-<p>Script tasks can be configured to output the return value of the python callable using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.create-secret]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;django.core.management.utils:get_random_secret_key()&quot;</span>
-<span class="n">print_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<section id="continue-on-subtask-failure">
+<h2>Continue on subtask failure<a class="headerlink" href="#continue-on-subtask-failure" title="Link to this heading">¶</a></h2>
+<p>A failure (non-zero result) will result in any remaining subtasks being cancelled, unless the <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option is set on the task like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;task3&quot;</span><span class="p">]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
-<p>Given the above configuration running the following command would output just the
-generated key.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>-q<span class="w"> </span>create-secret
-</pre></div>
-</div>
-<p>Note that if the return value is None then the <code class="code highlight toml docutils literal highlight-toml"><span class="n">print_result</span></code> option has no
-effect.</p>
-</section>
-<section id="calling-standard-library-functions">
-<h2>Calling standard library functions<a class="headerlink" href="#calling-standard-library-functions" title="Link to this heading">¶</a></h2>
-<p>Any python callable accessible via the python path can be referenced, including the
-standard library. This can be useful for ensuring that tasks work across platforms.</p>
-<p>For example, the following task will not always work on windows:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mkdir -p build/assets&quot;</span>
-</pre></div>
-</div>
-<p>whereas the same behaviour can can be reliably achieved like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.build]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;os:makedirs(&#39;build/assets&#39;, exist_ok=True)&quot;</span>
+<p>If you want to run all the subtasks to completion but return non-zero result in the end of the sequence if any of the subtasks have failed you can set <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">return_non_zero</span></code> like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;task3&quot;</span><span class="p">]</span>
+<span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;return_non_zero&quot;</span>
 </pre></div>
 </div>
 </section>
-<section id="poe-scripts-library">
-<h2>Poe scripts library<a class="headerlink" href="#poe-scripts-library" title="Link to this heading">¶</a></h2>
-<p>Poe the Poet includes the <code class="docutils literal notranslate"><span class="pre">poethepoet.scripts</span></code> package including the following functions as convenient cross-platform implementations of common task capabilities.
-These functions can be referenced from script tasks if <code class="docutils literal notranslate"><span class="pre">poethepoet</span></code> is available in the project virtual environment.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="poethepoet.scripts.rm">
-<span class="sig-prename descclassname"><span class="pre">poethepoet.scripts.</span></span><span class="sig-name descname"><span class="pre">rm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">patterns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#poethepoet.scripts.rm" title="Link to this definition">¶</a></dt>
-<dd><p>This function is intended for use in a script task to delete files and directories
-matching any of the given patterns, as a platform agnostic alternative to
-<code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">[patterns]</span></code></p>
-<p>Example usage:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.clean]</span>
-<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;poethepoet.scripts:rm(&#39;.mypy_cache&#39;, &#39;.pytest_cache&#39;, &#39;./**/__pycache__&#39;)&quot;</span>
+<section id="changing-the-default-item-type">
+<h2>Changing the default item type<a class="headerlink" href="#changing-the-default-item-type" title="Link to this heading">¶</a></h2>
+<p>If you want strings in the array to be interpreted as a task type other than <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> you may specify then <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;linters:run_mypy(all=True)&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;linters:run_pylint&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;linters:run_flake8&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">default_item_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;script&quot;</span>
 </pre></div>
 </div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>*patterns</strong> – <p>One or more paths to delete.
-<a class="reference external" href="https://docs.python.org/3/library/glob.html">Glob patterns</a> are supported.</p>
-</p></li>
-<li><p><strong>cwd</strong> – The directory relative to which patterns are evaluated. Defaults to <code class="docutils literal notranslate"><span class="pre">.</span></code>.</p></li>
-<li><p><strong>verbosity</strong> – An integer for setting the function’s verbosity. This can be set to
-<code class="docutils literal notranslate"><span class="pre">environ.get('POE_VERBOSITY')</span></code> to match the verbosity of the poe invocation.</p></li>
-<li><p><strong>dry_run</strong> – If true then nothing will be deleted, but output to stdout will be unaffected.
-This can be set to <code class="docutils literal notranslate"><span class="pre">_dry_run</span></code> to make poe delegate dry_run control to the
-function.</p></li>
+<p>Alternatively you can declare other task types inline like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;linters:run_mypy(all=True)&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;linters:run_pylint&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;linters:run_flake8&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>An array within a parallel task is interpreted as a <a class="reference internal" href="sequence.html"><span class="doc">sequence</span></a> task, so you can run certain parallel subtasks <a class="reference internal" href="../../guides/composition_guide.html#composing-tasks-to-run-in-parallel"><span class="std std-ref">with strict ordering</span></a>.</p>
+</div>
+</section>
+<section id="customize-output-prefixing">
+<h2>Customize output prefixing<a class="headerlink" href="#customize-output-prefixing" title="Link to this heading">¶</a></h2>
+<p>When running multiple tasks in parallel a prefix is applied to each line of output to identify the origin. By default the prefix includes the task name and has a distinct color applied to it (6 colors in rotation).</p>
+<p>Example output:</p>
+<div class="highlight-sh notranslate">
+<div class="highlight">
+<pre id="codecell5">
+<span style="color:red">task_1</span> | task_1 output line 1
+<span style="color:green">task_2</span> | task_2 output line 1
+<span style="color:yellow">task_3</span> | task_3 output line 1
+<span style="color:red">task_1</span> | task_1 output line 2
+<span style="color:blue">task_4</span> | task_4 output line 1
+<span style="color:yellow">task_3</span> | task_3 output line 2
+<span style="color:magenta">task_5</span> | task_5 output line 1
+<span style="color:cyan">task_6</span> | task_6 output line 1
+</pre>
+</div>
+</div><p>This behavior is customizable with the following options:</p>
+<ul class="simple">
+<li><p>Setting the <code class="docutils literal notranslate"><span class="pre">prefix</span></code> changes the prefix content: default <code class="docutils literal notranslate"><span class="pre">{name}</span></code>. The <code class="docutils literal notranslate"><span class="pre">{index}</span></code> tag is also available which indicates the index of the subtask within the parallel array.</p></li>
+<li><p>Setting the <code class="docutils literal notranslate"><span class="pre">prefix_max</span></code> changes the maximum width of the prefix: default <code class="docutils literal notranslate"><span class="pre">16</span></code></p></li>
+<li><p>Setting the <code class="docutils literal notranslate"><span class="pre">prefix_template</span></code> changes how the prefix is formatted: default <code class="docutils literal notranslate"><span class="pre">{color_start}{prefix}{color_end}</span> <span class="pre">|</span></code></p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
-<section id="delegating-dry-run-behavior-to-a-script">
-<h2>Delegating dry-run behavior to a script<a class="headerlink" href="#delegating-dry-run-behavior-to-a-script" title="Link to this heading">¶</a></h2>
-<p>Normally if the <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> global option is passed to the CLI then poe will go through the motions of running the given task, including logging to stdout, without actually running the task.</p>
-<p>However it is possible to configure poe to delegate respecting this dry run flag to an invoked script task, by passing it the <code class="docutils literal notranslate"><span class="pre">_dry_run</span></code> variable. When this variable is passed as an argument to the python function called within a script task then poe will always call the task, and delegate responsibility to the script for making sure that no side effects occur when run in dry-run mode.</p>
+<p>For example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;build&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;deploy-to-prod&quot;</span><span class="p">]</span>
+<span class="n">prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;{index}:{name}&quot;</span>
+<span class="n">prefix_max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="n">prefix_template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;[{prefix}] &quot;</span>
+</pre></div>
+</div>
+<p>will result in output rendered like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1:build] first task output line
+[2:test] second task output line
+[3:deploy_…] third task output line
+</pre></div>
+</div>
+<p>Note that:</p>
+<ol class="arabic simple">
+<li><p>When the <code class="docutils literal notranslate"><span class="pre">{prefix}</span></code> portion of the tempalate is longer that the configured <code class="docutils literal notranslate"><span class="pre">prefix_max</span></code> then it is truncated with ellipsis</p></li>
+<li><p>omitting the <code class="docutils literal notranslate"><span class="pre">{color_start}</span></code> and <code class="docutils literal notranslate"><span class="pre">{color_end}</span></code> tags from the template disables prefix coloring.</p></li>
+</ol>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>If <a class="reference internal" href="../options.html#redirect-task-output-to-a-file"><span class="std std-ref">capture_stdout</span></a> is set on a subtask then its output will of course be excluded.</p>
+</div>
 </section>
 </section>
 
@@ -343,23 +358,23 @@ function.</p></li>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="shell.html">
+          <a class="next-page" href="expr.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title"><code class="docutils literal notranslate"><span class="pre">shell</span></code> tasks</div>
+                <div class="title"><code class="docutils literal notranslate"><span class="pre">expr</span></code> tasks</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="cmd.html">
+          <a class="prev-page" href="sequence.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title"><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks</div>
+                <div class="title"><code class="docutils literal notranslate"><span class="pre">sequence</span></code> tasks</div>
                 
               </div>
             </a>
@@ -405,16 +420,11 @@ function.</p></li>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">script</span></code> tasks</a><ul>
-<li><a class="reference internal" href="#run-a-main-module-as-a-script-task">Run a <code class="docutils literal notranslate"><span class="pre">__main__</span></code> module as a script task</a></li>
+<li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">parallel</span></code> tasks</a><ul>
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
-<li><a class="reference internal" href="#output-the-return-value">Output the return value</a></li>
-<li><a class="reference internal" href="#calling-standard-library-functions">Calling standard library functions</a></li>
-<li><a class="reference internal" href="#poe-scripts-library">Poe scripts library</a><ul>
-<li><a class="reference internal" href="#poethepoet.scripts.rm"><code class="docutils literal notranslate"><span class="pre">rm()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#delegating-dry-run-behavior-to-a-script">Delegating dry-run behavior to a script</a></li>
+<li><a class="reference internal" href="#continue-on-subtask-failure">Continue on subtask failure</a></li>
+<li><a class="reference internal" href="#changing-the-default-item-type">Changing the default item type</a></li>
+<li><a class="reference internal" href="#customize-output-prefixing">Customize output prefixing</a></li>
 </ul>
 </li>
 </ul>

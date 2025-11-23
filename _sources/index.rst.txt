@@ -18,13 +18,17 @@ Poe the Poet Documentation
    :target: https://github.com/nat-n/poethepoet
    :alt: GitHub repo
 
-.. image:: https://img.shields.io/badge/python-3.9%20%E2%80%93%203.13-blue
+.. image:: https://img.shields.io/badge/python-10%20%E2%80%93%203.13-blue
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
 .. image:: https://img.shields.io/pypi/v/poethepoet.svg
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
+
+.. image:: https://img.shields.io/pypi/dm/poethepoet
+   :target: https://pypistats.org/packages/poethepoet
+   :alt: PyPI - Downloads
 
 .. image:: https://img.shields.io/pypi/l/ansicolortags.svg
    :target: https://github.com/nat-n/poethepoet/blob/main/LICENSE
@@ -34,7 +38,7 @@ Poe the Poet is a batteries included task runner that works well with |poetry_li
 
 It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project's virtual environment.
 
-"Simple things should be simple, complex things should be possible." – Alan Kay
+`"Simple things should be simple, complex things should be possible." --  Alan Kay`
 
 
 Top features
@@ -58,7 +62,7 @@ Top features
 
 |V| Tasks are :doc:`self documenting<./guides/help_guide>`, with optional help messages (just run :sh:`poe` with no arguments)
 
-|V| Tasks can be composed into :ref:`sequences<sequence_composition>` or :ref:`DAGs<graph_composition>`
+|V| Tasks can be composed to run in :ref:`sequence<sequence_composition>`, in :ref:`parallel<Composing tasks to run in parallel>`, or as a :ref:`DAG<graph_composition>`
 
 |V| Works with :ref:`.env files<envfile_option>`
 

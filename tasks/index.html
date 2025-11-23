@@ -176,6 +176,7 @@
 <li class="toctree-l2"><a class="reference internal" href="task_types/script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/shell.html">Shell tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/parallel.html">Parallel tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/expr.html">Expression tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/switch.html">Switch tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/ref.html">Reference tasks</a></li>
@@ -274,12 +275,13 @@
 </div>
 <section id="types-of-task">
 <h2>Types of task<a class="headerlink" href="#types-of-task" title="Link to this heading">¶</a></h2>
-<p>You can define seven different types of task:</p>
+<p>You can define eight different types of task:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="task_types/cmd.html"><span class="doc">Command tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">cmd</span></code> : for simple commands that are executed as a subprocess without a shell</p></li>
 <li><p><a class="reference internal" href="task_types/script.html"><span class="doc">Script tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">script</span></code> : for python function calls</p></li>
 <li><p><a class="reference internal" href="task_types/shell.html"><span class="doc">Shell tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">shell</span></code> : for scripts to be executed with via an external interpreter (such as sh).</p></li>
 <li><p><a class="reference internal" href="task_types/sequence.html"><span class="doc">Sequence tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">sequence</span></code> : for composing multiple tasks into a sequence</p></li>
+<li><p><a class="reference internal" href="task_types/parallel.html"><span class="doc">Parallel tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">parallel</span></code> : for running multiple tasks concurrently</p></li>
 <li><p><a class="reference internal" href="task_types/expr.html"><span class="doc">Expression tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">expr</span></code> : which consist of a python expression to evaluate</p></li>
 <li><p><a class="reference internal" href="task_types/switch.html"><span class="doc">Switch tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">switch</span></code> : for running different tasks depending on a control value (such as the platform)</p></li>
 <li><p><a class="reference internal" href="task_types/ref.html"><span class="doc">Reference tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">ref</span></code> : for defining a task as an alias of another task, such as in a sequence task.</p></li>
@@ -369,7 +371,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=29b1acb9"></script>
+</div><script src="../_static/documentation_options.js?v=9fa2033d"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

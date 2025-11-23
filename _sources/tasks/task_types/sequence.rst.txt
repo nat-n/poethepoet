@@ -8,11 +8,10 @@ The array items can be sub-tables that declare inline tasks, or strings :doc:`re
 .. code-block:: toml
 
   [tool.poe.tasks]
-
   test = "pytest --cov=src"
   build = "poetry build"
   _publish = "poetry publish"
-  release = ["test", "build", "_publish"]
+  release = ["test", "build", "_publish"] # run all three tasks in sequence
 
 .. important::
 
@@ -40,13 +39,13 @@ Continue sequence on task failure
 
 A failure (non-zero result) will result in the rest of the tasks in the sequence not
 being executed, unless the :toml:`ignore_fail` option is set on the task to
-:toml:`true` or :toml:`"return_zero"` like so:
+:toml:`true`, :toml:`"return_zero"`, or :toml:`"return_non_zero"` like so:
 
 .. code-block:: toml
 
   [tool.poe.tasks]
   attempts.sequence = ["task1", "task2", "task3"]
-  attempts.ignore_fail = "return_zero"
+  attempts.ignore_fail = true
 
 If you want to run all the subtasks in the sequence but return non-zero result in the
 end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail`
@@ -123,3 +122,7 @@ In some simpler cases a more succinct syntax may be preferred, missing strings (
     { script = "devtasks:build" },
     "_publish"
   ]
+
+.. hint::
+
+  An array within a sequence task is interpreted as a :doc:`parallel<parallel>` task, so you can run sections of a :ref:`sequence concurrently<Composing tasks to run in parallel>`.

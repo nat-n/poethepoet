@@ -176,6 +176,7 @@
 <li class="toctree-l2"><a class="reference internal" href="task_types/script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/shell.html">Shell tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="task_types/parallel.html">Parallel tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/expr.html">Expression tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/switch.html">Switch tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="task_types/ref.html">Reference tasks</a></li>
@@ -356,6 +357,7 @@ above but can also by given a list of such paths like so:</p>
 <p class="admonition-title">Warning</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code> is incompatible with the <code class="docutils literal notranslate"><span class="pre">use_exec</span></code> option, and tasks that declare it cannot be referenced by another task via the <code class="docutils literal notranslate"><span class="pre">uses</span></code> option.</p>
 </div>
+<p>The value <code class="docutils literal notranslate"><span class="pre">/dev/null</span></code> or <code class="docutils literal notranslate"><span class="pre">NUL</span></code> may be used to discard all output from the task.</p>
 </section>
 <section id="configure-the-executor-for-a-task">
 <h2>Configure the executor for a task<a class="headerlink" href="#configure-the-executor-for-a-task" title="Link to this heading">¶</a></h2>
@@ -508,7 +510,7 @@ above but can also by given a list of such paths like so:</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=29b1acb9"></script>
+</div><script src="../_static/documentation_options.js?v=9fa2033d"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

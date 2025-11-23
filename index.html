@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="index.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="GitHub repo PyPI PyPI MIT Poe the Poet is a batteries included task runner that works well with or with uv. It provides a simple way to define project tasks within your pyproject.toml, and either a..." />
-<meta name="description" content="GitHub repo PyPI PyPI MIT Poe the Poet is a batteries included task runner that works well with or with uv. It provides a simple way to define project tasks within your pyproject.toml, and either a..." />
+<meta property="og:description" content="GitHub repo PyPI PyPI PyPI - Downloads MIT Poe the Poet is a batteries included task runner that works well with or with uv. It provides a simple way to define project tasks within your pyproject.t..." />
+<meta name="description" content="GitHub repo PyPI PyPI PyPI - Downloads MIT Poe the Poet is a batteries included task runner that works well with or with uv. It provides a simple way to define project tasks within your pyproject.t..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="installation.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/index.html" />
 
@@ -176,6 +176,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/script.html">Script tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/shell.html">Shell tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks/task_types/parallel.html">Parallel tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/expr.html">Expression tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/switch.html">Switch tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks/task_types/ref.html">Reference tasks</a></li>
@@ -243,15 +244,17 @@
 <h1>Poe the Poet Documentation<a class="headerlink" href="#poe-the-poet-documentation" title="Link to this heading">¶</a></h1>
 <a class="reference external image-reference" href="https://github.com/nat-n/poethepoet"><img alt="GitHub repo" src="https://img.shields.io/github/stars/nat-n/poethepoet?style=social" />
 </a>
-<a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/badge/python-3.9%20%E2%80%93%203.13-blue" />
+<a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/badge/python-10%20%E2%80%93%203.13-blue" />
 </a>
 <a class="reference external image-reference" href="https://pypi.org/project/poethepoet/"><img alt="PyPI" src="https://img.shields.io/pypi/v/poethepoet.svg" />
+</a>
+<a class="reference external image-reference" href="https://pypistats.org/packages/poethepoet"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/poethepoet" />
 </a>
 <a class="reference external image-reference" href="https://github.com/nat-n/poethepoet/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/pypi/l/ansicolortags.svg" />
 </a>
 <p>Poe the Poet is a batteries included task runner that works well with <a href="https://python-poetry.org/" target="_blank">poetry</a> or with <a class="reference internal" href="guides/without_poetry.html#usage-with-uv"><span class="std std-ref">uv</span></a>.</p>
 <p>It provides a simple way to define project tasks within your pyproject.toml, and either a standalone CLI or a poetry plugin to run them using your project’s virtual environment.</p>
-<p>“Simple things should be simple, complex things should be possible.” – Alan Kay</p>
+<p><cite>“Simple things should be simple, complex things should be possible.” –  Alan Kay</cite></p>
 <section id="top-features">
 <h2>Top features<a class="headerlink" href="#top-features" title="Link to this heading">¶</a></h2>
 <p>✅  Straight forward declaration of project tasks in your pyproject.toml (or <a class="reference internal" href="guides/without_poetry.html"><span class="doc">poe_tasks.toml</span></a>)</p>
@@ -263,7 +266,7 @@
 <p>✅  Easily <a class="reference internal" href="guides/args_guide.html"><span class="doc">declare named CLI arguments</span></a> for your tasks</p>
 <p>✅  Tasks can specify and <a class="reference internal" href="tasks/task_types/cmd.html#ref-env-vars"><span class="std std-ref">reference environment variables</span></a>, even without a shell</p>
 <p>✅  Tasks are <a class="reference internal" href="guides/help_guide.html"><span class="doc">self documenting</span></a>, with optional help messages (just run <code class="code highlight sh docutils literal highlight-sh">poe</code> with no arguments)</p>
-<p>✅  Tasks can be composed into <a class="reference internal" href="guides/composition_guide.html#sequence-composition"><span class="std std-ref">sequences</span></a> or <a class="reference internal" href="guides/composition_guide.html#graph-composition"><span class="std std-ref">DAGs</span></a></p>
+<p>✅  Tasks can be composed to run in <a class="reference internal" href="guides/composition_guide.html#sequence-composition"><span class="std std-ref">sequence</span></a>, in <a class="reference internal" href="guides/composition_guide.html#composing-tasks-to-run-in-parallel"><span class="std std-ref">parallel</span></a>, or as a <a class="reference internal" href="guides/composition_guide.html#graph-composition"><span class="std std-ref">DAG</span></a></p>
 <p>✅  Works with <a class="reference internal" href="tasks/options.html#envfile-option"><span class="std std-ref">.env files</span></a></p>
 <p>✅  Can be <a class="reference internal" href="guides/library_guide.html"><span class="doc">used as a library</span></a> to embed in other tools</p>
 <p>✅  Tasks can be <a class="reference internal" href="guides/packaged_tasks.html"><span class="doc">defined in python packages</span></a> for ease of reuse across projects</p>
@@ -372,7 +375,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=29b1acb9"></script>
+</div><script src="_static/documentation_options.js?v=9fa2033d"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
