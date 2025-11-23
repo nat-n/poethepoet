@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Mapping, Sequence
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
 from ..helpers.eventloop import run_async
@@ -37,9 +37,9 @@ class PoeConfig:
 
     def __init__(
         self,
-        cwd: Optional[Union[Path, str]] = None,
-        table: Optional[Mapping[str, Any]] = None,
-        config_name: Optional[Union[str, Sequence[str]]] = None,
+        cwd: Path | str | None = None,
+        table: Mapping[str, Any] | None = None,
+        config_name: str | Sequence[str] | None = None,
         io: Optional["PoeIO"] = None,
     ):
         if config_name is not None:
@@ -64,7 +64,7 @@ class PoeConfig:
 
     def lookup_task(
         self, name: str
-    ) -> Union[tuple[Mapping[str, Any], ConfigPartition], tuple[None, None]]:
+    ) -> tuple[Mapping[str, Any], ConfigPartition] | tuple[None, None]:
         task = self._project_config.get("tasks", {}).get(name, None)
         if task is not None:
             return task, self._project_config
@@ -159,9 +159,7 @@ class PoeConfig:
     def project_dir(self) -> Path:
         return self._project_dir
 
-    def load_sync(
-        self, target_path: Optional[Union[Path, str]] = None, strict: bool = True
-    ):
+    def load_sync(self, target_path: Path | str | None = None, strict: bool = True):
         """
         Load the config from the given path or the current working directory.
         If strict is false then some errors in the config structure are tolerated.
@@ -170,9 +168,7 @@ class PoeConfig:
 
         return run_async(self.load(target_path=target_path, strict=strict))
 
-    async def load(
-        self, target_path: Optional[Union[Path, str]] = None, strict: bool = True
-    ):
+    async def load(self, target_path: Path | str | None = None, strict: bool = True):
         """
         target_path is the path to a file or directory for loading config
         If strict is false then some errors in the config structure are tolerated
@@ -235,7 +231,7 @@ class PoeConfig:
 
         from ..helpers.script import parse_script_reference
 
-        def handle_error(msg: str, error: Union[Exception, None] = None):
+        def handle_error(msg: str, error: Exception | None = None):
             if strict:
                 if error:
                     raise PoeException(msg) from error

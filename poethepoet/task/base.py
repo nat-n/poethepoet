@@ -60,8 +60,8 @@ class TaskSpecFactory:
     def get(
         self,
         task_name: str,
-        task_def: Optional[TaskDef] = None,
-        task_type: Optional[str] = None,
+        task_def: TaskDef | None = None,
+        task_type: str | None = None,
         parent: Optional["PoeTask.TaskSpec"] = None,
     ) -> "PoeTask.TaskSpec":
         if task_def and parent:
@@ -170,17 +170,17 @@ class PoeTask(metaclass=MetaPoeTask):
     __content_type__: ClassVar[type] = str
 
     class TaskOptions(PoeOptions):
-        args: Optional[Union[dict, list]] = None
-        capture_stdout: Optional[str] = None
-        cwd: Optional[str] = None
-        deps: Optional[Sequence[str]] = None
+        args: Union[dict, list] | None = None
+        capture_stdout: str | None = None
+        cwd: str | None = None
+        deps: Sequence[str] | None = None
         # ruff: noqa: UP007
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
         envfile: Union[str, Sequence[str]] = tuple()
-        executor: Optional[dict] = None
-        help: Optional[str] = None
-        uses: Optional[Mapping[str, str]] = None
-        verbosity: Optional[Literal[-2, -1, 0, 1, 2]] = None
+        executor: dict | None = None
+        help: str | None = None
+        uses: Mapping[str, str] | None = None
+        verbosity: Literal[-2, -1, 0, 1, 2] | None = None
 
         def validate(self):
             """
@@ -225,7 +225,7 @@ class PoeTask(metaclass=MetaPoeTask):
             self,
             parent_env: "EnvVarsManager",
             io: "PoeIO",
-            uses_values: Optional[Mapping[str, str]] = None,
+            uses_values: Mapping[str, str] | None = None,
         ) -> "EnvVarsManager":
             """
             Resolve the EnvVarsManager for this task, relative to the given parent_env
@@ -361,12 +361,12 @@ class PoeTask(metaclass=MetaPoeTask):
 
     spec: TaskSpec
     ctx: TaskContext
-    _parsed_args: Optional[tuple[dict[str, str], tuple[str, ...]]] = None
+    _parsed_args: tuple[dict[str, str], tuple[str, ...]] | None = None
 
     __task_types: ClassVar[dict[str, type["PoeTask"]]] = {}
-    __upstream_invocations: Optional[
-        dict[str, Union[list[tuple[str, ...]], dict[str, tuple[str, ...]]]]
-    ] = None
+    __upstream_invocations: (
+        dict[str, Union[list[tuple[str, ...]], dict[str, tuple[str, ...]]]] | None
+    ) = None
 
     def __init__(
         self,
@@ -395,7 +395,7 @@ class PoeTask(metaclass=MetaPoeTask):
         task_def: TaskDef,
         config: "PoeConfig",
         array_item: Union[bool, str] = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         if isinstance(task_def, str):
             if array_item:
                 return (
@@ -596,9 +596,7 @@ class PoeTask(metaclass=MetaPoeTask):
         )
 
     @classmethod
-    def is_task_type(
-        cls, task_def_key: str, content_type: Optional[type] = None
-    ) -> bool:
+    def is_task_type(cls, task_def_key: str, content_type: type | None = None) -> bool:
         """
         Checks whether the given key identifies a known task type.
         Optionally also check whether the given content_type matches the type of content
@@ -610,7 +608,7 @@ class PoeTask(metaclass=MetaPoeTask):
         )
 
     @classmethod
-    def get_task_types(cls, content_type: Optional[type] = None) -> tuple[str, ...]:
+    def get_task_types(cls, content_type: type | None = None) -> tuple[str, ...]:
         if content_type:
             return tuple(
                 task_type

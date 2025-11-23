@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..executor.task_run import PoeTaskRun
@@ -27,7 +27,7 @@ class SwitchTask(PoeTask):
     __content_type__: ClassVar[type] = list
 
     class TaskOptions(PoeTask.TaskOptions):
-        control: Union[str, dict]
+        control: str | dict
         default: Literal["pass", "fail"] = "fail"
 
         @classmethod
@@ -191,7 +191,7 @@ class SwitchTask(PoeTask):
     async def _handle_run(
         self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
     ):
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):

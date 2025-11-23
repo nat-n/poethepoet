@@ -1,21 +1,21 @@
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..exceptions import PoeException
 
 
 class PoeConfigFile:
     path: Path
-    _content: Optional[Mapping[str, Any]] = None
-    _error: Optional[PoeException] = None
+    _content: Mapping[str, Any] | None = None
+    _error: PoeException | None = None
     _valid: bool = False
 
     def __init__(self, path: Path):
         self.path = path
 
     @property
-    def content(self) -> Optional[Mapping[str, Any]]:
+    def content(self) -> Mapping[str, Any] | None:
         return self._content
 
     @property
@@ -23,14 +23,14 @@ class PoeConfigFile:
         return self._valid
 
     @property
-    def error(self) -> Optional[PoeException]:
+    def error(self) -> PoeException | None:
         return self._error
 
     @property
     def is_pyproject(self) -> bool:
         return self.path.name == "pyproject.toml"
 
-    def load(self, force: bool = False) -> Optional[Mapping]:
+    def load(self, force: bool = False) -> Mapping | None:
         if force or not self._content:
             try:
                 content = self._read_config_file(self.path)

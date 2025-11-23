@@ -1,11 +1,11 @@
 [tool.poetry]
-name        = "poethepoet_plugin"
-version     = "0.1.0"
+name = "poethepoet_plugin"
+version = "0.1.0"
 description = "A project that uses poetry as a plugin."
-authors     = ["Nat Noordanus <n@natn.me>"]
+authors = ["Nat Noordanus <n@natn.me>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 
 [tool.poetry.dev-dependencies]
 cowpy = { path = "../../packages/cowpy-1.1.5-py3-none-any.whl" }
@@ -15,10 +15,10 @@ poe_test_helpers = { path = "../../packages/poe_test_helpers" }
 poetry_command = "foo"
 
 [tool.poe.tasks]
-echo = { cmd = "poe_test_echo", help = "It's like echo"}
+echo = { cmd = "poe_test_echo", help = "It's like echo" }
 cow-greet = "cowpy 'good day sir!'"
 _secret_task = "foo"
 
 [build-system]
-requires      = ["poetry-core"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

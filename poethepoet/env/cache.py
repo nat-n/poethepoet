@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from ..exceptions import ExecutionError
 
@@ -16,7 +16,7 @@ class EnvFileCache:
         self._project_dir = project_dir
         self._io = io
 
-    def get(self, envfile: Union[str, Path]) -> dict[str, str]:
+    def get(self, envfile: str | Path) -> dict[str, str]:
         """
         Parse, cache, and return the environment variables from the envfile at the
         given path. The path is used as the cache key.

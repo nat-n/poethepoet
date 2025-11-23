@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+import types
 import typing
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import (
@@ -63,9 +63,7 @@ class TypeAnnotation:
         elif origin is Literal:
             return LiteralType(annotation)
 
-        # TODO: also match types.UnionType when dropping python 3.9
-        #       and switching to union type expressions
-        elif origin is Union:
+        elif origin in (types.UnionType, Union):
             return UnionType(annotation)
 
         elif annotation is Any:
@@ -74,7 +72,7 @@ class TypeAnnotation:
         elif annotation in (None, type(None)):
             return NoneType(annotation)
 
-        elif _is_typeddict(annotation):
+        elif typing.is_typeddict(annotation):
             return TypedDictType(annotation)
 
         raise ValueError(f"Cannot parse TypeAnnotation for annotation: {annotation}")
@@ -302,12 +300,3 @@ class PrimativeType(TypeAnnotation):
             yield (
                 f"Option {self._format_path(path)!r} must have a value of type: {self}"
             )
-
-
-def _is_typeddict(value: Any):
-    import typing
-
-    if sys.version_info >= (3, 10):
-        return typing.is_typeddict(value)
-    else:
-        return isinstance(value, typing._TypedDictMeta)  # type: ignore[attr-defined]

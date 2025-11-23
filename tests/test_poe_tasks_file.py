@@ -39,9 +39,7 @@ def test_load_poe_tasks_json(run_poe_subproc, projects):
     # and import tasks from another directory
     result = run_poe_subproc(cwd=projects["poe_tasks_file"] / "sub3")
     assert (
-        "Configured tasks:\n"
-        "  sub3_poetasks_json    \n"
-        "  sub2_poetasks_yaml    \n\n"
+        "Configured tasks:\n  sub3_poetasks_json    \n  sub2_poetasks_yaml    \n\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""

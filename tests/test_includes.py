@@ -44,7 +44,7 @@ def test_run_task_not_included_from_toml_file(run_poe_subproc):
 
 def test_docs_for_multiple_includes(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["includes/multiple_includes"]}',
+        f"-C={projects['includes/multiple_includes']}",
     )
     assert (
         "Configured tasks:\n"
@@ -61,7 +61,7 @@ def test_docs_for_multiple_includes(run_poe_subproc, projects):
 
 def test_running_from_multiple_includes(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["includes/multiple_includes"]}',
+        f"-C={projects['includes/multiple_includes']}",
         "echo",
         "Whirl!",
         project="includes",
@@ -71,13 +71,13 @@ def test_running_from_multiple_includes(run_poe_subproc, projects):
     assert result.stderr == ""
 
     result = run_poe_subproc(
-        f'-C={projects["includes/multiple_includes"]}', "greet", "Whirl!"
+        f"-C={projects['includes/multiple_includes']}", "greet", "Whirl!"
     )
     assert result.capture == "Poe => poe_test_echo Hello 'Whirl!'\n"
     assert result.stdout == "Hello Whirl!\n"
     assert result.stderr == ""
 
-    result = run_poe_subproc(f'-C={projects["includes/multiple_includes"]}', "laugh")
+    result = run_poe_subproc(f"-C={projects['includes/multiple_includes']}", "laugh")
     assert result.capture == "Poe => poe_test_echo $ONE_LAUGH | tr a-z A-Z\n"
     assert result.stdout == "LOL\n"
     assert result.stderr == ""
@@ -85,7 +85,7 @@ def test_running_from_multiple_includes(run_poe_subproc, projects):
 
 def test_reference_peer_include(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["includes/multiple_includes"]}', "reference_peer_include"
+        f"-C={projects['includes/multiple_includes']}", "reference_peer_include"
     )
     assert (
         result.capture
@@ -97,7 +97,7 @@ def test_reference_peer_include(run_poe_subproc, projects):
 
 def test_docs_for_only_includes(run_poe_subproc, projects):
     result = run_poe_subproc(
-        f'-C={projects["includes/only_includes"]}',
+        f"-C={projects['includes/only_includes']}",
     )
     assert (
         "Configured tasks:\n"
@@ -351,8 +351,7 @@ def test_use_poe_git_vars(run_poe_subproc, projects, is_windows, poe_project_pat
     else:
         assert result.stdout.endswith(
             # Can't find a sane way to properly test POE_GIT_ROOT :(
-            f"YYY {poe_project_path}/tests/fixtures/includes_project/sub_git_repo "
-            "ZZZ\n"
+            f"YYY {poe_project_path}/tests/fixtures/includes_project/sub_git_repo ZZZ\n"
         )
     assert result.stderr == ""
 

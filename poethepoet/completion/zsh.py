@@ -119,7 +119,7 @@ def get_zsh_completion_script(name: str = "") -> str:
     return "\n".join(
         [
             f"#compdef _{name} {name}\n",
-            f"function _{name} " "{",
+            f"function _{name} {{",
             target_path_logic,
             '    local ALL_EXLC=("-h" "--help" "--version")',
             "",

@@ -36,7 +36,7 @@ def resolve_command_tokens(
     if not config:
         config = ParseConfig(substitute_nodes={Glob: PythonGlob})
 
-    glob_pattern = re.compile(cast(Glob, config.resolve_node_cls(Glob)).PATTERN)
+    glob_pattern = re.compile(cast("Glob", config.resolve_node_cls(Glob)).PATTERN)
 
     def finalize_token(token_parts):
         """

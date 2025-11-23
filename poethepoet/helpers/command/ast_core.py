@@ -5,7 +5,7 @@ See sibling ast module for an example usage.
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import IO, Generic, Optional, TypeVar, Union, cast
+from typing import IO, Generic, TypeVar, cast
 
 
 class ParseCursor:
@@ -106,7 +106,7 @@ class ParseConfig:
 
     def __init__(
         self,
-        substitute_nodes: Optional[dict[type["AstNode"], type["AstNode"]]] = None,
+        substitute_nodes: dict[type["AstNode"], type["AstNode"]] | None = None,
         line_separators="",
     ):
         self.substitute_nodes = substitute_nodes or {}
@@ -119,24 +119,21 @@ class ParseConfig:
 class AstNode(ABC):
     _cancelled: bool = False
 
-    def __init__(self, chars: ParseCursor, config: Union[ParseConfig, None] = None):
+    def __init__(self, chars: ParseCursor, config: ParseConfig | None = None):
         self.config = config = config or ParseConfig()
         self._parse(chars)
 
     @abstractmethod
-    def _parse(self, chars: ParseCursor):
-        ...
+    def _parse(self, chars: ParseCursor): ...
 
     @abstractmethod
-    def pretty(self, indent: int = 0, increment: int = 4):
-        ...
+    def pretty(self, indent: int = 0, increment: int = 4): ...
 
     def __bool__(self):
         return not self._cancelled
 
     @abstractmethod
-    def __len__(self):
-        ...
+    def __len__(self): ...
 
 
 T = TypeVar("T", bound=AstNode)
@@ -154,7 +151,7 @@ class SyntaxNode(AstNode, Generic[T]):
         Apply Node class substitution for the given node AstNode if specified in
         the ParseConfig.
         """
-        return cast(type[T], self.config.resolve_node_cls(node_type))
+        return cast("type[T]", self.config.resolve_node_cls(node_type))
 
     @property
     def children(self) -> tuple["SyntaxNode", ...]:
@@ -208,7 +205,7 @@ class ContentNode(AstNode):
         Apply Node class substitution for the given node AstNode if specified in
         the ParseConfig.
         """
-        return cast(type, self.config.resolve_node_cls(node_type))
+        return cast("type", self.config.resolve_node_cls(node_type))
 
     def __str__(self):
         return self._content
@@ -231,7 +228,7 @@ class AnnotatedContentNode(ContentNode, Generic[T]):
     single child node, which is considered an annotation on the content.
     """
 
-    _annotation: Optional[T] = None
+    _annotation: T | None = None
 
     def pretty(self, indent: int = 0, increment: int = 4):
         indent += increment
@@ -239,7 +236,7 @@ class AnnotatedContentNode(ContentNode, Generic[T]):
         if self._annotation is not None:
             return (
                 f"{content_line}\n"
-                f"{' '*indent}{self._annotation.pretty(indent, increment)}"
+                f"{' ' * indent}{self._annotation.pretty(indent, increment)}"
             )
         return content_line
 
@@ -258,10 +255,10 @@ class AnnotatedContentNode(ContentNode, Generic[T]):
 
 
 class ParseError(RuntimeError):
-    line: Optional[int]
-    position: Optional[int]
+    line: int | None
+    position: int | None
 
-    def __init__(self, message: str, cursor: Optional[ParseCursor] = None):
+    def __init__(self, message: str, cursor: ParseCursor | None = None):
         super().__init__(message)
         self.message = message
         if cursor is not None:

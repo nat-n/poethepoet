@@ -18,13 +18,17 @@ Poe the Poet Documentation
    :target: https://github.com/nat-n/poethepoet
    :alt: GitHub repo
 
-.. image:: https://img.shields.io/badge/python-3.9%20%E2%80%93%203.13-blue
+.. image:: https://img.shields.io/badge/python-10%20%E2%80%93%203.13-blue
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 
 .. image:: https://img.shields.io/pypi/v/poethepoet.svg
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
+
+.. image:: https://img.shields.io/pypi/dm/poethepoet
+   :target: https://pypistats.org/packages/poethepoet
+   :alt: PyPI - Downloads
 
 .. image:: https://img.shields.io/pypi/l/ansicolortags.svg
    :target: https://github.com/nat-n/poethepoet/blob/main/LICENSE

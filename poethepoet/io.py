@@ -71,16 +71,12 @@ class PoeIO:
             self._baseline_verbosity = (
                 baseline_verbosity
                 if baseline_verbosity is not None
-                else parent._baseline_verbosity
-                if parent
-                else 0
+                else parent._baseline_verbosity if parent else 0
             )
             self._verbosity_offset = (
                 verbosity_offset
                 if verbosity_offset is not None
-                else parent._verbosity_offset
-                if parent
-                else None
+                else parent._verbosity_offset if parent else None
             )
 
         if parent:

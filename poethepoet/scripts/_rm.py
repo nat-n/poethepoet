@@ -1,13 +1,12 @@
 # ruff: noqa: E501
 import shutil
 from pathlib import Path
-from typing import Union
 
 
 def rm(
     *patterns: str,
     cwd: str = ".",
-    verbosity: Union[int, str] = 0,
+    verbosity: int | str = 0,
     dry_run: bool = False,
 ):
     """

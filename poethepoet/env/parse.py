@@ -1,7 +1,6 @@
 import re
 from collections.abc import Iterable, Sequence
 from enum import Enum
-from typing import Optional
 
 
 class ParseError(ValueError):
@@ -64,7 +63,7 @@ def parse_env_file(content_lines: Sequence[str]):
     result = {}
     cursor = 0
     state = ParserState.SCAN_VAR_NAME
-    var_name: Optional[str] = ""
+    var_name: str | None = ""
     var_content = []
 
     while cursor < len(content):
@@ -79,7 +78,6 @@ def parse_env_file(content_lines: Sequence[str]):
                     continue
 
                 if (
-                    # ruff: noqa: E501
                     re.match(WHITESPACE_PATTERN, content[cursor:], re.MULTILINE).end()  # type: ignore[union-attr]
                     == len(content) - cursor
                 ):

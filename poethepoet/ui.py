@@ -2,7 +2,7 @@ import os
 import sys
 from collections.abc import Mapping, Sequence
 from contextlib import redirect_stderr
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from .__version__ import __version__
 from .exceptions import ConfigValidationError, ExecutionError, PoeException
@@ -167,11 +167,11 @@ class PoeUi:
 
     def print_help(
         self,
-        tasks: Optional[
-            Mapping[str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]]
-        ] = None,
-        info: Optional[str] = None,
-        error: Optional[PoeException] = None,
+        tasks: (
+            Mapping[str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]] | None
+        ) = None,
+        info: str | None = None,
+        error: PoeException | None = None,
     ):
         # Ignore verbosity mode if help flag is set
         help_flag_set = self["help"] is None
@@ -183,7 +183,7 @@ class PoeUi:
         if not error and not self.io.verbosity_offset_was_set:
             verbosity = min(0, self.io.verbosity)
 
-        result: list[Union[str, Sequence[str]]] = []
+        result: list[str | Sequence[str]] = []
         if verbosity >= 0 and not help_single_task:
             result.append((f"<h2>Poe the Poet</h2> (version <em>{__version__}</em>)",))
 
@@ -336,7 +336,7 @@ class PoeUi:
             formatted_options = ", ".join(str(opt) for opt in options)
             task_arg_help = [
                 " " * indent,
-                f"<em3>{self._padr(formatted_options, col_width-1)}</em3>",
+                f"<em3>{self._padr(formatted_options, col_width - 1)}</em3>",
             ]
             if arg_help_text:
                 task_arg_help.append(self._align(arg_help_text, col_width))
@@ -360,7 +360,7 @@ class PoeUi:
             return text
         return text + " " * (width - len(text))
 
-    def print_error(self, error: Union[PoeException, ExecutionError]):
+    def print_error(self, error: PoeException | ExecutionError):
         error_lines = error.msg.split("\n")
         if error.cause:
             error_lines.append(f"From: {error.cause}")
