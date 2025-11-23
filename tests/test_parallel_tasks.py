@@ -183,24 +183,10 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
         ],
         flakiness_factor,
     )
-    assert sequences_are_similar(
-        result.output_lines[:3],
-        (
-            "fast_success | Great success!",
-            "fast_success | Great success!",
-            "fast_fail | failing fast with error",
-        ),
-        flakiness_factor,
-    ) or sequences_are_similar(
-        result.output_lines,
-        (
-            "fast_success | Great success!",
-            "fast_success | Great success!",
-            "fast_fail | failing fast with error",
-            "fast_success | Great success!",  # The process may abort before this last line...
-        ),
-        flakiness_factor,
-    )
+    assert set(result.output_lines) == {
+        "fast_success | Great success!",
+        "fast_fail | failing fast with error",
+    }
     assert result.code == 1
 
     result = run_poe_subproc("lvl2_seq", cwd=project_path)
