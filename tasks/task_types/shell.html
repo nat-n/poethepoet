@@ -249,7 +249,7 @@
 <span class="s2">&quot;&quot;&quot;</span>
 
 <span class="k">[tool.poe.tasks.pfwdstop]</span>
-<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;kill $(pgrep -f &quot;</span><span class="n">ssh</span><span class="w"> </span><span class="n">-N</span><span class="w"> </span><span class="n">-L</span><span class="w"> </span><span class="p">.</span><span class="err">*:(</span><span class="n">8080</span><span class="err">|</span><span class="n">5432</span><span class="err">)</span><span class="s2">&quot;)&quot;</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;kill $(pgrep -f &quot;ssh -N -L .*:(8080|5432)&quot;)&quot;&quot;&quot;</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
