@@ -14,7 +14,7 @@ An example use case for this might be opening some ssh tunnels in the background
   """
 
   [tool.poe.tasks.pfwdstop]
-  shell = "kill $(pgrep -f "ssh -N -L .*:(8080|5432)")"
+  shell = """kill $(pgrep -f "ssh -N -L .*:(8080|5432)")"""
 
 .. seealso::
 
