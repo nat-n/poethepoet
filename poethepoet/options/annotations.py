@@ -4,6 +4,7 @@ import types
 import typing
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import (
+    Annotated,
     Any,
     Literal,
     Optional,
@@ -14,15 +15,25 @@ from typing import (
 )
 
 
+class Metadata:
+    __slots__ = ("config_name",)
+
+    def __init__(self, *, config_name: str | None = None):
+        self.config_name = config_name
+
+
 class TypeAnnotation:
     """
     This class and its descendants provide a convenient model for parsing and
     enforcing pythonic type annotations for PoeOptions.
     """
 
+    __slots__ = ("_annotation", "_metadata")
+
     @classmethod
     def get_type_hint_globals(cls):
         return {
+            "Annotated": Annotated,
             "Any": Any,
             "Optional": Optional,
             "Mapping": Mapping,
@@ -34,14 +45,27 @@ class TypeAnnotation:
             "Literal": Literal,
             "Union": Union,
             "TypeAnnotation": cls,
+            "Metadata": Metadata,
         }
 
     @staticmethod
     def parse(annotation: Any):
         origin = get_origin(annotation)
 
+        # Support Annotated[T, Metadata(...)] so metadata can be
+        # propagated into created TypeAnnotation instances.
+        metadata = None
+        if origin is Annotated:
+            args = get_args(annotation)
+            # args[0] is the underlying annotation, args[1:] are metadata
+            annotation = args[0]
+            origin = get_origin(annotation)
+            # pick first metadata object (commonly Metadata)
+            if len(args) > 1:
+                metadata = args[1]
+
         if annotation in (str, int, float, bool):
-            return PrimativeType(annotation)
+            return PrimitiveType(annotation, metadata)
 
         elif annotation is dict or origin in (
             dict,
@@ -50,7 +74,7 @@ class TypeAnnotation:
             typing.Mapping,
             typing.MutableMapping,
         ):
-            return DictType(annotation)
+            return DictType(annotation, metadata)
 
         elif annotation is list or origin in (
             list,
@@ -58,27 +82,33 @@ class TypeAnnotation:
             Sequence,
             typing.Sequence,
         ):
-            return ListType(annotation)
+            return ListType(annotation, metadata)
 
         elif origin is Literal:
-            return LiteralType(annotation)
+            return LiteralType(annotation, metadata)
 
         elif origin in (types.UnionType, Union):
-            return UnionType(annotation)
+            return UnionType(annotation, metadata)
 
         elif annotation is Any:
-            return AnyType(annotation)
+            return AnyType(annotation, metadata)
 
         elif annotation in (None, type(None)):
-            return NoneType(annotation)
+            return NoneType(annotation, metadata)
 
         elif typing.is_typeddict(annotation):
-            return TypedDictType(annotation)
+            return TypedDictType(annotation, metadata)
 
         raise ValueError(f"Cannot parse TypeAnnotation for annotation: {annotation}")
 
-    def __init__(self, annotation: Any):
+    def __init__(self, annotation: Any, metadata: Any = None):
         self._annotation = annotation
+        self._metadata = metadata
+
+    def metadata_get(self, key: str, default: Any = None) -> Any:
+        if self._metadata and (value := getattr(self._metadata, key, None)):
+            return value
+        return default
 
     @property
     def is_optional(self) -> bool:
@@ -87,7 +117,7 @@ class TypeAnnotation:
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
         raise NotImplementedError
 
-    def zero_value(self):
+    def zero_value(self) -> Any:
         return None
 
     @staticmethod
@@ -98,8 +128,10 @@ class TypeAnnotation:
 
 
 class DictType(TypeAnnotation):
-    def __init__(self, annotation: Any):
-        super().__init__(annotation)
+    __slots__ = ("_value_type",)
+
+    def __init__(self, annotation: Any, metadata: Any = None):
+        super().__init__(annotation, metadata)
         if args := get_args(annotation):
             assert args[0] is str
             self._value_type = TypeAnnotation.parse(get_args(annotation)[1])
@@ -111,7 +143,7 @@ class DictType(TypeAnnotation):
             return "dict"
         return f"dict[str, {self._value_type}]"
 
-    def zero_value(self):
+    def zero_value(self) -> dict:
         return {}
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
@@ -127,11 +159,13 @@ class DictType(TypeAnnotation):
 
 
 class TypedDictType(TypeAnnotation):
-    def __init__(self, annotation: Any):
-        super().__init__(annotation)
+    __slots__ = ("_optional_keys", "_schema")
+
+    def __init__(self, annotation: Any, metadata: Any = None):
+        super().__init__(annotation, metadata)
         self._schema = {
             key: TypeAnnotation.parse(type_)
-            for key, type_ in get_type_hints(annotation).items()
+            for key, type_ in get_type_hints(annotation, include_extras=True).items()
         }
         self._optional_keys: frozenset[str] = getattr(
             annotation, "__optional_keys__", frozenset()
@@ -144,8 +178,12 @@ class TypedDictType(TypeAnnotation):
             + ")"
         )
 
-    def zero_value(self):
-        return {}
+    def zero_value(self) -> dict:
+        return {
+            key: value_type.zero_value()
+            for key, value_type in self._schema.items()
+            if key not in self._optional_keys
+        }
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
         if not isinstance(value, dict):
@@ -166,8 +204,10 @@ class TypedDictType(TypeAnnotation):
 
 
 class ListType(TypeAnnotation):
-    def __init__(self, annotation: Any):
-        super().__init__(annotation)
+    __slots__ = ("_type", "_value_type")
+
+    def __init__(self, annotation: Any, metadata: Any = None):
+        super().__init__(annotation, metadata)
         self._type = get_origin(annotation) or (tuple if annotation is tuple else list)
         if args := get_args(annotation):
             self._value_type = TypeAnnotation.parse(args[0])
@@ -184,7 +224,7 @@ class ListType(TypeAnnotation):
             return "list"
         return f"list[{self._value_type}]"
 
-    def zero_value(self):
+    def zero_value(self) -> list:
         return []
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
@@ -199,8 +239,10 @@ class ListType(TypeAnnotation):
 
 
 class LiteralType(TypeAnnotation):
-    def __init__(self, annotation: Any):
-        super().__init__(annotation)
+    __slots__ = ("_values",)
+
+    def __init__(self, annotation: Any, metadata: Any = None):
+        super().__init__(annotation, metadata)
         self._values = get_args(annotation)
 
     def __str__(self):
@@ -208,7 +250,7 @@ class LiteralType(TypeAnnotation):
             repr(type_) for type_ in self._values if type_ is not type(None)
         )
 
-    def zero_value(self):
+    def zero_value(self) -> Any:
         return self._values[0]
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
@@ -217,8 +259,10 @@ class LiteralType(TypeAnnotation):
 
 
 class UnionType(TypeAnnotation):
-    def __init__(self, annotation: Any):
-        super().__init__(annotation)
+    __slots__ = ("_value_types",)
+
+    def __init__(self, annotation: Any, metadata: Any = None):
+        super().__init__(annotation, metadata)
         self._value_types = tuple(
             TypeAnnotation.parse(arg) for arg in get_args(annotation)
         )
@@ -236,10 +280,11 @@ class UnionType(TypeAnnotation):
             }
         )
 
-    def zero_value(self):
-        if type(None) in self._value_types:
+    def zero_value(self) -> Any:
+        if any(isinstance(value_type, NoneType) for value_type in self._value_types):
+            # If the Type can be None then that's the zero value
             return None
-        return self._value_types[0]
+        return self._value_types[0].zero_value()
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
         if len(self._value_types) == 2:
@@ -263,8 +308,8 @@ class UnionType(TypeAnnotation):
 
 
 class AnyType(TypeAnnotation):
-    def __init__(self, annotation: Any = Any):
-        super().__init__(annotation)
+    def __init__(self, annotation: Any = Any, metadata: Any = None):
+        super().__init__(annotation, metadata)
 
     def __str__(self):
         return "Any"
@@ -276,8 +321,8 @@ class AnyType(TypeAnnotation):
 
 
 class NoneType(TypeAnnotation):
-    def __init__(self, annotation: Any = None):
-        super().__init__(annotation or type(None))
+    def __init__(self, annotation: Any = None, metadata: Any = None):
+        super().__init__(annotation or type(None), metadata)
 
     def __str__(self):
         return "None"
@@ -288,11 +333,11 @@ class NoneType(TypeAnnotation):
             yield f"Option {self._format_path(path)!r} must be None"
 
 
-class PrimativeType(TypeAnnotation):
+class PrimitiveType(TypeAnnotation):
     def __str__(self):
         return self._annotation.__name__
 
-    def zero_value(self):
+    def zero_value(self) -> Any:
         return self._annotation()
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:

@@ -126,7 +126,10 @@ class PoeUi:
             default="",
             help=maybe_suppress(
                 "executor_run_options",
-                "Pass additional options to the executor (e.g., for uv: '--isolated --python 3.11')",
+                (
+                    "Pass additional options to the executor "
+                    "(e.g., for uv: '--isolated --python 3.11')"
+                ),
             ),
         )
 

@@ -12,6 +12,9 @@ dependencies = []
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poe]
+executor = { type = "poetry" }
+
 [tool.poe.tasks]
 
 test-poetry-run-options.cmd = "python -c \"print('poetry run options test')\""

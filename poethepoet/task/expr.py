@@ -1,9 +1,10 @@
 import re
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from ..exceptions import ConfigValidationError, ExpressionParseError
 from ..executor.task_run import PoeTaskRun
+from ..options.annotations import Metadata
 from .base import PoeTask
 
 if TYPE_CHECKING:
@@ -24,7 +25,7 @@ class ExprTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         imports: Sequence[str] = tuple()
-        assert_: bool | int = False
+        assert_: Annotated[bool | int, Metadata(config_name="assert")] = False
         use_exec: bool = False
 
         def validate(self):

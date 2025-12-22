@@ -219,7 +219,7 @@ class RunContext:
             existing_run_options = executor_config.get("run_options", [])
 
             # FIXME: align types
-            executor_config = { # type: ignore
+            executor_config = {  # type: ignore
                 **executor_config,
                 "run_options": [*existing_run_options, *cli_run_options],
             }
