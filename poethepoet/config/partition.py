@@ -99,7 +99,7 @@ class ProjectConfig(ConfigPartition):
         default_array_item_task_type: str = "ref"
         env: Mapping[str, str | EnvDefault] = EmptyDict
         envfile: str | Sequence[str] = ()
-        executor: Mapping[str, str | Sequence[str] | bool] = MappingProxyType(
+        executor: Mapping[str, str | Sequence[str] | bool] | str = MappingProxyType(
             {"type": "auto"}
         )
         include: str | Sequence[str] | Sequence[IncludeItem] = ()

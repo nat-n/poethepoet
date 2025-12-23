@@ -34,6 +34,52 @@ def test_virtualenv_executor_activates_venv(
 
 
 @pytest.mark.slow
+def test_override_executor_config_on_task(run_poe_subproc, use_venv, projects):
+    """
+    Rely on task level config to correctly set the virtualenv location
+    """
+    venv_path = projects["venv"].joinpath("my_other_venv")
+    with use_venv(venv_path, ["./tests/fixtures/packages/poe_test_helpers"]):
+        result = run_poe_subproc("override-executor-on-task", project="venv")
+        assert result.capture == "Poe => poe_test_env\n"
+        assert f"VIRTUAL_ENV={venv_path}" in result.stdout
+        assert result.stderr == ""
+
+
+@pytest.mark.slow
+def test_override_executor_config_on_cli(run_poe_subproc, use_venv, projects):
+    """
+    Rely on executor config override from the --executor-opt options to correctly set
+    the virtualenv location
+    """
+    venv_path = projects["venv"].joinpath("my_other_venv")
+    with use_venv(venv_path, ["./tests/fixtures/packages/poe_test_helpers"]):
+        result = run_poe_subproc(
+            "--executor-opt", f"location={venv_path}", "show-env", project="venv"
+        )
+        assert result.capture == "Poe => poe_test_env\n"
+        assert f"VIRTUAL_ENV={venv_path}" in result.stdout
+        assert result.stderr == ""
+
+
+def test_override_executor_config(run_poe_subproc):
+    """
+    Rely on task level config to correctly set the virtualenv location
+    """
+    result = run_poe_subproc("override-executor", project="venv")
+    assert result.capture == "Poe => poe_test_env\n"
+    assert "POE_ACTIVE=simple" in result.stdout
+    assert result.stderr == ""
+
+
+def test_override_executor_with_cli(run_poe_subproc, projects):
+    result = run_poe_subproc("-e", "simple", "show-env", project="venv")
+    assert result.capture == "Poe => poe_test_env\n"
+    assert "POE_ACTIVE=simple" in result.stdout
+    assert result.stderr == ""
+
+
+@pytest.mark.slow
 def test_virtualenv_executor_provides_access_to_venv_content(
     run_poe_subproc, with_virtualenv_and_venv, projects
 ):

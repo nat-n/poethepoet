@@ -176,8 +176,8 @@ class PoeTask(metaclass=MetaPoeTask):
         deps: Sequence[str] | None = None
         # ruff: noqa: UP007
         env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = tuple()
-        executor: dict | None = None
+        envfile: Union[str, Sequence[str]] = ()
+        executor: Mapping[str, str | Sequence[str] | bool] | str | None = None
         help: str | None = None
         uses: Mapping[str, str] | None = None
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None
@@ -186,6 +186,17 @@ class PoeTask(metaclass=MetaPoeTask):
             """
             Validation rules that don't require any extra context go here.
             """
+
+        @classmethod
+        def normalize(cls, config: Any, strict: bool = True):
+            """
+            if executor is provided as just a string, then expand it to a dict with type
+            """
+
+            for item in super().normalize(config, strict):
+                if (executor := item.get("executor")) and isinstance(executor, str):
+                    yield {**item, "executor": {"type": executor}}
+                yield item
 
     class TaskSpec:
         name: str
@@ -210,9 +221,9 @@ class PoeTask(metaclass=MetaPoeTask):
             self.source = source
             self.parent = parent
 
-        def _parse_options(self, task_def: dict[str, Any]):
+        def _parse_options(self, task_def: dict[str, Any]) -> "PoeTask.TaskOptions":
             try:
-                return next(
+                return next(  # type: ignore[return-value]
                     self.task_type.TaskOptions.parse(
                         task_def, extra_keys=(self.task_type.__key__,)
                     )

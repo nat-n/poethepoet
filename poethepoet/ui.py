@@ -118,18 +118,23 @@ class PoeUi:
             help=maybe_suppress("executor", "Override the default task executor"),
         )
 
+        def key_value_pair(input_str: str) -> tuple[str, str]:
+            if "=" in input_str:
+                key, val = input_str.split("=", 1)
+                return key, val
+            return input_str, "1"
+
         parser.add_argument(
-            "--executor-run-options",
-            dest="executor_run_options",
-            metavar="OPTIONS",
-            type=str,
-            default="",
+            "-X",
+            "--executor-opt",
+            dest="executor_options",
+            action="append",
+            metavar="KEY[=VALUE]",
+            default=[],
+            type=key_value_pair,
             help=maybe_suppress(
-                "executor_run_options",
-                (
-                    "Pass additional options to the executor "
-                    "(e.g., for uv: '--isolated --python 3.11')"
-                ),
+                "executor_options",
+                "Set executor configuration for this run.",
             ),
         )
 

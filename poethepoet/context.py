@@ -4,7 +4,7 @@ import asyncio
 import os
 import re
 from contextlib import asynccontextmanager, contextmanager
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from .io import PoeIO
 from .shutdown import ShutdownManager
@@ -205,29 +205,10 @@ class RunContext:
 
         from .executor import PoeExecutor
 
-        if not executor_config:
-            if self.ui and self.ui["executor"]:
-                executor_config = {"type": self.ui["executor"]}
-            else:
-                executor_config = self.config.executor
-
-        # Merge CLI-provided executor_run_options (highest priority)
-        if self.ui and self.ui["executor_run_options"]:
-            import shlex
-
-            cli_run_options = shlex.split(self.ui["executor_run_options"])
-            existing_run_options = executor_config.get("run_options", [])
-
-            # FIXME: align types
-            executor_config = {  # type: ignore
-                **executor_config,
-                "run_options": [*existing_run_options, *cli_run_options],
-            }
-
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
-            executor_config=executor_config,
+            executor_config=self._resolve_executor_config(executor_config),
             env=env,
             working_dir=working_dir,
             capture_stdout=capture_stdout,
@@ -235,6 +216,41 @@ class RunContext:
             dry=False if delegate_dry_run else self.dry,
             io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
         )
+
+    def _resolve_executor_config(self, task_level_config: Mapping[str, str] | None):
+        """
+        Executor config is resolved from (in order of precedence):
+        - the --executor and --executor-opt global cli options
+        - the task level executor option
+        - the global level executor option
+        """
+
+        assert self.ui
+
+        # Any config that explicitly contradicts the final type will be ignored
+        final_type = (
+            self.ui["executor"]
+            or (task_level_config or {}).get("type")
+            or self.config.executor["type"]
+        )
+
+        cli_config = dict(cast("list[tuple[str,str]]", self.ui["executor_options"]))
+        if self.ui["executor"]:
+            cli_config["type"] = cast("str", self.ui["executor"])
+
+        result: dict[str, str] = {}
+        if self.config.executor["type"] == final_type:
+            result.update(self.config.executor)
+        if (
+            task_level_config
+            and task_level_config.get("type", final_type) == final_type
+        ):
+            result.update(task_level_config)
+
+        # Always take CLI overrides from --executor or --executor-opt
+        result.update(cli_config)
+
+        return result
 
 
 class InitializationContext:

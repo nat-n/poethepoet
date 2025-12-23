@@ -102,12 +102,18 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         Create an executor.
         """
         executor_cls = cls._resolve_implementation(context, executor_config["type"])
-        executor_options = next(executor_cls.ExecutorOptions.parse(executor_config))
+        try:
+            executor_options = next(executor_cls.ExecutorOptions.parse(executor_config))
+        except ConfigValidationError as error:
+            raise ConfigValidationError(
+                f"Couldn't parse executor options with executor type "
+                f"{executor_config.get('type')!r}"
+            ) from error
 
         return executor_cls(
             invocation=invocation,
             context=context,
-            options=executor_options,
+            options=executor_options,  # type: ignore[arg-type]
             env=env,
             project_dir=context.config.project_dir,
             working_dir=working_dir,

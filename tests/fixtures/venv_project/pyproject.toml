@@ -7,3 +7,14 @@ show-version = "test_print_version"
 test-package-version.script = "scripts:test_package_version"
 test-package-exec-version.script = "scripts:test_package_exec_version"
 show-env = "poe_test_env"
+
+
+[tool.poe.tasks.override-executor]
+# specify executor as string, with type incompatible with project executor config
+cmd = "poe_test_env"
+executor = "simple"
+
+[tool.poe.tasks.override-executor-on-task]
+# specify executor as string, with type incompatible with project executor config
+cmd = "poe_test_env"
+executor = { "location" = "my_other_venv" }

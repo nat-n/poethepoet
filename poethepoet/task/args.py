@@ -39,7 +39,7 @@ class ArgSpec(PoeOptions):
     multiple: Union[bool, int] = False
 
     @classmethod
-    def normalize(cls, args_def: ArgsDef, strict: bool = True):
+    def normalize(cls, config: ArgsDef, strict: bool = True):
         """
         Because arguments can be declared with different structures
         (i.e. dict or list), this function normalizes the input into a list of
@@ -48,8 +48,8 @@ class ArgSpec(PoeOptions):
         This is also where we do any validation that requires access to the raw
         config.
         """
-        if isinstance(args_def, list):
-            for item in args_def:
+        if isinstance(config, list):
+            for item in config:
                 if isinstance(item, str):
                     yield {"name": item, "options": (f"--{item}",)}
                 elif isinstance(item, dict):
@@ -63,8 +63,8 @@ class ArgSpec(PoeOptions):
                         "expected"
                     )
 
-        elif isinstance(args_def, dict):
-            for name, params in args_def.items():
+        elif isinstance(config, dict):
+            for name, params in config.items():
                 if not isinstance(params, dict):
                     raise ConfigValidationError(
                         f"Invalid configuration for arg {name!r}, expected dict"

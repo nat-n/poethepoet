@@ -140,11 +140,7 @@ class PoeOptions:
                 )
 
     @classmethod
-    def normalize(
-        cls,
-        config: Any,
-        strict: bool = True,
-    ):
+    def normalize(cls, config: Any, strict: bool = True):
         """
         This may be overridden by subclasses to coerce alternative variants of the
         config schema to the 'normal' variant.
