@@ -126,14 +126,55 @@ def test_uv_executor_task_with_cwd(
         assert f"pwd: {poe_project_path}/tests/fixtures\n" in result.stdout
 
 
+def _normalize_uv_lines(lines):
+    """Normalize uv stdout tokens into a list where flags and their values
+    are combined as `--flag=value` when the output splits them onto two
+    separate lines (happens on some Windows setups).
+    """
+    normalized = []
+    i = 0
+    while i < len(lines):
+        cur = lines[i]
+        if (
+            cur.startswith("--")
+            and "=" not in cur
+            and i + 1 < len(lines)
+            and not lines[i + 1].startswith("--")
+        ):
+            normalized.append(f"{cur}={lines[i+1]}")
+            i += 2
+        else:
+            normalized.append(cur)
+            i += 1
+    return normalized
+
+
+def _assert_uv_options_present(lines):
+    """Assert that the expected UV run options are present in the
+    normalized `lines` list. Accept both `--flag=value` and `--flag value`
+    style outputs.
+    """
+    lines_set = set(lines)
+    for expected in UV_RUN_OPTION_SET:
+        if expected == "run":
+            assert "run" in lines_set
+        elif "=" in expected:
+            assert expected in lines_set
+        else:
+            assert expected in lines_set or any(
+                line.startswith(expected + "=") for line in lines
+            )
+
+
 def test_uv_executor_passes_uv_run_options(run_poe_subproc, mock_uv_path):
     env = {"PATH": f"{mock_uv_path}{os.pathsep}{os.environ.get('PATH', '')}"}
 
     result = run_poe_subproc("test-uv-run-options", project="uv", env=env)
 
     assert result.code == 0
-    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    assert UV_RUN_OPTION_SET.issubset(set(lines))
+    raw_lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    lines = _normalize_uv_lines(raw_lines)
+    _assert_uv_options_present(lines)
     assert lines.count("--group=ci") == 1
     assert lines.count("--group=docs") == 1
 
@@ -180,7 +221,8 @@ def test_uv_executor_passes_uv_run_options_from_cli(
     )
 
     assert result.code == 0
-    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    assert UV_RUN_OPTION_SET.issubset(set(lines))
+    raw_lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    lines = _normalize_uv_lines(raw_lines)
+    _assert_uv_options_present(lines)
     assert lines.count("--group=ci") == 1
     assert lines.count("--group=docs") == 1
