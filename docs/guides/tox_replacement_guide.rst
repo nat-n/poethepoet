@@ -1,18 +1,20 @@
-Replacing Tox with UV and Poe
-==============================
+Replacing tox with uv and Poe the Poet
+======================================
 
-This guide shows you how to replace `tox <https://tox.wiki/>`_ with Poe the Poet and `uv <https://docs.astral.sh/uv/>`_ for running tests across multiple Python versions and environments.
+This guide demonstrates how Poe the Poet and |uv_link| can replace |tox_link| for running tests across multiple python versions and environments.
 
-Why Replace Tox?
+
+Why replace tox?
 ----------------
 
-While tox is a powerful tool for test automation, using Poe the Poet with uv offers several advantages:
+While tox is a powerful tool for test automation, using Poe the Poet with uv offers comparable expressiveness for many use cases, and several compelling advantages:
 
 - **Faster execution**: uv is significantly faster than traditional virtualenv tools
-- **Single configuration file**: Everything in ``pyproject.toml``
-- **Better integration**: Works seamlessly with your existing poetry or uv workflow
-- **More flexible**: Leverage all of Poe's task composition features
-- **Simpler syntax**: More intuitive configuration
+- **Unified configuration**: everything in ``pyproject.toml``
+- **Better integration**: works seamlessly with your existing uv workflow
+- **More flexible**: leverage all of Poe the Poet's task composition features
+- **Simpler syntax**: more intuitive task oriented configuration
+
 
 Prerequisites
 -------------
@@ -27,7 +29,10 @@ Install both uv and Poe the Poet:
     # Install Poe the Poet
     uv tool install poethepoet
 
-Basic Migration
+See other installation methods in the `uv installation guide <https://docs.astral.sh/uv/getting-started/installation/>`_ and :ref:`Poe the Poet installation guide<Installation>`.
+
+
+Basic migration
 ---------------
 
 A typical ``tox.ini`` file might look like this:
@@ -35,35 +40,35 @@ A typical ``tox.ini`` file might look like this:
 .. code-block:: ini
 
     [tox]
-    envlist = py39,py310,py311,py312
+    envlist = py310,py311,py312,py313
 
     [testenv]
     deps = pytest
            pytest-cov
     commands = pytest tests --cov=mypackage
 
-Here's the equivalent configuration using Poe the Poet with uv:
+Here's the equivalent configuration using Poe the Poet with the :ref:`uv executor <Uv Executor>`:
 
 .. code-block:: toml
 
     [tool.poe.executor]
-    type = "uv"
+    type = "uv" # Use the uv executor for all tasks by default
 
     [tool.poe.tasks.test-py39]
     cmd = "pytest tests --cov=mypackage"
-    executor_run_options = ["--isolated", "--python", "3.9"]
+    executor = {isolated = true, python = "3.9"} # Specify python version, and that we want an isolated env
 
     [tool.poe.tasks.test-py310]
     cmd = "pytest tests --cov=mypackage"
-    executor_run_options = ["--isolated", "--python", "3.10"]
+    executor = {isolated = true, python = "3.10"}
 
     [tool.poe.tasks.test-py311]
     cmd = "pytest tests --cov=mypackage"
-    executor_run_options = ["--isolated", "--python", "3.11"]
+    executor = {isolated = true, python = "3.11"}
 
     [tool.poe.tasks.test-py312]
     cmd = "pytest tests --cov=mypackage"
-    executor_run_options = ["--isolated", "--python", "3.12"]
+    executor = {isolated = true, python = "3.12"}
 
     [tool.poe.tasks.test-all]
     sequence = ["test-py39", "test-py310", "test-py311", "test-py312"]
@@ -80,27 +85,15 @@ Or run tests for a specific version:
 
     poe test-py311
 
-Understanding executor_run_options
------------------------------------
+.. tip::
 
-The ``executor_run_options`` are passed directly to ``uv run``. Common options include:
+  See the :ref:`uv executor documentation <Uv Executor>` for a full explanation of these and other available executor options.
 
-``--isolated``
-    Runs in an isolated environment, preventing access to the global Python packages. This ensures your tests run in a clean environment, similar to tox's default behavior.
 
-``--python <version>``
-    Specifies which Python version to use. This is the key to running tests across multiple Python versions.
-
-``--with <package>``
-    Adds additional packages to the environment. Useful for optional dependencies or test utilities.
-
-``--no-sync``
-    Skips dependency synchronization, which can speed up execution if you know your environment is already set up.
-
-Advanced Configurations
+Advanced configurations
 -----------------------
 
-Testing with Different Dependency Sets
+Testing with different dependency sets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need to test against different versions of dependencies (like tox's factors):
@@ -109,37 +102,25 @@ If you need to test against different versions of dependencies (like tox's facto
 
     [tool.poe.tasks.test-django32]
     cmd = "pytest tests"
-    executor_run_options = [
-        "--isolated",
-        "--python", "3.11",
-        "--with", "django==3.2.*"
-    ]
+    executor = { isolated = true, python = "3.11", group = "dev", with = "django==3.2.*" }
 
     [tool.poe.tasks.test-django42]
     cmd = "pytest tests"
-    executor_run_options = [
-        "--isolated",
-        "--python", "3.11",
-        "--with", "django==4.2.*"
-    ]
+    executor = { isolated = true, python = "3.11", group = "dev", with = "django==4.2.*" }
 
-Testing with Optional Dependencies
+Testing with optional dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To test optional dependency groups defined in your ``pyproject.toml``:
+Pick and choose optional or dev dependency groups defined in your ``pyproject.toml``:
 
 .. code-block:: toml
 
-    [tool.poe.tasks.test-extras]
+    [tool.poe.tasks.test-with-extras]
     cmd = "pytest tests"
-    executor_run_options = [
-        "--isolated",
-        "--python", "3.11",
-        "--extra", "all"
-    ]
+    executor = { extra = "all", group = ["ci", "debug"], no-group = "docs" }
 
-Pre and Post Test Commands
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compose testing with other tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use sequence tasks to run commands before and after tests:
 
@@ -150,186 +131,66 @@ Use sequence tasks to run commands before and after tests:
 
     [tool.poe.tasks.test-py311]
     cmd = "pytest tests --cov=mypackage"
-    executor_run_options = ["--isolated", "--python", "3.11"]
+    executor = { isolated = true, python = "3.11" }
 
     [tool.poe.tasks.coverage-report]
     cmd = "coverage report"
 
     [tool.poe.tasks.ci]
-    sequence = ["lint", "test-py311", "coverage-report"]
+    sequence = ["lint", "test-py311", "coverage-report"
 
-Parallel Execution
+Or define a DAG of tasks with task ``deps``:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.lint]
+    cmd = "ruff check ."
+
+    [tool.poe.tasks.test-py311]
+    cmd = "pytest tests --cov=mypackage"
+    executor = { isolated = true, python = "3.11" }
+    deps = ["lint"]
+
+See the :doc:`guide on task composition<../guides/composition_guide>` for more examples.
+
+Parallel execution
 ~~~~~~~~~~~~~~~~~~
 
-Unlike tox's ``-p`` flag, Poe doesn't currently support parallel task execution out of the box. However, you can use shell tasks to achieve this:
+tox supports running tests in parallel using the ``-p`` option. Poe the Poet lets you define a parallel task that runs all your test variants concurrently:
 
 .. code-block:: toml
 
     [tool.poe.tasks.test-parallel]
-    shell = """
-    poe test-py39 &
-    poe test-py310 &
-    poe test-py311 &
-    poe test-py312 &
-    wait
-    """
+    parallel = ["test-py39", "test-py310", "test-py311", "test-py312"]
 
-Environment Variables
+Environment variables
 ~~~~~~~~~~~~~~~~~~~~~
 
-Set environment variables for specific test runs:
+tox allows setting environment variables for test runs using the ``setenv`` option. You can achieve the same with Poe the Poet using the ``env`` or ``envfile`` options.
+
+Set environment variables directly:
 
 .. code-block:: toml
 
     [tool.poe.tasks.test-integration]
     cmd = "pytest tests/integration"
-    executor_run_options = ["--isolated", "--python", "3.11"]
+    executor = { isolated = true, python = "3.11" }
     env = { DATABASE_URL = "postgresql://localhost/test_db" }
 
-Migration Checklist
--------------------
-
-When migrating from tox to Poe + uv, consider these steps:
-
-1. Install uv and Poe the Poet
-2. Set up the uv executor in your ``pyproject.toml``
-3. Create a task for each Python version you want to test
-4. Add a ``test-all`` sequence task to run all version tests
-5. Migrate any ``setenv`` configurations to task-level ``env`` options
-6. Convert ``commands_pre`` to sequence task dependencies
-7. Update your CI/CD configuration to use ``poe`` instead of ``tox``
-8. Remove ``tox.ini`` once everything works
-
-CI/CD Integration
------------------
-
-GitHub Actions
-~~~~~~~~~~~~~~
-
-Replace tox in your GitHub Actions workflow:
-
-.. code-block:: yaml
-
-    name: Tests
-
-    on: [push, pull_request]
-
-    jobs:
-      test:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
-
-          - name: Install uv
-            run: curl -LsSf https://astral.sh/uv/install.sh | sh
-
-          - name: Install Poe the Poet
-            run: uv tool install poethepoet
-
-          - name: Run tests
-            run: poe test-all
-
-GitLab CI
-~~~~~~~~~
-
-.. code-block:: yaml
-
-    test:
-      image: python:3.11
-      before_script:
-        - curl -LsSf https://astral.sh/uv/install.sh | sh
-        - export PATH="$HOME/.cargo/bin:$PATH"
-        - uv tool install poethepoet
-      script:
-        - poe test-all
-
-Comparison Table
-----------------
-
-Here's a quick comparison of common tox features and their Poe + uv equivalents:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 35 35
-
-   * - Feature
-     - Tox
-     - Poe + uv
-   * - Multiple Python versions
-     - ``envlist = py39,py310``
-     - ``executor_run_options = ["--python", "3.9"]``
-   * - Isolated environments
-     - Default behavior
-     - ``executor_run_options = ["--isolated"]``
-   * - Install dependencies
-     - ``deps = pytest``
-     - Managed by uv from ``pyproject.toml`` or passed to run_options ``["--with", "pytest"]``
-   * - Run commands
-     - ``commands = pytest``
-     - ``cmd = "pytest"``
-   * - Environment variables
-     - ``setenv = VAR=value``
-     - ``env = { VAR = "value" }``
-   * - Command sequences
-     - ``commands_pre``, ``commands``
-     - ``sequence = ["cmd1", "cmd2"]``
-   * - Skip install
-     - ``skip_install = true``
-     - ``executor_run_options = ["--no-sync"]``
-   * - Parallel execution
-     - ``tox -p``
-     - Custom shell script with ``&`` and ``wait``
-
-Common Pitfalls
----------------
-
-Python Version Not Found
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-If uv can't find a specific Python version, ensure it's installed on your system:
-
-.. code-block:: bash
-
-    # Install specific Python version with uv
-    uv python install 3.11
-
-Dependency Resolution Issues
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you encounter dependency conflicts, ensure your ``pyproject.toml`` dependencies are properly specified. Unlike tox, uv uses your project's actual dependency specification.
-
-Missing Test Dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Make sure test dependencies are either in your ``pyproject.toml`` or added via ``--with`` options:
+Or load an envfile for the task:
 
 .. code-block:: toml
 
-    [tool.poe.tasks.test-py311]
-    cmd = "pytest tests"
-    executor_run_options = [
-        "--isolated",
-        "--python", "3.11",
-        "--with", "pytest",
-        "--with", "pytest-cov"
-    ]
+    [tool.poe.tasks.test-integration]
+    cmd = "pytest tests/integration"
+    executor = { isolated = true, python = "3.11" }
+    envfile = ".env.test"
 
-Performance Tips
-----------------
 
-1. **Use --no-sync for faster reruns**: If you know dependencies haven't changed:
+.. |uv_link| raw:: html
 
-   .. code-block:: toml
+   <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>
 
-       executor_run_options = ["--no-sync", "--python", "3.11"]
+.. |tox_link| raw:: html
 
-2. **Cache uv environments in CI**: Configure your CI to cache ``~/.cache/uv``
-
-3. **Run only changed version tests locally**: Instead of ``poe test-all``, run specific versions during development
-
-Further Reading
----------------
-
-- :ref:`UV Executor run options<UV Executor run options>` - Detailed documentation on executor options
-- :doc:`composition_guide` - Learn more about task composition
-- `uv documentation <https://docs.astral.sh/uv/>`_ - Learn more about uv options
+   <a href="https://tox.wiki/" target="_blank">tox</a>

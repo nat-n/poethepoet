@@ -42,7 +42,14 @@ def mock_uv_path(tmp_path, is_windows):
     tmp_dir.mkdir(parents=True, exist_ok=True)
     if is_windows:
         uv_path = tmp_dir / "uv.bat"
-        uv_path.write_text("@echo off\nfor %%A in (%*) do echo %%A\n")
+        uv_path.write_text(
+            "@echo off\r\n"
+            ":loop\r\n"
+            'if "%~1"=="" goto :eof\r\n'
+            "echo %~1\r\n"
+            "shift\r\n"
+            "goto loop\r\n"
+        )
     else:
         uv_path = tmp_dir / "uv"
         uv_path.write_text("#!/bin/sh\nprintf '%s\\n' \"$@\"\n")
