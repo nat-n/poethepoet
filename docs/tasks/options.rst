@@ -188,7 +188,7 @@ If you only want to change the executor type but not provide any additional conf
 Configure task level virtualenv with uv
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The uv executor supports configuring uv to run a task with its own environment. This is a powerful feature that allows Poe the Poet + uv to be used as a lightweight alternative to tools like tox for testing against multiple python versions or dependency sets.
+The uv executor supports configuring uv to run a task with its own environment. This is a powerful feature that allows Poe the Poet + uv to be used as a :ref:`lightweight alternative to tools like tox<Replacing tox with uv and Poe the Poet>` for testing against multiple python versions or dependency sets.
 
 .. code-block:: toml
 
