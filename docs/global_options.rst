@@ -3,15 +3,14 @@ Global options
 
 The following options can be set for all tasks in a project directly under ``[tool.poe]``. These are called global options, in contrast with :doc:`task options<tasks/options>`.
 
-
 **env** : ``dict[str, str]`` :ref:`📖<Global environment variables>`
   Define environment variables to be exposed to all tasks. These can be :ref:`extended on the task level<Setting task specific environment variables>`.
 
 **envfile** : ``str`` | ``list[str]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
-**executor** : ``dict[str, str]`` :ref:`📖<Change the executor type>`
-  Override the default behavior for selecting an executor for tasks in this project.
+**executor** : ``str | dict[str, str]`` :ref:`📖<Change the executor type>`
+  Specify the default executor type and/or configuration for all tasks in this project.
 
 **include** : ``str`` | ``dict[str, str]`` | ``list[str | dict[str, str]]`` | :doc:`📖<../guides/include_guide>`
   Specify one or more other toml or json files to load tasks from.
@@ -95,11 +94,11 @@ Normally envfile paths are resolved relative to the project root (that is the pa
 
 See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
 
-Change the executor type
-------------------------
+Configure the executor
+----------------------
 
 You can configure poe to use a specific executor by setting
-:toml:`tool.poe.executor.type`. Valid values include:
+:toml:`tool.poe.executor`. Valid values include:
 
 - **auto**: to automatically use the most appropriate of the following executors in order
 - **poetry**: to run tasks in the poetry managed environment
@@ -107,40 +106,64 @@ You can configure poe to use a specific executor by setting
 - **virtualenv**: to run tasks in the indicated virtualenv (or else "./.venv" or "./venv" if present)
 - **simple**: to run tasks without doing any specific environment setup
 
-The default behaviour is **auto**.
+The default behavior is **auto**.
 
-For example, the following configuration will cause poe to ignore the poetry environment
-(if present), and instead use the virtualenv at the given location relative to the
-parent directory. If no location is specified for a virtualenv then the default behavior is to use the virtualenv from ``./venv`` or ``./.venv`` if available.
+You specify a different executor to use as a global option, task level option, or at runtime with the ``--executor`` cli option.
 
-.. code-block:: toml
-
-  [tool.poe.executor]
-  type = "virtualenv"
-  location = "myvenv"
-
-If the virtualenv location is a relative path then it is resolved relative to the project root (the parent directory of the pyproject.toml file. However in a monorepo project it may also be defined relative to the git repo root by templating :ref:`these  special environment variables<Special variables>` like so:
+For example you can make your whole project use the simple executor (no environment integration) by default like so:
 
 .. code-block:: toml
 
-  [tool.poe.executor]
-  type = "virtualenv"
-  location = "${POE_GIT_DIR}/myvenv"
+    [tool.poe]
+    executor = "simple"
+
+Which is a short hand for the following table form which is required in order to pass options to the executor:
+
+.. code-block:: toml
+
+    [tool.poe.executor]
+    type = "simple"
 
 .. important::
 
-  You can also configure the executor :ref:`at the task level<Change the executor type>`, which will have higher precedence.
-  Alternatively you can override the executor type at runtime by passing the ``--executor`` CLI option (before the task name) with the name of the executor to use.
+  You can also configure the executor :ref:`at the task level<Configure the executor for a task>`, which will have higher precedence.
+  Alternatively you can override the executor type at runtime by passing the ``--executor`` CLI option (before the task name) with the name of the executor to use, or the
 
-Executor run options
-^^^^^^^^^^^^^^^^^^^^
-
-When using the **uv** or **poetry** executors, you can pass additional command-line options to ``uv run`` or ``poetry run`` using the ``run_options`` configuration.
-
-UV Executor
+Uv Executor
 ~~~~~~~~~~~
 
-For the **uv** executor, you can pass options to customize how uv executes your tasks:
+The uv executor can be configured with the following options, which translate into passing the corresponding CLI option to the `uv run command <https://docs.astral.sh/uv/reference/cli/#uv-run>`_:
+
+**extra** : ``str`` | ``list[str]`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--extra>`__
+  Include optional dependencies from the specified extra name.
+
+**group** : ``str`` | ``list[str]`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--group>`__
+  Include dependencies from the specified dependency group.
+
+**no-group** : ``str`` | ``list[str]`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--no-group>`__
+  Disable the specified dependency group.
+
+**with** : ``str`` | ``list[str]`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--with>`__
+  Run with the given packages installed.
+
+**isolated** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--isolated>`__
+  Run the command in an isolated virtual environment.
+
+**no-sync** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--no-sync>`__
+  Avoid syncing the virtual environment.
+
+**locked** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--locked>`__
+  Run without updating the uv.lock file.
+
+**frozen** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--frozen>`__
+  Run without updating the uv.lock file.
+
+**no-project** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--no-project>`__
+  Avoid discovering the project or workspace.
+
+**python** : ``str`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--python>`__
+  The Python interpreter to use for the run environment.
+
 
 .. code-block:: toml
 
@@ -171,43 +194,29 @@ Example with task-level options:
 
 This feature enables you to replace tools like tox by creating task variants for different Python versions or environments. See the :doc:`../guides/tox_replacement_guide` for a detailed guide on replacing tox.
 
-Poetry Executor
-~~~~~~~~~~~~~~~
 
-For the **poetry** executor, you can pass options to ``poetry run``:
+Virtualenv Executor
+~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: toml
+The virtualenv executor can be configured with the following options:
 
-  [tool.poe.executor]
-  type = "poetry"
-  run_options = ["--no-ansi"]
-
-Common use cases for poetry include:
-
-- Disable ANSI colors: ``--no-ansi`` to disable colored output
-- Dry run: ``--dry-run`` to see what would be executed without running
-
-Example with task-level options:
+**location** : ``bool``
+  The path of the virtual environment to use. Defaults to ``./venv`` or ``./.venv``.
 
 .. code-block:: toml
 
   [tool.poe.executor]
-  type = "poetry"
+  type = "virtualenv"
+  location = "myvenv"
 
-  [tool.poe.tasks.test-no-color]
-  cmd = "pytest tests"
-  executor_run_options = ["--no-ansi"]
+If the virtualenv location is a relative path then it is resolved relative to the project root (the parent directory of the pyproject.toml file. However in a monorepo project it may also be defined relative to the git repo root by templating :ref:`these  special environment variables<Special variables>` like so:
 
-Option Priority
-~~~~~~~~~~~~~~~
+.. code-block:: toml
 
-You can set ``run_options`` at three levels:
+  [tool.poe.executor]
+  type = "virtualenv"
+  location = "${POE_GIT_DIR}/myvenv"
 
-1. Global ``executor.run_options`` in ``[tool.poe.executor]``
-2. Task-level ``executor_run_options`` in task definitions
-3. CLI ``--executor-run-options`` flag
-
-Options are merged with the following priority (lowest to highest), meaning CLI options have the highest priority and will be added after all other options.
 
 Change the default shell interpreter
 ------------------------------------

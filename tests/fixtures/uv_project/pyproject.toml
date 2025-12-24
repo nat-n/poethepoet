@@ -28,12 +28,18 @@ echo env "$(env)"
 cwd = "${workdir}"
 args = [{ name = "workdir", positional = true }]
 
-[tool.poe.tasks.test-global-run-options]
-cmd = "python -c \"print('global run options test')\""
+[tool.poe.tasks.test-uv-run-options]
+cmd = "python -V"
+executor = { type = "uv", extra = "dev", group = [
+  "ci",
+  "docs",
+], no-group = "local", with = [
+  "http",
+  "tls",
+], python = "3.12", isolated = true, no-sync = true, locked = true, frozen = true, no-project = true }
 
-[tool.poe.tasks.test-task-run-options]
-cmd = "python -c \"print('task level options')\""
-executor = { type = "uv", run_options = ["--no-sync"] }
+[tool.poe.tasks.test-uv-run-options-cli]
+cmd = "python -V"
 
 [build-system]
 requires = ["hatchling"]

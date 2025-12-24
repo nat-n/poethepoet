@@ -63,10 +63,10 @@ class UvExecutor(PoeExecutor):
             uv_run_options.append(f"--project={self.context.config.project_dir}")
 
         uv_run_options.extend(
-            f"--{key}={value}"
+            f"--{key}={item}"
             for key in self.__uv_cli_options
             if (value := self.options.get(key))
-            for _ in ((value,) if isinstance(value, str) else value)
+            for item in ((value,) if isinstance(value, str) else value)
         )
         uv_run_options.extend(
             f"--{key}" for key in self.__uv_cli_flags if self.options.get(key)

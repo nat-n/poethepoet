@@ -32,11 +32,8 @@ The following options can be configured on your tasks and are not specific to an
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.
 
-**executor** : ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
-  Specify that this task should be executed with a specific executor.
-
-**executor_run_options** : ``list[str]`` :ref:`Passing options to executors<Passing options to executors>`
-  For the UV or Poetry executors, specify additional command-line options to pass to ``uv run`` or ``poetry run``.
+**executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
+  Specify executor type and/or configuration for this task.
 
 **verbosity** : ``int`` :ref:`📖<Configure task level verbosity>`
   Specify the verbosity level for this task, from -2 (least verbose) to 2 (most verbose), overriding the project level verbosity setting, which defaults to 0.
@@ -170,7 +167,7 @@ The value ``/dev/null`` or ``NUL`` may be used to discard all output from the ta
 Configure the executor for a task
 ---------------------------------
 
-You can specify a default executor for a task by providing the ``executor`` option like so:
+You can specify a different executor for a task by providing the ``executor`` option like so:
 
 .. code-block:: toml
 
@@ -178,44 +175,63 @@ You can specify a default executor for a task by providing the ``executor`` opti
     cmd      = "gunicorn ./my_app:run"
     executor = { type = "virtualenv", location = "./server.venv" }
 
-This works exactly like the the global option to :ref:`change the executor type<Change the executor type>` except it only impacts the one task.
+This works exactly like the the global option to :ref:`configure the executor<Configure the executor>` except it only impacts the one task. If the task does not specify a different executor type, then it will inherit from and extend the global executor configuration (assuming the type is the same).
 
-
-Passing options to executors
------------------------------------
-
-When using the **uv** or **poetry** executors, you can pass additional command-line options to ``uv run`` or ``poetry run`` at the task level using the ``executor_run_options`` option.
-
-UV Executor Example
-~~~~~~~~~~~~~~~~~~~
+If you only want to change the executor type but not provide any additional configuration, you can also specify the executor as a simple string like so:
 
 .. code-block:: toml
+
+    [tool.poe.tasks.serve]
+    cmd      = "gunicorn ./my_app:run"
+    executor = "poetry"
+
+Configure task level virtualenv with uv
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The uv executor supports configuring uv to run a task with its own environment. This is a powerful feature that allows poethepoet + uv to be used as a lightweight alternative to tools like tox for testing against multiple python versions or dependency sets.
+
+.. code-block:: toml
+
+    [tool.poe]
+    executor = "uv"
+
+    [tool.poe.tasks.test]
+    help     = "Run the tests"
+    cmd      = "pytest"
+    executor = {isolated = true, python = "3.11"}
 
     [tool.poe.tasks.test-py311]
-    cmd = "pytest tests"
-    executor_run_options = ["--isolated", "--python", "3.11"]
+    help     = "An alias for the test task that runs with python 3.11"
+    ref      = "test"
+    executor = {isolated = true, python = "3.11"}
 
     [tool.poe.tasks.test-py312]
-    cmd = "pytest tests"
-    executor_run_options = ["--isolated", "--python", "3.12"]
+    help     = "An alias for the test task that runs with python 3.12"
+    ref      = "test"
+    executor = {isolated = true, python = "3.12"}
 
-This allows you to create task variants for different Python versions or environments, effectively replacing tools like tox.
+    [tool.poe.tasks.test-matrix]
+    help     = "Run tests for all python versions"
+    sequence = ["test-py311", "test-py312"]
 
-Poetry Executor Example
-~~~~~~~~~~~~~~~~~~~~~~~
+Note that it is not necessary to specify ``type = "uv"`` in the executor configuration if the project is already configured to use the uv executor by default.
+
+You can also specify a dependency on the task level without needing to add it as a project dependency, using the ``with`` option like so:
 
 .. code-block:: toml
 
-    [tool.poe.tasks.test-no-color]
-    cmd = "pytest tests"
-    executor_run_options = ["--no-ansi"]
+    [tool.poe.tasks.test]
+    help     = "Run the tests"
+    cmd      = "pytest"
+    executor = {type = "uv", with = ["pytest"], isolated = true}
 
-Option Merging
-~~~~~~~~~~~~~~
+Executor options can also be set at runtime via the ``--executor-opt`` CLI option (before the task name) to override or add to the executor configuration for a specific task invocation.
 
-The ``executor_run_options`` are merged with any global ``executor.run_options`` configured for the project. Task-level options are appended after global options. You can further override these at runtime using the ``--executor-run-options`` CLI flag.
+.. code-block:: bash
 
-For more details, see :ref:`Executor run options<Executor run options>`.
+    poe --executor uv --executor-opt with=pytest --executor-opt isolated --executor-opt with=pytest-cov --executor-opt python=3.12 test --cov my_package
+
+Multiple values can be provided for options that accept lists by passing the ``--executor-opt`` option multiple times as shown above.
 
 
 Configure task level verbosity

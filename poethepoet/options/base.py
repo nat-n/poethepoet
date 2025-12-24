@@ -189,6 +189,17 @@ class PoeOptions:
         return self.get_fields()[resolved_key].is_optional
 
     @classmethod
+    def get_field_type(cls, key: str) -> type | None:
+        """
+        Return the class of the given field. If the field is unknown return None.
+        If the type is complex, return just the origin.
+        If the field is a union, return the first non-None arg.
+        """
+        if (resolved_key := cls.get_field_attribute(key)) is None:
+            return None
+        return cls.get_fields()[resolved_key].simple_type
+
+    @classmethod
     def get_fields(cls) -> dict[str, TypeAnnotation]:
         """
         Recent python versions removed inheritance for __annotations__

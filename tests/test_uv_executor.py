@@ -1,20 +1,83 @@
+import os
 import shutil
 
 import pytest
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_uv_package_script_task(run_poe_subproc, projects):
-    result = run_poe_subproc("-q", "script-task", project="uv")
+def _uv_integration_available():
+    if not shutil.which("uv"):
+        return False
+    try:
+        import socket
+
+        sock = socket.create_connection(("pypi.org", 443), timeout=1)
+    except OSError:
+        return False
+    else:
+        sock.close()
+        return True
+
+
+UV_INTEGRATION_AVAILABLE = _uv_integration_available()
+UV_RUN_OPTION_SET = {
+    "run",
+    "--extra=dev",
+    "--group=ci",
+    "--group=docs",
+    "--no-group=local",
+    "--with=http",
+    "--with=tls",
+    "--python=3.12",
+    "--isolated",
+    "--no-sync",
+    "--locked",
+    "--frozen",
+    "--no-project",
+}
+
+
+@pytest.fixture
+def mock_uv_path(tmp_path, is_windows):
+    tmp_dir = tmp_path / "mock_uv"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    if is_windows:
+        uv_path = tmp_dir / "uv.bat"
+        uv_path.write_text("@echo off\nfor %%A in (%*) do echo %%A\n")
+    else:
+        uv_path = tmp_dir / "uv"
+        uv_path.write_text("#!/bin/sh\nprintf '%s\\n' \"$@\"\n")
+        uv_path.chmod(0o755)
+    return tmp_dir
+
+
+@pytest.fixture
+def uv_cache_env(tmp_path):
+    xdg_cache = tmp_path / "xdg_cache"
+    uv_cache = tmp_path / "uv_cache"
+    xdg_cache.mkdir(parents=True, exist_ok=True)
+    uv_cache.mkdir(parents=True, exist_ok=True)
+    return {
+        "XDG_CACHE_HOME": str(xdg_cache),
+        "UV_CACHE_DIR": str(uv_cache),
+    }
+
+
+@pytest.mark.skipif(
+    not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
+)
+def test_uv_package_script_task(run_poe_subproc, projects, uv_cache_env):
+    result = run_poe_subproc("-q", "script-task", project="uv", env=uv_cache_env)
 
     assert result.capture == ""
     assert result.stderr == ""
     assert result.stdout == "Hello from uv-project 0.0.99\n"
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_uv_executor_env(run_poe_subproc, projects, is_windows):
-    result = run_poe_subproc("show-env", project="uv")
+@pytest.mark.skipif(
+    not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
+)
+def test_uv_executor_env(run_poe_subproc, projects, is_windows, uv_cache_env):
+    result = run_poe_subproc("show-env", project="uv", env=uv_cache_env)
 
     assert result.capture == "Poe => poe_test_env\n"
     assert result.stderr == ""
@@ -26,16 +89,22 @@ def test_uv_executor_env(run_poe_subproc, projects, is_windows):
     assert "POE_ACTIVE=uv" in result.stdout
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+@pytest.mark.skipif(
+    not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
+)
 def test_uv_executor_task_with_cwd(
-    run_poe_subproc, projects, poe_project_path, is_windows
+    run_poe_subproc, projects, poe_project_path, is_windows, uv_cache_env
 ):
     if is_windows:
         subproject_path = f"{projects['uv']}\\subproject"
-        result = run_poe_subproc("-C", subproject_path, "test-cwd", "..\\..")
+        result = run_poe_subproc(
+            "-C", subproject_path, "test-cwd", "..\\..", env=uv_cache_env
+        )
     else:
         subproject_path = f"{projects['uv']}/subproject"
-        result = run_poe_subproc("-C", subproject_path, "test-cwd", "../..")
+        result = run_poe_subproc(
+            "-C", subproject_path, "test-cwd", "../..", env=uv_cache_env
+        )
 
     assert result.capture == (
         "Poe => echo UV_RUN_RECURSION_DEPTH: $UV_RUN_RECURSION_DEPTH\n"
@@ -50,51 +119,61 @@ def test_uv_executor_task_with_cwd(
         assert f"pwd: {poe_project_path}/tests/fixtures\n" in result.stdout
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_uv_executor_with_global_run_options(run_poe_subproc, projects):
-    """Test that global executor run_options are passed to uv run"""
-    result = run_poe_subproc("test-global-run-options", project="uv")
+def test_uv_executor_passes_uv_run_options(run_poe_subproc, mock_uv_path):
+    env = {"PATH": f"{mock_uv_path}{os.pathsep}{os.environ.get('PATH', '')}"}
+
+    result = run_poe_subproc("test-uv-run-options", project="uv", env=env)
 
     assert result.code == 0
-    assert "global run options test" in result.stdout
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    assert UV_RUN_OPTION_SET.issubset(set(lines))
+    assert lines.count("--group=ci") == 1
+    assert lines.count("--group=docs") == 1
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_uv_executor_with_task_run_options(run_poe_subproc, projects):
-    """Test that task-level executor_run_options are passed to uv run"""
-    result = run_poe_subproc("test-task-run-options", project="uv")
+@pytest.mark.parametrize(
+    ("executor_flag", "executor_opt_flag"),
+    [("--executor", "--executor-opt"), ("-e", "-X")],
+)
+def test_uv_executor_passes_uv_run_options_from_cli(
+    run_poe_subproc, mock_uv_path, executor_flag, executor_opt_flag
+):
+    env = {"PATH": f"{mock_uv_path}{os.pathsep}{os.environ.get('PATH', '')}"}
 
-    assert result.code == 0
-    assert "task level options" in result.stdout
-
-
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_uv_executor_with_cli_run_options(run_poe_subproc, projects):
-    """Test that CLI executor_run_options are passed correctly"""
     result = run_poe_subproc(
-        "--executor-run-options",
-        " --no-sync",  # Single quoted string
-        "test-global-run-options",
+        executor_flag,
+        "uv",
+        executor_opt_flag,
+        "extra=dev",
+        executor_opt_flag,
+        "group=ci",
+        executor_opt_flag,
+        "group=docs",
+        executor_opt_flag,
+        "no-group=local",
+        executor_opt_flag,
+        "with=http",
+        executor_opt_flag,
+        "with=tls",
+        executor_opt_flag,
+        "python=3.12",
+        executor_opt_flag,
+        "isolated",
+        executor_opt_flag,
+        "no-sync",
+        executor_opt_flag,
+        "locked",
+        executor_opt_flag,
+        "frozen",
+        executor_opt_flag,
+        "no-project",
+        "test-uv-run-options-cli",
         project="uv",
+        env=env,
     )
 
-    # Should work with --no-sync option
     assert result.code == 0
-    assert "global run options test" in result.stdout
-
-
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_uv_executor_run_options_priority(run_poe_subproc, projects):
-    """Test that CLI > task > config priority is respected"""
-    # This task already has --no-sync as task-level option
-    # Adding another CLI option should work alongside it
-    result = run_poe_subproc(
-        "--executor-run-options",
-        " --quiet",  # Single option as string with leading space to avoid arg parsing
-        "test-task-run-options",
-        project="uv",
-    )
-
-    # Should succeed with both task and CLI options
-    assert result.code == 0
-    assert "task level options" in result.stdout
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    assert UV_RUN_OPTION_SET.issubset(set(lines))
+    assert lines.count("--group=ci") == 1
+    assert lines.count("--group=docs") == 1

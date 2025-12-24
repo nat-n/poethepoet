@@ -18,7 +18,7 @@ Poe the Poet Documentation
    :target: https://github.com/nat-n/poethepoet
    :alt: GitHub repo
 
-.. image:: https://img.shields.io/badge/python-10%20%E2%80%93%203.13-blue
+.. image:: https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue
    :target: https://pypi.org/project/poethepoet/
    :alt: PyPI
 

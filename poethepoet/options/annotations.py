@@ -114,6 +114,10 @@ class TypeAnnotation:
     def is_optional(self) -> bool:
         return False
 
+    @property
+    def simple_type(self) -> Any:
+        return self._annotation
+
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
         raise NotImplementedError
 
@@ -142,6 +146,10 @@ class DictType(TypeAnnotation):
         if isinstance(self._value_type, AnyType):
             return "dict"
         return f"dict[str, {self._value_type}]"
+
+    @property
+    def simple_type(self) -> Any:
+        return dict
 
     def zero_value(self) -> dict:
         return {}
@@ -177,6 +185,10 @@ class TypedDictType(TypeAnnotation):
             + ", ".join(f"{key}: {value}" for key, value in self._schema.items())
             + ")"
         )
+
+    @property
+    def simple_type(self) -> Any:
+        return dict
 
     def zero_value(self) -> dict:
         return {
@@ -224,6 +236,10 @@ class ListType(TypeAnnotation):
             return "list"
         return f"list[{self._value_type}]"
 
+    @property
+    def simple_type(self) -> Any:
+        return dict
+
     def zero_value(self) -> list:
         return []
 
@@ -249,6 +265,10 @@ class LiteralType(TypeAnnotation):
         return " | ".join(
             repr(type_) for type_ in self._values if type_ is not type(None)
         )
+
+    @property
+    def simple_type(self) -> Any:
+        return type(self._values[0])
 
     def zero_value(self) -> Any:
         return self._values[0]
@@ -279,6 +299,12 @@ class UnionType(TypeAnnotation):
                 if not isinstance(type_, NoneType)
             }
         )
+
+    @property
+    def simple_type(self) -> Any:
+        return next(
+            vt for vt in self._value_types if not isinstance(vt, NoneType)
+        ).simple_type
 
     def zero_value(self) -> Any:
         if any(isinstance(value_type, NoneType) for value_type in self._value_types):
@@ -314,6 +340,10 @@ class AnyType(TypeAnnotation):
     def __str__(self):
         return "Any"
 
+    @property
+    def simple_type(self) -> Any:
+        return None
+
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
         if False:
             yield ""
@@ -323,6 +353,10 @@ class AnyType(TypeAnnotation):
 class NoneType(TypeAnnotation):
     def __init__(self, annotation: Any = None, metadata: Any = None):
         super().__init__(annotation or type(None), metadata)
+
+    @property
+    def simple_type(self) -> Any:
+        return None
 
     def __str__(self):
         return "None"
