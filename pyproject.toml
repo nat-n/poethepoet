@@ -117,6 +117,7 @@ script = """
     "./tests/fixtures/**/.venv",
     "./tests/fixtures/simple_project/venv",
     "./tests/fixtures/venv_project/myvenv",
+    "./tests/fixtures/venv_project/my_other_venv",
     "./tests/temp",
     verbosity=environ.get('POE_VERBOSITY'),
     dry_run=_dry_run

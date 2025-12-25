@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from ..exceptions import ExecutionError
 from .base import PoeExecutor
@@ -21,8 +21,7 @@ class VirtualenvExecutor(PoeExecutor):
     __key__ = "virtualenv"
 
     class ExecutorOptions(PoeExecutor.ExecutorOptions):
-        type: str
-        location: Union[str, None] = None  # noqa: UP007
+        location: str | None = None
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:

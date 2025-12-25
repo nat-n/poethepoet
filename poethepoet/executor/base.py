@@ -89,7 +89,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         cls,
         invocation: tuple[str, ...],
         context: ContextProtocol,
-        executor_config: Mapping[str, str],
+        executor_config: Mapping[str, str | bool | list[str | bool]],
         env: EnvVarsManager,
         *,
         working_dir: Path | None = None,
@@ -101,13 +101,19 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         """
         Create an executor.
         """
-        executor_cls = cls._resolve_implementation(context, executor_config["type"])
-        executor_options = next(executor_cls.ExecutorOptions.parse(executor_config))
+        executor_cls = cls.resolve_implementation(context, str(executor_config["type"]))
+        try:
+            executor_options = next(executor_cls.ExecutorOptions.parse(executor_config))
+        except ConfigValidationError as error:
+            raise ConfigValidationError(
+                f"Couldn't parse executor options with executor type "
+                f"{executor_config.get('type')!r}"
+            ) from error
 
         return executor_cls(
             invocation=invocation,
             context=context,
-            options=executor_options,
+            options=executor_options,  # type: ignore[arg-type]
             env=env,
             project_dir=context.config.project_dir,
             working_dir=working_dir,
@@ -118,7 +124,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         )
 
     @classmethod
-    def _resolve_implementation(cls, context: ContextProtocol, executor_type: str):
+    def resolve_implementation(cls, context: ContextProtocol, executor_type: str):
         """
         Resolve to an executor class, either as specified in the available config or
         by making some reasonable assumptions based on visible features of the

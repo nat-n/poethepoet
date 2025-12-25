@@ -118,6 +118,26 @@ class PoeUi:
             help=maybe_suppress("executor", "Override the default task executor"),
         )
 
+        def key_value_pair(input_str: str) -> tuple[str, str]:
+            if "=" in input_str:
+                key, val = input_str.split("=", 1)
+                return key, val
+            return input_str, "1"
+
+        parser.add_argument(
+            "-X",
+            "--executor-opt",
+            dest="executor_options",
+            action="append",
+            metavar="KEY[=VALUE]",
+            default=[],
+            type=key_value_pair,
+            help=maybe_suppress(
+                "executor_options",
+                "Set executor configuration for this run.",
+            ),
+        )
+
         # legacy --root parameter, keep for backwards compatibility but help output is
         # suppressed
         parser.add_argument(

@@ -4,14 +4,14 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "poe-test-helpers",
-    "poe-test-package",
-]
+dependencies = ["poe-test-helpers", "poe-test-package"]
 
 [tool.uv.sources]
 poe-test-helpers = { path = "../packages/poe_test_helpers" }
 poe-test-package = { path = "../packages/poe_test_package" }
+
+[tool.poe]
+executor.type = "uv"
 
 [tool.poe.tasks]
 show-version = "test_print_version"
@@ -25,10 +25,21 @@ echo VIRTUAL_ENV: $VIRTUAL_ENV
 echo pwd: $(pwd)
 echo env "$(env)"
 """
-cwd   = "${workdir}"
-args  = [
-    { name = "workdir", positional = true }
-]
+cwd = "${workdir}"
+args = [{ name = "workdir", positional = true }]
+
+[tool.poe.tasks.test-uv-run-options]
+cmd = "python -V"
+executor = { type = "uv", extra = "dev", group = [
+  "ci",
+  "docs",
+], no-group = "local", with = [
+  "http",
+  "tls",
+], python = "3.12", isolated = true, no-sync = true, locked = true, frozen = true, no-project = true }
+
+[tool.poe.tasks.test-uv-run-options-cli]
+cmd = "python -V"
 
 [build-system]
 requires = ["hatchling"]
