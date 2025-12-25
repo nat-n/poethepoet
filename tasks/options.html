@@ -190,6 +190,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../guides/include_guide.html">Loading tasks from another file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/packaged_tasks.html">Loading tasks from a python package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/global_tasks.html">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/library_guide.html">Using poethepoet as a library</a></li>
 </ul>
@@ -262,7 +263,7 @@ The value is a map where the values are invocations of the other tasks, and the 
 </dd>
 <dt><strong>capture_stdout</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#redirect-task-output-to-a-file"><span class="std std-ref">📖</span></a></span></dt><dd><p>Causes the task output to be redirected to a file with the given path.</p>
 </dd>
-<dt><strong>executor</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#configure-the-executor-for-a-task"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify that this task should be executed with a specific executor.</p>
+<dt><strong>executor</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">str]</span></code> <a class="reference internal" href="#configure-the-executor-for-a-task"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify executor type and/or configuration for this task.</p>
 </dd>
 <dt><strong>verbosity</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code> <a class="reference internal" href="#configure-task-level-verbosity"><span class="std std-ref">📖</span></a></span></dt><dd><p>Specify the verbosity level for this task, from -2 (least verbose) to 2 (most verbose), overriding the project level verbosity setting, which defaults to 0.</p>
 </dd>
@@ -361,13 +362,54 @@ above but can also by given a list of such paths like so:</p>
 </section>
 <section id="configure-the-executor-for-a-task">
 <h2>Configure the executor for a task<a class="headerlink" href="#configure-the-executor-for-a-task" title="Link to this heading">¶</a></h2>
-<p>You can specify a default executor for a task by providing the <code class="docutils literal notranslate"><span class="pre">executor</span></code> option like so:</p>
+<p>You can specify a different executor for a task by providing the <code class="docutils literal notranslate"><span class="pre">executor</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn ./my_app:run&quot;</span>
 <span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;virtualenv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;./server.venv&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>This works exactly like the the global option to <a class="reference internal" href="../global_options.html#change-the-executor-type"><span class="std std-ref">change the executor type</span></a> except it only impacts the one task.</p>
+<p>This works exactly like the the global option to <a class="reference internal" href="../global_options.html#configure-the-executor"><span class="std std-ref">configure the executor</span></a> except it only impacts the one task. If the task does not specify a different executor type, then it will inherit from and extend the global executor configuration (assuming the type is the same).</p>
+<p>If you only want to change the executor type but not provide any additional configuration, you can also specify the executor as a simple string like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn ./my_app:run&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;poetry&quot;</span>
+</pre></div>
+</div>
+<section id="configure-task-level-virtualenv-with-uv">
+<h3>Configure task level virtualenv with uv<a class="headerlink" href="#configure-task-level-virtualenv-with-uv" title="Link to this heading">¶</a></h3>
+<p>The uv executor supports configuring uv to run a task with its own environment. This is a powerful feature that allows Poe the Poet + uv to be used as a <a class="reference internal" href="../guides/tox_replacement_guide.html#replacing-tox-with-uv-and-poe-the-poet"><span class="std std-ref">lightweight alternative to tools like tox</span></a> for testing against multiple python versions or dependency sets.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span>
+
+<span class="k">[tool.poe.tasks.test-py311]</span>
+<span class="n">help</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;An alias for the test task that runs with python 3.11&quot;</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.test-py312]</span>
+<span class="n">help</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;An alias for the test task that runs with python 3.12&quot;</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.12&quot;</span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.test-matrix]</span>
+<span class="n">help</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run tests for all python versions&quot;</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;test-py311&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py312&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Note that it is not necessary to specify <code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">&quot;uv&quot;</span></code> in the executor configuration if the project is already configured to use the uv executor by default.</p>
+<p>You can also specify a dependency on the task level without needing to add it as a project dependency, using the <code class="docutils literal notranslate"><span class="pre">with</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
+<span class="n">help</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run the tests&quot;</span>
+<span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pytest&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Executor options can also be set at runtime via the <code class="docutils literal notranslate"><span class="pre">--executor-opt</span></code> CLI option (before the task name) to override or add to the executor configuration for a specific task invocation.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>--executor<span class="w"> </span>uv<span class="w"> </span>--executor-opt<span class="w"> </span><span class="nv">with</span><span class="o">=</span>pytest<span class="w"> </span>--executor-opt<span class="w"> </span>isolated<span class="w"> </span>--executor-opt<span class="w"> </span><span class="nv">with</span><span class="o">=</span>pytest-cov<span class="w"> </span>--executor-opt<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.12<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--cov<span class="w"> </span>my_package
+</pre></div>
+</div>
+<p>Multiple values can be provided for options that accept lists by passing the <code class="docutils literal notranslate"><span class="pre">--executor-opt</span></code> option multiple times as shown above.</p>
+</section>
 </section>
 <section id="configure-task-level-verbosity">
 <h2>Configure task level verbosity<a class="headerlink" href="#configure-task-level-verbosity" title="Link to this heading">¶</a></h2>
@@ -493,7 +535,10 @@ above but can also by given a list of such paths like so:</p>
 </li>
 <li><a class="reference internal" href="#running-a-task-with-a-specific-working-directory">Running a task with a specific working directory</a></li>
 <li><a class="reference internal" href="#redirect-task-output-to-a-file">Redirect task output to a file</a></li>
-<li><a class="reference internal" href="#configure-the-executor-for-a-task">Configure the executor for a task</a></li>
+<li><a class="reference internal" href="#configure-the-executor-for-a-task">Configure the executor for a task</a><ul>
+<li><a class="reference internal" href="#configure-task-level-virtualenv-with-uv">Configure task level virtualenv with uv</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#configure-task-level-verbosity">Configure task level verbosity</a><ul>
 <li><a class="reference internal" href="#verbosity-levels">Verbosity levels</a></li>
 </ul>
@@ -510,7 +555,7 @@ above but can also by given a list of such paths like so:</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9fa2033d"></script>
+</div><script src="../_static/documentation_options.js?v=ee774964"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

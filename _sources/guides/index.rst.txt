@@ -13,5 +13,6 @@ This section contains guides for using the various features of Poe the Poet.
    include_guide
    packaged_tasks
    global_tasks
+   tox_replacement_guide
    without_poetry
    library_guide

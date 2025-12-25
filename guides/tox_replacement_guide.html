@@ -1,0 +1,505 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Replacing tox with uv and Poe the Poet" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="guides/tox_replacement_guide.html" />
+<meta property="og:site_name" content="Poe the Poet" />
+<meta property="og:description" content="This guide demonstrates how Poe the Poet and can replace for running tests across multiple python versions and environments. Why replace tox?: While tox is a powerful tool for test automation, usin..." />
+<meta name="description" content="This guide demonstrates how Poe the Poet and can replace for running tests across multiple python versions and environments. Why replace tox?: While tox is a powerful tool for test automation, usin..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Usage without poetry" href="without_poetry.html" /><link rel="prev" title="Global tasks" href="global_tasks.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/guides/tox_replacement_guide.html" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
+        <title>Replacing tox with uv and Poe the Poet - Poe the Poet</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Poe the Poet</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo only-light" src="../_static/poe_logo_x2000.png" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="../_static/poe_logo_x2000.png" alt="Dark Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">Poe the Poet</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../global_options.html">Global options</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tasks/index.html">Defining tasks</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Defining tasks</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/options.html">Standard task options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/cmd.html">Command tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/script.html">Script tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/shell.html">Shell tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/sequence.html">Sequence tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/parallel.html">Parallel tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/expr.html">Expression tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/switch.html">Switch tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Guides</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="running_guide.html">Running tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="composition_guide.html">Composing tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packaged_tasks.html">Loading tasks from a python package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Replacing tox with uv and Poe the Poet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">Licence</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/tox_replacement_guide.rst" title="Edit this page">
+    <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
+      <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
+    </svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="replacing-tox-with-uv-and-poe-the-poet">
+<h1>Replacing tox with uv and Poe the Poet<a class="headerlink" href="#replacing-tox-with-uv-and-poe-the-poet" title="Link to this heading">¶</a></h1>
+<p>This guide demonstrates how Poe the Poet and <a href="https://docs.astral.sh/uv/" target="_blank">uv</a> can replace <a href="https://tox.wiki/" target="_blank">tox</a> for running tests across multiple python versions and environments.</p>
+<section id="why-replace-tox">
+<h2>Why replace tox?<a class="headerlink" href="#why-replace-tox" title="Link to this heading">¶</a></h2>
+<p>While tox is a powerful tool for test automation, using Poe the Poet with uv offers comparable expressiveness for many use cases, and several compelling advantages:</p>
+<ul class="simple">
+<li><p><strong>Faster execution</strong>: uv is significantly faster than traditional virtualenv tools</p></li>
+<li><p><strong>Unified configuration</strong>: everything in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></p></li>
+<li><p><strong>Better integration</strong>: works seamlessly with your existing uv workflow</p></li>
+<li><p><strong>More flexible</strong>: leverage all of Poe the Poet’s task composition features</p></li>
+<li><p><strong>Simpler syntax</strong>: more intuitive task oriented configuration</p></li>
+</ul>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h2>
+<p>Install both uv and Poe the Poet:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install uv</span>
+curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+
+<span class="c1"># Install Poe the Poet</span>
+uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>poethepoet
+</pre></div>
+</div>
+<p>See other installation methods in the <a class="reference external" href="https://docs.astral.sh/uv/getting-started/installation/">uv installation guide</a> and <a class="reference internal" href="../poetry_plugin.html#installation"><span class="std std-ref">Poe the Poet installation guide</span></a>.</p>
+</section>
+<section id="basic-migration">
+<h2>Basic migration<a class="headerlink" href="#basic-migration" title="Link to this heading">¶</a></h2>
+<p>A typical <code class="docutils literal notranslate"><span class="pre">tox.ini</span></code> file might look like this:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[tox]</span>
+<span class="na">envlist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">py310,py311,py312,py313</span>
+
+<span class="k">[testenv]</span>
+<span class="na">deps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pytest</span>
+<span class="w">       </span><span class="na">pytest-cov</span>
+<span class="na">commands</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pytest tests --cov=mypackage</span>
+</pre></div>
+</div>
+<p>Here’s the equivalent configuration using Poe the Poet with the <a class="reference internal" href="../global_options.html#uv-executor"><span class="std std-ref">uv executor</span></a>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span>
+<span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="w"> </span><span class="c1"># Use the uv executor for all tasks by default</span>
+
+<span class="k">[tool.poe.tasks.test-py39]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests --cov=mypackage&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.9&quot;</span><span class="p">}</span><span class="w"> </span><span class="c1"># Specify python version, and that we want an isolated env</span>
+
+<span class="k">[tool.poe.tasks.test-py310]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests --cov=mypackage&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.10&quot;</span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.test-py311]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests --cov=mypackage&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.test-py312]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests --cov=mypackage&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.12&quot;</span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.test-all]</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;test-py39&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py310&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py311&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py312&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Run all tests with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>test-all
+</pre></div>
+</div>
+<p>Or run tests for a specific version:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>test-py311
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>See the <a class="reference internal" href="../global_options.html#uv-executor"><span class="std std-ref">uv executor documentation</span></a> for a full explanation of these and other available executor options.</p>
+</div>
+</section>
+<section id="advanced-configurations">
+<h2>Advanced configurations<a class="headerlink" href="#advanced-configurations" title="Link to this heading">¶</a></h2>
+<section id="testing-with-different-dependency-sets">
+<h3>Testing with different dependency sets<a class="headerlink" href="#testing-with-different-dependency-sets" title="Link to this heading">¶</a></h3>
+<p>If you need to test against different versions of dependencies (like tox’s factors):</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-django32]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;dev&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;django==3.2.*&quot;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.test-django42]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;dev&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;django==4.2.*&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-with-optional-dependencies">
+<h3>Testing with optional dependencies<a class="headerlink" href="#testing-with-optional-dependencies" title="Link to this heading">¶</a></h3>
+<p>Pick and choose optional or dev dependency groups defined in your <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-with-extras]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">extra</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;all&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ci&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;debug&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">no-group</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;docs&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="compose-testing-with-other-tasks">
+<h3>Compose testing with other tasks<a class="headerlink" href="#compose-testing-with-other-tasks" title="Link to this heading">¶</a></h3>
+<p>Use sequence tasks to run commands before and after tests:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.lint]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ruff check .&quot;</span>
+
+<span class="k">[tool.poe.tasks.test-py311]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests --cov=mypackage&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.coverage-report]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;coverage report&quot;</span>
+
+<span class="k">[tool.poe.tasks.ci]</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py311&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;coverage-report&quot;</span>
+</pre></div>
+</div>
+<p>Or define a DAG of tasks with task <code class="docutils literal notranslate"><span class="pre">deps</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.lint]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ruff check .&quot;</span>
+
+<span class="k">[tool.poe.tasks.test-py311]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests --cov=mypackage&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">deps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;lint&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>See the <a class="reference internal" href="composition_guide.html"><span class="doc">guide on task composition</span></a> for more examples.</p>
+</section>
+<section id="parallel-execution">
+<h3>Parallel execution<a class="headerlink" href="#parallel-execution" title="Link to this heading">¶</a></h3>
+<p>tox supports running tests in parallel using the <code class="docutils literal notranslate"><span class="pre">-p</span></code> option. Poe the Poet lets you define a parallel task that runs all your test variants concurrently:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-parallel]</span>
+<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;test-py39&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py310&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py311&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py312&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="environment-variables">
+<h3>Environment variables<a class="headerlink" href="#environment-variables" title="Link to this heading">¶</a></h3>
+<p>tox allows setting environment variables for test runs using the <code class="docutils literal notranslate"><span class="pre">setenv</span></code> option. You can achieve the same with Poe the Poet using the <code class="docutils literal notranslate"><span class="pre">env</span></code> or <code class="docutils literal notranslate"><span class="pre">envfile</span></code> options.</p>
+<p>Set environment variables directly:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-integration]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests/integration&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">DATABASE_URL</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;postgresql://localhost/test_db&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Or load an envfile for the task:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-integration]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests/integration&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env.test&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="without_poetry.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Usage without poetry</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="global_tasks.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Global tasks</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Nat Noordanus
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://pypi.org/project/poethepoet/" aria-label="PyPI">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg"  stroke="currentColor" fill="currentColor" stroke-width="0" width="16px" height="16" viewBox="0 0 512 512">
+                    <path d="M454,305.8294373l-91.1191101,33.691803v106.4807434L181.94487,512V298.2970276l179.8842926-66.8633728V58.8240128L454,92.4968643V305.8294373z M276.8390503,363.3849487c-15.7174377,5.7245483-28.4572144,23.9239502-28.4515686,40.6481018c0.0061646,16.7174377,12.7523499,25.6329346,28.4636841,19.919281c15.7173462-5.7247009,28.4602051-23.9217834,28.4544983-40.6459656C305.303009,366.5810547,292.5565491,357.6635437,276.8390503,363.3849487z M334.6160889,212.4997864l-180.3925323,66.8782959l0.2966461,135.7604065l-64.2104874,22.9912415L0,405.2594604V191.9265442l90.704361-33.6917877V51.7543259L232.9717102,0l101.6443787,32.4636765V212.4997864z M215.2144775,94.8330383c-15.7174835,5.7222672-28.4621582,23.9249802-28.458725,40.6499329c0.0025787,16.725235,12.750824,25.6462555,28.4683228,19.9248505c15.7174988-5.7219086,28.4623871-23.9248047,28.4592285-40.6498184C243.6806641,98.0326996,230.9319763,89.1116333,215.2144775,94.8330383z"/>
+                </svg>
+            </a>
+              <a class="muted-link " href="https://github.com/nat-n/poethepoet" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Replacing tox with uv and Poe the Poet</a><ul>
+<li><a class="reference internal" href="#why-replace-tox">Why replace tox?</a></li>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#basic-migration">Basic migration</a></li>
+<li><a class="reference internal" href="#advanced-configurations">Advanced configurations</a><ul>
+<li><a class="reference internal" href="#testing-with-different-dependency-sets">Testing with different dependency sets</a></li>
+<li><a class="reference internal" href="#testing-with-optional-dependencies">Testing with optional dependencies</a></li>
+<li><a class="reference internal" href="#compose-testing-with-other-tasks">Compose testing with other tasks</a></li>
+<li><a class="reference internal" href="#parallel-execution">Parallel execution</a></li>
+<li><a class="reference internal" href="#environment-variables">Environment variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=ee774964"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>
+        (function(){
+            var plausible_script = document.createElement('script');
+            plausible_script.setAttribute('defer','true');
+            plausible_script.setAttribute('data-domain','poethepoet.natn.io');
+            plausible_script.setAttribute('src','https://plausible.io/js/script.js');
+            document.head.appendChild(plausible_script);
+        })()
+        </script>
+    </body>
+</html>

@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="Poe the Poet" />
 <meta property="og:description" content="Poe the Poet was originally intended as the missing task runner for. But it also works great with, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurab..." />
 <meta name="description" content="Poe the Poet was originally intended as the missing task runner for. But it also works great with, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurab..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Global tasks" href="global_tasks.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Replacing tox with uv and Poe the Poet" href="tox_replacement_guide.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/guides/without_poetry.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
@@ -190,6 +190,7 @@
 <li class="toctree-l2"><a class="reference internal" href="include_guide.html">Loading tasks from another file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="packaged_tasks.html">Loading tasks from a python package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 </ul>
@@ -240,7 +241,7 @@
         <article role="main">
           <section id="usage-without-poetry">
 <h1>Usage without poetry<a class="headerlink" href="#usage-without-poetry" title="Link to this heading">¶</a></h1>
-<p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it also works great with <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurable via the <a class="reference internal" href="../global_options.html#change-the-executor-type"><span class="std std-ref">tool.poe.executor global option</span></a>.</p>
+<p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it also works great with <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurable via the <span class="xref std std-ref">tool.poe.executor global option</span>.</p>
 <p>By default poe will run tasks in your project’s virtual environment. Poe will deduce what kind of project is present by detecting tool specific tables in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> such as <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code>, lock files such as <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, or a virtualenv at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>. If no virtualenv is found then poe will run tasks without any special environment management.</p>
 <p>Poe the Poet can also be used as a <a class="reference internal" href="global_tasks.html"><span class="doc">global task runner</span></a>, scoped to your system rather than any particular project, like shell aliases by sweeter.</p>
 <section id="usage-with-uv">
@@ -321,14 +322,14 @@
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="global_tasks.html">
+          <a class="prev-page" href="tox_replacement_guide.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Global tasks</div>
+                <div class="title">Replacing tox with uv and Poe the Poet</div>
                 
               </div>
             </a>
@@ -391,7 +392,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9fa2033d"></script>
+</div><script src="../_static/documentation_options.js?v=ee774964"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

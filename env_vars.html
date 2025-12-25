@@ -190,6 +190,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/include_guide.html">Loading tasks from another file</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/packaged_tasks.html">Loading tasks from a python package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 </ul>
@@ -255,7 +256,7 @@
 <h2>Special variables<a class="headerlink" href="#special-variables" title="Link to this heading">¶</a></h2>
 <p>The following variables are not set on the environment by default but can be referenced from task configuration as if they were.</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code>: path of the git repo that the project is part of. This allows a project in a subdirectory of a monorepo to reference <a class="reference internal" href="guides/include_guide.html#including-files-relative-to-the-git-repo"><span class="std std-ref">includes</span></a>, <a class="reference internal" href="tasks/options.html#loading-environment-variables-from-an-env-file"><span class="std std-ref">envfiles</span></a>, or <a class="reference internal" href="global_options.html#change-the-executor-type"><span class="std std-ref">virtualenv location</span></a> relative to the root of the git repo. Note that referencing this variable causes poe to attempt to call the <code class="docutils literal notranslate"><span class="pre">git</span></code> executable which must be available on the path.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code>: path of the git repo that the project is part of. This allows a project in a subdirectory of a monorepo to reference <a class="reference internal" href="guides/include_guide.html#including-files-relative-to-the-git-repo"><span class="std std-ref">includes</span></a>, <a class="reference internal" href="tasks/options.html#loading-environment-variables-from-an-env-file"><span class="std std-ref">envfiles</span></a>, or <span class="xref std std-ref">virtualenv location</span> relative to the root of the git repo. Note that referencing this variable causes poe to attempt to call the <code class="docutils literal notranslate"><span class="pre">git</span></code> executable which must be available on the path.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code>: just like <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> except that if the project is in a git submodule, then the path will point to the working directory of the main repo above it.</p></li>
 </ul>
 </section>
@@ -352,7 +353,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=9fa2033d"></script>
+</div><script src="_static/documentation_options.js?v=ee774964"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
