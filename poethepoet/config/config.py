@@ -256,6 +256,7 @@ class PoeConfig:
             if invocation not in self._packaged_config_cache:
                 from ..context import InitializationContext
                 from ..env.manager import EnvVarsManager
+                from ..io import PoeIO
 
                 context = InitializationContext(config=self)
                 env = EnvVarsManager(self, base_env=environ)
@@ -266,7 +267,7 @@ class PoeConfig:
                     executor_config=include_script.get("executor"),
                     capture_stdout=True,
                     resolve_python=True,
-                    io=self._io,
+                    io=PoeIO(parent=self._io, verbosity_offset=-1),
                 )
 
                 script = (
