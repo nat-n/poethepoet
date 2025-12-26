@@ -50,17 +50,17 @@ You can configure environment variables to be set for all poe tasks in the pypro
   VAR1 = "FOO"
   VAR2 = "BAR BAR BLACK ${FARM_ANIMAL}"
 
-The example above also demonstrates how – as with env vars defined at the task level –
-posix variable interpolation syntax may be used to define global env vars with reference
-to variables already defined in the host environment or in a referenced env file.
+The example above also demonstrates how – as with env vars defined at the task level – posix variable interpolation syntax may be used to define global env vars with reference to variables already defined in the host environment or in a referenced env file.
 
-As with the task level option, you can indicated that a variable should only be set if
-not already set like so:
+As with the task level option, you can indicated that a variable should only be set if not already set like so:
 
 .. code-block:: toml
 
   [tool.poe.env]
   VAR1.default = "FOO"
+
+Loading external environment variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also specify an env file (with bash-like syntax) to load for all tasks like so:
 
@@ -76,7 +76,7 @@ You can also specify an env file (with bash-like syntax) to load for all tasks l
     [tool.poe]
     envfile = ".env"
 
-The envfile global option also accepts a list of env files like so.
+The envfile global option also accepts a list of env files like so:
 
 .. code-block:: toml
 
@@ -85,27 +85,34 @@ The envfile global option also accepts a list of env files like so.
 
 In this case the referenced files will be loaded in the given order.
 
-If you want poe to attempt to load an envfile only when it exists, you can use the
-table form of the option and place that path under ``optional``. Missing optional
-envfiles are skipped without producing a warning.
+.. important::
+
+  The envfile option is also available with the same capabilities at :ref:`the task level<Loading environment variables from an env file>`.
+
+Optional env files
+""""""""""""""""""
+
+Normally poe will emit a warning if a specified envfile is not found. If you consider an envfile to be optional, you can suppress these warnings by configuring the file path (or paths) under the ``optional`` prefix like so:
+
+.. code-block:: toml
+
+    [tool.poe]
+    envfile.optional = ".env"
+
+You can combine optional and expected envfiles like so:
 
 .. code-block:: toml
 
     [tool.poe.envfile]
-    optional = ".env"
-
-You can combine optional and expected envfiles. The following configuration keeps the
-project-wide ``shared.env`` mandatory while allowing a developer-local ``local.env``
-to be absent without noise. Using :toml:`envfile = ".env"` remains equivalent to
-setting :toml:`envfile.expect = ".env"` explicitly.
-
-.. code-block:: toml
-
-    [tool.poe.envfile]
-    expect = ["shared.env"]
+    expected = ["shared.env"]
     optional = ["local.env"]
 
-Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referenceing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
+In this example ``shared.env`` is considered mandatory, whereas ``local.env`` may be absent without generating noise. Using :toml:`envfile = ".env"` remains equivalent to setting :toml:`envfile.expected = ".env"` explicitly.
+
+Resolving env file paths
+""""""""""""""""""""""""
+
+Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referencing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
 
 .. code-block:: toml
 
@@ -113,6 +120,11 @@ Normally envfile paths are resolved relative to the project root (that is the pa
     envfile = "${POE_GIT_DIR}/.env"
 
 See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
+
+.. note::
+
+  Environment variables loaded from env files have higher precedence than any inherited from the host environment, but lower precedence than env defined directly in the pyproject.toml file. Similarly ``optional`` env files are loaded after ``expected`` ones, so variables defined in ``optional`` files can override those defined in ``expected`` files.
+
 
 Configure the executor
 ----------------------

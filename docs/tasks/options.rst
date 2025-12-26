@@ -100,25 +100,21 @@ You can also specify one or more env files (with bash-like syntax) to load per t
     serve.script  = "myapp:run"
     serve.envfile = ".env"
 
-The envfile option accepts the name (or relative path) to a single envfile as shown
-above but can also by given a list of such paths like so:
+The envfile option accepts the name (or relative path) to a single envfile as shown above but can also by given a list of such paths like so:
 
 .. code-block:: toml
 
     serve.envfile = [".env", "local.env"]
 
-In this case the referenced files will be loaded in the given order.
-
-Tasks can also treat envfiles as optional. Switching to the table syntax gives access
-to ``expect`` and ``optional`` keys, mirroring the global configuration behaviour. A
-missing optional envfile does not produce a warning while still documenting the
-intended path.
+Normally a missing envfile results in a warning, however optional envfiles can be indicated with the following structure including the ``optional`` key, in contrast with the ``expected`` key:
 
 .. code-block:: toml
 
     [tool.poe.tasks.serve.envfile]
-    expect = [".env"]
     optional = ["local.env"]
+    expected = ["base.env"]
+
+Files are loaded in the listed order, optional files are loaded after expected files. Last file wins in case of conflicts.
 
 Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referencing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
 
@@ -128,6 +124,11 @@ Normally envfile paths are resolved relative to the project root (that is the pa
     envfile = "${POE_GIT_DIR}/.env"
 
 See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
+
+.. important::
+
+  For a more detailed explanation see the documentation for :ref:`the envfile global option<Loading external environment variables>` which works in the same way.
+
 
 Running a task with a specific working directory
 ------------------------------------------------

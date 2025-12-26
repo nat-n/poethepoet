@@ -40,5 +40,7 @@ def test_trying_to_load_nonexistent_envfiles(run_poe_subproc, projects):
     assert "Warning: Poe failed to locate envfile at" in result.capture
     assert "not-real.env" in result.capture
     assert "imaginary.env" in result.capture
+    assert "nothingness.env" not in result.capture
+    assert "lies.env" not in result.capture
     assert result.stdout == "OK\n"
     assert result.stderr == ""

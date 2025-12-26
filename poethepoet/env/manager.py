@@ -163,7 +163,7 @@ def _iter_envfile_paths(
         for item in envfile_option:
             yield item, is_optional
     elif isinstance(envfile_option, dict):
-        if (expected := envfile_option.get("expect")) is not None:
+        if (expected := envfile_option.get("expected")) is not None:
             yield from _iter_envfile_paths(expected, False)
         if (optional := envfile_option.get("optional")) is not None:
             yield from _iter_envfile_paths(optional, True)

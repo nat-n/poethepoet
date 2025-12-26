@@ -10,8 +10,8 @@ class EnvDefault(TypedDict):
 
 
 class EnvfileOption(TypedDict, total=False):
-    expect: str | Sequence[str]
+    expected: str | Sequence[str]
     optional: str | Sequence[str]
 
 
-EnvfileOption.__optional_keys__ = frozenset({"expect", "optional"})
+EnvfileOption.__optional_keys__ = frozenset({"expected", "optional"})
