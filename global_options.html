@@ -276,15 +276,14 @@
 <span class="n">VAR2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;BAR BAR BLACK ${FARM_ANIMAL}&quot;</span>
 </pre></div>
 </div>
-<p>The example above also demonstrates how – as with env vars defined at the task level –
-posix variable interpolation syntax may be used to define global env vars with reference
-to variables already defined in the host environment or in a referenced env file.</p>
-<p>As with the task level option, you can indicated that a variable should only be set if
-not already set like so:</p>
+<p>The example above also demonstrates how – as with env vars defined at the task level – posix variable interpolation syntax may be used to define global env vars with reference to variables already defined in the host environment or in a referenced env file.</p>
+<p>As with the task level option, you can indicated that a variable should only be set if not already set like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.env]</span>
 <span class="n">VAR1</span><span class="p">.</span><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;FOO&quot;</span>
 </pre></div>
 </div>
+<section id="loading-external-environment-variables">
+<h3>Loading external environment variables<a class="headerlink" href="#loading-external-environment-variables" title="Link to this heading">¶</a></h3>
 <p>You can also specify an env file (with bash-like syntax) to load for all tasks like so:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">.env</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
@@ -300,18 +299,45 @@ not already set like so:</p>
 </pre></div>
 </div>
 </div>
-<p>The envfile global option also accepts a list of env files like so.</p>
+<p>The envfile global option also accepts a list of env files like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;standard.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;local.env&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>In this case the referenced files will be loaded in the given order.</p>
-<p>Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referenceing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>The envfile option is also available with the same capabilities at <a class="reference internal" href="tasks/options.html#loading-environment-variables-from-an-env-file"><span class="std std-ref">the task level</span></a>.</p>
+</div>
+<section id="optional-env-files">
+<h4>Optional env files<a class="headerlink" href="#optional-env-files" title="Link to this heading">¶</a></h4>
+<p>Normally poe will emit a warning if a specified envfile is not found. If you consider an envfile to be optional, you can suppress these warnings by configuring the file path (or paths) under the <code class="docutils literal notranslate"><span class="pre">optional</span></code> prefix like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="n">envfile</span><span class="p">.</span><span class="n">optional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span>
+</pre></div>
+</div>
+<p>You can combine optional and expected envfiles like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.envfile]</span>
+<span class="n">expected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;shared.env&quot;</span><span class="p">]</span>
+<span class="n">optional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;local.env&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>In this example <code class="docutils literal notranslate"><span class="pre">shared.env</span></code> is considered mandatory, whereas <code class="docutils literal notranslate"><span class="pre">local.env</span></code> may be absent without generating noise. Using <code class="code highlight toml docutils literal highlight-toml"><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span></code> remains equivalent to setting <code class="code highlight toml docutils literal highlight-toml"><span class="n">envfile</span><span class="p">.</span><span class="n">expected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span></code> explicitly.</p>
+</section>
+<section id="resolving-env-file-paths">
+<h4>Resolving env file paths<a class="headerlink" href="#resolving-env-file-paths" title="Link to this heading">¶</a></h4>
+<p>Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referencing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/.env&quot;</span>
 </pre></div>
 </div>
 <p>See the documentation on <a class="reference internal" href="env_vars.html#special-variables"><span class="std std-ref">Special variables</span></a> for a full explanation of how these variables work.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Environment variables loaded from env files have higher precedence than any inherited from the host environment, but lower precedence than env defined directly in the pyproject.toml file. Similarly <code class="docutils literal notranslate"><span class="pre">optional</span></code> env files are loaded after <code class="docutils literal notranslate"><span class="pre">expected</span></code> ones, so variables defined in <code class="docutils literal notranslate"><span class="pre">optional</span></code> files can override those defined in <code class="docutils literal notranslate"><span class="pre">expected</span></code> files.</p>
+</div>
+</section>
+</section>
 </section>
 <section id="configure-the-executor">
 <h2>Configure the executor<a class="headerlink" href="#configure-the-executor" title="Link to this heading">¶</a></h2>
@@ -551,7 +577,14 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Global options</a><ul>
-<li><a class="reference internal" href="#global-environment-variables">Global environment variables</a></li>
+<li><a class="reference internal" href="#global-environment-variables">Global environment variables</a><ul>
+<li><a class="reference internal" href="#loading-external-environment-variables">Loading external environment variables</a><ul>
+<li><a class="reference internal" href="#optional-env-files">Optional env files</a></li>
+<li><a class="reference internal" href="#resolving-env-file-paths">Resolving env file paths</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#configure-the-executor">Configure the executor</a><ul>
 <li><a class="reference internal" href="#uv-executor">Uv Executor</a></li>
 <li><a class="reference internal" href="#virtualenv-executor">Virtualenv Executor</a></li>
