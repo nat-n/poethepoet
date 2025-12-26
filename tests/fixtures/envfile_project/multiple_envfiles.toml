@@ -1,10 +1,17 @@
 [tool.poe]
-envfile = ["first.env", "second.env"]
+envfile.expect = "first.env"
+envfile.optional = ["second.env", "not-real.env"]
 env = { VAR_C = "VAL_C" }
 
 [tool.poe.tasks.show_me_the_vals]
 cmd = """
 poe_test_echo "${VAR_A}-${VAR_B}-${VAR_C}-${VAR_D}-${VAR_E}-${VAR_F}!!"
 """
-envfile = ["third.env", "fourth.env"]
+envfile.expect = ["third.env"]
+envfile.optional = "fourth.env"
 env = { VAR_F = "VAL_F" }
+
+[tool.poe.tasks.handle_disappointment]
+cmd = "poe_test_echo OK"
+envfile.expect = ["not-real.env", "imaginary.env"]
+envfile.optional = ["nothingness.env", "lies.env"]

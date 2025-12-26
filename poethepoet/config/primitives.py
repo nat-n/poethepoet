@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
-from typing import TypedDict, Union
+from typing import TypedDict
 
 EmptyDict: Mapping = MappingProxyType({})
 
@@ -10,5 +10,8 @@ class EnvDefault(TypedDict):
 
 
 class EnvfileOption(TypedDict, total=False):
-    expect: Union[str, Sequence[str]]
-    optional: Union[str, Sequence[str]]
+    expect: str | Sequence[str]
+    optional: str | Sequence[str]
+
+
+EnvfileOption.__optional_keys__ = frozenset({"expect", "optional"})

@@ -1,40 +1,17 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Iterable
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from ..io import PoeIO
 from .template import apply_envvars_to_template
-
-
-def _coerce_envfile_list(value: str | Sequence[str] | None) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value]
-    return list(value)
-
-
-def _iter_envfile_specs(envfile_option: Any) -> Iterable[tuple[str, bool]]:
-    seen: set[str] = set()
-
-    def add_values(values: str | Sequence[str] | None, optional: bool):
-        for entry in _coerce_envfile_list(values):
-            if entry not in seen:
-                seen.add(entry)
-                yield entry, optional
-
-    if isinstance(envfile_option, Mapping):
-        yield from add_values(envfile_option.get("expect"), optional=False)
-        yield from add_values(envfile_option.get("optional"), optional=True)
-    else:
-        yield from add_values(envfile_option, optional=False)
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from ..config import PoeConfig
+    from ..config.primitives import EnvDefault, EnvfileOption
     from .cache import EnvFileCache
 
 
@@ -105,8 +82,8 @@ class EnvVarsManager(Mapping):
 
     def apply_env_config(
         self,
-        envfile: str | list[str] | Mapping[str, str | Sequence[str]] | None,
-        config_env: Mapping[str, str | Mapping[str, str]] | None,
+        envfile_option: str | Sequence[str] | EnvfileOption,
+        config_env: Mapping[str, str | EnvDefault],
         config_dir: Path,
         config_working_dir: Path,
     ):
@@ -119,16 +96,14 @@ class EnvVarsManager(Mapping):
         scoped_env = self.clone()
         scoped_env.set("POE_CONF_DIR", str(config_dir))
 
-        if envfile:
-            for envfile_path, is_optional in _iter_envfile_specs(envfile):
+        if envfile_option:
+            for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
                 resolved_envfile = config_working_dir.joinpath(
                     apply_envvars_to_template(
                         envfile_path, scoped_env, require_braces=True
                     )
                 )
-                self.update(
-                    self.envfiles.get(resolved_envfile, optional=is_optional)
-                )
+                self.update(self.envfiles.get(resolved_envfile, optional=is_optional))
 
         scoped_env = self.clone()
         scoped_env.set("POE_CONF_DIR", str(config_dir))
@@ -172,3 +147,23 @@ class EnvVarsManager(Mapping):
 
     def fill_template(self, template: str):
         return apply_envvars_to_template(template, self._vars)
+
+
+def _iter_envfile_paths(
+    envfile_option: str | Sequence[str] | EnvfileOption, is_optional: bool = False
+) -> Iterable[tuple[str, bool]]:
+    """
+    Yield (envfile_path, is_optional) tuples from whatever form of envfile_option is
+    provided.
+    """
+
+    if isinstance(envfile_option, str):
+        yield envfile_option, is_optional
+    elif isinstance(envfile_option, (list, tuple)):
+        for item in envfile_option:
+            yield item, is_optional
+    elif isinstance(envfile_option, dict):
+        if (expected := envfile_option.get("expect")) is not None:
+            yield from _iter_envfile_paths(expected, False)
+        if (optional := envfile_option.get("optional")) is not None:
+            yield from _iter_envfile_paths(optional, True)

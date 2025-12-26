@@ -47,6 +47,9 @@ class EnvFileCache:
             self._io.print_debug(
                 f" - Optional envfile not found at {envfile_path_str!r}"
             )
+            # Return without caching
+            return result
+
         else:
             self._io.print_warning(
                 f"Poe failed to locate envfile at {envfile_path_str!r}"

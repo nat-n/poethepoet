@@ -6,7 +6,7 @@ from typing import IO, TYPE_CHECKING, Any, Literal, Union, cast
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterator, Mapping, Sequence
 
     from ..env.manager import EnvVarsManager
     from ..io import PoeIO
@@ -39,7 +39,9 @@ class ArgSpec(PoeOptions):
     multiple: Union[bool, int] = False
 
     @classmethod
-    def normalize(cls, config: ArgsDef, strict: bool = True):
+    def normalize(
+        cls, source: Mapping[str, Any] | list[Mapping[str, Any]], strict: bool = True
+    ):
         """
         Because arguments can be declared with different structures
         (i.e. dict or list), this function normalizes the input into a list of
@@ -48,8 +50,8 @@ class ArgSpec(PoeOptions):
         This is also where we do any validation that requires access to the raw
         config.
         """
-        if isinstance(config, list):
-            for item in config:
+        if isinstance(source, list):
+            for item in source:
                 if isinstance(item, str):
                     yield {"name": item, "options": (f"--{item}",)}
                 elif isinstance(item, dict):
@@ -63,8 +65,8 @@ class ArgSpec(PoeOptions):
                         "expected"
                     )
 
-        elif isinstance(config, dict):
-            for name, params in config.items():
+        elif isinstance(source, dict):
+            for name, params in source.items():
                 if not isinstance(params, dict):
                     raise ConfigValidationError(
                         f"Invalid configuration for arg {name!r}, expected dict"
@@ -84,14 +86,14 @@ class ArgSpec(PoeOptions):
         cls,
         source: Mapping[str, Any] | list,
         strict: bool = True,
-        extra_keys: Sequence[str] = tuple(),
-    ):
+        extra_keys: Sequence[str] = (),
+    ) -> Iterator[ArgSpec]:
         """
         Override parse function to perform validations that require considering all
         argument declarations at once.
         """
         try:
-            result = tuple(super().parse(source, strict, extra_keys))
+            result: tuple[ArgSpec] = tuple(super().parse(source, strict, extra_keys))  # type: ignore[assignment]
         except ConfigValidationError as error:
             PoeTaskArgs._enrich_config_error(error, cast("ArgsDef", source))
             raise
@@ -199,7 +201,7 @@ class PoeTaskArgs:
         self._args = self._parse_args_def(args_def)
         self._io = io
 
-    def _parse_args_def(self, args_def: ArgsDef):
+    def _parse_args_def(self, args_def: ArgsDef) -> tuple[ArgSpec, ...]:
         try:
             return tuple(ArgSpec.parse(args_def))
         except ConfigValidationError as error:
@@ -221,8 +223,12 @@ class PoeTaskArgs:
 
         try:
             return [
-                (arg["options"], arg.get("help", ""), format_default(arg))
-                for arg in ArgSpec.normalize(args_def, strict=False)
+                (
+                    cast("tuple[str, ...]", arg["options"]),
+                    str(arg.get("help", "")),
+                    format_default(arg),
+                )
+                for arg in ArgSpec.normalize(args_def, strict=False)  # type: ignore[arg-type]
             ]
         except ConfigValidationError as error:
             if suppress_errors:

@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
@@ -33,28 +34,30 @@ class SwitchTask(PoeTask):
         @classmethod
         def normalize(
             cls,
-            config: Any,
+            source: Mapping[str, Any] | list[Mapping[str, Any]],
             strict: bool = True,
         ):
             """
             Perform validations that require access to to the raw config.
             """
-            if strict and isinstance(config, dict):
-                # Subtasks may not declare certain options
-                for subtask_def in config.get("switch", tuple()):
-                    for banned_option in SUBTASK_OPTIONS_BLOCKLIST:
-                        if banned_option in subtask_def:
-                            if "case" not in subtask_def:
-                                raise ConfigValidationError(
-                                    "Default case includes incompatible option "
-                                    f"{banned_option!r}"
-                                )
-                            raise ConfigValidationError(
-                                f"Case {subtask_def.get('case')!r} includes "
-                                f"incompatible option {banned_option!r}"
-                            )
 
-            return super().normalize(config, strict)
+            for item in super().normalize(source, strict):
+                if strict:
+                    # Subtasks may not declare certain options
+                    for subtask_def in item.get("switch", ()):
+                        for banned_option in SUBTASK_OPTIONS_BLOCKLIST:
+                            if banned_option in subtask_def:
+                                if "case" not in subtask_def:
+                                    raise ConfigValidationError(
+                                        "Default case includes incompatible option "
+                                        f"{banned_option!r}"
+                                    )
+                                raise ConfigValidationError(
+                                    f"Case {subtask_def.get('case')!r} includes "
+                                    f"incompatible option {banned_option!r}"
+                                )
+
+                yield item
 
     class TaskSpec(PoeTask.TaskSpec):
         control_task_spec: PoeTask.TaskSpec
