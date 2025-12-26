@@ -140,15 +140,17 @@ class PoeOptions:
                 )
 
     @classmethod
-    def normalize(cls, config: Any, strict: bool = True):
+    def normalize(
+        cls, source: Mapping[str, Any] | list[Mapping[str, Any]], strict: bool = True
+    ):
         """
         This may be overridden by subclasses to coerce alternative variants of the
         config schema to the 'normal' variant.
         """
-        if isinstance(config, (list, tuple)):
-            yield from config
+        if isinstance(source, (list, tuple)):
+            yield from source
         else:
-            yield config
+            yield source
 
     def validate(self):
         pass

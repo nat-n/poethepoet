@@ -5,7 +5,7 @@ from typing import Any, Literal, TypedDict
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from .primitives import EmptyDict, EnvDefault
+from .primitives import EmptyDict, EnvDefault, EnvfileOption
 
 KNOWN_SHELL_INTERPRETERS = (
     "posix",
@@ -98,7 +98,7 @@ class ProjectConfig(ConfigPartition):
         default_array_task_type: str = "sequence"
         default_array_item_task_type: str = "ref"
         env: Mapping[str, str | EnvDefault] = EmptyDict
-        envfile: str | Sequence[str] = ()
+        envfile: str | Sequence[str] | EnvfileOption = ()
         executor: Mapping[str, str | Sequence[str] | bool] | str = MappingProxyType(
             {"type": "auto"}
         )
@@ -113,11 +113,13 @@ class ProjectConfig(ConfigPartition):
         @classmethod
         def normalize(
             cls,
-            config: Any,
+            source: Mapping[str, Any] | list[Mapping[str, Any]],
             strict: bool = True,
         ):
-            if isinstance(config, (list, tuple)):
-                raise ConfigValidationError("Expected ")
+            if isinstance(source, (list, tuple)):
+                raise ConfigValidationError("Expected single config")
+
+            config = dict(source)
 
             # Normalize include option:
             # > Union[str, Sequence[str], Mapping[str, str]] => list[dict]
@@ -149,6 +151,7 @@ class ProjectConfig(ConfigPartition):
                         )
                     else:
                         config["include_script"].append(item)
+
             yield config
 
         def validate(self):
@@ -245,7 +248,7 @@ class IncludedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
-        envfile: str | Sequence[str] = tuple()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         tasks: Mapping[str, Any] = EmptyDict
 
         def validate(self):
@@ -265,7 +268,7 @@ class PackagedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
-        envfile: str | Sequence[str] = tuple()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         tasks: Mapping[str, Any] = EmptyDict
 
         def validate(self):

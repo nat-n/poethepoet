@@ -83,8 +83,8 @@ class RunContext:
         self.env = EnvVarsManager(self.config, self.ui.io, base_env=env, cwd=cwd)
         for config_part in self.config.partitions():
             self.env.apply_env_config(
-                envfile=config_part.get("envfile", None),
-                config_env=config_part.get("env", None),
+                envfile_option=config_part.get("envfile"),
+                config_env=config_part.get("env"),
                 config_dir=config_part.config_dir,
                 config_working_dir=config_part.cwd,
             )

@@ -5,7 +5,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional, Union
 
-from ..config.primitives import EmptyDict, EnvDefault
+from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
 from ..exceptions import ConfigValidationError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
@@ -170,13 +170,13 @@ class PoeTask(metaclass=MetaPoeTask):
     __content_type__: ClassVar[type] = str
 
     class TaskOptions(PoeOptions):
-        args: Union[dict, list] | None = None
+        args: dict | list | None = None
         capture_stdout: str | None = None
         cwd: str | None = None
         deps: Sequence[str] | None = None
         # ruff: noqa: UP007
-        env: Mapping[str, Union[str, EnvDefault]] = EmptyDict
-        envfile: Union[str, Sequence[str]] = ()
+        env: Mapping[str, str | EnvDefault] = EmptyDict
+        envfile: str | Sequence[str] | EnvfileOption = ()
         executor: Mapping[str, str | Sequence[str] | bool] | str | None = None
         help: str | None = None
         uses: Mapping[str, str] | None = None
@@ -188,14 +188,24 @@ class PoeTask(metaclass=MetaPoeTask):
             """
 
         @classmethod
-        def normalize(cls, config: Any, strict: bool = True):
+        def normalize(
+            cls,
+            source: Mapping[str, Any] | list[Mapping[str, Any]],
+            strict: bool = True,
+        ):
             """
             if executor is provided as just a string, then expand it to a dict with type
             """
 
-            for item in super().normalize(config, strict):
+            for item in super().normalize(source, strict):
+                item = dict(item)
+
+                # Normalize executor option:
+                # > Mapping[str, str | Sequence[str] | bool] | str | None
+                #       => Mapping[str, str | Sequence[str | bool] | bool]
                 if (executor := item.get("executor")) and isinstance(executor, str):
-                    yield {**item, "executor": {"type": executor}}
+                    item["executor"] = {"type": executor}
+
                 yield item
 
     class TaskSpec:
@@ -241,8 +251,6 @@ class PoeTask(metaclass=MetaPoeTask):
             """
             Resolve the EnvVarsManager for this task, relative to the given parent_env
             """
-            task_envfile = self.options.get("envfile")
-            task_env = self.options.get("env")
 
             result = parent_env.clone(io=io)
 
@@ -252,8 +260,8 @@ class PoeTask(metaclass=MetaPoeTask):
 
             result.set("POE_CONF_DIR", str(self.source.config_dir))
             result.apply_env_config(
-                task_envfile,
-                task_env,
+                envfile_option=self.options.get("envfile"),
+                config_env=self.options.get("env"),
                 config_dir=self.source.config_dir,
                 config_working_dir=self.source.cwd,
             )
@@ -278,7 +286,7 @@ class PoeTask(metaclass=MetaPoeTask):
             self,
             invocation: tuple[str, ...],
             ctx: TaskContext,
-            capture_stdout: Union[str, bool] = False,
+            capture_stdout: str | bool = False,
         ) -> "PoeTask":
             return self.task_type(
                 spec=self,
@@ -384,7 +392,7 @@ class PoeTask(metaclass=MetaPoeTask):
         spec: TaskSpec,
         invocation: tuple[str, ...],
         ctx: TaskContext,
-        capture_stdout: Union[str, bool] = False,
+        capture_stdout: str | bool = False,
     ):
         self.spec = spec
         self.invocation = invocation
@@ -405,7 +413,7 @@ class PoeTask(metaclass=MetaPoeTask):
         cls,
         task_def: TaskDef,
         config: "PoeConfig",
-        array_item: Union[bool, str] = False,
+        array_item: bool | str = False,
     ) -> str | None:
         if isinstance(task_def, str):
             if array_item:

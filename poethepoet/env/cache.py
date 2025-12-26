@@ -16,7 +16,7 @@ class EnvFileCache:
         self._project_dir = project_dir
         self._io = io
 
-    def get(self, envfile: str | Path) -> dict[str, str]:
+    def get(self, envfile: str | Path, *, optional: bool = False) -> dict[str, str]:
         """
         Parse, cache, and return the environment variables from the envfile at the
         given path. The path is used as the cache key.
@@ -42,6 +42,13 @@ class EnvFileCache:
                     f"Syntax error in referenced envfile: {envfile_path_str!r};"
                     f" {message}"
                 ) from error
+
+        elif optional:
+            self._io.print_debug(
+                f" - Optional envfile not found at {envfile_path_str!r}"
+            )
+            # Return without caching
+            return result
 
         else:
             self._io.print_warning(

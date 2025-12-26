@@ -29,3 +29,18 @@ def test_multiple_envfiles(run_poe_subproc, projects):
     )
     assert result.stdout == "VAL_A-VAL_B-VAL_C-VAL_D-VAL_E-VAL_F!!\n"
     assert result.stderr == ""
+
+
+def test_trying_to_load_nonexistent_envfiles(run_poe_subproc, projects):
+    result = run_poe_subproc(
+        f"-C={projects['envfile/multiple_envfiles']}", "handle_disappointment"
+    )
+
+    assert "Poe => poe_test_echo OK\n" in result.capture
+    assert "Warning: Poe failed to locate envfile at" in result.capture
+    assert "not-real.env" in result.capture
+    assert "imaginary.env" in result.capture
+    assert "nothingness.env" not in result.capture
+    assert "lies.env" not in result.capture
+    assert result.stdout == "OK\n"
+    assert result.stderr == ""
