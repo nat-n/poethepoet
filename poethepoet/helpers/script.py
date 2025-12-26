@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 def parse_script_reference(
     script_ref: str,
     parsed_args: dict[str, Any] | None = None,
-    allowed_vars: Container[str] = tuple(),
+    allowed_vars: Container[str] = (),
 ) -> tuple[str, FunctionCall]:
     """
     Parses a script reference string and returns the module name and function call.
@@ -51,7 +51,7 @@ def parse_script_reference(
     else:
         function_call = FunctionCall.parse(
             source=target_ref,
-            arguments=set(parsed_args or tuple()),
+            arguments=set(parsed_args or ()),
             allowed_vars=allowed_vars,
         )
 

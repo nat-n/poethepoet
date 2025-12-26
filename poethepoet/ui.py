@@ -167,7 +167,7 @@ class PoeUi:
             help=maybe_suppress("ansi", "Force disable ANSI output"),
         )
 
-        parser.add_argument("task", default=tuple(), nargs=argparse.REMAINDER)
+        parser.add_argument("task", default=(), nargs=argparse.REMAINDER)
 
         return parser
 

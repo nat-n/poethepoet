@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import sys
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..executor.task_run import PoeTaskRun, PoeTaskRunError
@@ -80,17 +82,17 @@ class ParallelTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: list
-        options: "ParallelTask.TaskOptions"
-        subtasks: "Sequence[PoeTask.TaskSpec]"
+        options: ParallelTask.TaskOptions
+        subtasks: Sequence[PoeTask.TaskSpec]
 
         def __init__(
             self,
             name: str,
             task_def: dict[str, Any],
-            factory: "TaskSpecFactory",
-            source: "ConfigPartition",
+            factory: TaskSpecFactory,
+            source: ConfigPartition,
             *,
-            parent: Union["PoeTask.TaskSpec", None] = None,
+            parent: PoeTask.TaskSpec | None = None,
         ):
             super().__init__(name, task_def, factory, source, parent=parent)
 
@@ -129,7 +131,7 @@ class ParallelTask(PoeTask):
                         task_name=self.name,
                     ) from error
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -161,7 +163,7 @@ class ParallelTask(PoeTask):
         ]
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: "PoeTaskRun"
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
@@ -218,7 +220,7 @@ class ParallelTask(PoeTask):
                 )
                 raise
 
-    async def _handle_task_failures(self, task_state: "PoeTaskRun"):
+    async def _handle_task_failures(self, task_state: PoeTaskRun):
         ignore_fail = self.spec.options.ignore_fail
         non_zero_subtasks = []
         # listen for completion and error events from subtasks
@@ -265,7 +267,7 @@ class ParallelTask(PoeTask):
             )
 
     async def _format_output_lines(
-        self, task_name: str, subtask_index: int, subproc: "Process"
+        self, task_name: str, subtask_index: int, subproc: Process
     ):
         if not subproc.stdout:
             return

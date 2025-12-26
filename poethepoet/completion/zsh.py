@@ -50,7 +50,7 @@ def get_zsh_completion_script(name: str = "") -> str:
                 for excl_group in excl_groups
                 if option in excl_group
             ),
-            tuple(),
+            (),
         )
         # collect all option strings that are exclusive with this one
         excl_option_strings: set[str] = {

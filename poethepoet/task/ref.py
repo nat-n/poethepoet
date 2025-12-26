@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError
-from ..executor.task_run import PoeTaskRun
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
 
@@ -34,9 +36,9 @@ class RefTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "RefTask.TaskOptions"
+        options: RefTask.TaskOptions
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -59,7 +61,7 @@ class RefTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         """
         Lookup and delegate to the referenced task
@@ -94,9 +96,9 @@ class RefTask(PoeTask):
 
     async def _run_task_graph(
         self,
-        task: "PoeTask",
-        context: "RunContext",
-        env: "EnvVarsManager",
+        task: PoeTask,
+        context: RunContext,
+        env: EnvVarsManager,
         task_state: PoeTaskRun,
     ):
         from ..exceptions import ExecutionError

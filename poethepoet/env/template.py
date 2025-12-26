@@ -34,7 +34,7 @@ class SpyDict(dict):
     A kind of dict in which the behavior __getitem__ can be overridden.
     """
 
-    def __init__(self, content=tuple(), *, getitem_spy=None):
+    def __init__(self, content=(), *, getitem_spy=None):
         super().__init__(content)
         self._getitem_spy = getitem_spy
 

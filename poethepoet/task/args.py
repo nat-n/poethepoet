@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from contextlib import redirect_stderr
-from typing import IO, TYPE_CHECKING, Any, Literal, Union, cast
+from typing import IO, TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
@@ -15,7 +15,7 @@ from ..exceptions import ConfigValidationError, ExecutionError
 from ..options import PoeOptions
 
 ArgParams = dict[str, Any]
-ArgsDef = Union[list[str], list[ArgParams], dict[str, ArgParams]]
+ArgsDef = list[str] | list[ArgParams] | dict[str, ArgParams]
 
 arg_types: dict[str, type] = {
     "string": str,
@@ -26,17 +26,14 @@ arg_types: dict[str, type] = {
 
 
 class ArgSpec(PoeOptions):
-    # ruff: noqa: UP007
-    default: Union[str, int, float, bool] | None = None
+    default: str | int | float | bool | None = None
     help: str = ""
     name: str
     options: Sequence[str]
-    # ruff: noqa: UP007
-    positional: Union[bool, str] = False
+    positional: bool | str = False
     required: bool = False
     type: Literal["string", "float", "integer", "boolean"] = "string"
-    # ruff: noqa: UP007
-    multiple: Union[bool, int] = False
+    multiple: bool | int = False
 
     @classmethod
     def normalize(

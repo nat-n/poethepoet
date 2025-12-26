@@ -1,14 +1,16 @@
+from __future__ import annotations
+
 import shlex
 from typing import TYPE_CHECKING, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
-from ..executor.task_run import PoeTaskRun
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
 
@@ -39,9 +41,9 @@ class CmdTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "CmdTask.TaskOptions"
+        options: CmdTask.TaskOptions
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -51,7 +53,7 @@ class CmdTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
@@ -79,7 +81,7 @@ class CmdTask(PoeTask):
                 "More details: https://github.com/nat-n/poethepoet/discussions/314",
             )
 
-    def _resolve_commandline(self, context: "RunContext", env: "EnvVarsManager"):
+    def _resolve_commandline(self, context: RunContext, env: EnvVarsManager):
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens
         from ..helpers.command.ast_core import ParseError
 

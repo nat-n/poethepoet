@@ -1,4 +1,6 @@
 # ruff: noqa: N818
+
+
 class PoeException(RuntimeError):
     cause: str | None
 

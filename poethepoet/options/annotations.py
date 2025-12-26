@@ -14,6 +14,16 @@ from typing import (
     get_type_hints,
 )
 
+_registered_type_hint_globals = {}
+
+
+def option_annotation(type: type):
+    """
+    Register custom types (e.g. TypedDicts) to be usable in PoeOptions fields
+    """
+    _registered_type_hint_globals[type.__name__] = type
+    return type
+
 
 class Metadata:
     __slots__ = ("config_name",)
@@ -46,6 +56,7 @@ class TypeAnnotation:
             "Union": Union,
             "TypeAnnotation": cls,
             "Metadata": Metadata,
+            **_registered_type_hint_globals,
         }
 
     @staticmethod

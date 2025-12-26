@@ -1,7 +1,8 @@
-from collections.abc import Iterator, Mapping, Sequence
+from __future__ import annotations
+
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
 from ..helpers.eventloop import run_async
@@ -9,6 +10,8 @@ from .file import PoeConfigFile
 from .partition import ConfigPartition, IncludedConfig, PackagedConfig, ProjectConfig
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping, Sequence
+
     from ..io import PoeIO
 
 
@@ -40,7 +43,7 @@ class PoeConfig:
         cwd: Path | str | None = None,
         table: Mapping[str, Any] | None = None,
         config_name: str | Sequence[str] | None = None,
-        io: Optional["PoeIO"] = None,
+        io: PoeIO | None = None,
     ):
         if config_name is not None:
             if isinstance(config_name, str):

@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Iterable, Iterator, Mapping
 from glob import escape
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from .ast import Comment
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Mapping
+
     from .ast import Line, ParseConfig
 
 
-def parse_poe_cmd(source: str, config: Optional["ParseConfig"] = None):
+def parse_poe_cmd(source: str, config: ParseConfig | None = None):
     from .ast import Glob, ParseConfig, ParseCursor, PythonGlob, Script
 
     if not config:
@@ -22,9 +25,9 @@ def parse_poe_cmd(source: str, config: Optional["ParseConfig"] = None):
 
 
 def resolve_command_tokens(
-    lines: Iterable["Line"],
+    lines: Iterable[Line],
     env: Mapping[str, str],
-    config: Optional["ParseConfig"] = None,
+    config: ParseConfig | None = None,
 ) -> Iterator[tuple[str, bool]]:
     """
     Generates a sequence of tokens, and indicates for each whether it includes glob

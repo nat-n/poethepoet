@@ -1,16 +1,17 @@
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
-from ..executor.task_run import PoeTaskRun
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from collections.abc import MutableMapping
+    from collections.abc import Mapping, MutableMapping
 
     from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
 
@@ -62,16 +63,16 @@ class SwitchTask(PoeTask):
     class TaskSpec(PoeTask.TaskSpec):
         control_task_spec: PoeTask.TaskSpec
         case_task_specs: tuple[tuple[tuple[Any, ...], PoeTask.TaskSpec], ...]
-        options: "SwitchTask.TaskOptions"
+        options: SwitchTask.TaskOptions
 
         def __init__(
             self,
             name: str,
             task_def: dict[str, Any],
-            factory: "TaskSpecFactory",
-            source: "ConfigPartition",
+            factory: TaskSpecFactory,
+            source: ConfigPartition,
             *,
-            parent: Optional["PoeTask.TaskSpec"] = None,
+            parent: PoeTask.TaskSpec | None = None,
         ):
             super().__init__(name, task_def, factory, source, parent=parent)
 
@@ -112,7 +113,7 @@ class SwitchTask(PoeTask):
 
             self.case_task_specs = tuple(case_task_specs)
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             from collections import defaultdict
 
             allowed_control_task_types = ("expr", "cmd", "script")
@@ -192,7 +193,7 @@ class SwitchTask(PoeTask):
                 self.switch_tasks[case_key] = case_task
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)

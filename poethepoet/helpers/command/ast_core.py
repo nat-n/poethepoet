@@ -3,9 +3,13 @@ This module provides a framework for defining a hierarchical parser and AST.
 See sibling ast module for an example usage.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
-from typing import IO, Generic, TypeVar, cast
+from typing import IO, TYPE_CHECKING, Generic, TypeVar, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class ParseCursor:
@@ -41,7 +45,7 @@ class ParseCursor:
 
     @classmethod
     def from_string(cls, string: str):
-        return cls(char for char in string)
+        return cls(iter(string))
 
     @property
     def position(self):
@@ -101,18 +105,18 @@ class ParseConfig:
     to the parsed syntax without having to duplicate parsing logic.
     """
 
-    substitute_nodes: dict[type["AstNode"], type["AstNode"]]
+    substitute_nodes: dict[type[AstNode], type[AstNode]]
     line_separators: str
 
     def __init__(
         self,
-        substitute_nodes: dict[type["AstNode"], type["AstNode"]] | None = None,
+        substitute_nodes: dict[type[AstNode], type[AstNode]] | None = None,
         line_separators="",
     ):
         self.substitute_nodes = substitute_nodes or {}
         self.line_separators = line_separators
 
-    def resolve_node_cls(self, klass: type["AstNode"]) -> type["AstNode"]:
+    def resolve_node_cls(self, klass: type[AstNode]) -> type[AstNode]:
         return self.substitute_nodes.get(klass, klass)
 
 
@@ -154,8 +158,8 @@ class SyntaxNode(AstNode, Generic[T]):
         return cast("type[T]", self.config.resolve_node_cls(node_type))
 
     @property
-    def children(self) -> tuple["SyntaxNode", ...]:
-        return tuple(getattr(self, "_children", tuple()))
+    def children(self) -> tuple[SyntaxNode, ...]:
+        return tuple(getattr(self, "_children", ()))
 
     def pretty(self, indent: int = 0, increment: int = 4):
         indent += increment

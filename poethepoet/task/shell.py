@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Sequence
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError, PoeException
-from ..executor.task_run import PoeTaskRun
 from .base import PoeTask
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..executor.task_run import PoeTaskRun
 
 
 class ShellTask(PoeTask):
@@ -54,12 +57,12 @@ class ShellTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "ShellTask.TaskOptions"
+        options: ShellTask.TaskOptions
 
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -9,10 +11,10 @@ if TYPE_CHECKING:
 
 class EnvFileCache:
     _cache: dict[str, dict[str, str]] = {}
-    _io: "PoeIO"
+    _io: PoeIO
     _project_dir: Path
 
-    def __init__(self, project_dir: Path, io: "PoeIO"):
+    def __init__(self, project_dir: Path, io: PoeIO):
         self._project_dir = project_dir
         self._io = io
 

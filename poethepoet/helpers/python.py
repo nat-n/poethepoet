@@ -78,8 +78,8 @@ class FunctionCall(NamedTuple):
 
     expression: str
     function_ref: str
-    referenced_args: tuple[str, ...] = tuple()
-    referenced_globals: tuple[str, ...] = tuple()
+    referenced_args: tuple[str, ...] = ()
+    referenced_globals: tuple[str, ...] = ()
 
     @classmethod
     def parse(
@@ -138,7 +138,7 @@ def resolve_expression(
     arguments: Container[str],
     *,
     args_prefix: str = "__args.",
-    allowed_vars: Container[str] = tuple(),
+    allowed_vars: Container[str] = (),
 ) -> str:
     """
     Validate function call and substitute references to arguments with their namespaced
@@ -221,7 +221,7 @@ class NoInstance:
 
 
 def _validate_nodes_and_get_names(
-    node: ast.AST, source: str, *, ignore_names: Collection[str] = tuple()
+    node: ast.AST, source: str, *, ignore_names: Collection[str] = ()
 ) -> Iterator[ast.Name]:
     """
     Walk the ast from the given node and yield all of the encountered Name nodes
