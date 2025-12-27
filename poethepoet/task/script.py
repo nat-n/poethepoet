@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import shlex
 from typing import TYPE_CHECKING
 
 from ..exceptions import ConfigValidationError
-from ..executor.task_run import PoeTaskRun
 from ..helpers.script import parse_script_reference
 from .base import PoeTask
 
@@ -10,6 +11,7 @@ if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
 
@@ -36,9 +38,9 @@ class ScriptTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "ScriptTask.TaskOptions"
+        options: ScriptTask.TaskOptions
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -56,7 +58,7 @@ class ScriptTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         from ..helpers.python import format_class
 
@@ -117,7 +119,7 @@ class ScriptTask(PoeTask):
         await task_state.add_process(process, finalize=True)
 
     async def _run_module(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         """
         Execute the python module referenced by the task content

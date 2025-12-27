@@ -1,4 +1,4 @@
-# ruff: noqa: N806, UP007
+# ruff: noqa: N806
 r"""
 This module implements a hierarchical parser and AST for a subset of bash syntax
 including:
@@ -12,7 +12,7 @@ including:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Union, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from .ast_core import (
     AnnotatedContentNode,
@@ -504,7 +504,7 @@ class Word(SyntaxNode[Segment]):
             self._children.append(SegmentCls(chars, self.config))
 
 
-class Line(SyntaxNode[Union[Word, Comment]]):
+class Line(SyntaxNode[Word | Comment]):
     _terminator: str
 
     @property
@@ -551,7 +551,7 @@ class Line(SyntaxNode[Union[Word, Comment]]):
 
 
 class Script(SyntaxNode[Line]):
-    def __init__(self, chars: ParseCursor, config: Union[ParseConfig, None] = None):
+    def __init__(self, chars: ParseCursor, config: ParseConfig | None = None):
         config = config or ParseConfig()
         if not config.line_separators:
             config.line_separators = LINE_SEP_CHARS

@@ -1,11 +1,19 @@
-from collections.abc import Mapping, Sequence
-from pathlib import Path
+from __future__ import annotations
+
 from types import MappingProxyType
-from typing import Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from .primitives import EmptyDict, EnvDefault, EnvfileOption
+from ..options.annotations import option_annotation
+from .primitives import EmptyDict, EnvDefault
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+    from pathlib import Path
+
+    from .primitives import EnvfileOption
+
 
 KNOWN_SHELL_INTERPRETERS = (
     "posix",
@@ -19,6 +27,7 @@ KNOWN_SHELL_INTERPRETERS = (
 )
 
 
+@option_annotation
 class IncludeScriptItem(TypedDict):
     script: str
     cwd: str
@@ -28,6 +37,7 @@ class IncludeScriptItem(TypedDict):
 IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
 
 
+@option_annotation
 class IncludeItem(TypedDict):
     path: str
     cwd: str

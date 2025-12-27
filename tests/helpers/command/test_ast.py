@@ -259,7 +259,7 @@ def test_parse_param_operators():
         "10",
         (
             "x",
-            (":-", tuple()),
+            (":-", ()),
         ),
         "B",
     )

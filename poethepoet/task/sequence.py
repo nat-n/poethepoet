@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask, TaskContext
@@ -46,17 +48,17 @@ class SequenceTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: list
-        options: "SequenceTask.TaskOptions"
-        subtasks: "Sequence[PoeTask.TaskSpec]"
+        options: SequenceTask.TaskOptions
+        subtasks: Sequence[PoeTask.TaskSpec]
 
         def __init__(
             self,
             name: str,
             task_def: dict[str, Any],
-            factory: "TaskSpecFactory",
-            source: "ConfigPartition",
+            factory: TaskSpecFactory,
+            source: ConfigPartition,
             *,
-            parent: Union["PoeTask.TaskSpec", None] = None,
+            parent: PoeTask.TaskSpec | None = None,
         ):
             super().__init__(name, task_def, factory, source, parent=parent)
 
@@ -99,7 +101,7 @@ class SequenceTask(PoeTask):
                         task_name=self.name,
                     ) from error
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -112,7 +114,7 @@ class SequenceTask(PoeTask):
                 subtask.validate(config, task_specs)
 
     spec: TaskSpec
-    _subtasks: "Sequence[PoeTask]"
+    _subtasks: Sequence[PoeTask]
 
     def __init__(
         self,
@@ -132,7 +134,7 @@ class SequenceTask(PoeTask):
         ]
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: "PoeTaskRun"
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)

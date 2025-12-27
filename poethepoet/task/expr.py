@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, Any
 
 from ..exceptions import ConfigValidationError, ExpressionParseError
-from ..executor.task_run import PoeTaskRun
 from ..options.annotations import Metadata
 from .base import PoeTask
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, Sequence
+
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
+    from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
 
@@ -24,7 +27,7 @@ class ExprTask(PoeTask):
     __key__ = "expr"
 
     class TaskOptions(PoeTask.TaskOptions):
-        imports: Sequence[str] = tuple()
+        imports: Sequence[str] = ()
         assert_: Annotated[bool | int, Metadata(config_name="assert")] = False
         use_exec: bool = False
 
@@ -38,9 +41,9 @@ class ExprTask(PoeTask):
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
-        options: "ExprTask.TaskOptions"
+        options: ExprTask.TaskOptions
 
-        def _task_validations(self, config: "PoeConfig", task_specs: "TaskSpecFactory"):
+        def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
@@ -52,7 +55,7 @@ class ExprTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: "RunContext", env: "EnvVarsManager", task_state: PoeTaskRun
+        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         from ..helpers.python import format_class
 
@@ -93,7 +96,7 @@ class ExprTask(PoeTask):
     def parse_content(
         self,
         args: dict[str, Any] | None,
-        env: "EnvVarsManager",
+        env: EnvVarsManager,
         imports: Iterable[str],
     ) -> tuple[str, dict[str, str]]:
         """
@@ -113,7 +116,7 @@ class ExprTask(PoeTask):
 
         expression = resolve_expression(
             source=expression,
-            arguments=set(args or tuple()),
+            arguments=set(args or ()),
             allowed_vars={"sys", "__env", *imports},
         )
         # Strip out any new lines because they can be problematic on windows

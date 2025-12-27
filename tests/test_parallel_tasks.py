@@ -111,8 +111,8 @@ def generate_pyproject(temp_pyproject):
         project_tmpl = f"""
             [tool.poe.tasks]
             fast_success = "echo 'Great success!'"
-            slow_success = "poe_test_delayed_echo 100 'Eventual success!'"
-            slow_fail = "poe_test_fail 50 22"
+            slow_success = "poe_test_delayed_echo 275 'Eventual success!'"
+            slow_fail = "poe_test_fail 100 22"
             fast_fail.shell = "echo 'failing fast with error'; exit 1;"
 
             [tool.poe.tasks.lvl1_seq]
@@ -143,7 +143,7 @@ def generate_pyproject(temp_pyproject):
 
 
 @pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
-def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
+def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
     project_path = generate_pyproject()
 
     result = run_poe_subproc("lvl1_seq", cwd=project_path)
@@ -159,7 +159,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
     assert sequences_are_similar(
         result.capture_lines,
         [
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -172,7 +172,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
     ) or sequences_are_similar(
         result.capture_lines,
         [
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -193,7 +193,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -208,7 +208,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -233,10 +233,10 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -250,10 +250,10 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
     ) or sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -265,19 +265,22 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, is_windows):
         flakiness_factor,
     )
 
-    if is_windows:
-        # Windows error handling is too unpredictable for this test
-        return
-
-    assert set(result.output_lines) == {
-        "fast_success | Great success!",
-        "fast_fail | failing fast with error",
-    }
+    assert set(result.output_lines) in (
+        {
+            "fast_success | Great success!",
+            "fast_fail | failing fast with error",
+        },
+        {  # Sometimes the task takes longer to quit and we get more output
+            "fast_success | Great success!",
+            "fast_fail | failing fast with error",
+            "slow_success | Eventual success!",
+        },
+    )
     assert result.code == 1
 
 
 @pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
-def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, is_windows):
+def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
     project_path = generate_pyproject(
         seq1_ignore_fail=True,
         seq2_ignore_fail=True,
@@ -300,7 +303,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, is_window
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -332,7 +335,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, is_window
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -365,10 +368,10 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, is_window
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -380,10 +383,6 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, is_window
         ),
         flakiness_factor,
     )
-
-    if is_windows:
-        # Windows output ordering is too unpredictable for this test
-        return
 
     assert sequences_are_similar(
         result.output_lines,
@@ -406,9 +405,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, is_window
 
 
 @pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
-def test_parallel_ignore_but_propagate_failures(
-    run_poe_subproc, generate_pyproject, is_windows
-):
+def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproject):
     project_path = generate_pyproject(
         seq1_ignore_fail=True,
         seq2_ignore_fail=True,
@@ -420,7 +417,7 @@ def test_parallel_ignore_but_propagate_failures(
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -453,7 +450,7 @@ def test_parallel_ignore_but_propagate_failures(
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -487,10 +484,10 @@ def test_parallel_ignore_but_propagate_failures(
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 100 'Eventual success!'",
+            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -503,10 +500,6 @@ def test_parallel_ignore_but_propagate_failures(
         ),
         flakiness_factor,
     )
-
-    if is_windows:
-        # Windows output ordering is too unpredictable for this test
-        return
 
     assert sequences_are_similar(
         result.output_lines,
