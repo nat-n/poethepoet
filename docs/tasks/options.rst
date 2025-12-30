@@ -6,7 +6,7 @@ Overview
 
 The following options can be configured on your tasks and are not specific to any particular task type.
 
-**help** : ``str`` | ``int`` :doc:`📖<../guides/help_guide>`
+**help** : ``str`` :doc:`📖<../guides/help_guide>`
   Help text to be displayed next to the task name in the documentation when poe is run without specifying a task.
 
 **args** : ``dict[str, dict]`` | ``list[Union[str, dict]]`` :doc:`📖<../guides/args_guide>`

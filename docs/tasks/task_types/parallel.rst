@@ -29,7 +29,7 @@ The following options are also accepted:
 **prefix** : ``str`` :ref:`📖<Customize output prefixing>`
   Set the prefix applied to each line of output from subtasks. By default this is the task name.
 
-**prefix_max** : ``str`` :ref:`📖<Customize output prefixing>`
+**prefix_max** : ``int`` :ref:`📖<Customize output prefixing>`
   Set the maximum width of the prefix. Longer prefixes will be truncated. Default is 16 characters.
 
 **prefix_template** : ``str`` :ref:`📖<Customize output prefixing>`
