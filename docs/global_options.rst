@@ -9,7 +9,7 @@ The following options can be set for all tasks in a project directly under ``[to
 **envfile** : ``str`` | ``list[str]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
-**executor** : ``str | dict[str, str]`` :ref:`📖<Change the executor type>`
+**executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
   Specify the default executor type and/or configuration for all tasks in this project.
 
 **include** : ``str`` | ``dict[str, str]`` | ``list[str | dict[str, str]]`` | :doc:`📖<../guides/include_guide>`

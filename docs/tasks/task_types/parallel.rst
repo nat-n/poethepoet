@@ -20,7 +20,7 @@ Available task options
 
 The following options are also accepted:
 
-**ignore_fail** : ``bool`` | ``str`` :ref:`📖<Continue on task failure>`
+**ignore_fail** : ``bool`` | ``str`` :ref:`📖<Continue on subtask failure>`
   If true then the failure (or non-zero return value) of one task in the parallel group does not abort the execution.
 
 **default_item_type** : ``str`` :ref:`📖<Changing the default item type>`
