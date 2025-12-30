@@ -131,6 +131,10 @@ class ProjectConfig(ConfigPartition):
 
             config = dict(source)
 
+            # Normalize executor option:
+            if (executor := config.get("executor")) and isinstance(executor, str):
+                config["executor"] = {"type": executor}
+
             # Normalize include option:
             # > Union[str, Sequence[str], Mapping[str, str]] => list[dict]
             if includes := config.get("include"):
