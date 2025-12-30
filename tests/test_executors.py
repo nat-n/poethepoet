@@ -197,3 +197,13 @@ def test_override_executor(run_poe_subproc, with_virtualenv_and_venv, projects):
         assert result.capture == "Poe => poe_test_env\n"
         assert f"VIRTUAL_ENV={venv_path}" not in result.stdout
         assert result.stderr == ""
+
+
+def test_global_executor_config(run_poe_subproc):
+    """
+    Rely on global config to correctly
+    """
+    result = run_poe_subproc("show-env", project="simple_executor")
+    assert result.capture == "Poe => poe_test_env\n"
+    assert "POE_ACTIVE=simple" in result.stdout
+    assert result.stderr == ""
