@@ -1,3 +1,6 @@
+import uuid
+
+
 def test_ref_task(run_poe_subproc, projects, esc_prefix, is_windows):
     # This should be exactly the same as calling the echo task directly
     result = run_poe_subproc(
@@ -89,3 +92,35 @@ def test_ref_forwards_arguments(run_poe_subproc):
     assert result.capture == "Poe => poe_test_echo hi 'lol!' OK\n"
     assert result.stdout == "hi lol! OK\n"
     assert result.stderr == ""
+
+
+def test_ref_passes_capture_stdout(run_poe_subproc):
+    arg = uuid.uuid4().hex
+    result = run_poe_subproc("greet-ref-file", f"--subject={arg}", project="refs")
+    assert result.capture == f"Poe <= poe_test_echo hi {arg}\n"
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert (result.path / "greet-ref.txt").read_text() == f"hi {arg}\n"
+
+
+def test_ref_passes_task_which_has_capture_stdout(run_poe_subproc):
+    arg = uuid.uuid4().hex
+    result = run_poe_subproc(
+        "greet-ref-subject-file", f"--subject={arg}", project="refs"
+    )
+    assert result.capture == f"Poe <= poe_test_echo hi {arg}\n"
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert (result.path / "greet.txt").read_text() == f"hi {arg}\n"
+
+
+def test_ref_error_on_sequence_with_capture_stdout(run_poe_subproc):
+    result = run_poe_subproc("capture-sequence", project="refs_error")
+    assert "Error: Invalid task 'capture-sequence'" in result.capture
+    assert (
+        "Option 'capture_stdout' cannot be set on a ref task with: 'do-sequence'"
+        in result.capture
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert not (result.path / "echo.txt").exists()

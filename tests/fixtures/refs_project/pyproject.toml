@@ -5,11 +5,23 @@ cmd = "poe_test_echo hi"
 cmd  = "poe_test_echo hi ${subject}"
 args = ["subject"]
 
+[tool.poe.tasks.greet-subject-file]
+cmd  = "poe_test_echo hi ${subject}"
+args = ["subject"]
+capture_stdout = "greet.txt"
+
 [tool.poe.tasks.greet-funny]
 ref = "greet lol!"
 
 [tool.poe.tasks.greet-dave]
 ref = "greet-subject --subject dave"
+
+[tool.poe.tasks.greet-ref-file]
+ref = "greet-subject"
+capture_stdout = "greet-ref.txt"
+
+[tool.poe.tasks.greet-ref-subject-file]
+ref = "greet-subject-file"
 
 [tool.poe.tasks.apologize]
 cmd  = "echo \"I'm sorry ${name}, ${explain}\""

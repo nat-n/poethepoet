@@ -29,10 +29,6 @@ class RefTask(PoeTask):
                 raise ConfigValidationError(
                     "Option 'executor' cannot be set on a ref task"
                 )
-            if self.capture_stdout:
-                raise ConfigValidationError(
-                    "Option 'capture_stdout' cannot be set on a ref task"
-                )
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
@@ -52,10 +48,20 @@ class RefTask(PoeTask):
                     f"Includes reference to unknown task {task_name_ref!r}"
                 )
 
-            if task_specs.get(task_name_ref).options.get("use_exec", False):
+            ref_spec = task_specs.get(task_name_ref)
+            if ref_spec.options.get("use_exec", False):
                 raise ConfigValidationError(
                     f"Illegal reference to task with "
                     f"'use_exec' set to true: {task_name_ref!r}"
+                )
+
+            if self.options.capture_stdout and ref_spec.task_type.__key__ in (
+                "sequence",
+                "parallel",
+            ):
+                raise ConfigValidationError(
+                    "Option 'capture_stdout' cannot be set "
+                    f"on a ref task with: {task_name_ref!r}"
                 )
 
     spec: TaskSpec
@@ -81,7 +87,9 @@ class RefTask(PoeTask):
 
         task_spec = self.ctx.specs.get(ref_invocation[0])
         task = task_spec.create_task(
-            invocation=ref_invocation, ctx=TaskContext.from_task(self, task_spec)
+            invocation=ref_invocation,
+            ctx=TaskContext.from_task(self, task_spec),
+            capture_stdout=self.capture_stdout,
         )
 
         if task.has_deps():
