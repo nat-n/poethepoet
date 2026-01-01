@@ -11,6 +11,7 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
         r"welcome to " + esc_prefix + "${POE_ROOT}",
         project="scripts",
         env=poetry_vars,
+        shell=True,
     )
     assert (
         result.capture == f"Poe => echo-args nat, 'welcome to {projects['scripts']}'\n"

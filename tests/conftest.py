@@ -1,6 +1,8 @@
 import os
 import re
+import shlex
 import shutil
+import signal
 import sys
 import time
 import venv
@@ -8,7 +10,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, TimeoutExpired
 from typing import Any, NamedTuple
 
 import pytest
@@ -128,13 +130,46 @@ class PoeTestRunResult(NamedTuple):
         return self.stdout.strip().splitlines()
 
 
+class PoeTestRunHandle(NamedTuple):
+    invocation: tuple[str, ...]
+    working_dir: str
+    process: Popen
+    capture_path: Path
+
+    def result(self, timeout: int = 60) -> PoeTestRunResult:
+        returncode = 0
+        try:
+            task_out, task_err = self.process.communicate(timeout=timeout)
+        except TimeoutExpired as error:
+            returncode = 124
+            self.process.send_signal(signal.SIGINT)
+            task_out = error.stdout or b""
+            task_err = error.stderr or b""
+
+        with self.capture_path.open("rb") as output_file:
+            captured_output = (
+                output_file.read().decode(errors="ignore").replace("\r\n", "\n")
+            )
+
+        result = PoeTestRunResult(
+            invocation=self.invocation,
+            code=returncode or self.process.returncode,
+            path=self.working_dir,
+            capture=captured_output,
+            stdout=task_out.decode(errors="ignore").replace("\r\n", "\n"),
+            stderr=task_err.decode(errors="ignore").replace("\r\n", "\n"),
+        )
+        print(result)  # when a test fails this is usually useful to debug
+        return result
+
+
 @pytest.fixture
-def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
+def run_poe_subproc_handle(temp_file, is_windows):
     coverage_setup = (
         "from coverage import Coverage;"
         rf"Coverage(data_file=r\"{PROJECT_ROOT.joinpath('.coverage')}\").start();"
     )
-    shell_cmd_template = (
+    wrapper_cmd_template = (
         'python -c "'
         "{coverage_setup}"
         + (
@@ -150,17 +185,64 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         '"'
     )
 
+    def run_poe_subproc_handle(
+        *run_args: str,
+        cwd: str,
+        config_arg: str = "None",
+        shell: bool = False,
+        coverage: bool = not is_windows,
+        env: dict[str, str] | None = None,
+    ) -> PoeTestRunHandle:
+        wrapper_cmd = wrapper_cmd_template.format(
+            coverage_setup=(coverage_setup if coverage else ""),
+            cwd=cwd,
+            config=config_arg,
+            run_args=",".join(f'r\\"{arg}\\"' for arg in run_args),
+            output=rf"open(r\"{temp_file}\", \"w\")",
+        )
+
+        subproc_env = dict(os.environ)
+        # do not inherit these vars from the test
+        subproc_env.pop("VIRTUAL_ENV", None)
+        subproc_env.pop("POE_CWD", None)
+        subproc_env.pop("POE_PWD", None)
+        if env:
+            subproc_env.update(env)
+
+        if coverage:
+            subproc_env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
+
+        poeproc = Popen(
+            wrapper_cmd if shell else shlex.split(wrapper_cmd),
+            shell=shell,
+            stdout=PIPE,
+            stderr=PIPE,
+            env=subproc_env,
+        )
+        return PoeTestRunHandle(
+            invocation=run_args,
+            working_dir=cwd,
+            process=poeproc,
+            capture_path=temp_file,
+        )
+
+    return run_poe_subproc_handle
+
+
+@pytest.fixture
+def run_poe_subproc(run_poe_subproc_handle, projects, tmp_path, is_windows):
     def run_poe_subproc(
         *run_args: str,
         cwd: str | None = None,
         config: Mapping[str, Any] | None = None,
+        shell: bool = False,
         coverage: bool = not is_windows,
         env: dict[str, str] | None = None,
         project: str | None = None,
-        timeout: int = 60,
+        timeout: int = 30,
     ) -> PoeTestRunResult:
         if cwd is None:
-            cwd = projects.get(project, projects["example"])
+            cwd = str(projects.get(project, projects["example"]))
 
         if config is not None:
             config_path = tmp_path.joinpath("tmp_test_config_file")
@@ -172,42 +254,15 @@ def run_poe_subproc(projects, temp_file, tmp_path, is_windows):
         else:
             config_arg = "None"
 
-        shell_cmd = shell_cmd_template.format(
-            coverage_setup=(coverage_setup if coverage else ""),
+        handle = run_poe_subproc_handle(
+            *run_args,
             cwd=cwd,
-            config=config_arg,
-            run_args=",".join(f'r\\"{arg}\\"' for arg in run_args),
-            output=rf"open(r\"{temp_file}\", \"w\")",
+            config_arg=config_arg,
+            shell=shell,
+            coverage=coverage,
+            env=env,
         )
-
-        subproc_env = dict(os.environ)
-        subproc_env.pop("VIRTUAL_ENV", None)
-        subproc_env.pop("POE_CWD", None)  # do not inherit this from the test
-        subproc_env.pop("POE_PWD", None)  # do not inherit this from the test
-        if env:
-            subproc_env.update(env)
-
-        if coverage:
-            subproc_env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
-
-        poeproc = Popen(
-            shell_cmd, shell=True, stdout=PIPE, stderr=PIPE, env=subproc_env
-        )
-        task_out, task_err = poeproc.communicate(timeout=timeout)
-
-        with temp_file.open("rb") as output_file:
-            captured_output = (
-                output_file.read().decode(errors="ignore").replace("\r\n", "\n")
-            )
-
-        result = PoeTestRunResult(
-            invocation=run_args,
-            code=poeproc.returncode,
-            path=cwd,
-            capture=captured_output,
-            stdout=task_out.decode(errors="ignore").replace("\r\n", "\n"),
-            stderr=task_err.decode(errors="ignore").replace("\r\n", "\n"),
-        )
+        result = handle.result(timeout=timeout)
         print(result)  # when a test fails this is usually useful to debug
         return result
 
@@ -249,7 +304,6 @@ def run_poe_main(capsys, projects):
     def run_poe_main(
         *cli_args: str,
         cwd: str = projects["example"],
-        config: Mapping[str, Any] | None = None,
         project: str | None = None,
     ) -> PoeTestRunResult:
         cwd = projects.get(project, cwd)

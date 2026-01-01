@@ -23,6 +23,22 @@ def delayed_echo():
     print(" ".join(content), flush=True)
 
 
+def delayed_echo_with_pidfile():
+    """
+    A process that takes some time to start and then echoes the second argument.
+    The third argument is a file path where the process writes its own PID.
+
+    Usage: delayed_echo_with_pidfile sleep_time content pid_file_path
+    """
+    delay = sys.argv[1]
+    content = sys.argv[2]
+    pid_file_path = sys.argv[3]
+    with open(pid_file_path, "w") as pid_file:
+        pid_file.write(str(os.getpid()))
+    time.sleep(int(delay) / 1000)
+    print(" ".join(content), flush=True)
+
+
 def immortal_echo():
     """
     Swallow N interrupts and then echo the arguments on start and on each interrupt.
