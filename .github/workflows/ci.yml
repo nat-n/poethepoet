@@ -17,14 +17,14 @@ jobs:
     name: Check coding standards
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install poetry
         run: pipx install poetry
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: 3.12
+          python-version: 3.13
           cache: poetry
 
       - name: Install dependencies
@@ -51,21 +51,21 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Install uv for use in tests
+        uses: astral-sh/setup-uv@v7
 
       - name: Install poetry
         run: pipx install poetry
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: poetry
 
       - name: Install dependencies
-        run: poetry --ansi install --without docs
+        run: poetry --ansi install --without docs --without ci
 
       - name: Run tests
         run: poetry --ansi run pytest -v --color=yes
@@ -75,14 +75,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [code-quality, run-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install poetry
         run: pipx install poetry
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: 3.12
+          python-version: 3.13
 
       - name: Build package
         run: poetry --ansi build

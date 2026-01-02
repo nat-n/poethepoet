@@ -12,6 +12,7 @@ poe_test_echo = "poe_test_helpers:echo"
 poe_test_env = "poe_test_helpers:env"
 poe_test_pwd = "poe_test_helpers:pwd"
 poe_test_delayed_echo = "poe_test_helpers:delayed_echo"
+poe_test_delayed_echo_with_pidfile = "poe_test_helpers:delayed_echo_with_pidfile"
 poe_test_fail = "poe_test_helpers:fail"
 poe_test_immortal = "poe_test_helpers:immortal_echo"
 

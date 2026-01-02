@@ -25,8 +25,10 @@ class ShutdownManager:
         self._urgency = 0
         self.tasks: WeakSet[asyncio.Task] = WeakSet()
         self.processes: WeakSet[Process] = WeakSet()
+        self._backup_sighup = None
         self._backup_sigint = None
         self._backup_sigterm = None
+        self._backup_sigbreak = None
         self._is_windows = sys.platform == "win32"
         self._shutdown_worker: asyncio.Task | None = None
 
@@ -36,9 +38,9 @@ class ShutdownManager:
             self._urgency += max(1, 3 - self._urgency)
         else:
             self._urgency += 1
-        self._loop.call_soon_threadsafe(self._being_shut_down)
+        self._loop.call_soon_threadsafe(self._initialize_shutdown)
 
-    def _being_shut_down(self):
+    def _initialize_shutdown(self):
         if self._shutdown_worker:
             self._shutdown_worker.cancel()
         self._shutdown_worker = self._loop.create_task(
@@ -70,11 +72,10 @@ class ShutdownManager:
         else:
             for proc in tuple(self.processes):
                 if proc.returncode is None:
-                    with contextlib.suppress(ProcessLookupError):
-                        self._io.print_debug(
-                            " ! Sending SIGINT to subprocess group %s", proc.pid
-                        )
-                        os.killpg(os.getpgid(proc.pid), signal.SIGINT)
+                    self._io.print_debug(
+                        " ! Sending SIGINT to subprocess group %s", proc.pid
+                    )
+                    self._send_signal_to_group(proc, signal.SIGINT)
                 else:
                     self.processes.discard(proc)
 
@@ -106,8 +107,7 @@ class ShutdownManager:
                 while self.processes:
                     proc = self.processes.pop()
                     if proc.returncode is None:
-                        with contextlib.suppress(ProcessLookupError):
-                            os.killpg(os.getpgid(proc.pid), 9)
+                        self._send_signal_to_group(proc, 9)
 
         if self._urgency >= 4:
             self._io.print_debug(" ! Forceful shutdown triggered: killing subprocesses")
@@ -124,15 +124,44 @@ class ShutdownManager:
                 while self.processes:
                     proc = self.processes.pop()
                     if proc.returncode is None:
-                        with contextlib.suppress(ProcessLookupError):
-                            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                        self._send_signal_to_group(proc, signal.SIGKILL)
+
+    def _send_signal_to_group(self, proc: Process, sig: int):
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(os.getpgid(proc.pid), sig)
+
+    def _propagate_sighup(self, signum=None, frame=None):
+        """
+        If we receive SIGHUP then this means the parent TTY has closed. Since tasks run
+        in process groups we need to explicitly propagate the SIGHUP to them, and then
+        trigger shutdown so poe exits cleanly.
+        """
+        self._io.print_debug(" ! SIGHUP received: propagating to subprocess groups")
+        for proc in tuple(self.processes):
+            if proc.returncode is None:
+                self._io.print_debug(
+                    " ! Sending SIGHUP to subprocess group %s", proc.pid
+                )
+                self._send_signal_to_group(proc, signal.SIGHUP)
+            else:
+                self.processes.discard(proc)
+        # Also trigger shutdown so poe exits cleanly
+        self.shutdown(signum, frame)
 
     def install_handler(self):
+        if hasattr(signal, "SIGHUP"):
+            self._backup_sighup = signal.signal(signal.SIGHUP, self._propagate_sighup)
         self._backup_sigint = signal.signal(signal.SIGINT, self.shutdown)
         if hasattr(signal, "SIGTERM"):
             self._backup_sigterm = signal.signal(signal.SIGTERM, self.shutdown)
+        if hasattr(signal, "SIGBREAK"):  # Windows
+            self._backup_sigbreak = signal.signal(signal.SIGBREAK, self.shutdown)
 
     def restore_handler(self):
+        if hasattr(signal, "SIGHUP"):
+            signal.signal(signal.SIGHUP, self._backup_sighup or signal.SIG_DFL)
         signal.signal(signal.SIGINT, self._backup_sigint or signal.SIG_DFL)
         if hasattr(signal, "SIGTERM"):
             signal.signal(signal.SIGTERM, self._backup_sigterm or signal.SIG_DFL)
+        if hasattr(signal, "SIGBREAK"):  # Windows
+            signal.signal(signal.SIGBREAK, self._backup_sigbreak or signal.SIG_DFL)
