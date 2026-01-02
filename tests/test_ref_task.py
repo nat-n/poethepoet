@@ -118,9 +118,10 @@ def test_ref_error_on_sequence_with_capture_stdout(run_poe_subproc):
     result = run_poe_subproc("capture-sequence", project="refs_error")
     assert "Error: Invalid task 'capture-sequence'" in result.capture
     assert (
-        "Option 'capture_stdout' cannot be set on a ref task with: 'do-sequence'"
-        in result.capture
-    )
+        "Option 'capture_stdout' cannot be set on a ref task referencing 'sequence' "
+        "task: 'do-sequence'"
+    ) in result.capture
+
     assert result.stdout == ""
     assert result.stderr == ""
     assert not (result.path / "echo.txt").exists()

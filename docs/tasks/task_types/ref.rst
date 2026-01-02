@@ -36,7 +36,7 @@ Available task options
 
 .. warning::
 
-  If ref references to a sequence task or a parallel task, ``capture_stdout`` cannot be used.
+  A ref that references a :doc:`sequence<../tasks/task_types/sequence>` or :doc:`parallel<../tasks/task_types/parallel>` task cannot use the ``capture_stdout`` option.
 
 Passing arguments
 -----------------

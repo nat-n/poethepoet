@@ -61,7 +61,8 @@ class RefTask(PoeTask):
             ):
                 raise ConfigValidationError(
                     "Option 'capture_stdout' cannot be set "
-                    f"on a ref task with: {task_name_ref!r}"
+                    f"on a ref task referencing {ref_spec.task_type.__key__!r} task: "
+                    f"{task_name_ref!r}"
                 )
 
     spec: TaskSpec
