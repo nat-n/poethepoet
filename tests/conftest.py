@@ -169,9 +169,8 @@ def run_poe_subproc_handle(temp_file, is_windows):
         "from coverage import Coverage;"
         rf"Coverage(data_file=r\"{PROJECT_ROOT.joinpath('.coverage')}\").start();"
     )
-    wrapper_cmd_template = (
-        'python -c "'
-        "{coverage_setup}"
+    wrapper_script_template = (
+        '"{coverage_setup}'
         + (
             "import tomli;"
             # ruff: noqa: YTT204
@@ -181,8 +180,7 @@ def run_poe_subproc_handle(temp_file, is_windows):
         + "from poethepoet.app import PoeThePoet;"
         "from pathlib import Path;"
         r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
-        "exit(poe([{run_args}]));"
-        '"'
+        'exit(poe([{run_args}]));"'
     )
 
     def run_poe_subproc_handle(
@@ -193,7 +191,7 @@ def run_poe_subproc_handle(temp_file, is_windows):
         coverage: bool = not is_windows,
         env: dict[str, str] | None = None,
     ) -> PoeTestRunHandle:
-        wrapper_cmd = wrapper_cmd_template.format(
+        wrapper_script = wrapper_script_template.format(
             coverage_setup=(coverage_setup if coverage else ""),
             cwd=cwd,
             config=config_arg,
@@ -213,7 +211,11 @@ def run_poe_subproc_handle(temp_file, is_windows):
             subproc_env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
 
         poeproc = Popen(
-            wrapper_cmd if shell else shlex.split(wrapper_cmd),
+            (
+                f"{sys.executable} -c {wrapper_script}"
+                if shell
+                else [sys.executable, "-c", *shlex.split(wrapper_script)]
+            ),
             shell=shell,
             stdout=PIPE,
             stderr=PIPE,

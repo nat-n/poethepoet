@@ -28,6 +28,7 @@ class ShutdownManager:
         self._backup_sighup = None
         self._backup_sigint = None
         self._backup_sigterm = None
+        self._backup_sigbreak = None
         self._is_windows = sys.platform == "win32"
         self._shutdown_worker: asyncio.Task | None = None
 
@@ -153,6 +154,8 @@ class ShutdownManager:
         self._backup_sigint = signal.signal(signal.SIGINT, self.shutdown)
         if hasattr(signal, "SIGTERM"):
             self._backup_sigterm = signal.signal(signal.SIGTERM, self.shutdown)
+        if hasattr(signal, "SIGBREAK"):  # Windows
+            self._backup_sigbreak = signal.signal(signal.SIGBREAK, self.shutdown)
 
     def restore_handler(self):
         if hasattr(signal, "SIGHUP"):
@@ -160,3 +163,5 @@ class ShutdownManager:
         signal.signal(signal.SIGINT, self._backup_sigint or signal.SIG_DFL)
         if hasattr(signal, "SIGTERM"):
             signal.signal(signal.SIGTERM, self._backup_sigterm or signal.SIG_DFL)
+        if hasattr(signal, "SIGBREAK"):  # Windows
+            signal.signal(signal.SIGBREAK, self._backup_sigbreak or signal.SIG_DFL)

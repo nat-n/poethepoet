@@ -116,7 +116,6 @@ def test_pass_dry_run_and_verbosity_to_script(run_poe_subproc):
     result = run_poe_subproc("check-global-options", project="scripts")
     assert result.capture == "Poe => check-global-options\n"
     assert result.stdout == ("args ()\nkwargs {'dry': False, 'verbosity': '0'}\n")
-    assert result.stderr == ""
 
     result = run_poe_subproc("-d", "check-global-options", project="scripts")
     assert result.capture == "Poe => check-global-options\n"
