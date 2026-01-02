@@ -1,0 +1,5 @@
+[tool.poe]
+executor = "simple"
+
+[tool.poe.tasks]
+show-env = "poe_test_env"
