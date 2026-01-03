@@ -3,11 +3,11 @@ words-of-wisdom = "poe_test_echo \"Let it be\""
 
 [tool.poe.tasks.sleep_sort]
 parallel = [
-  { cmd = "poe_test_delayed_echo 333 333" },
+  { cmd = "poe_test_delayed_echo 450 450" },
   { cmd = "poe_test_delayed_echo 0 0" },
-  { cmd = "poe_test_delayed_echo 444 444" },
-  { cmd = "poe_test_delayed_echo 222 222" },
-  { cmd = "poe_test_delayed_echo 111 111" },
+  { cmd = "poe_test_delayed_echo 600 600" },
+  { cmd = "poe_test_delayed_echo 300 300" },
+  { cmd = "poe_test_delayed_echo 150 150" },
 ]
 
 [tool.poe.tasks.custom_prefix_task]
