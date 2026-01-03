@@ -530,6 +530,8 @@ def test_ref_parallel_return_non_zero(generate_composed_pyproject, run_poe):
     assert result.code == 1, "Expected non-zero result"
     assert "Subtasks 'child_fail_a', 'child_fail_b' returned non-zero exit status" in (
         result.capture
+    ) or "Subtasks 'child_fail_b', 'child_fail_a' returned non-zero exit status" in (
+        result.capture
     )
 
 
@@ -539,6 +541,9 @@ def test_ref_parallel_return_non_zero_ignore(generate_composed_pyproject, run_po
     assert result.code == 0, "Expected zero result"
     assert (
         "Warning: Subtasks 'child_fail_a', 'child_fail_b' returned non-zero exit status"
+        in result.capture
+    ) or (
+        "Warning: Subtasks 'child_fail_b', 'child_fail_a' returned non-zero exit status"
         in result.capture
     )
 
