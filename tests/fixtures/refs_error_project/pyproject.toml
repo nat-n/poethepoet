@@ -1,0 +1,6 @@
+[tool.poe.tasks.do-sequence]
+sequence = [{ cmd = "echo 1" }, { cmd = "echo 2" }]
+
+[tool.poe.tasks.capture-sequence]
+ref = "do-sequence"
+capture_stdout = "echo.txt"

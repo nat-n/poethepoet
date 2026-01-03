@@ -32,8 +32,11 @@ would be equivalent to executing the following in the shell:
 Available task options
 ----------------------
 
-``ref`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec``.
+``ref`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec``and ``executor``.
 
+.. warning::
+
+  A ref that references a :doc:`sequence<../tasks/task_types/sequence>` or :doc:`parallel<../tasks/task_types/parallel>` task cannot use the ``capture_stdout`` option.
 
 Passing arguments
 -----------------

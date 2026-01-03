@@ -98,7 +98,7 @@ def temp_file(tmp_path):
 class PoeTestRunResult(NamedTuple):
     invocation: tuple[str, ...]
     code: int
-    path: str
+    path: Path
     capture: str
     stdout: str
     stderr: str
@@ -154,7 +154,7 @@ class PoeTestRunHandle(NamedTuple):
         result = PoeTestRunResult(
             invocation=self.invocation,
             code=returncode or self.process.returncode,
-            path=self.working_dir,
+            path=Path(self.working_dir),
             capture=captured_output,
             stdout=task_out.decode(errors="ignore").replace("\r\n", "\n"),
             stderr=task_err.decode(errors="ignore").replace("\r\n", "\n"),
@@ -273,9 +273,10 @@ def run_poe_subproc(run_poe_subproc_handle, projects, tmp_path, is_windows):
 
 @pytest.fixture
 def run_poe(capsys, projects):
+
     def run_poe(
         *run_args: str,
-        cwd: str = projects["example"],
+        cwd: Path | str = projects["example"],
         config: Mapping[str, Any] | None = None,
         project: str | None = None,
         config_name="pyproject.toml",
@@ -295,7 +296,11 @@ def run_poe(capsys, projects):
         result_code = poe(run_args)
         output_capture.seek(0)
         return PoeTestRunResult(
-            run_args, result_code, cwd, output_capture.read(), *capsys.readouterr()
+            run_args,
+            result_code,
+            Path(cwd),
+            output_capture.read(),
+            *capsys.readouterr(),
         )
 
     return run_poe
@@ -303,9 +308,10 @@ def run_poe(capsys, projects):
 
 @pytest.fixture
 def run_poe_main(capsys, projects):
+
     def run_poe_main(
         *cli_args: str,
-        cwd: str = projects["example"],
+        cwd: Path | str = projects["example"],
         project: str | None = None,
     ) -> PoeTestRunResult:
         cwd = projects.get(project, cwd)
@@ -316,10 +322,10 @@ def run_poe_main(capsys, projects):
         sys.argv = ("poe", *cli_args)
         try:
             main()
-            result = PoeTestRunResult(cli_args, 0, cwd, "", *capsys.readouterr())
+            result = PoeTestRunResult(cli_args, 0, Path(cwd), "", *capsys.readouterr())
         except SystemExit as error:
             result = PoeTestRunResult(
-                cli_args, error.args[0], cwd, "", *capsys.readouterr()
+                cli_args, error.args[0], Path(cwd), "", *capsys.readouterr()
             )
         finally:
             os.chdir(prev_cwd)
@@ -334,7 +340,7 @@ def run_poetry(use_venv, poe_project_path, version):
 
     def run_poetry(
         args: list[str],
-        cwd: str,
+        cwd: Path | str,
         env: dict[str, str] | None = None,
     ):
         venv = Virtualenv(venv_location)
@@ -352,7 +358,7 @@ def run_poetry(use_venv, poe_project_path, version):
         result = PoeTestRunResult(
             invocation=tuple(args),
             code=poetry_proc.returncode,
-            path=cwd,
+            path=Path(cwd),
             capture="",
             stdout=poetry_out.decode(errors="ignore").replace("\r\n", "\n"),
             stderr=poetry_err.decode(errors="ignore").replace("\r\n", "\n"),
