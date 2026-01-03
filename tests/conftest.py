@@ -419,20 +419,22 @@ def use_venv(install_into_virtualenv):
             "maybe try delete it and run again"
         )
 
-        # create new venv
-        venv.EnvBuilder(
-            symlinks=True,
-            with_pip=True,
-        ).create(str(location))
+        try:
+            # create new venv
+            venv.EnvBuilder(
+                symlinks=True,
+                with_pip=True,
+            ).create(str(location))
 
-        if contents:
-            install_into_virtualenv(location, contents)
+            if contents:
+                install_into_virtualenv(location, contents)
 
-        yield
-        # Only cleanup if we actually created it to avoid this fixture being a bit
-        # dangerous
-        if not did_exist:
-            try_rm_dir(location)
+            yield
+        finally:
+            # Only cleanup if we actually created it to avoid this fixture being a bit
+            # dangerous
+            if not did_exist:
+                try_rm_dir(location)
 
     return use_venv
 
@@ -451,17 +453,19 @@ def use_virtualenv(install_into_virtualenv):
             "maybe try delete it (via `poe clean`) and try again"
         )
 
-        # create new virtualenv
-        virtualenv.cli_run([str(location)])
+        try:
+            # create new virtualenv
+            virtualenv.cli_run([str(location)])
 
-        if contents:
-            install_into_virtualenv(location, contents)
+            if contents:
+                install_into_virtualenv(location, contents)
 
-        yield
-        # Only cleanup if we actually created it to avoid this fixture being a bit
-        # dangerous
-        if not did_exist:
-            try_rm_dir(location)
+            yield
+        finally:
+            # Only cleanup if we actually created it to avoid this fixture being a bit
+            # dangerous
+            if not did_exist:
+                try_rm_dir(location)
 
     return use_virtualenv
 
