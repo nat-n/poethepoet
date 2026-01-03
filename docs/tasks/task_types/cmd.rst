@@ -137,7 +137,7 @@ Normally if a task subprocess returns a non-zero exit code, then the task is con
   cmd         = "rm -rf ./src/**/*.pyc"
   ignore_fail = true
 
-You can also ignore tasks failures just in case of one or more specific exit codes by providing a list of integers:
+You can also ignore task failures just in case of one or more specific exit codes by providing a list of integers:
 
 .. code-block:: toml
 
