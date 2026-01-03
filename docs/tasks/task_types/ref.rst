@@ -34,6 +34,8 @@ Available task options
 
 ``ref`` tasks support all of the :doc:`standard task options <../options>` with the exception of ``use_exec`` and ``executor``.
 
+The following options are also accepted:
+
 **ignore_fail** : ``bool`` :ref:`📖<Ignore reference task failure>`
   If true the failure of the referenced task will be ignored and the ref task will return exit code 0.
 
