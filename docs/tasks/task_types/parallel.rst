@@ -20,8 +20,8 @@ Available task options
 
 The following options are also accepted:
 
-**ignore_fail** : ``bool`` | ``str`` :ref:`📖<Continue on task failure>`
-  If true then the failure (or non-zero return value) of one task in the parallel group does not abort the execution.
+**ignore_fail** : ``bool`` | ``Literal["return_zero", "return_non_zero"]`` :ref:`📖<Continue on subtask failure>`
+  If set to something other than false then the failure (or non-zero return value) of one task in the parallel group does not abort the execution.
 
 **default_item_type** : ``str`` :ref:`📖<Changing the default item type>`
   Change the task type that is applied to string array items in this parallel group.
@@ -47,7 +47,7 @@ A failure (non-zero result) will result in any remaining subtasks being cancelle
   attempts.parallel = ["task1", "task2", "task3"]
   attempts.ignore_fail = true
 
-If you want to run all the subtasks to completion but return non-zero result in the end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` like so:
+If you want to run all the subtasks to completion but return non-zero result in the end of the parallel group if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` like so:
 
 .. code-block:: toml
 

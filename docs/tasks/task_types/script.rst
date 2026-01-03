@@ -39,6 +39,9 @@ The following options are also accepted:
 **print_result** : ``bool`` :ref:`📖<Output the return value>`
   If true then the return value of the python callable will be output to stdout, unless it is ``None``.
 
+**ignore_fail** : ``bool`` | ``list[int]``  :ref:`📖<Ignore task failure>`
+  Return exit code 0 even if the task fails, or specify a list of task exit codes to ignore.
+
 
 Output the return value
 -----------------------
