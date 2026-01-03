@@ -39,6 +39,9 @@ The following options are also accepted:
 **assert** : ``bool`` :ref:`📖<Fail if the expression result is falsey>`
   If set to true and the result of the expression is found to be a falsey value then the task will fail with a non-zero return value.
 
+**ignore_fail** : ``bool`` | ``list[int]``  :ref:`📖<Ignore task failure>`
+  Return exit code 0 even if the task fails, or specify a list of task exit codes to ignore.
+
 
 Referencing arguments and environment variables
 -----------------------------------------------

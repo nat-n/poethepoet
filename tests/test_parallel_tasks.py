@@ -13,18 +13,18 @@ def test_parallel_task_parallelism(run_poe_subproc):
     result = run_poe_subproc("--ansi", "sleep_sort", project="parallel")
 
     assert result.capture_lines == [
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 333 333\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 450 450\x1b[0m",
         "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 0 0\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 444 444\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 222 222\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 111 111\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 600 600\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 300 300\x1b[0m",
+        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 150 150\x1b[0m",
     ]
     assert result.stdout == (
         "\x1b[32msleep_sort[1]\x1b[0m | 0\n"
-        "\x1b[35msleep_sort[4]\x1b[0m | 111\n"
-        "\x1b[34msleep_sort[3]\x1b[0m | 222\n"
-        "\x1b[31msleep_sort[0]\x1b[0m | 333\n"
-        "\x1b[33msleep_sort[2]\x1b[0m | 444\n"
+        "\x1b[35msleep_sort[4]\x1b[0m | 150\n"
+        "\x1b[34msleep_sort[3]\x1b[0m | 300\n"
+        "\x1b[31msleep_sort[0]\x1b[0m | 450\n"
+        "\x1b[33msleep_sort[2]\x1b[0m | 600\n"
     )
 
 

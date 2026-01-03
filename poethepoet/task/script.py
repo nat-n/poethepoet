@@ -27,6 +27,7 @@ class ScriptTask(PoeTask):
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False
         print_result: bool = False
+        ignore_fail: bool | list[int] = False
 
         def validate(self):
             super().validate()
@@ -61,6 +62,9 @@ class ScriptTask(PoeTask):
         self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         from ..helpers.python import format_class
+
+        if ignore_fail := self.spec.options.ignore_fail:
+            task_state.ignore_failure(ignore_fail)
 
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)

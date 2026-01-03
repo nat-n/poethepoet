@@ -30,6 +30,7 @@ class ExprTask(PoeTask):
         imports: Sequence[str] = ()
         assert_: Annotated[bool | int, Metadata(config_name="assert")] = False
         use_exec: bool = False
+        ignore_fail: bool | list[int] = False
 
         def validate(self):
             super().validate()
@@ -58,6 +59,9 @@ class ExprTask(PoeTask):
         self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
         from ..helpers.python import format_class
+
+        if ignore_fail := self.spec.options.ignore_fail:
+            task_state.ignore_failure(ignore_fail)
 
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)

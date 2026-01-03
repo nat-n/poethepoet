@@ -31,6 +31,9 @@ The following options are also accepted:
 **interpreter** : ``str`` | ``list[str]`` :ref:`📖<Using a different shell interpreter>`
   Specify the shell interpreter that this task should execute with, or a list of interpreters in order of preference.
 
+**ignore_fail** : ``bool`` | ``list[int]``  :ref:`📖<Ignore task failure>`
+  Return exit code 0 even if the task fails, or specify a list of task exit codes to ignore.
+
 
 Using a different shell interpreter
 -----------------------------------

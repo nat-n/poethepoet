@@ -36,34 +36,40 @@ This implies that you can also define tasks of other types on a single line, lik
 .. code-block:: toml
 
   [tool.poe.tasks]
-  tunnel.shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &" } # (posix) shell based task
+  tunnel.shell = "ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &" # (posix) shell based task
 
 :doc:`Some options <options>` are applicable to all tasks, whereas other are only applicable to :ref:`specific types of tasks<Types of task>`.
 
 .. seealso::
 
-   Top level tasks are defined as members of :toml:`[tool.poe.tasks]`, but sometimes tasks can be defined as children of other tasks, for example as items within a :doc:`sequence <task_types/sequence>` task, or as the ``control`` or ``case`` roles with a :doc:`switch <task_types/sequence>` task.
+   Top level tasks are defined as members of :toml:`[tool.poe.tasks]`, but sometimes tasks can be defined as children of other tasks, for example as items within a :doc:`sequence <task_types/sequence>` task, or as the ``control`` or ``case`` roles within a :doc:`switch <task_types/switch>` task.
 
 Types of task
 -------------
 
-You can define eight different types of task:
+There are two categories of task each including four types: *Execution tasks* that run task content in a subprocess, and *Orchestration tasks* that run other tasks.
+
+Execution tasks
+~~~~~~~~~~~~~~~
 
 - :doc:`Command tasks <task_types/cmd>` :code:`cmd` : for simple commands that are executed as a subprocess without a shell
 
 - :doc:`Script tasks<task_types/script>` :code:`script` : for python function calls
 
-- :doc:`Shell tasks<task_types/shell>` :code:`shell` : for scripts to be executed with via an external interpreter (such as sh).
+- :doc:`Shell tasks<task_types/shell>` :code:`shell` : for scripts to be executed with via an external interpreter (such as bash).
+
+- :doc:`Expression tasks<task_types/expr>` :code:`expr` : which consist of a python expression to evaluate
+
+Orchestration tasks
+~~~~~~~~~~~~~~~~~~~
 
 - :doc:`Sequence tasks<task_types/sequence>` :code:`sequence` : for composing multiple tasks into a sequence
 
 - :doc:`Parallel tasks<task_types/parallel>` :code:`parallel` : for running multiple tasks concurrently
 
-- :doc:`Expression tasks<task_types/expr>` :code:`expr` : which consist of a python expression to evaluate
+- :doc:`Switch tasks<task_types/switch>` :code:`switch` : for running different tasks depending on the output of a *control* task
 
-- :doc:`Switch tasks<task_types/switch>` :code:`switch` : for running different tasks depending on a control value (such as the platform)
-
-- :doc:`Reference tasks<task_types/ref>` :code:`ref` : for defining a task as an alias of another task, such as in a sequence task.
+- :doc:`Reference tasks<task_types/ref>` :code:`ref` : for defining a task as an alias of another task, such as in a sequence task
 
 
 .. toctree::

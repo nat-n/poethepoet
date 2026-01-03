@@ -27,6 +27,7 @@ class ShellTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         interpreter: str | Sequence[str] | None = None
+        ignore_fail: bool | list[int] = False
 
         def validate(self):
             super().validate()
@@ -64,6 +65,9 @@ class ShellTask(PoeTask):
     async def _handle_run(
         self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
+        if ignore_fail := self.spec.options.ignore_fail:
+            task_state.ignore_failure(ignore_fail)
+
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 

@@ -27,6 +27,7 @@ class CmdTask(PoeTask):
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False
         empty_glob: Literal["pass", "null", "fail"] = "pass"
+        ignore_fail: bool | list[int] = False
 
         def validate(self):
             """
@@ -55,6 +56,9 @@ class CmdTask(PoeTask):
     async def _handle_run(
         self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
     ):
+        if ignore_fail := self.spec.options.ignore_fail:
+            task_state.ignore_failure(ignore_fail)
+
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 

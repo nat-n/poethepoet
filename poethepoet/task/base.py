@@ -203,8 +203,8 @@ class PoeTask(metaclass=MetaPoeTask):
 
                 # Normalize executor option:
                 # > Mapping[str, str | Sequence[str] | bool] | str | None
-                #       => Mapping[str, str | Sequence[str | bool] | bool]
-                if (executor := item.get("executor")) and isinstance(executor, str):
+                #     => Mapping[str, str | Sequence[str | bool] | bool]
+                if isinstance((executor := item.get("executor")), str):
                     item["executor"] = {"type": executor}
 
                 yield item

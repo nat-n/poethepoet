@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..exceptions import ConfigValidationError
+from ..exceptions import ConfigValidationError, ExecutionError
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
@@ -21,6 +21,8 @@ class RefTask(PoeTask):
     __key__ = "ref"
 
     class TaskOptions(PoeTask.TaskOptions):
+        ignore_fail: bool = False
+
         def validate(self):
             """
             Validation rules that don't require any extra context go here.
@@ -75,6 +77,10 @@ class RefTask(PoeTask):
         """
         import shlex
 
+        ignore_fail = self.spec.options.ignore_fail
+        if ignore_fail:
+            task_state.ignore_failure(ignore_fail)
+
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.update(named_arg_values)
 
@@ -94,14 +100,26 @@ class RefTask(PoeTask):
         )
 
         if task.has_deps():
-            await self._run_task_graph(task, context, env, task_state)
+            try:
+                await self._run_task_graph(task, context, env, task_state)
+            except ExecutionError as error:
+                if ignore_fail:
+                    self.ctx.io.print_warning(error.msg, message_verbosity=0)
+                else:
+                    raise
             await task_state.finalize()
             return
 
         child_task = await task.run(context=context, parent_env=env)
         await task_state.add_child(child_task)
         await task_state.finalize()
-        await child_task.wait(suppress_errors=False)
+        try:
+            await child_task.wait(suppress_errors=False)
+        except ExecutionError as error:
+            if ignore_fail:
+                self.ctx.io.print_warning(error.msg, message_verbosity=0)
+            else:
+                raise
 
     async def _run_task_graph(
         self,

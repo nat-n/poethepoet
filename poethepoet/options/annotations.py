@@ -8,21 +8,23 @@ from typing import (
     Any,
     Literal,
     Optional,
+    TypeVar,
     Union,
     get_args,
     get_origin,
     get_type_hints,
 )
 
+T = TypeVar("T", bound=Any)
 _registered_type_hint_globals = {}
 
 
-def option_annotation(type: type):
+def option_annotation(cls: T) -> T:
     """
     Register custom types (e.g. TypedDicts) to be usable in PoeOptions fields
     """
-    _registered_type_hint_globals[type.__name__] = type
-    return type
+    _registered_type_hint_globals[cls.__name__] = cls
+    return cls
 
 
 class Metadata:

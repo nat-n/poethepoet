@@ -9,7 +9,13 @@ from poethepoet.helpers.eventloop import async_iter_merge, async_noop
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process
-    from collections.abc import AsyncIterable, Awaitable, Callable, Coroutine
+    from collections.abc import (
+        AsyncIterable,
+        Awaitable,
+        Callable,
+        Collection,
+        Coroutine,
+    )
 
 
 class PoeTaskRunEvent:
@@ -48,6 +54,8 @@ class PoeTaskRun:
     """
 
     _parent: PoeTaskRun | None = None
+    _ignore_failure: bool = False
+    _ignore_failure_codes: Collection[int] = ()
 
     def __init__(
         self,
@@ -67,7 +75,6 @@ class PoeTaskRun:
         self._children: list[PoeTaskRun] = []
         self._processes: list[Process] = []
         self._update_condition = asyncio.Condition()
-        self._ignore_failure = False
         self._force_failure = False
         self._finalized = False
         self._completion_watcher: asyncio.Task | None = None
@@ -98,13 +105,20 @@ class PoeTaskRun:
         Force the task to fail, even if it would otherwise succeed.
         """
         self._ignore_failure = False
+        self._ignore_failure_codes = set()
         self._force_failure = True
 
-    def ignore_failure(self):
+    def ignore_failure(
+        self,
+        ignore_failure: bool | list[int] | str = True,
+    ):
         """
         Ignore any failures in this task, always returning zero return code.
         """
-        self._ignore_failure = True
+        self._ignore_failure = ignore_failure is True or isinstance(ignore_failure, str)
+        self._ignore_failure_codes = (
+            set(ignore_failure) if isinstance(ignore_failure, list) else set()
+        )
         self._force_failure = False
 
     def finalized(self) -> bool:
@@ -214,13 +228,18 @@ class PoeTaskRun:
         Check if the task has failed. A task is considered failed if any of its
         processes or child tasks have failed, unless ignore_failure is set.
         """
-        if self._ignore_failure:
+        if self._ignore_failure and not self._ignore_failure_codes:
             return False
+
+        ignore_failure_codes = (0, *self._ignore_failure_codes)
 
         return (
             self.asyncio_task.cancelled()
             or (self.asyncio_task.done() and self.asyncio_task.exception() is not None)
-            or any(process.returncode != 0 for process in self._processes)
+            or any(
+                process.returncode not in ignore_failure_codes
+                for process in self._processes
+            )
             or any(child.has_failure for child in self._children)
             or self._force_failure
         )
@@ -237,11 +256,19 @@ class PoeTaskRun:
             return None
         if any(child.return_code is None for child in self._children):
             return None
-        if self._ignore_failure:
+        if self._ignore_failure and not self._ignore_failure_codes:
             return 0
+
+        ignore_failure_codes = (0, None, *self._ignore_failure_codes)
         return sum(
-            process.returncode or 0 for process in self._processes if process.returncode
-        ) + sum(child.return_code or 0 for child in self._children) or int(
+            process.returncode or 0
+            for process in self._processes
+            if process.returncode not in ignore_failure_codes
+        ) + sum(
+            child.return_code or 0
+            for child in self._children
+            if child.return_code not in ignore_failure_codes
+        ) or int(
             self._force_failure
         )
 
