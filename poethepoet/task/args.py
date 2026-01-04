@@ -34,6 +34,7 @@ class ArgSpec(PoeOptions):
     required: bool = False
     type: Literal["string", "float", "integer", "boolean"] = "string"
     multiple: bool | int = False
+    choices: Sequence[str] | Sequence[float] | Sequence[int] | None = None
 
     @classmethod
     def normalize(
@@ -189,6 +190,31 @@ class ArgSpec(PoeOptions):
                 "Argument with type 'boolean' may not declare option 'multiple'"
             )
 
+        # Ensure choices are compatible with type
+        if self.choices is not None:
+            arg_type = arg_types.get(self.type, str)
+            for choice in self.choices:
+                if not isinstance(choice, arg_type) or isinstance(choice, bool):
+                    raise ConfigValidationError(
+                        f"Argument {self.name!r} has invalid choice value {choice!r} "
+                        f"that does not match type the configured {self.type!r}. "
+                        "(maybe update the type option on the argument?)"
+                    )
+            if (
+                self.default is not None
+                and (not isinstance(self.default, str) or "${" not in self.default)
+                and self.default not in self.choices
+            ):
+                raise ConfigValidationError(
+                    f"Argument {self.name!r} has default value {self.default!r} that "
+                    f"is not included in the configured choices {self.choices!r}"
+                )
+            if self.type == "boolean":
+                raise ConfigValidationError(
+                    f"Argument {self.name!r} with type 'boolean' may not declare "
+                    f"option 'choices'"
+                )
+
 
 class PoeTaskArgs:
     _args: tuple[ArgSpec, ...]
@@ -212,10 +238,14 @@ class PoeTaskArgs:
         if args_def is None:
             return []
 
-        def format_default(arg) -> str:
-            default = arg.get("default")
-            if default:
-                return f"[default: {default}]"
+        def format_arg_details(arg) -> str:
+            parts: list[str] = []
+            if default := arg.get("default"):
+                parts.append(f"default: {default}")
+            if choices := arg.get("choices"):
+                parts.append(f"choices: {', '.join(map(repr, choices))}")
+            if parts:
+                return f"[{'; '.join(parts)}]"
             return ""
 
         try:
@@ -223,7 +253,7 @@ class PoeTaskArgs:
                 (
                     cast("tuple[str, ...]", arg["options"]),
                     str(arg.get("help", "")),
-                    format_default(arg),
+                    format_arg_details(arg),
                 )
                 for arg in ArgSpec.normalize(args_def, strict=False)  # type: ignore[arg-type]
             ]
@@ -296,6 +326,9 @@ class PoeTaskArgs:
         else:
             result["dest"] = arg.name
             result["required"] = required
+
+        if arg.choices is not None:
+            result["choices"] = arg.choices
 
         if arg_type == "boolean":
             result["action"] = "store_false" if default else "store_true"
