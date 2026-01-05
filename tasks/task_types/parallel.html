@@ -253,7 +253,7 @@
 <p><code class="docutils literal notranslate"><span class="pre">parallel</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code> and <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code>.</p>
 <p>The following options are also accepted:</p>
 <dl>
-<dt><strong>ignore_fail</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="#continue-on-subtask-failure"><span class="std std-ref">📖</span></a></span></dt><dd><p>If true then the failure (or non-zero return value) of one task in the parallel group does not abort the execution.</p>
+<dt><strong>ignore_fail</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">Literal[&quot;return_zero&quot;,</span> <span class="pre">&quot;return_non_zero&quot;]</span></code> <a class="reference internal" href="#continue-on-subtask-failure"><span class="std std-ref">📖</span></a></span></dt><dd><p>If set to something other than false then the failure (or non-zero return value) of one task in the parallel group does not abort the execution.</p>
 </dd>
 <dt><strong>default_item_type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference internal" href="sequence.html#changing-the-default-item-type"><span class="std std-ref">📖</span></a></span></dt><dd><p>Change the task type that is applied to string array items in this parallel group.</p>
 </dd>
@@ -273,7 +273,7 @@
 <span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
-<p>If you want to run all the subtasks to completion but return non-zero result in the end of the sequence if any of the subtasks have failed you can set <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">return_non_zero</span></code> like so:</p>
+<p>If you want to run all the subtasks to completion but return non-zero result in the end of the parallel group if any of the subtasks have failed you can set <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">return_non_zero</span></code> like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 <span class="n">attempts</span><span class="p">.</span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;task1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;task2&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;task3&quot;</span><span class="p">]</span>
 <span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;return_non_zero&quot;</span>
@@ -437,7 +437,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=ee774964"></script>
+</div><script src="../../_static/documentation_options.js?v=dbb8e931"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

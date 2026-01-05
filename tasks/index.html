@@ -266,29 +266,37 @@
 </div>
 <p>This implies that you can also define tasks of other types on a single line, like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">tunnel</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w"> </span><span class="err">}</span><span class="w"> </span><span class="c1"># (posix) shell based task</span>
+<span class="n">tunnel</span><span class="p">.</span><span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ssh -N -L 0.0.0.0:8080:$PROD:8080 $PROD &amp;&quot;</span><span class="w"> </span><span class="c1"># (posix) shell based task</span>
 </pre></div>
 </div>
 <p><a class="reference internal" href="options.html"><span class="doc">Some options</span></a> are applicable to all tasks, whereas other are only applicable to <a class="reference internal" href="#types-of-task"><span class="std std-ref">specific types of tasks</span></a>.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>Top level tasks are defined as members of <code class="code highlight toml docutils literal highlight-toml"><span class="k">[tool.poe.tasks]</span></code>, but sometimes tasks can be defined as children of other tasks, for example as items within a <a class="reference internal" href="task_types/sequence.html"><span class="doc">sequence</span></a> task, or as the <code class="docutils literal notranslate"><span class="pre">control</span></code> or <code class="docutils literal notranslate"><span class="pre">case</span></code> roles with a <a class="reference internal" href="task_types/sequence.html"><span class="doc">switch</span></a> task.</p>
+<p>Top level tasks are defined as members of <code class="code highlight toml docutils literal highlight-toml"><span class="k">[tool.poe.tasks]</span></code>, but sometimes tasks can be defined as children of other tasks, for example as items within a <a class="reference internal" href="task_types/sequence.html"><span class="doc">sequence</span></a> task, or as the <code class="docutils literal notranslate"><span class="pre">control</span></code> or <code class="docutils literal notranslate"><span class="pre">case</span></code> roles within a <a class="reference internal" href="task_types/switch.html"><span class="doc">switch</span></a> task.</p>
 </div>
 <section id="types-of-task">
 <h2>Types of task<a class="headerlink" href="#types-of-task" title="Link to this heading">¶</a></h2>
-<p>You can define eight different types of task:</p>
+<p>There are two categories of task each including four types: <em>Execution tasks</em> that run task content in a subprocess, and <em>Orchestration tasks</em> that run other tasks.</p>
+<section id="execution-tasks">
+<h3>Execution tasks<a class="headerlink" href="#execution-tasks" title="Link to this heading">¶</a></h3>
 <ul class="simple">
 <li><p><a class="reference internal" href="task_types/cmd.html"><span class="doc">Command tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">cmd</span></code> : for simple commands that are executed as a subprocess without a shell</p></li>
 <li><p><a class="reference internal" href="task_types/script.html"><span class="doc">Script tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">script</span></code> : for python function calls</p></li>
-<li><p><a class="reference internal" href="task_types/shell.html"><span class="doc">Shell tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">shell</span></code> : for scripts to be executed with via an external interpreter (such as sh).</p></li>
+<li><p><a class="reference internal" href="task_types/shell.html"><span class="doc">Shell tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">shell</span></code> : for scripts to be executed with via an external interpreter (such as bash).</p></li>
+<li><p><a class="reference internal" href="task_types/expr.html"><span class="doc">Expression tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">expr</span></code> : which consist of a python expression to evaluate</p></li>
+</ul>
+</section>
+<section id="orchestration-tasks">
+<h3>Orchestration tasks<a class="headerlink" href="#orchestration-tasks" title="Link to this heading">¶</a></h3>
+<ul class="simple">
 <li><p><a class="reference internal" href="task_types/sequence.html"><span class="doc">Sequence tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">sequence</span></code> : for composing multiple tasks into a sequence</p></li>
 <li><p><a class="reference internal" href="task_types/parallel.html"><span class="doc">Parallel tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">parallel</span></code> : for running multiple tasks concurrently</p></li>
-<li><p><a class="reference internal" href="task_types/expr.html"><span class="doc">Expression tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">expr</span></code> : which consist of a python expression to evaluate</p></li>
-<li><p><a class="reference internal" href="task_types/switch.html"><span class="doc">Switch tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">switch</span></code> : for running different tasks depending on a control value (such as the platform)</p></li>
-<li><p><a class="reference internal" href="task_types/ref.html"><span class="doc">Reference tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">ref</span></code> : for defining a task as an alias of another task, such as in a sequence task.</p></li>
+<li><p><a class="reference internal" href="task_types/switch.html"><span class="doc">Switch tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">switch</span></code> : for running different tasks depending on the output of a <em>control</em> task</p></li>
+<li><p><a class="reference internal" href="task_types/ref.html"><span class="doc">Reference tasks</span></a> <code class="code docutils literal notranslate"><span class="pre">ref</span></code> : for defining a task as an alias of another task, such as in a sequence task</p></li>
 </ul>
 <div class="toctree-wrapper compound">
 </div>
+</section>
 </section>
 </section>
 
@@ -360,7 +368,11 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Defining tasks</a><ul>
-<li><a class="reference internal" href="#types-of-task">Types of task</a></li>
+<li><a class="reference internal" href="#types-of-task">Types of task</a><ul>
+<li><a class="reference internal" href="#execution-tasks">Execution tasks</a></li>
+<li><a class="reference internal" href="#orchestration-tasks">Orchestration tasks</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -372,7 +384,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=ee774964"></script>
+</div><script src="../_static/documentation_options.js?v=dbb8e931"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -262,11 +262,32 @@ follows:</p>
 </div>
 <section id="available-task-options">
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">ref</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ref</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a> with the exception of <code class="docutils literal notranslate"><span class="pre">use_exec</span></code> and <code class="docutils literal notranslate"><span class="pre">executor</span></code>.</p>
+<dl>
+<dt><strong>ignore_fail</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference internal" href="#ignore-reference-task-failure"><span class="std std-ref">📖</span></a></span></dt><dd><p>If true the failure of the referenced task will be ignored and the ref task will return exit code 0.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>A ref task that references a <a class="reference internal" href="sequence.html"><span class="doc">sequence</span></a> or <a class="reference internal" href="parallel.html"><span class="doc">parallel</span></a> task cannot use the <code class="docutils literal notranslate"><span class="pre">capture_stdout</span></code> option.</p>
+</div>
 </section>
 <section id="passing-arguments">
 <h2>Passing arguments<a class="headerlink" href="#passing-arguments" title="Link to this heading">¶</a></h2>
 <p>By default any arguments passed to a ref task will be forwarded to the referenced task, allowing it to function as a task alias. If named arguments are configured for the ref task then additional arguments can still be passed to the referenced task after <code class="docutils literal notranslate"><span class="pre">--</span></code> on the command line.</p>
+</section>
+<section id="ignore-reference-task-failure">
+<h2>Ignore reference task failure<a class="headerlink" href="#ignore-reference-task-failure" title="Link to this heading">¶</a></h2>
+<p>By default if the referenced task fails (has a non-zero exit code) then the ref task will also fail. However it is possible to configure a ref task to ignore failure using the <code class="code highlight toml docutils literal highlight-toml"><span class="n">ignore_fail</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test]</span>
+<span class="n">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
+
+<span class="k">[tool.poe.tasks.always-pass]</span>
+<span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;test&quot;</span>
+<span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+</pre></div>
+</div>
+<p>If the referenced task is configured to ignore failure itself then the ref task will see the referenced task as having succeeded regardless of its actual exit code.</p>
 </section>
 </section>
 
@@ -340,6 +361,7 @@ follows:</p>
 <li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">ref</span></code> tasks</a><ul>
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
 <li><a class="reference internal" href="#passing-arguments">Passing arguments</a></li>
+<li><a class="reference internal" href="#ignore-reference-task-failure">Ignore reference task failure</a></li>
 </ul>
 </li>
 </ul>
@@ -351,7 +373,7 @@ follows:</p>
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=ee774964"></script>
+</div><script src="../../_static/documentation_options.js?v=dbb8e931"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

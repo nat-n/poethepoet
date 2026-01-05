@@ -20,6 +20,9 @@ Available task options
 
 The following options are also accepted:
 
+**ignore_fail** : ``bool`` | ``list[int]``  :ref:`📖<Ignore task failure>`
+  Return exit code 0 even if the task fails, or specify a list of task exit codes to ignore.
+
 **empty_glob** : ``Literal["pass", "null", "fail"]`` :ref:`📖<Glob expansion>`
   Determines how to handle glob patterns with no matches. The default is ``"pass"``, which causes unmatched patterns to be passed through to the command (just like in bash). Setting it to ``"null"`` will replace an unmatched pattern with nothing, and setting it to ``"fail"`` will cause the task to fail with an error if there are no matches.
 
@@ -27,10 +30,9 @@ The following options are also accepted:
 Shell like features
 -------------------
 
-It is important to understand that ``cmd`` tasks are executed without a shell (to maximise portability). However some shell like features are still available including basic parameter expansion and pattern matching. Quotes and escapes are also generally interpreted as one would expect in a shell.
+It is important to understand that ``cmd`` tasks are executed without a shell (to maximize portability). However some shell like features are still available including basic parameter expansion and pattern matching. Quotes and escapes are also generally interpreted as one would expect in a shell.
 
 .. _ref_env_vars:
-
 
 Referencing environment variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,7 +57,6 @@ Parameter expansion can also can be disabled by escaping the $ with a backslash 
   [tool.poe.tasks]
   greet = "echo Hello \\$USER"  # the backslash itself needs escaping for the toml parser
 
-
 Parameter expansion operators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -77,7 +78,6 @@ The ``:+`` or *alternate value* operator is especially useful in cases such as t
   args = [{ name = "ARN_ONLY", options = ["--arn-only"], type = "boolean" }]
 
 In this example we declare a boolean argument with no default, so if the ``--arn-only`` flag is provided to the task then three additional CLI options will be included in the task content.
-
 
 Glob expansion
 ~~~~~~~~~~~~~~
@@ -120,3 +120,27 @@ The following task uses glob patterns to specify all ``.pyc`` files and ``__pyca
 .. |nullglob_link| raw:: html
 
    <a href="https://www.gnu.org/software/bash/manual/html_node/Filename-Expansion.html" target="_blank">nullglob option</a>
+
+
+Ignore task failure
+-------------------
+
+.. important::
+
+  This option works the same for all *Execution task types* including :doc:`cmd<cmd>`, :doc:`script<script>`, :doc:`expr<expr>`, and :doc:`shell<shell>`, but has a slightly different interpretation for :doc:`sequence<sequence>`, :doc:`parallel<parallel>`, and :doc:`ref<ref>` tasks.
+
+Normally if a task subprocess returns a non-zero exit code, then the task is considered to have failed. This failure propagates to the parent task (if any), and ultimately poe will return the same exit code to the host shell. However it is possible to configure a task to ignore failure, and return zero regardless, by setting the ``ignore_fail`` option like so:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.clean]
+  cmd         = "rm -rf ./src/**/*.pyc"
+  ignore_fail = true
+
+You can also ignore tasks failures just in case of one or more specific exit codes by providing a list of integers:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.serve]
+  cmd        = "pytest"
+  ignore_fail = [4, 5] # don't fail if no tests are found

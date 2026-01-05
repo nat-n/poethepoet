@@ -260,8 +260,7 @@
 </dl>
 </li>
 </ul>
-<p>The value for the named argument is then accessible by name within the task content,
-though exactly how will depend on the type of the task as detailed below.</p>
+<p>The value for the named argument is then accessible by name within the task content as an environment variable, and sometimes also as a native variable depending on the task type as detailed below.</p>
 <section id="configuration-syntax">
 <h2>Configuration syntax<a class="headerlink" href="#configuration-syntax" title="Link to this heading">¶</a></h2>
 <p>Named arguments are configured by declaring the <code class="docutils literal notranslate"><span class="pre">args</span></code> task option as either an array or
@@ -389,11 +388,17 @@ a sub-table.</p>
 <p>For positional arguments, only the last positional argument may have the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option set.</p>
 <p>This option is not compatible with arguments with type <code class="docutils literal notranslate"><span class="pre">boolean</span></code> since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type “integer” for similar effect.</p>
 <p>The values provided to an argument with the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.save]</span>
-<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo ${FILE_PATHS}&quot;</span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;FILE_PATHS&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">positional</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}]</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>
 </pre></div>
 </div>
+<p>[tool.poe.tasks.save]
+cmd  = “echo ${FILE_PATHS}”
+args = [{ name = “FILE_PATHS”, positional = true, multiple = true }]</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>choices</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list[str</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">float]</span></code></span></dt><dd><p>Constrain the accepted values for an argument to a fixed set. The choices are shown in task help output. For non-string argument types, the choices must be specified using the same type (e.g. <code class="docutils literal notranslate"><span class="pre">integer</span></code> choices should be numbers). This option is not compatible with <code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">&quot;boolean&quot;</span></code>.</p>
 </dd>
 </dl>
 </li>
@@ -408,6 +413,33 @@ a sub-table.</p>
 </dl>
 </li>
 </ul>
+</section>
+<section id="constraining-argument-values">
+<h2>Constraining argument values<a class="headerlink" href="#constraining-argument-values" title="Link to this heading">¶</a></h2>
+<p>You can document and enforce that only specific values should be accepted for an argument by specifying the <code class="docutils literal notranslate"><span class="pre">choices</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="k">[tool.poe.tasks.share]</span>
+<span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Share some personal information&quot;</span>
+<span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo &quot;</span><span class="n">My</span><span class="w"> </span><span class="n">favorite</span><span class="w"> </span><span class="n">ice</span><span class="w"> </span><span class="n">cream</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="err">${</span><span class="n">flavor</span><span class="err">}</span><span class="s2">&quot;</span>
+<span class="s2">[[tool.poe.tasks.share.args]]</span>
+<span class="s2">name = &quot;</span><span class="n">flavor</span><span class="s2">&quot;</span>
+<span class="s2">help = &quot;</span><span class="n">Favorite</span><span class="w"> </span><span class="n">ice</span><span class="w"> </span><span class="n">cream</span><span class="s2">&quot;</span>
+<span class="s2">positional = true</span>
+<span class="s2">choices = [&quot;</span><span class="n">chocolate</span><span class="s2">&quot;, &quot;</span><span class="n">pistachio</span><span class="s2">&quot;, &quot;</span><span class="n">vanilla</span><span class="s2">&quot;]</span>
+</pre></div>
+</div>
+<p>The resulting help output includes the choices:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>poe<span class="w"> </span>--help<span class="w"> </span>share
+
+<span class="go">Description:</span>
+<span class="go">  Run Share some personal information</span>
+
+<span class="go">Usage:</span>
+<span class="go">  poe [global options] check [named arguments] -- [free arguments]</span>
+
+<span class="go">Named arguments:</span>
+<span class="go">  flavor               Favorite ice cream [choices: &#39;chocolate&#39;, &#39;pistachio&#39;, &#39;vanilla&#39;]</span>
+</pre></div>
+</div>
 </section>
 <section id="arguments-for-cmd-and-shell-tasks">
 <h2>Arguments for cmd and shell tasks<a class="headerlink" href="#arguments-for-cmd-and-shell-tasks" title="Link to this heading">¶</a></h2>
@@ -562,6 +594,7 @@ example.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#task-argument-options">Task argument options</a></li>
+<li><a class="reference internal" href="#constraining-argument-values">Constraining argument values</a></li>
 <li><a class="reference internal" href="#arguments-for-cmd-and-shell-tasks">Arguments for cmd and shell tasks</a></li>
 <li><a class="reference internal" href="#arguments-for-script-tasks">Arguments for script tasks</a></li>
 <li><a class="reference internal" href="#arguments-for-sequence-tasks">Arguments for sequence tasks</a></li>
@@ -577,7 +610,7 @@ example.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=ee774964"></script>
+</div><script src="../_static/documentation_options.js?v=dbb8e931"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

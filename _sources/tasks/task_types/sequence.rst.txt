@@ -27,8 +27,8 @@ Available task options
 
 The following options are also accepted:
 
-**ignore_fail** : ``bool`` | ``str`` :ref:`📖<Continue sequence on task failure>`
-  If true then the failure (or non-zero return value) of one task in the sequence does not abort the sequence.
+**ignore_fail** : ``bool`` | ``Literal["return_zero", "return_non_zero"]`` :ref:`📖<Continue sequence on task failure>`
+  If set to something other than false then the failure (or non-zero return value) of one task in the sequence does not abort the sequence.
 
 **default_item_type** : ``str`` :ref:`📖<Changing the default item type>`
   Change the task type that is applied to string array items in this sequence.
@@ -37,19 +37,15 @@ The following options are also accepted:
 Continue sequence on task failure
 ---------------------------------
 
-A failure (non-zero result) will result in the rest of the tasks in the sequence not
-being executed, unless the :toml:`ignore_fail` option is set on the task to
-:toml:`true`, :toml:`"return_zero"`, or :toml:`"return_non_zero"` like so:
+A failure (non-zero result) will result in the rest of the tasks in the sequence being skipped, unless the :toml:`ignore_fail` option is set on the task to :toml:`true`, :toml:`"return_zero"`, or :toml:`"return_non_zero"` like so:
 
 .. code-block:: toml
 
-  [tool.poe.tasks]
-  attempts.sequence = ["task1", "task2", "task3"]
-  attempts.ignore_fail = true
+  [tool.poe.tasks.attempts]
+  sequence = ["task1", "task2", "task3"]
+  ignore_fail = true
 
-If you want to run all the subtasks in the sequence but return non-zero result in the
-end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail`
-option to the :toml:`return_non_zero` value like so:
+If you want to run all the subtasks in the sequence but return non-zero result in the end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` value like so:
 
 .. code-block:: toml
 

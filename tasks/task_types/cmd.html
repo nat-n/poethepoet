@@ -255,13 +255,15 @@
 <p><code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks support all of the <a class="reference internal" href="../options.html"><span class="doc">standard task options</span></a>.</p>
 <p>The following options are also accepted:</p>
 <dl>
+<dt><strong>ignore_fail</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">list[int]</span></code>  <a class="reference internal" href="#ignore-task-failure"><span class="std std-ref">📖</span></a></span></dt><dd><p>Return exit code 0 even if the task fails, or specify a list of task exit codes to ignore.</p>
+</dd>
 <dt><strong>empty_glob</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Literal[&quot;pass&quot;,</span> <span class="pre">&quot;null&quot;,</span> <span class="pre">&quot;fail&quot;]</span></code> <a class="reference internal" href="#glob-expansion"><span class="std std-ref">📖</span></a></span></dt><dd><p>Determines how to handle glob patterns with no matches. The default is <code class="docutils literal notranslate"><span class="pre">&quot;pass&quot;</span></code>, which causes unmatched patterns to be passed through to the command (just like in bash). Setting it to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> will replace an unmatched pattern with nothing, and setting it to <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> will cause the task to fail with an error if there are no matches.</p>
 </dd>
 </dl>
 </section>
 <section id="shell-like-features">
 <h2>Shell like features<a class="headerlink" href="#shell-like-features" title="Link to this heading">¶</a></h2>
-<p>It is important to understand that <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks are executed without a shell (to maximise portability). However some shell like features are still available including basic parameter expansion and pattern matching. Quotes and escapes are also generally interpreted as one would expect in a shell.</p>
+<p>It is important to understand that <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks are executed without a shell (to maximize portability). However some shell like features are still available including basic parameter expansion and pattern matching. Quotes and escapes are also generally interpreted as one would expect in a shell.</p>
 <section id="referencing-environment-variables">
 <span id="ref-env-vars"></span><h3>Referencing environment variables<a class="headerlink" href="#referencing-environment-variables" title="Link to this heading">¶</a></h3>
 <p>Environment variables can be templated into the command. Just like in bash: whitespace inside a variable results in a word break, and glob patterns are evaluated after parameter expansion, unless the parameter expansion is inside double quotes. Single quotes disable parameter expansion. Curly braces are recommended but optional.</p>
@@ -323,6 +325,25 @@ Hello<span class="w"> </span>nat
 <p>Just like in bash, the glob pattern can be escaped by wrapping it in quotes, or preceding it with a backslash.</p>
 </div>
 </section>
+</section>
+<section id="ignore-task-failure">
+<h2>Ignore task failure<a class="headerlink" href="#ignore-task-failure" title="Link to this heading">¶</a></h2>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>This option works the same for all <em>Execution task types</em> including <a class="reference internal" href="#"><span class="doc">cmd</span></a>, <a class="reference internal" href="script.html"><span class="doc">script</span></a>, <a class="reference internal" href="expr.html"><span class="doc">expr</span></a>, and <a class="reference internal" href="shell.html"><span class="doc">shell</span></a>, but has a slightly different interpretation for <a class="reference internal" href="sequence.html"><span class="doc">sequence</span></a>, <a class="reference internal" href="parallel.html"><span class="doc">parallel</span></a>, and <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> tasks.</p>
+</div>
+<p>Normally if a task subprocess returns a non-zero exit code, then the task is considered to have failed. This failure propagates to the parent task (if any), and ultimately poe will return the same exit code to the host shell. However it is possible to configure a task to ignore failure, and return zero regardless, by setting the <code class="docutils literal notranslate"><span class="pre">ignore_fail</span></code> option like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.clean]</span>
+<span class="n">cmd</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;rm -rf ./src/**/*.pyc&quot;</span>
+<span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+</pre></div>
+</div>
+<p>You can also ignore tasks failures just in case of one or more specific exit codes by providing a list of integers:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">cmd</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
+<span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">]</span><span class="w"> </span><span class="c1"># don&#39;t fail if no tests are found</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -401,6 +422,7 @@ Hello<span class="w"> </span>nat
 <li><a class="reference internal" href="#glob-expansion">Glob expansion</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#ignore-task-failure">Ignore task failure</a></li>
 </ul>
 </li>
 </ul>
@@ -412,7 +434,7 @@ Hello<span class="w"> </span>nat
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=ee774964"></script>
+</div><script src="../../_static/documentation_options.js?v=dbb8e931"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

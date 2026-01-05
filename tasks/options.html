@@ -313,18 +313,27 @@ The value is a map where the values are invocations of the other tasks, and the 
 <span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span>
 </pre></div>
 </div>
-<p>The envfile option accepts the name (or relative path) to a single envfile as shown
-above but can also by given a list of such paths like so:</p>
+<p>The envfile option accepts the name (or relative path) to a single envfile as shown above but can also by given a list of such paths like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">serve</span><span class="p">.</span><span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;.env&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;local.env&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>In this case the referenced files will be loaded in the given order.</p>
+<p>Normally a missing envfile results in a warning, however optional envfiles can be indicated with the following structure including the <code class="docutils literal notranslate"><span class="pre">optional</span></code> key, in contrast with the <code class="docutils literal notranslate"><span class="pre">expected</span></code> key:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve.envfile]</span>
+<span class="n">optional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;local.env&quot;</span><span class="p">]</span>
+<span class="n">expected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;base.env&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Files are loaded in the listed order, optional files are loaded after expected files. Last file wins in case of conflicts.</p>
 <p>Normally envfile paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the path relative to the root of the git repository, which can be done by referencing the <code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">POE_GIT_ROOT</span></code> variables like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_GIT_DIR}/.env&quot;</span>
 </pre></div>
 </div>
 <p>See the documentation on <a class="reference internal" href="../env_vars.html#special-variables"><span class="std std-ref">Special variables</span></a> for a full explanation of how these variables work.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>For a more detailed explanation see the documentation for <a class="reference internal" href="../global_options.html#loading-external-environment-variables"><span class="std std-ref">the envfile global option</span></a> which works in the same way.</p>
+</div>
 </section>
 </section>
 <section id="running-a-task-with-a-specific-working-directory">
@@ -555,7 +564,7 @@ above but can also by given a list of such paths like so:</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=ee774964"></script>
+</div><script src="../_static/documentation_options.js?v=dbb8e931"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
