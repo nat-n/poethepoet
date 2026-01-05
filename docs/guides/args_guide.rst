@@ -14,16 +14,13 @@ In general named arguments can take one of the following three forms:
 - **flags** which are either provided or not, but don't accept a value like
    :bash:`poe task-name --flag`
 
-The value for the named argument is then accessible by name within the task content,
-though exactly how will depend on the type of the task as detailed below.
-
+The value for the named argument is then accessible by name within the task content as an environment variable, and sometimes also as a native variable depending on the task type as detailed below.
 
 Configuration syntax
 ~~~~~~~~~~~~~~~~~~~~
 
 Named arguments are configured by declaring the ``args`` task option as either an array or
 a sub-table.
-
 
 Abbreviated form
 """"""""""""""""
@@ -41,7 +38,6 @@ This example can be invoked as
 .. code-block:: bash
 
     poe serve --host 0.0.0.0 --port 8001
-
 
 Array of inline tables
 """"""""""""""""""""""
@@ -81,7 +77,6 @@ If you want to provide more configuration per argument then the following toml s
       help = "The port on which to expose the service"
       default = "8000"
 
-
 .. important::
 
    The double square brackets is toml syntax for a table within an array.
@@ -108,7 +103,6 @@ The following toml syntax structure achieves exactly the same result as the prev
       default = "8000"
 
 When using this form the ``name`` option is no longer applicable because the key for the argument within the args table is taken as the name.
-
 
 Task argument options
 ~~~~~~~~~~~~~~~~~~~~~
@@ -162,15 +156,49 @@ Named arguments support the following configuration options:
 
    .. code-block:: toml
 
-    [tool.poe.tasks.save]
-    cmd  = "echo ${FILE_PATHS}"
-    args = [{ name = "FILE_PATHS", positional = true, multiple = true }]
+   [tool.poe.tasks.save]
+   cmd  = "echo ${FILE_PATHS}"
+   args = [{ name = "FILE_PATHS", positional = true, multiple = true }]
+
+- **choices** : ``list[str | int | float]``
+   Constrain the accepted values for an argument to a fixed set. The choices are shown in task help output. For non-string argument types, the choices must be specified using the same type (e.g. ``integer`` choices should be numbers). This option is not compatible with ``type = "boolean"``.
 
 - **required** : ``bool``
    If true then not providing the argument will result in an error. Arguments are not required by default.
 
 - **type** : ``Literal["string", "float", "integer", "boolean"]``
    The type that the provided value will be cast to. If not provided then the default behaviour    is to keep values as strings. Setting the type to ``"boolean"`` makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. :toml:`true` if no default value is given, or :toml:`false` if :toml:`default = true`.
+
+Constraining argument values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can document and enforce that only specific values should be accepted for an argument by specifying the ``choices`` option like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.share]
+    help = "Share some personal information"
+    cmd = "echo "My favorite ice cream is ${flavor}"
+   [[tool.poe.tasks.share.args]]
+   name = "flavor"
+   help = "Favorite ice cream"
+   positional = true
+   choices = ["chocolate", "pistachio", "vanilla"]
+
+The resulting help output includes the choices:
+
+.. code-block:: console
+
+    $ poe --help share
+
+    Description:
+      Run Share some personal information
+
+    Usage:
+      poe [global options] check [named arguments] -- [free arguments]
+
+    Named arguments:
+      flavor               Favorite ice cream [choices: 'chocolate', 'pistachio', 'vanilla']
 
 Arguments for cmd and shell tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

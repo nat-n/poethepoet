@@ -7,7 +7,7 @@ Installing Poe the Poet
 There are a few ways to install Poe the Poet depending on your preferences.
 
 1. Install the CLI globally *(recommended)*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following methods will make the ``poe`` executable available anywhere on your system.
 
@@ -95,20 +95,19 @@ With uv
 
 .. _shell_completion:
 
-.. tip::
-
-  If you prefer *not* to install the poe CLI globally, then you can still benefit from shell completions if you create an appropriate alias in your shell, such as one of:
-
-  - :sh:`alias poe="poetry run poe"`
-  - :sh:`alias poe="poetry poe"`
-  - :sh:`alias poe="uv run poe"`
-
 Enable tab completion for your shell
 ------------------------------------
 
 Poe comes with tab completion scripts for bash, zsh, and fish to save you keystrokes.
 How to install them will depend on your shell setup.
 
+.. tip::
+
+  We believe installing the poe CLI globally offers the best developer experience. However if for some reason you prefer *not* to then you can still benefit from shell completions if you create an appropriate alias in your shell, such as one of:
+
+  - :sh:`alias poe="poetry run poe"`
+  - :sh:`alias poe="poetry poe"`
+  - :sh:`alias poe="uv run poe"`
 
 Zsh
 ~~~
@@ -127,7 +126,6 @@ Zsh
 
   You'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to :sh:`compinit` to the end of your zshrc file.
 
-
 Bash
 ~~~~
 
@@ -141,7 +139,6 @@ Bash
 
 
 How to ensure installed bash completions are enabled may vary depending on your system.
-
 
 Fish
 ~~~~
