@@ -178,7 +178,7 @@ You can document and enforce that only specific values should be accepted for an
 
     [tool.poe.tasks.share]
     help = "Share some personal information"
-    cmd = "echo "My favorite ice cream is ${flavor}"
+    cmd = "echo \"My favorite ice cream is ${flavor}\""
    [[tool.poe.tasks.share.args]]
    name = "flavor"
    help = "Favorite ice cream"
