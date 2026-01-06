@@ -6,7 +6,7 @@ A **Parallel task** is defined by an array of other tasks to be run concurrently
 .. code-block:: toml
 
   [tool.poe.tasks]
-  parallel = ["mypy", "pylint"]
+  check.parallel = ["mypy", "pylint"]
 
 By default the contents of the array are interpreted as references to other tasks (actually an inline :doc:`ref<ref>` task). However, this behaviour can be altered by setting the :toml:`default_item_type` option locally on the parallel task.
 
@@ -63,7 +63,8 @@ If you want strings in the array to be interpreted as a task type other than :do
 
 .. code-block:: toml
 
-  parallel = [
+  [tool.poe.tasks]
+  check.parallel = [
     "linters:run_mypy(all=True)",
     "linters:run_pylint",
     "linters:run_flake8",
@@ -75,7 +76,7 @@ Alternatively you can declare other task types inline like so:
 .. code-block:: toml
 
   [tool.poe.tasks]
-  parallel = [
+  check.parallel = [
     { script = "linters:run_mypy(all=True)" },
     { script = "linters:run_pylint" },
     { script = "linters:run_flake8" },
