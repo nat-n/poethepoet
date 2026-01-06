@@ -243,7 +243,7 @@
 <h1><code class="docutils literal notranslate"><span class="pre">parallel</span></code> tasks<a class="headerlink" href="#parallel-tasks" title="Link to this heading">¶</a></h1>
 <p>A <strong>Parallel task</strong> is defined by an array of other tasks to be run concurrently.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mypy&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pylint&quot;</span><span class="p">]</span>
+<span class="n">check</span><span class="p">.</span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mypy&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pylint&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>By default the contents of the array are interpreted as references to other tasks (actually an inline <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> task). However, this behaviour can be altered by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option locally on the parallel task.</p>
@@ -283,7 +283,8 @@
 <section id="changing-the-default-item-type">
 <h2>Changing the default item type<a class="headerlink" href="#changing-the-default-item-type" title="Link to this heading">¶</a></h2>
 <p>If you want strings in the array to be interpreted as a task type other than <a class="reference internal" href="ref.html"><span class="doc">ref</span></a> you may specify then <code class="code highlight toml docutils literal highlight-toml"><span class="n">default_item_type</span></code> option like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
+<span class="n">check</span><span class="p">.</span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">  </span><span class="s2">&quot;linters:run_mypy(all=True)&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="s2">&quot;linters:run_pylint&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="s2">&quot;linters:run_flake8&quot;</span><span class="p">,</span>
@@ -293,7 +294,7 @@
 </div>
 <p>Alternatively you can declare other task types inline like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="n">check</span><span class="p">.</span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;linters:run_mypy(all=True)&quot;</span><span class="w"> </span><span class="p">},</span>
 <span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;linters:run_pylint&quot;</span><span class="w"> </span><span class="p">},</span>
 <span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">script</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;linters:run_flake8&quot;</span><span class="w"> </span><span class="p">},</span>

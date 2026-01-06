@@ -419,12 +419,12 @@ args = [{ name = “FILE_PATHS”, positional = true, multiple = true }]</p>
 <p>You can document and enforce that only specific values should be accepted for an argument by specifying the <code class="docutils literal notranslate"><span class="pre">choices</span></code> option like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="k">[tool.poe.tasks.share]</span>
 <span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Share some personal information&quot;</span>
-<span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo &quot;</span><span class="n">My</span><span class="w"> </span><span class="n">favorite</span><span class="w"> </span><span class="n">ice</span><span class="w"> </span><span class="n">cream</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="err">${</span><span class="n">flavor</span><span class="err">}</span><span class="s2">&quot;</span>
-<span class="s2">[[tool.poe.tasks.share.args]]</span>
-<span class="s2">name = &quot;</span><span class="n">flavor</span><span class="s2">&quot;</span>
-<span class="s2">help = &quot;</span><span class="n">Favorite</span><span class="w"> </span><span class="n">ice</span><span class="w"> </span><span class="n">cream</span><span class="s2">&quot;</span>
-<span class="s2">positional = true</span>
-<span class="s2">choices = [&quot;</span><span class="n">chocolate</span><span class="s2">&quot;, &quot;</span><span class="n">pistachio</span><span class="s2">&quot;, &quot;</span><span class="n">vanilla</span><span class="s2">&quot;]</span>
+<span class="w"> </span><span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo </span><span class="se">\&quot;</span><span class="s2">My favorite ice cream is ${flavor}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+<span class="k">[[tool.poe.tasks.share.args]]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;flavor&quot;</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Favorite ice cream&quot;</span>
+<span class="n">positional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<span class="n">choices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;chocolate&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pistachio&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;vanilla&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>The resulting help output includes the choices:</p>
