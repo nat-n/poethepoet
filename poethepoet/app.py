@@ -313,7 +313,7 @@ class PoeThePoet:
             error = PoeException(error)
 
         tasks_help: dict[
-            str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]
+            str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]], str | None]
         ] = {
             task_name: (
                 (
@@ -321,9 +321,10 @@ class PoeThePoet:
                     PoeTaskArgs.get_help_content(
                         content.get("args"), task_name, suppress_errors=bool(error)
                     ),
+                    content.get("category") or None,
                 )
                 if isinstance(content, dict)
-                else ("", ())
+                else ("", (), None)
             )
             for task_name, content in self.config.tasks.items()
         }

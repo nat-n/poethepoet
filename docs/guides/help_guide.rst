@@ -51,6 +51,64 @@ This help text will be displayed alongside the task name in the list of configur
     tunnel         Create an SSH tunnel to the production server
       --prod_host  Hostname of the production server [default: myapp.com]
 
+Grouping tasks
+--------------
+
+In addition, you can group commands together by adding the ``category`` option to the task definition, like so:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test]
+  help = "Run the test suite"
+  cmd  = "pytest --cov=poethepoet"
+
+  [tool.poe.tasks.serve]
+  help     = "Run the app in debug mode"
+  script   = "my_app.service:run(debug=True)"
+  category = "dev"
+
+  [tool.poe.tasks.tunnel]
+  help     = "Create an SSH tunnel to the production server"
+  shell    = "ssh -N -L 0.0.0.0:8080:$prod_host:8080 $prod_host &"
+  args     = [
+    {name = "prod_host", help = "Hostname of the production server", default = "myapp.com"}
+  ]
+  category = "dev"
+
+This help text will be displayed alongside the task name in the list of configured tasks when ``poe`` is run without specifying a task.
+
+.. code-block:: docs
+
+  $ poe --help
+  Poe the Poet (version 0.40.0)
+
+  Usage:
+    poe [global options] task [task arguments]
+
+  Global options:
+    -h [TASK], --help [TASK]
+                          Show this help page and exit, optionally supply a task.
+    --version             Print the version and exit
+    -v, --verbose         Increase output (repeatable)
+    -q, --quiet           Decrease output (repeatable)
+    -d, --dry-run         Print the task contents but don't actually run it
+    -C PATH, --directory PATH
+                          Specify where to find the pyproject.toml
+    -e EXECUTOR, --executor EXECUTOR
+                          Override the default task executor
+    -X KEY[=VALUE], --executor-opt KEY[=VALUE]
+                          Set executor configuration for this run.
+    --ansi                Force enable ANSI output
+    --no-ansi             Force disable ANSI output
+
+  Configured tasks:
+    test                  Run the test suite
+
+    dev
+      serve                 Run the app in debug mode
+      tunnel                Create an SSH tunnel to the production server
+        --prod_host         Hostname of the production server [default: myapp.com]
+
 Display help for a single task
 ------------------------------
 

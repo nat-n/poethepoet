@@ -174,6 +174,7 @@ class PoeTask(metaclass=MetaPoeTask):
     class TaskOptions(PoeOptions):
         args: dict | list | None = None
         capture_stdout: str | None = None
+        category: str | None = None
         cwd: str | None = None
         deps: Sequence[str] | None = None
         env: Mapping[str, str | EnvDefault] = EmptyDict

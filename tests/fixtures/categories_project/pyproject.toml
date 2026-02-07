@@ -1,0 +1,42 @@
+[tool.poe.tasks]
+
+[tool.poe.tasks.check]
+help = "Run type checking for a project"
+cmd = "echo 'Running mypy...'"
+category = "static_typing"
+
+[tool.poe.tasks.aws_login]
+help = "Log in to AWS SSO and update related resources (Docker, poetry, npm)"
+cmd = "echo 'Logging in to AWS...'"
+category = "auth"
+
+[tool.poe.tasks.docker_start]
+help = "Start Docker services"
+cmd = "echo 'Starting Docker...'"
+category = "docker"
+
+[tool.poe.tasks.docker_stop]
+help = "Stop Docker services"
+cmd = "echo 'Stopping Docker...'"
+category = "docker"
+
+[tool.poe.tasks.docker_restart]
+help = "Restart Docker services"
+sequence = [
+    { ref = "docker_stop" },
+    { ref = "docker_start" }
+]
+category = "docker"
+
+[tool.poe.tasks.uncategorized]
+help = "A task without a category"
+cmd = "echo 'Uncategorized task'"
+
+[tool.poe.tasks.another_uncategorized]
+help = "Another task without a category"
+cmd = "echo 'Another uncategorized task'"
+
+[tool.poe.tasks.empty_category]
+help = "A task with empty string category"
+cmd = "echo 'Empty category task'"
+category = ""
