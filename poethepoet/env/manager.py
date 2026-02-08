@@ -159,7 +159,7 @@ def _iter_envfile_paths(
 
     if isinstance(envfile_option, str):
         yield envfile_option, is_optional
-    elif isinstance(envfile_option, (list, tuple)):
+    elif isinstance(envfile_option, list | tuple):
         for item in envfile_option:
             yield item, is_optional
     elif isinstance(envfile_option, dict):

@@ -303,13 +303,14 @@ def test_nested_both_return_non_zero(generate_pyproject, run_poe):
 
 
 @pytest.mark.parametrize(
-    ("_task_type", "task_name", "capture_hint", "expected_code"),
+    ("task_type", "task_name", "capture_hint", "expected_code"),
     EXEC_TASK_CASES,
     ids=EXEC_TASK_IDS,
 )
 def test_exec_without_ignore(
-    generate_exec_pyproject, run_poe, _task_type, task_name, capture_hint, expected_code
+    generate_exec_pyproject, run_poe, task_type, task_name, capture_hint, expected_code
 ):
+    _ = task_type  # from parametrize, used for test IDs
     project_path = generate_exec_pyproject()
     result = run_poe(task_name, cwd=project_path)
     assert result.code == expected_code, "Expected non-zero result"
@@ -317,18 +318,19 @@ def test_exec_without_ignore(
 
 
 @pytest.mark.parametrize(
-    ("_task_type", "task_name", "capture_hint", "_expected_code"),
+    ("task_type", "task_name", "capture_hint", "expected_code"),
     EXEC_TASK_CASES,
     ids=EXEC_TASK_IDS,
 )
 def test_exec_ignore_true(
     generate_exec_pyproject,
     run_poe,
-    _task_type,
+    task_type,
     task_name,
     capture_hint,
-    _expected_code,
+    expected_code,
 ):
+    _, _ = task_type, expected_code  # from parametrize, used for test IDs
     project_path = generate_exec_pyproject({task_name: True})
     result = run_poe(task_name, cwd=project_path)
     assert result.code == 0, "Expected zero result"
@@ -336,18 +338,19 @@ def test_exec_ignore_true(
 
 
 @pytest.mark.parametrize(
-    ("_task_type", "task_name", "capture_hint", "_expected_code"),
+    ("task_type", "task_name", "capture_hint", "expected_code"),
     EXEC_TASK_CASES,
     ids=EXEC_TASK_IDS,
 )
 def test_exec_ignore_list_match(
     generate_exec_pyproject,
     run_poe,
-    _task_type,
+    task_type,
     task_name,
     capture_hint,
-    _expected_code,
+    expected_code,
 ):
+    _, _ = task_type, expected_code  # from parametrize, used for test IDs
     project_path = generate_exec_pyproject({task_name: [1]})
     result = run_poe(task_name, cwd=project_path)
     assert result.code == 0, "Expected zero result"
@@ -355,13 +358,14 @@ def test_exec_ignore_list_match(
 
 
 @pytest.mark.parametrize(
-    ("_task_type", "task_name", "capture_hint", "expected_code"),
+    ("task_type", "task_name", "capture_hint", "expected_code"),
     EXEC_TASK_FAIL_2_CASES,
     ids=EXEC_TASK_IDS,
 )
 def test_exec_ignore_list_nonmatch(
-    generate_exec_pyproject, run_poe, _task_type, task_name, capture_hint, expected_code
+    generate_exec_pyproject, run_poe, task_type, task_name, capture_hint, expected_code
 ):
+    _ = task_type  # from parametrize, used for test IDs
     project_path = generate_exec_pyproject({task_name: [1]})
     result = run_poe(task_name, cwd=project_path)
     assert result.code == expected_code, "Expected non-zero result"
@@ -369,18 +373,19 @@ def test_exec_ignore_list_nonmatch(
 
 
 @pytest.mark.parametrize(
-    ("_task_type", "task_name", "capture_hint", "_expected_code"),
+    ("task_type", "task_name", "capture_hint", "expected_code"),
     EXEC_TASK_FAIL_2_CASES,
     ids=EXEC_TASK_IDS,
 )
 def test_exec_ignore_list_multi_match(
     generate_exec_pyproject,
     run_poe,
-    _task_type,
+    task_type,
     task_name,
     capture_hint,
-    _expected_code,
+    expected_code,
 ):
+    _, _ = task_type, expected_code  # from parametrize, used for test IDs
     project_path = generate_exec_pyproject({task_name: [1, 2]})
     result = run_poe(task_name, cwd=project_path)
     assert result.code == 0, "Expected zero result"
@@ -389,7 +394,7 @@ def test_exec_ignore_list_multi_match(
 
 @pytest.mark.parametrize("invalid_value", [["1"], "return_non_zero"])
 @pytest.mark.parametrize(
-    ("_task_type", "task_name", "_capture_hint", "_expected_code"),
+    ("task_type", "task_name", "capture_hint", "expected_code"),
     EXEC_TASK_CASES,
     ids=EXEC_TASK_IDS,
 )
@@ -397,11 +402,12 @@ def test_exec_invalid_ignore_values(
     generate_exec_pyproject,
     run_poe,
     invalid_value,
-    _task_type,
+    task_type,
     task_name,
-    _capture_hint,
-    _expected_code,
+    capture_hint,
+    expected_code,
 ):
+    _, _, _ = task_type, capture_hint, expected_code  # from parametrize
     project_path = generate_exec_pyproject({task_name: invalid_value})
     result = run_poe(task_name, cwd=project_path)
     assert result.code == 1, "Expected non-zero result"

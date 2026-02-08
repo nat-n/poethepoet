@@ -147,7 +147,7 @@ class PoeOptions:
         This may be overridden by subclasses to coerce alternative variants of the
         config schema to the 'normal' variant.
         """
-        if isinstance(source, (list, tuple)):
+        if isinstance(source, list | tuple):
             yield from source
         else:
             yield source

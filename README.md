@@ -19,7 +19,7 @@
 
 - ✅ Tasks are run in poetry or uv's virtualenv ([or another env](https://poethepoet.natn.io/index.html#usage-without-poetry) you specify)
 
-- ✅ [Shell completion of task names](https://poethepoet.natn.io/installation.html#shell-completion) (and global options too for zsh)
+- ✅ [Shell completion of task names and arguments](https://poethepoet.natn.io/installation.html#shell-completion)
 
 - ✅ The poe CLI can be used standalone, or as a [plugin for poetry](https://poethepoet.natn.io/poetry_plugin.html)
 

@@ -202,7 +202,7 @@ def test_documentation_of_task_named_args(run_poe):
         r"    --greeting, -g        \s+\[default: hi\]\n"
         r"    --user                \s+\n"
         r"    --upper               \s+\n"
-        r"    --age, -a             \s+\n"
+        r"    --age, -a             \s+It is important to know the subjects age\n"
         r"    --height, -h          \s+The user's height in meters\n"
         r"  greet-strict            \s+All arguments are required\n"
         r"    --greeting"
@@ -231,6 +231,11 @@ def test_documentation_of_task_named_args(run_poe):
         r"                            \s+documentation multiline\n"
         r"    --engines             \s+Default arg\n"
         r"                            \s+documentation multiline\s+\n"
-        r"                          \s+\[default: true\]\n",
+        r"                          \s+\[default: true\]\n"
+        r"  flavor-picker           \s+Pick ice cream\n"
+        r"    --flavor, -f          \s+Ice cream flavor"
+        r" \[choices: 'vanilla', 'chocolate', 'strawberry'\]\n"
+        r"    size                  \s+Serving size"
+        r" \[choices: 'small', 'medium', 'large'\]\n",
         result.capture,
     )

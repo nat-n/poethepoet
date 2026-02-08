@@ -268,7 +268,7 @@ def _validate_nodes_and_get_names(
             node.body, source, ignore_names=lambda_args
         )
 
-    elif isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)):
+    elif isinstance(node, ast.ListComp | ast.SetComp | ast.GeneratorExp | ast.DictComp):
         # ignore comprehension/generator scoped variables
 
         comp_vars = {

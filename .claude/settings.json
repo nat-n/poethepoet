@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "PostToolUse":
+    [
+      {
+        "matcher": "Edit|Write",
+        "hooks":
+        [
+          {
+            "type": "command",
+            "command": "poe format"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow":
+    [
+      "Bash(poe *)"
+    ]
+  }
+}

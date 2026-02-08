@@ -126,7 +126,7 @@ class ProjectConfig(ConfigPartition):
             source: Mapping[str, Any] | list[Mapping[str, Any]],
             strict: bool = True,
         ):
-            if isinstance(source, (list, tuple)):
+            if isinstance(source, list | tuple):
                 raise ConfigValidationError("Expected single config")
 
             config = dict(source)
@@ -138,7 +138,7 @@ class ProjectConfig(ConfigPartition):
             # Normalize include option:
             # > Union[str, Sequence[str], Mapping[str, str]] => list[dict]
             if includes := config.get("include"):
-                if isinstance(includes, (dict, str)):
+                if isinstance(includes, dict | str):
                     includes = [includes]
                 if isinstance(includes, list):
                     config["include"] = [
