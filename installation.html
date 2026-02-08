@@ -346,21 +346,46 @@ mkdir<span class="w"> </span>-p<span class="w"> </span>~/.zfunc/
 poe<span class="w"> </span>_zsh_completion<span class="w"> </span>&gt;<span class="w"> </span>~/.zfunc/_poe
 </pre></div>
 </div>
+<p>Zsh completion includes:</p>
+<ul class="simple">
+<li><p>Global CLI options (<code class="docutils literal notranslate"><span class="pre">-v</span></code>, <code class="docutils literal notranslate"><span class="pre">-C</span></code>, etc.)</p></li>
+<li><p>Task names with help text descriptions</p></li>
+<li><p>Task-specific arguments (options and positional args)</p></li>
+</ul>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>You’ll need to start a new shell for the new completion script to be loaded. If it still doesn’t work try adding a call to <code class="code highlight sh docutils literal highlight-sh">compinit</code> to the end of your zshrc file.</p>
+<p>In some cases when upgrading to a newer version of the completion script it may be necessary to clean the zsh completions cache with <cite>rm ~/.zcompdump*</cite></p>
 </div>
 </section>
 <section id="bash">
 <h3>Bash<a class="headerlink" href="#bash" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># System bash</span>
-poe<span class="w"> </span>_bash_completion<span class="w"> </span>&gt;<span class="w"> </span>/etc/bash_completion.d/poe.bash-completion
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Quick setup - add to ~/.bashrc</span>
+<span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>poe<span class="w"> </span>_bash_completion<span class="k">)</span><span class="s2">&quot;</span>
+
+<span class="c1"># Or install to a file (requires new shell to take effect):</span>
+
+<span class="c1"># User local (recommended)</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span>~/.local/share/bash-completion/completions
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>&gt;<span class="w"> </span>~/.local/share/bash-completion/completions/poe
+
+<span class="c1"># System-wide</span>
+poe<span class="w"> </span>_bash_completion<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/bash_completion.d/poe<span class="w"> </span>&gt;<span class="w"> </span>/dev/null
 
 <span class="c1"># Homebrew bash</span>
-poe<span class="w"> </span>_bash_completion<span class="w"> </span>&gt;<span class="w"> </span><span class="k">$(</span>brew<span class="w"> </span>--prefix<span class="k">)</span>/etc/bash_completion.d/poe.bash-completion
+poe<span class="w"> </span>_bash_completion<span class="w"> </span>&gt;<span class="w"> </span><span class="k">$(</span>brew<span class="w"> </span>--prefix<span class="k">)</span>/etc/bash_completion.d/poe
 </pre></div>
 </div>
-<p>How to ensure installed bash completions are enabled may vary depending on your system.</p>
+<p>Bash completion includes:</p>
+<ul class="simple">
+<li><p>Global CLI options (<code class="docutils literal notranslate"><span class="pre">-v</span></code>, <code class="docutils literal notranslate"><span class="pre">-C</span></code>, etc.)</p></li>
+<li><p>Task names</p></li>
+<li><p>Task-specific arguments and choices</p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>If completions don’t work after installing to a file, ensure you have the <code class="docutils literal notranslate"><span class="pre">bash-completion</span></code> package installed and that it’s sourced in your <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>. You may need to start a new shell session.</p>
+</div>
 </section>
 <section id="fish">
 <h3>Fish<a class="headerlink" href="#fish" title="Link to this heading">¶</a></h3>
@@ -482,7 +507,7 @@ macOS, linux and windows.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=dbb8e931"></script>
+</div><script src="_static/documentation_options.js?v=aa6da368"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
