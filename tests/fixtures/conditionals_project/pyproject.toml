@@ -6,10 +6,12 @@ echo build part 1
 mkdir -p build
 touch ./build/asset1
 """
+help = "hi"
 cond.target = "./build/asset1"
 
 
 [tool.poe.tasks.build2]
+help = "hi"
 shell = """
 echo build part 2
 touch ./build/asset2
@@ -19,6 +21,7 @@ cond.target = "./build/asset1"
 
 
 [tool.poe.tasks.buildZ]
+help = "hi"
 shell   = "cat artifactX artifactY > artifactZ"
 prereqs = ["artifactX", "artifactY"]
 deps    = ["buildX", "buildY"] # automatically consider target of deps as prereqs?

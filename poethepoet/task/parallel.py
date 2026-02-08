@@ -98,7 +98,7 @@ class ParallelTask(PoeTask):
 
             self.subtasks = []
             for index, sub_task_def in enumerate(task_def[ParallelTask.__key__]):
-                if not isinstance(sub_task_def, (str, dict, list)):
+                if not isinstance(sub_task_def, str | dict | list):
                     raise ConfigValidationError(
                         f"Item #{index} in parallel task should be a value of "
                         "type: str | dict | list",

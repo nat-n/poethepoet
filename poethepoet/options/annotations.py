@@ -211,7 +211,6 @@ class TypedDictType(TypeAnnotation):
         }
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
-
         if not isinstance(value, dict):
             yield f"Option {self._format_path(path)!r} must be a dict"
 
@@ -258,7 +257,7 @@ class ListType(TypeAnnotation):
         return []
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
-        if not isinstance(value, (list, tuple)):
+        if not isinstance(value, list | tuple):
             yield f"Option {self._format_path(path)!r} must be a list"
 
         if isinstance(self._value_type, AnyType):

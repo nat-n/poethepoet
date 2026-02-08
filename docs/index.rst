@@ -48,7 +48,7 @@ Top features
 
 |V| Tasks are run in poetry, or uv's virtualenv (or another env you specify)
 
-|V| :ref:`Shell completion of task names<shell_completion>` (and global options too for zsh)
+|V| :ref:`Shell completion of task names and arguments<shell_completion>`
 
 |V| The poe CLI can be used standalone, or as a :doc:`plugin for poetry<./poetry_plugin>`
 

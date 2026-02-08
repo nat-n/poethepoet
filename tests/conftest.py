@@ -273,7 +273,6 @@ def run_poe_subproc(run_poe_subproc_handle, projects, tmp_path, is_windows):
 
 @pytest.fixture
 def run_poe(capsys, projects):
-
     def run_poe(
         *run_args: str,
         cwd: Path | str = projects["example"],
@@ -308,7 +307,6 @@ def run_poe(capsys, projects):
 
 @pytest.fixture
 def run_poe_main(capsys, projects):
-
     def run_poe_main(
         *cli_args: str,
         cwd: Path | str = projects["example"],

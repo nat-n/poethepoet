@@ -122,23 +122,47 @@ Zsh
   mkdir -p ~/.zfunc/
   poe _zsh_completion > ~/.zfunc/_poe
 
+Zsh completion includes:
+
+- Global CLI options (``-v``, ``-C``, etc.)
+- Task names with help text descriptions
+- Task-specific arguments (options and positional args)
+
 .. tip::
 
   You'll need to start a new shell for the new completion script to be loaded. If it still doesn't work try adding a call to :sh:`compinit` to the end of your zshrc file.
+
+  In some cases when upgrading to a newer version of the completion script it may be necessary to clean the zsh completions cache with `rm ~/.zcompdump*`
 
 Bash
 ~~~~
 
 .. code-block:: bash
 
-  # System bash
-  poe _bash_completion > /etc/bash_completion.d/poe.bash-completion
+  # Quick setup - add to ~/.bashrc
+  eval "$(poe _bash_completion)"
+
+  # Or install to a file (requires new shell to take effect):
+
+  # User local (recommended)
+  mkdir -p ~/.local/share/bash-completion/completions
+  poe _bash_completion > ~/.local/share/bash-completion/completions/poe
+
+  # System-wide
+  poe _bash_completion | sudo tee /etc/bash_completion.d/poe > /dev/null
 
   # Homebrew bash
-  poe _bash_completion > $(brew --prefix)/etc/bash_completion.d/poe.bash-completion
+  poe _bash_completion > $(brew --prefix)/etc/bash_completion.d/poe
 
+Bash completion includes:
 
-How to ensure installed bash completions are enabled may vary depending on your system.
+- Global CLI options (``-v``, ``-C``, etc.)
+- Task names
+- Task-specific arguments and choices
+
+.. tip::
+
+  If completions don't work after installing to a file, ensure you have the ``bash-completion`` package installed and that it's sourced in your ``~/.bashrc``. You may need to start a new shell session.
 
 Fish
 ~~~~
