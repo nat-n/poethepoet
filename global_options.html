@@ -379,7 +379,7 @@ Alternatively you can override the executor type at runtime by passing the <code
 </dd>
 <dt><strong>with</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> | <code class="docutils literal notranslate"><span class="pre">list[str]</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--with">📖</a></span></dt><dd><p>Run with the given packages installed.</p>
 </dd>
-<dt><strong>isolated</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--isolated">📖</a></span></dt><dd><p>Run the command in an isolated virtual environment.</p>
+<dt><strong>isolated</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--isolated">📖</a></span></dt><dd><p>Run the command in a fresh emphemeral virtual environment, instead of the usual in-project .venv</p>
 </dd>
 <dt><strong>no-sync</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--no-sync">📖</a></span></dt><dd><p>Avoid syncing the virtual environment.</p>
 </dd>
@@ -392,31 +392,21 @@ Alternatively you can override the executor type at runtime by passing the <code
 <dt><strong>python</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--python">📖</a></span></dt><dd><p>The Python interpreter to use for the run environment.</p>
 </dd>
 </dl>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span>
-<span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span>
-<span class="n">run_options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--isolated&quot;</span><span class="p">]</span>
-</pre></div>
-</div>
-<p>Common use cases for uv include:</p>
-<ul class="simple">
-<li><p>Isolated environments: <code class="docutils literal notranslate"><span class="pre">--isolated</span></code> to prevent accessing global packages</p></li>
-<li><p>Python version selection: <code class="docutils literal notranslate"><span class="pre">--python</span> <span class="pre">3.11</span></code> to use a specific Python version</p></li>
-<li><p>Additional dependencies: <code class="docutils literal notranslate"><span class="pre">--with</span> <span class="pre">httpx</span> <span class="pre">--with</span> <span class="pre">pytest</span></code> to add packages on-the-fly</p></li>
-</ul>
-<p>Example with task-level options:</p>
+<p>You can combine project and task level executor options and inheritance will work as you would expect:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.executor]</span>
 <span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span>
 
 <span class="k">[tool.poe.tasks.test-py311]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests&quot;</span>
-<span class="n">executor_run_options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--isolated&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--python&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="p">]</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.11&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pytest&quot;</span><span class="p">]}</span>
 
 <span class="k">[tool.poe.tasks.test-py312]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests&quot;</span>
-<span class="n">executor_run_options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--isolated&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--python&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;3.12&quot;</span><span class="p">]</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.12&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pytest&quot;</span><span class="p">]}</span>
 </pre></div>
 </div>
-<p>This feature enables you to replace tools like tox by creating task variants for different Python versions or environments. See the <a class="reference internal" href="guides/tox_replacement_guide.html"><span class="doc">Replacing tox with uv and Poe the Poet</span></a> for a detailed guide on replacing tox.</p>
+<p>This feature enables you to replace tools like tox by creating task variants for different Python versions or environments. See the <a class="reference internal" href="guides/tox_replacement_guide.html"><span class="doc">Replacing tox with uv and Poe the Poet</span></a> for a detailed guide on using poethepoet in this way.</p>
+<p>This kind of task level executor config will even work seamlessly in projects that don’t otherwise use <cite>uv</cite> if the executor type is specified at the task level.</p>
 </section>
 <section id="virtualenv-executor">
 <h3>Virtualenv Executor<a class="headerlink" href="#virtualenv-executor" title="Link to this heading">¶</a></h3>

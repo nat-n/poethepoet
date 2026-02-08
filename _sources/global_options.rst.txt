@@ -179,7 +179,7 @@ The uv executor can be configured with the following options, which translate in
   Run with the given packages installed.
 
 **isolated** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--isolated>`__
-  Run the command in an isolated virtual environment.
+  Run the command in a fresh emphemeral virtual environment, instead of the usual in-project .venv
 
 **no-sync** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--no-sync>`__
   Avoid syncing the virtual environment.
@@ -196,20 +196,7 @@ The uv executor can be configured with the following options, which translate in
 **python** : ``str`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--python>`__
   The Python interpreter to use for the run environment.
 
-
-.. code-block:: toml
-
-  [tool.poe.executor]
-  type = "uv"
-  run_options = ["--isolated"]
-
-Common use cases for uv include:
-
-- Isolated environments: ``--isolated`` to prevent accessing global packages
-- Python version selection: ``--python 3.11`` to use a specific Python version
-- Additional dependencies: ``--with httpx --with pytest`` to add packages on-the-fly
-
-Example with task-level options:
+You can combine project and task level executor options and inheritance will work as you would expect:
 
 .. code-block:: toml
 
@@ -218,14 +205,15 @@ Example with task-level options:
 
   [tool.poe.tasks.test-py311]
   cmd = "pytest tests"
-  executor_run_options = ["--isolated", "--python", "3.11"]
+  executor = {isolated = true, python = "3.11", with = ["pytest"]}
 
   [tool.poe.tasks.test-py312]
   cmd = "pytest tests"
-  executor_run_options = ["--isolated", "--python", "3.12"]
+  executor = {isolated = true, python = "3.12", with = ["pytest"]}
 
-This feature enables you to replace tools like tox by creating task variants for different Python versions or environments. See the :doc:`../guides/tox_replacement_guide` for a detailed guide on replacing tox.
+This feature enables you to replace tools like tox by creating task variants for different Python versions or environments. See the :doc:`../guides/tox_replacement_guide` for a detailed guide on using poethepoet in this way.
 
+This kind of task level executor config will even work seamlessly in projects that don't otherwise use `uv` if the executor type is specified at the task level.
 
 Virtualenv Executor
 ~~~~~~~~~~~~~~~~~~~
