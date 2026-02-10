@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from ..io import PoeIO
@@ -15,10 +15,10 @@ if TYPE_CHECKING:
     from .cache import EnvFileCache
 
 
-class EnvVarsManager(Mapping):
+class EnvVarsManager(Mapping[str, str | bool]):
     _config: PoeConfig
     _io: PoeIO
-    _vars: dict[str, str]
+    _vars: dict[str, str | bool]
     envfiles: EnvFileCache
 
     def __init__(
@@ -41,7 +41,7 @@ class EnvVarsManager(Mapping):
             else parent_env.envfiles
         )
         self._vars = {
-            **(parent_env.to_dict() if parent_env is not None else {}),
+            **(parent_env.to_cmd_reader() if parent_env is not None else {}),
             **(base_env or {}),
         }
 
@@ -57,16 +57,16 @@ class EnvVarsManager(Mapping):
 
         self._git_repo = GitRepo(config.project_dir)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> str | bool:
         return self._vars[key]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._vars)
 
     def __len__(self):
         return len(self._vars)
 
-    def get(self, key: Any, /, default: Any = None) -> str | None:
+    def get(self, key: Any, /, default: Any = None) -> str | bool | None:  # type: ignore[override]
         if key == "POE_GIT_DIR":
             # This is a special case environment variable that is only set if requested
             self._vars["POE_GIT_DIR"] = str(self._git_repo.path or "")
@@ -77,7 +77,7 @@ class EnvVarsManager(Mapping):
 
         return self._vars.get(key, default)
 
-    def set(self, key: str, value: str):
+    def set(self, key: str, value: str | bool):
         self._vars[key] = value
 
     def apply_env_config(
@@ -100,7 +100,9 @@ class EnvVarsManager(Mapping):
             for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
                 resolved_envfile = config_working_dir.joinpath(
                     apply_envvars_to_template(
-                        envfile_path, scoped_env, require_braces=True
+                        envfile_path,
+                        scoped_env.to_cmd_reader(with_special_case=True),
+                        require_braces=True,
                     )
                 )
                 self.update(self.envfiles.get(resolved_envfile, optional=is_optional))
@@ -117,20 +119,24 @@ class EnvVarsManager(Mapping):
                 continue
 
             self._vars[key] = apply_envvars_to_template(
-                value_str, scoped_env, require_braces=True
+                value_str,
+                scoped_env.to_cmd_reader(with_special_case=True),
+                require_braces=True,
             )
             scoped_env.set(key, self._vars[key])
 
     def update(self, env_vars: Mapping[str, Any]):
         # ensure all values are strings
-        str_vars: dict[str, str] = {}
+        new_vars: dict[str, str | bool] = {}
         for key, value in env_vars.items():
             if isinstance(value, list):
-                str_vars[key] = " ".join(str(item) for item in value)
+                new_vars[key] = " ".join(str(item) for item in value)
+            elif type(value) is bool:
+                new_vars[key] = value
             elif value is not None:
-                str_vars[key] = str(value)
+                new_vars[key] = str(value)
 
-        self._vars.update(str_vars)
+        self._vars.update(new_vars)
 
         return self
 
@@ -142,11 +148,40 @@ class EnvVarsManager(Mapping):
             cwd=self.cwd,
         )
 
-    def to_dict(self):
-        return dict(self._vars)
-
     def fill_template(self, template: str):
-        return apply_envvars_to_template(template, self._vars)
+        return apply_envvars_to_template(template, CmdEnvVarsReader(self._vars))
+
+    def to_cmd_reader(self, *, with_special_case: bool = False) -> CmdEnvVarsReader:
+        return CmdEnvVarsReader(self if with_special_case else self._vars)
+
+
+class CmdEnvVarsReader(Mapping[str, str]):
+    _vars: Mapping[str, str | bool]
+
+    @classmethod
+    def bool_to_str(cls, value: bool) -> str:
+        return "" if value is False else str(value)
+
+    def __init__(self, vars: Mapping[str, str | bool]) -> None:
+        self._vars = vars
+
+    def __getitem__(self, key) -> str:
+        result = self._vars[key]
+        if type(result) is bool:
+            return self.bool_to_str(result)
+        return result
+
+    def get(self, key: str, /, default: Any = None) -> str | None:
+        result = self._vars.get(key, default)
+        if type(result) is bool:
+            return self.bool_to_str(result)
+        return result
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._vars)
+
+    def __len__(self):
+        return len(self._vars)
 
 
 def _iter_envfile_paths(

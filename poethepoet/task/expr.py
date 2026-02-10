@@ -115,7 +115,7 @@ class ExprTask(PoeTask):
         from ..helpers.python import resolve_expression
 
         expression, accessed_vars = self._substitute_env_vars(
-            self.spec.content.strip(), env.to_dict()
+            self.spec.content.strip(), env.to_cmd_reader()
         )
 
         expression = resolve_expression(

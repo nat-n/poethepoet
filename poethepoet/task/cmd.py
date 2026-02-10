@@ -111,7 +111,9 @@ class CmdTask(PoeTask):
         working_dir = self.get_working_dir(env)
 
         result = []
-        for cmd_token, has_glob in resolve_command_tokens(command_lines, env):
+        for cmd_token, has_glob in resolve_command_tokens(
+            command_lines, env.to_cmd_reader(with_special_case=True)
+        ):
             if has_glob:
                 # Resolve glob pattern from the working directory
                 if matches := [str(match) for match in working_dir.glob(cmd_token)]:
