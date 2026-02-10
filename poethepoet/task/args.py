@@ -331,7 +331,11 @@ class PoeTaskArgs:
             result["choices"] = arg.choices
 
         if arg_type == "boolean":
-            result["action"] = "store_false" if default else "store_true"
+            if default:
+                result["action"] = "store_false"
+            else:
+                result["action"] = "store_true"
+                result["default"] = False
         else:
             result["type"] = arg_types.get(arg_type, str)
 
