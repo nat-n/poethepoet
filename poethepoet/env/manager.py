@@ -127,7 +127,7 @@ class EnvVarsManager(Mapping):
         for key, value in env_vars.items():
             if isinstance(value, list):
                 str_vars[key] = " ".join(str(item) for item in value)
-            elif value is not None:
+            elif value is not None and value is not False:
                 str_vars[key] = str(value)
 
         self._vars.update(str_vars)

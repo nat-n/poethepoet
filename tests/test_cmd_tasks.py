@@ -244,12 +244,20 @@ def test_cmd_with_empty_glob_fail(run_poe_subproc):
 
 
 def test_cmd_boolean_flag(run_poe_subproc):
-    result = run_poe_subproc("booleans", "--non", "--tru", "--fal", project="cmds")
+    result = run_poe_subproc(
+        "booleans",
+        "--non",
+        "--tru",
+        "--fal",
+        "--str",
+        project="cmds",
+    )
     assert result.capture == (
         r"""Poe => poe_test_echo '
 ${non}=True' '${non:+plus}=plus' '${non:-minus}=True
-${tru}=False' '${tru:+plus}=plus' '${tru:-minus}=False
-${fal}=True' '${fal:+plus}=plus' '${fal:-minus}=True'
+${tru}=' '${tru:+plus}=' '${tru:-minus}=minus
+${fal}=True' '${fal:+plus}=plus' '${fal:-minus}=True
+${str}=' '${str:+plus}=' '${str:-minus}=minus'
 """
     )
 
@@ -260,6 +268,7 @@ def test_cmd_boolean_flag_default_value(run_poe_subproc):
         r"""Poe => poe_test_echo '
 ${non}=' '${non:+plus}=' '${non:-minus}=minus
 ${tru}=True' '${tru:+plus}=plus' '${tru:-minus}=True
-${fal}=False' '${fal:+plus}=plus' '${fal:-minus}=False'
+${fal}=' '${fal:+plus}=' '${fal:-minus}=minus
+${str}=text' '${str:+plus}=plus' '${str:-minus}=text'
 """
     )
