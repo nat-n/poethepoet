@@ -98,3 +98,45 @@ capture_stdout = "./out.txt"
 
   [[tool.poe.tasks.capture_out.switch]]
   cmd = "echo default"
+
+[tool.poe.tasks.booleans-cmd]
+control.cmd = "poe_test_echo ${txt:-minus}"
+args = [
+  { name = "non", type = "boolean" },
+  { name = "tru", type = "boolean", default = true },
+  { name = "fal", type = "boolean", default = false },
+  { name = "txt", type = "boolean", default = "text" },
+]
+
+  [[tool.poe.tasks.booleans-cmd.switch]]
+  case = "text"
+  cmd = """poe_test_echo case=text\\
+\\${non}=${non} \\${non:+plus}=${non:+plus} \\${non:-minus}=${non:-minus}\\
+\\${fal}=${fal} \\${fal:+plus}=${fal:+plus} \\${fal:-minus}=${fal:-minus}\\
+\\${tru}=${tru} \\${tru:+plus}=${tru:+plus} \\${tru:-minus}=${tru:-minus}\\
+\\${txt}=${txt} \\${txt:+plus}=${txt:+plus} \\${txt:-minus}=${txt:-minus}
+"""
+
+  [[tool.poe.tasks.booleans-cmd.switch]]
+  expr = """{'non':non, 'tru':tru, 'fal':fal, 'txt':txt}"""
+
+[tool.poe.tasks.booleans-expr]
+control.expr = "tru"
+args = [
+  { name = "non", type = "boolean" },
+  { name = "tru", type = "boolean", default = true },
+  { name = "fal", type = "boolean", default = false },
+  { name = "txt", type = "boolean", default = "text" },
+]
+
+  [[tool.poe.tasks.booleans-expr.switch]]
+  case = "True"
+  expr = """{'case': True,'non':non, 'tru':tru, 'fal':fal, 'txt':txt}"""
+
+  [[tool.poe.tasks.booleans-expr.switch]]
+  cmd = """poe_test_echo \\
+\\${non}=${non} \\${non:+plus}=${non:+plus} \\${non:-minus}=${non:-minus}\\
+\\${fal}=${fal} \\${fal:+plus}=${fal:+plus} \\${fal:-minus}=${fal:-minus}\\
+\\${tru}=${tru} \\${tru:+plus}=${tru:+plus} \\${tru:-minus}=${tru:-minus}\\
+\\${txt}=${txt} \\${txt:+plus}=${txt:+plus} \\${txt:-minus}=${txt:-minus}
+"""

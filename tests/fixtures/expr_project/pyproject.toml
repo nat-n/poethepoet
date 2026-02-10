@@ -56,3 +56,12 @@ expr = """
   ) / 3
 """
 args = [{ name = "foo", positional = true, type = "float", default = 1.5 }]
+
+[tool.poe.tasks.booleans]
+expr = """{'non':non, 'tru':tru, 'fal':fal, 'txt':txt}"""
+args = [
+  { name = "non", type = "boolean" },
+  { name = "tru", type = "boolean", default = true },
+  { name = "fal", type = "boolean", default = false },
+  { name = "txt", type = "boolean", default = "text" },
+]
