@@ -426,3 +426,23 @@ def test_call_module_as_task(run_poe_subproc):
     assert result.capture == "Poe => module-as-task --foo cheese\n"
     assert result.stdout == "Thanks for the args! ['--foo', 'cheese']\n"
     assert result.stderr == ""
+
+
+def test_script_boolean_flag(run_poe_subproc):
+    result = run_poe_subproc(
+        "booleans", "--non", "--tru", "--fal", "--txt", project="scripts", env=no_venv
+    )
+    assert result.capture == "Poe => booleans --non --tru --fal --txt\n"
+    assert result.stdout == (
+        "args ()\n"
+        "kwargs {'non': True, 'tru': False, 'fal': True, 'txt': False}\n"
+    )
+
+
+def test_script_boolean_flag_default_value(run_poe_subproc):
+    result = run_poe_subproc("booleans", project="scripts", env=no_venv)
+    assert result.capture == "Poe => booleans\n"
+    assert result.stdout == (
+        "args ()\n"
+        "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
+    )
