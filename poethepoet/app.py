@@ -312,6 +312,12 @@ class PoeThePoet:
         if isinstance(error, str):
             error = PoeException(error)
 
+        task_to_group: dict[str, str | None] = {}
+        for group_name, group_data in self.config.groups.items():
+            if "tasks" in group_data:
+                for task_name in group_data["tasks"].keys():
+                    task_to_group[task_name] = group_name
+
         tasks_help: dict[
             str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]], str | None]
         ] = {
@@ -321,12 +327,16 @@ class PoeThePoet:
                     PoeTaskArgs.get_help_content(
                         content.get("args"), task_name, suppress_errors=bool(error)
                     ),
-                    content.get("category") or None,
+                    task_to_group.get(task_name),
                 )
                 if isinstance(content, dict)
-                else ("", (), None)
+                else ("", (), task_to_group.get(task_name))
             )
             for task_name, content in self.config.tasks.items()
         }
 
-        self.ui.print_help(tasks=tasks_help, info=info, error=error)
+        groups_info: dict[str, str] = {}
+        for group_name, group_data in self.config.groups.items():
+            groups_info[group_name] = group_data.get("heading", group_name)
+
+        self.ui.print_help(tasks=tasks_help, groups=groups_info, info=info, error=error)
