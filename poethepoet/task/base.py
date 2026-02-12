@@ -111,10 +111,17 @@ class TaskSpecFactory:
         return self
 
     def load(self, task_name: str):
-        task_def, config_partition = self.config.lookup_task(task_name)
+        task_def, config_partition, group_name = self.config.lookup_task(task_name)
 
         if task_def is None or config_partition is None:
             raise PoeException(f"Cannot instantiate unknown task {task_name!r}")
+
+        if group_name is not None:
+            group_data = self.config.groups.get(group_name, {})
+            if "executor" in group_data and isinstance(task_def, dict):
+                task_def = dict(task_def)
+                if "executor" not in task_def:
+                    task_def["executor"] = group_data["executor"]
 
         task_type = PoeTask.resolve_task_type(task_def, self.config)
         if not task_type:
@@ -174,7 +181,6 @@ class PoeTask(metaclass=MetaPoeTask):
     class TaskOptions(PoeOptions):
         args: dict | list | None = None
         capture_stdout: str | None = None
-        category: str | None = None
         cwd: str | None = None
         deps: Sequence[str] | None = None
         env: Mapping[str, str | EnvDefault] = EmptyDict

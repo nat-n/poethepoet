@@ -119,6 +119,7 @@ class ProjectConfig(ConfigPartition):
         shell_interpreter: str | Sequence[str] = "posix"
         verbosity: Literal[-2, -1, 0, 1, 2] = 0
         tasks: Mapping[str, Any] = EmptyDict
+        groups: Mapping[str, Any] = EmptyDict
 
         @classmethod
         def normalize(

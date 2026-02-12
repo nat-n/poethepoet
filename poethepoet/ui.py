@@ -194,6 +194,7 @@ class PoeUi:
             ]
             | None
         ) = None,
+        groups: Mapping[str, str] | None = None,
         info: str | None = None,
         error: PoeException | None = None,
     ):
@@ -249,11 +250,11 @@ class PoeUi:
 
             if verbosity >= -1:
                 if tasks:
-                    categorized_tasks: dict[str | None, list] = defaultdict(list)
-                    for task, (help_text, args_help, category) in tasks.items():
+                    grouped_tasks: dict[str | None, list] = defaultdict(list)
+                    for task, (help_text, args_help, group_name) in tasks.items():
                         if task.startswith("_"):
                             continue
-                        categorized_tasks[category].append((task, help_text, args_help))
+                        grouped_tasks[group_name].append((task, help_text, args_help))
 
                     max_task_len = max(
                         max(
@@ -268,26 +269,35 @@ class PoeUi:
                             + 2,
                         )
                         for task, (_, args, _) in tasks.items()
+                        if not task.startswith("_")
                     )
                     col_width = max(20, min(30, max_task_len))
 
                     tasks_section = ["<h2>Configured tasks:</h2>"]
-                    for task, help_text, args_help in categorized_tasks.get(None, []):
-                        tasks_section.append(
-                            f"  <em>{self._padr(task, col_width)}</em>  "
-                            f"{self._align(help_text, col_width)}"
-                        )
-                        tasks_section.extend(
-                            self._format_args_help(args_help, col_width, indent=3)
-                        )
-                    sorted_categories = sorted(
-                        cat for cat in categorized_tasks.keys() if cat is not None
+
+                    if None in grouped_tasks:
+                        for task, help_text, args_help in grouped_tasks[None]:
+                            tasks_section.append(
+                                f"  <em>{self._padr(task, col_width)}</em>  "
+                                f"{self._align(help_text, col_width)}"
+                            )
+                            tasks_section.extend(
+                                self._format_args_help(args_help, col_width, indent=3)
+                            )
+
+                    sorted_groups = sorted(
+                        grp for grp in grouped_tasks.keys() if grp is not None
                     )
-                    for category_count, category in enumerate(sorted_categories):
-                        if category_count > 0 or None in categorized_tasks:
+                    for group_count, group_name in enumerate(sorted_groups):
+                        if group_count > 0 or None in grouped_tasks:
                             tasks_section.append("")
-                        tasks_section.append(f"  {category}")
-                        for task, help_text, args_help in categorized_tasks[category]:
+
+                        group_heading = (
+                            groups.get(group_name, group_name) if groups else group_name
+                        )
+                        tasks_section.append(f"  {group_heading}")
+
+                        for task, help_text, args_help in grouped_tasks[group_name]:
                             tasks_section.append(
                                 f"    <em>{self._padr(task, col_width)}</em>  "
                                 f"{self._align(help_text, col_width)}"
