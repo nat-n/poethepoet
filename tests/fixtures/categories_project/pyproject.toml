@@ -1,0 +1,59 @@
+[tool.poe.tasks]
+
+[tool.poe.tasks.uncategorized]
+help = "A task without a category"
+cmd = "echo 'Uncategorized task'"
+
+[tool.poe.tasks.another_uncategorized]
+help = "Another task without a category"
+cmd = "echo 'Another uncategorized task'"
+
+# Tasks defined in groups
+
+[tool.poe.groups.static_typing]
+heading = "Static Typing"
+
+[tool.poe.groups.static_typing.tasks.check]
+help = "Run type checking for a project"
+cmd = "echo 'Running mypy...'"
+
+[tool.poe.groups.auth]
+heading = "Authentication"
+
+[tool.poe.groups.auth.tasks.aws_login]
+help = "Log in to AWS SSO and update related resources (Docker, poetry, npm)"
+cmd = "echo 'Logging in to AWS...'"
+
+[tool.poe.groups.docker]
+heading = "Docker"
+
+[tool.poe.groups.docker.tasks.docker_start]
+help = "Start Docker services"
+cmd = "echo 'Starting Docker...'"
+
+[tool.poe.groups.docker.tasks.docker_stop]
+help = "Stop Docker services"
+cmd = "echo 'Stopping Docker...'"
+
+[tool.poe.groups.docker.tasks.docker_clean]
+help = "Prune all unused resources (e.g., images, caches, and volumes)"
+cmd = "echo 'Cleaning Docker...'"
+
+[tool.poe.groups.docker.tasks.docker_restart]
+help = "Restart Docker services"
+sequence = [
+    { ref = "docker_stop" },
+    { ref = "docker_start" }
+]
+
+[tool.poe.groups.docker.tasks.docker_restart_clean]
+help = "Restart Docker services while pruning all unused resources"
+sequence = [
+    { ref = "docker_stop" },
+    { ref = "docker_clean" },
+    { ref = "docker_start" }
+]
+
+[tool.poe.groups.docker.tasks.docker_migrate]
+help = "Run database migrations for strategic-connections"
+cmd = "echo 'Running migrations...'"

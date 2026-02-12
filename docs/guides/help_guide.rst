@@ -68,3 +68,63 @@ Passing the ``--help`` option normally has the same effect as running poe with n
 
   Named arguments:
     --prod_host    Hostname of the production server [default: myapp.com]
+
+Grouping tasks
+--------------
+
+You can organize tasks into groups by defining them within group tables. This makes it easier to navigate large task lists and allows you to apply shared configuration (like an executor) to all tasks in a group.
+
+.. code-block:: toml
+
+  [tool.poe.groups.server]
+  heading = "Application Serving"
+  executor = { type = "uv", group = "server" }  # Applies to all tasks in this group
+
+  [tool.poe.groups.server.tasks.dev]
+  help = "Run the app in debug mode"
+  cmd  = "uvicorn my_app:app --reload"
+
+  [tool.poe.groups.server.tasks.prod]
+  help = "Run the app in production mode"
+  cmd  = "uvicorn my_app:app"
+
+  [tool.poe.groups.testing]
+  heading = "Testing & Quality"
+
+  [tool.poe.groups.testing.tasks.test]
+  help = "Run the test suite"
+  cmd  = "pytest --cov=my_app"
+
+  [tool.poe.groups.testing.tasks.lint]
+  help = "Run the linter"
+  cmd  = "ruff check ."
+
+When you run ``poe`` without specifying a task, tasks will be grouped by their group heading in the help output:
+
+.. code-block:: text
+
+  $ poe
+  Poe the Poet (version 0.40.0)
+
+  Usage:
+    poe [global options] task [task arguments]
+
+  Configured tasks:
+
+    Application Serving
+      dev   Run the app in debug mode
+      prod  Run the app in production mode
+
+    Testing & Quality
+      test  Run the test suite
+      lint  Run the linter
+
+**Group Options:**
+
+- **heading**: A human-readable name for the group displayed in help output. If not specified, the group name is used.
+- **executor**: Executor configuration that applies to all tasks in the group (unless a task overrides it).
+- **tasks**: A table of task definitions within the group.
+
+**Merging Groups:**
+
+Groups from different config files with the same name will be merged together. Tasks from later config files are added to the group.
