@@ -30,6 +30,9 @@ _TARGET_PATH_LOGIC = """
     # Timestamps for in-memory cache TTL (using $SECONDS)
     (( ${+_poe_mem_tasks_time} )) || typeset -gA _poe_mem_tasks_time
     (( ${+_poe_mem_args_time} )) || typeset -gA _poe_mem_args_time
+    # Hit counters for max cache hits (force refresh after N hits)
+    (( ${+_poe_cache_hits_tasks} )) || typeset -gA _poe_cache_hits_tasks
+    (( ${+_poe_cache_hits_args} )) || typeset -gA _poe_cache_hits_args
 
     # Set cache policy for poe completions (1 hour TTL)
     # Use wildcard pattern scoped to command name (${0#_} strips leading _ from
@@ -117,6 +120,13 @@ def _get_describe_task_args_completion(name: str) -> str:
                     task_args_data="${{_poe_mem_args[$args_cache_key]}}"
                     cache_hit=1
                 fi
+                # Check max cache hits (force refresh after N hits)
+                if (( cache_hit )); then
+                    (( _poe_cache_hits_args[$args_cache_key]++ ))
+                    if (( _poe_cache_hits_args[$args_cache_key] >= _POE_CACHE_MAX_HITS )); then
+                        cache_hit=0
+                    fi
+                fi
             fi
 
             # Fetch fresh if no cache hit
@@ -129,6 +139,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                     _store_cache $args_cache_id _poe_disk_args
                     _poe_mem_args[$args_cache_key]="$task_args_data"
                     _poe_mem_args_time[$args_cache_key]=$SECONDS
+                    _poe_cache_hits_args[$args_cache_key]=0
                 fi
             fi
 
@@ -377,6 +388,13 @@ def get_zsh_completion_script(name: str = "") -> str:
                     task_descriptions=(${{(f)_poe_mem_tasks[$effective_path]}})
                     cache_hit=1
                 fi
+                # Check max cache hits (force refresh after N hits)
+                if (( cache_hit )); then
+                    (( _poe_cache_hits_tasks[$effective_path]++ ))
+                    if (( _poe_cache_hits_tasks[$effective_path] >= _POE_CACHE_MAX_HITS )); then
+                        cache_hit=0
+                    fi
+                fi
             fi
 
             # Fetch fresh if no cache hit
@@ -400,6 +418,7 @@ def get_zsh_completion_script(name: str = "") -> str:
                     _store_cache $cache_id _poe_disk_tasks
                     _poe_mem_tasks[$effective_path]="$result"
                     _poe_mem_tasks_time[$effective_path]=$SECONDS
+                    _poe_cache_hits_tasks[$effective_path]=0
                 fi
                 task_descriptions=(${{(f)result}})
             fi
@@ -425,6 +444,13 @@ def get_zsh_completion_script(name: str = "") -> str:
                     task_descriptions=(${{(f)_poe_mem_tasks[$effective_path]}})
                     cache_hit=1
                 fi
+                # Check max cache hits (force refresh after N hits)
+                if (( cache_hit )); then
+                    (( _poe_cache_hits_tasks[$effective_path]++ ))
+                    if (( _poe_cache_hits_tasks[$effective_path] >= _POE_CACHE_MAX_HITS )); then
+                        cache_hit=0
+                    fi
+                fi
             fi
 
             # Fetch fresh if no cache hit
@@ -448,6 +474,7 @@ def get_zsh_completion_script(name: str = "") -> str:
                     _store_cache $cache_id _poe_disk_tasks
                     _poe_mem_tasks[$effective_path]="$result"
                     _poe_mem_tasks_time[$effective_path]=$SECONDS
+                    _poe_cache_hits_tasks[$effective_path]=0
                 fi
                 task_descriptions=(${{(f)result}})
             fi
@@ -476,6 +503,10 @@ _POE_CACHE_ENABLED=1
 
 # TTL for in-memory cache in seconds (matches disk cache policy of 1 hour)
 _POE_CACHE_TTL=3600
+
+# Max cache hits before forcing a refresh (prevents serving stale data forever
+# within a long-lived shell session, even when disk cache TTL hasn't expired)
+_POE_CACHE_MAX_HITS=10
 
 # Cache policy: invalidate after 1 hour
 _poe_caching_policy() {

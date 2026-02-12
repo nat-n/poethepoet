@@ -1085,6 +1085,314 @@ _poe
             "--stale" not in specs_text
         ), "Stale in-memory args cache should NOT be used after TTL expires"
 
+    # ========== Max cache hits tests ==========
+    #
+    # NOTE: The harness calls _poe itself at the end (build_full_harness).
+    # If the script also has _poe "$@", it runs TWICE, which increments the
+    # hit counter twice. To get a single invocation, we replace _poe "$@"
+    # with just the injection code (no function call), so only the harness's
+    # _poe call executes.
+
+    def test_task_cache_hit_below_max_serves_cached_data(
+        self, zsh_harness, completion_script
+    ):
+        """Cache hit below max hits threshold should serve cached data."""
+        cache_id = "poe_tasks__hits_test"
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/hits/test"',
+        )
+
+        # Inject hit counter at 8 (below max of 10) — next hit will be 9th, still valid
+        # Replace _poe "$@" with ONLY the injection (no call) to avoid double invocation
+        inject_hits = "\n".join(
+            [
+                "typeset -gA _poe_cache_hits_tasks",
+                "_poe_cache_hits_tasks[/hits/test]=8",
+            ]
+        )
+        script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
+
+        pre_cache = {cache_id: ["cached:Cached task"]}
+        mock = {"_zsh_describe_tasks": "fresh:Fresh task"}
+        result = zsh_harness(
+            script_with_hits,
+            ["poe", ""],
+            2,
+            mock_poe_output=mock,
+            pre_cache=pre_cache,
+        )
+
+        assert result.describe_called
+        assert (
+            "cached:Cached task" in result.describe_items
+        ), f"Expected cached data (hit count below max), got: {result.describe_items}"
+        assert (
+            "fresh:Fresh task" not in result.describe_items
+        ), "Fresh data should NOT be fetched when hit count is below max"
+
+    def test_task_cache_hit_at_max_triggers_fresh_fetch(
+        self, zsh_harness, completion_script
+    ):
+        """Cache hit reaching max hits threshold should trigger fresh fetch."""
+        cache_id = "poe_tasks__hits_test"
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/hits/test"',
+        )
+
+        # Inject hit counter at 9 — next hit will be 10th, triggers refresh
+        inject_hits = "\n".join(
+            [
+                "typeset -gA _poe_cache_hits_tasks",
+                "_poe_cache_hits_tasks[/hits/test]=9",
+            ]
+        )
+        script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
+
+        pre_cache = {cache_id: ["stale:Stale task"]}
+        mock = {"_zsh_describe_tasks": "fresh:Fresh task"}
+        result = zsh_harness(
+            script_with_hits,
+            ["poe", ""],
+            2,
+            mock_poe_output=mock,
+            pre_cache=pre_cache,
+        )
+
+        assert result.describe_called
+        assert (
+            "fresh:Fresh task" in result.describe_items
+        ), f"Expected fresh data (hit count reached max), got: {result.describe_items}"
+        assert (
+            "stale:Stale task" not in result.describe_items
+        ), "Stale cached data should NOT be served after max hits reached"
+
+    def test_task_in_memory_cache_hit_at_max_triggers_fresh_fetch(
+        self, zsh_harness, completion_script
+    ):
+        """In-memory cache hit reaching max hits should trigger fresh fetch."""
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/hits/mem"',
+        )
+
+        # Inject valid in-memory cache + hit counter at 9
+        inject = "\n".join(
+            [
+                "typeset -gA _poe_mem_tasks",
+                "typeset -gA _poe_mem_tasks_time",
+                "typeset -gA _poe_cache_hits_tasks",
+                "_poe_mem_tasks[/hits/mem]='stale:In-memory stale'",
+                "_poe_mem_tasks_time[/hits/mem]=100",
+                "_poe_cache_hits_tasks[/hits/mem]=9",
+                "SECONDS=200",
+            ]
+        )
+        script_with_hits = script_with_path.replace('_poe "$@"', inject)
+
+        mock = {"_zsh_describe_tasks": "fresh:Fresh data"}
+        result = zsh_harness(script_with_hits, ["poe", ""], 2, mock_poe_output=mock)
+
+        assert result.describe_called
+        assert (
+            "fresh:Fresh data" in result.describe_items
+        ), f"Expected fresh data (in-memory hit count at max), got: {result.describe_items}"
+        assert (
+            "stale:In-memory stale" not in result.describe_items
+        ), "Stale in-memory data should NOT be served after max hits"
+
+    def test_args_cache_hit_below_max_serves_cached_data(
+        self, zsh_harness, completion_script
+    ):
+        """Args cache hit below max hits should serve cached data."""
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/hits/args"',
+        )
+
+        # Pre-populate disk cache for args
+        args_cache_id = "poe_args_build__hits_args"
+        pre_cache = {
+            args_cache_id: ["--cached\tstring\tCached opt\t_"],
+            "poe_tasks__hits_args": ["build:Build"],
+        }
+
+        # Inject hit counter at 8 for args — next hit will be 9th, still valid
+        inject_hits = "\n".join(
+            [
+                "typeset -gA _poe_cache_hits_args",
+                '_inject_key="/hits/args|build"',
+                "_poe_cache_hits_args[$_inject_key]=8",
+            ]
+        )
+        script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
+
+        mock = {
+            "_zsh_describe_tasks": "build:Build",
+            "_describe_task_args": "--fresh\tstring\tFresh opt\t_",
+        }
+        result = zsh_harness(
+            script_with_hits,
+            ["poe", "build", ""],
+            3,
+            mock_poe_output=mock,
+            pre_cache=pre_cache,
+        )
+
+        assert result.arguments_called
+        specs_text = "\n".join(result.arguments_specs)
+        assert (
+            "--cached" in specs_text
+        ), f"Expected cached args (hit count below max), got: {result.arguments_specs}"
+        assert (
+            "--fresh" not in specs_text
+        ), "Fresh args should NOT be fetched when hit count is below max"
+
+    def test_args_cache_hit_at_max_triggers_fresh_fetch(
+        self, zsh_harness, completion_script
+    ):
+        """Args cache hit reaching max hits should trigger fresh fetch."""
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/hits/args"',
+        )
+
+        # Pre-populate disk cache for args
+        args_cache_id = "poe_args_build__hits_args"
+        pre_cache = {
+            args_cache_id: ["--stale\tstring\tStale opt\t_"],
+            "poe_tasks__hits_args": ["build:Build"],
+        }
+
+        # Inject hit counter at 9 for args — next hit will be 10th, triggers refresh
+        inject_hits = "\n".join(
+            [
+                "typeset -gA _poe_cache_hits_args",
+                '_inject_key="/hits/args|build"',
+                "_poe_cache_hits_args[$_inject_key]=9",
+            ]
+        )
+        script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
+
+        mock = {
+            "_zsh_describe_tasks": "build:Build",
+            "_describe_task_args": "--fresh\tstring\tFresh opt\t_",
+        }
+        result = zsh_harness(
+            script_with_hits,
+            ["poe", "build", ""],
+            3,
+            mock_poe_output=mock,
+            pre_cache=pre_cache,
+        )
+
+        assert result.arguments_called
+        specs_text = "\n".join(result.arguments_specs)
+        assert (
+            "--fresh" in specs_text
+        ), f"Expected fresh args (hit count reached max), got: {result.arguments_specs}"
+        assert (
+            "--stale" not in specs_text
+        ), "Stale cached args should NOT be served after max hits reached"
+
+    def test_help_task_cache_hit_at_max_triggers_fresh_fetch(
+        self, zsh_harness, completion_script
+    ):
+        """Help task state should also respect max cache hits."""
+        cache_id = "poe_tasks__hits_help"
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/hits/help"',
+        )
+
+        # Inject hit counter at 9 — next hit will be 10th
+        inject_hits = "\n".join(
+            [
+                "typeset -gA _poe_cache_hits_tasks",
+                "_poe_cache_hits_tasks[/hits/help]=9",
+            ]
+        )
+        script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
+
+        pre_cache = {cache_id: ["stale:Stale help"]}
+        mock = {"_zsh_describe_tasks": "fresh:Fresh help"}
+        result = zsh_harness(
+            script_with_hits,
+            ["poe", "--help", ""],
+            3,
+            mock_poe_output=mock,
+            pre_cache=pre_cache,
+        )
+
+        assert result.describe_called
+        assert (
+            "fresh:Fresh help" in result.describe_items
+        ), f"Expected fresh data (help_task hit count at max), got: {result.describe_items}"
+        assert (
+            "stale:Stale help" not in result.describe_items
+        ), "Stale help task data should NOT be served after max hits"
+
+    def test_cache_hit_counter_resets_after_fresh_fetch(
+        self, zsh_harness, completion_script
+    ):
+        """After a forced refresh from max hits, counter should reset so cache is used again."""
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/hits/reset"',
+        )
+
+        # First run: inject counter at 9, force a refresh
+        inject_hits_9 = "\n".join(
+            [
+                "typeset -gA _poe_cache_hits_tasks",
+                "_poe_cache_hits_tasks[/hits/reset]=9",
+            ]
+        )
+        script_at_9 = script_with_path.replace('_poe "$@"', inject_hits_9)
+
+        cache_id = "poe_tasks__hits_reset"
+        pre_cache = {cache_id: ["stale:Stale"]}
+        mock = {"_zsh_describe_tasks": "fresh:Fresh"}
+
+        result = zsh_harness(
+            script_at_9,
+            ["poe", ""],
+            2,
+            mock_poe_output=mock,
+            pre_cache=pre_cache,
+        )
+
+        # Verify fresh fetch happened (counter was at max)
+        assert "fresh:Fresh" in result.describe_items
+
+        # After the refresh, the cache file now has "fresh:Fresh"
+        # and the counter should have been reset to 0.
+        # On the NEXT run (counter=0), the disk cache should be used.
+        # We simulate this by using the cache that was stored during the refresh.
+        fresh_cache = result.get_cache_contents(cache_id)
+        assert fresh_cache, "Cache should have been updated after forced refresh"
+
+        # Second run: no injected counter (simulates counter=0 after reset)
+        # The disk cache should contain the fresh data from the previous run
+        pre_cache_2 = {cache_id: fresh_cache}
+        mock_2 = {"_zsh_describe_tasks": "newer:Even newer"}
+        result_2 = zsh_harness(
+            script_with_path,
+            ["poe", ""],
+            2,
+            mock_poe_output=mock_2,
+            pre_cache=pre_cache_2,
+        )
+
+        # Should use cache (counter is at 0, well below max)
+        assert (
+            "fresh:Fresh" in result_2.describe_items
+        ), f"Expected cached data after counter reset, got: {result_2.describe_items}"
+        assert (
+            "newer:Even newer" not in result_2.describe_items
+        ), "Should use cache after counter was reset by previous refresh"
+
 
 @pytest.mark.skipif(shutil.which("zsh") is None, reason="zsh not available")
 class TestZshHarnessBasic:
