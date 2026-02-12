@@ -897,6 +897,194 @@ class TestZshCompletionCaching:
         task_cache = [f for f in result.cache_files if "poe_tasks" in f]
         assert task_cache, f"help_task should also cache tasks: {result.cache_files}"
 
+    # ========== Cache TTL tests ==========
+
+    def test_cache_policy_found_after_arguments_modifies_context(
+        self, run_poe_main, tmp_path
+    ):
+        """Cache policy must be discoverable after _arguments -C modifies curcontext.
+
+        _arguments -C modifies curcontext when entering states (e.g.,
+        ':complete:poe:' becomes ':complete:poe-args:'). The zstyle
+        cache-policy pattern must match both the original and modified
+        contexts, otherwise _cache_invalid will never find the policy and
+        the disk cache will never expire.
+        """
+        result = run_poe_main("_zsh_completion")
+        script = result.stdout
+
+        # Extract the zstyle line from the generated script
+        zstyle_line = next(
+            line.strip()
+            for line in script.split("\n")
+            if "cache-policy" in line and "zstyle" in line
+        )
+
+        test_zsh = f"""
+function _poe {{
+    # Simulate initial curcontext (before _arguments -C)
+    local curcontext=":complete:poe:"
+
+    # Register cache policy using the line from our script
+    {zstyle_line}
+
+    # Before _arguments -C: policy should be found
+    local pol=""
+    zstyle -s ":completion:${{curcontext}}:" cache-policy pol
+    [[ "$pol" == "_poe_caching_policy" ]] && echo "BEFORE_OK" || echo "BEFORE_FAIL=$pol"
+
+    # After _arguments -C enters "args" state (appends state to command)
+    curcontext=":complete:poe-args:"
+    pol=""
+    zstyle -s ":completion:${{curcontext}}:" cache-policy pol
+    [[ "$pol" == "_poe_caching_policy" ]] && echo "ARGS_OK" || echo "ARGS_FAIL=$pol"
+
+    # After _arguments -C enters "task" state
+    curcontext=":complete:poe-1-task:"
+    pol=""
+    zstyle -s ":completion:${{curcontext}}:" cache-policy pol
+    [[ "$pol" == "_poe_caching_policy" ]] && echo "TASK_OK" || echo "TASK_FAIL=$pol"
+}}
+_poe
+"""
+        proc = subprocess.run(["zsh", "-c", test_zsh], capture_output=True, text=True)
+
+        assert (
+            "BEFORE_OK" in proc.stdout
+        ), f"Policy not found with initial curcontext. Output: {proc.stdout}"
+        assert "ARGS_OK" in proc.stdout, (
+            f"Policy not found after _arguments -C enters args state "
+            f"(curcontext changed). Output: {proc.stdout}"
+        )
+        assert "TASK_OK" in proc.stdout, (
+            f"Policy not found after _arguments -C enters task state "
+            f"(curcontext changed). Output: {proc.stdout}"
+        )
+
+    def test_expired_in_memory_cache_triggers_fresh_fetch(
+        self, zsh_harness, completion_script
+    ):
+        """In-memory cache past its TTL should not be used; fresh data should be fetched.
+
+        Without a TTL on the in-memory cache, once data is cached in
+        _poe_mem_tasks it would be served forever within the shell session,
+        even after the disk cache TTL expires.
+        """
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/ttl/test"',
+        )
+
+        # Inject pre-populated in-memory cache with a timestamp of 0,
+        # and advance SECONDS well past the TTL (3600s).
+        # NOTE: Keys must NOT be quoted inside [] - in zsh, quotes inside
+        # subscripts become part of the key, but the function looks up with
+        # $var expansion (no quotes).
+        inject_stale_cache = "\n".join(
+            [
+                "typeset -gA _poe_mem_tasks",
+                "typeset -gA _poe_mem_tasks_time",
+                "_poe_mem_tasks[/ttl/test]='stale:Stale data'",
+                "_poe_mem_tasks_time[/ttl/test]=0",
+                "SECONDS=4000",
+            ]
+        )
+        script_with_stale = script_with_path.replace(
+            '_poe "$@"',
+            inject_stale_cache + '\n_poe "$@"',
+        )
+
+        mock = {"_zsh_describe_tasks": "fresh:Fresh data"}
+        result = zsh_harness(script_with_stale, ["poe", ""], 2, mock_poe_output=mock)
+
+        assert result.describe_called
+        assert "fresh:Fresh data" in result.describe_items, (
+            f"Expected fresh data (stale in-memory cache should be expired), "
+            f"got: {result.describe_items}"
+        )
+        assert (
+            "stale:Stale data" not in result.describe_items
+        ), "Stale in-memory cache data should NOT be used after TTL expires"
+
+    def test_valid_in_memory_cache_is_used(self, zsh_harness, completion_script):
+        """In-memory cache within its TTL should be used instead of fetching fresh."""
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/ttl/test"',
+        )
+
+        # Inject pre-populated in-memory cache with a recent timestamp
+        # SECONDS=200, cached at 100 → age=100 < 3600 TTL → valid
+        inject_valid_cache = "\n".join(
+            [
+                "typeset -gA _poe_mem_tasks",
+                "typeset -gA _poe_mem_tasks_time",
+                "_poe_mem_tasks[/ttl/test]='cached:Cached data'",
+                "_poe_mem_tasks_time[/ttl/test]=100",
+                "SECONDS=200",
+            ]
+        )
+        script_with_valid = script_with_path.replace(
+            '_poe "$@"',
+            inject_valid_cache + '\n_poe "$@"',
+        )
+
+        mock = {"_zsh_describe_tasks": "fresh:Fresh data"}
+        result = zsh_harness(script_with_valid, ["poe", ""], 2, mock_poe_output=mock)
+
+        assert result.describe_called
+        assert (
+            "cached:Cached data" in result.describe_items
+        ), f"Expected cached data (within TTL), got: {result.describe_items}"
+        assert (
+            "fresh:Fresh data" not in result.describe_items
+        ), "Fresh data should NOT be fetched when in-memory cache is still valid"
+
+    def test_expired_in_memory_args_cache_triggers_fresh_fetch(
+        self, zsh_harness, completion_script
+    ):
+        """Task args in-memory cache past its TTL should trigger fresh fetch."""
+        script_with_path = completion_script.replace(
+            'local effective_path="${target_path:-$PWD}"',
+            'local effective_path="/ttl/args"',
+        )
+
+        # Inject stale task args in-memory cache.
+        # The cache key contains "|" which is special in zsh (pipe), so
+        # we must assign via a variable to avoid parsing issues.
+        inject_stale = "\n".join(
+            [
+                "typeset -gA _poe_mem_args",
+                "typeset -gA _poe_mem_args_time",
+                '_inject_key="/ttl/args|build"',
+                "_poe_mem_args[$_inject_key]=$'--stale\\tstring\\tStale opt\\t_'",
+                "_poe_mem_args_time[$_inject_key]=0",
+                "SECONDS=4000",
+            ]
+        )
+        script_with_stale = script_with_path.replace(
+            '_poe "$@"',
+            inject_stale + '\n_poe "$@"',
+        )
+
+        mock = {
+            "_zsh_describe_tasks": "build:Build it",
+            "_describe_task_args": "--fresh\tstring\tFresh opt\t_",
+        }
+        result = zsh_harness(
+            script_with_stale, ["poe", "build", ""], 3, mock_poe_output=mock
+        )
+
+        assert result.arguments_called
+        specs_text = "\n".join(result.arguments_specs)
+        assert "--fresh" in specs_text, (
+            f"Expected fresh args (stale cache should be expired), "
+            f"got specs: {result.arguments_specs}"
+        )
+        assert (
+            "--stale" not in specs_text
+        ), "Stale in-memory args cache should NOT be used after TTL expires"
+
 
 @pytest.mark.skipif(shutil.which("zsh") is None, reason="zsh not available")
 class TestZshHarnessBasic:
