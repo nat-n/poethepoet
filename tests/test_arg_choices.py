@@ -60,8 +60,7 @@ def test_choices_are_listed_in_task_summary_help(generate_choices_pyproject, run
 def test_choices_help_includes_default_and_choices_for_option(
     generate_choice_task_pyproject, run_poe
 ):
-    project_path = generate_choice_task_pyproject(
-        """
+    project_path = generate_choice_task_pyproject("""
             [tool.poe.tasks.check]
             cmd = "poe_test_echo ok"
 
@@ -71,8 +70,7 @@ def test_choices_help_includes_default_and_choices_for_option(
             type = "integer"
             default = 88
             choices = [88, 100]
-        """
-    )
+        """)
     result = run_poe("-h", "check", cwd=project_path)
     assert "--line-length, -l" in result.capture
     assert "[default: 88; choices: 88, 100]" in result.capture
@@ -99,8 +97,7 @@ def test_choices_rejects_invalid_value(generate_choices_pyproject, run_poe):
 
 
 def test_choices_allow_whitespace_values(generate_choice_task_pyproject, run_poe):
-    project_path = generate_choice_task_pyproject(
-        """
+    project_path = generate_choice_task_pyproject("""
             [tool.poe.tasks.check]
             cmd = "poe_test_echo ${package}"
 
@@ -108,8 +105,7 @@ def test_choices_allow_whitespace_values(generate_choice_task_pyproject, run_poe
             name = "package"
             positional = true
             choices = ["multi word", "single"]
-        """
-    )
+        """)
     result = run_poe("check", "multi word", cwd=project_path)
     assert result.code == 0
     assert result.capture == "Poe => poe_test_echo multi word\n"
@@ -122,8 +118,7 @@ def test_choices_allow_whitespace_values(generate_choice_task_pyproject, run_poe
 def test_choices_with_multiple_rejects_invalid_value(
     generate_choice_task_pyproject, run_poe
 ):
-    project_path = generate_choice_task_pyproject(
-        """
+    project_path = generate_choice_task_pyproject("""
             [tool.poe.tasks.check]
             cmd = "poe_test_echo ok"
 
@@ -133,8 +128,7 @@ def test_choices_with_multiple_rejects_invalid_value(
             multiple = true
             required = true
             choices = ["vanilla", "choc"]
-        """
-    )
+        """)
     result = run_poe("check", "--flavor", "vanilla", "mint", cwd=project_path)
     assert result.code == 1
     assert "invalid choice: 'mint'" in result.capture
@@ -146,8 +140,7 @@ def test_choices_with_multiple_rejects_invalid_value(
 def test_choices_templated_default_skips_membership_check(
     generate_choice_task_pyproject, run_poe
 ):
-    project_path = generate_choice_task_pyproject(
-        """
+    project_path = generate_choice_task_pyproject("""
             [tool.poe.tasks.check]
             cmd = "poe_test_echo ${package}"
 
@@ -156,8 +149,7 @@ def test_choices_templated_default_skips_membership_check(
             positional = true
             default = "${CHOICE}"
             choices = ["all"]
-        """
-    )
+        """)
     result = run_poe("-h", "check", cwd=project_path)
     assert "[default: ${CHOICE}; choices: 'all']" in result.capture
     assert result.stdout == ""
@@ -209,8 +201,7 @@ def test_invalid_choices_config(
 
 
 def test_integer_choices_accept_bool_values(generate_choice_task_pyproject, run_poe):
-    project_path = generate_choice_task_pyproject(
-        """
+    project_path = generate_choice_task_pyproject("""
             [tool.poe.tasks.check]
             cmd = "poe_test_echo ${count}"
 
@@ -219,8 +210,7 @@ def test_integer_choices_accept_bool_values(generate_choice_task_pyproject, run_
             positional = true
             type = "integer"
             choices = [true]
-        """
-    )
+        """)
     result = run_poe("check", "1", cwd=project_path)
     assert result.code == 1
     assert "Invalid argument 'count' declared" in result.capture

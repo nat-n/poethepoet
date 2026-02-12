@@ -61,5 +61,5 @@ class GitRepo:
             stdout=PIPE,
             stderr=PIPE,
         )
-        (captured_stdout, _) = proc.communicate()
+        captured_stdout, _ = proc.communicate()
         return proc, captured_stdout

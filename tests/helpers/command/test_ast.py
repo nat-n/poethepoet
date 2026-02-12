@@ -451,13 +451,9 @@ def test_parse_globs():
 
 def test_parse_non_globs():
     tree = Script(
-        ParseCursor.from_file(
-            StringIO(
-                """
+        ParseCursor.from_file(StringIO("""
                 ab[cd ]ef
-                """
-            )
-        ),
+                """)),
         config=ParseConfig(),
     )
     print(tree.pretty())
@@ -513,13 +509,9 @@ def test_parse_python_style_globs():
 
 def test_parse_python_style_non_globs():
     tree = Script(
-        ParseCursor.from_file(
-            StringIO(
-                """
+        ParseCursor.from_file(StringIO("""
                 ab[c d
-                """
-            )
-        ),
+                """)),
         config=ParseConfig(substitute_nodes={Glob: PythonGlob}),
     )
     print(tree.pretty())
@@ -531,9 +523,7 @@ def test_parse_python_style_non_globs():
 
 
 def test_parse_line_breaks():
-    tree = Script(
-        ParseCursor.from_string(
-            """
+    tree = Script(ParseCursor.from_string("""
             one
             two;three
 
@@ -541,9 +531,7 @@ def test_parse_line_breaks():
             "four";;;five;
 
             " ;"six'; '
-            """
-        )
-    )
+            """))
     print(tree.pretty())
     lines = tree.command_lines
     assert len(lines) == 6
@@ -570,14 +558,10 @@ def test_parse_cursor_basics():
 
 
 def test_ast_node_formatting():
-    tree = parse_poe_cmd(
-        """
+    tree = parse_poe_cmd("""
         hello $world!
-        """
-    )
-    assert (
-        tree.pretty()
-        == """Script:
+        """)
+    assert tree.pretty() == """Script:
     Line:
         Word:
             Segment:
@@ -586,7 +570,6 @@ def test_ast_node_formatting():
             Segment:
                 ParamExpansion: 'world'
                 UnquotedText: '!'"""
-    )
     assert repr(tree) == (
         "Script(Line(Word(Segment(UnquotedText('hello'))),"
         " Word(Segment(ParamExpansion('world'), UnquotedText('!')))))"
@@ -594,11 +577,9 @@ def test_ast_node_formatting():
 
 
 def test_ast_node_inspection():
-    tree = parse_poe_cmd(
-        """
+    tree = parse_poe_cmd("""
         hello $world!
-        """
-    )
+        """)
     assert tree[0][0][0][0] == "hello"
     assert tree[0][1][0][0] == "world"
     assert tree[0][1][0][1] == "!"
