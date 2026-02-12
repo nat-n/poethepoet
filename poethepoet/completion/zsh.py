@@ -232,6 +232,70 @@ def _get_describe_task_args_completion(name: str) -> str:
     """
 
 
+def _get_fetch_tasks_func(name: str) -> str:
+    """Generate the _poe_fetch_tasks zsh helper function.
+
+    Encapsulates the full hybrid caching logic for task descriptions:
+    disk cache -> in-memory cache -> fresh fetch (with hit counting and TTL).
+    Sets the zsh `reply` array with task description lines.
+    """
+    return f"""\
+# Fetch task descriptions with hybrid caching (disk -> in-memory -> fresh).
+# Sets the reply array with task description lines.
+# Usage: _poe_fetch_tasks "$effective_path" "$target_path"
+_poe_fetch_tasks() {{
+    local effective_path="$1"
+    local target_path="$2"
+    local cache_id="poe_tasks_${{effective_path//\\//_}}"
+    local -a _poe_disk_tasks
+    local cache_hit=0
+
+    reply=()
+
+    if (( _POE_CACHE_ENABLED )); then
+        # Try disk cache first (conventional, works if use-cache enabled)
+        if ! {{ _cache_invalid $cache_id || ! _retrieve_cache $cache_id _poe_disk_tasks }} && (( ${{#_poe_disk_tasks[@]}} > 0 )); then
+            reply=($_poe_disk_tasks)
+            cache_hit=1
+        # Fall back to in-memory cache (with TTL check)
+        elif [[ -v _poe_mem_tasks[$effective_path] ]] && (( (SECONDS - ${{_poe_mem_tasks_time[$effective_path]:-0}}) < _POE_CACHE_TTL )); then
+            reply=(${{(f)_poe_mem_tasks[$effective_path]}})
+            cache_hit=1
+        fi
+        # Force refresh after N cache hits
+        if (( cache_hit )); then
+            (( _poe_cache_hits_tasks[$effective_path]++ ))
+            if (( _poe_cache_hits_tasks[$effective_path] >= _POE_CACHE_MAX_HITS )); then
+                cache_hit=0
+            fi
+        fi
+    fi
+
+    if (( ! cache_hit )); then
+        local result
+        result="$({name} _zsh_describe_tasks $target_path 2>/dev/null)"
+        # Fall back to _list_tasks if command failed or returned help text
+        # (older poe versions don't have _zsh_describe_tasks)
+        if [[ -z "$result" || "$result" == *"Poe the Poet"* || "$result" == *"Usage"* ]]; then
+            local tasks
+            tasks="$({name} _list_tasks $target_path 2>/dev/null)"
+            result=""
+            for task in ${{=tasks}}; do
+                result+="$task:"$'\\n'
+            done
+        fi
+        if (( _POE_CACHE_ENABLED )) && [[ -n "$result" ]]; then
+            _poe_disk_tasks=(${{(f)result}})
+            _store_cache $cache_id _poe_disk_tasks
+            _poe_mem_tasks[$effective_path]="$result"
+            _poe_mem_tasks_time[$effective_path]=$SECONDS
+            _poe_cache_hits_tasks[$effective_path]=0
+        fi
+        reply=(${{(f)result}})
+    fi
+}}"""
+
+
 def _format_global_options(
     options: "list[Action]",
     excl_groups: "list[set[Action]]",
@@ -365,119 +429,23 @@ def get_zsh_completion_script(name: str = "") -> str:
 
     args_lines = _format_global_options(global_options, excl_groups)
 
-    # Task state: load descriptions only when completing task names (with caching)
-    # Uses hybrid approach: disk cache (if enabled) -> in-memory fallback -> fetch fresh
-    task_state_handler = f"""\
+    # Task state: load descriptions only when completing task names
+    # Delegates to _poe_fetch_tasks for hybrid caching logic
+    task_state_handler = """\
             # Don't show tasks if user is typing an option (starts with -)
-            [[ ${{words[CURRENT]}} == -* ]] && return
+            [[ ${words[CURRENT]} == -* ]] && return
 
-            local -a task_descriptions
-            local effective_path="${{target_path:-$PWD}}"
-            local cache_id="poe_tasks_${{effective_path//\\//_}}"
-            local -a _poe_disk_tasks
-            local cache_hit=0
-
-            # Try caches first (if caching enabled)
-            if (( _POE_CACHE_ENABLED )); then
-                # Try disk cache first (conventional, works if use-cache enabled)
-                if ! {{ _cache_invalid $cache_id || ! _retrieve_cache $cache_id _poe_disk_tasks }} && (( ${{#_poe_disk_tasks[@]}} > 0 )); then
-                    task_descriptions=($_poe_disk_tasks)
-                    cache_hit=1
-                # Fall back to in-memory cache (with TTL check)
-                elif [[ -v _poe_mem_tasks[$effective_path] ]] && (( (SECONDS - ${{_poe_mem_tasks_time[$effective_path]:-0}}) < _POE_CACHE_TTL )); then
-                    task_descriptions=(${{(f)_poe_mem_tasks[$effective_path]}})
-                    cache_hit=1
-                fi
-                # Check max cache hits (force refresh after N hits)
-                if (( cache_hit )); then
-                    (( _poe_cache_hits_tasks[$effective_path]++ ))
-                    if (( _poe_cache_hits_tasks[$effective_path] >= _POE_CACHE_MAX_HITS )); then
-                        cache_hit=0
-                    fi
-                fi
-            fi
-
-            # Fetch fresh if no cache hit
-            if (( ! cache_hit )); then
-                local result
-                result="$({name} _zsh_describe_tasks $target_path 2>/dev/null)"
-                # Fall back to _list_tasks if command failed or returned help text
-                # (older poe versions don't have _zsh_describe_tasks)
-                if [[ -z "$result" || "$result" == *"Poe the Poet"* || "$result" == *"Usage"* ]]; then
-                    local tasks
-                    tasks="$({name} _list_tasks $target_path 2>/dev/null)"
-                    # Convert space-separated to name: format (no descriptions)
-                    result=""
-                    for task in ${{=tasks}}; do
-                        result+="$task:"$'\\n'
-                    done
-                fi
-                # Store to caches (if caching enabled and there are tasks)
-                if (( _POE_CACHE_ENABLED )) && [[ -n "$result" ]]; then
-                    _poe_disk_tasks=(${{(f)result}})
-                    _store_cache $cache_id _poe_disk_tasks
-                    _poe_mem_tasks[$effective_path]="$result"
-                    _poe_mem_tasks_time[$effective_path]=$SECONDS
-                    _poe_cache_hits_tasks[$effective_path]=0
-                fi
-                task_descriptions=(${{(f)result}})
-            fi
+            local effective_path="${target_path:-$PWD}"
+            _poe_fetch_tasks "$effective_path" "$target_path"
+            local -a task_descriptions=("${reply[@]}")
             _describe 'task' task_descriptions"""
 
-    # help_task state: offer task names for --help [task] (with caching)
-    # Uses hybrid approach: disk cache (if enabled) -> in-memory fallback -> fetch fresh
-    help_task_state_handler = f"""\
-            local -a task_descriptions
-            local effective_path="${{target_path:-$PWD}}"
-            local cache_id="poe_tasks_${{effective_path//\\//_}}"
-            local -a _poe_disk_tasks
-            local cache_hit=0
-
-            # Try caches first (if caching enabled)
-            if (( _POE_CACHE_ENABLED )); then
-                # Try disk cache first (conventional, works if use-cache enabled)
-                if ! {{ _cache_invalid $cache_id || ! _retrieve_cache $cache_id _poe_disk_tasks }} && (( ${{#_poe_disk_tasks[@]}} > 0 )); then
-                    task_descriptions=($_poe_disk_tasks)
-                    cache_hit=1
-                # Fall back to in-memory cache (with TTL check)
-                elif [[ -v _poe_mem_tasks[$effective_path] ]] && (( (SECONDS - ${{_poe_mem_tasks_time[$effective_path]:-0}}) < _POE_CACHE_TTL )); then
-                    task_descriptions=(${{(f)_poe_mem_tasks[$effective_path]}})
-                    cache_hit=1
-                fi
-                # Check max cache hits (force refresh after N hits)
-                if (( cache_hit )); then
-                    (( _poe_cache_hits_tasks[$effective_path]++ ))
-                    if (( _poe_cache_hits_tasks[$effective_path] >= _POE_CACHE_MAX_HITS )); then
-                        cache_hit=0
-                    fi
-                fi
-            fi
-
-            # Fetch fresh if no cache hit
-            if (( ! cache_hit )); then
-                local result
-                result="$({name} _zsh_describe_tasks $target_path 2>/dev/null)"
-                # Fall back to _list_tasks if command failed or returned help text
-                # (older poe versions don't have _zsh_describe_tasks)
-                if [[ -z "$result" || "$result" == *"Poe the Poet"* || "$result" == *"Usage"* ]]; then
-                    local tasks
-                    tasks="$({name} _list_tasks $target_path 2>/dev/null)"
-                    # Convert space-separated to name: format (no descriptions)
-                    result=""
-                    for task in ${{=tasks}}; do
-                        result+="$task:"$'\\n'
-                    done
-                fi
-                # Store to caches (if caching enabled and there are tasks)
-                if (( _POE_CACHE_ENABLED )) && [[ -n "$result" ]]; then
-                    _poe_disk_tasks=(${{(f)result}})
-                    _store_cache $cache_id _poe_disk_tasks
-                    _poe_mem_tasks[$effective_path]="$result"
-                    _poe_mem_tasks_time[$effective_path]=$SECONDS
-                    _poe_cache_hits_tasks[$effective_path]=0
-                fi
-                task_descriptions=(${{(f)result}})
-            fi
+    # help_task state: offer task names for --help [task]
+    # Same caching as task state, without the option-prefix guard
+    help_task_state_handler = """\
+            local effective_path="${target_path:-$PWD}"
+            _poe_fetch_tasks "$effective_path" "$target_path"
+            local -a task_descriptions=("${reply[@]}")
             _describe 'task' task_descriptions"""
 
     # State handling logic
@@ -516,10 +484,14 @@ _poe_caching_policy() {
 }
 """
 
+    fetch_tasks_func = _get_fetch_tasks_func(name)
+
     return "\n".join(
         [
             f"#compdef {name}\n",
             cache_policy_func,
+            fetch_tasks_func,
+            "",
             f"function _{name} {{",
             "    local state",
             _TARGET_PATH_LOGIC,
