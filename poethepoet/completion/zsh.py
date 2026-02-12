@@ -32,7 +32,12 @@ _TARGET_PATH_LOGIC = """
     (( ${+_poe_mem_args_time} )) || typeset -gA _poe_mem_args_time
 
     # Set cache policy for poe completions (1 hour TTL)
-    zstyle ":completion:${curcontext}:" cache-policy _poe_caching_policy
+    # Use wildcard pattern scoped to command name (${0#_} strips leading _ from
+    # function name _poe -> poe). Must not use ${curcontext} because _arguments -C
+    # modifies curcontext when entering states (e.g. poe -> poe-args), so a literal
+    # context set here won't match the modified context when _cache_invalid looks
+    # it up later. The trailing * in ${0#_}* matches these state suffixes.
+    zstyle ":completion:*:${0#_}*:*" cache-policy _poe_caching_policy
 
     # Find target_path from -C/--directory/--root, potential task, and -- separator
     for ((i=2; i<${#words[@]}; i++)); do
