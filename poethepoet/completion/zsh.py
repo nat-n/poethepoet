@@ -27,6 +27,9 @@ _TARGET_PATH_LOGIC = """
     # In-memory cache fallback (used when disk cache not enabled)
     (( ${+_poe_mem_tasks} )) || typeset -gA _poe_mem_tasks
     (( ${+_poe_mem_args} )) || typeset -gA _poe_mem_args
+    # Timestamps for in-memory cache TTL (using $SECONDS)
+    (( ${+_poe_mem_tasks_time} )) || typeset -gA _poe_mem_tasks_time
+    (( ${+_poe_mem_args_time} )) || typeset -gA _poe_mem_args_time
 
     # Set cache policy for poe completions (1 hour TTL)
     zstyle ":completion:${curcontext}:" cache-policy _poe_caching_policy
@@ -104,8 +107,8 @@ def _get_describe_task_args_completion(name: str) -> str:
                 if ! {{ _cache_invalid $args_cache_id || ! _retrieve_cache $args_cache_id _poe_disk_args }} && (( ${{#_poe_disk_args[@]}} > 0 )); then
                     task_args_data="${{(pj:\\n:)_poe_disk_args}}"
                     cache_hit=1
-                # Fall back to in-memory cache
-                elif [[ -v _poe_mem_args[$args_cache_key] ]]; then
+                # Fall back to in-memory cache (with TTL check)
+                elif [[ -v _poe_mem_args[$args_cache_key] ]] && (( (SECONDS - ${{_poe_mem_args_time[$args_cache_key]:-0}}) < _POE_CACHE_TTL )); then
                     task_args_data="${{_poe_mem_args[$args_cache_key]}}"
                     cache_hit=1
                 fi
@@ -120,6 +123,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                     _poe_disk_args=("${{(f)task_args_data}}")
                     _store_cache $args_cache_id _poe_disk_args
                     _poe_mem_args[$args_cache_key]="$task_args_data"
+                    _poe_mem_args_time[$args_cache_key]=$SECONDS
                 fi
             fi
 
@@ -363,8 +367,8 @@ def get_zsh_completion_script(name: str = "") -> str:
                 if ! {{ _cache_invalid $cache_id || ! _retrieve_cache $cache_id _poe_disk_tasks }} && (( ${{#_poe_disk_tasks[@]}} > 0 )); then
                     task_descriptions=($_poe_disk_tasks)
                     cache_hit=1
-                # Fall back to in-memory cache
-                elif [[ -v _poe_mem_tasks[$effective_path] ]]; then
+                # Fall back to in-memory cache (with TTL check)
+                elif [[ -v _poe_mem_tasks[$effective_path] ]] && (( (SECONDS - ${{_poe_mem_tasks_time[$effective_path]:-0}}) < _POE_CACHE_TTL )); then
                     task_descriptions=(${{(f)_poe_mem_tasks[$effective_path]}})
                     cache_hit=1
                 fi
@@ -390,6 +394,7 @@ def get_zsh_completion_script(name: str = "") -> str:
                     _poe_disk_tasks=(${{(f)result}})
                     _store_cache $cache_id _poe_disk_tasks
                     _poe_mem_tasks[$effective_path]="$result"
+                    _poe_mem_tasks_time[$effective_path]=$SECONDS
                 fi
                 task_descriptions=(${{(f)result}})
             fi
@@ -410,8 +415,8 @@ def get_zsh_completion_script(name: str = "") -> str:
                 if ! {{ _cache_invalid $cache_id || ! _retrieve_cache $cache_id _poe_disk_tasks }} && (( ${{#_poe_disk_tasks[@]}} > 0 )); then
                     task_descriptions=($_poe_disk_tasks)
                     cache_hit=1
-                # Fall back to in-memory cache
-                elif [[ -v _poe_mem_tasks[$effective_path] ]]; then
+                # Fall back to in-memory cache (with TTL check)
+                elif [[ -v _poe_mem_tasks[$effective_path] ]] && (( (SECONDS - ${{_poe_mem_tasks_time[$effective_path]:-0}}) < _POE_CACHE_TTL )); then
                     task_descriptions=(${{(f)_poe_mem_tasks[$effective_path]}})
                     cache_hit=1
                 fi
@@ -437,6 +442,7 @@ def get_zsh_completion_script(name: str = "") -> str:
                     _poe_disk_tasks=(${{(f)result}})
                     _store_cache $cache_id _poe_disk_tasks
                     _poe_mem_tasks[$effective_path]="$result"
+                    _poe_mem_tasks_time[$effective_path]=$SECONDS
                 fi
                 task_descriptions=(${{(f)result}})
             fi
@@ -462,6 +468,9 @@ def get_zsh_completion_script(name: str = "") -> str:
     cache_policy_func = """\
 # Set to 1 to enable caching, 0 to disable (useful for debugging)
 _POE_CACHE_ENABLED=1
+
+# TTL for in-memory cache in seconds (matches disk cache policy of 1 hour)
+_POE_CACHE_TTL=3600
 
 # Cache policy: invalidate after 1 hour
 _poe_caching_policy() {
