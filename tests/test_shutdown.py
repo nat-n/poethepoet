@@ -43,10 +43,12 @@ def long_running_task(run_poe_subproc_handle, temp_pyproject, tmp_path):
     pid_file = tmp_path / "child.pid"
     # Use forward slashes for Windows compatibility in the command string
     pid_file_str = str(pid_file).replace("\\", "/")
-    project_path = temp_pyproject(f"""
+    project_path = temp_pyproject(
+        f"""
         [tool.poe.tasks.hang]
         cmd = "poe_test_delayed_echo_with_pidfile 60000 'done' '{pid_file_str}'"
-        """)
+        """
+    )
 
     poe_handle = run_poe_subproc_handle("hang", cwd=str(project_path))
 

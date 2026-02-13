@@ -117,12 +117,15 @@ def test_shell_task_with_multiple_value_arg(run_poe_subproc):
     result = run_poe_subproc(
         "multiple-value-arg", "hey", "1", "2", "3", project="shells"
     )
-    assert result.capture == """Poe => poe_test_echo "first: ${first} second: ${second}"
+    assert (
+        result.capture
+        == """Poe => poe_test_echo "first: ${first} second: ${second}"
 
 # bash treats space delimited string like array for iteration!
 for word in $second; do
   poe_test_echo $word
 done
 """
+    )
     assert result.stdout == "first: hey second: 1 2 3\n1\n2\n3\n"
     assert result.stderr == ""
