@@ -100,6 +100,12 @@ def _run_builtin_task(
         print(get_fish_completion_script(name=second_arg))
         return True
 
+    if task_name == "_powershell_completion":
+        from .completion.powershell import get_powershell_completion_script
+
+        print(get_powershell_completion_script(name=second_arg))
+        return True
+
     return False
 
 

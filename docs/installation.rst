@@ -175,6 +175,24 @@ Fish
   # Homebrew fish
   poe _fish_completion > (brew --prefix)/share/fish/vendor_completions.d/poe.fish
 
+Powershell
+~~~~~~~~~~
+
+.. code-block:: pwsh
+
+  # add to $PROFILE
+  poe _powershell_completion | out-string | invoke-expression
+
+
+Powershell completion includes:
+
+- Global CLI options (``-v``, ``-C``, etc.)
+- Task names
+- Task-specific arguments and choices
+
+.. tip::
+
+  You'll need to start a new shell for the new completion script to be loaded. Alternatively, you can invoke ``. $PROFILE`` to reload your profile.
 
 Supported python versions
 -------------------------
