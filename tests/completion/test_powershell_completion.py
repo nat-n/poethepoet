@@ -235,6 +235,38 @@ class TestPowerShellCompletionScript:
         assert "'ParameterName'" in script  # for options
         assert "'ParameterValue'" in script  # for values
 
+    def test_no_file_completion_for_freeform_options(self, run_poe_main):
+        """Verify options without choices don't fall back to file completion."""
+        result = run_poe_main("_powershell_completion")
+        script = result.stdout
+
+        # When an option has no choices, it should just return early
+        # rather than offering file completion (which isn't helpful for text args)
+        # The fix changes the "fall through to file completion" to just "return"
+        assert "# No choices - don't offer completions for free-form text" in script
+
+    def test_positional_args_array_wrapped(self, run_poe_main):
+        """Verify positional args collection is wrapped in @() for array safety."""
+        result = run_poe_main("_powershell_completion")
+        script = result.stdout
+
+        # Where-Object returns a single item directly (not as array) when only
+        # one match exists. This causes .Count to return hashtable key count (2)
+        # instead of array length (1). The fix wraps in @() to ensure array.
+        assert "$positionalArgs = @($taskArgs | Where-Object" in script
+
+    def test_prevword_calculation_handles_empty_completion(self, run_poe_main):
+        """Verify $prevWord calculation handles empty $wordToComplete correctly."""
+        result = run_poe_main("_powershell_completion")
+        script = result.stdout
+
+        # When $wordToComplete is empty (user pressed Tab after a space),
+        # $commandAst.CommandElements doesn't include a placeholder for it.
+        # So $words[-2] points to the wrong element. The fix uses $words[-1]
+        # when $wordToComplete is empty.
+        assert "if ($wordToComplete -eq '' -and $words.Count -ge 1)" in script
+        assert "$words[-1]" in script
+
 
 class TestPowerShellCompletionGracefulFailure:
     """Tests for graceful failure when no config exists."""
