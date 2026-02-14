@@ -271,17 +271,8 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
                         }}
                     return
                 }}
-                # No choices - fall through to file completion
-                Get-ChildItem -Path "$curWord*" -ErrorAction SilentlyContinue |
-                    ForEach-Object {{
-                        $type = if ($_.PSIsContainer) {{ 'ProviderContainer' }} else {{ 'ProviderItem' }}
-                        [System.Management.Automation.CompletionResult]::new(
-                            $_.FullName,
-                            $_.Name,
-                            $type,
-                            $_.FullName
-                        )
-                    }}
+                # No choices - don't offer completions for free-form text
+                # Let the user type their custom value without interference
                 return
             }}
         }}
@@ -343,7 +334,8 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
     }}
 
     # Find positional arg at this index
-    $positionalArgs = $taskArgs | Where-Object {{ $_.Type -eq 'positional' }}
+    # Wrap in @() to ensure it's always an array (Where-Object returns single item directly)
+    $positionalArgs = @($taskArgs | Where-Object {{ $_.Type -eq 'positional' }})
     if ($positionalIndex -lt $positionalArgs.Count) {{
         $posArg = $positionalArgs[$positionalIndex]
         if ($posArg.Choices.Count -gt 0) {{
