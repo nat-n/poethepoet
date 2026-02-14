@@ -65,9 +65,7 @@ function script:Get-PoeCurrentTask {{
         # Skip options
         if ($word.StartsWith('-')) {{
             # Skip value for options that take values
-            if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $Words.Count) {{
-                $i++
-            }}
+            if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $Words.Count) {{ $i++ }}
             continue
         }}
         # First non-option word is the task
@@ -164,9 +162,7 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
         $word = $words[$i]
         if ($word.StartsWith('-')) {{
             # Skip value for options that take values
-            if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) {{
-                $i++
-            }}
+            if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) {{ $i++ }}
             continue
         }}
         $currentTask = $word
@@ -181,7 +177,10 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
     }}
 
     # Handle global option value completion
-    $prevWord = if ($words.Count -ge 2) {{ $words[-2] }} else {{ $null }}
+    if ($wordToComplete -eq '' -and $words.Count -ge 1) {{ $prevWord = $words[-1] }}
+    elseif ($words.Count -ge 2) {{ $prevWord = $words[-2] }}
+    else {{ $prevWord = $null }}
+
     if ($prevWord) {{
         switch ($prevWord) {{
             {{ $_ -in @('-C', '--directory', '--root') }} {{
@@ -375,4 +374,4 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
             )
         }}
 }}
-"""
+"""  # noqa: E501
