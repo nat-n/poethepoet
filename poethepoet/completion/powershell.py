@@ -32,6 +32,48 @@ def get_powershell_completion_script(name: str = "") -> str:
         if takes_value:
             opts_with_values.extend(opt.option_strings)
 
+    # Build per-option exclusion map for global options filtering
+    repeatable_action_types = {"_CountAction", "_AppendAction"}
+
+    # Gather mutual exclusion groups from argparse
+    argparse_excl_groups = [
+        list(g._group_actions) for g in parser._mutually_exclusive_groups
+    ]
+    # Add implicit mutual exclusion: all count-actions conflict with each other
+    count_actions = [
+        opt
+        for opt in parser._action_groups[1]._group_actions
+        if opt.help != "==SUPPRESS==" and type(opt).__name__ == "_CountAction"
+    ]
+    if len(count_actions) > 1:
+        argparse_excl_groups.append(count_actions)
+
+    exclusion_map: dict[str, list[str]] = {}
+    for opt in parser._action_groups[1]._group_actions:
+        if opt.help == "==SUPPRESS==":
+            continue
+        is_repeatable = type(opt).__name__ in repeatable_action_types
+        for opt_str in opt.option_strings:
+            excluded: set[str] = set()
+            if not is_repeatable:
+                excluded.update(opt.option_strings)
+            for excl_group in argparse_excl_groups:
+                if opt in excl_group:
+                    for partner in excl_group:
+                        if partner is not opt:
+                            excluded.update(partner.option_strings)
+            exclusion_map[opt_str] = sorted(excluded)
+
+    # Format as PowerShell hashtable entries
+    excl_entries = []
+    for opt_str, excluded in exclusion_map.items():
+        if excluded:
+            values = ", ".join(f"'{e}'" for e in excluded)
+            excl_entries.append(f"    '{opt_str}' = @({values})")
+        else:
+            excl_entries.append(f"    '{opt_str}' = @()")
+    excl_map_str = "\n".join(excl_entries)
+
     global_opts_str = "', '".join(global_opts)
     opts_with_values_str = "', '".join(opts_with_values) if opts_with_values else ""
 
@@ -43,6 +85,9 @@ def get_powershell_completion_script(name: str = "") -> str:
 
 $script:PoeGlobalOptions = @('{global_opts_str}')
 $script:PoeOptionsWithValues = @('{opts_with_values_str}')
+$script:PoeGlobalOptionExclusions = @{{
+{excl_map_str}
+}}
 
 function script:Get-PoeTargetPath {{
     param([string[]]$Words)
@@ -84,7 +129,7 @@ function script:Get-PoeTaskArgs {{
         return @()
     }}
 
-    $args = @()
+    $taskArgList = @()
     try {{
         $output = if ($TargetPath) {{
             & {name} _describe_task_args $TaskName $TargetPath 2>$null
@@ -96,7 +141,7 @@ function script:Get-PoeTaskArgs {{
             foreach ($line in $output -split "`n") {{
                 $parts = $line -split "`t"
                 if ($parts.Count -ge 4) {{
-                    $args += @{{
+                    $taskArgList += @{{
                         Options = $parts[0] -split ','
                         Type = $parts[1]
                         Help = $parts[2]
@@ -108,7 +153,7 @@ function script:Get-PoeTaskArgs {{
     }} catch {{
         # Silently fail
     }}
-    return $args
+    return $taskArgList
 }}
 
 function script:Get-PoeTasks {{
@@ -216,8 +261,17 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
     if (-not $currentTask -or $cursorIndex -le $taskPosition) {{
         # Complete global options if word starts with -
         if ($curWord.StartsWith('-')) {{
+            $excludedGlobalOpts = @{{}}
+            for ($j = 1; $j -lt $words.Count; $j++) {{
+                $w = $words[$j]
+                if ($w.StartsWith('-') -and $script:PoeGlobalOptionExclusions.ContainsKey($w)) {{
+                    foreach ($ex in $script:PoeGlobalOptionExclusions[$w]) {{
+                        $excludedGlobalOpts[$ex] = $true
+                    }}
+                }}
+            }}
             $script:PoeGlobalOptions |
-                Where-Object {{ $_ -like "$curWord*" }} |
+                Where-Object {{ $_ -like "$curWord*" -and -not $excludedGlobalOpts.ContainsKey($_) }} |
                 ForEach-Object {{
                     [System.Management.Automation.CompletionResult]::new(
                         $_,

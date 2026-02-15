@@ -267,6 +267,18 @@ class TestPowerShellCompletionScript:
         assert "if ($wordToComplete -eq '' -and $words.Count -ge 1)" in script
         assert "$words[-1]" in script
 
+    def test_has_global_option_exclusions(self, run_poe_main):
+        """Verify script includes PoeGlobalOptionExclusions hashtable."""
+        result = run_poe_main("_powershell_completion")
+        script = result.stdout
+
+        assert "$script:PoeGlobalOptionExclusions" in script
+        # Should have entries for key options
+        assert "'-h'" in script
+        assert "'-v'" in script
+        assert "'-X'" in script
+        assert "'--ansi'" in script
+
 
 class TestPowerShellCompletionGracefulFailure:
     """Tests for graceful failure when no config exists."""
@@ -462,3 +474,1031 @@ class TestPowerShellCompletionIntegration:
 
         assert proc.returncode == 0, f"PowerShell error: {proc.stderr}"
         assert "Global options OK" in proc.stdout
+
+
+def _run_ps_test(run_poe_main, tmp_path, test_commands, mock_poe_func=None):
+    """Run PowerShell commands with the completion script loaded and return subprocess result.
+
+    Generates the completion script, writes it to a temp file, dot-sources it,
+    optionally overrides `poe` with a mock function, then runs test_commands.
+    """
+    script = run_poe_main("_powershell_completion").stdout
+    script_file = tmp_path / "completion.ps1"
+    script_file.write_text(script)
+
+    ps_cmd = _get_powershell_cmd()
+    parts = [f". '{script_file}'"]
+    if mock_poe_func:
+        parts.append(mock_poe_func)
+    parts.append(test_commands)
+
+    return subprocess.run(
+        [
+            ps_cmd,
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            "\n".join(parts),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellGetPoeTargetPath:
+    """Test Get-PoeTargetPath function directly in PowerShell."""
+
+    def test_c_flag(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '-C', '/mypath', 'task1')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "/mypath" in proc.stdout.strip()
+
+    def test_directory_flag(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '--directory', '/other/path', 'task1')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "/other/path" in proc.stdout.strip()
+
+    def test_root_flag(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '--root', '/root/path', 'task1')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "/root/path" in proc.stdout.strip()
+
+    def test_no_directory_option(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', 'task1')
+            if ($null -eq $r) { Write-Output 'NULL' } else { Write-Output $r }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "NULL"
+
+    def test_c_at_end_no_value(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '-C')
+            if ($null -eq $r) { Write-Output 'NULL' } else { Write-Output $r }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "NULL"
+
+    def test_first_directory_wins(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '-C', '/first', '--directory', '/second')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "/first" in proc.stdout.strip()
+
+    def test_directory_interleaved_with_options(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '-v', '--directory', '/mydir', 'task1')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "/mydir" in proc.stdout.strip()
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellGetPoeCurrentTask:
+    """Test Get-PoeCurrentTask function directly in PowerShell."""
+
+    def test_simple_task(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', 'mytask')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "mytask"
+
+    def test_task_after_c_flag(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', '-C', '/path', 'mytask')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "mytask"
+
+    def test_task_after_boolean_flag(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', '-v', 'mytask')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "mytask"
+
+    def test_task_after_option_with_value(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', '-e', 'poetry', 'mytask')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "mytask"
+
+    def test_no_task_all_options(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', '-v', '--help')
+            if ($null -eq $r) { Write-Output 'NULL' } else { Write-Output $r }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "NULL"
+
+    def test_task_with_dashes(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', 'my-task')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "my-task"
+
+    def test_task_with_colons(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', 'ns:task')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "ns:task"
+
+    def test_task_with_plus(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', 'task+extra')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "task+extra"
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellGetUsedOptions:
+    """Test Get-UsedOptions function directly in PowerShell."""
+
+    def test_single_used_option(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-UsedOptions -Words @('poe', 'mytask', '--greeting', 'hello') -TaskPosition 1
+            Write-Output ($r.Keys -join ',')
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "--greeting" in proc.stdout.strip()
+
+    def test_multiple_used_options(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-UsedOptions -Words @('poe', 'mytask', '--greeting', 'hello', '-n', '5') -TaskPosition 1
+            $keys = $r.Keys | Sort-Object
+            Write-Output ($keys -join ',')
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        output = proc.stdout.strip()
+        assert "--greeting" in output
+        assert "-n" in output
+
+    def test_no_options_used(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-UsedOptions -Words @('poe', 'mytask', 'arg1') -TaskPosition 1
+            Write-Output "COUNT:$($r.Count)"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:0" in proc.stdout.strip()
+
+    def test_short_form_tracking(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-UsedOptions -Words @('poe', 'mytask', '-g', 'hello') -TaskPosition 1
+            Write-Output ($r.Keys -join ',')
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "-g" in proc.stdout.strip()
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellGetPoeTasks:
+    """Test Get-PoeTasks function with mocked poe command."""
+
+    def test_basic_list(self, run_poe_main, tmp_path):
+        mock = 'function poe { Write-Output "greet echo build test" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTasks
+            Write-Output ($r -join ',')
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        tasks = proc.stdout.strip().split(",")
+        assert "greet" in tasks
+        assert "echo" in tasks
+        assert "build" in tasks
+        assert "test" in tasks
+
+    def test_empty_output(self, run_poe_main, tmp_path):
+        mock = "function poe { }"
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTasks)
+            Write-Output "COUNT:$($r.Count)"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:0" in proc.stdout.strip()
+
+    def test_mock_throws(self, run_poe_main, tmp_path):
+        mock = 'function poe { throw "error" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTasks)
+            Write-Output "COUNT:$($r.Count)"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:0" in proc.stdout.strip()
+
+    def test_special_chars_in_names(self, run_poe_main, tmp_path):
+        mock = 'function poe { Write-Output "my-task ns:task task+extra" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTasks
+            Write-Output ($r -join ',')
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        tasks = proc.stdout.strip().split(",")
+        assert "my-task" in tasks
+        assert "ns:task" in tasks
+        assert "task+extra" in tasks
+
+    def test_target_path_forwarded(self, run_poe_main, tmp_path):
+        mock = """function poe {
+    if ($args[1] -eq '/custom/path') {
+        Write-Output "pathed-task"
+    } else {
+        Write-Output "default-task"
+    }
+}"""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTasks -TargetPath '/custom/path'
+            Write-Output ($r -join ',')
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "pathed-task" in proc.stdout.strip()
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellGetPoeTaskArgs:
+    """Test Get-PoeTaskArgs function with mocked poe command."""
+
+    def test_single_arg(self, run_poe_main, tmp_path):
+        mock = (
+            'function poe { Write-Output "--greeting,-g`tstring`tGreeting message`t_" }'
+        )
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTaskArgs -TaskName 'greet')
+            Write-Output "COUNT:$($r.Count)"
+            Write-Output "OPTS:$($r[0].Options -join ',')"
+            Write-Output "TYPE:$($r[0].Type)"
+            Write-Output "HELP:$($r[0].Help)"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:1" in proc.stdout
+        assert "OPTS:--greeting,-g" in proc.stdout
+        assert "TYPE:string" in proc.stdout
+        assert "HELP:Greeting message" in proc.stdout
+
+    def test_multiple_args(self, run_poe_main, tmp_path):
+        mock = 'function poe { Write-Output "--greeting,-g`tstring`tGreeting`t_`n--count,-n`tinteger`tCount`t_" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTaskArgs -TaskName 'greet')
+            Write-Output "COUNT:$($r.Count)"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:2" in proc.stdout
+
+    def test_args_with_choices(self, run_poe_main, tmp_path):
+        mock = 'function poe { Write-Output "--format,-f`tstring`tOutput format`tjson xml csv" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTaskArgs -TaskName 'export')
+            Write-Output "CHOICES:$($r[0].Choices -join ',')"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "CHOICES:json,xml,csv" in proc.stdout
+
+    def test_positional_arg(self, run_poe_main, tmp_path):
+        mock = 'function poe { Write-Output "name`tpositional`tThe name`t_" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTaskArgs -TaskName 'greet')
+            Write-Output "TYPE:$($r[0].Type)"
+            Write-Output "OPTS:$($r[0].Options -join ',')"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TYPE:positional" in proc.stdout
+        assert "OPTS:name" in proc.stdout
+
+    def test_empty_task_name(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTaskArgs -TaskName ''
+            Write-Output "COUNT:$($r.Count)"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:0" in proc.stdout
+
+    def test_target_path_forwarded(self, run_poe_main, tmp_path):
+        mock = """function poe {
+    if ($args[2] -eq '/custom/path') {
+        Write-Output "--pathed`tstring`tPathed arg`t_"
+    } else {
+        Write-Output "--default`tstring`tDefault arg`t_"
+    }
+}"""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTaskArgs -TaskName 'mytask' -TargetPath '/custom/path')
+            Write-Output "OPTS:$($r[0].Options -join ',')"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "OPTS:--pathed" in proc.stdout
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellUsedOptionGroupFiltering:
+    """Test the usedGroups logic that filters already-used option groups."""
+
+    def test_short_form_excludes_long(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--greeting', '-g'); Type = 'string'; Help = 'Greeting'; Choices = @() }
+                @{ Options = @('--count', '-n'); Type = 'integer'; Help = 'Count'; Choices = @() }
+            )
+            $words = @('poe', 'greet', '-g', 'hello')
+            $usedGroups = @{}
+            foreach ($word in $words) {
+                if (-not $word.StartsWith('-')) { continue }
+                foreach ($arg in $taskArgs) {
+                    if ($word -in $arg.Options) {
+                        foreach ($opt in $arg.Options) {
+                            $usedGroups[$opt] = $true
+                        }
+                    }
+                }
+            }
+            Write-Output "GREETING:$($usedGroups.ContainsKey('--greeting'))"
+            Write-Output "G:$($usedGroups.ContainsKey('-g'))"
+            Write-Output "COUNT:$($usedGroups.ContainsKey('--count'))"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "GREETING:True" in proc.stdout
+        assert "G:True" in proc.stdout
+        assert "COUNT:False" in proc.stdout
+
+    def test_long_form_excludes_short(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--greeting', '-g'); Type = 'string'; Help = 'Greeting'; Choices = @() }
+            )
+            $words = @('poe', 'greet', '--greeting', 'hello')
+            $usedGroups = @{}
+            foreach ($word in $words) {
+                if (-not $word.StartsWith('-')) { continue }
+                foreach ($arg in $taskArgs) {
+                    if ($word -in $arg.Options) {
+                        foreach ($opt in $arg.Options) {
+                            $usedGroups[$opt] = $true
+                        }
+                    }
+                }
+            }
+            Write-Output "G:$($usedGroups.ContainsKey('-g'))"
+            Write-Output "GREETING:$($usedGroups.ContainsKey('--greeting'))"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "G:True" in proc.stdout
+        assert "GREETING:True" in proc.stdout
+
+    def test_unrelated_options_unaffected(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--greeting', '-g'); Type = 'string'; Help = 'Greeting'; Choices = @() }
+                @{ Options = @('--count', '-n'); Type = 'integer'; Help = 'Count'; Choices = @() }
+            )
+            $words = @('poe', 'greet', '-g', 'hello')
+            $usedGroups = @{}
+            foreach ($word in $words) {
+                if (-not $word.StartsWith('-')) { continue }
+                foreach ($arg in $taskArgs) {
+                    if ($word -in $arg.Options) {
+                        foreach ($opt in $arg.Options) {
+                            $usedGroups[$opt] = $true
+                        }
+                    }
+                }
+            }
+            Write-Output "N:$($usedGroups.ContainsKey('-n'))"
+            Write-Output "COUNT:$($usedGroups.ContainsKey('--count'))"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "N:False" in proc.stdout
+        assert "COUNT:False" in proc.stdout
+
+    def test_multiple_groups_used(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--greeting', '-g'); Type = 'string'; Help = 'Greeting'; Choices = @() }
+                @{ Options = @('--count', '-n'); Type = 'integer'; Help = 'Count'; Choices = @() }
+                @{ Options = @('--verbose'); Type = 'boolean'; Help = 'Verbose'; Choices = @() }
+            )
+            $words = @('poe', 'greet', '-g', 'hello', '-n', '5')
+            $usedGroups = @{}
+            foreach ($word in $words) {
+                if (-not $word.StartsWith('-')) { continue }
+                foreach ($arg in $taskArgs) {
+                    if ($word -in $arg.Options) {
+                        foreach ($opt in $arg.Options) {
+                            $usedGroups[$opt] = $true
+                        }
+                    }
+                }
+            }
+            Write-Output "GREETING:$($usedGroups.ContainsKey('--greeting'))"
+            Write-Output "COUNT:$($usedGroups.ContainsKey('--count'))"
+            Write-Output "VERBOSE:$($usedGroups.ContainsKey('--verbose'))"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "GREETING:True" in proc.stdout
+        assert "COUNT:True" in proc.stdout
+        assert "VERBOSE:False" in proc.stdout
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellOptionValueCompletion:
+    """Test option value completion logic."""
+
+    def test_choices_offered_for_string_option(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--format', '-f'); Type = 'string'; Help = 'Format'; Choices = @('json', 'xml', 'csv') }
+            )
+            $prevWord = '--format'
+            $curWord = ''
+            $results = @()
+            foreach ($arg in $taskArgs) {
+                if ($prevWord -in $arg.Options) {
+                    if ($arg.Type -eq 'boolean') { break }
+                    if ($arg.Choices.Count -gt 0) {
+                        $results = @($arg.Choices | Where-Object { $_ -like "$curWord*" })
+                    }
+                }
+            }
+            Write-Output ($results -join ',')
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        choices = proc.stdout.strip().split(",")
+        assert "json" in choices
+        assert "xml" in choices
+        assert "csv" in choices
+
+    def test_boolean_flag_no_value_completion(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--verbose', '-v'); Type = 'boolean'; Help = 'Verbose'; Choices = @() }
+            )
+            $prevWord = '--verbose'
+            $matched = $false
+            foreach ($arg in $taskArgs) {
+                if ($prevWord -in $arg.Options) {
+                    if ($arg.Type -eq 'boolean') {
+                        $matched = $true
+                        break
+                    }
+                }
+            }
+            Write-Output "BOOLEAN_BREAK:$matched"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "BOOLEAN_BREAK:True" in proc.stdout
+
+    def test_no_choices_returns_early(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--name', '-n'); Type = 'string'; Help = 'Name'; Choices = @() }
+            )
+            $prevWord = '--name'
+            $hasChoices = $false
+            foreach ($arg in $taskArgs) {
+                if ($prevWord -in $arg.Options) {
+                    if ($arg.Choices.Count -gt 0) {
+                        $hasChoices = $true
+                    }
+                }
+            }
+            Write-Output "HAS_CHOICES:$hasChoices"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "HAS_CHOICES:False" in proc.stdout
+
+    def test_partial_choice_filtering(self, run_poe_main, tmp_path):
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--format', '-f'); Type = 'string'; Help = 'Format'; Choices = @('json', 'xml', 'csv') }
+            )
+            $prevWord = '--format'
+            $curWord = 'j'
+            $results = @()
+            foreach ($arg in $taskArgs) {
+                if ($prevWord -in $arg.Options) {
+                    if ($arg.Choices.Count -gt 0) {
+                        $results = @($arg.Choices | Where-Object { $_ -like "$curWord*" })
+                    }
+                }
+            }
+            Write-Output ($results -join ',')
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "json"
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellPositionalArgCompletion:
+    """Test positional argument index tracking logic."""
+
+    def test_first_positional_with_choices(self, run_poe_main, tmp_path):
+        # Simulates: poe pick-flavor <TAB>
+        # When wordToComplete is '', CommandElements doesn't include the empty token
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('flavor'); Type = 'positional'; Help = 'Flavor'; Choices = @('vanilla', 'chocolate', 'strawberry') }
+            )
+            $words = @('poe', 'pick-flavor')
+            $wordToComplete = ''
+            $taskPosition = 1
+            $positionalIndex = 0
+            for ($i = $taskPosition + 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $isValuedOpt = $false
+                    foreach ($arg in $taskArgs) {
+                        if ($word -in $arg.Options -and $arg.Type -ne 'boolean') {
+                            $isValuedOpt = $true; break
+                        }
+                    }
+                    if ($isValuedOpt) { $i++ }
+                    continue
+                }
+                if ($i -lt ($words.Count - 1) -or $wordToComplete -eq '') {
+                    $positionalIndex++
+                }
+            }
+            $positionalArgs = @($taskArgs | Where-Object { $_.Type -eq 'positional' })
+            if ($positionalIndex -lt $positionalArgs.Count) {
+                Write-Output "CHOICES:$($positionalArgs[$positionalIndex].Choices -join ',')"
+            } else {
+                Write-Output "NO_MATCH"
+            }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "CHOICES:vanilla,chocolate,strawberry" in proc.stdout
+
+    def test_positional_after_option_with_value(self, run_poe_main, tmp_path):
+        # Simulates: poe pick-flavor --count 5 <TAB>
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--count', '-n'); Type = 'integer'; Help = 'Count'; Choices = @() }
+                @{ Options = @('flavor'); Type = 'positional'; Help = 'Flavor'; Choices = @('vanilla', 'chocolate') }
+            )
+            $words = @('poe', 'pick-flavor', '--count', '5')
+            $wordToComplete = ''
+            $taskPosition = 1
+            $positionalIndex = 0
+            for ($i = $taskPosition + 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $isValuedOpt = $false
+                    foreach ($arg in $taskArgs) {
+                        if ($word -in $arg.Options -and $arg.Type -ne 'boolean') {
+                            $isValuedOpt = $true; break
+                        }
+                    }
+                    if ($isValuedOpt) { $i++ }
+                    continue
+                }
+                if ($i -lt ($words.Count - 1) -or $wordToComplete -eq '') {
+                    $positionalIndex++
+                }
+            }
+            Write-Output "INDEX:$positionalIndex"
+            $positionalArgs = @($taskArgs | Where-Object { $_.Type -eq 'positional' })
+            if ($positionalIndex -lt $positionalArgs.Count) {
+                Write-Output "CHOICES:$($positionalArgs[$positionalIndex].Choices -join ',')"
+            }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "INDEX:0" in proc.stdout
+        assert "CHOICES:vanilla,chocolate" in proc.stdout
+
+    def test_positional_without_choices(self, run_poe_main, tmp_path):
+        # Simulates: poe greet <TAB> where name is positional with no choices
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('name'); Type = 'positional'; Help = 'Name'; Choices = @() }
+            )
+            $words = @('poe', 'greet')
+            $wordToComplete = ''
+            $taskPosition = 1
+            $positionalIndex = 0
+            for ($i = $taskPosition + 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) { continue }
+                if ($i -lt ($words.Count - 1) -or $wordToComplete -eq '') {
+                    $positionalIndex++
+                }
+            }
+            $positionalArgs = @($taskArgs | Where-Object { $_.Type -eq 'positional' })
+            if ($positionalIndex -lt $positionalArgs.Count -and $positionalArgs[$positionalIndex].Choices.Count -gt 0) {
+                Write-Output "HAS_CHOICES"
+            } else {
+                Write-Output "NO_CHOICES"
+            }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "NO_CHOICES" in proc.stdout
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellGracefulFailure:
+    """Test graceful failure handling in PowerShell."""
+
+    def test_describe_task_args_returns_empty(self, run_poe_main, tmp_path):
+        mock = "function poe { }"
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTaskArgs -TaskName 'nonexistent'
+            Write-Output "COUNT:$($r.Count)"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:0" in proc.stdout
+
+    def test_list_tasks_returns_empty(self, run_poe_main, tmp_path):
+        mock = "function poe { }"
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = @(Get-PoeTasks)
+            Write-Output "COUNT:$($r.Count)"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "COUNT:0" in proc.stdout
+
+    def test_mock_poe_throws_exception(self, run_poe_main, tmp_path):
+        mock = "function poe { throw 'Something went wrong' }"
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $tasks = @(Get-PoeTasks)
+            $argsResult = Get-PoeTaskArgs -TaskName 'sometask'
+            Write-Output "TASKS:$($tasks.Count)"
+            Write-Output "ARGS:$($argsResult.Count)"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASKS:0" in proc.stdout
+        assert "ARGS:0" in proc.stdout
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellGlobalOptionFiltering:
+    """Test that already-used global options are filtered from completions."""
+
+    def _build_exclusion_test(
+        self, run_poe_main, tmp_path, words_ps, assert_excluded, assert_available
+    ):
+        """Helper: dot-source script, build $excludedGlobalOpts from $words, check results."""
+        words_str = ", ".join(f"'{w}'" for w in words_ps)
+        excluded_checks = "\n".join(
+            f"            Write-Output \"EXCL:{opt}:$($excludedGlobalOpts.ContainsKey('{opt}'))\""
+            for opt in assert_excluded
+        )
+        available_checks = "\n".join(
+            f"            Write-Output \"AVAIL:{opt}:$(-not $excludedGlobalOpts.ContainsKey('{opt}'))\""
+            for opt in assert_available
+        )
+        test_commands = f"""
+            $words = @({words_str})
+            $excludedGlobalOpts = @{{}}
+            for ($j = 1; $j -lt $words.Count; $j++) {{
+                $w = $words[$j]
+                if ($w.StartsWith('-') -and $script:PoeGlobalOptionExclusions.ContainsKey($w)) {{
+                    foreach ($ex in $script:PoeGlobalOptionExclusions[$w]) {{
+                        $excludedGlobalOpts[$ex] = $true
+                    }}
+                }}
+            }}
+{excluded_checks}
+{available_checks}
+        """
+        proc = _run_ps_test(run_poe_main, tmp_path, test_commands)
+        assert proc.returncode == 0, f"PowerShell error: {proc.stderr}"
+        for opt in assert_excluded:
+            assert (
+                f"EXCL:{opt}:True" in proc.stdout
+            ), f"Expected {opt} to be excluded, output: {proc.stdout}"
+        for opt in assert_available:
+            assert (
+                f"AVAIL:{opt}:True" in proc.stdout
+            ), f"Expected {opt} to be available, output: {proc.stdout}"
+
+    def test_nonrepeatable_excludes_identity_group(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "-d"],
+            assert_excluded=["-d", "--dry-run"],
+            assert_available=["-v", "-C"],
+        )
+
+    def test_long_form_excludes_short(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "--dry-run"],
+            assert_excluded=["-d", "--dry-run"],
+            assert_available=[],
+        )
+
+    def test_short_form_excludes_long(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "-C", "/path"],
+            assert_excluded=["-C", "--directory"],
+            assert_available=[],
+        )
+
+    def test_repeatable_count_not_self_excluded(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "-v"],
+            assert_excluded=["-q", "--quiet"],
+            assert_available=["-v", "--verbose"],
+        )
+
+    def test_repeatable_append_not_excluded(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "-X", "k=v"],
+            assert_excluded=[],
+            assert_available=["-X", "--executor-opt"],
+        )
+
+    def test_ansi_excludes_no_ansi(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "--ansi"],
+            assert_excluded=["--ansi", "--no-ansi"],
+            assert_available=[],
+        )
+
+    def test_no_ansi_excludes_ansi(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "--no-ansi"],
+            assert_excluded=["--ansi", "--no-ansi"],
+            assert_available=[],
+        )
+
+    def test_quiet_excludes_verbose(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "--quiet"],
+            assert_excluded=["-v", "--verbose"],
+            assert_available=["-q", "--quiet"],
+        )
+
+    def test_multiple_cumulative(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe", "-v", "-d"],
+            assert_excluded=["-q", "--quiet", "-d", "--dry-run"],
+            assert_available=["-v", "--verbose", "-C"],
+        )
+
+    def test_no_options_nothing_excluded(self, run_poe_main, tmp_path):
+        self._build_exclusion_test(
+            run_poe_main,
+            tmp_path,
+            words_ps=["poe"],
+            assert_excluded=[],
+            assert_available=[
+                "-h",
+                "--help",
+                "-v",
+                "--verbose",
+                "-d",
+                "--dry-run",
+                "-C",
+                "--directory",
+                "-X",
+            ],
+        )
