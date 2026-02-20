@@ -26,7 +26,7 @@ prefix_template = "{color_start}{prefix}{color_end} "
 
 [tool.poe.tasks.parallel_of_sequences]
 parallel = [
-  { cmd = "poe_test_delayed_echo 222 para1" },
+  { cmd = "poe_test_delayed_echo 600 para1" },
   [
     { cmd = "poe_test_delayed_echo 111 seq1" },
     { cmd = "poe_test_echo seq2" },
@@ -37,7 +37,7 @@ parallel = [
 sequence = [
   { cmd = "poe_test_delayed_echo 222 seq1" },
   [
-    { cmd = "poe_test_delayed_echo 111 para1" },
+    { cmd = "poe_test_delayed_echo 300 para1" },
     { cmd = "poe_test_echo para2" },
   ],
 ]

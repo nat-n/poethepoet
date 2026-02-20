@@ -51,7 +51,7 @@ def test_sequence_in_parallel_task(run_poe_subproc):
     result = run_poe_subproc("parallel_of_sequences", project="parallel")
 
     assert result.capture_lines == [
-        "Poe => poe_test_delayed_echo 222 para1",
+        "Poe => poe_test_delayed_echo 600 para1",
         "Poe => poe_test_delayed_echo 111 seq1",
         "Poe => poe_test_echo seq2",
     ]
@@ -68,7 +68,7 @@ def test_parallel_in_sequence_task(run_poe_subproc):
 
     assert result.capture_lines == [
         "Poe => poe_test_delayed_echo 222 seq1",
-        "Poe => poe_test_delayed_echo 111 para1",
+        "Poe => poe_test_delayed_echo 300 para1",
         "Poe => poe_test_echo para2",
     ]
     assert result.stdout == (
