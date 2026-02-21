@@ -2,12 +2,19 @@
 words-of-wisdom = "poe_test_echo \"Let it be\""
 
 [tool.poe.tasks.sleep_sort]
+args = [
+  { name = "d0", positional = true, default = "0" },
+  { name = "d1", positional = true, default = "50" },
+  { name = "d2", positional = true, default = "100" },
+  { name = "d3", positional = true, default = "150" },
+  { name = "d4", positional = true, default = "200" },
+]
 parallel = [
-  { cmd = "poe_test_delayed_echo 450 450" },
-  { cmd = "poe_test_delayed_echo 0 0" },
-  { cmd = "poe_test_delayed_echo 600 600" },
-  { cmd = "poe_test_delayed_echo 300 300" },
-  { cmd = "poe_test_delayed_echo 150 150" },
+  { cmd = "poe_test_delayed_echo $d3 $d3" },
+  { cmd = "poe_test_delayed_echo $d0 $d0" },
+  { cmd = "poe_test_delayed_echo $d4 $d4" },
+  { cmd = "poe_test_delayed_echo $d2 $d2" },
+  { cmd = "poe_test_delayed_echo $d1 $d1" },
 ]
 
 [tool.poe.tasks.custom_prefix_task]
@@ -25,19 +32,27 @@ prefix_max = 32
 prefix_template = "{color_start}{prefix}{color_end} "
 
 [tool.poe.tasks.parallel_of_sequences]
+args = [
+  { name = "para_delay", positional = true, default = "100" },
+  { name = "seq_delay", positional = true, default = "50" },
+]
 parallel = [
-  { cmd = "poe_test_delayed_echo 222 para1" },
+  { cmd = "poe_test_delayed_echo $para_delay para1" },
   [
-    { cmd = "poe_test_delayed_echo 111 seq1" },
+    { cmd = "poe_test_delayed_echo $seq_delay seq1" },
     { cmd = "poe_test_echo seq2" },
   ],
 ]
 
 [tool.poe.tasks.sequence_of_parallels]
+args = [
+  { name = "seq_delay", positional = true, default = "100" },
+  { name = "para_delay", positional = true, default = "50" },
+]
 sequence = [
-  { cmd = "poe_test_delayed_echo 222 seq1" },
+  { cmd = "poe_test_delayed_echo $seq_delay seq1" },
   [
-    { cmd = "poe_test_delayed_echo 111 para1" },
+    { cmd = "poe_test_delayed_echo $para_delay para1" },
     { cmd = "poe_test_echo para2" },
   ],
 ]

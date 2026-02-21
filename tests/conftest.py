@@ -33,6 +33,12 @@ def is_windows():
     return sys.platform == "win32"
 
 
+@pytest.fixture
+def delay_factor(request):
+    execution_count = getattr(request.node, "execution_count", 1)
+    return 2 ** (execution_count - 1)
+
+
 @pytest.fixture(scope="session")
 def pyproject():
     with PROJECT_TOML.open("rb") as toml_file:
