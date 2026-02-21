@@ -66,9 +66,9 @@ def get_powershell_completion_script(name: str = "") -> str:
 
     # Format as PowerShell hashtable entries
     excl_entries = []
-    for opt_str, excluded in exclusion_map.items():
-        if excluded:
-            values = ", ".join(f"'{e}'" for e in excluded)
+    for opt_str, excl_list in exclusion_map.items():
+        if excl_list:
+            values = ", ".join(f"'{e}'" for e in excl_list)
             excl_entries.append(f"    '{opt_str}' = @({values})")
         else:
             excl_entries.append(f"    '{opt_str}' = @()")
