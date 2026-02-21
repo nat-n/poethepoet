@@ -72,17 +72,22 @@ default_item_type = "cmd"
 sequence = ["./tools/poetry-ci-install.sh"]
 
 [tool.poe.tasks.sequential_parallel]
+args = [
+  { name = "d0", positional = true, default = "0" },
+  { name = "d1", positional = true, default = "50" },
+  { name = "d2", positional = true, default = "100" },
+]
 sequence = [
   { cmd = "poe_test_echo First" },
   [
-    { cmd = "poe_test_delayed_echo 50 second 50" },
-    { cmd = "poe_test_delayed_echo 0 second 0" },
-    { cmd = "poe_test_delayed_echo 100 second 100" },
+    { cmd = "poe_test_delayed_echo $d1 second $d1" },
+    { cmd = "poe_test_delayed_echo $d0 second $d0" },
+    { cmd = "poe_test_delayed_echo $d2 second $d2" },
   ],
   [
-    { cmd = "poe_test_delayed_echo 50 third 50" },
-    { cmd = "poe_test_delayed_echo 0 third 0" },
-    { cmd = "poe_test_delayed_echo 100 third 100" },
+    { cmd = "poe_test_delayed_echo $d1 third $d1" },
+    { cmd = "poe_test_delayed_echo $d0 third $d0" },
+    { cmd = "poe_test_delayed_echo $d2 third $d2" },
   ],
   { cmd = "poe_test_echo Last" },
 ]

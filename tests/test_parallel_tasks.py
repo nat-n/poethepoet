@@ -1,34 +1,41 @@
 # ruff: noqa: E501
-import sys
 from collections.abc import Sequence
 
 import pytest
 
-# tests are much flakier on windows
-flakiness_factor = 3 if sys.platform == "win32" else 1
 
-
-@pytest.mark.flaky(reruns=3 * flakiness_factor, reruns_delay=1)
-def test_parallel_task_parallelism(run_poe_subproc):
-    result = run_poe_subproc("--ansi", "sleep_sort", project="parallel")
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_task_parallelism(run_poe_subproc, delay_factor):
+    base = 50 * delay_factor
+    d0, d1, d2, d3, d4 = 0, base, 2 * base, 3 * base, 4 * base
+    result = run_poe_subproc(
+        "--ansi",
+        "sleep_sort",
+        str(d0),
+        str(d1),
+        str(d2),
+        str(d3),
+        str(d4),
+        project="parallel",
+    )
 
     assert result.capture_lines == [
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 450 450\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 0 0\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 600 600\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 300 300\x1b[0m",
-        "\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo 150 150\x1b[0m",
+        f"\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo {d3} {d3}\x1b[0m",
+        f"\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo {d0} {d0}\x1b[0m",
+        f"\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo {d4} {d4}\x1b[0m",
+        f"\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo {d2} {d2}\x1b[0m",
+        f"\x1b[37mPoe =>\x1b[0m \x1b[94mpoe_test_delayed_echo {d1} {d1}\x1b[0m",
     ]
     assert result.stdout == (
-        "\x1b[32msleep_sort[1]\x1b[0m | 0\n"
-        "\x1b[35msleep_sort[4]\x1b[0m | 150\n"
-        "\x1b[34msleep_sort[3]\x1b[0m | 300\n"
-        "\x1b[31msleep_sort[0]\x1b[0m | 450\n"
-        "\x1b[33msleep_sort[2]\x1b[0m | 600\n"
+        f"\x1b[32msleep_sort[1]\x1b[0m | {d0}\n"
+        f"\x1b[35msleep_sort[4]\x1b[0m | {d1}\n"
+        f"\x1b[34msleep_sort[3]\x1b[0m | {d2}\n"
+        f"\x1b[31msleep_sort[0]\x1b[0m | {d3}\n"
+        f"\x1b[33msleep_sort[2]\x1b[0m | {d4}\n"
     )
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
 def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
     result = run_poe_subproc("parallel_with_stdout_capture", project="parallel")
 
@@ -46,13 +53,18 @@ def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
         assert f.read() == "2 going to file\n"
 
 
-@pytest.mark.flaky(reruns=3 * flakiness_factor, reruns_delay=1)
-def test_sequence_in_parallel_task(run_poe_subproc):
-    result = run_poe_subproc("parallel_of_sequences", project="parallel")
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_sequence_in_parallel_task(run_poe_subproc, delay_factor):
+    base = 250 * delay_factor
+    para_delay = 2 * base
+    seq_delay = base
+    result = run_poe_subproc(
+        "parallel_of_sequences", str(para_delay), str(seq_delay), project="parallel"
+    )
 
     assert result.capture_lines == [
-        "Poe => poe_test_delayed_echo 222 para1",
-        "Poe => poe_test_delayed_echo 111 seq1",
+        f"Poe => poe_test_delayed_echo {para_delay} para1",
+        f"Poe => poe_test_delayed_echo {seq_delay} seq1",
         "Poe => poe_test_echo seq2",
     ]
     assert result.stdout == (
@@ -62,13 +74,18 @@ def test_sequence_in_parallel_task(run_poe_subproc):
     )
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
-def test_parallel_in_sequence_task(run_poe_subproc):
-    result = run_poe_subproc("sequence_of_parallels", project="parallel")
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_in_sequence_task(run_poe_subproc, delay_factor):
+    base = 50 * delay_factor
+    seq_delay = 2 * base
+    para_delay = base
+    result = run_poe_subproc(
+        "sequence_of_parallels", str(seq_delay), str(para_delay), project="parallel"
+    )
 
     assert result.capture_lines == [
-        "Poe => poe_test_delayed_echo 222 seq1",
-        "Poe => poe_test_delayed_echo 111 para1",
+        f"Poe => poe_test_delayed_echo {seq_delay} seq1",
+        f"Poe => poe_test_delayed_echo {para_delay} para1",
         "Poe => poe_test_echo para2",
     ]
     assert result.stdout == (
@@ -76,7 +93,7 @@ def test_parallel_in_sequence_task(run_poe_subproc):
     )
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
 def test_customize_parallel_task_prefix(run_poe_subproc):
     result = run_poe_subproc(
         "--ansi", "custom_prefix_task", project="parallel", timeout=10
@@ -95,6 +112,7 @@ def test_customize_parallel_task_prefix(run_poe_subproc):
 @pytest.fixture
 def generate_pyproject(temp_pyproject):
     def generator(
+        delay_factor=1,
         seq1_ignore_fail=False,
         seq2_ignore_fail=False,
         para1_ignore_fail=False,
@@ -108,11 +126,14 @@ def generate_pyproject(temp_pyproject):
             else:
                 return ""
 
+        slow_delay = 5 * 50 * delay_factor
+        fail_delay = 2 * 50 * delay_factor
+
         project_tmpl = f"""
             [tool.poe.tasks]
             fast_success = "echo 'Great success!'"
-            slow_success = "poe_test_delayed_echo 275 'Eventual success!'"
-            slow_fail = "poe_test_fail 100 22"
+            slow_success = "poe_test_delayed_echo {slow_delay} 'Eventual success!'"
+            slow_fail = "poe_test_fail {fail_delay} 22"
             fast_fail.shell = "echo 'failing fast with error'; exit 1;"
 
             [tool.poe.tasks.lvl1_seq]
@@ -142,9 +163,10 @@ def generate_pyproject(temp_pyproject):
     return generator
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
-def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
-    project_path = generate_pyproject()
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
+    slow_delay = 5 * 50 * delay_factor
+    project_path = generate_pyproject(delay_factor=delay_factor)
 
     result = run_poe_subproc("lvl1_seq", cwd=project_path)
     assert result.capture == (
@@ -159,7 +181,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
     assert sequences_are_similar(
         result.capture_lines,
         [
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -168,11 +190,10 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
             "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
             "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
         ],
-        flakiness_factor,
     ) or sequences_are_similar(
         result.capture_lines,
         [
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -180,7 +201,6 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
             "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
             "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
         ],
-        flakiness_factor,
     )
     assert set(result.output_lines) == {
         "fast_success | Great success!",
@@ -193,7 +213,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -203,12 +223,11 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
             "Error: Sequence aborted after failed subtask 'lvl1_para'",
             "     | From: ExecutionError(\"Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'\")",
         ),
-        flakiness_factor,
     ) or sequences_are_similar(
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -217,7 +236,6 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
             "Error: Sequence aborted after failed subtask 'lvl1_para'",
             "     | From: ExecutionError(\"Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'\")",
         ),
-        flakiness_factor,
     )
 
     assert result.stdout.startswith(
@@ -233,10 +251,10 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -246,14 +264,13 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
             "Warning: Parallel subtask 'lvl2_seq' failed with exception: Sequence aborted after failed subtask 'lvl1_para'",
             "Error: Parallel task 'lvl2_para' aborted after failed subtask 'lvl2_seq'",
         ),
-        flakiness_factor,
     ) or sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -262,7 +279,6 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
             "Warning: Parallel subtask 'lvl2_seq' failed with exception: Sequence aborted after failed subtask 'lvl1_para'",
             "Error: Parallel task 'lvl2_para' aborted after failed subtask 'lvl2_seq'",
         ),
-        flakiness_factor,
     )
 
     assert set(result.output_lines) in (
@@ -279,9 +295,11 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject):
     assert result.code == 1
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
-def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, delay_factor):
+    slow_delay = 5 * 50 * delay_factor
     project_path = generate_pyproject(
+        delay_factor=delay_factor,
         seq1_ignore_fail=True,
         seq2_ignore_fail=True,
         para1_ignore_fail=True,
@@ -303,7 +321,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -312,7 +330,6 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
             "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
             "Poe => echo 'Great success!'",
         ),
-        flakiness_factor,
     )
 
     assert sequences_are_similar(
@@ -326,7 +343,6 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
             "fast_success | Great success!",
             "slow_success | Eventual success!",
         ),
-        flakiness_factor,
     )
     assert result.code == 0
 
@@ -335,7 +351,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -345,7 +361,6 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
         ),
-        flakiness_factor,
     )
     assert sequences_are_similar(
         result.output_lines,
@@ -360,7 +375,6 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
             "slow_success | Eventual success!",
             "Great success!",
         ),
-        flakiness_factor,
     )
     assert result.code == 0
 
@@ -368,10 +382,10 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -381,7 +395,6 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
         ),
-        flakiness_factor,
     )
 
     assert sequences_are_similar(
@@ -399,14 +412,17 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject):
             "slow_success | Eventual success!",
             "fast_success | Great success!",
         ),
-        flakiness_factor,
     )
     assert result.code == 0
 
 
-@pytest.mark.flaky(reruns=2 * flakiness_factor, reruns_delay=1)
-def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproject):
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_ignore_but_propagate_failures(
+    run_poe_subproc, generate_pyproject, delay_factor
+):
+    slow_delay = 5 * 50 * delay_factor
     project_path = generate_pyproject(
+        delay_factor=delay_factor,
         seq1_ignore_fail=True,
         seq2_ignore_fail=True,
         para1_ignore_fail="return_non_zero",
@@ -417,7 +433,7 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -427,7 +443,6 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
             "Poe => echo 'Great success!'",
             "Error: Subtask 'fast_fail' returned non-zero exit status",
         ),
-        flakiness_factor,
     )
 
     assert sequences_are_similar(
@@ -441,7 +456,6 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
             "fast_success | Great success!",
             "slow_success | Eventual success!",
         ),
-        flakiness_factor,
     )
     assert result.code == 1
 
@@ -450,7 +464,7 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
         result.capture_lines,
         (
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -461,7 +475,6 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
             "Warning: Subtask 'fast_fail' returned non-zero exit status",
             "Poe => echo 'Great success!'",
         ),
-        flakiness_factor,
     )
     assert sequences_are_similar(
         result.output_lines,
@@ -476,7 +489,6 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
             "slow_success | Eventual success!",
             "Great success!",
         ),
-        flakiness_factor,
     )
     assert result.code == 0
 
@@ -484,10 +496,10 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
     assert sequences_are_similar(
         result.capture_lines,
         (
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'Great success!'",
-            "Poe => poe_test_delayed_echo 275 'Eventual success!'",
+            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
             "Poe => echo 'failing fast with error'; exit 1;",
             "Poe => echo 'Great success!'",
@@ -498,7 +510,6 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
             "Warning: Subtask 'fast_fail' returned non-zero exit status",
             "Poe => echo 'Great success!'",
         ),
-        flakiness_factor,
     )
 
     assert sequences_are_similar(
@@ -516,7 +527,6 @@ def test_parallel_ignore_but_propagate_failures(run_poe_subproc, generate_pyproj
             "slow_success | Eventual success!",
             "fast_success | Great success!",
         ),
-        flakiness_factor,
     )
     assert result.code == 0
 

@@ -12,29 +12,36 @@ def test_sequence_task(run_poe_subproc, esc_prefix):
     assert result.stderr == ""
 
 
-@pytest.mark.flaky(reruns=4)
-def test_list_inside_sequence_is_parallel(run_poe_subproc, esc_prefix):
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_list_inside_sequence_is_parallel(run_poe_subproc, esc_prefix, delay_factor):
+    base = 50 * delay_factor
+    d0, d1, d2 = 0, base, 2 * base
     result = run_poe_subproc(
-        "sequential_parallel", project="sequences", env={"NO_COLOR": "1"}
+        "sequential_parallel",
+        str(d0),
+        str(d1),
+        str(d2),
+        project="sequences",
+        env={"NO_COLOR": "1"},
     )
     assert result.capture == (
         "Poe => poe_test_echo First\n"
-        "Poe => poe_test_delayed_echo 50 second 50\n"
-        "Poe => poe_test_delayed_echo 0 second 0\n"
-        "Poe => poe_test_delayed_echo 100 second 100\n"
-        "Poe => poe_test_delayed_echo 50 third 50\n"
-        "Poe => poe_test_delayed_echo 0 third 0\n"
-        "Poe => poe_test_delayed_echo 100 third 100\n"
+        f"Poe => poe_test_delayed_echo {d1} second {d1}\n"
+        f"Poe => poe_test_delayed_echo {d0} second {d0}\n"
+        f"Poe => poe_test_delayed_echo {d2} second {d2}\n"
+        f"Poe => poe_test_delayed_echo {d1} third {d1}\n"
+        f"Poe => poe_test_delayed_echo {d0} third {d0}\n"
+        f"Poe => poe_test_delayed_echo {d2} third {d2}\n"
         "Poe => poe_test_echo Last\n"
     )
     assert result.stdout == (
         "First\n"
-        "sequential_para… | second 0\n"
-        "sequential_para… | second 50\n"
-        "sequential_para… | second 100\n"
-        "sequential_para… | third 0\n"
-        "sequential_para… | third 50\n"
-        "sequential_para… | third 100\n"
+        f"sequential_para… | second {d0}\n"
+        f"sequential_para… | second {d1}\n"
+        f"sequential_para… | second {d2}\n"
+        f"sequential_para… | third {d0}\n"
+        f"sequential_para… | third {d1}\n"
+        f"sequential_para… | third {d2}\n"
         "Last\n"
     )
     assert result.stderr == ""
