@@ -38,9 +38,6 @@ The following options can be configured on your tasks and are not specific to an
 **verbosity** : ``int`` :ref:`📖<Configure task level verbosity>`
   Specify the verbosity level for this task, from -2 (least verbose) to 2 (most verbose), overriding the project level verbosity setting, which defaults to 0.
 
-**category** : ``str`` :doc:`📖<../guides/help_guide>`
-  Specify a category for the task for grouping tasks when poe is running without specifying a task.
-
 **use_exec** : ``bool`` :ref:`📖<Defining tasks that run via exec instead of a subprocess>`
   Specify that this task should be executed in the same process, instead of as a subprocess.
 
