@@ -397,10 +397,27 @@ poe _fish_completion <span class="o">&gt;</span> <span class="o">(</span>brew --
 </pre></div>
 </div>
 </section>
+<section id="powershell">
+<h3>Powershell<a class="headerlink" href="#powershell" title="Link to this heading">¶</a></h3>
+<div class="highlight-pwsh notranslate"><div class="highlight"><pre><span></span><span class="c"># add to $PROFILE</span>
+<span class="n">poe</span> <span class="n">_powershell_completion</span> <span class="p">|</span> <span class="nb">out-string</span> <span class="p">|</span> <span class="nb">invoke-expression</span>
+</pre></div>
+</div>
+<p>Powershell completion includes:</p>
+<ul class="simple">
+<li><p>Global CLI options (<code class="docutils literal notranslate"><span class="pre">-v</span></code>, <code class="docutils literal notranslate"><span class="pre">-C</span></code>, etc.)</p></li>
+<li><p>Task names</p></li>
+<li><p>Task-specific arguments and choices</p></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You’ll need to start a new shell for the new completion script to be loaded. Alternatively, you can invoke <code class="docutils literal notranslate"><span class="pre">.</span> <span class="pre">$PROFILE</span></code> to reload your profile.</p>
+</div>
+</section>
 </section>
 <section id="supported-python-versions">
 <h2>Supported python versions<a class="headerlink" href="#supported-python-versions" title="Link to this heading">¶</a></h2>
-<p>Poe the Poet officially supports python &gt;=3.10, and is tested with python 3.10 to 3.13 on
+<p>Poe the Poet officially supports python &gt;=3.10, and is tested with python 3.10 to 3.14 on
 macOS, linux and windows.</p>
 </section>
 </section>
@@ -493,6 +510,7 @@ macOS, linux and windows.</p>
 <li><a class="reference internal" href="#zsh">Zsh</a></li>
 <li><a class="reference internal" href="#bash">Bash</a></li>
 <li><a class="reference internal" href="#fish">Fish</a></li>
+<li><a class="reference internal" href="#powershell">Powershell</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#supported-python-versions">Supported python versions</a></li>
@@ -507,7 +525,7 @@ macOS, linux and windows.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=aa6da368"></script>
+</div><script src="_static/documentation_options.js?v=38127d83"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
