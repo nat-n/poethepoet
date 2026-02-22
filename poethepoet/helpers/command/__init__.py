@@ -59,31 +59,49 @@ def resolve_command_tokens(
         token_parts.clear()
         return (token, includes_glob)
 
-    def resolve_param_argument(argument: ParamArgument, env: Mapping[str, str]):
-        token_parts = []
+    def resolve_param_argument(
+        argument: ParamArgument, env: Mapping[str, str]
+    ) -> list[tuple[str, bool]]:
+        """
+        Resolve a parameter argument to a list of (text, is_quoted) tuples,
+        preserving quoting information from the argument's segments so that
+        quoted parts are not subject to word splitting.
+        """
+        parts: list[tuple[str, bool]] = []
         for segment in argument.segments:
+            segment_text_parts: list[str] = []
             for element in segment:
                 if isinstance(element, ParamExpansion):
-                    token_parts.append(resolve_param_value(element, env))
+                    result = resolve_param_value(element, env)
+                    if isinstance(result, list):
+                        # Nested operation result — flatten to string within
+                        # this segment
+                        segment_text_parts.append(
+                            "".join(text for text, _ in result)
+                        )
+                    else:
+                        segment_text_parts.append(result)
                 else:
-                    token_parts.append(element.content)
+                    segment_text_parts.append(element.content)
+            parts.append(("".join(segment_text_parts), segment.is_quoted))
+        return parts
 
-        return "".join(token_parts)
-
-    def resolve_param_value(element: ParamExpansion, env: Mapping[str, str]):
+    def resolve_param_value(
+        element: ParamExpansion, env: Mapping[str, str]
+    ) -> str | list[tuple[str, bool]]:
         param_value = env.get(element.param_name, "")
 
         if element.operation:
             if param_value:
                 if element.operation.operator == ":+":
                     # apply 'alternate value' operation
-                    param_value = resolve_param_argument(
+                    return resolve_param_argument(
                         element.operation.argument, env
                     )
 
             elif element.operation.operator == ":-":
                 # apply 'default value' operation
-                param_value = resolve_param_argument(element.operation.argument, env)
+                return resolve_param_argument(element.operation.argument, env)
 
         return param_value
 
@@ -98,40 +116,105 @@ def resolve_command_tokens(
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):
-                        param_value = resolve_param_value(element, env)
-                        if not param_value:
-                            # Empty param value has no effect
-                            continue
-                        if segment.is_quoted:
-                            token_parts.append((param_value, False))
-                        elif param_value.isspace():
-                            # collapse whitespace value
-                            token_parts.append((" ", False))
+                        param_result = resolve_param_value(element, env)
+
+                        if isinstance(param_result, list):
+                            # Structured result from :+ or :- operation
+                            if not any(text for text, _ in param_result):
+                                # All parts empty — no effect
+                                continue
+
+                            if segment.is_quoted:
+                                # Outer context is quoted — no word splitting
+                                full_text = "".join(
+                                    text for text, _ in param_result
+                                )
+                                token_parts.append((full_text, False))
+                            else:
+                                for part_text, part_is_quoted in param_result:
+                                    if not part_text:
+                                        continue
+                                    if part_is_quoted:
+                                        # Quoted part: no word splitting
+                                        token_parts.append(
+                                            (part_text, False)
+                                        )
+                                    elif part_text.isspace():
+                                        # Whitespace-only unquoted part
+                                        if token_parts:
+                                            yield finalize_token(token_parts)
+                                    else:
+                                        # Unquoted: apply word splitting
+                                        if (
+                                            part_text[0].isspace()
+                                            and token_parts
+                                        ):
+                                            yield finalize_token(token_parts)
+
+                                        param_words = (
+                                            (
+                                                pw,
+                                                bool(glob_pattern.search(pw)),
+                                            )
+                                            for pw in part_text.split()
+                                        )
+
+                                        token_parts.append(next(param_words))
+
+                                        for param_word in param_words:
+                                            if token_parts:
+                                                yield finalize_token(
+                                                    token_parts
+                                                )
+                                            token_parts.append(param_word)
+
+                                        if (
+                                            part_text[-1].isspace()
+                                            and token_parts
+                                        ):
+                                            yield finalize_token(token_parts)
+
                         else:
-                            # If the the param expansion it not quoted then:
-                            # - Whitespace inside a substituted param value results in
-                            #  a word break, regardless of quotes or backslashes
-                            # - glob patterns should be evaluated
+                            # Simple string result (no operation applied)
+                            param_value = param_result
+                            if not param_value:
+                                # Empty param value has no effect
+                                continue
+                            if segment.is_quoted:
+                                token_parts.append((param_value, False))
+                            elif param_value.isspace():
+                                # collapse whitespace value
+                                token_parts.append((" ", False))
+                            else:
+                                # If the param expansion is not quoted then:
+                                # - Whitespace inside a substituted param
+                                #   value results in a word break
+                                # - glob patterns should be evaluated
 
-                            if param_value[0].isspace() and token_parts:
-                                # param_value starts with a word break
-                                yield finalize_token(token_parts)
-
-                            param_words = (
-                                (word, bool(glob_pattern.search(word)))
-                                for word in param_value.split()
-                            )
-
-                            token_parts.append(next(param_words))
-
-                            for param_word in param_words:
-                                if token_parts:
+                                if param_value[0].isspace() and token_parts:
+                                    # param_value starts with a word break
                                     yield finalize_token(token_parts)
-                                token_parts.append(param_word)
 
-                            if param_value[-1].isspace() and token_parts:
-                                # param_value ends with a word break
-                                yield finalize_token(token_parts)
+                                param_words = (
+                                    (
+                                        pw,
+                                        bool(glob_pattern.search(pw)),
+                                    )
+                                    for pw in param_value.split()
+                                )
+
+                                token_parts.append(next(param_words))
+
+                                for param_word in param_words:
+                                    if token_parts:
+                                        yield finalize_token(token_parts)
+                                    token_parts.append(param_word)
+
+                                if (
+                                    param_value[-1].isspace() and token_parts
+                                ):
+                                    # param_value ends with a word break
+                                    yield finalize_token(token_parts)
 
                     elif isinstance(element, Glob):
                         token_parts.append((element.content, True))

@@ -77,3 +77,70 @@ def test_resolve_command_tokens():
         ("two", False),
         ("three", False),
     ]
+
+
+def test_resolve_command_tokens_param_operation_preserves_quotes():
+    """
+    Test that quotes inside :+ and :- parameter operations are respected,
+    preventing incorrect word splitting. (GitHub issue #333)
+    """
+
+    # Alternate value with single-quoted argument
+    line = parse_poe_cmd("echo pytest ${SKIP:+ -m 'not build'}")[0]
+    assert list(resolve_command_tokens([line], {"SKIP": "1"})) == [
+        ("echo", False),
+        ("pytest", False),
+        ("-m", False),
+        ("not build", False),
+    ]
+
+    # Alternate value not triggered (var unset)
+    assert list(resolve_command_tokens([line], {})) == [
+        ("echo", False),
+        ("pytest", False),
+    ]
+
+    # Default value with single-quoted argument
+    line = parse_poe_cmd("echo ${X:-'hello world'}")[0]
+    assert list(resolve_command_tokens([line], {})) == [
+        ("echo", False),
+        ("hello world", False),
+    ]
+
+    # Default value not triggered (var set)
+    assert list(resolve_command_tokens([line], {"X": "val"})) == [
+        ("echo", False),
+        ("val", False),
+    ]
+
+    # Double-quoted argument in operation
+    line = parse_poe_cmd("""echo ${X:+"hello world"}""")[0]
+    assert list(resolve_command_tokens([line], {"X": "1"})) == [
+        ("echo", False),
+        ("hello world", False),
+    ]
+
+    # Mixed quoted and unquoted parts in operation argument
+    line = parse_poe_cmd("echo ${X:+--flag 'a b' --other}")[0]
+    assert list(resolve_command_tokens([line], {"X": "1"})) == [
+        ("echo", False),
+        ("--flag", False),
+        ("a b", False),
+        ("--other", False),
+    ]
+
+    # Quoted part adjacent to surrounding text (no word break)
+    line = parse_poe_cmd("echo A${X:+'bar'}B")[0]
+    assert list(resolve_command_tokens([line], {"X": "1"})) == [
+        ("echo", False),
+        ("AbarB", False),
+    ]
+
+    # Operation argument with leading/trailing whitespace and quotes
+    line = parse_poe_cmd("echo ${X:+ -m 'not build' --verbose}")[0]
+    assert list(resolve_command_tokens([line], {"X": "1"})) == [
+        ("echo", False),
+        ("-m", False),
+        ("not build", False),
+        ("--verbose", False),
+    ]
