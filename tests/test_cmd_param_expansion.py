@@ -23,10 +23,15 @@ import pytest
         (r"A${FOO:+bar}B", "AbarB", {"FOO": "foo"}),
         # recursion
         (r"A${FOO:->${BAR:+ ${BAZ:- the end }<}}B", "A> the end <B", {"BAR": "X"}),
-        # quotes preserved in alternate value operator (issue #333)
+        # quotes preserved in alternate/default value operator (issue #333)
         (r"${FOO:+ -m 'not build'}", "-m not build", {"FOO": "x"}),
         (r"""${FOO:+ -m "not build"}""", "-m not build", {"FOO": "x"}),
         (r"${FOO:-'hello world'}", "hello world", {}),
+        # nested operations preserve inner quoting
+        (r"${A:-${B:+'hello world'}}", "hello world", {"B": "x"}),
+        (r"${A:-${B:+-m 'not build'}}", "-m not build", {"B": "1"}),
+        # double-quoted var in operation expands and preserves spaces
+        (r'${FOO:+"$BAR"}', "hello world", {"FOO": "x", "BAR": "hello world"}),
         # weird argument content
         (r"A${FOO:- !&%;#($)@}B", "A !&%;#($)@B", {}),
         (r'"A${FOO:-?.*[x]}B"', "A?.*[x]B", {}),

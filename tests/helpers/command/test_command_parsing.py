@@ -2,11 +2,9 @@ from poethepoet.helpers.command import parse_poe_cmd, resolve_command_tokens
 
 
 def test_resolve_command_tokens():
-    line = parse_poe_cmd(
-        """
+    line = parse_poe_cmd("""
         abc${thing1}def *$thing2?
-        """
-    )[0]
+        """)[0]
 
     assert list(resolve_command_tokens([line], {"thing2": ""})) == [
         ("abcdef", False),
@@ -50,11 +48,9 @@ def test_resolve_command_tokens():
         ("?", True),
     ]
 
-    line = parse_poe_cmd(
-        """
+    line = parse_poe_cmd("""
         "ab$thing1* and ${thing2}? '${thing1}'" '${thing1}' ""
-        """
-    )[0]
+        """)[0]
 
     assert list(resolve_command_tokens([line], {"thing1": r" *\o/", "thing2": ""})) == [
         (r"ab *\o/* and ? ' *\o/'", False),
@@ -62,15 +58,13 @@ def test_resolve_command_tokens():
         ("", False),
     ]
 
-    lines = parse_poe_cmd(
-        """
+    lines = parse_poe_cmd("""
         # comment
         one # comment
         two # comment
         three # comment
         # comment
-        """
-    )
+        """)
 
     assert list(resolve_command_tokens(lines, {})) == [
         ("one", False),
@@ -143,4 +137,91 @@ def test_resolve_command_tokens_param_operation_preserves_quotes():
         ("-m", False),
         ("not build", False),
         ("--verbose", False),
+    ]
+
+
+def test_resolve_command_tokens_nested_operations_preserve_inner_quoting():
+    """
+    Test that quoting is preserved through nested parameter expansion
+    operations. In bash, inner quoting survives through outer expansions:
+      ${A:-${B:+'hello world'}}  →  [hello world]  (one word)
+      ${A:-${B:+hello world}}   →  [hello] [world] (two words)
+    """
+
+    # Inner single quotes survive through outer :-
+    line = parse_poe_cmd("echo ${A:-${B:+'hello world'}}")[0]
+    assert list(resolve_command_tokens([line], {"B": "set"})) == [
+        ("echo", False),
+        ("hello world", False),
+    ]
+
+    # Without inner quotes, word splitting applies
+    line = parse_poe_cmd("echo ${A:-${B:+hello world}}")[0]
+    assert list(resolve_command_tokens([line], {"B": "set"})) == [
+        ("echo", False),
+        ("hello", False),
+        ("world", False),
+    ]
+
+    # Issue #333 pattern through nesting
+    line = parse_poe_cmd("echo ${A:-${B:+-m 'not build'}}")[0]
+    assert list(resolve_command_tokens([line], {"B": "1"})) == [
+        ("echo", False),
+        ("-m", False),
+        ("not build", False),
+    ]
+
+    # Prefix/suffix around nested quoted expansion
+    line = parse_poe_cmd("echo ${A:- prefix ${B:+'hello world'} suffix}")[0]
+    assert list(resolve_command_tokens([line], {"B": "set"})) == [
+        ("echo", False),
+        ("prefix", False),
+        ("hello world", False),
+        ("suffix", False),
+    ]
+
+    # Three levels deep
+    line = parse_poe_cmd("echo ${A:-${B:+${C:-'deep value'}}}")[0]
+    assert list(resolve_command_tokens([line], {"B": "set"})) == [
+        ("echo", False),
+        ("deep value", False),
+    ]
+
+
+def test_resolve_command_tokens_double_quoted_var_in_operation():
+    """
+    Test that double-quoted variable references inside :+/:- arguments
+    expand the variable and prevent word splitting of the result, matching
+    bash behavior:
+      ${X:+"$Y"}  where Y="a b"  →  [a b]  (one word)
+      ${X:+$Y}    where Y="a b"  →  [a] [b] (two words)
+    """
+
+    # Double-quoted $Y prevents word splitting of its value
+    line = parse_poe_cmd('echo ${X:+"$Y"}')[0]
+    assert list(resolve_command_tokens([line], {"X": "1", "Y": "hello world"})) == [
+        ("echo", False),
+        ("hello world", False),
+    ]
+
+    # Unquoted $Y allows word splitting
+    line = parse_poe_cmd("echo ${X:+$Y}")[0]
+    assert list(resolve_command_tokens([line], {"X": "1", "Y": "hello world"})) == [
+        ("echo", False),
+        ("hello", False),
+        ("world", False),
+    ]
+
+    # Double-quoted $Y in :- default
+    line = parse_poe_cmd('echo ${X:-"$Y"}')[0]
+    assert list(resolve_command_tokens([line], {"Y": "hello world"})) == [
+        ("echo", False),
+        ("hello world", False),
+    ]
+
+    # Single-quoted $Y prevents expansion (literal $Y)
+    line = parse_poe_cmd("echo ${X:+'$Y'}")[0]
+    assert list(resolve_command_tokens([line], {"X": "1", "Y": "EXPANDED"})) == [
+        ("echo", False),
+        ("$Y", False),
     ]

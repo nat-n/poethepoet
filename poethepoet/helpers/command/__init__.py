@@ -66,24 +66,46 @@ def resolve_command_tokens(
         Resolve a parameter argument to a list of (text, is_quoted) tuples,
         preserving quoting information from the argument's segments so that
         quoted parts are not subject to word splitting.
+
+        When a nested param expansion with an operation returns structured
+        parts, those parts are spliced into the result rather than flattened,
+        so that inner quoting survives through outer expansions.
         """
         parts: list[tuple[str, bool]] = []
         for segment in argument.segments:
             segment_text_parts: list[str] = []
+
+            def flush_segment_text():
+                if segment_text_parts:
+                    parts.append(("".join(segment_text_parts), segment.is_quoted))
+                    segment_text_parts.clear()
+
             for element in segment:
                 if isinstance(element, ParamExpansion):
                     result = resolve_param_value(element, env)
                     if isinstance(result, list):
-                        # Nested operation result — flatten to string within
-                        # this segment
-                        segment_text_parts.append(
-                            "".join(text for text, _ in result)
-                        )
+                        if segment.is_quoted:
+                            # Inside a quoted segment, quoting is already
+                            # established — just flatten the nested result
+                            segment_text_parts.append(
+                                "".join(text for text, _ in result)
+                            )
+                        else:
+                            # Unquoted segment: splice inner parts so that
+                            # inner quoting survives through the outer
+                            # expansion (e.g. ${A:-${B:+'hello world'}})
+                            for inner_text, inner_quoted in result:
+                                if inner_quoted:
+                                    flush_segment_text()
+                                    parts.append((inner_text, True))
+                                else:
+                                    segment_text_parts.append(inner_text)
                     else:
                         segment_text_parts.append(result)
                 else:
                     segment_text_parts.append(element.content)
-            parts.append(("".join(segment_text_parts), segment.is_quoted))
+
+            flush_segment_text()
         return parts
 
     def resolve_param_value(
@@ -95,9 +117,7 @@ def resolve_command_tokens(
             if param_value:
                 if element.operation.operator == ":+":
                     # apply 'alternate value' operation
-                    return resolve_param_argument(
-                        element.operation.argument, env
-                    )
+                    return resolve_param_argument(element.operation.argument, env)
 
             elif element.operation.operator == ":-":
                 # apply 'default value' operation
@@ -126,9 +146,7 @@ def resolve_command_tokens(
 
                             if segment.is_quoted:
                                 # Outer context is quoted — no word splitting
-                                full_text = "".join(
-                                    text for text, _ in param_result
-                                )
+                                full_text = "".join(text for text, _ in param_result)
                                 token_parts.append((full_text, False))
                             else:
                                 for part_text, part_is_quoted in param_result:
@@ -136,19 +154,14 @@ def resolve_command_tokens(
                                         continue
                                     if part_is_quoted:
                                         # Quoted part: no word splitting
-                                        token_parts.append(
-                                            (part_text, False)
-                                        )
+                                        token_parts.append((part_text, False))
                                     elif part_text.isspace():
                                         # Whitespace-only unquoted part
                                         if token_parts:
                                             yield finalize_token(token_parts)
                                     else:
                                         # Unquoted: apply word splitting
-                                        if (
-                                            part_text[0].isspace()
-                                            and token_parts
-                                        ):
+                                        if part_text[0].isspace() and token_parts:
                                             yield finalize_token(token_parts)
 
                                         param_words = (
@@ -163,15 +176,10 @@ def resolve_command_tokens(
 
                                         for param_word in param_words:
                                             if token_parts:
-                                                yield finalize_token(
-                                                    token_parts
-                                                )
+                                                yield finalize_token(token_parts)
                                             token_parts.append(param_word)
 
-                                        if (
-                                            part_text[-1].isspace()
-                                            and token_parts
-                                        ):
+                                        if part_text[-1].isspace() and token_parts:
                                             yield finalize_token(token_parts)
 
                         else:
@@ -210,9 +218,7 @@ def resolve_command_tokens(
                                         yield finalize_token(token_parts)
                                     token_parts.append(param_word)
 
-                                if (
-                                    param_value[-1].isspace() and token_parts
-                                ):
+                                if param_value[-1].isspace() and token_parts:
                                     # param_value ends with a word break
                                     yield finalize_token(token_parts)
 
