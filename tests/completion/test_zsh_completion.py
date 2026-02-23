@@ -262,6 +262,28 @@ class TestZshCompletionScript:
         # Should fallback to files if no args defined
         assert "_files" in script
 
+    def test_skips_global_options_when_task_known(self, run_poe_main):
+        """Verify script skips global _arguments when current_task is set."""
+        result = run_poe_main("_zsh_completion")
+        script = result.stdout
+
+        # Should have conditional that skips _arguments when task is known
+        assert 'if [[ -n "$current_task" ]]; then' in script
+        assert 'state="args"' in script
+
+    def test_stops_parsing_global_opts_after_task(self, run_poe_main):
+        """Verify parsing loop stops treating words as global options after task."""
+        result = run_poe_main("_zsh_completion")
+        script = result.stdout
+
+        # Should have early continue when current_task is set
+        assert 'if [[ -n "$current_task" ]]; then' in script
+        # The continue should appear in the for loop before DIR_ARGS/VALUE_OPTS checks
+        # Find the for loop section and verify the continue is there
+        loop_start = script.index("for ((i=2;")
+        loop_section = script[loop_start:script.index("done", loop_start) + 4]
+        assert "continue" in loop_section
+
 
 def test_describe_task_args_multi_form_options(run_poe_main, projects):
     """Verify multi-form options (--opt,-o) are output correctly."""

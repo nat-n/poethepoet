@@ -48,6 +48,10 @@ _TARGET_PATH_LOGIC = """
             after_separator=1
             break
         fi
+        # Once we have a task, stop parsing global options - rest belongs to task
+        if [[ -n "$current_task" ]]; then
+            continue
+        fi
         if (( $DIR_ARGS[(Ie)${words[i]}] )); then
             if (( ($i+1) >= ${#words[@]} )); then
                 _files
@@ -486,6 +490,18 @@ _poe_caching_policy() {
 
     fetch_tasks_func = _get_fetch_tasks_func(name)
 
+    # Wrap _arguments in a conditional: skip global options when task is known
+    arguments_block = " \\\n        ".join(args_lines)
+    conditional_arguments = (
+        "    # If we already identified a task, skip global options and go"
+        " straight to task args\n"
+        '    if [[ -n "$current_task" ]]; then\n'
+        '        state="args"\n'
+        "    else\n"
+        "    " + arguments_block + "\n"
+        "    fi"
+    )
+
     return "\n".join(
         [
             f"#compdef {name}\n",
@@ -497,7 +513,7 @@ _poe_caching_policy() {
             _TARGET_PATH_LOGIC,
             '    local ALL_EXLC=("-h" "--help" "--version")',
             "",
-            " \\\n        ".join(args_lines),
+            conditional_arguments,
             state_handling,
             "}",
             "",

@@ -453,13 +453,15 @@ class ZshHarnessBuilder:
             + "\n            # Fallback to _files if no args defined",
         )
 
-        # Capture state variable before the case statement
+        # Capture state variable before the state handling block
         state_capture = """
     # Harness: capture state variable
     echo "$state" > "$_HARNESS_DIR/state"
 """
         modified = modified.replace(
-            "case $state in", state_capture + "\n    case $state in"
+            "# Handle states (may be space-separated when ambiguous)",
+            state_capture
+            + "\n    # Handle states (may be space-separated when ambiguous)",
         )
 
         return modified
