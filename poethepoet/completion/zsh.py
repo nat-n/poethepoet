@@ -53,6 +53,16 @@ _TARGET_PATH_LOGIC = """
         if [[ -n "$current_task" ]]; then
             continue
         fi
+        # Handle --option=value style (e.g. --directory=/path, --executor=poetry)
+        # zsh keeps these as a single word in $words
+        if [[ "${words[i]}" == -*=* ]]; then
+            local _opt="${words[i]%%=*}"
+            if (( $DIR_ARGS[(Ie)$_opt] )); then
+                target_path="${words[i]#*=}"
+            fi
+            # Value is consumed in the same word — skip to next
+            continue
+        fi
         if (( $DIR_ARGS[(Ie)${words[i]}] )); then
             if (( ($i+1) >= ${#words[@]} )); then
                 _files
@@ -100,10 +110,15 @@ def _get_describe_task_args_completion(name: str) -> str:
             [[ -z "$current_task" ]] && {{ _files; return; }}
 
             # Count existing options in command line for filtering
+            # Strip =value suffix so --opt=val counts against --opt
             local -A option_counts
             for ((i=2; i<${{#words[@]}}; i++)); do
                 local w="${{words[i]}}"
-                [[ "$w" == -* && "$w" != "--" ]] && (( option_counts[$w]++ ))
+                if [[ "$w" == -*=* ]]; then
+                    (( option_counts[${{w%%=*}}]++ ))
+                elif [[ "$w" == -* && "$w" != "--" ]]; then
+                    (( option_counts[$w]++ ))
+                fi
             done
 
             # Check cache for task args (hybrid: disk cache -> in-memory -> fetch)
