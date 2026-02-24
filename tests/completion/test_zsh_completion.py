@@ -270,6 +270,9 @@ class TestZshCompletionScript:
         # Should have conditional that skips _arguments when task is known
         assert 'if [[ -n "$current_task" ]]; then' in script
         assert 'state="args"' in script
+        # Must strip $words/$CURRENT using (@) to preserve array elements
+        assert "(@)words[$current_task_idx,-1]" in script
+        assert "CURRENT -= current_task_idx - 1" in script
 
     def test_stops_parsing_global_opts_after_task(self, run_poe_main):
         """Verify parsing loop stops treating words as global options after task."""

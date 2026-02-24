@@ -504,7 +504,7 @@ _poe_caching_policy() {
         "        # only task args after it, so the args handler and its inner\n"
         "        # _arguments -s call see the correct context.\n"
         "        (( CURRENT -= current_task_idx - 1 ))\n"
-        '        words=("${words[$current_task_idx,-1]}")\n'
+        '        words=("${(@)words[$current_task_idx,-1]}")\n'
         "    else\n"
         "    " + arguments_block + "\n"
         "    fi"
