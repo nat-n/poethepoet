@@ -281,7 +281,7 @@ class TestZshCompletionScript:
         # The continue should appear in the for loop before DIR_ARGS/VALUE_OPTS checks
         # Find the for loop section and verify the continue is there
         loop_start = script.index("for ((i=2;")
-        loop_section = script[loop_start:script.index("done", loop_start) + 4]
+        loop_section = script[loop_start : script.index("done", loop_start) + 4]
         assert "continue" in loop_section
 
 

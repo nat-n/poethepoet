@@ -22,6 +22,7 @@ _TARGET_PATH_LOGIC = """
 
     local target_path=""
     local current_task=""
+    local current_task_idx=0
     local after_separator=0
 
     # In-memory cache fallback (used when disk cache not enabled)
@@ -65,6 +66,7 @@ _TARGET_PATH_LOGIC = """
         elif [[ "${words[i]}" != -* && -z "$current_task" ]]; then
             # First non-option word is potential task (validated later if needed)
             current_task="${words[i]}"
+            current_task_idx=$i
         fi
     done
 
@@ -497,6 +499,12 @@ _poe_caching_policy() {
         " straight to task args\n"
         '    if [[ -n "$current_task" ]]; then\n'
         '        state="args"\n'
+        "        # Replicate the $words/$CURRENT stripping that _arguments -C\n"
+        "        # does for *::arg:->args — keep task name as $words[1] and\n"
+        "        # only task args after it, so the args handler and its inner\n"
+        "        # _arguments -s call see the correct context.\n"
+        "        (( CURRENT -= current_task_idx - 1 ))\n"
+        '        words=("${words[$current_task_idx,-1]}")\n'
         "    else\n"
         "    " + arguments_block + "\n"
         "    fi"

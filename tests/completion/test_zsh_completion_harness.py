@@ -319,12 +319,12 @@ class TestZshCompletionE2E:
         assert "--env" in specs_text, f"Expected task's --env in specs: {specs_text}"
         assert "--verbose" in specs_text
         # Global options should NOT be present (--executor, --directory, etc.)
-        assert "--executor" not in specs_text, (
-            f"Global --executor should not appear in task arg specs: {specs_text}"
-        )
-        assert "--directory" not in specs_text, (
-            f"Global --directory should not appear in task arg specs: {specs_text}"
-        )
+        assert (
+            "--executor" not in specs_text
+        ), f"Global --executor should not appear in task arg specs: {specs_text}"
+        assert (
+            "--directory" not in specs_text
+        ), f"Global --directory should not appear in task arg specs: {specs_text}"
 
     def test_task_e_option_not_consumed_by_global_executor(
         self, zsh_harness, completion_script
@@ -350,9 +350,9 @@ class TestZshCompletionE2E:
         # Should offer remaining task options (--verbose)
         # --env/-e should be filtered out (already used)
         specs_text = "\n".join(result.arguments_specs)
-        assert "--verbose" in specs_text, (
-            f"Expected --verbose in remaining task options: {specs_text}"
-        )
+        assert (
+            "--verbose" in specs_text
+        ), f"Expected --verbose in remaining task options: {specs_text}"
 
     def test_global_options_still_work_before_task(
         self, zsh_harness, completion_script
