@@ -479,9 +479,6 @@ class ZshHarnessBuilder:
             "",
             "# The completion script:",
             self.instrument_script(script),
-            "",
-            "# Call the completion function",
-            "_poe",
         ]
         return "\n".join(parts)
 

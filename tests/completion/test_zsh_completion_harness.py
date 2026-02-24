@@ -1188,11 +1188,11 @@ _poe
         )
 
         # Inject hit counter at 8 (below max of 10) — next hit will be 9th, still valid
-        # Replace _poe "$@" with ONLY the injection (no call) to avoid double invocation
         inject_hits = "\n".join(
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/test]=8",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1230,6 +1230,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/test]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1271,6 +1272,7 @@ _poe
                 "_poe_mem_tasks_time[/hits/mem]=100",
                 "_poe_cache_hits_tasks[/hits/mem]=9",
                 "SECONDS=200",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject)
@@ -1308,6 +1310,7 @@ _poe
                 "typeset -gA _poe_cache_hits_args",
                 '_inject_key="/hits/args|build"',
                 "_poe_cache_hits_args[$_inject_key]=8",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1355,6 +1358,7 @@ _poe
                 "typeset -gA _poe_cache_hits_args",
                 '_inject_key="/hits/args|build"',
                 "_poe_cache_hits_args[$_inject_key]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1395,6 +1399,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/help]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1431,6 +1436,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/reset]=9",
+                '_poe "$@"',
             ]
         )
         script_at_9 = script_with_path.replace('_poe "$@"', inject_hits_9)
