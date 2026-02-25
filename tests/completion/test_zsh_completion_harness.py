@@ -292,6 +292,90 @@ class TestZshCompletionE2E:
         # Quoted choices should appear
         assert "quick run" in specs_text or "'quick run'" in specs_text
 
+    # ========== Task-specific options isolation tests ==========
+
+    def test_task_options_not_mixed_with_global_options(
+        self, zsh_harness, completion_script
+    ):
+        """After task name, only task-specific options should be offered, not global poe options."""
+        mock_output = {
+            "_zsh_describe_tasks": "flux-check:Check flux",
+            "_describe_task_args": "--env,-e\tstring\tEnvironment\tdev staging prod\n--verbose\tboolean\tVerbose output\t_",
+        }
+
+        # Simulate: poe flux-check -<TAB>
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "flux-check", "-"],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.current_task == "flux-check"
+        assert result.state == "args"
+        assert result.arguments_called
+        # Task-specific args should be present
+        specs_text = "\n".join(result.arguments_specs)
+        assert "--env" in specs_text, f"Expected task's --env in specs: {specs_text}"
+        assert "--verbose" in specs_text
+        # Global options should NOT be present (--executor, --directory, etc.)
+        assert (
+            "--executor" not in specs_text
+        ), f"Global --executor should not appear in task arg specs: {specs_text}"
+        assert (
+            "--directory" not in specs_text
+        ), f"Global --directory should not appear in task arg specs: {specs_text}"
+
+    def test_task_e_option_not_consumed_by_global_executor(
+        self, zsh_harness, completion_script
+    ):
+        """Task's -e option value should not be consumed by global -e/--executor parsing."""
+        mock_output = {
+            "_zsh_describe_tasks": "flux-check:Check flux",
+            "_describe_task_args": "--env,-e\tstring\tEnvironment\tdev staging prod\n--verbose\tboolean\tVerbose output\t_",
+        }
+
+        # Simulate: poe flux-check -e prod -<TAB>
+        # Bug: -e after task was being parsed as global --executor, consuming "prod"
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "flux-check", "-e", "prod", "-"],
+            current=5,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.current_task == "flux-check"
+        assert result.state == "args"
+        assert result.arguments_called
+        # Should offer remaining task options (--verbose)
+        # --env/-e should be filtered out (already used)
+        specs_text = "\n".join(result.arguments_specs)
+        assert (
+            "--verbose" in specs_text
+        ), f"Expected --verbose in remaining task options: {specs_text}"
+
+    def test_global_options_still_work_before_task(
+        self, zsh_harness, completion_script
+    ):
+        """Global options should still work when no task has been typed yet."""
+        mock_output = {
+            "_zsh_describe_tasks": "greet:Greet someone",
+        }
+
+        # Simulate: poe -<TAB> (no task yet)
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "-"],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.current_task == ""
+        assert result.arguments_called
+        # Global options should be present
+        specs_text = "\n".join(result.arguments_specs)
+        assert "--help" in specs_text or "-h" in specs_text
+
     # ========== Option filtering tests ==========
 
     def test_option_not_offered_after_use(self, zsh_harness, completion_script):
@@ -1104,11 +1188,11 @@ _poe
         )
 
         # Inject hit counter at 8 (below max of 10) — next hit will be 9th, still valid
-        # Replace _poe "$@" with ONLY the injection (no call) to avoid double invocation
         inject_hits = "\n".join(
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/test]=8",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1146,6 +1230,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/test]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1187,6 +1272,7 @@ _poe
                 "_poe_mem_tasks_time[/hits/mem]=100",
                 "_poe_cache_hits_tasks[/hits/mem]=9",
                 "SECONDS=200",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject)
@@ -1224,6 +1310,7 @@ _poe
                 "typeset -gA _poe_cache_hits_args",
                 '_inject_key="/hits/args|build"',
                 "_poe_cache_hits_args[$_inject_key]=8",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1271,6 +1358,7 @@ _poe
                 "typeset -gA _poe_cache_hits_args",
                 '_inject_key="/hits/args|build"',
                 "_poe_cache_hits_args[$_inject_key]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1311,6 +1399,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/help]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1347,6 +1436,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/reset]=9",
+                '_poe "$@"',
             ]
         )
         script_at_9 = script_with_path.replace('_poe "$@"', inject_hits_9)

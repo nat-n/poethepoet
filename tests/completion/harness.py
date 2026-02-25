@@ -323,6 +323,10 @@ class ZshHarnessBuilder:
             f'        {debug_prefix} completing option: $cur" >&2',
             "    fi",
             "",
+            "    # Only set state when called with -C (real _arguments only manages",
+            "    # state transitions with -C; _arguments -s does not set state)",
+            '    [[ "$1" != "-C" ]] && return',
+            "",
             "    # Determine state based on CURRENT position",
             "    # NOTE: Real _arguments -C can set MULTIPLE space-separated states",
             "    # when there's ambiguity (e.g., optional option value vs positional)",
@@ -453,13 +457,15 @@ class ZshHarnessBuilder:
             + "\n            # Fallback to _files if no args defined",
         )
 
-        # Capture state variable before the case statement
+        # Capture state variable before the state handling block
         state_capture = """
     # Harness: capture state variable
     echo "$state" > "$_HARNESS_DIR/state"
 """
         modified = modified.replace(
-            "case $state in", state_capture + "\n    case $state in"
+            "# Handle states (may be space-separated when ambiguous)",
+            state_capture
+            + "\n    # Handle states (may be space-separated when ambiguous)",
         )
 
         return modified
@@ -473,9 +479,6 @@ class ZshHarnessBuilder:
             "",
             "# The completion script:",
             self.instrument_script(script),
-            "",
-            "# Call the completion function",
-            "_poe",
         ]
         return "\n".join(parts)
 
