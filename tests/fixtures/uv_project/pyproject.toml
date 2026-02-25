@@ -36,7 +36,7 @@ executor = { type = "uv", extra = "dev", group = [
 ], no-group = "local", with = [
   "http",
   "tls",
-], python = "3.12", isolated = true, no-sync = true, locked = true, frozen = true, no-project = true }
+], python = "3.12", isolated = true, exact = true, no-sync = true, locked = true, frozen = true, no-project = true }
 
 [tool.poe.tasks.test-uv-run-options-cli]
 cmd = "python -V"
