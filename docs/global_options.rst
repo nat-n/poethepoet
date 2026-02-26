@@ -181,6 +181,9 @@ The uv executor can be configured with the following options, which translate in
 **isolated** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--isolated>`__
   Run the command in a fresh emphemeral virtual environment, instead of the usual in-project .venv
 
+**exact** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--exact>`__
+  Sync the environment exactly, removing extraneous packages not in the requested groups (unlike the default inexact sync which only adds missing packages).
+
 **no-sync** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--no-sync>`__
   Avoid syncing the virtual environment.
 

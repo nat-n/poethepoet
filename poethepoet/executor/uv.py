@@ -28,6 +28,7 @@ class UvExecutor(PoeExecutor):
         ] = None
         with_: Annotated[str | list[str] | None, Metadata(config_name="with")] = None
         isolated: bool = False
+        exact: bool = False
         no_sync: Annotated[bool, Metadata(config_name="no-sync")] = False
         locked: bool = False
         frozen: bool = False
@@ -35,7 +36,7 @@ class UvExecutor(PoeExecutor):
         python: str | None = None
 
     __uv_cli_options = ("extra", "group", "no-group", "with", "python")
-    __uv_cli_flags = ("isolated", "no-sync", "locked", "frozen", "no-project")
+    __uv_cli_flags = ("isolated", "exact", "no-sync", "locked", "frozen", "no-project")
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:
