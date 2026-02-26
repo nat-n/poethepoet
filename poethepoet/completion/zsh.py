@@ -211,7 +211,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                                 arg_specs+=("${{excl}}${{opt}}"'['"$help_text"']')
                                 ;;
                             *)
-                                arg_specs+=("${{excl}}${{opt}}"'['"$help_text"']'"$val_compl")
+                                arg_specs+=("${{excl}}${{opt}}="'['"$help_text"']'"$val_compl")
                                 ;;
                         esac
                     done
@@ -238,7 +238,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                             fi
                             ;;
                         *)
-                            arg_specs+=("$opts"'['"$help_text"']'"$val_compl")
+                            arg_specs+=("$opts="'['"$help_text"']'"$val_compl")
                             ;;
                     esac
                 fi
@@ -399,21 +399,22 @@ def _format_global_options(
         )
 
         if takes_value:
-            # Add value placeholder based on option type
+            # Add = so --opt=value and --opt value both work (= enables
+            # same-word-after-= form in addition to next-word form)
             if option.dest == "project_root":
-                args_lines.append(f'"{options_part}[{option.help}]:directory:_files"')
+                args_lines.append(f'"{options_part}=[{option.help}]:directory:_files"')
             elif option.dest == "executor":
                 # Known executor types
                 args_lines.append(
-                    f'"{options_part}[{option.help}]'
+                    f'"{options_part}=[{option.help}]'
                     ':executor:(auto poetry simple uv virtualenv)"'
                 )
             elif option.dest == "executor_options":
                 # -X/--executor-opt takes arbitrary key=value, no useful completion
                 # but must have value placeholder so zsh knows it consumes a value
-                args_lines.append(f'"{options_part}[{option.help}]:opt:()"')
+                args_lines.append(f'"{options_part}=[{option.help}]:opt:()"')
             else:
-                args_lines.append(f'"{options_part}[{option.help}]:value:()"')
+                args_lines.append(f'"{options_part}=[{option.help}]:value:()"')
         else:
             args_lines.append(f'"{options_part}[{option.help}]"')
 
@@ -510,9 +511,9 @@ _poe_caching_policy() {
     # Wrap _arguments in a conditional: skip global options when task is known
     arguments_block = " \\\n        ".join(args_lines)
     conditional_arguments = (
-        "    # If we already identified a task, skip global options and go"
-        " straight to task args\n"
-        '    if [[ -n "$current_task" ]]; then\n'
+        "    # If we already identified a task and cursor is past it, skip global"
+        " options and go straight to task args\n"
+        '    if [[ -n "$current_task" && CURRENT -gt $current_task_idx ]]; then\n'
         '        state="args"\n'
         "        # Replicate the $words/$CURRENT stripping that _arguments -C\n"
         "        # does for *::arg:->args — keep task name as $words[1] and\n"

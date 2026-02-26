@@ -1502,3 +1502,639 @@ class TestPowerShellGlobalOptionFiltering:
                 "-X",
             ],
         )
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellTaskOptionIsolation:
+    """Tests that global option handling doesn't leak into task-specific completion.
+
+    These tests verify that after a task name, global options like -e/--executor
+    and -C/--directory are not matched, and that the used-options filter only
+    scans words after the task position.
+    """
+
+    # Bug 1: Global value completion should not fire after task name
+
+    def test_global_executor_not_offered_after_task(self, run_poe_main, tmp_path):
+        """poe mytask -e <TAB> should not trigger global executor completion."""
+        # Simulate the completer's prevWord + task-position guard logic
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '-e')
+            $wordToComplete = ''
+            $curWord = ''
+
+            # Find task (reproduces completer logic)
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            # prevWord logic from completer
+            if ($wordToComplete -eq '' -and $words.Count -ge 1) { $prevWord = $words[-1] }
+            elseif ($words.Count -ge 2) { $prevWord = $words[-2] }
+            else { $prevWord = $null }
+
+            # The guard: should block global completion when past task
+            $globalCompletionFired = $false
+            if ($prevWord -and (-not $currentTask -or $cursorIndex -le $taskPosition)) {
+                if ($prevWord -in @('-e', '--executor')) {
+                    $globalCompletionFired = $true
+                }
+            }
+            Write-Output "TASK:$currentTask"
+            Write-Output "GLOBAL_FIRED:$globalCompletionFired"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:mytask" in proc.stdout
+        assert "GLOBAL_FIRED:False" in proc.stdout
+
+    def test_global_directory_not_offered_after_task(self, run_poe_main, tmp_path):
+        """poe mytask -C <TAB> should not trigger global directory completion."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '-C')
+            $wordToComplete = ''
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            if ($wordToComplete -eq '' -and $words.Count -ge 1) { $prevWord = $words[-1] }
+            elseif ($words.Count -ge 2) { $prevWord = $words[-2] }
+            else { $prevWord = $null }
+
+            $globalCompletionFired = $false
+            if ($prevWord -and (-not $currentTask -or $cursorIndex -le $taskPosition)) {
+                if ($prevWord -in @('-C', '--directory', '--root')) {
+                    $globalCompletionFired = $true
+                }
+            }
+            Write-Output "GLOBAL_FIRED:$globalCompletionFired"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "GLOBAL_FIRED:False" in proc.stdout
+
+    def test_global_executor_still_works_before_task(self, run_poe_main, tmp_path):
+        """poe -e <TAB> (no task yet) should still trigger executor completion."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', '-e')
+            $wordToComplete = ''
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            if ($wordToComplete -eq '' -and $words.Count -ge 1) { $prevWord = $words[-1] }
+            elseif ($words.Count -ge 2) { $prevWord = $words[-2] }
+            else { $prevWord = $null }
+
+            $globalCompletionFired = $false
+            if ($prevWord -and (-not $currentTask -or $cursorIndex -le $taskPosition)) {
+                if ($prevWord -in @('-e', '--executor')) {
+                    $globalCompletionFired = $true
+                }
+            }
+            Write-Output "TASK:$currentTask"
+            Write-Output "GLOBAL_FIRED:$globalCompletionFired"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:" in proc.stdout  # currentTask is null
+        assert "GLOBAL_FIRED:True" in proc.stdout
+
+    # Bug 2: Get-PoeTargetPath should stop at task name
+
+    def test_target_path_not_set_from_task_c_option(self, run_poe_main, tmp_path):
+        """poe mytask -C /path should not set target_path from task's -C."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', 'mytask', '-C', '/some/path')
+            if ($null -eq $r) { Write-Output 'NULL' } else { Write-Output $r }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "NULL"
+
+    def test_target_path_set_from_global_c_before_task(self, run_poe_main, tmp_path):
+        """poe -C /path mytask should set target_path from global -C."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '-C', '/global/path', 'mytask')
+            Write-Output $r
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "/global/path" in proc.stdout.strip()
+
+    def test_target_path_ignores_task_e_value(self, run_poe_main, tmp_path):
+        """poe mytask -e prod should not confuse the pre-parsing loop."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', 'mytask', '-e', 'prod', '-C', '/task/path')
+            if ($null -eq $r) { Write-Output 'NULL' } else { Write-Output $r }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == "NULL"
+
+    # Bug 3: Used-options loop should only scan words after task position
+
+    def test_global_v_doesnt_filter_task_v(self, run_poe_main, tmp_path):
+        """poe -v mytask -<TAB>: global -v should not exclude task's -v/--verbose."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('-v', '--verbose'); Type = 'boolean'; Help = 'Verbose'; Choices = @() }
+                @{ Options = @('--output', '-o'); Type = 'string'; Help = 'Output'; Choices = @() }
+            )
+            $words = @('poe', '-v', 'mytask')
+            $taskPosition = 2
+
+            # Replicate the fixed usedGroups logic: start from taskPosition+1
+            $usedGroups = @{}
+            for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                $w = $words[$j]
+                if (-not $w.StartsWith('-')) { continue }
+                foreach ($arg in $taskArgs) {
+                    if ($w -in $arg.Options) {
+                        foreach ($opt in $arg.Options) {
+                            $usedGroups[$opt] = $true
+                        }
+                    }
+                }
+            }
+
+            # -v and --verbose should NOT be excluded (global -v is before task)
+            Write-Output "V_EXCLUDED:$($usedGroups.ContainsKey('-v'))"
+            Write-Output "VERBOSE_EXCLUDED:$($usedGroups.ContainsKey('--verbose'))"
+            Write-Output "O_EXCLUDED:$($usedGroups.ContainsKey('-o'))"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "V_EXCLUDED:False" in proc.stdout
+        assert "VERBOSE_EXCLUDED:False" in proc.stdout
+        assert "O_EXCLUDED:False" in proc.stdout
+
+    def test_task_used_option_still_filtered(self, run_poe_main, tmp_path):
+        """poe mytask --verbose -<TAB>: task's --verbose should be filtered."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('-v', '--verbose'); Type = 'boolean'; Help = 'Verbose'; Choices = @() }
+                @{ Options = @('--output', '-o'); Type = 'string'; Help = 'Output'; Choices = @() }
+            )
+            $words = @('poe', 'mytask', '--verbose')
+            $taskPosition = 1
+
+            $usedGroups = @{}
+            for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                $w = $words[$j]
+                if (-not $w.StartsWith('-')) { continue }
+                foreach ($arg in $taskArgs) {
+                    if ($w -in $arg.Options) {
+                        foreach ($opt in $arg.Options) {
+                            $usedGroups[$opt] = $true
+                        }
+                    }
+                }
+            }
+
+            Write-Output "V_EXCLUDED:$($usedGroups.ContainsKey('-v'))"
+            Write-Output "VERBOSE_EXCLUDED:$($usedGroups.ContainsKey('--verbose'))"
+            Write-Output "O_EXCLUDED:$($usedGroups.ContainsKey('-o'))"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "V_EXCLUDED:True" in proc.stdout
+        assert "VERBOSE_EXCLUDED:True" in proc.stdout
+        assert "O_EXCLUDED:False" in proc.stdout
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellEqualsStyleOptions:
+    """Tests for --option=value style argument handling in PowerShell completion."""
+
+    def test_get_target_path_equals_style(self, run_poe_main, tmp_path):
+        """poe --directory=/mypath task1 should extract /mypath as target path."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeTargetPath -Words @('poe', '--directory=/mypath', 'task1')
+            if ($null -eq $r) { Write-Output 'NULL' } else { Write-Output "PATH:$r" }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "PATH:/mypath" in proc.stdout
+
+    def test_get_current_task_skips_equals_option(self, run_poe_main, tmp_path):
+        """poe --executor=auto mytask should return mytask, not --executor=auto."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $r = Get-PoeCurrentTask -Words @('poe', '--executor=auto', 'mytask')
+            if ($null -eq $r) { Write-Output 'NULL' } else { Write-Output "TASK:$r" }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:mytask" in proc.stdout
+
+    def test_task_position_skips_equals_option(self, run_poe_main, tmp_path):
+        """Task position detection in main body handles --executor=auto correctly."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', '--executor=auto', 'mytask')
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+            Write-Output "TASK:$currentTask"
+            Write-Output "POS:$taskPosition"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:mytask" in proc.stdout
+        assert "POS:2" in proc.stdout
+
+    def test_used_option_equals_filtered(self, run_poe_main, tmp_path):
+        """poe task --mode=debug should mark --mode and -m as used."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--mode', '-m'); Type = 'string'; Help = 'Mode'; Choices = @('debug', 'release') }
+                @{ Options = @('--other', '-o'); Type = 'string'; Help = 'Other'; Choices = @() }
+            )
+            $words = @('poe', 'task', '--mode=debug')
+            $taskPosition = 1
+            $usedGroups = @{}
+            for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                $w = $words[$j]
+                if (-not $w.StartsWith('-')) { continue }
+                $optBase = if ($w.Contains('=')) { $w.Substring(0, $w.IndexOf('=')) } else { $w }
+                foreach ($arg in $taskArgs) {
+                    if ($optBase -in $arg.Options) {
+                        foreach ($opt in $arg.Options) {
+                            $usedGroups[$opt] = $true
+                        }
+                    }
+                }
+            }
+            Write-Output "MODE:$($usedGroups.ContainsKey('--mode'))"
+            Write-Output "M:$($usedGroups.ContainsKey('-m'))"
+            Write-Output "OTHER:$($usedGroups.ContainsKey('--other'))"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "MODE:True" in proc.stdout
+        assert "M:True" in proc.stdout
+        assert "OTHER:False" in proc.stdout
+
+    def test_positional_count_with_equals_option(self, run_poe_main, tmp_path):
+        """--flavor=vanilla should not increment positional index or skip next word."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $taskArgs = @(
+                @{ Options = @('--flavor', '-f'); Type = 'string'; Help = 'Flavor'; Choices = @('vanilla', 'chocolate') }
+                @{ Options = @('name'); Type = 'positional'; Help = 'Name'; Choices = @('alice', 'bob') }
+            )
+            $words = @('poe', 'pick', '--flavor=vanilla')
+            $wordToComplete = ''
+            $taskPosition = 1
+            $positionalIndex = 0
+            for ($i = $taskPosition + 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    $isValuedOpt = $false
+                    foreach ($arg in $taskArgs) {
+                        if ($optBase -in $arg.Options -and $arg.Type -ne 'boolean') {
+                            $isValuedOpt = $true; break
+                        }
+                    }
+                    if ($isValuedOpt -and -not $hasEquals) { $i++ }
+                    continue
+                }
+                if ($i -lt ($words.Count - 1) -or $wordToComplete -eq '') {
+                    $positionalIndex++
+                }
+            }
+            Write-Output "INDEX:$positionalIndex"
+            $positionalArgs = @($taskArgs | Where-Object { $_.Type -eq 'positional' })
+            if ($positionalIndex -lt $positionalArgs.Count) {
+                Write-Output "CHOICES:$($positionalArgs[$positionalIndex].Choices -join ',')"
+            } else {
+                Write-Output "NO_MATCH"
+            }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "INDEX:0" in proc.stdout
+        assert "CHOICES:alice,bob" in proc.stdout
+
+    def test_executor_equals_value_completion(self, run_poe_main, tmp_path):
+        """$curWord='--executor=' should trigger value completion with prefixed results."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $curWord = '--executor='
+            $results = @()
+            if ($curWord -like '-*=*') {
+                $eqIdx = $curWord.IndexOf('=')
+                $optPart = $curWord.Substring(0, $eqIdx)
+                $valPart = $curWord.Substring($eqIdx + 1)
+                $prefix = "$optPart="
+
+                if ($optPart -in @('-e', '--executor')) {
+                    $results = @('auto', 'poetry', 'simple', 'uv', 'virtualenv') |
+                        Where-Object { $_ -like "$valPart*" } |
+                        ForEach-Object { "$prefix$_" }
+                }
+            }
+            foreach ($r in $results) { Write-Output "RESULT:$r" }
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "RESULT:--executor=auto" in proc.stdout
+        assert "RESULT:--executor=poetry" in proc.stdout
+        assert "RESULT:--executor=simple" in proc.stdout
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellSeparatorHandling:
+    """Tests for -- separator handling in PowerShell completion.
+
+    After `--`, shells conventionally stop interpreting options and pass
+    remaining arguments through to the underlying command. Only file
+    completions should be offered after the separator.
+    """
+
+    def test_after_separator_returns_files_only(self, run_poe_main, tmp_path):
+        """poe mytask -- <TAB> should only offer file completions, not task options."""
+        mock = 'function poe { Write-Output "--greeting,-g\tstring\tGreeting\t_" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '--', '')
+            $wordToComplete = ''
+            $curWord = ''
+
+            # Find task (reproduces completer logic)
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            # Check for -- separator after task position
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "TASK:$currentTask"
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:mytask" in proc.stdout
+        assert "SEPARATOR:True" in proc.stdout
+
+    def test_after_separator_no_options(self, run_poe_main, tmp_path):
+        """poe mytask -- --f<TAB> should not offer --flavor etc."""
+        mock = 'function poe { Write-Output "--flavor,-f\tstring\tFlavor\tvanilla chocolate" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '--', '--f')
+            $wordToComplete = '--f'
+            $curWord = '--f'
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count - 1
+
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "SEPARATOR:True" in proc.stdout
+
+    def test_double_dash_before_task_is_not_separator(self, run_poe_main, tmp_path):
+        """poe -- <TAB> should not trigger separator (no task found yet)."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', '--', '')
+            $wordToComplete = ''
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "TASK:$currentTask"
+            Write-Output "TASKPOS:$taskPosition"
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        # No task found, so taskPosition is -1, separator should be false
+        assert "SEPARATOR:False" in proc.stdout
+
+    def test_separator_with_args_before(self, run_poe_main, tmp_path):
+        """poe mytask --flavor vanilla -- <TAB> should only offer file completion."""
+        mock = 'function poe { Write-Output "--flavor,-f\tstring\tFlavor\tvanilla chocolate" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '--flavor', 'vanilla', '--', '')
+            $wordToComplete = ''
+            $curWord = ''
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "TASK:$currentTask"
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:mytask" in proc.stdout
+        assert "SEPARATOR:True" in proc.stdout
+
+    def test_separator_in_generated_script(self, run_poe_main):
+        """Verify the generated script contains -- separator handling code."""
+        result = run_poe_main("_powershell_completion")
+        script = result.stdout
+
+        assert "$afterSeparator" in script
+        assert "eq '--'" in script

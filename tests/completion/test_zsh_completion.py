@@ -274,6 +274,28 @@ class TestZshCompletionScript:
         assert "(@)words[$current_task_idx,-1]" in script
         assert "CURRENT -= current_task_idx - 1" in script
 
+    def test_global_value_options_have_equals(self, run_poe_main):
+        """Global value-taking options should have '=' for --opt=value completion."""
+        result = run_poe_main("_zsh_completion")
+        script = result.stdout
+
+        # Find the _arguments -C block (global options)
+        args_start = script.index("_arguments -C")
+        args_end = script.index('"*::arg:->args"', args_start)
+        args_block = script[args_start:args_end]
+
+        # --directory/-C takes a value and should have = for --directory=path
+        assert "=[" in args_block, (
+            f"Value-taking global options should have '=' modifier. "
+            f"Block:\n{args_block}"
+        )
+        # Specifically check --directory spec has =
+        for line in args_block.split("\n"):
+            if "--directory" in line and ":directory:" in line:
+                assert (
+                    "=[" in line
+                ), f"--directory spec should have '=' for --directory=path: {line}"
+
     def test_stops_parsing_global_opts_after_task(self, run_poe_main):
         """Verify parsing loop stops treating words as global options after task."""
         result = run_poe_main("_zsh_completion")

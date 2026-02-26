@@ -41,22 +41,51 @@ def get_bash_completion_script(name: str = "") -> str:
 
 {func_name}() {{
     local cur prev words cword
-    _init_completion 2>/dev/null || {{
+    _init_completion -n = 2>/dev/null || {{
         COMPREPLY=()
-        cur="${{COMP_WORDS[COMP_CWORD]}}"
-        prev="${{COMP_WORDS[COMP_CWORD-1]}}"
-        words=("${{COMP_WORDS[@]}}")
-        cword=$COMP_CWORD
+        # Merge = signs split by COMP_WORDBREAKS (replicates -n = behavior)
+        local _i _w _last_idx
+        local -a _mw=()
+        local _mc=0
+        for (( _i=0; _i < ${{#COMP_WORDS[@]}}; _i++ )); do
+            _w="${{COMP_WORDS[_i]}}"
+            _last_idx=$(( ${{#_mw[@]}} - 1 ))
+            if [[ "$_w" == "=" && ${{#_mw[@]}} -gt 0 ]]; then
+                _mw[$_last_idx]+="="
+                (( _i == COMP_CWORD )) && _mc=$_last_idx
+            elif [[ ${{#_mw[@]}} -gt 0 && "${{_mw[$_last_idx]}}" == *= ]]; then
+                _mw[$_last_idx]+="$_w"
+                (( _i == COMP_CWORD )) && _mc=$_last_idx
+            else
+                (( _i == COMP_CWORD )) && _mc=${{#_mw[@]}}
+                _mw+=("$_w")
+            fi
+        done
+        words=("${{_mw[@]}}")
+        cword=$_mc
+        cur="${{words[cword]}}"
+        if (( cword > 0 )); then prev="${{words[cword-1]}}"; else prev=""; fi
     }}
 
     local target_path=""
     local task_position=""
     local potential_task=""
+    local after_separator=""
     local i
 
     # Extract target_path from -C/--directory/--root and find task position
     for ((i=1; i < ${{#words[@]}}; i++)); do
+        # Once we have a task, check for -- separator
+        if [[ -n "$task_position" ]]; then
+            if [[ "${{words[i]}}" == "--" ]]; then
+                after_separator=1
+            fi
+            continue
+        fi
         case "${{words[i]}}" in
+            -C=*|--directory=*|--root=*)
+                target_path="${{words[i]#*=}}"
+                ;;
             -C|--directory|--root)
                 if ((i+1 < ${{#words[@]}})); then
                     target_path="${{words[i+1]}}"
@@ -64,12 +93,14 @@ def get_bash_completion_script(name: str = "") -> str:
                 fi
                 ;;
             -*)
-                # Skip options and their values
-                case "${{words[i]}}" in
-                    {opts_with_values_str})
-                        ((i++))  # skip the value too
-                        ;;
-                esac
+                # Skip options and their values (only if no = inline)
+                if [[ "${{words[i]}}" != *=* ]]; then
+                    case "${{words[i]}}" in
+                        {opts_with_values_str})
+                            ((i++))  # skip the value too
+                            ;;
+                    esac
+                fi
                 ;;
             *)
                 # First non-option word is the task
@@ -81,17 +112,35 @@ def get_bash_completion_script(name: str = "") -> str:
         esac
     done
 
-    # Complete global option values (early return)
-    case "$prev" in
-        -C|--directory|--root)
-            _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$cur"))
-            return
-            ;;
-        -e|--executor)
-            COMPREPLY=($(compgen -W "auto poetry simple uv virtualenv" -- "$cur"))
-            return
-            ;;
-    esac
+    # Complete global option values (early return) — only before the task
+    if [[ -z "$task_position" ]] || ((cword <= task_position)); then
+        # Handle --opt=value style for global options
+        case "$cur" in
+            -C=*|--directory=*|--root=*)
+                local val="${{cur#*=}}" prefix="${{cur%%=*}}="
+                _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$val"))
+                COMPREPLY=("${{COMPREPLY[@]/#/$prefix}}")
+                return
+                ;;
+            -e=*|--executor=*)
+                local val="${{cur#*=}}" prefix="${{cur%%=*}}="
+                local -a vals
+                vals=($(compgen -W "auto poetry simple uv virtualenv" -- "$val"))
+                COMPREPLY=("${{vals[@]/#/$prefix}}")
+                return
+                ;;
+        esac
+        case "$prev" in
+            -C|--directory|--root)
+                _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$cur"))
+                return
+                ;;
+            -e|--executor)
+                COMPREPLY=($(compgen -W "auto poetry simple uv virtualenv" -- "$cur"))
+                return
+                ;;
+        esac
+    fi
 
     # If cursor is at or before task position, complete tasks/global options
     if [[ -z "$task_position" ]] || ((cword <= task_position)); then
@@ -103,6 +152,12 @@ def get_bash_completion_script(name: str = "") -> str:
             tasks=$({name} _list_tasks "$target_path" 2>/dev/null)
             COMPREPLY=($(compgen -W "$tasks" -- "$cur"))
         fi
+        return
+    fi
+
+    # After --, only offer file completions (pass-through args to task)
+    if [[ "$after_separator" == "1" ]] && ((cword > task_position)); then
+        _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$cur"))
         return
     fi
 
@@ -139,21 +194,47 @@ def get_bash_completion_script(name: str = "") -> str:
     for ((i=task_position+1; i < cword; i++)); do
         local word="${{words[i]}}"
         if [[ "$word" == -* ]]; then
-            # Check if this is a known option
+            # Check if this is a known option (strip =value for matching)
+            local opt_name="${{word%%=*}}"
             local is_opt=false is_bool=false
             for opt in "${{task_opts[@]}}"; do
-                [[ "$word" == "$opt" ]] && is_opt=true && break
+                [[ "$opt_name" == "$opt" ]] && is_opt=true && break
             done
             if [[ "$is_opt" == true ]]; then
                 for opt in "${{boolean_opts[@]}}"; do
-                    [[ "$word" == "$opt" ]] && is_bool=true && break
+                    [[ "$opt_name" == "$opt" ]] && is_bool=true && break
                 done
-                [[ "$is_bool" == false ]] && ((i++))  # Skip value for non-boolean
+                # Only skip next word if no = inline and not boolean
+                [[ "$is_bool" == false && "$word" != *=* ]] && ((i++))
             fi
         else
             ((positional_index++))
         fi
     done
+
+    # Handle --opt=value style for task options
+    if [[ "$cur" == -*=* ]]; then
+        local opt_part="${{cur%%=*}}" val_part="${{cur#*=}}"
+        local opt_choices=""
+        while IFS=$'\\t' read -r opts arg_type help_text choices; do
+            [[ -z "$opts" ]] && continue
+            [[ "$choices" == "_" ]] && choices=""
+            if [[ ",$opts," == *",$opt_part,"* ]]; then
+                opt_choices="$choices"
+                break
+            fi
+        done <<< "$task_args_data"
+        local prefix="${{opt_part}}="
+        if [[ -n "$opt_choices" ]]; then
+            local -a vals
+            vals=($(compgen -W "$opt_choices" -- "$val_part"))
+            COMPREPLY=("${{vals[@]/#/$prefix}}")
+        else
+            _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$val_part"))
+            COMPREPLY=("${{COMPREPLY[@]/#/$prefix}}")
+        fi
+        return
+    fi
 
     # If prev is an option, try to complete its value
     if [[ "$prev" == -* ]]; then
@@ -191,8 +272,10 @@ def get_bash_completion_script(name: str = "") -> str:
         # Build set of all used option forms (including equivalents) in ONE pass
         # This avoids O(n²) re-parsing of task_args_data for each option
         local used_forms=" "
-        for word in "${{words[@]}}"; do
+        for ((j=task_position+1; j < ${{#words[@]}}; j++)); do
+            local word="${{words[j]}}"
             [[ "$word" != -* ]] && continue
+            word="${{word%%=*}}"  # Strip =value for matching
             # Find this word's equivalence group and add ALL forms
             while IFS=$'\\t' read -r opts arg_type help_text choices; do
                 [[ -z "$opts" ]] && continue
