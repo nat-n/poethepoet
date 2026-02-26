@@ -241,3 +241,50 @@ def test_cmd_with_empty_glob_fail(run_poe_subproc):
         "Error: Glob pattern 'n*thing' did not match any files in working directory"
     )
     assert result.stderr == ""
+
+
+def test_cmd_boolean_flag(run_poe_subproc):
+    result = run_poe_subproc(
+        "booleans",
+        "--non",
+        "--tru",
+        "--fal",
+        "--txt",
+        project="cmds",
+    )
+    assert result.capture == (
+        r"""Poe => poe_test_echo '
+${non}=True' '${non:+plus}=plus' '${non:-minus}=True
+${fal}=True' '${fal:+plus}=plus' '${fal:-minus}=True
+${tru}=' '${tru:+plus}=' '${tru:-minus}=minus
+${txt}=' '${txt:+plus}=' '${txt:-minus}=minus'
+"""
+    )
+    assert result.stdout == (
+        """
+${non}=True ${non:+plus}=plus ${non:-minus}=True
+${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
+${tru}= ${tru:+plus}= ${tru:-minus}=minus
+${txt}= ${txt:+plus}= ${txt:-minus}=minus
+"""
+    )
+
+
+def test_cmd_boolean_flag_default_value(run_poe_subproc):
+    result = run_poe_subproc("booleans", project="cmds")
+    assert result.capture == (
+        r"""Poe => poe_test_echo '
+${non}=' '${non:+plus}=' '${non:-minus}=minus
+${fal}=' '${fal:+plus}=' '${fal:-minus}=minus
+${tru}=True' '${tru:+plus}=plus' '${tru:-minus}=True
+${txt}=text' '${txt:+plus}=plus' '${txt:-minus}=text'
+"""
+    )
+    assert result.stdout == (
+        """
+${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
+"""
+    )

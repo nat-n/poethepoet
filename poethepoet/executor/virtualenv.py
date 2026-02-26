@@ -40,7 +40,7 @@ class VirtualenvExecutor(PoeExecutor):
         return await self._execute_cmd(
             (venv.resolve_executable(cmd[0]), *cmd[1:]),
             input=input,
-            env=venv.get_env_vars(self.env.to_dict()),
+            env=venv.get_env_vars(self.env.to_cmd_reader()),
             use_exec=use_exec,
         )
 

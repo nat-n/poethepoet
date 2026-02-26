@@ -100,3 +100,19 @@ def test_christmas_tree_expr(run_poe_subproc):
     assert result.stdout == "True\n"
     assert result.stderr == ""
     assert result.code == 0
+
+
+def test_expr_boolean_flag(run_poe_subproc):
+    result = run_poe_subproc(
+        "booleans", "--non", "--tru", "--fal", "--txt", project="expr"
+    )
+    assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
+    assert result.stdout == "{'non': True, 'tru': False, 'fal': True, 'txt': False}\n"
+
+
+def test_expr_boolean_flag_default_value(run_poe_subproc):
+    result = run_poe_subproc("booleans", project="expr")
+    assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
+    assert (
+        result.stdout == "{'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
+    )

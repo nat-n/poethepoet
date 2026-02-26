@@ -60,3 +60,17 @@ cwd = ".."
 cmd = """poe_test_echo cmds_pro* - n*thing"""
 empty_glob = "fail"
 cwd = ".."
+
+[tool.poe.tasks.booleans]
+cmd = """poe_test_echo \\
+\\${non}=${non} \\${non:+plus}=${non:+plus} \\${non:-minus}=${non:-minus}\\
+\\${fal}=${fal} \\${fal:+plus}=${fal:+plus} \\${fal:-minus}=${fal:-minus}\\
+\\${tru}=${tru} \\${tru:+plus}=${tru:+plus} \\${tru:-minus}=${tru:-minus}\\
+\\${txt}=${txt} \\${txt:+plus}=${txt:+plus} \\${txt:-minus}=${txt:-minus}
+"""
+args = [
+    { name = "non", type = "boolean" },
+    { name = "tru", type = "boolean", default = true },
+    { name = "fal", type = "boolean", default = false },
+    { name = "txt", type = "boolean", default = "text" },
+]
