@@ -93,10 +93,23 @@ function script:Get-PoeTargetPath {{
     param([string[]]$Words)
 
     for ($i = 1; $i -lt $Words.Count; $i++) {{
-        if ($Words[$i] -in @('-C', '--directory', '--root')) {{
-            if ($i + 1 -lt $Words.Count) {{
-                return $Words[$i + 1]
+        $w = $Words[$i]
+        if ($w.StartsWith('-')) {{
+            # Handle --opt=value: extract base option and inline value
+            $optBase = if ($w.Contains('=')) {{ $w.Substring(0, $w.IndexOf('=')) }} else {{ $w }}
+            $hasEquals = $w.Contains('=')
+            if ($optBase -in @('-C', '--directory', '--root')) {{
+                if ($hasEquals) {{
+                    return $w.Substring($w.IndexOf('=') + 1)
+                }} elseif ($i + 1 -lt $Words.Count) {{
+                    return $Words[$i + 1]
+                }}
             }}
+            # Skip value for options that take values (only if no =)
+            if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $Words.Count) {{ $i++ }}
+        }} else {{
+            # First non-option word is the task — stop scanning global options
+            break
         }}
     }}
     return $null
@@ -109,8 +122,10 @@ function script:Get-PoeCurrentTask {{
         $word = $Words[$i]
         # Skip options
         if ($word.StartsWith('-')) {{
-            # Skip value for options that take values
-            if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $Words.Count) {{ $i++ }}
+            $optBase = if ($word.Contains('=')) {{ $word.Substring(0, $word.IndexOf('=')) }} else {{ $word }}
+            $hasEquals = $word.Contains('=')
+            # Skip value for options that take values (only if no =)
+            if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $Words.Count) {{ $i++ }}
             continue
         }}
         # First non-option word is the task
@@ -206,8 +221,10 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
     for ($i = 1; $i -lt $words.Count; $i++) {{
         $word = $words[$i]
         if ($word.StartsWith('-')) {{
-            # Skip value for options that take values
-            if ($word -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) {{ $i++ }}
+            $optBase = if ($word.Contains('=')) {{ $word.Substring(0, $word.IndexOf('=')) }} else {{ $word }}
+            $hasEquals = $word.Contains('=')
+            # Skip value for options that take values (only if no =)
+            if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) {{ $i++ }}
             continue
         }}
         $currentTask = $word
@@ -221,12 +238,40 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
         $cursorIndex = $words.Count
     }}
 
-    # Handle global option value completion
+    # Handle global option value completion — only before the task
     if ($wordToComplete -eq '' -and $words.Count -ge 1) {{ $prevWord = $words[-1] }}
     elseif ($words.Count -ge 2) {{ $prevWord = $words[-2] }}
     else {{ $prevWord = $null }}
 
-    if ($prevWord) {{
+    # Handle --opt=value style for global options
+    if ((-not $currentTask -or $cursorIndex -le $taskPosition) -and $curWord -like '-*=*') {{
+        $eqIdx = $curWord.IndexOf('=')
+        $optPart = $curWord.Substring(0, $eqIdx)
+        $valPart = $curWord.Substring($eqIdx + 1)
+        $prefix = "$optPart="
+
+        if ($optPart -in @('-C', '--directory', '--root')) {{
+            Get-ChildItem -Path "$valPart*" -Directory -ErrorAction SilentlyContinue |
+                ForEach-Object {{
+                    [System.Management.Automation.CompletionResult]::new(
+                        "$prefix$($_.FullName)", $_.Name, 'ParameterValue', $_.FullName
+                    )
+                }}
+            return
+        }}
+        if ($optPart -in @('-e', '--executor')) {{
+            @('auto', 'poetry', 'simple', 'uv', 'virtualenv') |
+                Where-Object {{ $_ -like "$valPart*" }} |
+                ForEach-Object {{
+                    [System.Management.Automation.CompletionResult]::new(
+                        "$prefix$_", $_, 'ParameterValue', "Executor: $_"
+                    )
+                }}
+            return
+        }}
+    }}
+
+    if ($prevWord -and (-not $currentTask -or $cursorIndex -le $taskPosition)) {{
         switch ($prevWord) {{
             {{ $_ -in @('-C', '--directory', '--root') }} {{
                 # Directory completion
@@ -264,8 +309,9 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
             $excludedGlobalOpts = @{{}}
             for ($j = 1; $j -lt $words.Count; $j++) {{
                 $w = $words[$j]
-                if ($w.StartsWith('-') -and $script:PoeGlobalOptionExclusions.ContainsKey($w)) {{
-                    foreach ($ex in $script:PoeGlobalOptionExclusions[$w]) {{
+                $optBase = if ($w.Contains('=')) {{ $w.Substring(0, $w.IndexOf('=')) }} else {{ $w }}
+                if ($optBase.StartsWith('-') -and $script:PoeGlobalOptionExclusions.ContainsKey($optBase)) {{
+                    foreach ($ex in $script:PoeGlobalOptionExclusions[$optBase]) {{
                         $excludedGlobalOpts[$ex] = $true
                     }}
                 }}
@@ -302,6 +348,28 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
     $taskArgs = Get-PoeTaskArgs -TaskName $currentTask -TargetPath $targetPath
     $usedOpts = Get-UsedOptions -Words $words -TaskPosition $taskPosition
 
+    # Handle --opt=value style for task options
+    if ($curWord -like '-*=*') {{
+        $eqIdx = $curWord.IndexOf('=')
+        $optPart = $curWord.Substring(0, $eqIdx)
+        $valPart = $curWord.Substring($eqIdx + 1)
+        $prefix = "$optPart="
+        foreach ($arg in $taskArgs) {{
+            if ($optPart -in $arg.Options) {{
+                if ($arg.Choices.Count -gt 0) {{
+                    $arg.Choices | Where-Object {{ $_ -like "$valPart*" }} | ForEach-Object {{
+                        $value = $_ -replace "^'|'$", ""
+                        [System.Management.Automation.CompletionResult]::new(
+                            "$prefix$value", $value, 'ParameterValue', $value
+                        )
+                    }}
+                }}
+                return
+            }}
+        }}
+        return
+    }}
+
     # If previous word is an option, try to complete its value
     if ($prevWord -and $prevWord.StartsWith('-')) {{
         foreach ($arg in $taskArgs) {{
@@ -335,11 +403,14 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
     # Show task options if word starts with -
     if ($curWord.StartsWith('-')) {{
         # Build list of all option strings, excluding already used ones
+        # Only scan words after the task position to avoid global options
         $usedGroups = @{{}}
-        foreach ($word in $words) {{
-            if (-not $word.StartsWith('-')) {{ continue }}
+        for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {{
+            $w = $words[$j]
+            if (-not $w.StartsWith('-')) {{ continue }}
+            $optBase = if ($w.Contains('=')) {{ $w.Substring(0, $w.IndexOf('=')) }} else {{ $w }}
             foreach ($arg in $taskArgs) {{
-                if ($word -in $arg.Options) {{
+                if ($optBase -in $arg.Options) {{
                     foreach ($opt in $arg.Options) {{
                         $usedGroups[$opt] = $true
                     }}
@@ -370,15 +441,17 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
     for ($i = $taskPosition + 1; $i -lt $words.Count; $i++) {{
         $word = $words[$i]
         if ($word.StartsWith('-')) {{
+            $optBase = if ($word.Contains('=')) {{ $word.Substring(0, $word.IndexOf('=')) }} else {{ $word }}
+            $hasEquals = $word.Contains('=')
             # Check if this is a known option with value
             $isValuedOpt = $false
             foreach ($arg in $taskArgs) {{
-                if ($word -in $arg.Options -and $arg.Type -ne 'boolean') {{
+                if ($optBase -in $arg.Options -and $arg.Type -ne 'boolean') {{
                     $isValuedOpt = $true
                     break
                 }}
             }}
-            if ($isValuedOpt) {{ $i++ }}
+            if ($isValuedOpt -and -not $hasEquals) {{ $i++ }}
             continue
         }}
         # This is a positional arg (or the current word we're completing)
