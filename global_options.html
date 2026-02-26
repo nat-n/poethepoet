@@ -381,6 +381,8 @@ Alternatively you can override the executor type at runtime by passing the <code
 </dd>
 <dt><strong>isolated</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--isolated">📖</a></span></dt><dd><p>Run the command in a fresh emphemeral virtual environment, instead of the usual in-project .venv</p>
 </dd>
+<dt><strong>exact</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--exact">📖</a></span></dt><dd><p>Sync the environment exactly, removing extraneous packages not in the requested groups (unlike the default inexact sync which only adds missing packages).</p>
+</dd>
 <dt><strong>no-sync</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--no-sync">📖</a></span></dt><dd><p>Avoid syncing the virtual environment.</p>
 </dd>
 <dt><strong>locked</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> <a class="reference external" href="https://docs.astral.sh/uv/reference/cli/#uv-run--locked">📖</a></span></dt><dd><p>Run without updating the uv.lock file.</p>
@@ -595,7 +597,7 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=38127d83"></script>
+</div><script src="_static/documentation_options.js?v=9c6af99a"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
