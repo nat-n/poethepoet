@@ -1063,51 +1063,53 @@ class TestBashSeparatorHandling:
         result = run_poe_main("_bash_completion")
         return result.stdout
 
-    def test_no_separator_handling(self, bash_harness, completion_script):
-        """Document current behavior: -- is not specially handled."""
+    def test_after_separator_no_task_options(self, bash_harness, completion_script):
+        """poe mytask -- --f<TAB> should not complete task opts, just files."""
         mock_output = {
             "_list_tasks": "task",
-            "_bash_describe_task_args": "--opt",
-            "_bash_task_arg_choices": "",
+            "_describe_task_args": "--flavor,-f\tstring\tFlavor\tvanilla chocolate",
         }
 
         result = bash_harness(
             completion_script,
-            words=["poe", "task", "--", ""],
+            words=["poe", "task", "--", "--f"],
             current=3,
             mock_poe_output=mock_output,
             mock_files=["file.txt"],
         )
 
-        # Current bash completion doesn't have special -- handling
-        # It will treat -- as a regular word and offer file completion
+        # After --, should only offer file completions, not --flavor
         assert result.filedir_called or result.compgen_called
+        assert "--flavor" not in result.compreply
+        assert "-f" not in result.compreply
 
-    def test_double_dash_treated_as_option(self, bash_harness, completion_script):
-        """-- starting with - might be treated as option."""
+    def test_after_separator_no_positional_choices(
+        self, bash_harness, completion_script
+    ):
+        """poe mytask -- <TAB> should offer files, not positional choices."""
         mock_output = {
-            "_list_tasks": "task",
-            "_bash_describe_task_args": "--opt",
-            "_bash_task_arg_choices": "",
+            "_list_tasks": "pick",
+            "_describe_task_args": "flavor\tpositional\tFlavor\tvanilla chocolate",
         }
 
         result = bash_harness(
             completion_script,
-            words=["poe", "task", "--"],
-            current=2,
+            words=["poe", "pick", "--", ""],
+            current=3,
             mock_poe_output=mock_output,
+            mock_files=["file.txt"],
         )
 
-        # -- starts with -, so might trigger option completion
-        # or it might just show --opt filtered to --
-        assert result.task_args_called or result.compgen_called
+        # After --, should only offer file completions, not positional choices
+        assert result.filedir_called or result.compgen_called
+        assert "vanilla" not in result.compreply
+        assert "chocolate" not in result.compreply
 
     def test_args_after_double_dash(self, bash_harness, completion_script):
-        """Arguments after -- should still get file completion."""
+        """poe task --opt value -- <TAB> should offer file completion."""
         mock_output = {
             "_list_tasks": "task",
-            "_bash_describe_task_args": "--opt",
-            "_bash_task_arg_choices": "",
+            "_describe_task_args": "--opt\tstring\tOption\t_",
         }
 
         result = bash_harness(
@@ -1120,6 +1122,25 @@ class TestBashSeparatorHandling:
 
         # After --, should fall back to file completion
         assert result.filedir_called or result.compgen_called
+
+    def test_double_dash_before_task_not_separator(
+        self, bash_harness, completion_script
+    ):
+        """poe -- <TAB> should not trigger separator (no task yet)."""
+        mock_output = {
+            "_list_tasks": "task1 task2",
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "--", ""],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        # -- in global options area shouldn't trigger separator
+        # Should still offer task completion
+        assert result.list_tasks_called or result.compreply
 
 
 @requires_bash

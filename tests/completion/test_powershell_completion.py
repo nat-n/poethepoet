@@ -1932,3 +1932,209 @@ class TestPowerShellEqualsStyleOptions:
         assert "RESULT:--executor=auto" in proc.stdout
         assert "RESULT:--executor=poetry" in proc.stdout
         assert "RESULT:--executor=simple" in proc.stdout
+
+
+@pytest.mark.skipif(
+    not _powershell_is_available(), reason="PowerShell not available or not functional"
+)
+class TestPowerShellSeparatorHandling:
+    """Tests for -- separator handling in PowerShell completion.
+
+    After `--`, shells conventionally stop interpreting options and pass
+    remaining arguments through to the underlying command. Only file
+    completions should be offered after the separator.
+    """
+
+    def test_after_separator_returns_files_only(self, run_poe_main, tmp_path):
+        """poe mytask -- <TAB> should only offer file completions, not task options."""
+        mock = 'function poe { Write-Output "--greeting,-g\tstring\tGreeting\t_" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '--', '')
+            $wordToComplete = ''
+            $curWord = ''
+
+            # Find task (reproduces completer logic)
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            # Check for -- separator after task position
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "TASK:$currentTask"
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:mytask" in proc.stdout
+        assert "SEPARATOR:True" in proc.stdout
+
+    def test_after_separator_no_options(self, run_poe_main, tmp_path):
+        """poe mytask -- --f<TAB> should not offer --flavor etc."""
+        mock = 'function poe { Write-Output "--flavor,-f\tstring\tFlavor\tvanilla chocolate" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '--', '--f')
+            $wordToComplete = '--f'
+            $curWord = '--f'
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count - 1
+
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "SEPARATOR:True" in proc.stdout
+
+    def test_double_dash_before_task_is_not_separator(self, run_poe_main, tmp_path):
+        """poe -- <TAB> should not trigger separator (no task found yet)."""
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', '--', '')
+            $wordToComplete = ''
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "TASK:$currentTask"
+            Write-Output "TASKPOS:$taskPosition"
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+        )
+        assert proc.returncode == 0, proc.stderr
+        # No task found, so taskPosition is -1, separator should be false
+        assert "SEPARATOR:False" in proc.stdout
+
+    def test_separator_with_args_before(self, run_poe_main, tmp_path):
+        """poe mytask --flavor vanilla -- <TAB> should only offer file completion."""
+        mock = 'function poe { Write-Output "--flavor,-f\tstring\tFlavor\tvanilla chocolate" }'
+        proc = _run_ps_test(
+            run_poe_main,
+            tmp_path,
+            """
+            $words = @('poe', 'mytask', '--flavor', 'vanilla', '--', '')
+            $wordToComplete = ''
+            $curWord = ''
+
+            $currentTask = $null
+            $taskPosition = -1
+            for ($i = 1; $i -lt $words.Count; $i++) {
+                $word = $words[$i]
+                if ($word.StartsWith('-')) {
+                    $optBase = if ($word.Contains('=')) { $word.Substring(0, $word.IndexOf('=')) } else { $word }
+                    $hasEquals = $word.Contains('=')
+                    if (-not $hasEquals -and $optBase -in $script:PoeOptionsWithValues -and ($i + 1) -lt $words.Count) { $i++ }
+                    continue
+                }
+                $currentTask = $word
+                $taskPosition = $i
+                break
+            }
+
+            $cursorIndex = $words.Count
+
+            $afterSeparator = $false
+            if ($taskPosition -ge 0) {
+                for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {
+                    if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {
+                        $afterSeparator = $true
+                        break
+                    }
+                }
+            }
+
+            Write-Output "TASK:$currentTask"
+            Write-Output "SEPARATOR:$afterSeparator"
+        """,
+            mock_poe_func=mock,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "TASK:mytask" in proc.stdout
+        assert "SEPARATOR:True" in proc.stdout
+
+    def test_separator_in_generated_script(self, run_poe_main):
+        """Verify the generated script contains -- separator handling code."""
+        result = run_poe_main("_powershell_completion")
+        script = result.stdout
+
+        assert "$afterSeparator" in script
+        assert "eq '--'" in script

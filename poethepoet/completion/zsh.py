@@ -511,9 +511,9 @@ _poe_caching_policy() {
     # Wrap _arguments in a conditional: skip global options when task is known
     arguments_block = " \\\n        ".join(args_lines)
     conditional_arguments = (
-        "    # If we already identified a task, skip global options and go"
-        " straight to task args\n"
-        '    if [[ -n "$current_task" ]]; then\n'
+        "    # If we already identified a task and cursor is past it, skip global"
+        " options and go straight to task args\n"
+        '    if [[ -n "$current_task" && CURRENT -gt $current_task_idx ]]; then\n'
         '        state="args"\n'
         "        # Replicate the $words/$CURRENT stripping that _arguments -C\n"
         "        # does for *::arg:->args — keep task name as $words[1] and\n"

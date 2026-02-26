@@ -225,6 +225,37 @@ class TestZshCompletionE2E:
         assert result.state == "task"
         assert result.describe_called
 
+    def test_partial_task_stays_in_task_state_with_trailing_words(
+        self, zsh_harness, completion_script
+    ):
+        """Cursor ON a partial task token must stay in task state, not jump to args.
+
+        When the cursor is positioned on a word that the pre-parse loop identifies
+        as a task (e.g., user moved cursor back mid-line), the completion should
+        still offer task names — not task arguments. This requires checking that
+        CURRENT > current_task_idx before bypassing global _arguments.
+        """
+        mock_output = {
+            "_zsh_describe_tasks": "greet:Greet someone\necho:Echo text",
+            "_describe_task_args": "--mode,-m\tstring\tMode\tfast slow",
+        }
+
+        # Simulate: cursor on "gr" with words after it (e.g., user editing mid-line)
+        # poe gr --mode fast
+        #     ^cursor (CURRENT=2)
+        # Pre-parse loop sees "gr" as task, but cursor is ON it, not past it.
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "gr", "--mode", "fast"],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert (
+            result.state == "task"
+        ), f"Cursor ON partial task token should stay in task state, got: {result.state!r}"
+        assert result.describe_called, "Should offer task name completions"
+
     # ========== Task args completion tests ==========
 
     def test_describe_task_args_completion(self, zsh_harness, completion_script):

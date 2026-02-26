@@ -238,6 +238,29 @@ Register-ArgumentCompleter -CommandName {name} -Native -ScriptBlock {{
         $cursorIndex = $words.Count
     }}
 
+    # Check for -- separator after task position
+    $afterSeparator = $false
+    if ($taskPosition -ge 0) {{
+        for ($j = $taskPosition + 1; $j -lt $words.Count; $j++) {{
+            if ($words[$j] -eq '--' -and $j -lt $cursorIndex) {{
+                $afterSeparator = $true
+                break
+            }}
+        }}
+    }}
+
+    # After --, only offer file completions (pass-through args to task)
+    if ($afterSeparator) {{
+        Get-ChildItem -Path "$curWord*" -ErrorAction SilentlyContinue |
+            ForEach-Object {{
+                $type = if ($_.PSIsContainer) {{ 'ProviderContainer' }} else {{ 'ProviderItem' }}
+                [System.Management.Automation.CompletionResult]::new(
+                    $_.FullName, $_.Name, $type, $_.FullName
+                )
+            }}
+        return
+    }}
+
     # Handle global option value completion — only before the task
     if ($wordToComplete -eq '' -and $words.Count -ge 1) {{ $prevWord = $words[-1] }}
     elseif ($words.Count -ge 2) {{ $prevWord = $words[-2] }}

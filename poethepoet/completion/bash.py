@@ -70,12 +70,16 @@ def get_bash_completion_script(name: str = "") -> str:
     local target_path=""
     local task_position=""
     local potential_task=""
+    local after_separator=""
     local i
 
     # Extract target_path from -C/--directory/--root and find task position
     for ((i=1; i < ${{#words[@]}}; i++)); do
-        # Once we have a task, stop parsing global options
+        # Once we have a task, check for -- separator
         if [[ -n "$task_position" ]]; then
+            if [[ "${{words[i]}}" == "--" ]]; then
+                after_separator=1
+            fi
             continue
         fi
         case "${{words[i]}}" in
@@ -148,6 +152,12 @@ def get_bash_completion_script(name: str = "") -> str:
             tasks=$({name} _list_tasks "$target_path" 2>/dev/null)
             COMPREPLY=($(compgen -W "$tasks" -- "$cur"))
         fi
+        return
+    fi
+
+    # After --, only offer file completions (pass-through args to task)
+    if [[ "$after_separator" == "1" ]] && ((cword > task_position)); then
+        _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$cur"))
         return
     fi
 
