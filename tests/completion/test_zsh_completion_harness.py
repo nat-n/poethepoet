@@ -225,6 +225,30 @@ class TestZshCompletionE2E:
         assert result.state == "task"
         assert result.describe_called
 
+
+    def test_partial_task_name_stays_in_task_state(self, zsh_harness, completion_script):
+        """Typing first positional token should still complete tasks, not task args."""
+        mock_output = {
+            "_zsh_describe_tasks": "greet:Greet someone\necho:Echo text",
+            "_describe_task_args": "--mode,-m\tstring\tMode\tfast slow",
+        }
+
+        # Simulate: poe gr<TAB>
+        # Even though "gr" is a potential task token, cursor is still on that token,
+        # so completion should remain in task/global state rather than task-arg state.
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "gr"],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.state == "task"
+        assert result.describe_called, "Should describe task names for partial task token"
+        assert not result.arguments_called or all(
+            "Mode" not in spec for spec in result.arguments_specs
+        )
+
     # ========== Task args completion tests ==========
 
     def test_describe_task_args_completion(self, zsh_harness, completion_script):
@@ -291,6 +315,153 @@ class TestZshCompletionE2E:
         specs_text = "\n".join(result.arguments_specs)
         # Quoted choices should appear
         assert "quick run" in specs_text or "'quick run'" in specs_text
+
+    # ========== Option=value style completion tests ==========
+
+    def test_value_option_specs_include_equals(self, zsh_harness, completion_script):
+        """Value-taking option specs should include '=' so --opt=value and -f=value work.
+
+        The '=' modifier tells _arguments that the value can follow '=' in the
+        same word OR appear in the next word. This enables all forms:
+        --flavor=value, --flavor value, -f=value, and -fvalue (via -s).
+        """
+        mock_output = {
+            "_zsh_describe_tasks": "pick:Pick something",
+            "_describe_task_args": "--flavor,-f\tstring\tIce cream flavor\tvanilla chocolate strawberry\n--upper\tboolean\tUppercase\t_\nsize\tpositional\tServing size\tsmall medium large",
+        }
+
+        # Simulate: poe pick <TAB>
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "pick", ""],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.arguments_called
+        # Multi-option --flavor,-f produces two specs, both with =
+        flavor_specs = [s for s in result.arguments_specs if "Ice cream flavor" in s]
+        assert len(flavor_specs) == 2, f"Expected 2 flavor specs, got: {flavor_specs}"
+        assert any(
+            "-f=[" in s for s in flavor_specs
+        ), f"Short option spec should have '=': {flavor_specs}"
+        assert any(
+            "--flavor=[" in s for s in flavor_specs
+        ), f"Long option spec should have '=': {flavor_specs}"
+        # Boolean options should NOT have =
+        upper_specs = [s for s in result.arguments_specs if "--upper" in s]
+        for spec in upper_specs:
+            assert "--upper=" not in spec, f"Boolean option should NOT have '=': {spec}"
+        # Positional args should NOT have =
+        for spec in result.arguments_specs:
+            if spec.startswith(":"):
+                assert "=[" not in spec, f"Positional arg should NOT have '=': {spec}"
+
+    def test_single_option_spec_includes_equals(self, zsh_harness, completion_script):
+        """Single-form value options should also include '='."""
+        mock_output = {
+            "_zsh_describe_tasks": "task:A task",
+            "_describe_task_args": "--output\tstring\tOutput dir\t_",
+        }
+
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "task", ""],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.arguments_called
+        output_specs = [s for s in result.arguments_specs if "--output" in s]
+        assert output_specs, "Should have --output in specs"
+        for spec in output_specs:
+            assert (
+                "--output=[" in spec
+            ), f"Single value option should have '=' for --option=value style: {spec}"
+
+    # ========== Task-specific options isolation tests ==========
+
+    def test_task_options_not_mixed_with_global_options(
+        self, zsh_harness, completion_script
+    ):
+        """After task name, only task-specific options should be offered, not global poe options."""
+        mock_output = {
+            "_zsh_describe_tasks": "flux-check:Check flux",
+            "_describe_task_args": "--env,-e\tstring\tEnvironment\tdev staging prod\n--verbose\tboolean\tVerbose output\t_",
+        }
+
+        # Simulate: poe flux-check -<TAB>
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "flux-check", "-"],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.current_task == "flux-check"
+        assert result.state == "args"
+        assert result.arguments_called
+        # Task-specific args should be present
+        specs_text = "\n".join(result.arguments_specs)
+        assert "--env" in specs_text, f"Expected task's --env in specs: {specs_text}"
+        assert "--verbose" in specs_text
+        # Global options should NOT be present (--executor, --directory, etc.)
+        assert (
+            "--executor" not in specs_text
+        ), f"Global --executor should not appear in task arg specs: {specs_text}"
+        assert (
+            "--directory" not in specs_text
+        ), f"Global --directory should not appear in task arg specs: {specs_text}"
+
+    def test_task_e_option_not_consumed_by_global_executor(
+        self, zsh_harness, completion_script
+    ):
+        """Task's -e option value should not be consumed by global -e/--executor parsing."""
+        mock_output = {
+            "_zsh_describe_tasks": "flux-check:Check flux",
+            "_describe_task_args": "--env,-e\tstring\tEnvironment\tdev staging prod\n--verbose\tboolean\tVerbose output\t_",
+        }
+
+        # Simulate: poe flux-check -e prod -<TAB>
+        # Bug: -e after task was being parsed as global --executor, consuming "prod"
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "flux-check", "-e", "prod", "-"],
+            current=5,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.current_task == "flux-check"
+        assert result.state == "args"
+        assert result.arguments_called
+        # Should offer remaining task options (--verbose)
+        # --env/-e should be filtered out (already used)
+        specs_text = "\n".join(result.arguments_specs)
+        assert (
+            "--verbose" in specs_text
+        ), f"Expected --verbose in remaining task options: {specs_text}"
+
+    def test_global_options_still_work_before_task(
+        self, zsh_harness, completion_script
+    ):
+        """Global options should still work when no task has been typed yet."""
+        mock_output = {
+            "_zsh_describe_tasks": "greet:Greet someone",
+        }
+
+        # Simulate: poe -<TAB> (no task yet)
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "-"],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.current_task == ""
+        assert result.arguments_called
+        # Global options should be present
+        specs_text = "\n".join(result.arguments_specs)
+        assert "--help" in specs_text or "-h" in specs_text
 
     # ========== Option filtering tests ==========
 
@@ -442,6 +613,27 @@ class TestZshCompletionE2E:
         )
 
         assert result.target_path == "/other/path"
+
+    def test_directory_equals_style_completes_tasks(
+        self, zsh_harness, completion_script
+    ):
+        """poe --directory=path <TAB> should complete task names."""
+        mock_output = {
+            "_zsh_describe_tasks": "greet:Greet someone\necho:Echo text",
+        }
+
+        # Simulate: poe --directory=/some/path <TAB>
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "--directory=/some/path", ""],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.target_path == "/some/path"
+        assert result.state == "task", f"Expected task state, got: {result.state!r}"
+        assert result.describe_called, "Should offer task completions"
+        assert "greet:Greet someone" in result.describe_items
 
     # ========== Positional args tests ==========
 
@@ -1104,11 +1296,11 @@ _poe
         )
 
         # Inject hit counter at 8 (below max of 10) — next hit will be 9th, still valid
-        # Replace _poe "$@" with ONLY the injection (no call) to avoid double invocation
         inject_hits = "\n".join(
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/test]=8",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1146,6 +1338,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/test]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1187,6 +1380,7 @@ _poe
                 "_poe_mem_tasks_time[/hits/mem]=100",
                 "_poe_cache_hits_tasks[/hits/mem]=9",
                 "SECONDS=200",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject)
@@ -1224,6 +1418,7 @@ _poe
                 "typeset -gA _poe_cache_hits_args",
                 '_inject_key="/hits/args|build"',
                 "_poe_cache_hits_args[$_inject_key]=8",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1271,6 +1466,7 @@ _poe
                 "typeset -gA _poe_cache_hits_args",
                 '_inject_key="/hits/args|build"',
                 "_poe_cache_hits_args[$_inject_key]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1311,6 +1507,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/help]=9",
+                '_poe "$@"',
             ]
         )
         script_with_hits = script_with_path.replace('_poe "$@"', inject_hits)
@@ -1347,6 +1544,7 @@ _poe
             [
                 "typeset -gA _poe_cache_hits_tasks",
                 "_poe_cache_hits_tasks[/hits/reset]=9",
+                '_poe "$@"',
             ]
         )
         script_at_9 = script_with_path.replace('_poe "$@"', inject_hits_9)

@@ -1416,3 +1416,272 @@ class TestBashBackwardCompatibility:
         # Task completion should still work
         assert result.list_tasks_called
         assert "simple-task" in result.compreply
+
+
+@requires_bash
+class TestBashTaskOptionIsolation:
+    """Tests that global option handling doesn't leak into task-specific completion.
+
+    These tests verify that after a task name, global options like -e/--executor
+    and -C/--directory are not matched, and that the used-options filter only
+    scans words after the task position.
+    """
+
+    @pytest.fixture
+    def completion_script(self, run_poe_main):
+        """Get the generated bash completion script."""
+        result = run_poe_main("_bash_completion")
+        return result.stdout
+
+    # Bug 1: Global value completion fires after task name
+
+    def test_task_e_option_not_completed_as_global_executor(
+        self, bash_harness, completion_script
+    ):
+        """poe mytask -e <TAB> should complete task's -e choices, not executor."""
+        mock_output = {
+            "_list_tasks": "mytask",
+            "_describe_task_args": "-e,--env\tstring\tEnvironment\tdev staging prod",
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "mytask", "-e", ""],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        # Should offer task's -e choices
+        assert "dev" in result.compreply
+        assert "staging" in result.compreply
+        assert "prod" in result.compreply
+        # Should NOT offer global executor choices
+        assert "auto" not in result.compreply
+        assert "poetry" not in result.compreply
+        assert "virtualenv" not in result.compreply
+
+    def test_task_c_option_not_completed_as_directory(
+        self, bash_harness, completion_script
+    ):
+        """poe mytask -C <TAB> should complete task's -C, not call _filedir."""
+        mock_output = {
+            "_list_tasks": "mytask",
+            "_describe_task_args": "-C,--config\tstring\tConfig\tbase override custom",
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "mytask", "-C", ""],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        # Should offer task's -C choices, not directory completion
+        assert "base" in result.compreply
+        assert "override" in result.compreply
+        assert "custom" in result.compreply
+
+    # Bug 2: Pre-parsing loop doesn't stop at task name
+
+    def test_task_option_doesnt_set_target_path(self, bash_harness, completion_script):
+        """poe mytask -C /some/path <TAB> should not set target_path."""
+        mock_output = {
+            "_list_tasks": "mytask",
+            "_describe_task_args": "-C,--config\tstring\tConfig\t_",
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "mytask", "-C", "/some/path", ""],
+            current=4,
+            mock_poe_output=mock_output,
+        )
+
+        # target_path should NOT be set from task's -C argument
+        assert result.detected_target_path == ""
+
+    def test_task_e_value_not_skipped_by_global_parsing(
+        self, bash_harness, completion_script
+    ):
+        """poe mytask -e prod --verbose <TAB> should not misparse task args."""
+        mock_output = {
+            "_list_tasks": "mytask",
+            "_describe_task_args": (
+                "-e,--env\tstring\tEnvironment\t_\n" "--verbose\tboolean\tVerbose\t_"
+            ),
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "mytask", "-e", "prod", "--verbose", ""],
+            current=5,
+            mock_poe_output=mock_output,
+        )
+
+        # The task should be correctly identified
+        assert result.detected_task == "mytask"
+        # target_path should not be set
+        assert result.detected_target_path == ""
+
+    # Bug 3: Used-options loop scans all words (including before task)
+
+    def test_global_option_doesnt_filter_task_option(
+        self, bash_harness, completion_script
+    ):
+        """poe -v mytask -<TAB> should still offer task's -v/--verbose."""
+        mock_output = {
+            "_list_tasks": "mytask",
+            "_describe_task_args": (
+                "-v,--verbose\tboolean\tVerbose\t_\n" "--output,-o\tstring\tOutput\t_"
+            ),
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "-v", "mytask", "-"],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        # Task's -v and --verbose should still be offered even though
+        # global -v was used before the task name
+        assert "-v" in result.compreply
+        assert "--verbose" in result.compreply
+        assert "--output" in result.compreply
+        assert "-o" in result.compreply
+
+    def test_global_options_still_work_before_task(
+        self, bash_harness, completion_script
+    ):
+        """poe -e <TAB> (no task yet) should still offer executor choices."""
+        mock_output = {"_list_tasks": "mytask"}
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "-e", ""],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        # Global executor choices should still work when no task is present
+        assert "auto" in result.compreply
+        assert "poetry" in result.compreply
+        assert "simple" in result.compreply
+
+
+@requires_bash
+class TestBashEqualsStyleOptions:
+    """Tests for --option=value style argument handling.
+
+    After _init_completion -n =, bash keeps --opt=value as a single word.
+    These tests verify that the completion script handles this correctly.
+    """
+
+    @pytest.fixture
+    def completion_script(self, run_poe_main):
+        """Get the generated bash completion script."""
+        result = run_poe_main("_bash_completion")
+        return result.stdout
+
+    def test_directory_equals_completes_tasks(self, bash_harness, completion_script):
+        """poe --directory=/path <TAB> should detect target_path and list tasks."""
+        mock_output = {"_list_tasks": "remote-task deploy"}
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "--directory=/some/path", ""],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.detected_target_path == "/some/path"
+        assert result.list_tasks_called
+        assert "remote-task" in result.compreply
+
+    def test_task_option_equals_value_completion(self, bash_harness, completion_script):
+        """poe pick --flavor= should offer prefixed choices."""
+        mock_output = {
+            "_list_tasks": "pick",
+            "_describe_task_args": "--flavor,-f\tstring\tFlavor\tvanilla chocolate strawberry",
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "pick", "--flavor="],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert "--flavor=vanilla" in result.compreply
+        assert "--flavor=chocolate" in result.compreply
+        assert "--flavor=strawberry" in result.compreply
+
+    def test_task_option_equals_partial_value(self, bash_harness, completion_script):
+        """poe pick --flavor=van should filter to --flavor=vanilla."""
+        mock_output = {
+            "_list_tasks": "pick",
+            "_describe_task_args": "--flavor,-f\tstring\tFlavor\tvanilla chocolate strawberry",
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "pick", "--flavor=van"],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert "--flavor=vanilla" in result.compreply
+        assert "--flavor=chocolate" not in result.compreply
+
+    def test_used_option_equals_filtered(self, bash_harness, completion_script):
+        """poe task --mode=debug -<TAB> should filter --mode/-m from completions."""
+        mock_output = {
+            "_list_tasks": "task",
+            "_describe_task_args": (
+                "--mode,-m\tstring\tMode\t_\n" "--other,-o\tstring\tOther\t_"
+            ),
+        }
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "task", "--mode=debug", "-"],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        # --mode and -m should be filtered (already used via --mode=debug)
+        assert "--mode" not in result.compreply
+        assert "-m" not in result.compreply
+        # --other and -o should still appear
+        assert "--other" in result.compreply
+        assert "-o" in result.compreply
+
+    def test_c_equals_completes_tasks(self, bash_harness, completion_script):
+        """poe -C=/path <TAB> should detect target_path and list tasks."""
+        mock_output = {"_list_tasks": "remote-task deploy"}
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "-C=/some/path", ""],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.detected_target_path == "/some/path"
+        assert result.list_tasks_called
+        assert "remote-task" in result.compreply
+
+    def test_executor_equals_value_completion(self, bash_harness, completion_script):
+        """poe --executor= should offer --executor=auto, etc."""
+        mock_output = {"_list_tasks": "greet"}
+
+        result = bash_harness(
+            completion_script,
+            words=["poe", "--executor="],
+            current=1,
+            mock_poe_output=mock_output,
+        )
+
+        assert "--executor=auto" in result.compreply
+        assert "--executor=poetry" in result.compreply
+        assert "--executor=simple" in result.compreply

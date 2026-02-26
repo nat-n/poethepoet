@@ -22,6 +22,7 @@ _TARGET_PATH_LOGIC = """
 
     local target_path=""
     local current_task=""
+    local current_task_idx=0
     local after_separator=0
 
     # In-memory cache fallback (used when disk cache not enabled)
@@ -48,6 +49,20 @@ _TARGET_PATH_LOGIC = """
             after_separator=1
             break
         fi
+        # Once we have a task, stop parsing global options - rest belongs to task
+        if [[ -n "$current_task" ]]; then
+            continue
+        fi
+        # Handle --option=value style (e.g. --directory=/path, --executor=poetry)
+        # zsh keeps these as a single word in $words
+        if [[ "${words[i]}" == -*=* ]]; then
+            local _opt="${words[i]%%=*}"
+            if (( $DIR_ARGS[(Ie)$_opt] )); then
+                target_path="${words[i]#*=}"
+            fi
+            # Value is consumed in the same word — skip to next
+            continue
+        fi
         if (( $DIR_ARGS[(Ie)${words[i]}] )); then
             if (( ($i+1) >= ${#words[@]} )); then
                 _files
@@ -61,6 +76,7 @@ _TARGET_PATH_LOGIC = """
         elif [[ "${words[i]}" != -* && -z "$current_task" ]]; then
             # First non-option word is potential task (validated later if needed)
             current_task="${words[i]}"
+            current_task_idx=$i
         fi
     done
 
@@ -94,10 +110,15 @@ def _get_describe_task_args_completion(name: str) -> str:
             [[ -z "$current_task" ]] && {{ _files; return; }}
 
             # Count existing options in command line for filtering
+            # Strip =value suffix so --opt=val counts against --opt
             local -A option_counts
             for ((i=2; i<${{#words[@]}}; i++)); do
                 local w="${{words[i]}}"
-                [[ "$w" == -* && "$w" != "--" ]] && (( option_counts[$w]++ ))
+                if [[ "$w" == -*=* ]]; then
+                    (( option_counts[${{w%%=*}}]++ ))
+                elif [[ "$w" == -* && "$w" != "--" ]]; then
+                    (( option_counts[$w]++ ))
+                fi
             done
 
             # Check cache for task args (hybrid: disk cache -> in-memory -> fetch)
@@ -190,7 +211,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                                 arg_specs+=("${{excl}}${{opt}}"'['"$help_text"']')
                                 ;;
                             *)
-                                arg_specs+=("${{excl}}${{opt}}"'['"$help_text"']'"$val_compl")
+                                arg_specs+=("${{excl}}${{opt}}="'['"$help_text"']'"$val_compl")
                                 ;;
                         esac
                     done
@@ -217,7 +238,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                             fi
                             ;;
                         *)
-                            arg_specs+=("$opts"'['"$help_text"']'"$val_compl")
+                            arg_specs+=("$opts="'['"$help_text"']'"$val_compl")
                             ;;
                     esac
                 fi
@@ -378,21 +399,22 @@ def _format_global_options(
         )
 
         if takes_value:
-            # Add value placeholder based on option type
+            # Add = so --opt=value and --opt value both work (= enables
+            # same-word-after-= form in addition to next-word form)
             if option.dest == "project_root":
-                args_lines.append(f'"{options_part}[{option.help}]:directory:_files"')
+                args_lines.append(f'"{options_part}=[{option.help}]:directory:_files"')
             elif option.dest == "executor":
                 # Known executor types
                 args_lines.append(
-                    f'"{options_part}[{option.help}]'
+                    f'"{options_part}=[{option.help}]'
                     ':executor:(auto poetry simple uv virtualenv)"'
                 )
             elif option.dest == "executor_options":
                 # -X/--executor-opt takes arbitrary key=value, no useful completion
                 # but must have value placeholder so zsh knows it consumes a value
-                args_lines.append(f'"{options_part}[{option.help}]:opt:()"')
+                args_lines.append(f'"{options_part}=[{option.help}]:opt:()"')
             else:
-                args_lines.append(f'"{options_part}[{option.help}]:value:()"')
+                args_lines.append(f'"{options_part}=[{option.help}]:value:()"')
         else:
             args_lines.append(f'"{options_part}[{option.help}]"')
 
@@ -486,6 +508,24 @@ _poe_caching_policy() {
 
     fetch_tasks_func = _get_fetch_tasks_func(name)
 
+    # Wrap _arguments in a conditional: skip global options when task is known
+    arguments_block = " \\\n        ".join(args_lines)
+    conditional_arguments = (
+        "    # If we already identified a task and cursor is after it, skip global"
+        " options and go straight to task args\n"
+        '    if [[ -n "$current_task" && CURRENT -gt $current_task_idx ]]; then\n'
+        '        state="args"\n'
+        "        # Replicate the $words/$CURRENT stripping that _arguments -C\n"
+        "        # does for *::arg:->args — keep task name as $words[1] and\n"
+        "        # only task args after it, so the args handler and its inner\n"
+        "        # _arguments -s call see the correct context.\n"
+        "        (( CURRENT -= current_task_idx - 1 ))\n"
+        '        words=("${(@)words[$current_task_idx,-1]}")\n'
+        "    else\n"
+        "    " + arguments_block + "\n"
+        "    fi"
+    )
+
     return "\n".join(
         [
             f"#compdef {name}\n",
@@ -497,7 +537,7 @@ _poe_caching_policy() {
             _TARGET_PATH_LOGIC,
             '    local ALL_EXLC=("-h" "--help" "--version")',
             "",
-            " \\\n        ".join(args_lines),
+            conditional_arguments,
             state_handling,
             "}",
             "",
