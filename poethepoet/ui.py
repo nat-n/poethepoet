@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from contextlib import redirect_stderr
 from typing import TYPE_CHECKING
@@ -188,8 +189,12 @@ class PoeUi:
     def print_help(
         self,
         tasks: (
-            Mapping[str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]]]] | None
+            Mapping[
+                str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]], str | None]
+            ]
+            | None
         ) = None,
+        groups: Mapping[str, str] | None = None,
         info: str | None = None,
         error: PoeException | None = None,
     ):
@@ -214,7 +219,7 @@ class PoeUi:
             result.append(self._format_poe_error(error))
 
         if tasks and help_single_task:
-            help_text, args_help = tasks[help_single_task]
+            help_text, args_help, _ = tasks[help_single_task]
             result.append(
                 self._format_single_task_help(help_single_task, help_text, args_help)
             )
@@ -245,6 +250,12 @@ class PoeUi:
 
             if verbosity >= -1:
                 if tasks:
+                    grouped_tasks: dict[str | None, list] = defaultdict(list)
+                    for task, (help_text, args_help, group_name) in tasks.items():
+                        if task.startswith("_"):
+                            continue
+                        grouped_tasks[group_name].append((task, help_text, args_help))
+
                     max_task_len = max(
                         max(
                             len(task),
@@ -257,21 +268,43 @@ class PoeUi:
                             )
                             + 2,
                         )
-                        for task, (_, args) in tasks.items()
+                        for task, (_, args, _) in tasks.items()
+                        if not task.startswith("_")
                     )
                     col_width = max(20, min(30, max_task_len))
 
                     tasks_section = ["<h2>Configured tasks:</h2>"]
-                    for task, (help_text, args_help) in tasks.items():
-                        if task.startswith("_"):
-                            continue
-                        tasks_section.append(
-                            f"  <em>{self._padr(task, col_width)}</em>  "
-                            f"{self._align(help_text, col_width)}"
+
+                    if None in grouped_tasks:
+                        for task, help_text, args_help in grouped_tasks[None]:
+                            tasks_section.append(
+                                f"  <em>{self._padr(task, col_width)}</em>  "
+                                f"{self._align(help_text, col_width)}"
+                            )
+                            tasks_section.extend(
+                                self._format_args_help(args_help, col_width, indent=3)
+                            )
+
+                    sorted_groups = sorted(
+                        grp for grp in grouped_tasks.keys() if grp is not None
+                    )
+                    for group_count, group_name in enumerate(sorted_groups):
+                        if group_count > 0 or None in grouped_tasks:
+                            tasks_section.append("")
+
+                        group_heading = (
+                            groups.get(group_name, group_name) if groups else group_name
                         )
-                        tasks_section.extend(
-                            self._format_args_help(args_help, col_width, indent=3)
-                        )
+                        tasks_section.append(f"  {group_heading}")
+
+                        for task, help_text, args_help in grouped_tasks[group_name]:
+                            tasks_section.append(
+                                f"    <em>{self._padr(task, col_width)}</em>  "
+                                f"{self._align(help_text, col_width)}"
+                            )
+                            tasks_section.extend(
+                                self._format_args_help(args_help, col_width, indent=5)
+                            )
 
                     result.append(tasks_section)
 

@@ -67,17 +67,29 @@ class PoeConfig:
 
     def lookup_task(
         self, name: str
-    ) -> tuple[Mapping[str, Any], ConfigPartition] | tuple[None, None]:
+    ) -> (
+        tuple[Mapping[str, Any], ConfigPartition, str | None] | tuple[None, None, None]
+    ):
         task = self._project_config.get("tasks", {}).get(name, None)
         if task is not None:
-            return task, self._project_config
+            return task, self._project_config, None
 
         for include in reversed((*self._packaged_config, *self._included_config)):
             task = include.get("tasks", {}).get(name, None)
             if task is not None:
-                return task, include
+                return task, include, None
 
-        return None, None
+        for group_name, group_data in self.groups.items():
+            task_def = group_data.get("tasks", {}).get(name, None)
+            if task_def is not None:
+                for partition in self.partitions(included_first=False):
+                    partition_group = partition.get("groups", {}).get(group_name, {})
+                    task = partition_group.get("tasks", {}).get(name, None)
+                    if task is not None:
+                        return task_def, partition, group_name
+                return task_def, self._project_config, group_name
+
+        return None, None, None
 
     def partitions(self, included_first=True) -> Iterator[ConfigPartition]:
         if included_first:
@@ -94,6 +106,29 @@ class PoeConfig:
         return self._project_config.options.executor
 
     @property
+    def groups(self) -> dict[str, dict[str, Any]]:
+        result: dict[str, dict[str, Any]] = {}
+
+        for config_part in (
+            *self._packaged_config,
+            *self._included_config,
+            self._project_config,
+        ):
+            for group_name, group_def in config_part.get("groups", {}).items():
+                if group_name not in result:
+                    result[group_name] = {}
+
+                for key, value in group_def.items():
+                    if key == "tasks":
+                        if "tasks" not in result[group_name]:
+                            result[group_name]["tasks"] = {}
+                        result[group_name]["tasks"].update(value)
+                    else:
+                        result[group_name][key] = value
+
+        return result
+
+    @property
     def task_names(self) -> Iterator[str]:
         result = list(self._project_config.get("tasks", {}).keys())
         for config_part in self._included_config + self._packaged_config:
@@ -101,6 +136,13 @@ class PoeConfig:
                 # Don't use a set to dedup because we want to preserve task order
                 if task_name not in result:
                     result.append(task_name)
+
+        for group_data in self.groups.values():
+            if "tasks" in group_data:
+                for task_name in group_data["tasks"].keys():
+                    if task_name not in result:
+                        result.append(task_name)
+
         yield from result
 
     @property
@@ -111,6 +153,13 @@ class PoeConfig:
                 if task_name in result:
                     continue
                 result[task_name] = task_def
+
+        for group_data in self.groups.values():
+            if "tasks" in group_data:
+                for task_name, task_def in group_data["tasks"].items():
+                    if task_name not in result:
+                        result[task_name] = task_def
+
         return result
 
     @property
