@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+from collections.abc import Mapping, Sequence  # noqa: TC003
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
@@ -9,9 +11,9 @@ from ..options.annotations import option_annotation
 from .primitives import EmptyDict, EnvDefault
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
+    from ..task.base import TaskDef
     from .primitives import EnvfileOption
 
 
@@ -44,6 +46,62 @@ class IncludeItem(TypedDict):
 
 
 IncludeItem.__optional_keys__ = frozenset({"cwd"})
+
+
+@option_annotation
+class TaskGroup(TypedDict):
+    heading: str
+    executor: Mapping[str, str | Sequence[str] | bool] | str | None = None  # type: ignore[misc]
+    tasks: Mapping[str, Any] = EmptyDict  # type: ignore[misc]
+
+
+TaskGroup.__optional_keys__ = frozenset({"executor", "tasks"})
+
+
+class GroupConfig:
+    name: str
+    heading: str
+    executor: dict | None
+
+    def __init__(
+        self,
+        name: str,
+        group_def: dict[str, Any],
+    ):
+        self.name = name
+        heading = group_def.get("heading", name)
+        assert isinstance(heading, str)
+        self.heading = heading
+        executor = group_def.get("executor")
+        assert executor is None or isinstance(executor, dict)
+        self.executor = executor
+
+
+class TaskConfig:
+    name: str
+    task_def: TaskDef
+    partition: ConfigPartition
+    group: GroupConfig | None
+
+    def __init__(
+        self,
+        name: str,
+        task_def: TaskDef,
+        partition: ConfigPartition,
+        group: GroupConfig | None = None,
+    ):
+        self.name = name
+        self.task_def = task_def
+        self.partition = partition
+        self.group = group
+
+    def get(self, key: str, default: Any = None):
+        """
+        Get task option
+        """
+        if isinstance(self.task_def, dict):
+            return self.task_def.get(key, default)
+        return default
 
 
 class ConfigPartition:
@@ -95,6 +153,28 @@ class ConfigPartition:
     def get(self, key: str, default: Any = NoValue):
         return self.options.get(key, default)
 
+    def collect_tasks(self, strict: bool = True) -> dict[str, TaskConfig]:
+        """
+        Collect tasks configured in this partition (including from groups).
+        """
+        result = {
+            task_name: TaskConfig(task_name, task_def, self)
+            for task_name, task_def in self.get("tasks", {}).items()
+        }
+
+        for group_name, group_def in self.get("groups", {}).items():
+            for task_name, task_def in group_def.get("tasks", {}).items():
+                if strict and task_name in result:
+                    raise ConfigValidationError(
+                        f"Config from {self.path} contains task "
+                        f"{task_name!r} multiple times, including in group {group_name}"
+                    )
+                result[task_name] = TaskConfig(
+                    task_name, task_def, self, GroupConfig(group_name, group_def)
+                )
+
+        return result
+
 
 class ProjectConfig(ConfigPartition):
     is_primary = True
@@ -119,7 +199,7 @@ class ProjectConfig(ConfigPartition):
         shell_interpreter: str | Sequence[str] = "posix"
         verbosity: Literal[-2, -1, 0, 1, 2] = 0
         tasks: Mapping[str, Any] = EmptyDict
-        groups: Mapping[str, Any] = EmptyDict
+        groups: Mapping[str, TaskGroup] = EmptyDict
 
         @classmethod
         def normalize(
@@ -135,6 +215,12 @@ class ProjectConfig(ConfigPartition):
             # Normalize executor option:
             if (executor := config.get("executor")) and isinstance(executor, str):
                 config["executor"] = {"type": executor}
+
+            # Normalize group executor options:
+            if groups := config.get("groups"):
+                for group_def in groups.values():
+                    if isinstance(group_def.get("executor"), str):
+                        group_def["executor"] = {"type": group_def["executor"]}
 
             # Normalize include option:
             # > Union[str, Sequence[str], Mapping[str, str]] => list[dict]
@@ -238,6 +324,22 @@ class ProjectConfig(ConfigPartition):
                 if executor := include_script.get("executor"):
                     PoeExecutor.validate_config(executor)
 
+            # Validate group names and headings
+            for group_name, group_def in self.groups.items():
+                if not re.fullmatch(r"[\w\-_]*", group_name):
+                    raise ConfigValidationError(
+                        f"Invalid group name {group_name!r}. Group names must contain "
+                        "only letters, digits, hyphens, and underscores."
+                    )
+                if (heading := group_def.get("heading")) and not re.fullmatch(
+                    r"[\w\d\- _\[\]\(\)\&\*]+", heading
+                ):
+                    raise ConfigValidationError(
+                        f"Invalid heading {heading!r} for group {group_name!r}. "
+                        "Headings may only contain letters, digits, hyphens, "
+                        "spaces, underscores, brackets, and parentheses."
+                    )
+
         @classmethod
         def validate_env(cls, env: Mapping[str, str]):
             # Validate env value
@@ -265,6 +367,7 @@ class IncludedConfig(ConfigPartition):
         env: Mapping[str, str | EnvDefault] = EmptyDict
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         tasks: Mapping[str, Any] = EmptyDict
+        groups: Mapping[str, TaskGroup] = EmptyDict
 
         def validate(self):
             """
@@ -285,6 +388,7 @@ class PackagedConfig(ConfigPartition):
         env: Mapping[str, str | EnvDefault] = EmptyDict
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         tasks: Mapping[str, Any] = EmptyDict
+        groups: Mapping[str, TaskGroup] = EmptyDict
 
         def validate(self):
             """

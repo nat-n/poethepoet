@@ -57,3 +57,26 @@ sequence = [
 [tool.poe.groups.docker.tasks.docker_migrate]
 help = "Run database migrations for strategic-connections"
 cmd = "echo 'Running migrations...'"
+
+# Group with executor config for testing executor inheritance
+[tool.poe.groups.simple_group]
+heading = "Simple Executor Group"
+executor = "simple"
+
+[tool.poe.groups.simple_group.tasks.group_show_env]
+help = "Show env (should inherit simple executor from group)"
+cmd = "poe_test_env"
+
+# Group with virtualenv executor — tasks should fail unless they override it
+[tool.poe.groups.venv_group]
+heading = "Venv Group"
+executor = {type = "virtualenv", location = "nonexistent_venv"}
+
+[tool.poe.groups.venv_group.tasks.venv_group_task]
+help = "Should fail because group executor points to missing venv"
+cmd = "echo should_not_run"
+
+[tool.poe.groups.venv_group.tasks.venv_group_task_override]
+help = "Should succeed because task overrides group executor"
+cmd = "poe_test_echo override_works"
+executor = {type = "simple"}

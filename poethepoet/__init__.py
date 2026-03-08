@@ -30,7 +30,7 @@ def iter_tasks(target_path: str = "."):
 
     config = PoeConfig()
     config.load_sync(target_path, strict=False)
-    for task in config.tasks.keys():
+    for task in config.task_names:
         if task and task[0] != "_":
             yield task
 
@@ -176,13 +176,13 @@ def _zsh_describe_tasks(target_path: str | None = None):
 
         config = PoeConfig()
         config.load_sync(target_path, strict=False)
-        tasks = config.tasks
 
         for task_name in config.task_names:
             if not task_name or task_name.startswith("_"):
                 continue
 
-            task_def = tasks.get(task_name, {})
+            task = config.lookup_task(task_name)
+            task_def = task.task_def if task else {}
 
             # Extract help text - handle both dict and simple string task definitions
             if isinstance(task_def, dict):
@@ -226,7 +226,10 @@ def _describe_task_args(task_name: str, target_path: str | None = None):
         config = PoeConfig()
         config.load_sync(target_path, strict=False)
 
-        task_def = config.tasks.get(task_name, {})
+        task = config.lookup_task(task_name)
+        if not task:
+            return
+        task_def = task.task_def
         if not isinstance(task_def, dict):
             return
 

@@ -257,19 +257,22 @@ class PoeUi:
                         grouped_tasks[group_name].append((task, help_text, args_help))
 
                     max_task_len = max(
-                        max(
-                            len(task),
+                        (
                             max(
-                                [
-                                    len(", ".join(str(opt) for opt in opts))
-                                    for (opts, _, _) in args
-                                ]
-                                or (0,)
+                                len(task),
+                                max(
+                                    [
+                                        len(", ".join(str(opt) for opt in opts))
+                                        for (opts, _, _) in args
+                                    ]
+                                    or (0,)
+                                )
+                                + 2,
                             )
-                            + 2,
-                        )
-                        for task, (_, args, _) in tasks.items()
-                        if not task.startswith("_")
+                            for task, (_, args, _) in tasks.items()
+                            if not task.startswith("_")
+                        ),
+                        default=0,
                     )
                     col_width = max(20, min(30, max_task_len))
 
@@ -295,11 +298,13 @@ class PoeUi:
                         group_heading = (
                             groups.get(group_name, group_name) if groups else group_name
                         )
-                        tasks_section.append(f"  {group_heading}")
+                        tasks_section.append(
+                            f" <group-heading>{group_heading}</group-heading>"
+                        )
 
                         for task, help_text, args_help in grouped_tasks[group_name]:
                             tasks_section.append(
-                                f"    <em>{self._padr(task, col_width)}</em>  "
+                                f"  <em>{self._padr(task, col_width)}</em>  "
                                 f"{self._align(help_text, col_width)}"
                             )
                             tasks_section.extend(

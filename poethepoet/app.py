@@ -198,7 +198,7 @@ class PoeThePoet:
             return None
 
         task_name = task[0]
-        if task_name not in self.config.task_names:
+        if task_name not in self.config.get_tasks():
             self.print_help(error=PoeException(f"Unrecognized task {task_name!r}"))
             return None
 
@@ -312,31 +312,27 @@ class PoeThePoet:
         if isinstance(error, str):
             error = PoeException(error)
 
-        task_to_group: dict[str, str | None] = {}
-        for group_name, group_data in self.config.groups.items():
-            if "tasks" in group_data:
-                for task_name in group_data["tasks"].keys():
-                    task_to_group[task_name] = group_name
+        all_tasks = self.config.get_tasks()
 
         tasks_help: dict[
             str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]], str | None]
         ] = {
             task_name: (
-                (
-                    str(content.get("help", "")),
-                    PoeTaskArgs.get_help_content(
-                        content.get("args"), task_name, suppress_errors=bool(error)
-                    ),
-                    task_to_group.get(task_name),
-                )
-                if isinstance(content, dict)
-                else ("", (), task_to_group.get(task_name))
+                task.get("help", ""),
+                PoeTaskArgs.get_help_content(
+                    task.get("args"), task_name, suppress_errors=bool(error)
+                ),
+                task.group.name if task.group else None,
             )
-            for task_name, content in self.config.tasks.items()
+            for task_name, task in all_tasks.items()
         }
 
-        groups_info: dict[str, str] = {}
-        for group_name, group_data in self.config.groups.items():
-            groups_info[group_name] = group_data.get("heading", group_name)
+        groups_headings = {
+            task.group.name: task.group.heading
+            for task in all_tasks.values()
+            if task.group
+        }
 
-        self.ui.print_help(tasks=tasks_help, groups=groups_info, info=info, error=error)
+        self.ui.print_help(
+            tasks=tasks_help, groups=groups_headings, info=info, error=error
+        )

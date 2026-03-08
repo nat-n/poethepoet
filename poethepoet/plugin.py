@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from cleo.commands.command import Command
 from cleo.events.console_events import COMMAND, TERMINATE
@@ -119,7 +119,7 @@ class PoetryPlugin(ApplicationPlugin):
         command_prefix = poe_config._project_config.get("poetry_command").strip()
         PoeCommand.command_prefix = command_prefix
 
-        poe_tasks = poe_config.tasks
+        poe_tasks = poe_config.get_tasks()
         self._validate_command_prefix(command_prefix)
 
         if command_prefix in COMMANDS:
@@ -137,20 +137,26 @@ class PoetryPlugin(ApplicationPlugin):
                     )
                 if task_name.startswith("_"):
                     continue
-                self._register_command(application, poe_config, task_name, task)
+                self._register_command(
+                    application, poe_config, task_name, task.get("help", "")
+                )
         else:
             self._register_command(
                 application,
                 poe_config,
                 "",
-                {"help": "Run poe tasks defined for this project"},
+                "Run poe tasks defined for this project",
                 command_prefix,
             )
             for task_name, task in poe_tasks.items():
                 if task_name.startswith("_"):
                     continue
                 self._register_command(
-                    application, poe_config, task_name, task, f"{command_prefix} "
+                    application,
+                    poe_config,
+                    task_name,
+                    task.get("help", ""),
+                    f"{command_prefix} ",
                 )
 
         self._monkey_patch_cleo(command_prefix, list(poe_tasks.keys()))
@@ -185,11 +191,10 @@ class PoetryPlugin(ApplicationPlugin):
         application: Application,
         poe_config: PoeConfig,
         task_name: str,
-        task: Any,
+        task_help: str,
         prefix: str = "",
     ):
         command_name = prefix + task_name
-        task_help = task.get("help", "") if isinstance(task, dict) else ""
         application.command_loader.register_factory(
             command_name,
             type(

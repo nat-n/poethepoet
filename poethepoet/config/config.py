@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, Any
 from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
 from ..helpers.eventloop import run_async
 from .file import PoeConfigFile
-from .partition import ConfigPartition, IncludedConfig, PackagedConfig, ProjectConfig
+from .partition import (
+    ConfigPartition,
+    IncludedConfig,
+    PackagedConfig,
+    ProjectConfig,
+    TaskConfig,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping, Sequence
@@ -37,6 +43,7 @@ class PoeConfig:
     A global cache of raw configs derived from task packages
     """
     _packaged_config_cache: dict[tuple[str, ...], dict] = {}
+    _tasks: Mapping[str, TaskConfig] = {}
 
     def __init__(
         self,
@@ -65,31 +72,23 @@ class PoeConfig:
 
             self._io = PoeIO.get_default_io()
 
-    def lookup_task(
-        self, name: str
-    ) -> (
-        tuple[Mapping[str, Any], ConfigPartition, str | None] | tuple[None, None, None]
-    ):
-        task = self._project_config.get("tasks", {}).get(name, None)
-        if task is not None:
-            return task, self._project_config, None
+    def get_tasks(self) -> Mapping[str, TaskConfig]:
+        """
+        Collect tasks from across configs and groups.
+        Project config tasks appear first and take precedence over includes.
+        """
+        if not self._tasks:
+            result: dict[str, TaskConfig] = {}
+            for partition in self.partitions(included_first=False):
+                for task_name, task_config in partition.collect_tasks().items():
+                    if task_name not in result:
+                        result[task_name] = task_config
+            self._tasks = result
 
-        for include in reversed((*self._packaged_config, *self._included_config)):
-            task = include.get("tasks", {}).get(name, None)
-            if task is not None:
-                return task, include, None
+        return self._tasks
 
-        for group_name, group_data in self.groups.items():
-            task_def = group_data.get("tasks", {}).get(name, None)
-            if task_def is not None:
-                for partition in self.partitions(included_first=False):
-                    partition_group = partition.get("groups", {}).get(group_name, {})
-                    task = partition_group.get("tasks", {}).get(name, None)
-                    if task is not None:
-                        return task_def, partition, group_name
-                return task_def, self._project_config, group_name
-
-        return None, None, None
+    def lookup_task(self, name: str) -> TaskConfig | None:
+        return self.get_tasks().get(name)
 
     def partitions(self, included_first=True) -> Iterator[ConfigPartition]:
         if included_first:
@@ -106,61 +105,22 @@ class PoeConfig:
         return self._project_config.options.executor
 
     @property
-    def groups(self) -> dict[str, dict[str, Any]]:
-        result: dict[str, dict[str, Any]] = {}
-
-        for config_part in (
-            *self._packaged_config,
-            *self._included_config,
-            self._project_config,
-        ):
-            for group_name, group_def in config_part.get("groups", {}).items():
-                if group_name not in result:
-                    result[group_name] = {}
-
-                for key, value in group_def.items():
-                    if key == "tasks":
-                        if "tasks" not in result[group_name]:
-                            result[group_name]["tasks"] = {}
-                        result[group_name]["tasks"].update(value)
-                    else:
-                        result[group_name][key] = value
-
-        return result
-
-    @property
     def task_names(self) -> Iterator[str]:
-        result = list(self._project_config.get("tasks", {}).keys())
-        for config_part in self._included_config + self._packaged_config:
-            for task_name in config_part.get("tasks", {}).keys():
-                # Don't use a set to dedup because we want to preserve task order
-                if task_name not in result:
-                    result.append(task_name)
-
-        for group_data in self.groups.values():
-            if "tasks" in group_data:
-                for task_name in group_data["tasks"].keys():
-                    if task_name not in result:
-                        result.append(task_name)
-
-        yield from result
-
-    @property
-    def tasks(self) -> dict[str, Any]:
-        result = dict(self._project_config.get("tasks", {}))
-        for config_part in self._included_config + self._packaged_config:
-            for task_name, task_def in config_part.get("tasks", {}).items():
-                if task_name in result:
-                    continue
-                result[task_name] = task_def
-
-        for group_data in self.groups.values():
-            if "tasks" in group_data:
-                for task_name, task_def in group_data["tasks"].items():
-                    if task_name not in result:
-                        result[task_name] = task_def
-
-        return result
+        """
+        Yield task names without building TaskConfig objects — used for shell
+        completion where we only need the names.
+        """
+        seen: set[str] = set()
+        for partition in self.partitions(included_first=False):
+            for task_name in partition.get("tasks", {}).keys():
+                if task_name not in seen:
+                    yield task_name
+                    seen.add(task_name)
+            for group_def in partition.get("groups", {}).values():
+                for task_name in group_def.get("tasks", {}).keys():
+                    if task_name not in seen:
+                        yield task_name
+                        seen.add(task_name)
 
     @property
     def default_task_type(self) -> str:
