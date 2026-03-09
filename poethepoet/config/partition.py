@@ -324,20 +324,12 @@ class ProjectConfig(ConfigPartition):
                 if executor := include_script.get("executor"):
                     PoeExecutor.validate_config(executor)
 
-            # Validate group names and headings
-            for group_name, group_def in self.groups.items():
-                if not re.fullmatch(r"[\w\-_]*", group_name):
+            # Validate group names
+            for group_name in self.groups.keys():
+                if not re.fullmatch(r"[\w\-_]+", group_name):
                     raise ConfigValidationError(
                         f"Invalid group name {group_name!r}. Group names must contain "
                         "only letters, digits, hyphens, and underscores."
-                    )
-                if (heading := group_def.get("heading")) and not re.fullmatch(
-                    r"[\w\d\- _\[\]\(\)\&\*]+", heading
-                ):
-                    raise ConfigValidationError(
-                        f"Invalid heading {heading!r} for group {group_name!r}. "
-                        "Headings may only contain letters, digits, hyphens, "
-                        "spaces, underscores, brackets, and parentheses."
                     )
 
         @classmethod

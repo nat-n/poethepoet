@@ -76,9 +76,13 @@ You can organize tasks into groups by defining them within group tables. This ma
 
 .. code-block:: toml
 
+  [tool.poe.tasks.test]
+  help = "Run the tests"
+  cmd = "pytest"
+
   [tool.poe.groups.server]
   heading = "Application Serving"
-  executor = { type = "uv", group = "server" }  # Applies to all tasks in this group
+  executor = { type = "uv", group = "server" }  # Tasks in this group will run with uv's "server" dependency-group
 
   [tool.poe.groups.server.tasks.dev]
   help = "Run the app in debug mode"
@@ -110,21 +114,25 @@ When you run ``poe`` without specifying a task, tasks will be grouped by their g
     poe [global options] task [task arguments]
 
   Configured tasks:
+    pytest         Run the tests
 
-    Application Serving
-      dev   Run the app in debug mode
-      prod  Run the app in production mode
+  Application Serving
+    dev            Run the app in debug mode
+    prod           Run the app in production mode
 
-    Testing & Quality
-      test  Run the test suite
-      lint  Run the linter
+  Testing & Quality
+    test           Run the test suite
+    lint           Run the linter
+
+
+Group names must consist of only alphanumeric characters, dashes, or underscores.
 
 **Group Options:**
 
 - **heading**: A human-readable name for the group displayed in help output. If not specified, the group name is used.
-- **executor**: Executor configuration that applies to all tasks in the group (unless a task overrides it).
+- **executor**: Executor configuration that applies to all tasks in the group. Group executor config has higher precedence than project level, and lower precedence than task level config.
 - **tasks**: A table of task definitions within the group.
 
 **Merging Groups:**
 
-Groups from different config files with the same name will be merged together. Tasks from later config files are added to the group.
+When an :ref:`included config file<Running tasks from another file>` defines a group with the same name as one in the main project config, the tasks from both are merged under a single heading. Only group config (e.g. heading and executor) from the config file with the highest precedence is preserved when merging groups.

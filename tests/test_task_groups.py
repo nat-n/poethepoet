@@ -1,6 +1,6 @@
 """Tests for task grouping feature."""
 
-# -- Help output tests --
+# -- Help output and heading precedence --
 
 
 def test_groups_in_help_output(run_poe_subproc, projects):
@@ -42,8 +42,16 @@ def test_groups_in_help_output(run_poe_subproc, projects):
     assert tasks_section.find("docker_start") > docker_idx
     assert tasks_section.find("check") > static_typing_idx
 
+    # Tasks from included config appear under the same group headings
+    assert tasks_section.find("docker_logs") > docker_idx
+    assert tasks_section.find("lint") > static_typing_idx
 
-# -- Task execution from groups --
+    # Project heading takes precedence (not "Docker (Extra)" or "Static Typing (Extra)")
+    assert "Docker (Extra)" not in tasks_section
+    assert "Static Typing (Extra)" not in tasks_section
+
+
+# -- Task execution (project and included groups) --
 
 
 def test_task_execution_from_group(run_poe_subproc, projects):
@@ -53,7 +61,14 @@ def test_task_execution_from_group(run_poe_subproc, projects):
     assert "Running mypy..." in result.capture
 
 
-# -- Group executor inheritance tests --
+def test_included_group_task_execution(run_poe_subproc, projects):
+    """Tasks from an included config's group can be executed."""
+    result = run_poe_subproc("docker_logs", cwd=projects["groups"])
+    assert result.code == 0
+    assert "Showing logs..." in result.capture
+
+
+# -- Executor resolution (inheritance, task/CLI override, cross-include precedence) --
 
 
 def test_group_executor_inherited(run_poe_subproc, projects):
@@ -77,9 +92,19 @@ def test_group_executor_overridden_by_task(run_poe_subproc, projects):
     assert "override_works" in result.stdout
 
 
+def test_group_executor_precedence_across_includes(run_poe_subproc, projects):
+    """Project's group executor takes precedence over include's group executor."""
+    # extra_tasks.toml redefines simple_group with a broken virtualenv executor,
+    # but the project's executor = "simple" should win.
+    result = run_poe_subproc("included_group_env", cwd=projects["groups"])
+    assert result.code == 0
+    assert "POE_ACTIVE=simple" in result.stdout
+
+
 def test_group_executor_overridden_by_cli(run_poe_subproc, projects):
     """CLI --executor overrides group-level executor."""
     result = run_poe_subproc(
         "--executor", "simple", "venv_group_task", cwd=projects["groups"]
     )
     assert result.code == 0
+    assert "should_not_run" in result.capture

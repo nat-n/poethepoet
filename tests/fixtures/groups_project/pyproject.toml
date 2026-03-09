@@ -1,3 +1,6 @@
+[tool.poe]
+include = "extra_tasks.toml"
+
 [tool.poe.tasks]
 
 [tool.poe.tasks.uncategorized]

@@ -9,6 +9,7 @@ from ..helpers.eventloop import run_async
 from .file import PoeConfigFile
 from .partition import (
     ConfigPartition,
+    GroupConfig,
     IncludedConfig,
     PackagedConfig,
     ProjectConfig,
@@ -76,12 +77,20 @@ class PoeConfig:
         """
         Collect tasks from across configs and groups.
         Project config tasks appear first and take precedence over includes.
+        Group config (heading, executor) comes from the highest-precedence
+        partition that defines that group; tasks are merged across partitions.
         """
         if not self._tasks:
             result: dict[str, TaskConfig] = {}
+            group_configs: dict[str, GroupConfig] = {}
             for partition in self.partitions(included_first=False):
+                for group_name, group_def in partition.get("groups", {}).items():
+                    if group_name not in group_configs:
+                        group_configs[group_name] = GroupConfig(group_name, group_def)
                 for task_name, task_config in partition.collect_tasks().items():
                     if task_name not in result:
+                        if task_config.group:
+                            task_config.group = group_configs[task_config.group.name]
                         result[task_name] = task_config
             self._tasks = result
 
