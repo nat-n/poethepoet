@@ -22,52 +22,62 @@ You can add help text to your tasks by adding the ``help`` option to the task de
 
 This help text will be displayed alongside the task name in the list of configured tasks when ``poe`` is run without specifying a task.
 
-.. code-block:: docs
+.. raw:: html
 
-  $ poe --help
-  Poe the Poet - A task runner that works well with poetry.
-  version 0.25.1
+    <div class="highlight-sh notranslate">
+    <div class="highlight">
+    <pre>$ poe --help
+    <strong>Poe the Poet</strong> (version <span style="color:#56B6C2">0.43.0</span>)
 
-  Usage:
-    poe [global options] task [task arguments]
+    <strong>Usage:</strong>
+      <span style="text-decoration:underline">poe</span> [global options] task [task arguments]
 
-  Global options:
-    -h [TASK], --help [TASK]
-                          Show this help page and exit, optionally supply a task.
-    --version             Print the version and exit
-    -v, --verbose         Increase command output (repeatable)
-    -q, --quiet           Decrease command output (repeatable)
-    -d, --dry-run         Print the task contents but don't actually run it
-    -C PATH, --directory PATH
-                          Specify where to find the pyproject.toml
-    -e EXECUTOR, --executor EXECUTOR
-                          Override the default task executor
-    --ansi                Force enable ANSI output
-    --no-ansi             Force disable ANSI output
+    <strong>Global options:</strong>
+      <strong>-h, --help [TASK]</strong>     Show this help page and exit, optionally supply a
+                            task.
+      <strong>--version</strong>             Print the version and exit
+      <strong>-v, --verbose</strong>         Increase output (repeatable)
+      <strong>-q, --quiet</strong>           Decrease output (repeatable)
+      <strong>-d, --dry-run</strong>         Print the task contents but don't actually run it
+      <strong>-C, --directory PATH</strong>  Specify where to find the pyproject.toml
+      <strong>-e, --executor EXECUTOR</strong>
+                            Override the default task executor
+      <strong>-X, --executor-opt KEY[=VALUE]</strong>
+                            Set executor configuration for this run.
+      <strong>--ansi</strong>                Force enable ANSI output
+      <strong>--no-ansi</strong>             Force disable ANSI output
 
-  Configured tasks:
-    test           Run the test suite
-    serve          Run the app in debug mode
-    tunnel         Create an SSH tunnel to the production server
-      --prod_host  Hostname of the production server [default: myapp.com]
+    <strong>Configured tasks:</strong>
+      <span style="color:#56B6C2">test</span>           Run the test suite
+      <span style="color:#56B6C2">serve</span>          Run the app in debug mode
+      <span style="color:#56B6C2">tunnel</span>         Create an SSH tunnel to the production server
+       <span style="color:#4B78CC">--prod_host</span>  Hostname of the production server [default: myapp.com]
+    </pre>
+    </div>
+    </div>
 
 Display help for a single task
 ------------------------------
 
 Passing the ``--help`` option normally has the same effect as running poe with no arguments. However you can also supply the name of a task to display documentation for just that task.
 
-.. code-block:: docs
+.. raw:: html
 
-  $ poe --help tunnel
+    <div class="highlight-sh notranslate">
+    <div class="highlight">
+    <pre>$ poe --help tunnel
 
-  Description:
-    Create an SSH tunnel to the production server
+    <strong>Description:</strong>
+      Create an SSH tunnel to the production server
 
-  Usage:
-    poe [global options] tunnel [named arguments] -- [free arguments]
+    <strong>Usage:</strong>
+      <span style="text-decoration:underline">poe</span> [global options] <span style="color:#56B6C2">tunnel</span> [named arguments] -- [free arguments]
 
-  Named arguments:
-    --prod_host    Hostname of the production server [default: myapp.com]
+    <strong>Named arguments:</strong>
+      <span style="color:#4B78CC">--prod_host</span>    Hostname of the production server [default: myapp.com]
+    </pre>
+    </div>
+    </div>
 
 Grouping tasks
 --------------
@@ -103,36 +113,39 @@ You can organize tasks into groups by defining them within group tables. This ma
   help = "Run the linter"
   cmd  = "ruff check ."
 
-When you run ``poe`` without specifying a task, tasks will be grouped by their group heading in the help output:
+When you run ``poe`` without specifying a task, ungrouped tasks appear first, followed by groups sorted alphabetically by group name:
 
-.. code-block:: text
+.. raw:: html
 
-  $ poe
-  Poe the Poet (version 0.40.0)
+    <div class="highlight-sh notranslate">
+    <div class="highlight">
+    <pre><strong>Configured tasks:</strong>
+      <span style="color:#56B6C2">test</span>           Run the tests
 
-  Usage:
-    poe [global options] task [task arguments]
+    <span style="color:#98C379">Application Serving</span>
+      <span style="color:#56B6C2">dev</span>            Run the app in debug mode
+      <span style="color:#56B6C2">prod</span>           Run the app in production mode
 
-  Configured tasks:
-    pytest         Run the tests
-
-  Application Serving
-    dev            Run the app in debug mode
-    prod           Run the app in production mode
-
-  Testing & Quality
-    test           Run the test suite
-    lint           Run the linter
+    <span style="color:#98C379">Testing &amp; Quality</span>
+      <span style="color:#56B6C2">unit</span>           Run the test suite
+      <span style="color:#56B6C2">lint</span>           Run the linter
+    </pre>
+    </div>
+    </div>
 
 
 Group names must consist of only alphanumeric characters, dashes, or underscores.
 
-**Group Options:**
+
+Group options
+~~~~~~~~~~~~~
 
 - **heading**: A human-readable name for the group displayed in help output. If not specified, the group name is used.
 - **executor**: Executor configuration that applies to all tasks in the group. Group executor config has higher precedence than project level, and lower precedence than task level config.
 - **tasks**: A table of task definitions within the group.
 
-**Merging Groups:**
+
+Merging groups
+~~~~~~~~~~~~~~
 
 When an :ref:`included config file<Running tasks from another file>` defines a group with the same name as one in the main project config, the tasks from both are merged under a single heading. Only group config (e.g. heading and executor) from the config file with the highest precedence is preserved when merging groups.

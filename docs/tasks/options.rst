@@ -197,8 +197,6 @@ If you only want to change the executor type but not provide any additional conf
     cmd      = "gunicorn ./my_app:run"
     executor = "poetry"
 
-
-
 .. important::
 
   You can also configure the executor at the :ref:`project level<Configure the executor>` or at the :ref:`task group level<Grouping tasks>`, which will have lower precedence.
