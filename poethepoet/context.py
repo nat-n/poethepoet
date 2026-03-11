@@ -39,6 +39,7 @@ class ContextProtocol(Protocol):
         working_dir: Path,
         *,
         executor_config: Mapping[str, str] | None = None,
+        group_executor_config: Mapping[str, str] | None = None,
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
@@ -191,6 +192,7 @@ class RunContext:
         working_dir: Path,
         *,
         executor_config: Mapping[str, str] | None = None,
+        group_executor_config: Mapping[str, str] | None = None,
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
@@ -208,7 +210,10 @@ class RunContext:
         return PoeExecutor.get(
             invocation=invocation,
             context=self,
-            executor_config=self._resolve_executor_config(executor_config),
+            executor_config=self._resolve_executor_config(
+                task_level_config=executor_config,
+                group_level_config=group_executor_config,
+            ),
             env=env,
             working_dir=working_dir,
             capture_stdout=capture_stdout,
@@ -217,11 +222,16 @@ class RunContext:
             io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
         )
 
-    def _resolve_executor_config(self, task_level_config: Mapping[str, str] | None):
+    def _resolve_executor_config(
+        self,
+        task_level_config: Mapping[str, str] | None,
+        group_level_config: Mapping[str, str] | None = None,
+    ):
         """
         Executor config is resolved from (in order of precedence):
         - the --executor and --executor-opt global cli options
         - the task level executor option
+        - the group level executor option
         - the global level executor option
         """
 
@@ -231,6 +241,7 @@ class RunContext:
         final_type: str = (
             self.ui["executor"]
             or (task_level_config or {}).get("type")
+            or (group_level_config or {}).get("type")
             or self.config.executor["type"]
         )
 
@@ -262,6 +273,11 @@ class RunContext:
         result: dict[str, str | bool | list[str | bool]] = {"type": final_type}
         if self.config.executor["type"] == final_type:
             result.update(self.config.executor)
+        if (
+            group_level_config
+            and group_level_config.get("type", final_type) == final_type
+        ):
+            result.update(group_level_config)
         if (
             task_level_config
             and task_level_config.get("type", final_type) == final_type
@@ -301,6 +317,7 @@ class InitializationContext:
         working_dir: Path,
         *,
         executor_config: Mapping[str, str] | None = None,
+        group_executor_config: Mapping[str, str] | None = None,
         capture_stdout: str | bool = False,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,

@@ -102,6 +102,7 @@ class PoeIO:
         self._color.add_style("action", "light_blue")
         self._color.add_style("error", "light_red", options="bold")
         self._color.add_style("warning", "light_red", options="bold")
+        self._color.add_style("group-heading", "green")
 
     @classmethod
     def get_default_io(cls) -> PoeIO:

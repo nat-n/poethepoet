@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, MutableMapping
 
     from ..config import ConfigPartition, PoeConfig
+    from ..config.partition import GroupConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
     from ..executor.task_run import PoeTaskRun
@@ -73,8 +74,11 @@ class SwitchTask(PoeTask):
             source: ConfigPartition,
             *,
             parent: PoeTask.TaskSpec | None = None,
+            group: GroupConfig | None = None,
         ):
-            super().__init__(name, task_def, factory, source, parent=parent)
+            super().__init__(
+                name, task_def, factory, source, parent=parent, group=group
+            )
 
             switch_args = task_def.get("args")
             control_task_def = task_def["control"]

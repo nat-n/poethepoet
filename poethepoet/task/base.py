@@ -15,6 +15,7 @@ from ..options import PoeOptions
 
 if TYPE_CHECKING:
     from ..config import ConfigPartition, PoeConfig
+    from ..config.partition import GroupConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
     from ..ui import PoeUi
@@ -87,6 +88,7 @@ class TaskSpecFactory:
         task_def: TaskDef,
         source: ConfigPartition,
         parent: PoeTask.TaskSpec | None = None,
+        group: GroupConfig | None = None,
     ) -> PoeTask.TaskSpec:
         """
         A parent task should be provided when this task is defined inline within another
@@ -102,19 +104,21 @@ class TaskSpecFactory:
             factory=self,
             source=source,
             parent=parent,
+            group=group,
         )
 
     def load_all(self):
-        for task_name in self.config.task_names:
+        for task_name in self.config.get_tasks().keys():
             self.load(task_name)
 
         return self
 
     def load(self, task_name: str):
-        task_def, config_partition = self.config.lookup_task(task_name)
-
-        if task_def is None or config_partition is None:
+        task = self.config.lookup_task(task_name)
+        if task is None:
             raise PoeException(f"Cannot instantiate unknown task {task_name!r}")
+
+        task_def = task.task_def
 
         task_type = PoeTask.resolve_task_type(task_def, self.config)
         if not task_type:
@@ -124,12 +128,12 @@ class TaskSpecFactory:
                 f"Available task keys: {set(PoeTask.get_task_types())!r}",
                 task_name=task_name,
                 filename=(
-                    None if config_partition.is_primary else str(config_partition.path)
+                    None if task.partition.is_primary else str(task.partition.path)
                 ),
             )
 
         self.__cache[task_name] = self.create(
-            task_name, task_type, task_def, source=config_partition
+            task_name, task_type, task_def, source=task.partition, group=task.group
         )
 
     def __iter__(self):
@@ -216,6 +220,7 @@ class PoeTask(metaclass=MetaPoeTask):
         task_type: type[PoeTask]
         source: ConfigPartition
         parent: PoeTask.TaskSpec | None = None
+        group: GroupConfig | None = None
 
         def __init__(
             self,
@@ -225,12 +230,14 @@ class PoeTask(metaclass=MetaPoeTask):
             source: ConfigPartition,
             *,
             parent: PoeTask.TaskSpec | None = None,
+            group: GroupConfig | None = None,
         ):
             self.name = name
             self.content = task_def[self.task_type.__key__]
             self.options = self._parse_options(task_def)
             self.source = source
             self.parent = parent
+            self.group = group
 
         def _parse_options(self, task_def: dict[str, Any]) -> PoeTask.TaskOptions:
             try:
@@ -534,6 +541,9 @@ class PoeTask(metaclass=MetaPoeTask):
             env,
             working_dir=self.get_working_dir(env),
             executor_config=self.spec.options.get("executor"),
+            group_executor_config=(
+                self.spec.group.executor if self.spec.group else None
+            ),
             capture_stdout=self.capture_stdout,
             resolve_python=resolve_python,
             delegate_dry_run=delegate_dry_run,

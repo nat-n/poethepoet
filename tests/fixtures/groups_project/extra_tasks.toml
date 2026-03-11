@@ -1,0 +1,23 @@
+[tool.poe.groups.docker]
+# Different heading — should be ignored because project config takes precedence
+heading = "Docker (Extra)"
+
+[tool.poe.groups.docker.tasks.docker_logs]
+help = "Show Docker logs"
+cmd = "echo 'Showing logs...'"
+
+[tool.poe.groups.static_typing]
+heading = "Static Typing (Extra)"
+
+[tool.poe.groups.static_typing.tasks.lint]
+help = "Run linter"
+cmd = "echo 'Running linter...'"
+
+# Redefines simple_group with a broken executor — project's executor should win
+[tool.poe.groups.simple_group]
+heading = "Simple Executor Group (Extra)"
+executor = {type = "virtualenv", location = "nonexistent_venv"}
+
+[tool.poe.groups.simple_group.tasks.included_group_env]
+help = "Should inherit simple executor from project's group config"
+cmd = "poe_test_env"

@@ -197,6 +197,12 @@ If you only want to change the executor type but not provide any additional conf
     cmd      = "gunicorn ./my_app:run"
     executor = "poetry"
 
+.. important::
+
+  You can also configure the executor at the :ref:`project level<Configure the executor>` or at the :ref:`task group level<Grouping tasks>`, which will have lower precedence.
+  Alternatively you can override the executor type at runtime by passing the ``--executor`` CLI option (before the task name) with the name of the executor to use, and pass executor options via the ``--executor-opt`` global CLI option.
+
+
 Configure task level virtualenv with uv
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

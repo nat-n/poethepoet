@@ -9,7 +9,7 @@ The following options can be set for all tasks in a project directly under ``[to
 **envfile** : ``str`` | ``list[str]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
-**executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
+**executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor>`
   Specify the default executor type and/or configuration for all tasks in this project.
 
 **include** : ``str`` | ``dict[str, str]`` | ``list[str | dict[str, str]]`` | :doc:`📖<../guides/include_guide>`
@@ -158,8 +158,9 @@ Which is a short hand for the following table form which is required in order to
 
 .. important::
 
-  You can also configure the executor :ref:`at the task level<Configure the executor for a task>`, which will have higher precedence.
-  Alternatively you can override the executor type at runtime by passing the ``--executor`` CLI option (before the task name) with the name of the executor to use, or the
+  You can also configure the executor at the :ref:`task group level<Grouping tasks>`, or at the :ref:`task level<Configure the executor for a task>`, which will have higher precedence.
+  Alternatively you can override the executor type at runtime by passing the ``--executor`` CLI option (before the task name) with the name of the executor to use, and pass executor options via the ``--executor-opt`` global CLI option.
+
 
 Uv Executor
 ~~~~~~~~~~~

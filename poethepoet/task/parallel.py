@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from ..config import ConfigPartition, PoeConfig
+    from ..config.partition import GroupConfig
     from ..context import RunContext
     from ..env.manager import EnvVarsManager
     from .base import TaskSpecFactory
@@ -93,8 +94,11 @@ class ParallelTask(PoeTask):
             source: ConfigPartition,
             *,
             parent: PoeTask.TaskSpec | None = None,
+            group: GroupConfig | None = None,
         ):
-            super().__init__(name, task_def, factory, source, parent=parent)
+            super().__init__(
+                name, task_def, factory, source, parent=parent, group=group
+            )
 
             self.subtasks = []
             for index, sub_task_def in enumerate(task_def[ParallelTask.__key__]):
