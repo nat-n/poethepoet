@@ -129,3 +129,48 @@ done
     )
     assert result.stdout == "first: hey second: 1 2 3\n1\n2\n3\n"
     assert result.stderr == ""
+
+
+def test_shell_boolean_flag(run_poe_subproc):
+    result = run_poe_subproc(
+        "booleans",
+        "--non",
+        "--tru",
+        "--fal",
+        "--txt",
+        project="shells",
+    )
+    assert result.capture == (
+        r"Poe => poe_test_echo "
+        r"""\${non}=${non} \${non:+plus}=${non:+plus} \${non:-minus}=${non:-minus}
+poe_test_echo \${fal}=${fal} \${fal:+plus}=${fal:+plus} \${fal:-minus}=${fal:-minus}
+poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-minus}
+poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
+"""
+    )
+    assert result.stdout == (
+        """${non}=True ${non:+plus}=plus ${non:-minus}=True
+${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
+${tru}= ${tru:+plus}= ${tru:-minus}=minus
+${txt}= ${txt:+plus}= ${txt:-minus}=minus
+"""
+    )
+
+
+def test_shell_boolean_flag_default_value(run_poe_subproc):
+    result = run_poe_subproc("booleans", project="shells")
+    assert result.capture == (
+        r"Poe => poe_test_echo "
+        r"""\${non}=${non} \${non:+plus}=${non:+plus} \${non:-minus}=${non:-minus}
+poe_test_echo \${fal}=${fal} \${fal:+plus}=${fal:+plus} \${fal:-minus}=${fal:-minus}
+poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-minus}
+poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
+"""
+    )
+    assert result.stdout == (
+        """${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
+"""
+    )

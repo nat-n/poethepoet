@@ -134,3 +134,66 @@ def test_switch_capture_out(run_poe_subproc, projects):
             assert output_file.read() == "default\n"
     finally:
         output_path.unlink()
+
+
+def test_switch_boolean_flag(run_poe_subproc):
+    result = run_poe_subproc(
+        "booleans-cmd", "--non", "--tru", "--fal", "--txt", project="switch"
+    )
+    assert (
+        result.capture == "Poe <= poe_test_echo minus\n"
+        "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
+    )
+    assert result.stdout == "{'non': True, 'tru': False, 'fal': True, 'txt': False}\n"
+
+    result = run_poe_subproc(
+        "booleans-expr", "--non", "--tru", "--fal", "--txt", project="switch"
+    )
+    assert result.capture == (
+        "Poe <= tru\n"
+        r"""Poe => poe_test_echo '
+${non}=True' '${non:+plus}=plus' '${non:-minus}=True
+${fal}=True' '${fal:+plus}=plus' '${fal:-minus}=True
+${tru}=' '${tru:+plus}=' '${tru:-minus}=minus
+${txt}=' '${txt:+plus}=' '${txt:-minus}=minus'
+"""
+    )
+    assert result.stdout == (
+        """
+${non}=True ${non:+plus}=plus ${non:-minus}=True
+${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
+${tru}= ${tru:+plus}= ${tru:-minus}=minus
+${txt}= ${txt:+plus}= ${txt:-minus}=minus
+"""
+    )
+
+
+def test_switch_boolean_flag_default_value(run_poe_subproc):
+    result = run_poe_subproc("booleans-cmd", project="switch")
+    assert result.capture == (
+        "Poe <= poe_test_echo text\n"
+        r"""Poe => poe_test_echo 'case=text
+${non}=' '${non:+plus}=' '${non:-minus}=minus
+${fal}=' '${fal:+plus}=' '${fal:-minus}=minus
+${tru}=True' '${tru:+plus}=plus' '${tru:-minus}=True
+${txt}=text' '${txt:+plus}=plus' '${txt:-minus}=text'
+"""
+    )
+    assert result.stdout == (
+        """case=text
+${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
+"""
+    )
+
+    result = run_poe_subproc("booleans-expr", project="switch")
+    assert (
+        result.capture == "Poe <= tru\n"
+        "Poe => {'case': True,'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
+    )
+    assert (
+        result.stdout
+        == "{'case': True, 'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
+    )
