@@ -86,7 +86,7 @@ In the example below, it prints ``"hello!"`` if the ``--hello`` flag is present;
 .. code-block:: toml
 
   [tool.poe.tasks.greet]
-  cmd = "echo ${hello:- hello!}"
+  cmd = "echo ${hello:-hello!}"
   args = [{ name = "hello", type = "boolean", default = "hi!" }]
 
 Glob expansion
