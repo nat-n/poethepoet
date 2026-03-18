@@ -171,7 +171,7 @@ class CmdEnvVarsReader(Mapping[str, str]):
             return self.bool_to_str(result)
         return result
 
-    def get(self, key: str, /, default: Any = None) -> str | None:
+    def get(self, key: str, /, default: Any = None) -> str | None:  # type: ignore[override]
         result = self._vars.get(key, default)
         if type(result) is bool:
             return self.bool_to_str(result)
