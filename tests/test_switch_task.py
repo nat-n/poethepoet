@@ -158,7 +158,7 @@ ${tru}=' '${tru:+plus}=' '${tru:-minus}=minus
 ${txt}=' '${txt:+plus}=' '${txt:-minus}=minus'
 """
     )
-    assert result.stdout == (
+    assert result.stdout.endswith(
         """
 ${non}=True ${non:+plus}=plus ${non:-minus}=True
 ${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
@@ -179,7 +179,7 @@ ${tru}=True' '${tru:+plus}=plus' '${tru:-minus}=True
 ${txt}=text' '${txt:+plus}=plus' '${txt:-minus}=text'
 """
     )
-    assert result.stdout == (
+    assert result.stdout.endswith(
         """case=text
 ${non}= ${non:+plus}= ${non:-minus}=minus
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus

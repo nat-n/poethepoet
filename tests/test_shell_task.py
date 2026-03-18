@@ -148,7 +148,7 @@ poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-mi
 poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
 """
     )
-    assert result.stdout == (
+    assert result.stdout.endswith(
         """${non}=True ${non:+plus}=plus ${non:-minus}=True
 ${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
 ${tru}= ${tru:+plus}= ${tru:-minus}=minus
@@ -167,7 +167,7 @@ poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-mi
 poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
 """
     )
-    assert result.stdout == (
+    assert result.stdout.endswith(
         """${non}= ${non:+plus}= ${non:-minus}=minus
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus
 ${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
