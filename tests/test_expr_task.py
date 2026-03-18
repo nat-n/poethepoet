@@ -113,6 +113,4 @@ def test_expr_boolean_flag(run_poe_subproc):
 def test_expr_boolean_flag_default_value(run_poe_subproc):
     result = run_poe_subproc("booleans", project="expr")
     assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
-    assert (
-        result.stdout == "{'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
-    )
+    assert result.stdout == "{'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
