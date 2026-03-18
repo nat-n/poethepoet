@@ -101,7 +101,7 @@ class EnvVarsManager(Mapping[str, str | bool]):
                 resolved_envfile = config_working_dir.joinpath(
                     apply_envvars_to_template(
                         envfile_path,
-                        scoped_env.to_cmd_reader(with_special_case=True),
+                        scoped_env.to_cmd_reader(with_poe_git_env=True),
                         require_braces=True,
                     )
                 )
@@ -120,7 +120,7 @@ class EnvVarsManager(Mapping[str, str | bool]):
 
             self._vars[key] = apply_envvars_to_template(
                 value_str,
-                scoped_env.to_cmd_reader(with_special_case=True),
+                scoped_env.to_cmd_reader(with_poe_git_env=True),
                 require_braces=True,
             )
             scoped_env.set(key, self._vars[key])
@@ -151,8 +151,8 @@ class EnvVarsManager(Mapping[str, str | bool]):
     def fill_template(self, template: str):
         return apply_envvars_to_template(template, CmdEnvVarsReader(self._vars))
 
-    def to_cmd_reader(self, *, with_special_case: bool = False) -> CmdEnvVarsReader:
-        return CmdEnvVarsReader(self if with_special_case else self._vars)
+    def to_cmd_reader(self, *, with_poe_git_env: bool = False) -> CmdEnvVarsReader:
+        return CmdEnvVarsReader(self if with_poe_git_env else self._vars)
 
 
 class CmdEnvVarsReader(Mapping[str, str]):
