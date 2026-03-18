@@ -112,7 +112,7 @@ class CmdTask(PoeTask):
 
         result = []
         for cmd_token, has_glob in resolve_command_tokens(
-            command_lines, env.to_cmd_reader(with_special_case=True)
+            command_lines, env.to_cmd_reader(with_poe_git_env=True)
         ):
             if has_glob:
                 # Resolve glob pattern from the working directory
