@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from ..config import PoeConfig
     from ..context import RunContext
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
@@ -56,7 +56,7 @@ class ExprTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         from ..helpers.python import format_class
 
@@ -64,7 +64,8 @@ class ExprTask(PoeTask):
             task_state.ignore_failure(ignore_fail)
 
         named_arg_values, _ = self.get_parsed_arguments(env)
-        env.update(named_arg_values)
+        env.register_task_args(named_arg_values)
+        named_arg_values = env.get_args()
 
         imports = self.spec.options.imports
 
@@ -100,7 +101,7 @@ class ExprTask(PoeTask):
     def parse_content(
         self,
         args: dict[str, Any] | None,
-        env: EnvVarsManager,
+        env: TaskEnv,
         imports: Iterable[str],
     ) -> tuple[str, dict[str, str]]:
         """
@@ -115,7 +116,7 @@ class ExprTask(PoeTask):
         from ..helpers.python import resolve_expression
 
         expression, accessed_vars = self._substitute_env_vars(
-            self.spec.content.strip(), env.to_cmd_reader()
+            self.spec.content.strip(), env
         )
 
         expression = resolve_expression(

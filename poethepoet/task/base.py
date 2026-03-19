@@ -16,7 +16,7 @@ from ..options import PoeOptions
 if TYPE_CHECKING:
     from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..ui import PoeUi
     from .args import PoeTaskArgs
 
@@ -245,12 +245,12 @@ class PoeTask(metaclass=MetaPoeTask):
 
         def get_task_env(
             self,
-            parent_env: EnvVarsManager,
+            parent_env: TaskEnv,
             io: PoeIO,
             uses_values: Mapping[str, str] | None = None,
-        ) -> EnvVarsManager:
+        ) -> TaskEnv:
             """
-            Resolve the EnvVarsManager for this task, relative to the given parent_env
+            Resolve the TaskEnv for this task, relative to the given parent_env
             """
 
             result = parent_env.clone(io=io)
@@ -437,8 +437,8 @@ class PoeTask(metaclass=MetaPoeTask):
         return None
 
     def get_parsed_arguments(
-        self, env: EnvVarsManager
-    ) -> tuple[dict[str, str], tuple[str, ...]]:
+        self, env: TaskEnv
+    ) -> tuple[dict[str, Any], tuple[str, ...]]:
         """
         Returns a dict of parsed arguments, and a list extra arguments.
 
@@ -471,7 +471,7 @@ class PoeTask(metaclass=MetaPoeTask):
     async def run(
         self,
         context: RunContext,
-        parent_env: EnvVarsManager | None = None,
+        parent_env: TaskEnv | None = None,
     ) -> PoeTaskRun:
         """
         Run this task
@@ -513,7 +513,7 @@ class PoeTask(metaclass=MetaPoeTask):
         return task_state
 
     async def _handle_run(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         """
         This method must be implemented by a subclass and is expected to mutate the
@@ -524,12 +524,12 @@ class PoeTask(metaclass=MetaPoeTask):
     def _get_executor(
         self,
         context: RunContext,
-        env: EnvVarsManager,
+        env: TaskEnv,
         *,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
     ):
-        return context.get_executor(
+        executor = context.get_executor(
             self.invocation,
             env,
             working_dir=self.get_working_dir(env),
@@ -539,10 +539,14 @@ class PoeTask(metaclass=MetaPoeTask):
             delegate_dry_run=delegate_dry_run,
             io=self.ctx.io,
         )
+        # Make POE_ACTIVE variable available for interpolating into task content
+        if executor.__key__:
+            env.set("POE_ACTIVE", executor.__key__)
+        return executor
 
     def get_working_dir(
         self,
-        env: EnvVarsManager,
+        env: TaskEnv,
     ) -> Path:
         cwd_option = env.fill_template(self.spec.options.get("cwd", self.ctx.cwd))
         working_dir = Path(cwd_option)
@@ -572,7 +576,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
         if self.__upstream_invocations is None:
             env = self.spec.get_task_env(context.env, io=self.ctx.io)
-            env.update(self.get_parsed_arguments(env)[0])
+            env.register_task_args(self.get_parsed_arguments(env)[0])
 
             self.__upstream_invocations = {
                 "deps": [
