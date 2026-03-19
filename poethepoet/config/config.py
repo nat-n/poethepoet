@@ -258,11 +258,11 @@ class PoeConfig:
 
             if invocation not in self._packaged_config_cache:
                 from ..context import InitializationContext
-                from ..env.manager import EnvVarsManager
+                from ..env.task_env import TaskEnv
                 from ..io import PoeIO
 
                 context = InitializationContext(config=self)
-                env = EnvVarsManager(self, base_env=environ)
+                env = TaskEnv.create(config=self, base_env=environ)
                 executor = context.get_executor(
                     invocation=invocation,
                     env=env,

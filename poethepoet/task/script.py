@@ -10,7 +10,7 @@ from .base import PoeTask
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
@@ -59,7 +59,7 @@ class ScriptTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         from ..helpers.python import format_class
 
@@ -67,7 +67,8 @@ class ScriptTask(PoeTask):
             task_state.ignore_failure(ignore_fail)
 
         named_arg_values, _ = self.get_parsed_arguments(env)
-        env.update(named_arg_values)
+        env.register_task_args(named_arg_values)
+        named_arg_values = env.get_args()
 
         # TODO: do something about extra_args, like raise an error?
 
@@ -123,7 +124,7 @@ class ScriptTask(PoeTask):
         await task_state.add_process(process, finalize=True)
 
     async def _run_module(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         """
         Execute the python module referenced by the task content
