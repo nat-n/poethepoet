@@ -266,7 +266,7 @@ ${non}=True ${non:+plus}=plus ${non:-minus}=True
 ${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
 ${tru}= ${tru:+plus}= ${tru:-minus}=minus
 ${txt}= ${txt:+plus}= ${txt:-minus}=minus
-"""
+""".lstrip()
     )
 
 
@@ -286,5 +286,5 @@ ${non}= ${non:+plus}= ${non:-minus}=minus
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus
 ${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
 ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
-"""
+""".lstrip()
     )

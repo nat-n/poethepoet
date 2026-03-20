@@ -153,7 +153,7 @@ poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-mi
 ${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
 ${tru}= ${tru:+plus}= ${tru:-minus}=minus
 ${txt}= ${txt:+plus}= ${txt:-minus}=minus
-"""
+""".lstrip()
     )
 
 
@@ -172,5 +172,5 @@ poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-mi
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus
 ${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
 ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
-"""
+""".lstrip()
     )
