@@ -8,7 +8,7 @@ from .base import PoeTask, TaskContext
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
@@ -70,7 +70,7 @@ class RefTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         """
         Lookup and delegate to the referenced task
@@ -82,7 +82,7 @@ class RefTask(PoeTask):
             task_state.ignore_failure(ignore_fail)
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.update(named_arg_values)
+        env.register_task_args(named_arg_values)
 
         ref_invocation = (
             *(
@@ -125,7 +125,7 @@ class RefTask(PoeTask):
         self,
         task: PoeTask,
         context: RunContext,
-        env: EnvVarsManager,
+        env: TaskEnv,
         task_state: PoeTaskRun,
     ):
         from ..exceptions import ExecutionError

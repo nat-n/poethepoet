@@ -47,7 +47,7 @@ class PoetryExecutor(PoeExecutor):
             return await self._execute_cmd(
                 (venv.resolve_executable(cmd[0]), *cmd[1:]),
                 input=input,
-                env=venv.get_env_vars(self.env.to_cmd_reader()),
+                env=venv.get_env_vars(self.env.get_subprocess_env_vars()),
                 use_exec=use_exec,
             )
 

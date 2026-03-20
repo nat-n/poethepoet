@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, MutableMapping, Sequence
 
     from ..context import ContextProtocol
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..io import PoeIO
 
 
@@ -53,7 +53,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         invocation: tuple[str, ...],
         context: ContextProtocol,
         options: PoeExecutor.ExecutorOptions,
-        env: EnvVarsManager,
+        env: TaskEnv,
         *,
         project_dir: Path | None = None,
         working_dir: Path | None = None,
@@ -90,7 +90,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         invocation: tuple[str, ...],
         context: ContextProtocol,
         executor_config: Mapping[str, str | bool | list[str | bool]],
-        env: EnvVarsManager,
+        env: TaskEnv,
         *,
         working_dir: Path | None = None,
         capture_stdout: str | bool = False,
@@ -217,7 +217,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         # Beware: this is the point of no return!
 
         exec_env = dict(
-            (self.env.to_cmd_reader() if env is None else env),
+            (self.env.get_subprocess_env_vars() if env is None else env),
             POE_ACTIVE=cast("str", self.__key__),
         )
         if self.working_dir:
@@ -244,7 +244,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             return await asyncio.create_subprocess_exec(sys.executable, "-c", "")
         popen_kwargs: MutableMapping[str, Any] = {}
         popen_kwargs["env"] = dict(
-            (self.env.to_cmd_reader() if env is None else env), POE_ACTIVE=self.__key__
+            (self.env.get_subprocess_env_vars() if env is None else env),
+            POE_ACTIVE=self.__key__,
         )
         if input is not None:
             popen_kwargs["stdin"] = PIPE

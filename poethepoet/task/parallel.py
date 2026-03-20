@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from ..config import ConfigPartition, PoeConfig
     from ..context import RunContext
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from .base import TaskSpecFactory
 
 T = TypeVar("T")
@@ -163,10 +163,10 @@ class ParallelTask(PoeTask):
         ]
 
     async def _handle_run(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         named_arg_values, _ = self.get_parsed_arguments(env)
-        env.update(named_arg_values)
+        env.register_task_args(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
             raise PoeException(f"Parallel task {self.name!r} does not accept arguments")
