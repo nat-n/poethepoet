@@ -261,6 +261,15 @@ options = ["--verbose", "-v"]
 type = "boolean"
 help = "Verbose output"
 
+[tool.poe.tasks.booleans]
+script = """pkg:echo_script(non=non, tru=tru, fal=fal, txt=txt)"""
+args = [
+  { name = "non", type = "boolean" },
+  { name = "tru", type = "boolean", default = true },
+  { name = "fal", type = "boolean", default = false },
+  { name = "txt", type = "boolean", default = "text" },
+]
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

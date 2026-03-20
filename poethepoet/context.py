@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from .config import PoeConfig
-    from .env.manager import EnvVarsManager
+    from .env.task_env import TaskEnv
     from .ui import PoeUi
 
 
@@ -35,7 +35,7 @@ class ContextProtocol(Protocol):
     def get_executor(
         self,
         invocation: tuple[str, ...],
-        env: EnvVarsManager,
+        env: TaskEnv,
         working_dir: Path,
         *,
         executor_config: Mapping[str, str] | None = None,
@@ -51,7 +51,7 @@ class RunContext:
     config: PoeConfig
     exec_cache: dict[str, Any]
     ui: PoeUi | None
-    env: EnvVarsManager
+    env: TaskEnv
     dry: bool
     poe_active: str | None
     multistage: bool = False  # FIXME: check if this is used anywhere!
@@ -68,7 +68,7 @@ class RunContext:
         cwd: Path | str | None = None,
         loop: asyncio.AbstractEventLoop | None = None,
     ):
-        from .env.manager import EnvVarsManager
+        from .env.task_env import TaskEnv
 
         self.config = config
         self.ui = ui
@@ -80,8 +80,10 @@ class RunContext:
         self._loop = loop or asyncio.get_event_loop()
         self._shutdown_manager = ShutdownManager(self._loop, self.ui.io)
 
-        # Init root EnvVarsManager
-        self.env = EnvVarsManager(self.config, self.ui.io, base_env=env, cwd=cwd)
+        # Init root TaskEnv
+        self.env = TaskEnv.create(
+            config=self.config, base_env=env, io=self.ui.io, cwd=cwd
+        )
         for config_part in self.config.partitions():
             self.env.apply_env_config(
                 envfile_option=config_part.get("envfile"),
@@ -188,7 +190,7 @@ class RunContext:
     def get_executor(
         self,
         invocation: tuple[str, ...],
-        env: EnvVarsManager,
+        env: TaskEnv,
         working_dir: Path,
         *,
         executor_config: Mapping[str, str] | None = None,
@@ -313,7 +315,7 @@ class InitializationContext:
     def get_executor(
         self,
         invocation: tuple[str, ...],
-        env: EnvVarsManager,
+        env: TaskEnv,
         working_dir: Path,
         *,
         executor_config: Mapping[str, str] | None = None,

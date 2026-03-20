@@ -167,7 +167,12 @@ Named arguments support the following configuration options:
    If true then not providing the argument will result in an error. Arguments are not required by default.
 
 - **type** : ``Literal["string", "float", "integer", "boolean"]``
-   The type that the provided value will be cast to. If not provided then the default behaviour    is to keep values as strings. Setting the type to ``"boolean"`` makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. :toml:`true` if no default value is given, or :toml:`false` if :toml:`default = true`.
+   The type that the provided value will be cast to. If not provided then the default behaviour is to keep values as strings. Setting the type to ``"boolean"`` makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. :toml:`"true"` if no default value is given, or :toml:`false` if :toml:`default = true`.
+
+   When expanded in variables, :toml:`true` becomes `True`. For :toml:`false`, the behavior depends on the task type. In `script` and `expr` tasks, it becomes `False`. In `cmd` and `shell` tasks, :toml:`false` expands to an empty string (`""`).
+
+   Expanding to an empty string is intentional, as it’s designed for use in variable expansion. For details, see the :ref:`parameter expansion operators<Parameter expansion operators>`.
+
 
 Constraining argument values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

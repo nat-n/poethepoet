@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from argparse import ArgumentParser
     from collections.abc import Iterator, Mapping, Sequence
 
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..io import PoeIO
 
 from ..exceptions import ConfigValidationError, ExecutionError
@@ -283,7 +283,7 @@ class PoeTaskArgs:
         if task_name:
             error.task_name = task_name
 
-    def build_parser(self, env: EnvVarsManager, program_name: str) -> ArgumentParser:
+    def build_parser(self, env: TaskEnv, program_name: str) -> ArgumentParser:
         import argparse
 
         parser = argparse.ArgumentParser(
@@ -298,7 +298,7 @@ class PoeTaskArgs:
             )
         return parser
 
-    def _get_argument_params(self, arg: ArgSpec, env: EnvVarsManager):
+    def _get_argument_params(self, arg: ArgSpec, env: TaskEnv):
         default = arg.get("default")
         if isinstance(default, str):
             default = env.fill_template(default)
@@ -331,13 +331,17 @@ class PoeTaskArgs:
             result["choices"] = arg.choices
 
         if arg_type == "boolean":
-            result["action"] = "store_false" if default else "store_true"
+            if default:
+                result["action"] = "store_false"
+            else:
+                result["action"] = "store_true"
+                result["default"] = False
         else:
             result["type"] = arg_types.get(arg_type, str)
 
         return result
 
-    def parse(self, args: Sequence[str], env: EnvVarsManager, program_name: str):
+    def parse(self, args: Sequence[str], env: TaskEnv, program_name: str):
         error_stream = (
             self._io.error_output
             if self._io.verbosity > -3

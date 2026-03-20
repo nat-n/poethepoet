@@ -9,7 +9,7 @@ from .base import PoeTask
 if TYPE_CHECKING:
     from ..config import PoeConfig
     from ..context import RunContext
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
 
@@ -54,16 +54,15 @@ class CmdTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.update(named_arg_values)
+        env.register_task_args(named_arg_values)
 
         executor = self._get_executor(context, env)
-        env.update({"POE_ACTIVE": executor.__key__})
 
         cmd = (*self._resolve_commandline(context, env), *extra_args)
 
@@ -85,7 +84,7 @@ class CmdTask(PoeTask):
                 "More details: https://github.com/nat-n/poethepoet/discussions/314",
             )
 
-    def _resolve_commandline(self, context: RunContext, env: EnvVarsManager):
+    def _resolve_commandline(self, context: RunContext, env: TaskEnv):
         from ..helpers.command import parse_poe_cmd, resolve_command_tokens
         from ..helpers.command.ast_core import ParseError
 
