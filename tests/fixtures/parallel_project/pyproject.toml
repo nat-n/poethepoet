@@ -57,6 +57,16 @@ sequence = [
   ],
 ]
 
+[tool.poe.tasks.bool_parallel]
+args = [
+  { name = "flag", type = "boolean" },
+  { name = "val", type = "boolean", default = true },
+]
+parallel = [
+  { cmd = "poe_test_echo cmd:${flag:-unset}:${val:-unset}" },
+  { expr = "{'flag':flag, 'val':val}" },
+]
+
 [tool.poe.tasks.parallel_with_stdout_capture]
 parallel = [
   { cmd = "poe_test_echo \"1 going to stdout 1\"" },

@@ -1,7 +1,7 @@
 Configuring CLI arguments
 -------------------------
 
-By default extra arguments passed to the poe CLI following the task name are appended to the end of a :doc:`cmd task<../tasks/task_types/cmd>`, or exposed as ``sys.argv`` in a :doc:`script task<../tasks/task_types/script>`, but will cause an error for other task types). Alternatively it is possible to define named arguments that a task should accept, which will be documented in the help for that task, and exposed to the task in a way the makes the most sense for that task type.
+By default extra arguments passed to the poe CLI following the task name are appended to the end of a :doc:`cmd task<../tasks/task_types/cmd>`, or exposed as ``sys.argv`` in a :doc:`script task<../tasks/task_types/script>`, but will cause an error for other task types. Alternatively it is possible to define named arguments that a task should accept, which will be documented in the help for that task, and exposed to the task in a way that makes the most sense for that task type.
 
 In general named arguments can take one of the following three forms:
 
@@ -14,7 +14,14 @@ In general named arguments can take one of the following three forms:
 - **flags** which are either provided or not, but don't accept a value like
    :bash:`poe task-name --flag`
 
-The value for the named argument is then accessible by name within the task content as an environment variable, and sometimes also as a native variable depending on the task type as detailed below.
+The value for the named argument is then accessible by name within the task content, also in most cases as an environment variable, and sometimes also as a native variable depending on the task type as detailed below.
+
+.. tip::
+
+   You can indicate that a variable should be private, and not propagated to the task subprocess for use at runtime by naming it in lowercase with a prefix of ``_``.
+
+   Private variables can be used via parameter expansion in :doc:`cmd tasks<../tasks/task_types/cmd>`, as variables in :doc:`expr tasks<../tasks/task_types/expr>` or :doc:`script tasks<../tasks/task_types/script>`, but not in :doc:`shell tasks<../tasks/task_types/shell>` tasks which can only evaluate variables from the environment at runtime.
+
 
 Configuration syntax
 ~~~~~~~~~~~~~~~~~~~~
@@ -30,14 +37,33 @@ The array form may contain string items which are interpreted as an option argum
 .. code-block:: toml
 
     [tool.poe.tasks.serve]
-    cmd = "myapp:run"
-    args = ["host", "port"]
+    script = "myapp:run"
+    args   = ["host", "port"]
 
 This example can be invoked as
 
 .. code-block:: bash
 
     poe serve --host 0.0.0.0 --port 8001
+
+When used with a :doc:`script task<../tasks/task_types/script>` in this way the ``run`` function from the ``myapp`` module will be called passing the ``host`` and ``port`` as keyword arguments with whatever values are provided on the CLI, in addition to ``host`` and ``port`` being set as environment variables on the task subprocess, and the `sys.argv` being populated with the full invocation.
+
+The following example demonstrates a slightly different form where the private ``_food`` arg is explicitly passed to the ``frying_pan`` function.
+
+.. code-block:: toml
+
+   [tool.poe.tasks.cook]
+   script = "kitchen:frying_pan(_food)"
+   args   = ["_food"]
+
+This example can be invoked as
+
+.. code-block:: bash
+
+    poe cook --food eggs
+
+Note that the leading underscore is stripped from the inferred CLI option.
+
 
 Array of inline tables
 """"""""""""""""""""""
@@ -141,7 +167,7 @@ Named arguments support the following configuration options:
    A list of options to accept for this argument, similar to `argsparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then the name of the argument is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
 
 - **positional** : ``bool``
-   If set to true then the argument becomes a position argument instead of an option argument. Note that positional arguments may not have type ``boolean``.
+   If set to true then the argument becomes a position argument instead of an option argument. Note that positional arguments may not have ``type = "boolean"``.
 
 - **multiple** : ``bool`` | ``int``
    If the ``multiple`` option is set to true on a positional or option argument then that argument will accept multiple values.
@@ -150,7 +176,7 @@ Named arguments support the following configuration options:
 
    For positional arguments, only the last positional argument may have the ``multiple`` option set.
 
-   This option is not compatible with arguments with type ``boolean`` since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type "integer" for similar effect.
+   This option is not compatible with arguments with ``type = "boolean"`` since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type "integer" for similar effect.
 
    The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
 
@@ -169,9 +195,11 @@ Named arguments support the following configuration options:
 - **type** : ``Literal["string", "float", "integer", "boolean"]``
    The type that the provided value will be cast to. If not provided then the default behaviour is to keep values as strings. Setting the type to ``"boolean"`` makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. :toml:`"true"` if no default value is given, or :toml:`false` if :toml:`default = true`.
 
-   When expanded in variables, :toml:`true` becomes `True`. For :toml:`false`, the behavior depends on the task type. In `script` and `expr` tasks, it becomes `False`. In `cmd` and `shell` tasks, :toml:`false` expands to an empty string (`""`).
+.. note::
 
-   Expanding to an empty string is intentional, as it’s designed for use in variable expansion. For details, see the :ref:`parameter expansion operators<Parameter expansion operators>`.
+   When a :toml:`type = "boolean"` flag arg evaluates to :toml:`false`, this results in the corresponding environment variable (if any) being *unset* for the task, even if it was previously set by some other means. This ensures consistent *non-truthy* semantics for :ref:`parameter expansion operators<Parameter expansion operators>`, in config, shells or other subprocesses.
+
+   If the flag value is :toml:`true` then it is exposed as a python variable with the value ``True`` in expr or script tasks, and an environment variable with the string value ``True``.
 
 
 Constraining argument values
@@ -239,20 +267,28 @@ Arguments for script tasks
 
 Arguments can be defined for :doc:`script<../tasks/task_types/script>` tasks in the same way, but how they are exposed to the underlying python function depends on how the script is defined.
 
-In the following example, since no parenthesis are included for the referenced function, all provided args will be passed to the function as kwargs:
+In the following example, since no parenthesis are included for the referenced function, all provided args will be passed to the function as keyword arguments:
 
 .. code-block:: toml
 
   [tool.poe.tasks.build]
-  script = "my_app.util:build", args = ["dest", "version"]
+  script = "my_app.util:build"
+  args = ["dest", "version"]
 
 You can also control exactly how values are passed to the python function as demonstrated in the following example:
 
 .. code-block:: toml
 
   [tool.poe.tasks.build]
-  script = "my_app.util:build(dest, build_version=version, verbose=True)"
-  args = ["dest", "version"]
+  script = "my_app.util:build(_dest, build_version=_version, verbose=True)"
+  args = [
+    { name = "_dest" },
+    { name = "_version", type = "integer" }
+  ]
+
+In the second example, the arg names are prefixed with an underscore, which combined with the fact that they're all lowercase makes them private, i.e. they are not propagated to environment variables on the task subprocess.
+
+Note also that because the type of _version is integer, the value passed to the ``--version`` CLI argument will be parsed to an int and passed as such when calling the build function in python.
 
 Arguments for sequence tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -267,10 +303,12 @@ example.
   args = [{ name = "target", positional = true }]
 
   [tool.poe.tasks.check]
-  sequence = ["build ${target}", { script = "util:run_tests(environ['target'])" }]
-  args = ["target"]
+  sequence = ["build ${_target}", { script = "util:run_tests(_target)" }]
+  args = ["_target"]
 
-This works by setting the argument values as environment variables for the subtasks, which can be read at runtime, but also referenced in the task definition as demonstrated in the above example for a :doc:`ref<../tasks/task_types/ref>` task and :doc:`script<../tasks/task_types/script>` task.
+This works by setting the argument values as either private or environment variables for the subtasks, which can be referenced in the task definition as demonstrated in the above example for a :doc:`ref<../tasks/task_types/ref>` task and :doc:`script<../tasks/task_types/script>` task. Non-private variables can be accessed as environment variables at runtime.
+
+Notice that the argument is accessible like a python variable in the script subtask.
 
 Passing free arguments in addition to named arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

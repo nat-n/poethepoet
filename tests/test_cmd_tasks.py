@@ -288,3 +288,158 @@ ${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
 ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
 """.lstrip()
     )
+
+
+def test_cmd_boolean_flag_partial_negate_true(run_poe_subproc):
+    """Only --tru passed: negates default=true to False (unset), others keep defaults"""
+    result = run_poe_subproc(
+        "booleans",
+        "--tru",
+        project="cmds",
+    )
+    assert result.stdout.endswith(
+        """
+${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}= ${tru:+plus}= ${tru:-minus}=minus
+${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
+""".lstrip()
+    )
+
+
+def test_cmd_boolean_flag_partial_negate_string(run_poe_subproc):
+    """Only --txt passed: negates default="text" to False (unset), others keep defaults"""
+    result = run_poe_subproc(
+        "booleans",
+        "--txt",
+        project="cmds",
+    )
+    assert result.stdout.endswith(
+        """
+${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}= ${txt:+plus}= ${txt:-minus}=minus
+""".lstrip()
+    )
+
+
+def test_cmd_int_zero_default(run_poe_subproc):
+    result = run_poe_subproc("int_zero_default", project="cmds")
+    assert result.capture == "Poe => poe_test_echo 0\n"
+    assert result.stdout.strip() == "0"
+
+
+def test_cmd_int_zero_explicit(run_poe_subproc):
+    result = run_poe_subproc("int_zero_default", "--count", "0", project="cmds")
+    assert result.capture == "Poe => poe_test_echo 0\n"
+    assert result.stdout.strip() == "0"
+
+
+def test_cmd_bool_env_collision_flag_set(run_poe_subproc):
+    result = run_poe_subproc("bool_env_collision", "--MY_FLAG", project="cmds")
+    assert result.capture == "Poe => poe_test_echo True\n"
+    assert result.stdout.strip() == "True"
+
+
+def test_cmd_bool_env_collision_flag_unset(run_poe_subproc):
+    result = run_poe_subproc("bool_env_collision", project="cmds")
+    assert result.capture == "Poe => poe_test_echo fallback\n"
+    assert result.stdout.strip() == "fallback"
+
+
+def test_cmd_bool_env_presence_true(run_poe_subproc):
+    result = run_poe_subproc("bool_env_presence", project="cmds")
+    assert result.stdout.strip() == "True 'True'"
+
+
+def test_cmd_bool_env_presence_false_is_unset(run_poe_subproc):
+    result = run_poe_subproc("bool_env_presence", "--MY_FLAG", project="cmds")
+    assert result.stdout.strip() == "False None"
+
+
+def test_private_env_var_filtered_from_subprocess(run_poe_subproc):
+    """Env vars starting with _ (no uppercase) are filtered from subprocess"""
+    result = run_poe_subproc("private_env_vars", project="cmds")
+    assert "_secret=hidden" not in result.stdout
+    assert "_SECRET=VISIBLE" in result.stdout
+    assert "normal=visible" in result.stdout
+
+
+def test_private_env_var_accessible_in_template(run_poe_subproc):
+    """Private vars are still available for template resolution"""
+    result = run_poe_subproc("private_env_template", project="cmds")
+    assert result.stdout.strip() == "hidden:VISIBLE:visible"
+
+
+def test_private_arg_filtered_from_subprocess(run_poe_subproc):
+    """Boolean arg named _flag (no uppercase) is private, _FLAG is not"""
+    result = run_poe_subproc("private_arg", project="cmds")
+    assert "_flag=True" not in result.stdout
+    assert "_FLAG=True" in result.stdout
+
+
+def test_private_arg_negated_not_in_subprocess(run_poe_subproc):
+    """Inferred option names strip leading underscores from arg names"""
+    result = run_poe_subproc("private_arg", "--flag", "--FLAG", project="cmds")
+    assert "_flag=" not in result.stdout
+    assert "_FLAG=" not in result.stdout
+
+
+def test_private_arg_accessible_in_template(run_poe_subproc):
+    """Private args are available for cmd template resolution despite subprocess filtering"""
+    result = run_poe_subproc("private_arg_in_template", project="cmds")
+    assert result.stdout.strip() == "True:True"
+
+
+def test_private_shorthand_arg_uses_stripped_inferred_option_names(run_poe_subproc):
+    """Short-form arg names infer CLI options without leading underscores"""
+    result = run_poe_subproc(
+        "private_shorthand_arg",
+        "--secret",
+        "hidden",
+        "--PUBLIC",
+        "VISIBLE",
+        project="cmds",
+    )
+    assert result.capture == "Poe => poe_test_echo hidden:VISIBLE\n"
+    assert result.stdout == "hidden:VISIBLE\n"
+    assert result.stderr == ""
+
+
+def test_private_shorthand_arg_old_option_name_is_rejected(run_poe):
+    """The old inferred option form with the leading underscore is no longer accepted"""
+    result = run_poe("private_shorthand_arg", "--_secret", "hidden", project="cmds")
+    assert "unrecognized arguments: --_secret hidden" in result.capture
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_private_arg_explicit_option_keeps_leading_underscore(run_poe_subproc):
+    """Explicitly configured options are unaffected by shorthand inference changes"""
+    result = run_poe_subproc(
+        "private_explicit_option", "--_secret", "hidden", project="cmds"
+    )
+    assert result.capture == "Poe => poe_test_echo hidden\n"
+    assert result.stdout == "hidden\n"
+    assert result.stderr == ""
+
+
+def test_multi_value_not_provided_is_unset(run_poe_subproc):
+    """Multiple arg not provided at all: env var is unset (argparse returns None)"""
+    result = run_poe_subproc("multi_value_env", project="cmds")
+    assert result.stdout.strip() == "False None"
+
+
+def test_multi_value_provided_with_values(run_poe_subproc):
+    """Multiple arg with values: env var is space-separated string"""
+    result = run_poe_subproc(
+        "multi_value_env", "--items", "1", "2", "3", project="cmds"
+    )
+    assert result.stdout.strip() == "True '1 2 3'"
+
+
+def test_multi_value_provided_empty(run_poe_subproc):
+    """Multiple arg provided with no values (--items with nothing): env var is unset"""
+    result = run_poe_subproc("multi_value_env", "--items", project="cmds")
+    assert result.stdout.strip() == "False None"

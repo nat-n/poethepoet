@@ -16,6 +16,10 @@ ref = "greet lol!"
 [tool.poe.tasks.greet-dave]
 ref = "greet-subject --subject dave"
 
+[tool.poe.tasks.greet-secret]
+ref = "greet-subject --subject ${_subject}"
+env = { _subject = "secret" }
+
 [tool.poe.tasks.greet-ref-file]
 ref = "greet-subject"
 capture_stdout = "greet-ref.txt"
@@ -33,3 +37,93 @@ ref = "apologize"
 [tool.poe.tasks.sorry-dave]
 ref  = "apologize --name=Dave --explain='${explain}'"
 args = [{ name = "explain", positional = true, multiple = true }]
+
+[tool.poe.tasks.bool_expr]
+expr = "{'flag':flag, 'val':val}"
+args = [
+  { name = "flag", type = "boolean" },
+  { name = "val", type = "boolean", default = true },
+]
+
+[tool.poe.tasks.bool_cmd]
+cmd = "poe_test_echo ${flag:-unset}:${val:-unset}"
+args = [
+  { name = "flag", type = "boolean" },
+  { name = "val", type = "boolean", default = true },
+]
+
+[tool.poe.tasks.bool_ref_forwarding]
+ref = "bool_cmd"
+args = [
+  { name = "flag", type = "boolean" },
+  { name = "val", type = "boolean", default = true },
+]
+
+[tool.poe.tasks.bool_ref_override]
+ref = "bool_cmd --val"
+args = [
+  { name = "flag", type = "boolean" },
+  { name = "val", type = "boolean", default = true },
+]
+
+[tool.poe.tasks.bool_ref_inheriting]
+ref = "bool_expr_no_args"
+args = [
+  { name = "flag", type = "boolean" },
+  { name = "val", type = "boolean", default = true },
+]
+
+[tool.poe.tasks.bool_expr_no_args]
+expr = "{'flag':flag, 'val':val}"
+
+[tool.poe.tasks.bool_sequence_ref]
+args = [
+  { name = "flag", type = "boolean" },
+  { name = "val", type = "boolean", default = true },
+]
+sequence = [
+  { cmd = "poe_test_echo ${flag:-unset}:${val:-unset}" },
+  { ref = "bool_expr_no_args" },
+]
+
+[tool.poe.tasks.word_cmd]
+cmd = "poe_test_echo ${subject}:${tone}"
+args = [
+  { name = "subject", default = "child-subject" },
+  { name = "tone", default = "child-tone" },
+]
+
+[tool.poe.tasks.word_ref_shadow]
+ref = "word_cmd"
+args = ["subject", "tone"]
+
+[tool.poe.tasks.word_ref_override]
+ref = "word_cmd --tone ref-tone"
+args = ["subject", "tone"]
+
+[tool.poe.tasks.multi_ref_expr]
+expr = "{'items': items, 'label': label}"
+args = [
+  { name = "items", multiple = true },
+]
+
+[tool.poe.tasks.multi_ref_shadow]
+ref = "multi_ref_expr"
+args = [
+  { name = "items", multiple = true },
+  "label",
+]
+
+[tool.poe.tasks.multi_ref_override]
+ref = "multi_ref_expr --items ref-a ref-b"
+args = [
+  { name = "items", multiple = true },
+  "label",
+]
+
+[tool.poe.tasks.multi_ref_empty_override]
+ref = "multi_ref_expr --items"
+args = [
+  { name = "items", multiple = true },
+  "label",
+]

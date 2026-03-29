@@ -114,3 +114,52 @@ def test_expr_boolean_flag_default_value(run_poe_subproc):
     result = run_poe_subproc("booleans", project="expr")
     assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
     assert result.stdout == "{'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
+
+
+def test_expr_boolean_flag_partial(run_poe_subproc):
+    """--non toggles False->True, --tru negates True->False, fal/txt keep defaults"""
+    result = run_poe_subproc("booleans", "--non", "--tru", project="expr")
+    assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
+    assert result.stdout == "{'non': True, 'tru': False, 'fal': False, 'txt': 'text'}\n"
+
+
+def test_expr_multi_value_typed_list(run_poe_subproc):
+    """Expr tasks receive multiple args as typed Python lists"""
+    result = run_poe_subproc(
+        "multi_value_expr", "--nums", "1", "2", "3", "--words", "a", "b", project="expr"
+    )
+    assert result.stdout == "{'nums': [1, 2, 3], 'words': ['a', 'b']}\n"
+
+
+def test_expr_multi_value_not_provided(run_poe_subproc):
+    """Multiple args not provided: expr sees None (argparse default)"""
+    result = run_poe_subproc("multi_value_expr", project="expr")
+    assert result.stdout == "{'nums': None, 'words': None}\n"
+
+
+def test_expr_multi_value_empty_flag(run_poe_subproc):
+    """Multiple args provided with no values (--nums --words): expr sees empty lists"""
+    result = run_poe_subproc("multi_value_expr", "--nums", "--words", project="expr")
+    assert result.stdout == "{'nums': [], 'words': []}\n"
+
+
+def test_expr_private_arg_accessible(run_poe_subproc):
+    """Private args are accessible as typed values in expr tasks"""
+    result = run_poe_subproc("private_arg_expr", project="expr")
+    assert result.stdout == "{'_flag': True, '_FLAG': True}\n"
+
+
+def test_expr_private_arg_negated(run_poe_subproc):
+    """Inferred option names strip leading underscores for expr arg declarations too"""
+    result = run_poe_subproc("private_arg_expr", "--flag", project="expr")
+    assert result.stdout == "{'_flag': False, '_FLAG': True}\n"
+
+
+def test_expr_env_access_uses_typed_and_templated_channels(run_poe_subproc):
+    result = run_poe_subproc("bool_env_access_expr", project="expr")
+    assert result.stdout == "{'typed': True, 'templated': 'True'}\n"
+
+
+def test_expr_env_access_unset_bool_arg_preserves_typed_false(run_poe_subproc):
+    result = run_poe_subproc("bool_env_access_expr", "--MY_FLAG", project="expr")
+    assert result.stdout == "{'typed': False, 'templated': ''}\n"

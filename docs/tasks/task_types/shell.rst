@@ -1,7 +1,7 @@
 ``shell`` tasks
 ===============
 
-**Shell tasks** are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can leverage the full syntax of the shell interpreter such as command substitution, pipes, background processes, etc.
+**Shell tasks** are similar to simple command tasks except that they are executed inside a new shell, and so are interpreted as a shell script instead of a single command. This means they can leverage the full syntax of the shell interpreter such as command substitution, pipes, background processes, etc.
 
 An example use case for this might be opening some ssh tunnels in the background with one task and closing them with another like so:
 
@@ -89,3 +89,27 @@ The default value can be changed with the global ``shell_interpreter`` option.
 .. |git_bash_link| raw:: html
 
    <a href="https://gitforwindows.org" target="_blank">git bash</a>
+
+
+Task arguments
+--------------
+
+As with other task types, shell tasks support configuring named arguments via the ``args`` option. Argument values are set as environment variables on the shell subprocess.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.greet]
+  shell = """
+  echo "${GREETING} ${NAME}"
+  echo "How are you?"
+  """
+  args = [
+    { name = "NAME", default = "world" },
+    { name = "GREETING", default = "Hi" },
+  ]
+
+See the :doc:`args guide<../../guides/args_guide>` for full details on configuring arguments.
+
+.. warning::
+
+  Unlike cmd, script, or expr tasks, shell tasks only access variables from the environment at runtime via the shell interpreter. Therefore ``_private`` environment variables cannot be accessed from shell task content, unless they are remapped to a normal environment variable via the ``env`` option.

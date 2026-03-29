@@ -190,13 +190,18 @@ class TaskEnv(Mapping[str, str]):
 
     def register_task_args(self, args: Mapping[str, Any]):
         """
-        Set typed argument variables. All arg names are tracked; only non-None
-        values are stringified into env vars.
+        Track typed argument variables, and map to env vars.
         """
-        for key, val in args.items():
-            self._arg_vars[key] = val
-            if val is not None:
-                self._env_vars[key] = self._stringify_value(val)
+        for key, value in args.items():
+            self._arg_vars[key] = value
+
+            if value is None or value is False or value == []:
+                # False or unset arg value maps to unset env var
+                self._env_vars.pop(key, None)
+            elif isinstance(value, list):
+                self.set(key, " ".join(str(item) for item in value))
+            else:
+                self.set(key, str(value))
 
     def apply_env_config(
         self,
@@ -238,20 +243,8 @@ class TaskEnv(Mapping[str, str]):
             resolved_value = apply_envvars_to_template(
                 value_str, scoped_vars, require_braces=True
             )
-            self._env_vars[key] = resolved_value
+            self.set(key, resolved_value)
             scoped_vars.set(key, resolved_value)
-
-    @staticmethod
-    def _stringify_value(value) -> str:
-        """
-        Map from a typed value to a string
-        """
-        if value is False:
-            # False maps to empty string to align with shell semantics
-            return ""
-        if isinstance(value, list):
-            return " ".join(str(item) for item in value)
-        return str(value)
 
 
 def _iter_envfile_paths(

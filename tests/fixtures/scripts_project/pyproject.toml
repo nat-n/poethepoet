@@ -270,6 +270,18 @@ args = [
   { name = "txt", type = "boolean", default = "text" },
 ]
 
+[tool.poe.tasks.bool_partial]
+script = """pkg:echo_script(non=non, tru=tru, fal=fal)"""
+args = [
+  { name = "non", type = "boolean" },
+  { name = "tru", type = "boolean", default = true },
+  { name = "fal", type = "boolean", default = false },
+]
+
+[tool.poe.tasks.bool_env_access]
+script = """pkg:echo_script(typed=MY_FLAG, present=('MY_FLAG' in environ), value=(environ['MY_FLAG'] if 'MY_FLAG' in environ else None))"""
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

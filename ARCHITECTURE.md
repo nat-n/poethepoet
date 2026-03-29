@@ -29,7 +29,7 @@ poethepoet/
 │   └── uv.py        # uv virtualenv
 │
 ├── env/             # Environment variable handling
-│   └── manager.py   # EnvVarsManager
+│   └── task_env.py  # TaskEnv
 │
 ├── completion/      # Shell completion scripts
 │   ├── zsh.py       # Zsh completion with task descriptions + args

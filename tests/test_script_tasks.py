@@ -444,3 +444,32 @@ def test_script_boolean_flag_default_value(run_poe_subproc):
     assert result.stdout == (
         "args ()\n" "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
     )
+
+
+def test_script_boolean_flag_partial(run_poe_subproc):
+    """--non toggles False->True, --tru negates True->False, fal keeps default False"""
+    result = run_poe_subproc(
+        "bool_partial", "--non", "--tru", project="scripts", env=no_venv
+    )
+    assert result.capture == "Poe => bool_partial --non --tru\n"
+    assert result.stdout == (
+        "args ()\n" "kwargs {'non': True, 'tru': False, 'fal': False}\n"
+    )
+
+
+def test_script_env_access_uses_typed_and_environ_channels(run_poe_subproc):
+    result = run_poe_subproc("bool_env_access", project="scripts", env=no_venv)
+    assert result.capture == "Poe => bool_env_access\n"
+    assert result.stdout == (
+        "args ()\n" "kwargs {'typed': True, 'present': True, 'value': 'True'}\n"
+    )
+
+
+def test_script_env_access_unset_bool_arg_preserves_typed_false(run_poe_subproc):
+    result = run_poe_subproc(
+        "bool_env_access", "--MY_FLAG", project="scripts", env=no_venv
+    )
+    assert result.capture == "Poe => bool_env_access --MY_FLAG\n"
+    assert result.stdout == (
+        "args ()\n" "kwargs {'typed': False, 'present': False, 'value': None}\n"
+    )

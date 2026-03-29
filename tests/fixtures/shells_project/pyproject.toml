@@ -86,3 +86,27 @@ args = [
     { name = "fal", type = "boolean", default = false },
     { name = "txt", type = "boolean", default = "text" },
 ]
+
+[tool.poe.tasks.bool_env_collision]
+shell = "poe_test_echo ${MY_FLAG:-fallback}"
+env = { MY_FLAG = "from_config" }
+args = [{ name = "MY_FLAG", type = "boolean" }]
+
+[tool.poe.tasks.bool_env_presence]
+shell = "python -c \"import os; print('MY_FLAG' in os.environ, repr(os.getenv('MY_FLAG')))\""
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]
+
+[tool.poe.tasks.bool_unset_semantics_sh]
+interpreter = ["sh"]
+shell = "poe_test_echo ${MY_FLAG+set}:${MY_FLAG-unset}:${MY_FLAG:-fallback}"
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]
+
+[tool.poe.tasks.bool_unset_semantics_pwsh]
+interpreter = "pwsh"
+shell = """
+$present = Test-Path env:MY_FLAG
+$value = if ($present) { $env:MY_FLAG } else { "unset" }
+$fallback = if ($null -ne $env:MY_FLAG) { $env:MY_FLAG } else { "fallback" }
+poe_test_echo "$present|$value|$fallback"
+"""
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]

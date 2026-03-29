@@ -86,3 +86,7 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
 ## Development tasks
 
 - This project uses poe tasks to manage project tasks. Always check if there is an applicable poe task for a common action, e.g. running servers, tests or other quality checks.
+
+## Agent behavior
+
+- If you see something, say something. Always report potential bugs if you spot them, especially in new code.

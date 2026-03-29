@@ -71,13 +71,13 @@ In the following example, if ``AWS_REGION`` has a value then it will be used, ot
 
 The ``:+`` or *alternate value* operator is especially useful in cases such as the following where you might want to control whether some CLI options are passed to the command.
 
-In this example we declare a boolean argument with no default, so if the ``--arn-only`` flag is provided to the task then three additional CLI options will be included in the task content.
+In this example we declare a boolean argument with no default, so if the ``--arn-only`` flag is provided to the task then three additional CLI options will be included in the task content. If not then _arn_only will evaluate to empty string in the context of the cmd task content.
 
 .. code-block:: toml
 
   [tool.poe.tasks.aws-identity]
-  cmd = "aws sts get-caller-identity ${ARN_ONLY:+ --no-cli-pager --output text --query 'Arn'}"
-  args = [{ name = "ARN_ONLY", options = ["--arn-only"], type = "boolean" }]
+  cmd = "aws sts get-caller-identity ${_arn_only:+ --no-cli-pager --output text --query 'Arn'}"
+  args = [{ name = "_arn_only", options = ["--arn-only"], type = "boolean" }]
 
 When you want to switch the value based on whether a flag is present, it’s best to use the ``:-`` operator.
 

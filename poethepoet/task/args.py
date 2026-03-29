@@ -51,7 +51,7 @@ class ArgSpec(PoeOptions):
         if isinstance(source, list):
             for item in source:
                 if isinstance(item, str):
-                    yield {"name": item, "options": (f"--{item}",)}
+                    yield {"name": item, "options": (f"--{item.lstrip('_')}",)}
                 elif isinstance(item, dict):
                     yield dict(
                         item,
@@ -133,7 +133,7 @@ class ArgSpec(PoeOptions):
             if isinstance(positional, str):
                 return [positional]
             return [name]
-        return tuple(arg.get("options", [f"--{name}"]))
+        return tuple(arg.get("options", [f"--{(name or "").lstrip('_')}"]))
 
     def validate(self):
         try:
