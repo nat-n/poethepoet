@@ -29,7 +29,7 @@ def test_envfile_private_var_filtered_from_subprocess(run_poe_subproc):
 def test_envfile_private_var_inherited_and_filtered(run_poe_subproc):
     result = run_poe_subproc("inherit-envfile-private", project="envfile")
     assert "_secret=hidden" not in result.stdout
-    assert "USER=admin" in result.stdout
+    assert "PUBLIC_UNDERSCORE=VISIBLE" in result.stdout
     assert result.stderr == ""
 
 

@@ -46,7 +46,7 @@ args = [
 ]
 
 [tool.poe.tasks.bool_cmd]
-cmd = "poe_test_echo ${flag:-unset}:${val:-unset}"
+cmd = "poe_test_echo ${flag:-unset}:${val:-unset}:${marker}"
 args = [
   { name = "flag", type = "boolean" },
   { name = "val", type = "boolean", default = true },
@@ -57,6 +57,7 @@ ref = "bool_cmd"
 args = [
   { name = "flag", type = "boolean" },
   { name = "val", type = "boolean", default = true },
+  { name = "marker", default = "parent-marker" },
 ]
 
 [tool.poe.tasks.bool_ref_override]
@@ -64,6 +65,7 @@ ref = "bool_cmd --val"
 args = [
   { name = "flag", type = "boolean" },
   { name = "val", type = "boolean", default = true },
+  { name = "marker", default = "parent-marker" },
 ]
 
 [tool.poe.tasks.bool_ref_inheriting]
@@ -87,7 +89,7 @@ sequence = [
 ]
 
 [tool.poe.tasks.word_cmd]
-cmd = "poe_test_echo ${subject}:${tone}"
+cmd = "poe_test_echo ${subject}:${tone}:${marker}"
 args = [
   { name = "subject", default = "child-subject" },
   { name = "tone", default = "child-tone" },
@@ -95,11 +97,11 @@ args = [
 
 [tool.poe.tasks.word_ref_shadow]
 ref = "word_cmd"
-args = ["subject", "tone"]
+args = ["subject", "tone", "marker"]
 
 [tool.poe.tasks.word_ref_override]
 ref = "word_cmd --tone ref-tone"
-args = ["subject", "tone"]
+args = ["subject", "tone", "marker"]
 
 [tool.poe.tasks.multi_ref_expr]
 expr = "{'items': items, 'label': label}"

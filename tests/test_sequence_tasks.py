@@ -190,6 +190,7 @@ def test_private_arg_inherited_and_filtered(run_poe_subproc):
     """Private args inherited by a child stay hidden from the subprocess env"""
     result = run_poe_subproc("private_arg_inherited", project="sequences")
     assert "_secret=hidden" not in result.stdout
+    assert "public=visible" in result.stdout
 
 
 def test_private_arg_inherited_can_be_remapped_public(run_poe_subproc):

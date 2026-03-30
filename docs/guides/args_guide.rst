@@ -46,7 +46,7 @@ This example can be invoked as
 
     poe serve --host 0.0.0.0 --port 8001
 
-When used with a :doc:`script task<../tasks/task_types/script>` in this way the ``run`` function from the ``myapp`` module will be called passing the ``host`` and ``port`` as keyword arguments with whatever values are provided on the CLI, in addition to ``host`` and ``port`` being set as environment variables on the task subprocess, and the `sys.argv` being populated with the full invocation.
+When used with a :doc:`script task<../tasks/task_types/script>` in this way the ``run`` function from the ``myapp`` module will be called passing the ``host`` and ``port`` as keyword arguments with whatever values are provided on the CLI, in addition to ``host`` and ``port`` being set as environment variables on the task subprocess, and the ``sys.argv`` being populated with the full invocation.
 
 The following example demonstrates a slightly different form where the private ``_food`` arg is explicitly passed to the ``frying_pan`` function.
 
@@ -105,7 +105,7 @@ If you want to provide more configuration per argument then the following toml s
 
 .. important::
 
-   The double square brackets is toml syntax for a table within an array.
+   The double square brackets are toml syntax for a table within an array.
 
 Subtable configuration syntax
 """""""""""""""""""""""""""""
@@ -161,13 +161,13 @@ Named arguments support the following configuration options:
    A short description of the argument to include in the documentation of the task.
 
 - **name** : ``str``
-   The name of the task. Only applicable when *args* is an array.
+   The name of the argument. Only applicable when *args* is an array.
 
 - **options** : ``list[str]``
-   A list of options to accept for this argument, similar to `argsparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then the name of the argument is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
+   A list of options to accept for this argument, similar to `argparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then the name of the argument is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
 
 - **positional** : ``bool``
-   If set to true then the argument becomes a position argument instead of an option argument. Note that positional arguments may not have ``type = "boolean"``.
+   If set to true then the argument becomes a positional argument instead of an option argument. Note that positional arguments may not have ``type = "boolean"``.
 
 - **multiple** : ``bool`` | ``int``
    If the ``multiple`` option is set to true on a positional or option argument then that argument will accept multiple values.
@@ -178,7 +178,7 @@ Named arguments support the following configuration options:
 
    This option is not compatible with arguments with ``type = "boolean"`` since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type "integer" for similar effect.
 
-   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
+   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your Python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
 
    .. code-block:: toml
 
@@ -259,13 +259,13 @@ The resulting task can be run like:
 
   poe passby --planet mars
 
-.. TIP::
+.. tip::
    For PowerShell tasks, the variable needs to be referenced as an environment variable in the shell code, e.g., :code:`$env:planet`.
 
 Arguments for script tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Arguments can be defined for :doc:`script<../tasks/task_types/script>` tasks in the same way, but how they are exposed to the underlying python function depends on how the script is defined.
+Arguments can be defined for :doc:`script<../tasks/task_types/script>` tasks in the same way, but how they are exposed to the underlying Python function depends on how the script is defined.
 
 In the following example, since no parenthesis are included for the referenced function, all provided args will be passed to the function as keyword arguments:
 
@@ -275,7 +275,7 @@ In the following example, since no parenthesis are included for the referenced f
   script = "my_app.util:build"
   args = ["dest", "version"]
 
-You can also control exactly how values are passed to the python function as demonstrated in the following example:
+You can also control exactly how values are passed to the Python function as demonstrated in the following example:
 
 .. code-block:: toml
 

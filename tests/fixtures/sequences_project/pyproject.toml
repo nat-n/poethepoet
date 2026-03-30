@@ -128,7 +128,10 @@ sequence = [
 ]
 
 [tool.poe.tasks.private_arg_inherited]
-args = [{ name = "_secret", default = "hidden" }]
+args = [
+  { name = "_secret", default = "hidden" },
+  { name = "public", default = "visible" },
+]
 sequence = [
   { cmd = "poe_test_env" },
 ]

@@ -142,19 +142,19 @@ def test_ref_bool_inheriting_negate(run_poe_subproc):
 def test_ref_child_arg_defaults_shadow_inherited_bool_args(run_poe_subproc):
     """Referenced task defaults override inherited values for matching arg names"""
     result = run_poe_subproc("bool_ref_forwarding", "--flag", project="refs")
-    assert result.stdout.strip() == "unset:True"
+    assert result.stdout.strip() == "unset:True:parent-marker"
 
 
 def test_ref_child_defaults_override_inherited_negated_bool_arg(run_poe_subproc):
-    """A child default still wins when the inherited value came from parent invocation"""
+    """Child default wins when inherited value came from parent"""
     result = run_poe_subproc("bool_ref_forwarding", "--val", project="refs")
-    assert result.stdout.strip() == "unset:True"
+    assert result.stdout.strip() == "unset:True:parent-marker"
 
 
 def test_ref_definition_args_override_inherited_and_child_defaults(run_poe_subproc):
     """Args in the ref definition become child invocation args and win per name"""
     result = run_poe_subproc("bool_ref_override", "--flag", project="refs")
-    assert result.stdout.strip() == "unset:unset"
+    assert result.stdout.strip() == "unset:unset:parent-marker"
 
 
 def test_ref_child_arg_defaults_shadow_inherited_string_args(run_poe_subproc):
@@ -163,9 +163,10 @@ def test_ref_child_arg_defaults_shadow_inherited_string_args(run_poe_subproc):
         "word_ref_shadow",
         "--subject=parent-subject",
         "--tone=parent-tone",
+        "--marker=parent-marker",
         project="refs",
     )
-    assert result.stdout.strip() == "child-subject:child-tone"
+    assert result.stdout.strip() == "child-subject:child-tone:parent-marker"
 
 
 def test_ref_definition_args_override_inherited_string_args(run_poe_subproc):
@@ -174,9 +175,10 @@ def test_ref_definition_args_override_inherited_string_args(run_poe_subproc):
         "word_ref_override",
         "--subject=parent-subject",
         "--tone=parent-tone",
+        "--marker=parent-marker",
         project="refs",
     )
-    assert result.stdout.strip() == "child-subject:ref-tone"
+    assert result.stdout.strip() == "child-subject:ref-tone:parent-marker"
 
 
 def test_ref_child_multiple_arg_shadows_inherited_list(run_poe_subproc):
@@ -206,7 +208,7 @@ def test_ref_definition_multiple_arg_overrides_inherited_list(run_poe_subproc):
 
 
 def test_ref_definition_empty_multiple_arg_overrides_inherited_list(run_poe_subproc):
-    """An explicit empty multiple arg in the ref definition overrides an inherited list"""
+    """Empty multiple arg in ref definition overrides inherited list"""
     result = run_poe_subproc(
         "multi_ref_empty_override",
         "--items",

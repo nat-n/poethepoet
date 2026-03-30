@@ -162,10 +162,7 @@ ignore_fail = true
 help   = "Execute poe from this repo (useful for testing)"
 script = "poethepoet:main"
 
-[tool.poe.tasks.poep]
-help   = "Execute poe from this repo (useful for testing)"
-script = "poethepoet:main"
-args = ["lol"]
+
 
 [tool.poe.tasks.zsh-harness]
 help   = "Run zsh completion script through test harness for debugging"

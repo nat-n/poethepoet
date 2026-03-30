@@ -308,7 +308,7 @@ ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
 
 
 def test_cmd_boolean_flag_partial_negate_string(run_poe_subproc):
-    """Only --txt passed: negates default="text" to False (unset), others keep defaults"""
+    """--txt negates default="text" to False (unset), others keep defaults"""
     result = run_poe_subproc(
         "booleans",
         "--txt",
@@ -382,12 +382,14 @@ def test_private_arg_filtered_from_subprocess(run_poe_subproc):
 def test_private_arg_negated_not_in_subprocess(run_poe_subproc):
     """Inferred option names strip leading underscores from arg names"""
     result = run_poe_subproc("private_arg", "--flag", "--FLAG", project="cmds")
+    assert result.capture == "Poe => poe_test_env\n"
     assert "_flag=" not in result.stdout
     assert "_FLAG=" not in result.stdout
+    assert result.stderr == ""
 
 
 def test_private_arg_accessible_in_template(run_poe_subproc):
-    """Private args are available for cmd template resolution despite subprocess filtering"""
+    """Private args resolve in cmd templates despite subprocess filtering"""
     result = run_poe_subproc("private_arg_in_template", project="cmds")
     assert result.stdout.strip() == "True:True"
 

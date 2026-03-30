@@ -98,6 +98,7 @@ class ArgSpec(PoeOptions):
 
         if strict:
             arg_names = set()
+            option_args: dict[str, str] = {}
             positional_multiple = None
             for arg in result:
                 if arg.name in arg_names:
@@ -106,6 +107,16 @@ class ArgSpec(PoeOptions):
                         context=f"Invalid argument {arg.name!r} declared",
                     )
                 arg_names.add(arg.name)
+
+                if not arg.positional:
+                    for option in ArgSpec._get_arg_options_list(arg, arg.name, strict):
+                        if option in option_args:
+                            raise ConfigValidationError(
+                                f"Arguments {option_args[option]!r} and"
+                                f" {arg.name!r} generate the same CLI"
+                                f" option {option!r}",
+                            )
+                        option_args[option] = arg.name
 
                 if arg.positional:
                     if positional_multiple:
@@ -120,10 +131,11 @@ class ArgSpec(PoeOptions):
 
     @staticmethod
     def _get_arg_options_list(
-        arg: ArgParams, name: str | None = None, strict: bool = True
+        arg: Mapping[str, Any] | ArgSpec, name: str | None = None, strict: bool = True
     ):
         positional = arg.get("positional", False)
         name = name or arg.get("name")
+        stripped = (name or "").lstrip("_")
         if positional:
             if strict and arg.get("options"):
                 raise ConfigValidationError(
@@ -133,7 +145,7 @@ class ArgSpec(PoeOptions):
             if isinstance(positional, str):
                 return [positional]
             return [name]
-        return tuple(arg.get("options", [f"--{(name or "").lstrip('_')}"]))
+        return tuple(arg.get("options", [f"--{stripped}"]))
 
     def validate(self):
         try:

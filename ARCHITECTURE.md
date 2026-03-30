@@ -89,6 +89,87 @@ subprocess (with appropriate virtualenv)
 - Carries execution state through the task tree
 - Handles output capture for composed tasks
 
+## Variable Resolution Model
+
+The trickiest part of Poe's runtime model is that task values flow through two related
+channels:
+
+- **Typed args**: python values stored on `TaskEnv` and consumed directly by `expr` and
+  `script` tasks
+- **Environment projection**: string values exposed to subprocess-oriented tasks such as
+  `cmd` and `shell`
+
+These channels are derived from the same task state, but they are observed
+differently by different task types.
+
+### Layering and precedence
+
+Task environment state is built by layering values in roughly this order:
+
+1. Host environment
+2. Project-level `envfile`
+3. Project-level `env`
+4. Parent task state
+5. Task-level `envfile`
+6. Task-level `env`
+7. `uses` outputs
+8. Task args
+
+The principle is: values closer to the running task override values further away.
+Child tasks always inherit parent task state first, and then apply their own config and
+argument parsing on top.
+
+### Inheritance and shadowing
+
+Orchestration tasks (`sequence`, `parallel`, `switch`, `ref`) do not get special-case
+variable semantics. A child task always starts from inherited parent state.
+
+If the child task declares an arg with the same name as an inherited value, then the
+child task's parsed arg value wins for that name. This includes defaults: a child arg
+default is treated the same as a value obtained from the child invocation. Explicit
+values in a referenced task invocation (for example the content of a `ref` task) have
+the highest precedence for that child task.
+
+### Private variables
+
+Variables whose names start with `_` and contain no uppercase characters are treated as
+private when they are introduced by Poe-managed sources such as `env`, `envfile`,
+`uses`, or args.
+
+Private variables:
+
+- remain available for config-time interpolation
+- can be inherited by child tasks
+- can be remapped to public variables via task-level `env`
+- are filtered from the subprocess environment
+
+Host environment variables are preserved verbatim and are not implicitly reclassified as
+private.
+
+### Boolean args
+
+Boolean args are not special with respect to inheritance or precedence, but they do
+have special environment projection semantics:
+
+- typed value `True` projects to environment value `"True"`
+- typed value `False` remains available as `False` to `expr`/`script`, but its
+  environment projection is **unset**
+
+This gives consistent falsey behavior across shells and subprocesses while preserving
+typed access for task types that can consume python values directly.
+
+### Observation points by task type
+
+Different task types observe the same underlying state in different ways:
+
+- `cmd`: sees environment projection plus Poe's own parameter expansion
+- `shell`: sees runtime environment only, interpreted by the selected shell
+- `expr`: sees typed args directly, and `${...}` template expansion as strings
+- `script`: sees typed args directly, `sys.argv`, and `os.environ`
+
+When behavior looks inconsistent across task types, the first question should be:
+"Is this task reading the typed arg channel or the subprocess environment channel?"
+
 ## Task types
 
 There are two categories of task types:

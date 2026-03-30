@@ -23,11 +23,11 @@ For ``cmd`` tasks expansion of variables via bash parameter expansion syntax is 
 Private variables
 ~~~~~~~~~~~~~~~~~
 
-Variables that start with ``_`` and only contain lowercase characters are treated as private, which means that they're available for use in configuration time (which includes parameter expansion within ``cmd`` tasks), but are not exposed to the task subprocess at runtime. This applies to all variables set via project or task level configuration.
+Variables that start with ``_`` and contain no uppercase characters are treated as private, which means that they're available for use in configuration time (which includes parameter expansion within ``cmd`` tasks), but are not exposed to the task subprocess at runtime. This applies to all variables set via project or task level configuration.
 
 It is a good practice to use private variable names for ``args`` or ``uses`` unless you specifically want those values to be set on the task environment.
 
-In the following example, the ``_food`` arg will cause the task to accept an option like  ``--food sausages``, and will be accessible as a variable in the task config, but not as an environment variable at runtime.
+In the following example, the ``_food`` arg will cause the task to accept an option like ``--food sausages``, and will be accessible as a variable in the task config, but not as an environment variable at runtime.
 
 .. code-block:: toml
 

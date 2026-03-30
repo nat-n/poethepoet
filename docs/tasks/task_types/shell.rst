@@ -18,7 +18,7 @@ An example use case for this might be opening some ssh tunnels in the background
 
 .. seealso::
 
-    By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the system and uses that. When running on windows, poe will first look for |git_bash_link| at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.
+    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. When running on Windows, poe will first look for |git_bash_link| at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.
 
 
 Available task options
@@ -38,7 +38,7 @@ The following options are also accepted:
 Using a different shell interpreter
 -----------------------------------
 
-It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:
+It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on Windows or other environments with PowerShell installed then you can specify a PowerShell-based task like so:
 
 .. code-block:: toml
 
@@ -48,7 +48,7 @@ It is also possible to specify an alternative interpreter (or list of compatible
   """
   interpreter = "pwsh"
 
-If your task content is restricted to syntax that is valid for both posix shells and powershell then you can maximise the likelihood of it working on any system by specifying the interpreter as:
+If your task content is restricted to syntax that is valid for both POSIX shells and PowerShell then you can maximise the likelihood of it working on any system by specifying the interpreter as:
 
 .. code-block:: toml
 
@@ -71,7 +71,7 @@ The following interpreter values may be used:
 posix
     This is the default behavior, equivalent to ``["sh", "bash", "zsh"]``, meaning that poe will try to find sh, and fallback to bash, then zsh.
 sh
-    Use the basic posix shell. This is often an alias for either bash or dash depending on the operating system.
+    Use the basic POSIX shell. This is often an alias for either bash or dash depending on the operating system.
 bash
     Uses whatever version of bash can be found. This is usually the most portable option.
 zsh
