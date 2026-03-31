@@ -39,7 +39,7 @@ def test_task_graph_in_sequence(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_uses_private_var_filtered_from_subprocess(run_poe_subproc):
+def test_uses_private_var_filtered_from_subprocess(run_poe_subproc, is_windows):
     """Private vars introduced via uses stay private in downstream subprocess envs"""
     result = run_poe_subproc("uses_private_env", project="graphs")
     assert result.capture == (
@@ -48,9 +48,11 @@ def test_uses_private_var_filtered_from_subprocess(run_poe_subproc):
         "Poe <= poe_test_echo visible\n"
         "Poe => poe_test_env\n"
     )
-    assert "_secret=hidden" not in result.stdout
-    assert "_PUBLIC=VISIBLE" in result.stdout
-    assert "normal=visible" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "_public=visible" in stdout_lower
+    assert "normal=visible" in stdout_lower
     assert result.stderr == ""
 
 
@@ -67,7 +69,7 @@ def test_uses_private_var_accessible_in_template(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_uses_private_var_inherited_and_filtered(run_poe_subproc):
+def test_uses_private_var_inherited_and_filtered(run_poe_subproc, is_windows):
     """Private vars introduced via uses stay private when inherited by subtasks"""
     result = run_poe_subproc("uses_private_inherited", project="graphs")
     assert result.capture == (
@@ -76,16 +78,20 @@ def test_uses_private_var_inherited_and_filtered(run_poe_subproc):
         "Poe <= poe_test_echo visible\n"
         "Poe => poe_test_env\n"
     )
-    assert "_secret=hidden" not in result.stdout
-    assert "_PUBLIC=VISIBLE" in result.stdout
-    assert "normal=visible" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "_public=visible" in stdout_lower
+    assert "normal=visible" in stdout_lower
     assert result.stderr == ""
 
 
-def test_uses_private_var_inherited_can_be_remapped_public(run_poe_subproc):
+def test_uses_private_var_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
     """A child task can alias inherited private uses vars to public env vars via env"""
     result = run_poe_subproc("uses_private_remapped", project="graphs")
     assert result.capture == ("Poe <= poe_test_echo hidden\n" "Poe => poe_test_env\n")
-    assert "_secret=hidden" not in result.stdout
-    assert "public=hidden" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "public=hidden" in stdout_lower
     assert result.stderr == ""

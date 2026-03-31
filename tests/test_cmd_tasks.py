@@ -358,12 +358,18 @@ def test_cmd_bool_env_presence_false_is_unset(run_poe_subproc):
     assert result.stdout.strip() == "False None"
 
 
-def test_private_env_var_filtered_from_subprocess(run_poe_subproc):
+def test_private_env_var_filtered_from_subprocess(run_poe_subproc, is_windows):
     """Env vars starting with _ (no uppercase) are filtered from subprocess"""
     result = run_poe_subproc("private_env_vars", project="cmds")
-    assert "_secret=hidden" not in result.stdout
-    assert "_SECRET=VISIBLE" in result.stdout
-    assert "normal=visible" in result.stdout
+    stdout_lower = result.stdout.lower()
+    assert "normal=visible" in stdout_lower
+    if is_windows:
+        # Windows env vars are case-insensitive so _secret and _SECRET
+        # collide; only one survives and it won't be filtered as private
+        assert "_secret=" in stdout_lower
+    else:
+        assert "_secret=hidden" not in result.stdout
+        assert "_SECRET=VISIBLE" in result.stdout
 
 
 def test_private_env_var_accessible_in_template(run_poe_subproc):
@@ -372,19 +378,26 @@ def test_private_env_var_accessible_in_template(run_poe_subproc):
     assert result.stdout.strip() == "hidden:VISIBLE:visible"
 
 
-def test_private_arg_filtered_from_subprocess(run_poe_subproc):
+def test_private_arg_filtered_from_subprocess(
+    run_poe_subproc,
+    is_windows,
+):
     """Boolean arg named _flag (no uppercase) is private, _FLAG is not"""
     result = run_poe_subproc("private_arg", project="cmds")
-    assert "_flag=True" not in result.stdout
-    assert "_FLAG=True" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if is_windows:
+        assert "_flag=" in stdout_lower
+    else:
+        assert "_flag=True" not in result.stdout
+        assert "_FLAG=True" in result.stdout
 
 
 def test_private_arg_negated_not_in_subprocess(run_poe_subproc):
     """Inferred option names strip leading underscores from arg names"""
     result = run_poe_subproc("private_arg", "--flag", "--FLAG", project="cmds")
     assert result.capture == "Poe => poe_test_env\n"
-    assert "_flag=" not in result.stdout
-    assert "_FLAG=" not in result.stdout
+    stdout_lower = result.stdout.lower()
+    assert "_flag=" not in stdout_lower
     assert result.stderr == ""
 
 

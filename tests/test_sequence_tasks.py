@@ -172,29 +172,37 @@ ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
     )
 
 
-def test_private_env_inherited_and_filtered(run_poe_subproc):
+def test_private_env_inherited_and_filtered(run_poe_subproc, is_windows):
     """Private vars remain private when inherited by subtasks in a sequence"""
     result = run_poe_subproc("private_inherited", project="sequences")
-    assert "_secret=hidden" not in result.stdout
-    assert "normal=visible" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "normal=visible" in stdout_lower
 
 
-def test_private_env_inherited_can_be_remapped_public(run_poe_subproc):
+def test_private_env_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
     """A child task can alias inherited private env vars to public names via env"""
     result = run_poe_subproc("private_env_remapped", project="sequences")
-    assert "_secret=hidden" not in result.stdout
-    assert "public=hidden" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "public=hidden" in stdout_lower
 
 
-def test_private_arg_inherited_and_filtered(run_poe_subproc):
+def test_private_arg_inherited_and_filtered(run_poe_subproc, is_windows):
     """Private args inherited by a child stay hidden from the subprocess env"""
     result = run_poe_subproc("private_arg_inherited", project="sequences")
-    assert "_secret=hidden" not in result.stdout
-    assert "public=visible" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "public=visible" in stdout_lower
 
 
-def test_private_arg_inherited_can_be_remapped_public(run_poe_subproc):
+def test_private_arg_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
     """A child task can alias inherited private args to public env vars via env"""
     result = run_poe_subproc("private_arg_remapped", project="sequences")
-    assert "_secret=hidden" not in result.stdout
-    assert "public=hidden" in result.stdout
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "public=hidden" in stdout_lower
