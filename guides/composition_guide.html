@@ -193,6 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="migrations.html">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
@@ -327,14 +328,15 @@
 <span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Build and deploy the app&quot;</span>
 <span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
 <span class="w">  </span><span class="s2">&quot;sam deploy --config-env $SAM_ENV_NAME&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;aws s3 sync --delete ./client/build s3://${BUCKET_NAME}&quot;</span>
+<span class="w">  </span><span class="s2">&quot;aws s3 sync --delete ./client/build s3://${_bucket_name}&quot;</span>
 <span class="p">]</span>
 <span class="n">default_item_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cmd&quot;</span>
 <span class="n">deps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;build-frontend&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;build-backend&quot;</span><span class="p">]</span>
-<span class="n">uses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">BUCKET_NAME</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_website_bucket_name&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">uses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">_bucket_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_website_bucket_name&quot;</span><span class="w"> </span><span class="p">}</span>
 </pre></div>
 </div>
-<p>In this example the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task depends on the <code class="code docutils literal notranslate"><span class="pre">build-frontend</span></code> <code class="code docutils literal notranslate"><span class="pre">build-backend</span></code>, which means that these tasks get executed before the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task. It also declares that it uses the output of the hidden <code class="code docutils literal notranslate"><span class="pre">_website_bucket_name</span></code> task, which means that this also gets executed, but its output it captured and then made available to the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task as the environment variable <code class="code docutils literal notranslate"><span class="pre">BUCKET_NAME</span></code>.</p>
+<p>In this example the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task depends on the <code class="code docutils literal notranslate"><span class="pre">build-frontend</span></code> <code class="code docutils literal notranslate"><span class="pre">build-backend</span></code>, which means that these tasks get executed before the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task. It also declares that it uses the output of the hidden <code class="code docutils literal notranslate"><span class="pre">_website_bucket_name</span></code> task, which means that this also gets executed, but its output is captured and then made available to the <code class="code docutils literal notranslate"><span class="pre">shipit</span></code> task as the private variable <code class="code docutils literal notranslate"><span class="pre">_bucket_name</span></code>.</p>
+<p>Normally the key in the uses table will be set as an environment variable for the task, but if as in this example it has the form of a private variable (lowercase and prefixes with <code class="docutils literal notranslate"><span class="pre">_</span></code>) then it will only be available to reference in config (or in a cmd task), and will not be available on the environment (which prevents it from being used directly in a <code class="docutils literal notranslate"><span class="pre">shell</span></code> task).</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>Note that captured output that is exposed as an environment variable via the <code class="docutils literal notranslate"><span class="pre">uses</span></code> is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash.</p>
@@ -424,7 +426,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9c6af99a"></script>
+</div><script src="../_static/documentation_options.js?v=49c737da"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -7,9 +7,9 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="env_vars.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Internal Environment variables: The following environment variables are used by Poe the Poet internally, and can be accessed from within configuration and tasks. POE_ROOT: path to the parent direct..." />
-<meta name="description" content="Internal Environment variables: The following environment variables are used by Poe the Poet internally, and can be accessed from within configuration and tasks. POE_ROOT: path to the parent direct..." />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Licence" href="license.html" /><link rel="prev" title="Using poethepoet as a library" href="guides/library_guide.html" />
+<meta property="og:description" content="How Poe the Poet uses environment variables: Poe tasks inherit environment variables from the host shell, but tasks also run with additional variables that are provided via the following channels, ..." />
+<meta name="description" content="How Poe the Poet uses environment variables: Poe tasks inherit environment variables from the host shell, but tasks also run with additional variables that are provided via the following channels, ..." />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Licence" href="license.html" /><link rel="prev" title="Migration Guides" href="guides/migrations.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/env_vars.html" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
@@ -193,6 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/migrations.html">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Environment variables</a></li>
@@ -241,8 +242,37 @@
         <article role="main">
           <section id="environment-variables">
 <h1>Environment variables<a class="headerlink" href="#environment-variables" title="Link to this heading">¶</a></h1>
+<section id="how-poe-the-poet-uses-environment-variables">
+<h2>How Poe the Poet uses environment variables<a class="headerlink" href="#how-poe-the-poet-uses-environment-variables" title="Link to this heading">¶</a></h2>
+<p>Poe tasks inherit environment variables from the host shell, but tasks also run with additional variables that are provided via the following channels, ordered with ascending precedence. The principle for precedence is that variables closer to the task override those further away.</p>
+<ol class="arabic simple">
+<li><p>Host environment variables (what poe receives as <code class="docutils literal notranslate"><span class="pre">os.environ</span></code>)</p></li>
+<li><p>Project level <a class="reference internal" href="global_options.html#loading-external-environment-variables"><span class="std std-ref">env files</span></a> (in the order listed)</p></li>
+<li><p>Project level <a class="reference internal" href="global_options.html#global-environment-variables"><span class="std std-ref">env config</span></a></p></li>
+<li><p>Parent task variables</p></li>
+<li><p>Task level <a class="reference internal" href="tasks/options.html#envfile-option"><span class="std std-ref">env files</span></a></p></li>
+<li><p>Task level <a class="reference internal" href="tasks/options.html#setting-task-specific-environment-variables"><span class="std std-ref">env config</span></a></p></li>
+<li><p>Output values from tasks configured as dependencies via the <a class="reference internal" href="guides/composition_guide.html"><span class="doc">uses</span></a> option</p></li>
+<li><p>Variables set by task <a class="reference internal" href="guides/args_guide.html"><span class="doc">args</span></a></p></li>
+</ol>
+<p>As well as being exposed to the task at runtime, environment variables can also be templated into some other task configuration fields.</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks expansion of variables via bash parameter expansion syntax is performed as part of resolving the command to run as a subprocess.</p>
+<section id="private-variables">
+<h3>Private variables<a class="headerlink" href="#private-variables" title="Link to this heading">¶</a></h3>
+<p>Variables that start with <code class="docutils literal notranslate"><span class="pre">_</span></code> and contain no uppercase characters are treated as private, which means that they’re available for use in configuration time (which includes parameter expansion within <code class="docutils literal notranslate"><span class="pre">cmd</span></code> tasks), but are not exposed to the task subprocess at runtime. This applies to all variables set via project or task level configuration.</p>
+<p>It is a good practice to use private variable names for <code class="docutils literal notranslate"><span class="pre">args</span></code> or <code class="docutils literal notranslate"><span class="pre">uses</span></code> unless you specifically want those values to be set on the task environment.</p>
+<p>In the following example, the <code class="docutils literal notranslate"><span class="pre">_food</span></code> arg will cause the task to accept an option like <code class="docutils literal notranslate"><span class="pre">--food</span> <span class="pre">sausages</span></code>, and will be accessible as a variable in the task config, but not as an environment variable at runtime.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.cook]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;kitchen:frying_pan(_food)&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_food&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;eggs&quot;</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="variables-managed-by-poe-the-poet">
+<h2>Variables managed by Poe the Poet<a class="headerlink" href="#variables-managed-by-poe-the-poet" title="Link to this heading">¶</a></h2>
 <section id="internal-environment-variables">
-<h2>Internal Environment variables<a class="headerlink" href="#internal-environment-variables" title="Link to this heading">¶</a></h2>
+<h3>Internal Environment variables<a class="headerlink" href="#internal-environment-variables" title="Link to this heading">¶</a></h3>
 <p>The following environment variables are used by Poe the Poet internally, and can be accessed from within configuration and tasks.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_ROOT</span></code>: path to the parent directory of the main tasks file (e.g. pyproject.toml).</p></li>
@@ -253,7 +283,7 @@
 </ul>
 </section>
 <section id="special-variables">
-<h2>Special variables<a class="headerlink" href="#special-variables" title="Link to this heading">¶</a></h2>
+<h3>Special variables<a class="headerlink" href="#special-variables" title="Link to this heading">¶</a></h3>
 <p>The following variables are not set on the environment by default but can be referenced from task configuration as if they were.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_GIT_DIR</span></code>: path of the git repo that the project is part of. This allows a project in a subdirectory of a monorepo to reference <a class="reference internal" href="guides/include_guide.html#including-files-relative-to-the-git-repo"><span class="std std-ref">includes</span></a>, <a class="reference internal" href="tasks/options.html#loading-environment-variables-from-an-env-file"><span class="std std-ref">envfiles</span></a>, or <a class="reference internal" href="tasks/options.html#configure-the-executor-for-a-task"><span class="std std-ref">virtualenv location</span></a> relative to the root of the git repo. Note that referencing this variable causes poe to attempt to call the <code class="docutils literal notranslate"><span class="pre">git</span></code> executable which must be available on the path.</p></li>
@@ -261,13 +291,14 @@
 </ul>
 </section>
 <section id="external-environment-variables">
-<h2>External Environment variables<a class="headerlink" href="#external-environment-variables" title="Link to this heading">¶</a></h2>
+<h3>External Environment variables<a class="headerlink" href="#external-environment-variables" title="Link to this heading">¶</a></h3>
 <p>The following environment variables can be set to modify Poe the Poet’s behavior.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_PROJECT_DIR</span></code>: used as the default value for the <code class="docutils literal notranslate"><span class="pre">--directory</span></code> global argument.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">NO_COLOR</span></code>: disables ansi colors in output (unless the –ansi argument is provided).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_DEBUG</span></code>: can be set to <code class="docutils literal notranslate"><span class="pre">1</span></code> to enable printing debug messages to stdout.</p></li>
 </ul>
+</section>
 </section>
 </section>
 
@@ -285,14 +316,14 @@
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="guides/library_guide.html">
+          <a class="prev-page" href="guides/migrations.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Using poethepoet as a library</div>
+                <div class="title">Migration Guides</div>
                 
               </div>
             </a>
@@ -339,9 +370,16 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Environment variables</a><ul>
+<li><a class="reference internal" href="#how-poe-the-poet-uses-environment-variables">How Poe the Poet uses environment variables</a><ul>
+<li><a class="reference internal" href="#private-variables">Private variables</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#variables-managed-by-poe-the-poet">Variables managed by Poe the Poet</a><ul>
 <li><a class="reference internal" href="#internal-environment-variables">Internal Environment variables</a></li>
 <li><a class="reference internal" href="#special-variables">Special variables</a></li>
 <li><a class="reference internal" href="#external-environment-variables">External Environment variables</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -353,7 +391,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=9c6af99a"></script>
+</div><script src="_static/documentation_options.js?v=49c737da"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

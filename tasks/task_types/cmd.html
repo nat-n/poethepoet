@@ -193,6 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/migrations.html">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../env_vars.html">Environment variables</a></li>
@@ -276,7 +277,7 @@
 Hello<span class="w"> </span>nat
 </pre></div>
 </div>
-<p>Parameter expansion can also can be disabled by escaping the $ with a backslash like so:</p>
+<p>Parameter expansion can also be disabled by escaping the $ with a backslash like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
 <span class="n">greet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo Hello </span><span class="se">\\</span><span class="s2">$USER&quot;</span><span class="w">  </span><span class="c1"># the backslash itself needs escaping for the toml parser</span>
 </pre></div>
@@ -291,19 +292,26 @@ Hello<span class="w"> </span>nat
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">:+</span></code> or <em>alternate value</em> operator is especially useful in cases such as the following where you might want to control whether some CLI options are passed to the command.</p>
+<p>In this example we declare a boolean argument with no default, so if the <code class="docutils literal notranslate"><span class="pre">--arn-only</span></code> flag is provided to the task then three additional CLI options will be included in the task content. If not then _arn_only will evaluate to empty string in the context of the cmd task content.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.aws-identity]</span>
-<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;aws sts get-caller-identity ${ARN_ONLY:+ --no-cli-pager --output text --query &#39;Arn&#39;}&quot;</span>
-<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;ARN_ONLY&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--arn-only&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="w"> </span><span class="p">}]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;aws sts get-caller-identity ${_arn_only:+ --no-cli-pager --output text --query &#39;Arn&#39;}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_arn_only&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--arn-only&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
-<p>In this example we declare a boolean argument with no default, so if the <code class="docutils literal notranslate"><span class="pre">--arn-only</span></code> flag is provided to the task then three additional CLI options will be included in the task content.</p>
+<p>When you want to switch the value based on whether a flag is present, it’s best to use the <code class="docutils literal notranslate"><span class="pre">:-</span></code> operator.</p>
+<p>In the example below, it prints <code class="docutils literal notranslate"><span class="pre">&quot;hello!&quot;</span></code> if the <code class="docutils literal notranslate"><span class="pre">--hello</span></code> flag is present; otherwise, it prints <code class="docutils literal notranslate"><span class="pre">&quot;hi!&quot;</span></code>.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.greet]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo ${hello:-hello!}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hi!&quot;</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
 </section>
 <section id="glob-expansion">
 <h3>Glob expansion<a class="headerlink" href="#glob-expansion" title="Link to this heading">¶</a></h3>
 <p>Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. Glob patterns are evaluated relative to the working directory of the task.</p>
 <p>The supported glob syntax is that of the <a href="https://docs.python.org/3/library/glob.html" target="_blank">python standard library glob module</a>, which differs from bash in that square bracket patterns don’t support character classes, don’t break on whitespace, and don’t allow escaping of contained characters.</p>
-<p>If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">empty_glob</span></code> option to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code>. If set to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> then the pattern will be replaced with nothing (similar to how bash behaves with the <a href="https://www.gnu.org/software/bash/manual/html_node/Filename-Expansion.html" target="_blank">nullglob option</a> is set), and if set to <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> then a glob pattern with no matches will cause the task execution will fail with an error.</p>
-<p>The following task uses glob patterns to specify all <code class="docutils literal notranslate"><span class="pre">.pyc</span></code> files and <code class="docutils literal notranslate"><span class="pre">__pycache__</span></code> directories in the project in the project for removal, and thanks to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">empty_glob</span></code> options it will succeed even if there are no matches since no arguments will be passed to the <code class="docutils literal notranslate"><span class="pre">rm</span></code> command.</p>
+<p>If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the <code class="code highlight toml docutils literal highlight-toml"><span class="n">empty_glob</span></code> option to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code>. If set to <code class="docutils literal notranslate"><span class="pre">&quot;null&quot;</span></code> then the pattern will be replaced with nothing (similar to how bash behaves when <a href="https://www.gnu.org/software/bash/manual/html_node/Filename-Expansion.html" target="_blank">nullglob option</a> is set), and if set to <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> then a glob pattern with no matches will cause task execution to fail with an error.</p>
+<p>The following task uses glob patterns to specify all <code class="docutils literal notranslate"><span class="pre">.pyc</span></code> files and <code class="docutils literal notranslate"><span class="pre">__pycache__</span></code> directories in the project for removal, and thanks to the <code class="code highlight toml docutils literal highlight-toml"><span class="n">empty_glob</span></code> option it will succeed even if there are no matches since no arguments will be passed to the <code class="docutils literal notranslate"><span class="pre">rm</span></code> command.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.clean]</span>
 <span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">rm -rf ./**/*.pyc</span>
@@ -338,7 +346,7 @@ Hello<span class="w"> </span>nat
 <span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 </pre></div>
 </div>
-<p>You can also ignore tasks failures just in case of one or more specific exit codes by providing a list of integers:</p>
+<p>You can also ignore task failures just in case of one or more specific exit codes by providing a list of integers:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
 <span class="n">cmd</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest&quot;</span>
 <span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">]</span><span class="w"> </span><span class="c1"># don&#39;t fail if no tests are found</span>
@@ -434,7 +442,7 @@ Hello<span class="w"> </span>nat
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=9c6af99a"></script>
+</div><script src="../../_static/documentation_options.js?v=49c737da"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

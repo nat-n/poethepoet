@@ -1,7 +1,7 @@
 ``shell`` tasks
 ===============
 
-**Shell tasks** are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can leverage the full syntax of the shell interpreter such as command substitution, pipes, background processes, etc.
+**Shell tasks** are similar to simple command tasks except that they are executed inside a new shell, and so are interpreted as a shell script instead of a single command. This means they can leverage the full syntax of the shell interpreter such as command substitution, pipes, background processes, etc.
 
 An example use case for this might be opening some ssh tunnels in the background with one task and closing them with another like so:
 
@@ -18,7 +18,7 @@ An example use case for this might be opening some ssh tunnels in the background
 
 .. seealso::
 
-    By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the system and uses that. When running on windows, poe will first look for |git_bash_link| at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.
+    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. When running on Windows, poe will first look for |git_bash_link| at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.
 
 
 Available task options
@@ -38,7 +38,7 @@ The following options are also accepted:
 Using a different shell interpreter
 -----------------------------------
 
-It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:
+It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on Windows or other environments with PowerShell installed then you can specify a PowerShell-based task like so:
 
 .. code-block:: toml
 
@@ -48,7 +48,7 @@ It is also possible to specify an alternative interpreter (or list of compatible
   """
   interpreter = "pwsh"
 
-If your task content is restricted to syntax that is valid for both posix shells and powershell then you can maximise the likelihood of it working on any system by specifying the interpreter as:
+If your task content is restricted to syntax that is valid for both POSIX shells and PowerShell then you can maximise the likelihood of it working on any system by specifying the interpreter as:
 
 .. code-block:: toml
 
@@ -71,7 +71,7 @@ The following interpreter values may be used:
 posix
     This is the default behavior, equivalent to ``["sh", "bash", "zsh"]``, meaning that poe will try to find sh, and fallback to bash, then zsh.
 sh
-    Use the basic posix shell. This is often an alias for either bash or dash depending on the operating system.
+    Use the basic POSIX shell. This is often an alias for either bash or dash depending on the operating system.
 bash
     Uses whatever version of bash can be found. This is usually the most portable option.
 zsh
@@ -89,3 +89,27 @@ The default value can be changed with the global ``shell_interpreter`` option.
 .. |git_bash_link| raw:: html
 
    <a href="https://gitforwindows.org" target="_blank">git bash</a>
+
+
+Task arguments
+--------------
+
+As with other task types, shell tasks support configuring named arguments via the ``args`` option. Argument values are set as environment variables on the shell subprocess.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.greet]
+  shell = """
+  echo "${GREETING} ${NAME}"
+  echo "How are you?"
+  """
+  args = [
+    { name = "NAME", default = "world" },
+    { name = "GREETING", default = "Hi" },
+  ]
+
+See the :doc:`args guide<../../guides/args_guide>` for full details on configuring arguments.
+
+.. warning::
+
+  Unlike cmd, script, or expr tasks, shell tasks only access variables from the environment at runtime via the shell interpreter. Therefore ``_private`` environment variables cannot be accessed from shell task content, unless they are remapped to a normal environment variable via the ``env`` option.

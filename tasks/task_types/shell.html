@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/task_types/shell.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Shell tasks are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can leverage the full syntax of the shell i..." />
-<meta name="description" content="Shell tasks are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can leverage the full syntax of the shell i..." />
+<meta property="og:description" content="Shell tasks are similar to simple command tasks except that they are executed inside a new shell, and so are interpreted as a shell script instead of a single command. This means they can leverage ..." />
+<meta name="description" content="Shell tasks are similar to simple command tasks except that they are executed inside a new shell, and so are interpreted as a shell script instead of a single command. This means they can leverage ..." />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="sequence tasks" href="sequence.html" /><link rel="prev" title="script tasks" href="script.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/shell.html" />
 
@@ -193,6 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/migrations.html">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../env_vars.html">Environment variables</a></li>
@@ -241,7 +242,7 @@
         <article role="main">
           <section id="shell-tasks">
 <h1><code class="docutils literal notranslate"><span class="pre">shell</span></code> tasks<a class="headerlink" href="#shell-tasks" title="Link to this heading">¶</a></h1>
-<p><strong>Shell tasks</strong> are similar to simple command tasks except that they are executed inside a new shell, and can consist of multiple statements. This means they can leverage the full syntax of the shell interpreter such as command substitution, pipes, background processes, etc.</p>
+<p><strong>Shell tasks</strong> are similar to simple command tasks except that they are executed inside a new shell, and so are interpreted as a shell script instead of a single command. This means they can leverage the full syntax of the shell interpreter such as command substitution, pipes, background processes, etc.</p>
 <p>An example use case for this might be opening some ssh tunnels in the background with one task and closing them with another like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.pfwd]</span>
 <span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
@@ -255,7 +256,7 @@
 </div>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p>By default poe attempts to find a posix shell (sh, bash, or zsh in that order) on the system and uses that. When running on windows, poe will first look for <a href="https://gitforwindows.org" target="_blank">git bash</a> at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.</p>
+<p>By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. When running on Windows, poe will first look for <a href="https://gitforwindows.org" target="_blank">git bash</a> at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.</p>
 </div>
 <section id="available-task-options">
 <h2>Available task options<a class="headerlink" href="#available-task-options" title="Link to this heading">¶</a></h2>
@@ -270,7 +271,7 @@
 </section>
 <section id="using-a-different-shell-interpreter">
 <h2>Using a different shell interpreter<a class="headerlink" href="#using-a-different-shell-interpreter" title="Link to this heading">¶</a></h2>
-<p>It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on windows or other environments with powershell installed then you can specify a powershell based task like so:</p>
+<p>It is also possible to specify an alternative interpreter (or list of compatible interpreters ordered by preference) to be invoked to execute shell task content. For example if you only expect the task to be executed on Windows or other environments with PowerShell installed then you can specify a PowerShell-based task like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.install-poetry]</span>
 <span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">(Invoke-WebRequest -Uri https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py -UseBasicParsing).Content | python -</span>
@@ -278,7 +279,7 @@
 <span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span>
 </pre></div>
 </div>
-<p>If your task content is restricted to syntax that is valid for both posix shells and powershell then you can maximise the likelihood of it working on any system by specifying the interpreter as:</p>
+<p>If your task content is restricted to syntax that is valid for both POSIX shells and PowerShell then you can maximise the likelihood of it working on any system by specifying the interpreter as:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="n">interpreter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;posix&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pwsh&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -296,7 +297,7 @@
 <dl class="simple">
 <dt>posix</dt><dd><p>This is the default behavior, equivalent to <code class="docutils literal notranslate"><span class="pre">[&quot;sh&quot;,</span> <span class="pre">&quot;bash&quot;,</span> <span class="pre">&quot;zsh&quot;]</span></code>, meaning that poe will try to find sh, and fallback to bash, then zsh.</p>
 </dd>
-<dt>sh</dt><dd><p>Use the basic posix shell. This is often an alias for either bash or dash depending on the operating system.</p>
+<dt>sh</dt><dd><p>Use the basic POSIX shell. This is often an alias for either bash or dash depending on the operating system.</p>
 </dd>
 <dt>bash</dt><dd><p>Uses whatever version of bash can be found. This is usually the most portable option.</p>
 </dd>
@@ -310,6 +311,26 @@
 </dd>
 </dl>
 <p>The default value can be changed with the global <code class="docutils literal notranslate"><span class="pre">shell_interpreter</span></code> option.</p>
+</section>
+<section id="task-arguments">
+<h2>Task arguments<a class="headerlink" href="#task-arguments" title="Link to this heading">¶</a></h2>
+<p>As with other task types, shell tasks support configuring named arguments via the <code class="docutils literal notranslate"><span class="pre">args</span></code> option. Argument values are set as environment variables on the shell subprocess.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.greet]</span>
+<span class="n">shell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">echo &quot;${GREETING} ${NAME}&quot;</span>
+<span class="s2">echo &quot;How are you?&quot;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;NAME&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;world&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;GREETING&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Hi&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>See the <a class="reference internal" href="../../guides/args_guide.html"><span class="doc">args guide</span></a> for full details on configuring arguments.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Unlike cmd, script, or expr tasks, shell tasks only access variables from the environment at runtime via the shell interpreter. Therefore <code class="docutils literal notranslate"><span class="pre">_private</span></code> environment variables cannot be accessed from shell task content, unless they are remapped to a normal environment variable via the <code class="docutils literal notranslate"><span class="pre">env</span></code> option.</p>
+</div>
 </section>
 </section>
 
@@ -383,6 +404,7 @@
 <li><a class="reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">shell</span></code> tasks</a><ul>
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
 <li><a class="reference internal" href="#using-a-different-shell-interpreter">Using a different shell interpreter</a></li>
+<li><a class="reference internal" href="#task-arguments">Task arguments</a></li>
 </ul>
 </li>
 </ul>
@@ -394,7 +416,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=9c6af99a"></script>
+</div><script src="../../_static/documentation_options.js?v=49c737da"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

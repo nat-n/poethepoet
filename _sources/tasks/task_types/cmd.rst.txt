@@ -50,7 +50,7 @@ Environment variables can be templated into the command. Just like in bash: whit
   Poe => echo Hello nat
   Hello nat
 
-Parameter expansion can also can be disabled by escaping the $ with a backslash like so:
+Parameter expansion can also be disabled by escaping the $ with a backslash like so:
 
 .. code-block:: toml
 
@@ -71,13 +71,23 @@ In the following example, if ``AWS_REGION`` has a value then it will be used, ot
 
 The ``:+`` or *alternate value* operator is especially useful in cases such as the following where you might want to control whether some CLI options are passed to the command.
 
+In this example we declare a boolean argument with no default, so if the ``--arn-only`` flag is provided to the task then three additional CLI options will be included in the task content. If not then _arn_only will evaluate to empty string in the context of the cmd task content.
+
 .. code-block:: toml
 
   [tool.poe.tasks.aws-identity]
-  cmd = "aws sts get-caller-identity ${ARN_ONLY:+ --no-cli-pager --output text --query 'Arn'}"
-  args = [{ name = "ARN_ONLY", options = ["--arn-only"], type = "boolean" }]
+  cmd = "aws sts get-caller-identity ${_arn_only:+ --no-cli-pager --output text --query 'Arn'}"
+  args = [{ name = "_arn_only", options = ["--arn-only"], type = "boolean" }]
 
-In this example we declare a boolean argument with no default, so if the ``--arn-only`` flag is provided to the task then three additional CLI options will be included in the task content.
+When you want to switch the value based on whether a flag is present, it’s best to use the ``:-`` operator.
+
+In the example below, it prints ``"hello!"`` if the ``--hello`` flag is present; otherwise, it prints ``"hi!"``.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.greet]
+  cmd = "echo ${hello:-hello!}"
+  args = [{ name = "hello", type = "boolean", default = "hi!" }]
 
 Glob expansion
 ~~~~~~~~~~~~~~
@@ -86,9 +96,9 @@ Glob patterns in cmd tasks are expanded and replaced with the list of matching f
 
 The supported glob syntax is that of the |glob_link|, which differs from bash in that square bracket patterns don't support character classes, don't break on whitespace, and don't allow escaping of contained characters.
 
-If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the :toml:`empty_glob` option to ``"null"`` or ``"fail"``. If set to ``"null"`` then the pattern will be replaced with nothing (similar to how bash behaves with the |nullglob_link| is set), and if set to ``"fail"`` then a glob pattern with no matches will cause the task execution will fail with an error.
+If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the :toml:`empty_glob` option to ``"null"`` or ``"fail"``. If set to ``"null"`` then the pattern will be replaced with nothing (similar to how bash behaves when |nullglob_link| is set), and if set to ``"fail"`` then a glob pattern with no matches will cause task execution to fail with an error.
 
-The following task uses glob patterns to specify all ``.pyc`` files and ``__pycache__`` directories in the project in the project for removal, and thanks to the :toml:`empty_glob` options it will succeed even if there are no matches since no arguments will be passed to the ``rm`` command.
+The following task uses glob patterns to specify all ``.pyc`` files and ``__pycache__`` directories in the project for removal, and thanks to the :toml:`empty_glob` option it will succeed even if there are no matches since no arguments will be passed to the ``rm`` command.
 
 .. code-block:: toml
 
@@ -137,7 +147,7 @@ Normally if a task subprocess returns a non-zero exit code, then the task is con
   cmd         = "rm -rf ./src/**/*.pyc"
   ignore_fail = true
 
-You can also ignore tasks failures just in case of one or more specific exit codes by providing a list of integers:
+You can also ignore task failures just in case of one or more specific exit codes by providing a list of integers:
 
 .. code-block:: toml
 

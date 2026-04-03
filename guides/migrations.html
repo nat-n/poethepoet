@@ -3,17 +3,17 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta property="og:title" content="Using toml syntax" />
+<meta property="og:title" content="Migration Guides" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="guides/toml_guide.html" />
+<meta property="og:url" content="guides/migrations.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="TODO: Explain different ways of leveraging toml syntax to define tasks." />
-<meta name="description" content="TODO: Explain different ways of leveraging toml syntax to define tasks." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
-        <link rel="canonical" href="http://poethepoet.natn.io/guides/toml_guide.html" />
+<meta property="og:description" content="As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to..." />
+<meta name="description" content="As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Environment variables" href="../env_vars.html" /><link rel="prev" title="Using poethepoet as a library" href="library_guide.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/guides/migrations.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
-        <title>Using toml syntax - Poe the Poet</title>
+        <title>Migration Guides - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -142,7 +142,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -166,7 +166,7 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul>
+  <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../poetry_plugin.html">Poetry plugin</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../global_options.html">Global options</a></li>
@@ -182,7 +182,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../tasks/task_types/ref.html">Reference tasks</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="index.html">Guides</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Guides</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Guides</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Guides</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="running_guide.html">Running tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="help_guide.html">Documenting tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="args_guide.html">Configuring CLI arguments</a></li>
@@ -193,7 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
-<li class="toctree-l2"><a class="reference internal" href="migrations.html">Migration Guides</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
@@ -218,7 +218,7 @@
         </a>
         <div class="content-icon-container">
           <div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/toml_guide.rst" title="Edit this page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/migrations.rst" title="Edit this page">
     <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
@@ -234,15 +234,39 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
-          <section id="using-toml-syntax">
-<h1>Using toml syntax<a class="headerlink" href="#using-toml-syntax" title="Link to this heading">¶</a></h1>
-<p>TODO: Explain different ways of leveraging toml syntax to define tasks.</p>
+          <section id="migration-guides">
+<h1>Migration Guides<a class="headerlink" href="#migration-guides" title="Link to this heading">¶</a></h1>
+<p>As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.</p>
+<section id="id1">
+<h2>0.43.0<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>This release included a major refactor of how variables are managed which could unexpectedly change behavior in some situations.</p>
+<section id="change-in-handling-of-boolean-args">
+<h3>Change in handling of boolean args<a class="headerlink" href="#change-in-handling-of-boolean-args" title="Link to this heading">¶</a></h3>
+<p>To better support usage of boolean args in task logic, instead of mapping the arg value <code class="docutils literal notranslate"><span class="pre">false</span></code> to the string value <code class="docutils literal notranslate"><span class="pre">False</span></code> in the corresponding environment variable, it is instead mapped to <em>the environment variable being unset</em>, even if it was previously set on the environment. This allows more natural usage from most contexts, such as parameter expansion logic in cmd or shell tasks.</p>
+<p>However some tasks or scripts may need to be updated if they previously checked for <code class="docutils literal notranslate"><span class="pre">&quot;False&quot;</span></code> specifically, or if they use <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">-u</span></code>.</p>
+<p>Additionally if the variable was accessed from a python script via <code class="code highlight python docutils literal highlight-python"><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]</span></code> then this will break now. It is recommended to instead use <code class="code highlight python docutils literal highlight-python"><span class="s2">&quot;flag&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span></code> or <code class="code highlight python docutils literal highlight-python"><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;flag&quot;</span><span class="p">)</span></code> to check if the flag is set to true.</p>
+<p>Note that as of this release you can reference the flag directly like a local python variable with a bool value in expr or script tasks, even if the arg was provided to a parent task, like a switch or sequence.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.check-flag]</span>
+<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;flag and &#39;cli flag was set&#39; or &#39;cli flag was not set&#39;&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;flag&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="p">}]</span>
+</pre></div>
+</div>
+</section>
+<section id="introduction-of-private-variables">
+<h3>Introduction of private variables<a class="headerlink" href="#introduction-of-private-variables" title="Link to this heading">¶</a></h3>
+<p>Any variable set within the project or task config (including referenced envfiles) that contains no uppercase letters and starts with an underscore, e.g. <code class="docutils literal notranslate"><span class="pre">_private</span></code> will not be exposed as an environment variable accessible to the task at runtime.</p>
+<p>It seems unlikely that anyone would specifically need to pass variables like this to a task.</p>
+<p>Using private variables is now encouraged as a best practice to avoid unintentionally setting environment variables on task subprocesses.</p>
+<p>Arg names are typically referenced within task content, and normally set as environment variables. However if an arg name is prefixed with an underscore to make it private, and there are no options explicitly configured for that arg, then any leading underscores will be stripped from the name when generating an option name from it. For example the arg name <code class="docutils literal notranslate"><span class="pre">_flag</span></code> will result in the cli option <code class="docutils literal notranslate"><span class="pre">--flag</span></code>.</p>
+<p>Since this can cause collisions between options, there is now a config validation to prevent collisions between cli options.</p>
+</section>
+</section>
 </section>
 
         </article>
@@ -250,8 +274,26 @@
       <footer>
         
         <div class="related-pages">
-          
-          
+          <a class="next-page" href="../env_vars.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Environment variables</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="library_guide.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Using poethepoet as a library</div>
+                
+              </div>
+            </a>
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -282,8 +324,31 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Migration Guides</a><ul>
+<li><a class="reference internal" href="#id1">0.43.0</a><ul>
+<li><a class="reference internal" href="#change-in-handling-of-boolean-args">Change in handling of boolean args</a></li>
+<li><a class="reference internal" href="#introduction-of-private-variables">Introduction of private variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

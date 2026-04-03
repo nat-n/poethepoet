@@ -193,6 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../guides/library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/migrations.html">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../env_vars.html">Environment variables</a></li>
@@ -284,6 +285,18 @@ The value is a map where the values are invocations of the other tasks, and the 
 </pre></div>
 </div>
 <p>Notice this example uses deep keys which can be more convenient but aren’t as well supported by some older toml implementations.</p>
+<p>If the variable name starts with <code class="docutils literal notranslate"><span class="pre">_</span></code> and contains no uppercase characters then it will be private and not actually exposed as an environment variable on the task subprocess, however it will be usable in task configuration, or cmd task parameter expansion.</p>
+<p>For example private variables can be inherited by subtasks and then aliased to standard variables by interpolating them into the variable definition like so:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.run]</span>
+<span class="n">ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;_serve&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;_favorite_number&quot;</span><span class="p">]</span>
+
+<span class="k">[tool.poe.tasks._serve]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;This indirection is pointless but illustrates the point&quot;</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:run&quot;</span>
+<span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">PORT</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${_favorite_number}&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
 <section id="setting-defaults-for-environment-variables">
 <h3>Setting defaults for environment variables<a class="headerlink" href="#setting-defaults-for-environment-variables" title="Link to this heading">¶</a></h3>
 <p>The previous example can be modified to only set the <cite>PORT</cite> variable if it is not already set by replacing the last line with the following:</p>
@@ -383,6 +396,11 @@ The value is a map where the values are invocations of the other tasks, and the 
 <span class="n">cmd</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gunicorn ./my_app:run&quot;</span>
 <span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;poetry&quot;</span>
 </pre></div>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>You can also configure the executor at the <a class="reference internal" href="../global_options.html#configure-the-executor"><span class="std std-ref">project level</span></a> or at the <a class="reference internal" href="../guides/help_guide.html#grouping-tasks"><span class="std std-ref">task group level</span></a>, which will have lower precedence.
+Alternatively you can override the executor type at runtime by passing the <code class="docutils literal notranslate"><span class="pre">--executor</span></code> CLI option (before the task name) with the name of the executor to use, and pass executor options via the <code class="docutils literal notranslate"><span class="pre">--executor-opt</span></code> global CLI option.</p>
 </div>
 <section id="configure-task-level-virtualenv-with-uv">
 <h3>Configure task level virtualenv with uv<a class="headerlink" href="#configure-task-level-virtualenv-with-uv" title="Link to this heading">¶</a></h3>
@@ -564,7 +582,7 @@ The value is a map where the values are invocations of the other tasks, and the 
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9c6af99a"></script>
+</div><script src="../_static/documentation_options.js?v=49c737da"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -193,6 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/migrations.html">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="env_vars.html">Environment variables</a></li>
@@ -260,13 +261,13 @@
 <h2>Top features<a class="headerlink" href="#top-features" title="Link to this heading">¶</a></h2>
 <p>✅  Straight forward declaration of project tasks in your pyproject.toml (or <a class="reference internal" href="guides/without_poetry.html"><span class="doc">poe_tasks.toml</span></a>)</p>
 <p>✅  Tasks are run in poetry, or uv’s virtualenv (or another env you specify)</p>
-<p>✅  <a class="reference internal" href="installation.html#shell-completion"><span class="std std-ref">Shell completion of task names and arguments</span></a></p>
+<p>✅  <a class="reference internal" href="installation.html#shell-completion"><span class="std std-ref">Shell completion</span></a> of task names and arguments</p>
 <p>✅  The poe CLI can be used standalone, or as a <a class="reference internal" href="poetry_plugin.html"><span class="doc">plugin for poetry</span></a></p>
 <p>✅  Tasks can be <a class="reference internal" href="tasks/task_types/cmd.html"><span class="doc">commands</span></a>, <a class="reference internal" href="tasks/task_types/shell.html"><span class="doc">shell scripts</span></a>, <a class="reference internal" href="tasks/task_types/expr.html"><span class="doc">python expressions</span></a>, or references to <a class="reference internal" href="tasks/task_types/script.html"><span class="doc">python functions</span></a></p>
 <p>✅  Concise commands with extra arguments passed to the task <code class="code highlight sh docutils literal highlight-sh">poe<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span>task<span class="w"> </span><span class="o">[</span>task_args<span class="o">]</span></code></p>
 <p>✅  Easily <a class="reference internal" href="guides/args_guide.html"><span class="doc">declare named CLI arguments</span></a> for your tasks</p>
 <p>✅  Tasks can specify and <a class="reference internal" href="tasks/task_types/cmd.html#ref-env-vars"><span class="std std-ref">reference environment variables</span></a>, even without a shell</p>
-<p>✅  Tasks are <a class="reference internal" href="guides/help_guide.html"><span class="doc">self documenting</span></a>, with optional help messages (just run <code class="code highlight sh docutils literal highlight-sh">poe</code> with no arguments)</p>
+<p>✅  Tasks are <a class="reference internal" href="guides/help_guide.html"><span class="doc">self documenting</span></a>, with optional help messages and task grouping (just run <code class="code highlight sh docutils literal highlight-sh">poe</code> with no arguments)</p>
 <p>✅  Tasks can be composed to run in <a class="reference internal" href="guides/composition_guide.html#sequence-composition"><span class="std std-ref">sequence</span></a>, in <a class="reference internal" href="guides/composition_guide.html#composing-tasks-to-run-in-parallel"><span class="std std-ref">parallel</span></a>, or as a <a class="reference internal" href="guides/composition_guide.html#graph-composition"><span class="std std-ref">DAG</span></a></p>
 <p>✅  Works with <a class="reference internal" href="tasks/options.html#envfile-option"><span class="std std-ref">.env files</span></a></p>
 <p>✅  Can be <a class="reference internal" href="guides/library_guide.html"><span class="doc">used as a library</span></a> to embed in other tools</p>
@@ -376,7 +377,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=9c6af99a"></script>
+</div><script src="_static/documentation_options.js?v=49c737da"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

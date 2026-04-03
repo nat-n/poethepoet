@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="tasks/task_types/expr.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Expr tasks consist of a single python expression. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print 2 when run: Exp..." />
-<meta name="description" content="Expr tasks consist of a single python expression. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print 2 when run: Exp..." />
+<meta property="og:description" content="Expr tasks consist of a single Python expression. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print 2 when run: Exp..." />
+<meta name="description" content="Expr tasks consist of a single Python expression. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print 2 when run: Exp..." />
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="switch tasks" href="switch.html" /><link rel="prev" title="parallel tasks" href="parallel.html" />
         <link rel="canonical" href="http://poethepoet.natn.io/tasks/task_types/expr.html" />
 
@@ -193,6 +193,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/without_poetry.html">Usage without poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/library_guide.html">Using poethepoet as a library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/migrations.html">Migration Guides</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../env_vars.html">Environment variables</a></li>
@@ -241,7 +242,7 @@
         <article role="main">
           <section id="expr-tasks">
 <h1><code class="docutils literal notranslate"><span class="pre">expr</span></code> tasks<a class="headerlink" href="#expr-tasks" title="Link to this heading">¶</a></h1>
-<p><strong>Expr tasks</strong> consist of a single <a class="reference external" href="https://docs.python.org/3/reference/expressions.html">python expression</a>. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print <cite>2</cite> when run:</p>
+<p><strong>Expr tasks</strong> consist of a single <a class="reference external" href="https://docs.python.org/3/reference/expressions.html">Python expression</a>. Running the task evaluates the expression and outputs the resulting value. Here’s a trivial example of an expr task that will print <cite>2</cite> when run:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.trivial-example]</span>
 <span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1 + 1&quot;</span>
 </pre></div>
@@ -253,13 +254,13 @@
 </div>
 <p><strong>Expressions can:</strong></p>
 <ul class="simple">
-<li><p>use most python expression constructs with the exception of yield, await, or named
+<li><p>use most Python expression constructs with the exception of yield, await, or named
 expressions</p></li>
 <li><p>use most builtin functions including all members of
 <a class="reference external" href="https://github.com/nat-n/poethepoet/blob/main/poethepoet/helpers/python.py#L13">this collection</a></p></li>
 <li><p>reference the <a href="https://docs.python.org/3/library/sys.html" target="_blank">sys module</a> module without having to specify it as an import</p></li>
 <li><p>directly access whatever arguments were passed to the task from <cite>sys.argv</cite></p></li>
-<li><p>reference values of named args as python variables</p></li>
+<li><p>reference values of named args as Python variables with a Python type matching the configured arg type</p></li>
 <li><p>include environment variables as string values that are injected into the expression
 using the usual templating syntax <code class="docutils literal notranslate"><span class="pre">${...}</span></code></p></li>
 </ul>
@@ -278,7 +279,7 @@ using the usual templating syntax <code class="docutils literal notranslate"><sp
 </section>
 <section id="referencing-arguments-and-environment-variables">
 <h2>Referencing arguments and environment variables<a class="headerlink" href="#referencing-arguments-and-environment-variables" title="Link to this heading">¶</a></h2>
-<p>The expression can reference environment variables using templating syntax as in <a class="reference internal" href="cmd.html"><span class="doc">cmd</span></a> tasks, and named arguments as python variables in scope as in <a class="reference internal" href="script.html"><span class="doc">script</span></a> tasks.</p>
+<p>The expression can reference environment variables using templating syntax as in <a class="reference internal" href="cmd.html"><span class="doc">cmd</span></a> tasks, and named arguments as Python variables in scope as in <a class="reference internal" href="script.html"><span class="doc">script</span></a> tasks.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.venv-active]</span>
 <span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;&quot;(</span>
 <span class="s2">  f&#39;{target_venv} is active&#39;</span>
@@ -302,7 +303,7 @@ poethepoet-LCpCQf8S-py3.10<span class="w"> </span>is<span class="w"> </span>not<
 </section>
 <section id="referencing-imported-modules-in-an-expression">
 <h2>Referencing imported modules in an expression<a class="headerlink" href="#referencing-imported-modules-in-an-expression" title="Link to this heading">¶</a></h2>
-<p>By default the sys module is available to the expression which allows access to <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> or <code class="docutils literal notranslate"><span class="pre">sys.platform</span></code> among other useful values. However you can also reference any other importable module via the imports option as in the following example.</p>
+<p>By default the sys module is available to the expression which allows access to <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> or <code class="docutils literal notranslate"><span class="pre">sys.platform</span></code> among other useful values. However you can also reference any other importable Python module via the imports option as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.count-hidden]</span>
 <span class="n">help</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Count hidden files or subdirectories&quot;</span>
 <span class="n">expr</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;len(list(pathlib.Path(&#39;.&#39;).glob(&#39;.*&#39;)))&quot;</span>
@@ -424,7 +425,7 @@ return non-zero if the result is False.</p>
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=9c6af99a"></script>
+</div><script src="../../_static/documentation_options.js?v=49c737da"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
