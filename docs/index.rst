@@ -60,7 +60,7 @@ Top features
 
 |V| Tasks can specify and :ref:`reference environment variables<ref_env_vars>`, even without a shell
 
-|V| Tasks are :doc:`self documenting<./guides/help_guide>`, with optional help messages (just run :sh:`poe` with no arguments)
+|V| Tasks are :doc:`self documenting<./guides/help_guide>`, with optional help messages and task grouping (just run :sh:`poe` with no arguments)
 
 |V| Tasks can be composed to run in :ref:`sequence<sequence_composition>`, in :ref:`parallel<Composing tasks to run in parallel>`, or as a :ref:`DAG<graph_composition>`
 

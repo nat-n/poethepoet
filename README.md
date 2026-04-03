@@ -31,7 +31,7 @@
 
 - ✅ Tasks can specify and [reference environment variables](https://poethepoet.natn.io/tasks/task_types/cmd.html#ref-env-vars), even without a shell
 
-- ✅ Tasks are [self documenting](https://poethepoet.natn.io/guides/help_guide.html), with optional help messages (just run `poe` with no arguments)
+- ✅ Tasks are [self documenting](https://poethepoet.natn.io/guides/help_guide.html), with optional help messages and task grouping (just run `poe` with no arguments)
 
 - ✅ Tasks can be composed to run in [sequence](https://poethepoet.natn.io/guides/composition_guide.html#composing-tasks-into-sequences), in [parallel](https://poethepoet.natn.io/guides/composition_guide.html#composing-tasks-to-run-in-parallel), or as a [DAG](https://poethepoet.natn.io/guides/composition_guide.html#composing-tasks-into-graphs).
 
