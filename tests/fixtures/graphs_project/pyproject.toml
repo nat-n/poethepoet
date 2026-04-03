@@ -39,3 +39,32 @@ _do_setup  = "poe_test_echo here\nwe go...\n"
   [tool.poe.tasks.ab]
   help = "Sequence of tasks a and b"
   sequence = ["a", "b"]
+
+  [tool.poe.tasks._private_out]
+  cmd = "poe_test_echo hidden"
+
+  [tool.poe.tasks._PUBLIC_out]
+  cmd = "poe_test_echo VISIBLE"
+
+  [tool.poe.tasks._normal_out]
+  cmd = "poe_test_echo visible"
+
+  [tool.poe.tasks.uses_private_env]
+  cmd = "poe_test_env"
+  uses = { _secret = "_private_out", _PUBLIC = "_PUBLIC_out", normal = "_normal_out" }
+
+  [tool.poe.tasks.uses_private_template]
+  cmd = "poe_test_echo ${_secret}:${_PUBLIC}:${normal}"
+  uses = { _secret = "_private_out", _PUBLIC = "_PUBLIC_out", normal = "_normal_out" }
+
+  [tool.poe.tasks.uses_private_inherited]
+  uses = { _secret = "_private_out", _PUBLIC = "_PUBLIC_out", normal = "_normal_out" }
+  sequence = [
+    { cmd = "poe_test_env" },
+  ]
+
+  [tool.poe.tasks.uses_private_remapped]
+  uses = { _secret = "_private_out" }
+  sequence = [
+    { cmd = "poe_test_env", env = { public = "${_secret}" } },
+  ]

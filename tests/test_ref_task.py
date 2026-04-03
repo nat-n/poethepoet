@@ -29,6 +29,13 @@ def test_ref_passes_named_args_in_definition(run_poe_subproc):
     assert result.stderr == ""
 
 
+def test_ref_interpolates_private_var_in_definition(run_poe_subproc):
+    result = run_poe_subproc("greet-secret", project="refs")
+    assert result.capture == "Poe => poe_test_echo hi secret\n"
+    assert result.stdout == "hi secret\n"
+    assert result.stderr == ""
+
+
 def test_ref_passes_extra_args_in_definition(run_poe_subproc):
     result = run_poe_subproc("greet-funny", project="refs")
     assert result.capture == "Poe => poe_test_echo hi 'lol!'\n"
@@ -112,6 +119,127 @@ def test_ref_passes_task_which_has_capture_stdout(run_poe_subproc):
     assert result.stdout == ""
     assert result.stderr == ""
     assert (result.path / "greet.txt").read_text() == f"hi {arg}\n"
+
+
+def test_ref_bool_inheriting_flag(run_poe_subproc):
+    """Ref task passes boolean args to referenced task via env inheritance"""
+    result = run_poe_subproc("bool_ref_inheriting", "--flag", project="refs")
+    assert result.stdout == "{'flag': True, 'val': True}\n"
+
+
+def test_ref_bool_inheriting_defaults(run_poe_subproc):
+    """Referenced task inherits typed False from ref's boolean args"""
+    result = run_poe_subproc("bool_ref_inheriting", project="refs")
+    assert result.stdout == "{'flag': False, 'val': True}\n"
+
+
+def test_ref_bool_inheriting_negate(run_poe_subproc):
+    """Negate a true-default boolean arg, verify False inherits through ref"""
+    result = run_poe_subproc("bool_ref_inheriting", "--val", project="refs")
+    assert result.stdout == "{'flag': False, 'val': False}\n"
+
+
+def test_ref_child_arg_defaults_shadow_inherited_bool_args(run_poe_subproc):
+    """Referenced task defaults override inherited values for matching arg names"""
+    result = run_poe_subproc("bool_ref_forwarding", "--flag", project="refs")
+    assert result.stdout.strip() == "unset:True:parent-marker"
+
+
+def test_ref_child_defaults_override_inherited_negated_bool_arg(run_poe_subproc):
+    """Child default wins when inherited value came from parent"""
+    result = run_poe_subproc("bool_ref_forwarding", "--val", project="refs")
+    assert result.stdout.strip() == "unset:True:parent-marker"
+
+
+def test_ref_definition_args_override_inherited_and_child_defaults(run_poe_subproc):
+    """Args in the ref definition become child invocation args and win per name"""
+    result = run_poe_subproc("bool_ref_override", "--flag", project="refs")
+    assert result.stdout.strip() == "unset:unset:parent-marker"
+
+
+def test_ref_child_arg_defaults_shadow_inherited_string_args(run_poe_subproc):
+    """The same shadowing rule applies to non-boolean args"""
+    result = run_poe_subproc(
+        "word_ref_shadow",
+        "--subject=parent-subject",
+        "--tone=parent-tone",
+        "--marker=parent-marker",
+        project="refs",
+    )
+    assert result.stdout.strip() == "child-subject:child-tone:parent-marker"
+
+
+def test_ref_definition_args_override_inherited_string_args(run_poe_subproc):
+    """Explicit args in the ref definition have higher precedence than inherited args"""
+    result = run_poe_subproc(
+        "word_ref_override",
+        "--subject=parent-subject",
+        "--tone=parent-tone",
+        "--marker=parent-marker",
+        project="refs",
+    )
+    assert result.stdout.strip() == "child-subject:ref-tone:parent-marker"
+
+
+def test_ref_child_multiple_arg_shadows_inherited_list(run_poe_subproc):
+    """A child multiple arg shadows an inherited list, while other args still inherit"""
+    result = run_poe_subproc(
+        "multi_ref_shadow",
+        "--items",
+        "parent-a",
+        "parent-b",
+        "--label=parent-label",
+        project="refs",
+    )
+    assert result.stdout == "{'items': None, 'label': 'parent-label'}\n"
+
+
+def test_ref_definition_multiple_arg_overrides_inherited_list(run_poe_subproc):
+    """Explicit list values in the ref definition override inherited multiple args"""
+    result = run_poe_subproc(
+        "multi_ref_override",
+        "--items",
+        "parent-a",
+        "parent-b",
+        "--label=parent-label",
+        project="refs",
+    )
+    assert result.stdout == "{'items': ['ref-a', 'ref-b'], 'label': 'parent-label'}\n"
+
+
+def test_ref_definition_empty_multiple_arg_overrides_inherited_list(run_poe_subproc):
+    """Empty multiple arg in ref definition overrides inherited list"""
+    result = run_poe_subproc(
+        "multi_ref_empty_override",
+        "--items",
+        "parent-a",
+        "parent-b",
+        "--label=parent-label",
+        project="refs",
+    )
+    assert result.stdout == "{'items': [], 'label': 'parent-label'}\n"
+
+
+def test_ref_bool_sequence_multilevel_flag(run_poe_subproc):
+    """Sequence -> ref -> expr: boolean args survive two levels of inheritance"""
+    result = run_poe_subproc("bool_sequence_ref", "--flag", project="refs")
+    # cmd subtask sees True via env var, expr subtask sees True via typed arg
+    assert "True:True" in result.stdout
+    assert "{'flag': True, 'val': True}" in result.stdout
+
+
+def test_ref_bool_sequence_multilevel_defaults(run_poe_subproc):
+    """Sequence -> ref -> expr: False survives two levels of clone()"""
+    result = run_poe_subproc("bool_sequence_ref", project="refs")
+    assert "unset:True" in result.stdout
+    assert "{'flag': False, 'val': True}" in result.stdout
+
+
+def test_ref_bool_sequence_multilevel_negate(run_poe_subproc):
+    """Sequence -> ref -> expr: negated True->False survives two levels"""
+    result = run_poe_subproc("bool_sequence_ref", "--val", project="refs")
+    assert "unset:unset" in result.stdout
+    assert "{'flag': False, 'val': False}" in result.stdout
 
 
 def test_ref_error_on_sequence_with_capture_stdout(run_poe_subproc):

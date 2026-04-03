@@ -58,6 +58,21 @@ You can specify arbitrary environment variables to be set for a single task by p
 
 Notice this example uses deep keys which can be more convenient but aren't as well supported by some older toml implementations.
 
+If the variable name starts with ``_`` and contains no uppercase characters then it will be private and not actually exposed as an environment variable on the task subprocess, however it will be usable in task configuration, or cmd task parameter expansion.
+
+For example private variables can be inherited by subtasks and then aliased to standard variables by interpolating them into the variable definition like so:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.run]
+    ref = "_serve"
+    args = ["_favorite_number"]
+
+    [tool.poe.tasks._serve]
+    help = "This indirection is pointless but illustrates the point"
+    script = "myapp:run"
+    env = { PORT = "${_favorite_number}" }
+
 
 Setting defaults for environment variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

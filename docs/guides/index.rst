@@ -16,3 +16,4 @@ This section contains guides for using the various features of Poe the Poet.
    tox_replacement_guide
    without_poetry
    library_guide
+   migrations

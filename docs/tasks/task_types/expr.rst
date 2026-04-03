@@ -1,7 +1,7 @@
 ``expr`` tasks
 ==============
 
-**Expr tasks** consist of a single `python expression <https://docs.python.org/3/reference/expressions.html>`_. Running the task evaluates the expression and outputs the resulting value. Here's a trivial example of an expr task that will print `2` when run:
+**Expr tasks** consist of a single `Python expression <https://docs.python.org/3/reference/expressions.html>`_. Running the task evaluates the expression and outputs the resulting value. Here's a trivial example of an expr task that will print `2` when run:
 
 .. code-block:: toml
 
@@ -16,13 +16,13 @@
 
 **Expressions can:**
 
-- use most python expression constructs with the exception of yield, await, or named
+- use most Python expression constructs with the exception of yield, await, or named
   expressions
 - use most builtin functions including all members of
   `this collection <https://github.com/nat-n/poethepoet/blob/main/poethepoet/helpers/python.py#L13>`_
 - reference the |sys_module_link| module without having to specify it as an import
 - directly access whatever arguments were passed to the task from `sys.argv`
-- reference values of named args as python variables
+- reference values of named args as Python variables with a Python type matching the configured arg type
 - include environment variables as string values that are injected into the expression
   using the usual templating syntax ``${...}``
 
@@ -46,7 +46,7 @@ The following options are also accepted:
 Referencing arguments and environment variables
 -----------------------------------------------
 
-The expression can reference environment variables using templating syntax as in :doc:`cmd<cmd>` tasks, and named arguments as python variables in scope as in :doc:`script<script>` tasks.
+The expression can reference environment variables using templating syntax as in :doc:`cmd<cmd>` tasks, and named arguments as Python variables in scope as in :doc:`script<script>` tasks.
 
 .. code-block:: toml
 
@@ -76,7 +76,7 @@ Notice that the expression may be formatted over multiple lines, as in normal py
 Referencing imported modules in an expression
 ---------------------------------------------
 
-By default the sys module is available to the expression which allows access to ``sys.argv`` or ``sys.platform`` among other useful values. However you can also reference any other importable module via the imports option as in the following example.
+By default the sys module is available to the expression which allows access to ``sys.argv`` or ``sys.platform`` among other useful values. However you can also reference any other importable Python module via the imports option as in the following example.
 
 .. code-block:: toml
 

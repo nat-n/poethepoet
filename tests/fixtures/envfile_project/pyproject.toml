@@ -13,3 +13,18 @@ cmd = """
 poe_test_echo "deploying to ${USER}:${PASSWORD}@${HOST}${PATH_SUFFIX}"
 """
 envfile = "prod.env"
+
+[tool.poe.tasks.show-envfile-vars]
+cmd = "poe_test_env"
+
+[tool.poe.tasks.inherit-envfile-private]
+envfile = "credentials.env"
+sequence = [
+  { cmd = "poe_test_env" },
+]
+
+[tool.poe.tasks.remap-envfile-private]
+envfile = "credentials.env"
+sequence = [
+  { cmd = "poe_test_env", env = { public = "${_secret}" } },
+]

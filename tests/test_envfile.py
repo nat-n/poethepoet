@@ -18,6 +18,29 @@ def test_task_envfile_and_default(run_poe_subproc):
     assert result.stderr == ""
 
 
+def test_envfile_private_var_filtered_from_subprocess(run_poe_subproc, is_windows):
+    result = run_poe_subproc("show-envfile-vars", project="envfile")
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "PUBLIC_UNDERSCORE=VISIBLE" in result.stdout
+    assert result.stderr == ""
+
+
+def test_envfile_private_var_inherited_and_filtered(run_poe_subproc, is_windows):
+    result = run_poe_subproc("inherit-envfile-private", project="envfile")
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "PUBLIC_UNDERSCORE=VISIBLE" in result.stdout
+    assert result.stderr == ""
+
+
+def test_envfile_private_var_inherited_can_be_remapped_public(run_poe_subproc):
+    result = run_poe_subproc("remap-envfile-private", project="envfile")
+    stdout_lower = result.stdout.lower()
+    assert "public=hidden" in stdout_lower
+    assert result.stderr == ""
+
+
 def test_multiple_envfiles(run_poe_subproc, projects):
     result = run_poe_subproc(
         f"-C={projects['envfile/multiple_envfiles']}", "show_me_the_vals"

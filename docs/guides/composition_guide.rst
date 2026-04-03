@@ -108,14 +108,16 @@ You can define tasks that depend on other tasks, and optionally capture and reus
   help = "Build and deploy the app"
   sequence = [
     "sam deploy --config-env $SAM_ENV_NAME",
-    "aws s3 sync --delete ./client/build s3://${BUCKET_NAME}"
+    "aws s3 sync --delete ./client/build s3://${_bucket_name}"
   ]
   default_item_type = "cmd"
   deps = ["build-frontend", "build-backend"]
-  uses = { BUCKET_NAME = "_website_bucket_name" }
+  uses = { _bucket_name = "_website_bucket_name" }
 
 
-In this example the :code:`shipit` task depends on the :code:`build-frontend` :code:`build-backend`, which means that these tasks get executed before the :code:`shipit` task. It also declares that it uses the output of the hidden :code:`_website_bucket_name` task, which means that this also gets executed, but its output it captured and then made available to the :code:`shipit` task as the environment variable :code:`BUCKET_NAME`.
+In this example the :code:`shipit` task depends on the :code:`build-frontend` :code:`build-backend`, which means that these tasks get executed before the :code:`shipit` task. It also declares that it uses the output of the hidden :code:`_website_bucket_name` task, which means that this also gets executed, but its output is captured and then made available to the :code:`shipit` task as the private variable :code:`_bucket_name`.
+
+Normally the key in the uses table will be set as an environment variable for the task, but if as in this example it has the form of a private variable (lowercase and prefixes with ``_``) then it will only be available to reference in config (or in a cmd task), and will not be available on the environment (which prevents it from being used directly in a ``shell`` task).
 
 .. important::
 

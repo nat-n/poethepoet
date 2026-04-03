@@ -97,3 +97,112 @@ def test_subtasks_inherit_cwd_option_as_default(run_poe_subproc, is_windows):
         )
         assert result.stdout.split()[3].endswith("tests/fixtures/sequences_project")
     assert result.stderr == ""
+
+
+def test_sequences_boolean_flag(run_poe_subproc):
+    result = run_poe_subproc(
+        "booleans",
+        "--non",
+        "--tru",
+        "--fal",
+        "--txt",
+        project="sequences",
+    )
+    assert result.capture == (
+        r"""Poe => poe_test_echo '
+${non}=True' '${non:+plus}=plus' '${non:-minus}=True
+${fal}=True' '${fal:+plus}=plus' '${fal:-minus}=True
+${tru}=' '${tru:+plus}=' '${tru:-minus}=minus
+${txt}=' '${txt:+plus}=' '${txt:-minus}=minus'
+"""
+        r"Poe => poe_test_echo "
+        r"""\${non}=${non} \${non:+plus}=${non:+plus} \${non:-minus}=${non:-minus}
+poe_test_echo \${fal}=${fal} \${fal:+plus}=${fal:+plus} \${fal:-minus}=${fal:-minus}
+poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-minus}
+poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
+"""
+        "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
+    )
+    # Verify cmd and shell subtasks see boolean values via env vars
+    assert result.stdout.endswith(
+        """
+${non}=True ${non:+plus}=plus ${non:-minus}=True
+${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
+${tru}= ${tru:+plus}= ${tru:-minus}=minus
+${txt}= ${txt:+plus}= ${txt:-minus}=minus
+${non}=True ${non:+plus}=plus ${non:-minus}=True
+${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
+${tru}= ${tru:+plus}= ${tru:-minus}=minus
+${txt}= ${txt:+plus}= ${txt:-minus}=minus
+{'non': True, 'tru': False, 'fal': True, 'txt': False}
+""".lstrip()
+    )
+
+
+def test_sequences_boolean_flag_default_value(run_poe_subproc):
+    result = run_poe_subproc("booleans", project="sequences")
+    assert result.capture == (
+        r"""Poe => poe_test_echo '
+${non}=' '${non:+plus}=' '${non:-minus}=minus
+${fal}=' '${fal:+plus}=' '${fal:-minus}=minus
+${tru}=True' '${tru:+plus}=plus' '${tru:-minus}=True
+${txt}=text' '${txt:+plus}=plus' '${txt:-minus}=text'
+"""
+        r"Poe => poe_test_echo "
+        r"""\${non}=${non} \${non:+plus}=${non:+plus} \${non:-minus}=${non:-minus}
+poe_test_echo \${fal}=${fal} \${fal:+plus}=${fal:+plus} \${fal:-minus}=${fal:-minus}
+poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-minus}
+poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
+"""
+        "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
+    )
+    # Verify cmd and shell subtasks see boolean values via env vars
+    assert result.stdout.endswith(
+        """
+${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
+${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
+{'non': False, 'tru': True, 'fal': False, 'txt': 'text'}
+""".lstrip()
+    )
+
+
+def test_private_env_inherited_and_filtered(run_poe_subproc, is_windows):
+    """Private vars remain private when inherited by subtasks in a sequence"""
+    result = run_poe_subproc("private_inherited", project="sequences")
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "normal=visible" in stdout_lower
+
+
+def test_private_env_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
+    """A child task can alias inherited private env vars to public names via env"""
+    result = run_poe_subproc("private_env_remapped", project="sequences")
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "public=hidden" in stdout_lower
+
+
+def test_private_arg_inherited_and_filtered(run_poe_subproc, is_windows):
+    """Private args inherited by a child stay hidden from the subprocess env"""
+    result = run_poe_subproc("private_arg_inherited", project="sequences")
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "public=visible" in stdout_lower
+
+
+def test_private_arg_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
+    """A child task can alias inherited private args to public env vars via env"""
+    result = run_poe_subproc("private_arg_remapped", project="sequences")
+    stdout_lower = result.stdout.lower()
+    if not is_windows:
+        assert "_secret=hidden" not in result.stdout
+    assert "public=hidden" in stdout_lower

@@ -56,3 +56,30 @@ expr = """
   ) / 3
 """
 args = [{ name = "foo", positional = true, type = "float", default = 1.5 }]
+
+[tool.poe.tasks.booleans]
+expr = """{'non':non, 'tru':tru, 'fal':fal, 'txt':txt}"""
+args = [
+  { name = "non", type = "boolean" },
+  { name = "tru", type = "boolean", default = true },
+  { name = "fal", type = "boolean", default = false },
+  { name = "txt", type = "boolean", default = "text" },
+]
+
+[tool.poe.tasks.multi_value_expr]
+expr = "{'nums':nums, 'words':words}"
+args = [
+  { name = "nums", type = "integer", multiple = true },
+  { name = "words", type = "string", multiple = true },
+]
+
+[tool.poe.tasks.private_arg_expr]
+expr = "{'_flag':_flag, '_FLAG':_FLAG}"
+args = [
+  { name = "_flag", type = "boolean", default = true },
+  { name = "_FLAG", type = "boolean", default = true },
+]
+
+[tool.poe.tasks.bool_env_access_expr]
+expr = "{'typed': MY_FLAG, 'templated': ([${MY_FLAG}] or [''])[0]}"
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]

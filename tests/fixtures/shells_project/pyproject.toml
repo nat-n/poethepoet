@@ -72,3 +72,41 @@ poe_test_echo "bam bam baaam bam"
     positional = true
     multiple   = true
     type       = "integer"
+
+[tool.poe.tasks.booleans]
+shell = """
+poe_test_echo \\${non}=${non} \\${non:+plus}=${non:+plus} \\${non:-minus}=${non:-minus}
+poe_test_echo \\${fal}=${fal} \\${fal:+plus}=${fal:+plus} \\${fal:-minus}=${fal:-minus}
+poe_test_echo \\${tru}=${tru} \\${tru:+plus}=${tru:+plus} \\${tru:-minus}=${tru:-minus}
+poe_test_echo \\${txt}=${txt} \\${txt:+plus}=${txt:+plus} \\${txt:-minus}=${txt:-minus}
+"""
+args = [
+    { name = "non", type = "boolean" },
+    { name = "tru", type = "boolean", default = true },
+    { name = "fal", type = "boolean", default = false },
+    { name = "txt", type = "boolean", default = "text" },
+]
+
+[tool.poe.tasks.bool_env_collision]
+shell = "poe_test_echo ${MY_FLAG:-fallback}"
+env = { MY_FLAG = "from_config" }
+args = [{ name = "MY_FLAG", type = "boolean" }]
+
+[tool.poe.tasks.bool_env_presence]
+shell = "python -c \"import os; print('MY_FLAG' in os.environ, repr(os.getenv('MY_FLAG')))\""
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]
+
+[tool.poe.tasks.bool_unset_semantics_sh]
+interpreter = ["sh"]
+shell = "poe_test_echo ${MY_FLAG+set}:${MY_FLAG-unset}:${MY_FLAG:-fallback}"
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]
+
+[tool.poe.tasks.bool_unset_semantics_pwsh]
+interpreter = "pwsh"
+shell = """
+$present = Test-Path env:MY_FLAG
+$value = if ($present) { $env:MY_FLAG } else { "unset" }
+$fallback = if ($null -ne $env:MY_FLAG) { $env:MY_FLAG } else { "fallback" }
+poe_test_echo "$present|$value|$fallback"
+"""
+args = [{ name = "MY_FLAG", type = "boolean", default = true }]

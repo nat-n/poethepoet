@@ -531,6 +531,27 @@ def test_parallel_ignore_but_propagate_failures(
     assert result.code == 0
 
 
+def test_parallel_bool_flag(run_poe_subproc):
+    """Parallel task: both cmd and expr subtasks see boolean args from parent"""
+    result = run_poe_subproc("bool_parallel", "--flag", project="parallel")
+    assert "cmd:True:True" in result.stdout
+    assert "{'flag': True, 'val': True}" in result.stdout
+
+
+def test_parallel_bool_defaults(run_poe_subproc):
+    """Parallel task: False boolean arg is unset in cmd, typed False in expr"""
+    result = run_poe_subproc("bool_parallel", project="parallel")
+    assert "cmd:unset:True" in result.stdout
+    assert "{'flag': False, 'val': True}" in result.stdout
+
+
+def test_parallel_bool_negate(run_poe_subproc):
+    """Parallel task: negating true-default boolean produces unset/False"""
+    result = run_poe_subproc("bool_parallel", "--val", project="parallel")
+    assert "cmd:unset:unset" in result.stdout
+    assert "{'flag': False, 'val': False}" in result.stdout
+
+
 def sequences_are_similar(seq1: Sequence, seq2: Sequence, distance: int = 1):
     """
     Check if two sequences have the same items in almost the same order.

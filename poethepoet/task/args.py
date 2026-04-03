@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from argparse import ArgumentParser
     from collections.abc import Iterator, Mapping, Sequence
 
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..io import PoeIO
 
 from ..exceptions import ConfigValidationError, ExecutionError
@@ -51,7 +51,7 @@ class ArgSpec(PoeOptions):
         if isinstance(source, list):
             for item in source:
                 if isinstance(item, str):
-                    yield {"name": item, "options": (f"--{item}",)}
+                    yield {"name": item, "options": (f"--{item.lstrip('_')}",)}
                 elif isinstance(item, dict):
                     yield dict(
                         item,
@@ -98,6 +98,7 @@ class ArgSpec(PoeOptions):
 
         if strict:
             arg_names = set()
+            option_args: dict[str, str] = {}
             positional_multiple = None
             for arg in result:
                 if arg.name in arg_names:
@@ -106,6 +107,16 @@ class ArgSpec(PoeOptions):
                         context=f"Invalid argument {arg.name!r} declared",
                     )
                 arg_names.add(arg.name)
+
+                if not arg.positional:
+                    for option in ArgSpec._get_arg_options_list(arg, arg.name, strict):
+                        if option in option_args:
+                            raise ConfigValidationError(
+                                f"Arguments {option_args[option]!r} and"
+                                f" {arg.name!r} generate the same CLI"
+                                f" option {option!r}",
+                            )
+                        option_args[option] = arg.name
 
                 if arg.positional:
                     if positional_multiple:
@@ -120,10 +131,11 @@ class ArgSpec(PoeOptions):
 
     @staticmethod
     def _get_arg_options_list(
-        arg: ArgParams, name: str | None = None, strict: bool = True
+        arg: Mapping[str, Any] | ArgSpec, name: str | None = None, strict: bool = True
     ):
         positional = arg.get("positional", False)
         name = name or arg.get("name")
+        stripped = (name or "").lstrip("_")
         if positional:
             if strict and arg.get("options"):
                 raise ConfigValidationError(
@@ -133,7 +145,7 @@ class ArgSpec(PoeOptions):
             if isinstance(positional, str):
                 return [positional]
             return [name]
-        return tuple(arg.get("options", [f"--{name}"]))
+        return tuple(arg.get("options", [f"--{stripped}"]))
 
     def validate(self):
         try:
@@ -283,7 +295,7 @@ class PoeTaskArgs:
         if task_name:
             error.task_name = task_name
 
-    def build_parser(self, env: EnvVarsManager, program_name: str) -> ArgumentParser:
+    def build_parser(self, env: TaskEnv, program_name: str) -> ArgumentParser:
         import argparse
 
         parser = argparse.ArgumentParser(
@@ -298,7 +310,7 @@ class PoeTaskArgs:
             )
         return parser
 
-    def _get_argument_params(self, arg: ArgSpec, env: EnvVarsManager):
+    def _get_argument_params(self, arg: ArgSpec, env: TaskEnv):
         default = arg.get("default")
         if isinstance(default, str):
             default = env.fill_template(default)
@@ -331,13 +343,17 @@ class PoeTaskArgs:
             result["choices"] = arg.choices
 
         if arg_type == "boolean":
-            result["action"] = "store_false" if default else "store_true"
+            if default:
+                result["action"] = "store_false"
+            else:
+                result["action"] = "store_true"
+                result["default"] = False
         else:
             result["type"] = arg_types.get(arg_type, str)
 
         return result
 
-    def parse(self, args: Sequence[str], env: EnvVarsManager, program_name: str):
+    def parse(self, args: Sequence[str], env: TaskEnv, program_name: str):
         error_stream = (
             self._io.error_output
             if self._io.verbosity > -3

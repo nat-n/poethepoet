@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from ..context import RunContext
-    from ..env.manager import EnvVarsManager
+    from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
 
 
@@ -63,13 +63,13 @@ class ShellTask(PoeTask):
     spec: TaskSpec
 
     async def _handle_run(
-        self, context: RunContext, env: EnvVarsManager, task_state: PoeTaskRun
+        self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
         named_arg_values, _ = self.get_parsed_arguments(env)
-        env.update(named_arg_values)
+        env.register_task_args(named_arg_values)
 
         if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
             raise PoeException(
