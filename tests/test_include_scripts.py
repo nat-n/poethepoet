@@ -3,8 +3,8 @@ import shutil
 import pytest
 
 
-def test_docs_with_included_tasks(run_poe_subproc, projects):
-    result = run_poe_subproc(project="include_scripts")
+def test_docs_with_included_tasks(run_poe, projects):
+    result = run_poe(project="include_scripts")
     assert (
         "Configured tasks:\n"
         "  check-vars             \n"
@@ -25,8 +25,8 @@ def test_docs_with_included_tasks(run_poe_subproc, projects):
 
 
 @pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_config_level_env_and_envfile(run_poe_subproc, projects):
-    result = run_poe_subproc("check-vars", project="include_scripts")
+def test_config_level_env_and_envfile(run_poe, projects):
+    result = run_poe("check-vars", project="include_scripts")
     assert (
         "Poe => poe_test_echo 'ENV_VAR:ENV_VAL\nENVFILE_VAR:ENVFILE_VAL'"
         in result.capture
@@ -35,24 +35,24 @@ def test_config_level_env_and_envfile(run_poe_subproc, projects):
 
 
 @pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_task_with_and_without_executor(run_poe_subproc, projects):
-    result = run_poe_subproc("script-executor", project="include_scripts")
+def test_task_with_and_without_executor(run_poe, projects):
+    result = run_poe("script-executor", project="include_scripts")
     assert "Poe => poe_test_echo build_time:uv" in result.capture
     assert result.stdout.startswith("build_time:uv, run_time:uv")
 
-    result = run_poe_subproc("script-executor-again", project="include_scripts")
+    result = run_poe("script-executor-again", project="include_scripts")
     assert "Poe => poe_test_echo build_time:simple" in result.capture
     assert result.stdout.startswith("build_time:simple, run_time:uv")
 
 
 @pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
-def test_included_script_with_cwd(run_poe_subproc, projects, is_windows):
+def test_included_script_with_cwd(run_poe, projects, is_windows):
     # check the cwd gets set properly for the task when cwd option set on include
-    result = run_poe_subproc("cwd", project="include_scripts")
+    result = run_poe("cwd", project="include_scripts")
     assert "Poe => poe_test_pwd" in result.capture
     assert result.stdout.endswith("include_scripts_project\n")
 
-    result = run_poe_subproc("cwd-more", project="include_scripts")
+    result = run_poe("cwd-more", project="include_scripts")
     assert "Poe => poe_test_pwd" in result.capture
     if is_windows:
         assert result.stdout.endswith("include_scripts_project\\src\n")
@@ -60,7 +60,7 @@ def test_included_script_with_cwd(run_poe_subproc, projects, is_windows):
         assert result.stdout.endswith("include_scripts_project/src\n")
 
     # check POE_CONF_DIR gets set properly for the task when cwd option set on include
-    result = run_poe_subproc("confdir", project="include_scripts")
+    result = run_poe("confdir", project="include_scripts")
     if is_windows:
         assert "Poe => poe_test_echo 'POE_CONF_DIR=" in result.capture
     else:
@@ -68,7 +68,7 @@ def test_included_script_with_cwd(run_poe_subproc, projects, is_windows):
     assert result.stdout.startswith("POE_CONF_DIR=")
     assert result.stdout.endswith("include_scripts_project\n")
 
-    result = run_poe_subproc("confdir-more", project="include_scripts")
+    result = run_poe("confdir-more", project="include_scripts")
     if is_windows:
         assert "Poe => poe_test_echo 'POE_CONF_DIR=" in result.capture
         assert result.stdout.endswith("include_scripts_project\\src\n")

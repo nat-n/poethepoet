@@ -1,5 +1,5 @@
-def test_global_envfile_and_default(run_poe_subproc):
-    result = run_poe_subproc("test", project="default_value")
+def test_global_envfile_and_default(run_poe):
+    result = run_poe("test", project="default_value")
     assert (
         "Poe => poe_test_echo '!one!' '!two!' '!three!' '!four!' '!five!' '!six!'\n"
         in result.capture
@@ -8,7 +8,7 @@ def test_global_envfile_and_default(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_global_envfile_and_default_with_presets(run_poe_subproc):
+def test_global_envfile_and_default_with_presets(run_poe):
     env = {
         "ONE": "111",
         "TWO": "222",
@@ -18,7 +18,7 @@ def test_global_envfile_and_default_with_presets(run_poe_subproc):
         "SIX": "666",
     }
 
-    result = run_poe_subproc("test", project="default_value", env=env)
+    result = run_poe("test", project="default_value", env=env)
     assert (
         "Poe => poe_test_echo '!one!' '!two!' '!three!' 444 '!five!' 666\n"
         in result.capture

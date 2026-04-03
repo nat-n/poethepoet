@@ -3,8 +3,8 @@ import difflib
 no_venv = {"POETRY_VIRTUALENVS_CREATE": "false"}
 
 
-def test_script_task_with_hard_coded_args(run_poe_subproc, projects, esc_prefix):
-    result = run_poe_subproc("static-args-test", project="scripts", env=no_venv)
+def test_script_task_with_hard_coded_args(run_poe, projects, esc_prefix):
+    result = run_poe("static-args-test", project="scripts", env=no_venv)
     assert result.capture == "Poe => static-args-test\n"
     assert result.stdout == (
         "str: pat a cake\n"
@@ -33,29 +33,29 @@ def test_call_attr_func_with_exec(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_print_result(run_poe_subproc):
-    result = run_poe_subproc("print-script-result", project="scripts", env=no_venv)
+def test_print_result(run_poe):
+    result = run_poe("print-script-result", project="scripts", env=no_venv)
     assert result.capture == "Poe => print-script-result\n"
     assert result.stdout == "determining most random number...\n7\n"
     assert result.stderr == ""
 
 
-def test_dont_print_result(run_poe_subproc):
-    result = run_poe_subproc("dont-print-script-result", project="scripts", env=no_venv)
+def test_dont_print_result(run_poe):
+    result = run_poe("dont-print-script-result", project="scripts", env=no_venv)
     assert result.capture == "Poe => dont-print-script-result\n"
     assert result.stdout == "determining most random number...\n"
     assert result.stderr == ""
 
 
-def test_automatic_kwargs_from_args(run_poe_subproc):
-    result = run_poe_subproc("greet", project="scripts", env=no_venv)
+def test_automatic_kwargs_from_args(run_poe):
+    result = run_poe("greet", project="scripts", env=no_venv)
     assert result.capture == "Poe => greet\n"
     assert result.stdout == "I'm sorry Dave\n"
     assert result.stderr == ""
 
 
-def test_script_task_with_cli_args(run_poe_subproc, is_windows):
-    result = run_poe_subproc(
+def test_script_task_with_cli_args(run_poe, is_windows):
+    result = run_poe(
         "greet-passed-args",
         "--greeting=hello",
         "--user=nat",
@@ -76,9 +76,9 @@ def test_script_task_with_cli_args(run_poe_subproc, is_windows):
     assert result.stderr == ""
 
 
-def test_script_task_with_args_optional(run_poe_subproc, projects, is_windows):
+def test_script_task_with_args_optional(run_poe, projects, is_windows):
     named_args_project_path = projects["scripts"]
-    result = run_poe_subproc(
+    result = run_poe(
         "greet-passed-args",
         "--greeting=hello",
         "--user=nat",
@@ -102,16 +102,16 @@ def test_script_task_with_args_optional(run_poe_subproc, projects, is_windows):
     assert result.stderr == ""
 
 
-def test_script_task_default_arg(run_poe_subproc):
-    result = run_poe_subproc("greet-full-args", project="scripts", env=no_venv)
+def test_script_task_default_arg(run_poe):
+    result = run_poe("greet-full-args", project="scripts", env=no_venv)
     assert result.capture == "Poe => greet-full-args\n"
     # hi is the default value for --greeting
     assert result.stdout == "hi None None None\n"
     assert result.stderr == ""
 
 
-def test_script_task_include_boolean_flag_and_numeric_args(run_poe_subproc):
-    result = run_poe_subproc(
+def test_script_task_include_boolean_flag_and_numeric_args(run_poe):
+    result = run_poe(
         "greet-full-args",
         "--greeting=hello",
         "--user=nat",
@@ -129,8 +129,8 @@ def test_script_task_include_boolean_flag_and_numeric_args(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_script_task_with_short_args(run_poe_subproc):
-    result = run_poe_subproc(
+def test_script_task_with_short_args(run_poe):
+    result = run_poe(
         "greet-full-args",
         "-g=Ciao",
         "--user=toni",
@@ -147,16 +147,14 @@ def test_script_task_with_short_args(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_wrong_args_passed(run_poe_subproc):
+def test_wrong_args_passed(run_poe):
     base_error = (
         "usage: poe greet-full-args [--greeting GREETING] [--user USER] [--upper]\n"
         "                           [--age AGE] [--height USER_HEIGHT]\n"
         "poe greet-full-args: error:"
     )
 
-    result = run_poe_subproc(
-        "greet-full-args", "--age=lol", project="scripts", env=no_venv
-    )
+    result = run_poe("greet-full-args", "--age=lol", project="scripts", env=no_venv)
     assert result.capture == (
         f"{base_error} argument --age/-a: invalid int value: 'lol'\n"
         "Error: Invalid arguments for task 'greet-full-args'\n"
@@ -164,7 +162,7 @@ def test_wrong_args_passed(run_poe_subproc):
     assert result.stdout == ""
     assert result.stderr == ""
 
-    result = run_poe_subproc("greet-full-args", "--age", project="scripts", env=no_venv)
+    result = run_poe("greet-full-args", "--age", project="scripts", env=no_venv)
     assert result.capture == (
         f"{base_error} argument --age/-a: expected one argument\n"
         "Error: Invalid arguments for task 'greet-full-args'\n"
@@ -172,9 +170,7 @@ def test_wrong_args_passed(run_poe_subproc):
     assert result.stdout == ""
     assert result.stderr == ""
 
-    result = run_poe_subproc(
-        "greet-full-args", "--age 3 2 1", project="scripts", env=no_venv
-    )
+    result = run_poe("greet-full-args", "--age 3 2 1", project="scripts", env=no_venv)
     assert result.capture == (
         f"{base_error} unrecognized arguments: --age 3 2 1\n"
         "Error: Invalid arguments for task 'greet-full-args'\n"
@@ -182,9 +178,7 @@ def test_wrong_args_passed(run_poe_subproc):
     assert result.stdout == ""
     assert result.stderr == ""
 
-    result = run_poe_subproc(
-        "greet-full-args", "--potato", project="scripts", env=no_venv
-    )
+    result = run_poe("greet-full-args", "--potato", project="scripts", env=no_venv)
     assert result.capture == (
         f"{base_error} unrecognized arguments: --potato\n"
         "Error: Invalid arguments for task 'greet-full-args'\n"
@@ -193,8 +187,8 @@ def test_wrong_args_passed(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_required_args(run_poe_subproc):
-    result = run_poe_subproc(
+def test_required_args(run_poe):
+    result = run_poe(
         "greet-strict",
         "--greeting=yo",
         "--name",
@@ -206,7 +200,7 @@ def test_required_args(run_poe_subproc):
     assert result.stdout == "yo dude\n"
     assert result.stderr == ""
 
-    result = run_poe_subproc("greet-strict", project="scripts", env=no_venv)
+    result = run_poe("greet-strict", project="scripts", env=no_venv)
     assert result.stderr == ""
     assert result.stdout == ""
     assert result.capture == (
@@ -216,8 +210,8 @@ def test_required_args(run_poe_subproc):
     )
 
 
-def test_script_task_bad_type(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_script_task_bad_type(run_poe, projects):
+    result = run_poe(
         f"-C={projects['scripts/bad_type']}",
         "bad-type",
         "--greeting=hello",
@@ -232,8 +226,8 @@ def test_script_task_bad_type(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_script_task_bad_content(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_script_task_bad_content(run_poe, projects):
+    result = run_poe(
         f"-C={projects['scripts/bad_content']}",
         "bad-content",
         "--greeting=hello",
@@ -247,8 +241,8 @@ def test_script_task_bad_content(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_script_with_positional_args(run_poe_subproc):
-    result = run_poe_subproc(
+def test_script_with_positional_args(run_poe):
+    result = run_poe(
         "greet-positional", "help!", "Santa", project="scripts", env=no_venv
     )
     assert result.capture == "Poe => greet-positional 'help!' Santa\n"
@@ -256,15 +250,13 @@ def test_script_with_positional_args(run_poe_subproc):
     assert result.stderr == ""
 
     # Omission of optional positional arg
-    result = run_poe_subproc(
-        "greet-positional", "Santa", project="scripts", env=no_venv
-    )
+    result = run_poe("greet-positional", "Santa", project="scripts", env=no_venv)
     assert result.capture == "Poe => greet-positional Santa\n"
     assert result.stdout == "yo Santa\n"
     assert result.stderr == ""
 
     # Omission of required positional arg
-    result = run_poe_subproc("greet-positional", project="scripts", env=no_venv)
+    result = run_poe("greet-positional", project="scripts", env=no_venv)
     assert result.capture == (
         "usage: poe greet-positional [--upper] [greeting] user\n"
         "poe greet-positional: error: the following arguments are required: user\n"
@@ -274,7 +266,7 @@ def test_script_with_positional_args(run_poe_subproc):
     assert result.stderr == ""
 
     # Too many positional args
-    result = run_poe_subproc(
+    result = run_poe(
         "greet-positional", "plop", "plop", "plop", project="scripts", env=no_venv
     )
     assert result.capture == (
@@ -286,15 +278,15 @@ def test_script_with_positional_args(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_script_with_positional_args_and_options(run_poe_subproc):
-    result = run_poe_subproc(
+def test_script_with_positional_args_and_options(run_poe):
+    result = run_poe(
         "greet-positional", "help!", "Santa", "--upper", project="scripts", env=no_venv
     )
     assert result.capture == "Poe => greet-positional 'help!' Santa --upper\n"
     assert result.stdout == "HELP! SANTA\n"
     assert result.stderr == ""
 
-    result = run_poe_subproc(
+    result = run_poe(
         "greet-positional", "--upper", "help!", "Santa", project="scripts", env=no_venv
     )
     assert result.capture == "Poe => greet-positional --upper 'help!' Santa\n"
@@ -302,9 +294,9 @@ def test_script_with_positional_args_and_options(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_script_with_multi_value_args(run_poe_subproc):
+def test_script_with_multi_value_args(run_poe):
     # Test with all args
-    result = run_poe_subproc(
+    result = run_poe(
         "multiple-value-args",
         "hey",
         "1",
@@ -330,7 +322,7 @@ def test_script_with_multi_value_args(run_poe_subproc):
     assert result.stderr == ""
 
     # Test with some args
-    result = run_poe_subproc(
+    result = run_poe(
         "multiple-value-args", "1", "--engines", "v2", project="scripts", env=no_venv
     )
     assert result.capture == "Poe => multiple-value-args 1 --engines v2\n"
@@ -340,7 +332,7 @@ def test_script_with_multi_value_args(run_poe_subproc):
     assert result.stderr == ""
 
     # Test with minimal args
-    result = run_poe_subproc(
+    result = run_poe(
         "multiple-value-args", "--engines", "v2", project="scripts", env=no_venv
     )
     assert result.capture == "Poe => multiple-value-args --engines v2\n"
@@ -350,7 +342,7 @@ def test_script_with_multi_value_args(run_poe_subproc):
     assert result.stderr == ""
 
     # Not enough values for option: 0
-    result = run_poe_subproc(
+    result = run_poe(
         "multiple-value-args",
         "--engines",
         "v2",
@@ -366,7 +358,7 @@ def test_script_with_multi_value_args(run_poe_subproc):
     assert result.stderr == ""
 
     # Too many values for option: 3
-    result = run_poe_subproc(
+    result = run_poe(
         "multiple-value-args",
         "bloop",  # without the first arg, dong gets read an positional
         "--engines",
@@ -389,7 +381,7 @@ def test_script_with_multi_value_args(run_poe_subproc):
     assert result.stderr == ""
 
     # wrong type for multiple values
-    result = run_poe_subproc(
+    result = run_poe(
         "multiple-value-args",
         "1",
         "wrong",
@@ -406,8 +398,8 @@ def test_script_with_multi_value_args(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_async_script_task(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_async_script_task(run_poe, projects):
+    result = run_poe(
         "async-task",
         "--a=foo",
         "--b=bar",
@@ -419,8 +411,8 @@ def test_async_script_task(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_call_module_as_task(run_poe_subproc):
-    result = run_poe_subproc(
+def test_call_module_as_task(run_poe):
+    result = run_poe(
         "module-as-task", "--foo", "cheese", project="scripts", env=no_venv
     )
     assert result.capture == "Poe => module-as-task --foo cheese\n"
@@ -428,8 +420,8 @@ def test_call_module_as_task(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_script_boolean_flag(run_poe_subproc):
-    result = run_poe_subproc(
+def test_script_boolean_flag(run_poe):
+    result = run_poe(
         "booleans", "--non", "--tru", "--fal", "--txt", project="scripts", env=no_venv
     )
     assert result.capture == "Poe => booleans --non --tru --fal --txt\n"
@@ -438,37 +430,33 @@ def test_script_boolean_flag(run_poe_subproc):
     )
 
 
-def test_script_boolean_flag_default_value(run_poe_subproc):
-    result = run_poe_subproc("booleans", project="scripts", env=no_venv)
+def test_script_boolean_flag_default_value(run_poe):
+    result = run_poe("booleans", project="scripts", env=no_venv)
     assert result.capture == "Poe => booleans\n"
     assert result.stdout == (
         "args ()\n" "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
     )
 
 
-def test_script_boolean_flag_partial(run_poe_subproc):
+def test_script_boolean_flag_partial(run_poe):
     """--non toggles False->True, --tru negates True->False, fal keeps default False"""
-    result = run_poe_subproc(
-        "bool_partial", "--non", "--tru", project="scripts", env=no_venv
-    )
+    result = run_poe("bool_partial", "--non", "--tru", project="scripts", env=no_venv)
     assert result.capture == "Poe => bool_partial --non --tru\n"
     assert result.stdout == (
         "args ()\n" "kwargs {'non': True, 'tru': False, 'fal': False}\n"
     )
 
 
-def test_script_env_access_uses_typed_and_environ_channels(run_poe_subproc):
-    result = run_poe_subproc("bool_env_access", project="scripts", env=no_venv)
+def test_script_env_access_uses_typed_and_environ_channels(run_poe):
+    result = run_poe("bool_env_access", project="scripts", env=no_venv)
     assert result.capture == "Poe => bool_env_access\n"
     assert result.stdout == (
         "args ()\n" "kwargs {'typed': True, 'present': True, 'value': 'True'}\n"
     )
 
 
-def test_script_env_access_unset_bool_arg_preserves_typed_false(run_poe_subproc):
-    result = run_poe_subproc(
-        "bool_env_access", "--MY_FLAG", project="scripts", env=no_venv
-    )
+def test_script_env_access_unset_bool_arg_preserves_typed_false(run_poe):
+    result = run_poe("bool_env_access", "--MY_FLAG", project="scripts", env=no_venv)
     assert result.capture == "Poe => bool_env_access --MY_FLAG\n"
     assert result.stdout == (
         "args ()\n" "kwargs {'typed': False, 'present': False, 'value': None}\n"

@@ -20,9 +20,9 @@ TASK_POE_PWD = "${POE_PWD}"
 """
 
 
-def test_global_env_templating(temp_pyproject, run_poe_subproc):
+def test_global_env_templating(temp_pyproject, run_poe):
     project_path = temp_pyproject(EXAMPLE_CONFIG)
-    result = run_poe_subproc("my-task", cwd=project_path)
+    result = run_poe("my-task", cwd=project_path)
     assert result.code == 0
 
     printed_vars = {
@@ -45,9 +45,9 @@ expr = "${FILE}"
 """
 
 
-def test_substitution_in_envvar(temp_pyproject, run_poe_subproc):
+def test_substitution_in_envvar(temp_pyproject, run_poe):
     project_path = temp_pyproject(EXAMPLE_WITH_ENV_COMPOSITION)
-    result = run_poe_subproc("frobnicate", cwd=project_path)
+    result = run_poe("frobnicate", cwd=project_path)
 
     assert result.capture == "Poe => ${FILE}\n"
     assert result.stdout == "/foo/bar/baz\n"

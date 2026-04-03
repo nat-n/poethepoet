@@ -15,8 +15,8 @@ def _init_git_submodule(projects):
     repo.delete_git_dir()
 
 
-def test_docs_for_include_toml_file(run_poe_subproc):
-    result = run_poe_subproc(project="includes")
+def test_docs_for_include_toml_file(run_poe):
+    result = run_poe(project="includes")
     assert (
         "Configured tasks:\n"
         "  echo                  says what you say\n"
@@ -28,22 +28,22 @@ def test_docs_for_include_toml_file(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_run_task_included_from_toml_file(run_poe_subproc):
-    result = run_poe_subproc("greet", "Whirl!", project="includes")
+def test_run_task_included_from_toml_file(run_poe):
+    result = run_poe("greet", "Whirl!", project="includes")
     assert result.capture == "Poe => poe_test_echo Hello 'Whirl!'\n"
     assert result.stdout == "Hello Whirl!\n"
     assert result.stderr == ""
 
 
-def test_run_task_not_included_from_toml_file(run_poe_subproc):
-    result = run_poe_subproc("echo", "Whirl!", project="includes")
+def test_run_task_not_included_from_toml_file(run_poe):
+    result = run_poe("echo", "Whirl!", project="includes")
     assert result.capture == "Poe => poe_test_echo 'Whirl!'\n"
     assert result.stdout == "Whirl!\n"
     assert result.stderr == ""
 
 
-def test_docs_for_multiple_includes(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_docs_for_multiple_includes(run_poe, projects):
+    result = run_poe(
         f"-C={projects['includes/multiple_includes']}",
     )
     assert (
@@ -59,8 +59,8 @@ def test_docs_for_multiple_includes(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_running_from_multiple_includes(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_running_from_multiple_includes(run_poe, projects):
+    result = run_poe(
         f"-C={projects['includes/multiple_includes']}",
         "echo",
         "Whirl!",
@@ -70,21 +70,19 @@ def test_running_from_multiple_includes(run_poe_subproc, projects):
     assert result.stdout == "Whirl!\n"
     assert result.stderr == ""
 
-    result = run_poe_subproc(
-        f"-C={projects['includes/multiple_includes']}", "greet", "Whirl!"
-    )
+    result = run_poe(f"-C={projects['includes/multiple_includes']}", "greet", "Whirl!")
     assert result.capture == "Poe => poe_test_echo Hello 'Whirl!'\n"
     assert result.stdout == "Hello Whirl!\n"
     assert result.stderr == ""
 
-    result = run_poe_subproc(f"-C={projects['includes/multiple_includes']}", "laugh")
+    result = run_poe(f"-C={projects['includes/multiple_includes']}", "laugh")
     assert result.capture == "Poe => poe_test_echo $ONE_LAUGH | tr a-z A-Z\n"
     assert result.stdout == "LOL\n"
     assert result.stderr == ""
 
 
-def test_reference_peer_include(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_reference_peer_include(run_poe, projects):
+    result = run_poe(
         f"-C={projects['includes/multiple_includes']}", "reference_peer_include"
     )
     assert (
@@ -95,8 +93,8 @@ def test_reference_peer_include(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_docs_for_only_includes(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_docs_for_only_includes(run_poe, projects):
+    result = run_poe(
         f"-C={projects['includes/only_includes']}",
     )
     assert (
@@ -110,8 +108,8 @@ def test_docs_for_only_includes(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_monorepo_contains_only_expected_tasks(run_poe_subproc, projects):
-    result = run_poe_subproc(project="monorepo")
+def test_monorepo_contains_only_expected_tasks(run_poe, projects):
+    result = run_poe(project="monorepo")
     assert result.capture.endswith(
         "Configured tasks:\n"
         "  get_cwd_0             \n"
@@ -126,8 +124,8 @@ def test_monorepo_contains_only_expected_tasks(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_monorepo_can_also_include_parent(run_poe_subproc, projects, is_windows):
-    result = run_poe_subproc(cwd=projects["monorepo/subproject_2"])
+def test_monorepo_can_also_include_parent(run_poe, projects, is_windows):
+    result = run_poe(cwd=projects["monorepo/subproject_2"])
     assert result.capture.endswith(
         "Configured tasks:\n"
         "  add                   \n"
@@ -138,7 +136,7 @@ def test_monorepo_can_also_include_parent(run_poe_subproc, projects, is_windows)
     assert result.stdout == ""
     assert result.stderr == ""
 
-    result = run_poe_subproc("get_cwd_0", cwd=projects["monorepo/subproject_2"])
+    result = run_poe("get_cwd_0", cwd=projects["monorepo/subproject_2"])
     assert result.capture == "Poe => import os; print(os.getcwd())\n"
     if is_windows:
         assert result.stdout.endswith(
@@ -149,17 +147,15 @@ def test_monorepo_can_also_include_parent(run_poe_subproc, projects, is_windows)
     assert result.stderr == ""
 
 
-def test_set_default_task_type_with_include(run_poe_subproc, projects):
-    result = run_poe_subproc("add", cwd=projects["monorepo/subproject_2"])
+def test_set_default_task_type_with_include(run_poe, projects):
+    result = run_poe("add", cwd=projects["monorepo/subproject_2"])
     assert result.capture == "Poe => 1 + 1\n"
     assert result.stdout == "2\n"
     assert result.stderr == ""
 
 
-def test_monorepo_runs_each_task_with_expected_cwd(
-    run_poe_subproc, projects, is_windows
-):
-    result = run_poe_subproc("get_cwd_0", project="monorepo")
+def test_monorepo_runs_each_task_with_expected_cwd(run_poe, projects, is_windows):
+    result = run_poe("get_cwd_0", project="monorepo")
     assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
@@ -167,7 +163,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         assert result.stdout.endswith("/tests/fixtures/monorepo_project\n")
     assert result.stderr == ""
 
-    result = run_poe_subproc("get_cwd_1", project="monorepo")
+    result = run_poe("get_cwd_1", project="monorepo")
     assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith("\\tests\\fixtures\\monorepo_project\n")
@@ -175,7 +171,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         assert result.stdout.endswith("/tests/fixtures/monorepo_project\n")
     assert result.stderr == ""
 
-    result = run_poe_subproc("get_cwd_2", project="monorepo")
+    result = run_poe("get_cwd_2", project="monorepo")
     assert "Poe => import os; print(os.getcwd())\n" in result.capture
     if is_windows:
         assert result.stdout.endswith(
@@ -185,7 +181,7 @@ def test_monorepo_runs_each_task_with_expected_cwd(
         assert result.stdout.endswith("/tests/fixtures/monorepo_project/subproject_2\n")
     assert result.stderr == ""
 
-    result = run_poe_subproc(
+    result = run_poe(
         "-C",
         str(projects["monorepo/subproject_3"]),
         "get_cwd_3",
@@ -199,8 +195,8 @@ def test_monorepo_runs_each_task_with_expected_cwd(
     assert result.stderr == ""
 
 
-def test_include_subproject_envfiles_no_cwd_set(run_poe_subproc, projects, is_windows):
-    result = run_poe_subproc("subproj3_env", project="monorepo")
+def test_include_subproject_envfiles_no_cwd_set(run_poe, projects, is_windows):
+    result = run_poe("subproj3_env", project="monorepo")
     assert result.capture == (
         "Poe => echo POE_ROOT:          ${POE_ROOT}\n"
         "echo POE_CWD:           ${POE_CWD}\n"
@@ -259,10 +255,8 @@ def test_include_subproject_envfiles_no_cwd_set(run_poe_subproc, projects, is_wi
     assert result.stderr == ""
 
 
-def test_include_subproject_envfiles_with_cwd_set(
-    run_poe_subproc, projects, is_windows
-):
-    result = run_poe_subproc("subproj4_env", project="monorepo")
+def test_include_subproject_envfiles_with_cwd_set(run_poe, projects, is_windows):
+    result = run_poe("subproj4_env", project="monorepo")
     assert result.capture == (
         "Poe => echo POE_ROOT:          ${POE_ROOT}\n"
         "echo POE_CWD:           ${POE_CWD}\n"
@@ -326,19 +320,17 @@ def test_include_subproject_envfiles_with_cwd_set(
 
 
 @pytest.mark.usefixtures("_init_git_submodule")
-def test_include_tasks_from_git_repo(run_poe_subproc, projects):
+def test_include_tasks_from_git_repo(run_poe, projects):
     # test task included relative to POE_GIT_DIR
-    result = run_poe_subproc(
-        "did_it_work2", cwd=projects["includes/sub_git_repo/sub_project"]
-    )
+    result = run_poe("did_it_work2", cwd=projects["includes/sub_git_repo/sub_project"])
     assert "Poe => poe_test_echo yes\n" in result.capture
     assert result.stdout == "yes\n"
     assert result.stderr == ""
 
 
 @pytest.mark.usefixtures("_init_git_submodule")
-def test_use_poe_git_vars(run_poe_subproc, projects, is_windows, poe_project_path):
-    result = run_poe_subproc(
+def test_use_poe_git_vars(run_poe, projects, is_windows, poe_project_path):
+    result = run_poe(
         "has_repo_env_vars", cwd=projects["includes/sub_git_repo/sub_project"]
     )
     assert "Poe => poe_test_echo XXX" in result.capture
@@ -358,11 +350,9 @@ def test_use_poe_git_vars(run_poe_subproc, projects, is_windows, poe_project_pat
 
 @pytest.mark.usefixtures("_init_git_submodule")
 def test_poe_git_vars_for_task_level_envfile_and_env(
-    run_poe_subproc, projects, poe_project_path
+    run_poe, projects, poe_project_path
 ):
-    result = run_poe_subproc(
-        "print_env", cwd=projects["includes/sub_git_repo/sub_project"]
-    )
+    result = run_poe("print_env", cwd=projects["includes/sub_git_repo/sub_project"])
     assert "Poe => poe_test_env\n" in result.capture
     assert "POE_GIT_ROOT=" not in result.stdout
     assert f"POE_GIT_ROOT_2={poe_project_path}" in result.stdout
