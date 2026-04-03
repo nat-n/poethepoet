@@ -3,9 +3,9 @@
 # -- Help output and heading precedence --
 
 
-def test_groups_in_help_output(run_poe_subproc, projects):
+def test_groups_in_help_output(run_poe, projects):
     """Test that tasks are grouped correctly in help output."""
-    result = run_poe_subproc(cwd=projects["groups"])
+    result = run_poe(cwd=projects["groups"])
     assert result.code == 1, "Expected non-zero result when no task specified"
 
     output = result.capture
@@ -54,16 +54,16 @@ def test_groups_in_help_output(run_poe_subproc, projects):
 # -- Task execution (project and included groups) --
 
 
-def test_task_execution_from_group(run_poe_subproc, projects):
+def test_task_execution_from_group(run_poe, projects):
     """Tasks defined in groups can be executed normally."""
-    result = run_poe_subproc("check", cwd=projects["groups"])
+    result = run_poe("check", cwd=projects["groups"])
     assert result.code == 0
     assert "Running mypy..." in result.capture
 
 
-def test_included_group_task_execution(run_poe_subproc, projects):
+def test_included_group_task_execution(run_poe, projects):
     """Tasks from an included config's group can be executed."""
-    result = run_poe_subproc("docker_logs", cwd=projects["groups"])
+    result = run_poe("docker_logs", cwd=projects["groups"])
     assert result.code == 0
     assert "Showing logs..." in result.capture
 
@@ -71,40 +71,38 @@ def test_included_group_task_execution(run_poe_subproc, projects):
 # -- Executor resolution (inheritance, task/CLI override, cross-include precedence) --
 
 
-def test_group_executor_inherited(run_poe_subproc, projects):
+def test_group_executor_inherited(run_poe, projects):
     """Task with no executor in a group with executor='simple' should use simple."""
-    result = run_poe_subproc("group_show_env", cwd=projects["groups"])
+    result = run_poe("group_show_env", cwd=projects["groups"])
     assert result.code == 0
     assert "POE_ACTIVE=simple" in result.stdout
 
 
-def test_group_executor_inherited_fails_with_bad_config(run_poe_subproc, projects):
+def test_group_executor_inherited_fails_with_bad_config(run_poe, projects):
     """Task inheriting a virtualenv executor with a missing venv should fail."""
-    result = run_poe_subproc("venv_group_task", cwd=projects["groups"])
+    result = run_poe("venv_group_task", cwd=projects["groups"])
     assert result.code == 1
     assert "nonexistent_venv" in result.capture
 
 
-def test_group_executor_overridden_by_task(run_poe_subproc, projects):
+def test_group_executor_overridden_by_task(run_poe, projects):
     """Task-level executor overrides group-level executor."""
-    result = run_poe_subproc("venv_group_task_override", cwd=projects["groups"])
+    result = run_poe("venv_group_task_override", cwd=projects["groups"])
     assert result.code == 0
     assert "override_works" in result.stdout
 
 
-def test_group_executor_precedence_across_includes(run_poe_subproc, projects):
+def test_group_executor_precedence_across_includes(run_poe, projects):
     """Project's group executor takes precedence over include's group executor."""
     # extra_tasks.toml redefines simple_group with a broken virtualenv executor,
     # but the project's executor = "simple" should win.
-    result = run_poe_subproc("included_group_env", cwd=projects["groups"])
+    result = run_poe("included_group_env", cwd=projects["groups"])
     assert result.code == 0
     assert "POE_ACTIVE=simple" in result.stdout
 
 
-def test_group_executor_overridden_by_cli(run_poe_subproc, projects):
+def test_group_executor_overridden_by_cli(run_poe, projects):
     """CLI --executor overrides group-level executor."""
-    result = run_poe_subproc(
-        "--executor", "simple", "venv_group_task", cwd=projects["groups"]
-    )
+    result = run_poe("--executor", "simple", "venv_group_task", cwd=projects["groups"])
     assert result.code == 0
     assert "should_not_run" in result.capture

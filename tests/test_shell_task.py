@@ -12,8 +12,8 @@ def _clean_shell_output(text: str) -> str:
     return _strip_terminal_control_sequences(text).strip()
 
 
-def test_shell_task(run_poe_subproc):
-    result = run_poe_subproc("count", project="shells")
+def test_shell_task(run_poe):
+    result = run_poe("count", project="shells")
     assert result.capture == (
         "Poe => poe_test_echo 1 && poe_test_echo 2 "
         "&& poe_test_echo $(python -c 'print(1 + 2)')\n"
@@ -29,9 +29,9 @@ def test_shell_task_raises_given_extra_args(run_poe):
     assert result.stderr == ""
 
 
-def test_multiline_non_default_type_task(run_poe_subproc):
+def test_multiline_non_default_type_task(run_poe):
     # This should be exactly the same as calling the echo task directly
-    result = run_poe_subproc("sing", project="shells")
+    result = run_poe("sing", project="shells")
     assert result.capture == (
         'Poe => poe_test_echo "this is the story";\n'
         'poe_test_echo "all about how" &&      # the last line won\'t run\n'
@@ -44,8 +44,8 @@ def test_multiline_non_default_type_task(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_shell_task_with_dash_case_arg(run_poe_subproc):
-    result = run_poe_subproc(
+def test_shell_task_with_dash_case_arg(run_poe):
+    result = run_poe(
         "greet", "--formal-greeting=hey", "--subject=you", project="shells"
     )
     assert result.capture == ("Poe => poe_test_echo $formal_greeting $subject\n")
@@ -54,16 +54,16 @@ def test_shell_task_with_dash_case_arg(run_poe_subproc):
 
 
 @pytest.mark.skipif(not shutil.which("sh"), reason="No sh available")
-def test_interpreter_sh(run_poe_subproc):
-    result = run_poe_subproc("echo_sh", project="shells")
+def test_interpreter_sh(run_poe):
+    result = run_poe("echo_sh", project="shells")
     assert result.capture == ("Poe => poe_test_echo $0 $test_var\n")
     assert "roflcopter" in result.stdout
     assert result.stderr == ""
 
 
 @pytest.mark.skipif(not shutil.which("bash"), reason="No bash available")
-def test_interpreter_bash(run_poe_subproc):
-    result = run_poe_subproc("echo_bash", project="shells")
+def test_interpreter_bash(run_poe):
+    result = run_poe("echo_bash", project="shells")
     assert result.capture == ("Poe => poe_test_echo $0 $test_var\n")
     assert "bash" in result.stdout
     assert "roflcopter" in result.stdout
@@ -71,23 +71,23 @@ def test_interpreter_bash(run_poe_subproc):
 
 
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="No pwsh available")
-def test_interpreter_pwsh(run_poe_subproc):
-    result = run_poe_subproc("echo_pwsh", project="shells")
+def test_interpreter_pwsh(run_poe):
+    result = run_poe("echo_pwsh", project="shells")
     assert result.capture == ("Poe => poe_test_echo $ENV:test_var\n")
     assert "roflcopter" in result.stdout
     assert result.stderr == ""
 
 
 @pytest.mark.skipif(not shutil.which("powershell"), reason="No powershell available")
-def test_interpreter_powershell(run_poe_subproc):
-    result = run_poe_subproc("echo_powershell", project="shells")
+def test_interpreter_powershell(run_poe):
+    result = run_poe("echo_powershell", project="shells")
     assert result.capture == ("Poe => poe_test_echo $ENV:test_var\n")
     assert "roflcopter" in result.stdout
     assert result.stderr == ""
 
 
-def test_interpreter_python(run_poe_subproc):
-    result = run_poe_subproc("echo_python", project="shells")
+def test_interpreter_python(run_poe):
+    result = run_poe("echo_python", project="shells")
     assert result.capture == (
         "Poe => import sys, os\n\ndef run():\n"
         '    print(sys.version_info, os.environ.get("test_var"))\n\nrun()\n'
@@ -97,8 +97,8 @@ def test_interpreter_python(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_bad_interpreter_config(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_bad_interpreter_config(run_poe, projects):
+    result = run_poe(
         f"-C={projects['shells/bad_interpreter']}",
         "bad-interpreter",
     )
@@ -112,8 +112,8 @@ def test_bad_interpreter_config(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_global_interpreter_config(run_poe_subproc, projects):
-    result = run_poe_subproc(
+def test_global_interpreter_config(run_poe, projects):
+    result = run_poe(
         f"-C={projects['shells/shell_interpreter_config']}",
         "echo_python",
     )
@@ -122,10 +122,8 @@ def test_global_interpreter_config(run_poe_subproc, projects):
     assert result.stderr == ""
 
 
-def test_shell_task_with_multiple_value_arg(run_poe_subproc):
-    result = run_poe_subproc(
-        "multiple-value-arg", "hey", "1", "2", "3", project="shells"
-    )
+def test_shell_task_with_multiple_value_arg(run_poe):
+    result = run_poe("multiple-value-arg", "hey", "1", "2", "3", project="shells")
     assert (
         result.capture
         == """Poe => poe_test_echo "first: ${first} second: ${second}"
@@ -140,8 +138,8 @@ done
     assert result.stderr == ""
 
 
-def test_shell_boolean_flag(run_poe_subproc):
-    result = run_poe_subproc(
+def test_shell_boolean_flag(run_poe):
+    result = run_poe(
         "booleans",
         "--non",
         "--tru",
@@ -166,8 +164,8 @@ ${txt}= ${txt:+plus}= ${txt:-minus}=minus
     )
 
 
-def test_shell_boolean_flag_default_value(run_poe_subproc):
-    result = run_poe_subproc("booleans", project="shells")
+def test_shell_boolean_flag_default_value(run_poe):
+    result = run_poe("booleans", project="shells")
     assert result.capture == (
         r"Poe => poe_test_echo "
         r"""\${non}=${non} \${non:+plus}=${non:+plus} \${non:-minus}=${non:-minus}
@@ -185,9 +183,9 @@ ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
     )
 
 
-def test_shell_boolean_flag_partial_negate_true(run_poe_subproc):
+def test_shell_boolean_flag_partial_negate_true(run_poe):
     """Only --tru passed: negates default=true to False (unset), others keep defaults"""
-    result = run_poe_subproc(
+    result = run_poe(
         "booleans",
         "--tru",
         project="shells",
@@ -201,45 +199,45 @@ ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
     )
 
 
-def test_shell_bool_env_collision_flag_set(run_poe_subproc):
-    result = run_poe_subproc("bool_env_collision", "--MY_FLAG", project="shells")
+def test_shell_bool_env_collision_flag_set(run_poe):
+    result = run_poe("bool_env_collision", "--MY_FLAG", project="shells")
     assert result.stdout.strip() == "True"
 
 
-def test_shell_bool_env_collision_flag_unset(run_poe_subproc):
-    result = run_poe_subproc("bool_env_collision", project="shells")
+def test_shell_bool_env_collision_flag_unset(run_poe):
+    result = run_poe("bool_env_collision", project="shells")
     assert result.stdout.strip() == "fallback"
 
 
-def test_shell_bool_env_presence_true(run_poe_subproc):
-    result = run_poe_subproc("bool_env_presence", project="shells")
+def test_shell_bool_env_presence_true(run_poe):
+    result = run_poe("bool_env_presence", project="shells")
     assert result.stdout.strip() == "True 'True'"
 
 
-def test_shell_bool_env_presence_false_is_unset(run_poe_subproc):
-    result = run_poe_subproc("bool_env_presence", "--MY_FLAG", project="shells")
+def test_shell_bool_env_presence_false_is_unset(run_poe):
+    result = run_poe("bool_env_presence", "--MY_FLAG", project="shells")
     assert result.stdout.strip() == "False None"
 
 
 @pytest.mark.skipif(not shutil.which("sh"), reason="No sh available")
-def test_shell_unset_semantics_sh_true(run_poe_subproc):
-    result = run_poe_subproc("bool_unset_semantics_sh", project="shells")
+def test_shell_unset_semantics_sh_true(run_poe):
+    result = run_poe("bool_unset_semantics_sh", project="shells")
     assert result.stdout.strip() == "set:True:True"
 
 
 @pytest.mark.skipif(not shutil.which("sh"), reason="No sh available")
-def test_shell_unset_semantics_sh_false(run_poe_subproc):
-    result = run_poe_subproc("bool_unset_semantics_sh", "--MY_FLAG", project="shells")
+def test_shell_unset_semantics_sh_false(run_poe):
+    result = run_poe("bool_unset_semantics_sh", "--MY_FLAG", project="shells")
     assert result.stdout.strip() == ":unset:fallback"
 
 
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="No pwsh available")
-def test_shell_unset_semantics_pwsh_true(run_poe_subproc):
-    result = run_poe_subproc("bool_unset_semantics_pwsh", project="shells")
+def test_shell_unset_semantics_pwsh_true(run_poe):
+    result = run_poe("bool_unset_semantics_pwsh", project="shells")
     assert _clean_shell_output(result.stdout) == "True|True|True"
 
 
 @pytest.mark.skipif(not shutil.which("pwsh"), reason="No pwsh available")
-def test_shell_unset_semantics_pwsh_false(run_poe_subproc):
-    result = run_poe_subproc("bool_unset_semantics_pwsh", "--MY_FLAG", project="shells")
+def test_shell_unset_semantics_pwsh_false(run_poe):
+    result = run_poe("bool_unset_semantics_pwsh", "--MY_FLAG", project="shells")
     assert _clean_shell_output(result.stdout) == "False|unset|fallback"

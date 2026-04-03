@@ -136,6 +136,39 @@ class PoeTestRunResult(NamedTuple):
         return self.stdout.strip().splitlines()
 
 
+def build_poe_test_env(env: Mapping[str, str] | None = None) -> dict[str, str]:
+    """
+    Build a base environment for test runs that matches the subprocess fixture's
+    semantics more closely than a direct pass-through of os.environ.
+    """
+
+    base_env = dict(os.environ)
+    for var_name in ("VIRTUAL_ENV", "POE_CWD", "POE_PWD", "POE_PROJECT_DIR"):
+        base_env.pop(var_name, None)
+
+    if env:
+        base_env.update(env)
+
+    return base_env
+
+
+@contextmanager
+def patched_environ(env: Mapping[str, str]):
+    """
+    Temporarily replace os.environ so parser- and IO-level startup reads see the same
+    environment mapping that the fixture passes into PoeThePoet.
+    """
+
+    previous_env = dict(os.environ)
+    os.environ.clear()
+    os.environ.update(env)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(previous_env)
+
+
 class PoeTestRunHandle(NamedTuple):
     invocation: tuple[str, ...]
     working_dir: str
@@ -205,13 +238,7 @@ def run_poe_subproc_handle(temp_file, is_windows):
             output=rf"open(r\"{temp_file}\", \"w\")",
         )
 
-        subproc_env = dict(os.environ)
-        # do not inherit these vars from the test
-        subproc_env.pop("VIRTUAL_ENV", None)
-        subproc_env.pop("POE_CWD", None)
-        subproc_env.pop("POE_PWD", None)
-        if env:
-            subproc_env.update(env)
+        subproc_env = build_poe_test_env(env)
 
         if coverage:
             subproc_env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
@@ -278,34 +305,38 @@ def run_poe_subproc(run_poe_subproc_handle, projects, tmp_path, is_windows):
 
 
 @pytest.fixture
-def run_poe(capsys, projects):
+def run_poe(capfd, projects):
     def run_poe(
         *run_args: str,
         cwd: Path | str = projects["example"],
         config: Mapping[str, Any] | None = None,
         project: str | None = None,
-        config_name="pyproject.toml",
+        config_name=None,
         program_name="poe",
         env: Mapping[str, str] | None = None,
     ) -> PoeTestRunResult:
         cwd = projects.get(project, cwd)
         output_capture = StringIO()
-        poe = PoeThePoet(
-            cwd=cwd,
-            config=config,
-            output=output_capture,
-            config_name=config_name,
-            program_name=program_name,
-            env=env,
-        )
-        result_code = poe(run_args)
+        run_env = build_poe_test_env(env)
+        with patched_environ(run_env):
+            poe = PoeThePoet(
+                cwd=cwd,
+                config=config,
+                output=output_capture,
+                config_name=config_name,
+                program_name=program_name,
+                env=run_env,
+            )
+            result_code = poe(run_args)
         output_capture.seek(0)
+        captured_out, captured_err = capfd.readouterr()
         return PoeTestRunResult(
             run_args,
             result_code,
             Path(cwd),
-            output_capture.read(),
-            *capsys.readouterr(),
+            output_capture.read().replace("\r\n", "\n"),
+            captured_out.replace("\r\n", "\n"),
+            captured_err.replace("\r\n", "\n"),
         )
 
     return run_poe
@@ -495,21 +526,6 @@ def try_rm_dir(location: Path):
                 "Cleanup failed. You might need to run `poe clean` before tests can be "
                 "run again."
             )
-
-
-@pytest.fixture(scope="session")
-def with_virtualenv_and_venv(use_venv, use_virtualenv):
-    def with_virtualenv_and_venv(
-        location: Path,
-        contents: list[str] | None = None,
-    ):
-        with use_venv(location, contents, require_empty=True):
-            yield
-
-        with use_virtualenv(location, contents, require_empty=True):
-            yield
-
-    return with_virtualenv_and_venv
 
 
 @pytest.fixture

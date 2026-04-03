@@ -1,5 +1,5 @@
-def test_call_attr_func(run_poe_subproc):
-    result = run_poe_subproc("deep-graph-with-args", project="graphs")
+def test_call_attr_func(run_poe):
+    result = run_poe("deep-graph-with-args", project="graphs")
     assert result.capture == (
         "Poe => poe_test_echo here we go...\n"
         "Poe => :\n"
@@ -12,8 +12,8 @@ def test_call_attr_func(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_uses_dry_run(run_poe_subproc):
-    result = run_poe_subproc("-d", "deep-graph-with-args", project="graphs")
+def test_uses_dry_run(run_poe):
+    result = run_poe("-d", "deep-graph-with-args", project="graphs")
     assert result.capture == (
         "Poe => poe_test_echo here we go...\n"
         "Poe => :\n"
@@ -27,8 +27,8 @@ def test_uses_dry_run(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_task_graph_in_sequence(run_poe_subproc):
-    result = run_poe_subproc("ab", project="graphs")
+def test_task_graph_in_sequence(run_poe):
+    result = run_poe("ab", project="graphs")
     assert result.capture == (
         "Poe <= echo A1\n"
         "Poe <= echo A2\n"
@@ -39,9 +39,9 @@ def test_task_graph_in_sequence(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_uses_private_var_filtered_from_subprocess(run_poe_subproc, is_windows):
+def test_uses_private_var_filtered_from_subprocess(run_poe, is_windows):
     """Private vars introduced via uses stay private in downstream subprocess envs"""
-    result = run_poe_subproc("uses_private_env", project="graphs")
+    result = run_poe("uses_private_env", project="graphs")
     assert result.capture == (
         "Poe <= poe_test_echo hidden\n"
         "Poe <= poe_test_echo VISIBLE\n"
@@ -56,9 +56,9 @@ def test_uses_private_var_filtered_from_subprocess(run_poe_subproc, is_windows):
     assert result.stderr == ""
 
 
-def test_uses_private_var_accessible_in_template(run_poe_subproc):
+def test_uses_private_var_accessible_in_template(run_poe):
     """Private vars introduced via uses are still available for template resolution"""
-    result = run_poe_subproc("uses_private_template", project="graphs")
+    result = run_poe("uses_private_template", project="graphs")
     assert result.capture == (
         "Poe <= poe_test_echo hidden\n"
         "Poe <= poe_test_echo VISIBLE\n"
@@ -69,9 +69,9 @@ def test_uses_private_var_accessible_in_template(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_uses_private_var_inherited_and_filtered(run_poe_subproc, is_windows):
+def test_uses_private_var_inherited_and_filtered(run_poe, is_windows):
     """Private vars introduced via uses stay private when inherited by subtasks"""
-    result = run_poe_subproc("uses_private_inherited", project="graphs")
+    result = run_poe("uses_private_inherited", project="graphs")
     assert result.capture == (
         "Poe <= poe_test_echo hidden\n"
         "Poe <= poe_test_echo VISIBLE\n"
@@ -86,9 +86,9 @@ def test_uses_private_var_inherited_and_filtered(run_poe_subproc, is_windows):
     assert result.stderr == ""
 
 
-def test_uses_private_var_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
+def test_uses_private_var_inherited_can_be_remapped_public(run_poe, is_windows):
     """A child task can alias inherited private uses vars to public env vars via env"""
-    result = run_poe_subproc("uses_private_remapped", project="graphs")
+    result = run_poe("uses_private_remapped", project="graphs")
     assert result.capture == ("Poe <= poe_test_echo hidden\n" "Poe => poe_test_env\n")
     stdout_lower = result.stdout.lower()
     if not is_windows:

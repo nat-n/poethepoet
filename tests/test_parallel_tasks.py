@@ -36,8 +36,8 @@ def test_parallel_task_parallelism(run_poe_subproc, delay_factor):
 
 
 @pytest.mark.flaky(reruns=3, reruns_delay=1)
-def test_parallel_task_with_redirected_outputs(run_poe_subproc, tests_temp_dir):
-    result = run_poe_subproc("parallel_with_stdout_capture", project="parallel")
+def test_parallel_task_with_redirected_outputs(run_poe, tests_temp_dir):
+    result = run_poe("parallel_with_stdout_capture", project="parallel")
 
     assert result.capture_lines == [
         "Poe => poe_test_echo '1 going to stdout 1'",
@@ -531,23 +531,23 @@ def test_parallel_ignore_but_propagate_failures(
     assert result.code == 0
 
 
-def test_parallel_bool_flag(run_poe_subproc):
+def test_parallel_bool_flag(run_poe):
     """Parallel task: both cmd and expr subtasks see boolean args from parent"""
-    result = run_poe_subproc("bool_parallel", "--flag", project="parallel")
+    result = run_poe("bool_parallel", "--flag", project="parallel")
     assert "cmd:True:True" in result.stdout
     assert "{'flag': True, 'val': True}" in result.stdout
 
 
-def test_parallel_bool_defaults(run_poe_subproc):
+def test_parallel_bool_defaults(run_poe):
     """Parallel task: False boolean arg is unset in cmd, typed False in expr"""
-    result = run_poe_subproc("bool_parallel", project="parallel")
+    result = run_poe("bool_parallel", project="parallel")
     assert "cmd:unset:True" in result.stdout
     assert "{'flag': False, 'val': True}" in result.stdout
 
 
-def test_parallel_bool_negate(run_poe_subproc):
+def test_parallel_bool_negate(run_poe):
     """Parallel task: negating true-default boolean produces unset/False"""
-    result = run_poe_subproc("bool_parallel", "--val", project="parallel")
+    result = run_poe("bool_parallel", "--val", project="parallel")
     assert "cmd:unset:unset" in result.stdout
     assert "{'flag': False, 'val': False}" in result.stdout
 

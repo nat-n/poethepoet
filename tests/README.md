@@ -1,6 +1,6 @@
 # Poe the Poet Tests
 
-Good test coverage is critical for poethepoet. This readme describes the patterns and conventions we use.
+Good test coverage is critical for poethepoet. This README describes the patterns and conventions we use.
 
 Tests are normally run via `poe test`, which accepts extra arguments for pytest. For example to run a specific test with increased verbosity:
 
@@ -55,17 +55,17 @@ tests/
 
 - Files that define tests are named like `test_*.py`
 - Given the functional focus, tests are primarily organised by domain rather than type
-- Some domains are organised into a subdirectories with their own `conftest.py`
+- Some domains are organised into subdirectories with their own `conftest.py`
 
 ## Fixtures
 
-- Sample projects are collected under `tests/fixtures` and named with a `_project` suffix, the `projects` pytest fixture registers these by convention, and is used by `poe_run` etc
+- Sample projects are collected under `tests/fixtures` and named with a `_project` suffix, the `projects` pytest fixture registers these by convention, and is used by `run_poe` etc
 - Task files can also be dynamically generated using the temp_pyproject generator
 - `tests/fixtures/packages` contains python packages for use in tests
 - Most fixtures are kept in `tests/conftest.py`, unless they are specialised to testing only one area
 - Fixture projects should be kept scoped to a single domain of functionality to test; prefer adding a new fixture project over expanding an unrelated one.
-- The `run_poe` fixture should be prefered for new functional tests for performance reasons, unless there is some aspect of the test that benefits from running the poe cli in its own project, in which case `run_poe_subproc` must be used. Running poe in a subprocess offers better isolation, and CLI semantics. `run_poe_main` may also be used to exercis the cli entrypoint within the current project.
-- If a test requires creating an isolated venv then `use_venv`, `use_virtualenv`, `with_virtualenv_and_venv` can be used. These fixtures are slow so should be used sparingly.
+- The `run_poe` fixture should be preferred for new functional tests for performance reasons, unless there is some aspect of the test that benefits from running the poe cli in its own project, in which case `run_poe_subproc` must be used. Running poe in a subprocess offers better isolation, and CLI semantics. `run_poe_main` may also be used to exercise the cli entrypoint within the current project.
+- If a test requires creating an isolated venv then `use_venv` can be used. This fixture is slow so should be used sparingly.
 
 ## Debugging zsh completion
 
@@ -98,9 +98,9 @@ The following pytest marks are used systematically:
 
 - `@pytest.mark.slow`: is applied to tests that usually take more than a couple of seconds, such as tests that require setting up a venv
 - `@pytest.mark.flaky`: is used to mark tests that are prone to race conditions, so may need to be retried
-- `@pytest.mark.skipif`: is used if a test is not expected to be able to run in all environments, such as if it requires a certain an undeclared external dependency from the host
+- `@pytest.mark.skipif`: is used if a test is not expected to be able to run in all environments, such as if it requires a certain undeclared external dependency from the host
 
-Some other pytest marks are also used in the standard way, such as `parameterize`, `usefixtures`, or `asyncio`
+Some other pytest marks are also used in the standard way, such as `parametrize`, `usefixtures`, or `asyncio`
 
 ## Debugging the poetry extension
 

@@ -1,8 +1,8 @@
 import pytest
 
 
-def test_sequence_task(run_poe_subproc, esc_prefix):
-    result = run_poe_subproc("composite_task", project="sequences")
+def test_sequence_task(run_poe, esc_prefix):
+    result = run_poe("composite_task", project="sequences")
     assert result.capture == (
         "Poe => poe_test_echo Hello\n"
         "Poe => poe_test_echo 'World!'\n"
@@ -47,9 +47,9 @@ def test_list_inside_sequence_is_parallel(run_poe_subproc, esc_prefix, delay_fac
     assert result.stderr == ""
 
 
-def test_a_script_sequence_task_with_args(run_poe_subproc, esc_prefix):
+def test_a_script_sequence_task_with_args(run_poe, esc_prefix):
     # This should be exactly the same as calling the composite_task task directly
-    result = run_poe_subproc("greet-multiple", "--mouse=Jerry", project="sequences")
+    result = run_poe("greet-multiple", "--mouse=Jerry", project="sequences")
     assert result.capture == (
         """Poe => 'my_package:main(environ.get('"'"'cat'"'"'))'\n"""
         """Poe => 'my_package:main(environ['"'"'mouse'"'"'])'\n"""
@@ -58,10 +58,8 @@ def test_a_script_sequence_task_with_args(run_poe_subproc, esc_prefix):
     assert result.stderr == ""
 
 
-def test_sequence_task_with_multiple_value_arg(run_poe_subproc):
-    result = run_poe_subproc(
-        "multiple-value-arg", "hey", "1", "2", "3", project="sequences"
-    )
+def test_sequence_task_with_multiple_value_arg(run_poe):
+    result = run_poe("multiple-value-arg", "hey", "1", "2", "3", project="sequences")
     assert result.capture == (
         "Poe => poe_test_echo first: hey\nPoe => poe_test_echo second: '1 2 3'\n"
         "Poe => poe_test_echo Done.\n"
@@ -70,8 +68,8 @@ def test_sequence_task_with_multiple_value_arg(run_poe_subproc):
     assert result.stderr == ""
 
 
-def test_subtasks_inherit_cwd_option_as_default(run_poe_subproc, is_windows):
-    result = run_poe_subproc("all_cwd", project="sequences")
+def test_subtasks_inherit_cwd_option_as_default(run_poe, is_windows):
+    result = run_poe("all_cwd", project="sequences")
     assert result.capture == (
         "Poe => os.getcwd()\n"
         "Poe => os.getcwd()\n"
@@ -99,8 +97,8 @@ def test_subtasks_inherit_cwd_option_as_default(run_poe_subproc, is_windows):
     assert result.stderr == ""
 
 
-def test_sequences_boolean_flag(run_poe_subproc):
-    result = run_poe_subproc(
+def test_sequences_boolean_flag(run_poe):
+    result = run_poe(
         "booleans",
         "--non",
         "--tru",
@@ -139,8 +137,8 @@ ${txt}= ${txt:+plus}= ${txt:-minus}=minus
     )
 
 
-def test_sequences_boolean_flag_default_value(run_poe_subproc):
-    result = run_poe_subproc("booleans", project="sequences")
+def test_sequences_boolean_flag_default_value(run_poe):
+    result = run_poe("booleans", project="sequences")
     assert result.capture == (
         r"""Poe => poe_test_echo '
 ${non}=' '${non:+plus}=' '${non:-minus}=minus
@@ -172,36 +170,36 @@ ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
     )
 
 
-def test_private_env_inherited_and_filtered(run_poe_subproc, is_windows):
+def test_private_env_inherited_and_filtered(run_poe, is_windows):
     """Private vars remain private when inherited by subtasks in a sequence"""
-    result = run_poe_subproc("private_inherited", project="sequences")
+    result = run_poe("private_inherited", project="sequences")
     stdout_lower = result.stdout.lower()
     if not is_windows:
         assert "_secret=hidden" not in result.stdout
     assert "normal=visible" in stdout_lower
 
 
-def test_private_env_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
+def test_private_env_inherited_can_be_remapped_public(run_poe, is_windows):
     """A child task can alias inherited private env vars to public names via env"""
-    result = run_poe_subproc("private_env_remapped", project="sequences")
+    result = run_poe("private_env_remapped", project="sequences")
     stdout_lower = result.stdout.lower()
     if not is_windows:
         assert "_secret=hidden" not in result.stdout
     assert "public=hidden" in stdout_lower
 
 
-def test_private_arg_inherited_and_filtered(run_poe_subproc, is_windows):
+def test_private_arg_inherited_and_filtered(run_poe, is_windows):
     """Private args inherited by a child stay hidden from the subprocess env"""
-    result = run_poe_subproc("private_arg_inherited", project="sequences")
+    result = run_poe("private_arg_inherited", project="sequences")
     stdout_lower = result.stdout.lower()
     if not is_windows:
         assert "_secret=hidden" not in result.stdout
     assert "public=visible" in stdout_lower
 
 
-def test_private_arg_inherited_can_be_remapped_public(run_poe_subproc, is_windows):
+def test_private_arg_inherited_can_be_remapped_public(run_poe, is_windows):
     """A child task can alias inherited private args to public env vars via env"""
-    result = run_poe_subproc("private_arg_remapped", project="sequences")
+    result = run_poe("private_arg_remapped", project="sequences")
     stdout_lower = result.stdout.lower()
     if not is_windows:
         assert "_secret=hidden" not in result.stdout

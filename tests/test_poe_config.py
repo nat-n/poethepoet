@@ -20,8 +20,8 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
     result.assert_no_err()
 
 
-def test_setting_default_array_item_task_type(run_poe_subproc):
-    result = run_poe_subproc(
+def test_setting_default_array_item_task_type(run_poe):
+    result = run_poe(
         "composite_task", project="scripts", env={"POETRY_VIRTUALENVS_CREATE": "false"}
     )
     assert (
@@ -31,8 +31,8 @@ def test_setting_default_array_item_task_type(run_poe_subproc):
     result.assert_no_err()
 
 
-def test_setting_global_env_vars(run_poe_subproc):
-    result = run_poe_subproc("travel", env=poetry_vars)
+def test_setting_global_env_vars(run_poe):
+    result = run_poe("travel", env=poetry_vars)
     assert (
         result.capture == "Poe => poe_test_echo 'from EARTH to'\nPoe => 'travel[1]'\n"
     )
@@ -40,8 +40,8 @@ def test_setting_global_env_vars(run_poe_subproc):
     result.assert_no_err()
 
 
-def test_setting_default_verbosity(run_poe_subproc, low_verbosity_project_path):
-    result = run_poe_subproc(
+def test_setting_default_verbosity(run_poe, low_verbosity_project_path):
+    result = run_poe(
         "test",
         cwd=low_verbosity_project_path,
     )
@@ -50,8 +50,8 @@ def test_setting_default_verbosity(run_poe_subproc, low_verbosity_project_path):
     result.assert_no_err()
 
 
-def test_override_default_verbosity(run_poe_subproc, low_verbosity_project_path):
-    result = run_poe_subproc(
+def test_override_default_verbosity(run_poe, low_verbosity_project_path):
+    result = run_poe(
         "-v",
         "-v",
         "test",
@@ -62,8 +62,8 @@ def test_override_default_verbosity(run_poe_subproc, low_verbosity_project_path)
     result.assert_no_err()
 
 
-def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_path):
-    result = run_poe_subproc(
+def test_partially_decrease_verbosity(run_poe, high_verbosity_project_path):
+    result = run_poe(
         "-q",
         "test",
         cwd=high_verbosity_project_path,
@@ -73,8 +73,8 @@ def test_partially_decrease_verbosity(run_poe_subproc, high_verbosity_project_pa
     result.assert_no_err()
 
 
-def test_decrease_verbosity(run_poe_subproc):
-    result = run_poe_subproc("-q", "part1", env=poetry_vars)
+def test_decrease_verbosity(run_poe):
+    result = run_poe("-q", "part1", env=poetry_vars)
     assert result.capture == ""
     assert result.stdout == "Hello\n"
     result.assert_no_err()

@@ -57,90 +57,90 @@ def generate_pyproject(temp_pyproject):
     return generator
 
 
-def test_task_vs_project_verbosity(generate_pyproject, run_poe_subproc):
+def test_task_vs_project_verbosity(generate_pyproject, run_poe):
     # with override down
     project_path = generate_pyproject(project_verbosity=0, task_verbosity=-1)
-    result = run_poe_subproc("default_task", cwd=project_path)
+    result = run_poe("default_task", cwd=project_path)
     assert (
         result.capture
         == "Poe => poe_test_echo 'cmd task inheriting default verbosity 0 0'\n"
     )
     assert result.stdout == "cmd task inheriting default verbosity 0 0\n"
 
-    result = run_poe_subproc("override_task", cwd=project_path)
+    result = run_poe("override_task", cwd=project_path)
     assert result.capture == ""
     assert result.stdout == "cmd task with verbosity -1 -1\n"
 
     # # with override up
     project_path = generate_pyproject(project_verbosity=-1, task_verbosity=0)
-    result = run_poe_subproc("default_task", cwd=project_path)
+    result = run_poe("default_task", cwd=project_path)
     assert result.capture == ""
     assert result.stdout == "cmd task inheriting default verbosity -1 -1\n"
 
-    result = run_poe_subproc("override_task", cwd=project_path)
+    result = run_poe("override_task", cwd=project_path)
     assert result.capture == "Poe => poe_test_echo 'cmd task with verbosity 0 0'\n"
     assert result.stdout == "cmd task with verbosity 0 0\n"
 
 
-def test_override_verbosity_with_cli(generate_pyproject, run_poe_subproc):
+def test_override_verbosity_with_cli(generate_pyproject, run_poe):
     # with override up
     project_path = generate_pyproject(project_verbosity=-1, task_verbosity=-2)
-    result = run_poe_subproc("-v", "default_task", cwd=project_path)
+    result = run_poe("-v", "default_task", cwd=project_path)
     assert (
         result.capture
         == "Poe => poe_test_echo 'cmd task inheriting default verbosity -1 0'\n"
     )
     assert result.stdout == "cmd task inheriting default verbosity -1 0\n"
 
-    result = run_poe_subproc("-v", "override_task", cwd=project_path)
+    result = run_poe("-v", "override_task", cwd=project_path)
     assert result.capture == ""
     assert result.stdout == "cmd task with verbosity -2 -1\n"
 
-    result = run_poe_subproc("-vv", "default_task", cwd=project_path)
+    result = run_poe("-vv", "default_task", cwd=project_path)
     assert (
         result.capture
         == "Poe => poe_test_echo 'cmd task inheriting default verbosity -1 1'\n"
     )
     assert result.stdout == "cmd task inheriting default verbosity -1 1\n"
 
-    result = run_poe_subproc("-vv", "override_task", cwd=project_path)
+    result = run_poe("-vv", "override_task", cwd=project_path)
     assert result.capture == "Poe => poe_test_echo 'cmd task with verbosity -2 0'\n"
     assert result.stdout == "cmd task with verbosity -2 0\n"
 
-    result = run_poe_subproc("-vvv", "override_task", cwd=project_path)
+    result = run_poe("-vvv", "override_task", cwd=project_path)
     assert result.capture == "Poe => poe_test_echo 'cmd task with verbosity -2 1'\n"
     assert result.stdout == "cmd task with verbosity -2 1\n"
 
     # with override down
     project_path = generate_pyproject(project_verbosity=1, task_verbosity=2)
 
-    result = run_poe_subproc("-q", "default_task", cwd=project_path)
+    result = run_poe("-q", "default_task", cwd=project_path)
     assert (
         result.capture
         == "Poe => poe_test_echo 'cmd task inheriting default verbosity 1 0'\n"
     )
     assert result.stdout == "cmd task inheriting default verbosity 1 0\n"
 
-    result = run_poe_subproc("-q", "override_task", cwd=project_path)
+    result = run_poe("-q", "override_task", cwd=project_path)
     assert result.capture == "Poe => poe_test_echo 'cmd task with verbosity 2 1'\n"
     assert result.stdout == "cmd task with verbosity 2 1\n"
 
-    result = run_poe_subproc("-qq", "default_task", cwd=project_path)
+    result = run_poe("-qq", "default_task", cwd=project_path)
     assert result.capture == ""
     assert result.stdout == "cmd task inheriting default verbosity 1 -1\n"
 
-    result = run_poe_subproc("-qq", "override_task", cwd=project_path)
+    result = run_poe("-qq", "override_task", cwd=project_path)
     assert result.capture == "Poe => poe_test_echo 'cmd task with verbosity 2 0'\n"
     assert result.stdout == "cmd task with verbosity 2 0\n"
 
-    result = run_poe_subproc("-qqq", "override_task", cwd=project_path)
+    result = run_poe("-qqq", "override_task", cwd=project_path)
     assert result.capture == ""
     assert result.stdout == "cmd task with verbosity 2 -1\n"
 
 
-def test_sequence_task_with_verbosity(generate_pyproject, run_poe_subproc):
+def test_sequence_task_with_verbosity(generate_pyproject, run_poe):
     project_path = generate_pyproject()
-    result = run_poe_subproc("seq_task", cwd=project_path)
+    result = run_poe("seq_task", cwd=project_path)
     assert result.capture == (
         "Poe => poe_test_echo 'cmd task inheriting default verbosity 0 0'\n"
         "Poe => poe_test_echo inline_task 0 0\n"
@@ -157,7 +157,7 @@ def test_sequence_task_with_verbosity(generate_pyproject, run_poe_subproc):
     )
 
     project_path = generate_pyproject(project_verbosity=-1)
-    result = run_poe_subproc("seq_task", cwd=project_path)
+    result = run_poe("seq_task", cwd=project_path)
     assert result.capture == (
         "Poe => poe_test_echo 'cmd task inheriting default verbosity -1 0'\n"
         "Poe => poe_test_echo inline_task 0 0\n"
@@ -174,15 +174,15 @@ def test_sequence_task_with_verbosity(generate_pyproject, run_poe_subproc):
     )
 
 
-def test_switch_task_with_verbosity(generate_pyproject, run_poe_subproc):
+def test_switch_task_with_verbosity(generate_pyproject, run_poe):
     project_path = generate_pyproject()
-    result = run_poe_subproc("switch_task", cwd=project_path)
+    result = run_poe("switch_task", cwd=project_path)
     assert result.capture == (
         "Poe <= poe_test_echo\nPoe => poe_test_echo 'default verbosity'\n"
     )
     assert result.stdout == "default verbosity\n"
 
-    result = run_poe_subproc(
+    result = run_poe(
         "switch_task", "--control_option=override_verbosity_up", cwd=project_path
     )
     assert result.capture == (
@@ -191,13 +191,13 @@ def test_switch_task_with_verbosity(generate_pyproject, run_poe_subproc):
     )
     assert result.stdout == "task verbosity up\n"
 
-    result = run_poe_subproc(
+    result = run_poe(
         "switch_task", "--control_option=override_verbosity_down", cwd=project_path
     )
     assert result.capture == ("Poe <= poe_test_echo override_verbosity_down\n")
     assert result.stdout == "task verbosity down\n"
 
-    result = run_poe_subproc(
+    result = run_poe(
         "-qqq",
         "switch_task",
         "--control_option=override_verbosity_up",

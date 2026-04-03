@@ -167,10 +167,10 @@ def _assert_uv_options_present(lines):
             )
 
 
-def test_uv_executor_passes_uv_run_options(run_poe_subproc, mock_uv_path):
+def test_uv_executor_passes_uv_run_options(run_poe, mock_uv_path):
     env = {"PATH": f"{mock_uv_path}{os.pathsep}{os.environ.get('PATH', '')}"}
 
-    result = run_poe_subproc("test-uv-run-options", project="uv", env=env)
+    result = run_poe("test-uv-run-options", project="uv", env=env)
 
     assert result.code == 0
     raw_lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
@@ -185,11 +185,11 @@ def test_uv_executor_passes_uv_run_options(run_poe_subproc, mock_uv_path):
     [("--executor", "--executor-opt"), ("-e", "-X")],
 )
 def test_uv_executor_passes_uv_run_options_from_cli(
-    run_poe_subproc, mock_uv_path, executor_flag, executor_opt_flag
+    run_poe, mock_uv_path, executor_flag, executor_opt_flag
 ):
     env = {"PATH": f"{mock_uv_path}{os.pathsep}{os.environ.get('PATH', '')}"}
 
-    result = run_poe_subproc(
+    result = run_poe(
         executor_flag,
         "uv",
         executor_opt_flag,
