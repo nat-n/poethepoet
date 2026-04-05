@@ -1,0 +1,5 @@
+[tool.poe]
+include = ["../deep_cycle/chain_b.toml"]
+
+[tool.poe.tasks]
+deep_c_task = "poe_test_echo deep_c"

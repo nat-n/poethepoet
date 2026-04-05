@@ -43,9 +43,10 @@ IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
 class IncludeItem(TypedDict):
     path: str
     cwd: str
+    recursive: bool
 
 
-IncludeItem.__optional_keys__ = frozenset({"cwd"})
+IncludeItem.__optional_keys__ = frozenset({"cwd", "recursive"})
 
 
 @option_annotation
@@ -222,36 +223,7 @@ class ProjectConfig(ConfigPartition):
                     if isinstance(group_def.get("executor"), str):
                         group_def["executor"] = {"type": group_def["executor"]}
 
-            # Normalize include option:
-            # > Union[str, Sequence[str], Mapping[str, str]] => list[dict]
-            if includes := config.get("include"):
-                if isinstance(includes, dict | str):
-                    includes = [includes]
-                if isinstance(includes, list):
-                    config["include"] = [
-                        {"path": item} if isinstance(item, str) else item
-                        for item in includes
-                    ]
-
-            # Normalize include_script option:
-            # > Union[str, Sequence[str], Sequence[IncludeScriptItem]]
-            #       => list[IncludeScriptItem]
-            if include_script := config.get("include_script"):
-                config["include_script"] = []
-                if not isinstance(include_script, list):
-                    include_script = [include_script]
-                for item in include_script:
-                    if isinstance(item, str):
-                        config["include_script"].append({"script": item})
-                    elif isinstance(executor_config := item.get("executor"), str):
-                        config["include_script"].append(
-                            {
-                                "script": item["script"],
-                                "executor": {"type": executor_config},
-                            }
-                        )
-                    else:
-                        config["include_script"].append(item)
+            config = _normalize_included_config_path(config)
 
             yield config
 
@@ -360,15 +332,35 @@ class IncludedConfig(ConfigPartition):
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         tasks: Mapping[str, Any] = EmptyDict
         groups: Mapping[str, TaskGroup] = EmptyDict
+        include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        include_script: str | Sequence[str | IncludeScriptItem] = ()
+
+        @classmethod
+        def normalize(
+            cls,
+            source: Mapping[str, Any] | list[Mapping[str, Any]],
+            strict: bool = True,
+        ):
+            if isinstance(source, (list, tuple)):
+                raise ConfigValidationError("Expected single config")
+
+            yield _normalize_included_config_path(dict(source))
 
         def validate(self):
             """
             Validation rules that don't require any extra context go here.
             """
+            from ..executor import PoeExecutor
+
             super().validate()
 
             # Apply same validation to env option as for the main config
             ProjectConfig.ConfigOptions.validate_env(self.env)
+
+            # Validate include_script executor configs
+            for include_script in self.include_script:
+                if executor := include_script.get("executor"):
+                    PoeExecutor.validate_config(executor)
 
 
 class PackagedConfig(ConfigPartition):
@@ -390,3 +382,38 @@ class PackagedConfig(ConfigPartition):
 
             # Apply same validation to env option as for the main config
             ProjectConfig.ConfigOptions.validate_env(self.env)
+
+
+def _normalize_included_config_path(config: dict) -> dict:
+    """
+    Normalize include and include_script options if set:
+    > include: Union[str, Sequence[str], Mapping[str, str]] => list[dict]
+    > include_script: Union[str, Sequence[str], Sequence[IncludeScriptItem]]
+          => list[IncludeScriptItem]
+    """
+
+    if includes := config.get("include"):
+        if isinstance(includes, dict | str):
+            includes = [includes]
+        if isinstance(includes, list):
+            config["include"] = [
+                {"path": item} if isinstance(item, str) else item for item in includes
+            ]
+
+    if include_script := config.get("include_script"):
+        config["include_script"] = []
+        if not isinstance(include_script, list):
+            include_script = [include_script]
+        for item in include_script:
+            if isinstance(item, str):
+                config["include_script"].append({"script": item})
+            elif isinstance(executor_config := item.get("executor"), str):
+                config["include_script"].append(
+                    {
+                        "script": item["script"],
+                        "executor": {"type": executor_config},
+                    }
+                )
+            else:
+                config["include_script"].append(item)
+    return config

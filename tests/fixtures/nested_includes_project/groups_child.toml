@@ -1,0 +1,8 @@
+[tool.poe.groups.build]
+heading = "Build Tasks"
+
+[tool.poe.groups.build.tasks.package_task]
+cmd = "poe_test_echo packaging"
+
+[tool.poe.tasks.child_ungrouped]
+cmd = "poe_test_echo child_ungrouped"

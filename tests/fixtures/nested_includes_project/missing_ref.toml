@@ -1,0 +1,5 @@
+[tool.poe]
+include = ["does_not_exist.toml"]
+
+[tool.poe.tasks]
+surviving_task = "poe_test_echo survived"

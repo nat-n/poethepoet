@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -209,7 +210,11 @@ class PoeConfig:
                 self._project_dir = config_file.path.parent
 
                 config_content = config_file.load()
-                assert config_content
+                if not config_content:
+                    raise ConfigValidationError(
+                        f"Config file at {config_file.path} is empty or invalid",
+                        filename=str(config_file.path),
+                    ) from config_file.error
 
                 try:
                     self._project_config = ProjectConfig(
@@ -241,182 +246,240 @@ class PoeConfig:
                     f"No poe configuration found from location {self._project_dir}"
                 )
 
-        self._load_includes(strict=strict)
+        await self._load_includes(strict=strict)
         await self._load_packages(strict=strict)
 
     async def _load_packages(self, strict: bool = True):
         if not self._project_config.options.include_script:
             return
+        for include_script in self._project_config.options.include_script:
+            await self._load_include_script(include_script, strict=strict)
 
-        import json
-
+    async def _load_include_script(self, include_script: dict, strict: bool = True):
         from ..helpers.script import parse_script_reference
 
-        def handle_error(msg: str, error: Exception | None = None):
-            if strict:
-                if error:
-                    raise PoeException(msg) from error
-                else:
-                    raise PoeException(msg)
-            elif self._io:
-                self._io.print_debug(f" ! {msg}")
+        # Attempt to load tasks from the include_script
+        try:
+            target_module, function_call = parse_script_reference(
+                include_script["script"], allowed_vars={"os", "sys", "environ"}
+            )
+        except ExpressionParseError as error:
+            raise PoeException("Invalid configuration for include_script") from error
 
-        # Attempt to load tasks from each of the include_script
-        for include_script in self._project_config.options.include_script:
+        invocation = ("$include_script$", include_script["script"])
+
+        if invocation not in self._packaged_config_cache:
+            from ..context import InitializationContext
+            from ..env.task_env import TaskEnv
+            from ..io import PoeIO
+
+            context = InitializationContext(config=self)
+            env = TaskEnv.create(config=self, base_env=environ)
+            executor = context.get_executor(
+                invocation=invocation,
+                env=env,
+                working_dir=self._project_dir,
+                executor_config=include_script.get("executor"),
+                capture_stdout=True,
+                resolve_python=True,
+                io=PoeIO(parent=self._io, verbosity_offset=-1),
+            )
+
+            script = (
+                "import os,sys,json;"
+                "environ=os.environ;"
+                "from importlib import import_module as _i;"
+                f"sys.path.append('src');"
+                "_o=sys.stdout;sys.stdout=sys.stderr;"
+                f"_m = _i('{target_module}');"
+                "sys.stdout=_o;"
+                f"print(json.dumps(_m.{function_call.expression}));"
+            )
             try:
-                target_module, function_call = parse_script_reference(
-                    include_script["script"], allowed_vars={"os", "sys", "environ"}
-                )
-            except ExpressionParseError as error:
-                raise PoeException(
-                    "Invalid configuration for include_script"
-                ) from error
-
-            invocation = ("$include_script$", include_script["script"])
-
-            if invocation not in self._packaged_config_cache:
-                from ..context import InitializationContext
-                from ..env.task_env import TaskEnv
-                from ..io import PoeIO
-
-                context = InitializationContext(config=self)
-                env = TaskEnv.create(config=self, base_env=environ)
-                executor = context.get_executor(
-                    invocation=invocation,
-                    env=env,
-                    working_dir=self._project_dir,
-                    executor_config=include_script.get("executor"),
-                    capture_stdout=True,
-                    resolve_python=True,
-                    io=PoeIO(parent=self._io, verbosity_offset=-1),
-                )
-
-                script = (
-                    "import os,sys,json;"
-                    "environ=os.environ;"
-                    "from importlib import import_module as _i;"
-                    f"sys.path.append('src');"
-                    "_o=sys.stdout;sys.stdout=sys.stderr;"
-                    f"_m = _i('{target_module}');"
-                    "sys.stdout=_o;"
-                    f"print(json.dumps(_m.{function_call.expression}));"
-                )
-                try:
-                    if self._io:
-                        self._io.print_debug(
-                            f" . Executing script for include_script {script!r}"
-                        )
-                    subproc = await executor.execute(("python", "-c", script))
-                    await subproc.wait()
-                except Exception as error:
-                    handle_error(
-                        "subprocess execution failed for configured include_script"
-                        f" {include_script['script']!r}",
-                        error,
+                if self._io:
+                    self._io.print_debug(
+                        f" . Executing script for include_script {script!r}"
                     )
-                    continue
+                subproc = await executor.execute(("python", "-c", script))
+                await subproc.wait()
+            except Exception as error:
+                self._handle_error(
+                    "subprocess execution failed for configured include_script"
+                    f" {include_script['script']!r}",
+                    error,
+                    strict=strict,
+                )
+                return
 
-                if subproc.returncode != 0:
-                    handle_error(
-                        "include_script subprocess returned non-zero for "
-                        f" {include_script['script']!r}",
-                    )
-                    continue
+            if subproc.returncode != 0:
+                self._handle_error(
+                    "include_script subprocess returned non-zero for "
+                    f" {include_script['script']!r}",
+                    strict=strict,
+                )
+                return
 
-                # TODO: get the actual output from the subprocess directly?
-                script_result = context.get_task_output(invocation)
-
-                try:
-                    parsed_result = json.loads(script_result)
-                    if isinstance(parsed_result, str):
-                        parsed_result = json.loads(parsed_result)
-                    self._packaged_config_cache[invocation] = parsed_result
-                except json.decoder.JSONDecodeError as error:
-                    handle_error(
-                        "Return value from include_script script must be valid json",
-                        error,
-                    )
-                    continue
+            # TODO: get the actual output from the subprocess directly?
+            script_result = context.get_task_output(invocation)
 
             try:
-                config_json = dict(self._packaged_config_cache[invocation])
-                config_path = Path(
-                    config_json.pop("config_path", self._project_config.path)
+                parsed_result = json.loads(script_result)
+                if isinstance(parsed_result, str):
+                    parsed_result = json.loads(parsed_result)
+                self._packaged_config_cache[invocation] = parsed_result
+            except json.decoder.JSONDecodeError as error:
+                self._handle_error(
+                    "Return value from include_script script must be valid json",
+                    error,
+                    strict=strict,
                 )
-                if config_json.get("tool", {}).get("poe"):
-                    pass
-                elif tool_poe := config_json.get("tool.poe"):
-                    config_json = {"tool": {"poe": tool_poe}}
-                else:
-                    config_json = {"tool": {"poe": config_json}}
+                return
 
-                if include_cwd := include_script.get("cwd"):
-                    config_cwd = self._project_dir.joinpath(include_cwd).resolve()
-                else:
-                    config_cwd = None
+        try:
+            config_json = dict(self._packaged_config_cache[invocation])
+            config_path = Path(
+                config_json.pop("config_path", self._project_config.path)
+            )
+            if config_json.get("tool", {}).get("poe"):
+                pass
+            elif tool_poe := config_json.get("tool.poe"):
+                config_json = {"tool": {"poe": tool_poe}}
+            else:
+                config_json = {"tool": {"poe": config_json}}
 
-                self._packaged_config.append(
-                    PackagedConfig(
-                        full_config=config_json,
-                        path=config_path,
-                        project_dir=self._project_dir,
-                        cwd=config_cwd,
-                        strict=strict,
-                    )
+            if include_cwd := include_script.get("cwd"):
+                config_cwd = self._project_dir.joinpath(include_cwd).resolve()
+            else:
+                config_cwd = None
+
+            self._packaged_config.append(
+                PackagedConfig(
+                    full_config=config_json,
+                    path=config_path,
+                    project_dir=self._project_dir,
+                    cwd=config_cwd,
+                    strict=strict,
                 )
-            except (PoeException, KeyError) as error:
-                raise ConfigValidationError(
-                    f"Invalid content in loaded config from {target_module}"
-                ) from error
+            )
+        except (PoeException, KeyError) as error:
+            raise ConfigValidationError(
+                f"Invalid content in loaded config from {target_module}"
+            ) from error
 
-    def _load_includes(self, strict: bool = True):
+    def _handle_error(
+        self, msg: str, error: Exception | None = None, strict: bool = True
+    ):
+        if strict:
+            if error:
+                raise PoeException(msg) from error
+            else:
+                raise PoeException(msg)
+        elif self._io:
+            self._io.print_debug(f" ! {msg}")
+
+    async def _load_includes(self, strict: bool = True):
         # Attempt to load each of the included configs
         for include in self._project_config.options.include:
-            include_path = self.resolve_git_path(include["path"])
+            await self._load_included_config(include, strict=strict)
 
-            if not include_path.exists():
-                if self._io:
-                    self._io.print_warning(
-                        f"Poe could not include file from invalid path {include_path}",
-                        message_verbosity=0,
-                    )
-                continue
-
-            try:
-                config_file = PoeConfigFile(include_path)
-                config_content = config_file.load()
-                assert config_content
-
-                self._included_config.append(
-                    IncludedConfig(
-                        config_content,
-                        path=config_file.path,
-                        project_dir=self._project_dir,
-                        cwd=(
-                            self._project_dir.joinpath(include["cwd"]).resolve()
-                            if include.get("cwd")
-                            else None
-                        ),
-                        strict=strict,
-                    )
+    async def _load_included_config(
+        self,
+        include: dict,
+        strict: bool = True,
+        ancestors: Sequence[Path] = (),
+        source_config_dir: Path | None = None,
+    ):
+        include_path = self.resolve_git_path(
+            include["path"], source_config_dir=source_config_dir
+        )
+        if include_path in ancestors:
+            if self._io:
+                self._io.print_warning(
+                    f"Cyclic include detected for path {include_path}",
+                    message_verbosity=1,
                 )
-                if self._io:
-                    self._io.print_debug(f"  Included config from {include_path}")
-            except (PoeException, KeyError) as error:
-                raise ConfigValidationError(
-                    f"Invalid content in included file from {include_path}",
-                    filename=str(include_path),
-                ) from error
+            return
 
-    def resolve_git_path(self, resource_path: str):
+        if not include_path.exists():
+            if self._io:
+                self._io.print_warning(
+                    f"Poe could not include file from invalid path {include_path}",
+                    message_verbosity=0,
+                )
+            return
+
+        try:
+            config_file = PoeConfigFile(include_path)
+            config_content = config_file.load()
+            if not config_content:
+                raise ConfigValidationError(
+                    f"Included file at {include_path} is empty or invalid",
+                    filename=str(include_path),
+                ) from config_file.error
+
+            included_config = IncludedConfig(
+                config_content,
+                path=config_file.path,
+                project_dir=self._project_dir,
+                cwd=(
+                    # TODO: think about whether source_config_dir here is correct?
+                    (source_config_dir or self._project_dir)
+                    .joinpath(include["cwd"])
+                    .resolve()
+                    if include.get("cwd")
+                    else None
+                ),
+                strict=strict,
+            )
+            self._included_config.append(included_config)
+
+            if self._io:
+                self._io.print_debug(f"  Included config from {include_path}")
+
+            if include.get("recursive", True):
+                if child_includes := included_config.get("include"):
+                    # Recursively load any includes from the included config
+                    # Therefore includes are loaded depth-first
+                    for child_include in child_includes:
+                        await self._load_included_config(
+                            child_include,
+                            strict=strict,
+                            ancestors=(*ancestors, include_path),
+                            source_config_dir=include_path.parent,
+                        )
+
+                if child_include_scripts := included_config.get("include_script"):
+                    for child_include_script in child_include_scripts:
+                        await self._load_include_script(
+                            child_include_script, strict=strict
+                        )
+
+        except (PoeException, KeyError) as error:
+            if isinstance(error, ConfigValidationError) and error.filename:
+                raise error
+            raise ConfigValidationError(
+                f"Invalid content in included file from {include_path}",
+                filename=str(include_path),
+            ) from error
+
+    def resolve_git_path(
+        self, resource_path: str, source_config_dir: Path | None = None
+    ):
         """
         Resolve a path within the project that may contain POE_ROOT, POE_GIT_DIR, or
-        POE_GIT_ROOT variables.
+        POE_GIT_ROOT variables. Relative paths are resolved against source_config_dir if
+        provided, otherwise against the project directory.
         """
 
         from ..env.template import apply_envvars_to_template
 
+        if source_config_dir is None:
+            source_config_dir = self._project_dir
+
         available_vars = {"POE_ROOT": str(self._project_dir)}
+
+        if "${POE_CONF_DIR}" in resource_path:
+            available_vars["POE_CONF_DIR"] = str(source_config_dir)
 
         if "${POE_GIT_DIR}" in resource_path:
             from ..helpers.git import GitRepo
@@ -434,4 +497,4 @@ class PoeConfig:
             resource_path, available_vars, require_braces=True
         )
 
-        return self._project_dir.joinpath(resource_path).resolve()
+        return source_config_dir.joinpath(resource_path).resolve()

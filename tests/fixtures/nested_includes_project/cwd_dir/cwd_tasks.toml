@@ -1,0 +1,8 @@
+[tool.poe]
+envfile = "cwd.env"
+
+[tool.poe.tasks.cwd_confdir_task]
+cmd = "poe_test_echo POE_CONF_DIR=${POE_CONF_DIR}"
+
+[tool.poe.tasks.cwd_env_task]
+cmd = "poe_test_echo CWD_VAR=${CWD_VAR}"

@@ -1,0 +1,5 @@
+[tool.poe]
+include = ["chain_b.toml"]
+
+[tool.poe.tasks]
+deep_root_task = "poe_test_echo deep_root"

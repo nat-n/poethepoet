@@ -1,0 +1,8 @@
+[tool.poe]
+include = ["groups_child.toml"]
+
+[tool.poe.groups.build]
+heading = "Build Tasks"
+
+[tool.poe.groups.build.tasks.compile_task]
+cmd = "poe_test_echo compiling"
