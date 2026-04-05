@@ -1,0 +1,2 @@
+[tool.poe.tasks]
+nr_grandchild_task = "poe_test_echo nr_grandchild"

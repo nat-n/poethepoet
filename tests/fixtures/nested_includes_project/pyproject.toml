@@ -1,0 +1,17 @@
+[tool.poe.env]
+ROOT_ENV = "from_root"
+
+[tool.poe]
+include = [
+  "level_a.toml",
+  "sibling_d.toml",
+  "missing_ref.toml",
+  "with_include_script.toml",
+  "groups_nested.toml",
+  { path = "nonrecursive_child.toml", recursive = false },
+]
+
+[tool.poe.tasks]
+root_task = "poe_test_echo root"
+override_task = "poe_test_echo root_wins"
+check_all_env = "poe_test_echo ROOT=${ROOT_ENV} A=${A_ENV} B=${B_ENV} D=${D_ENV}"

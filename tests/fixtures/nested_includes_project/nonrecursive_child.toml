@@ -1,0 +1,6 @@
+[tool.poe]
+include = ["nonrecursive_grandchild.toml"]
+include_script = [{ script = "tasks_provider:get_tasks", executor = "simple" }]
+
+[tool.poe.tasks]
+nr_child_task = "poe_test_echo nr_child"

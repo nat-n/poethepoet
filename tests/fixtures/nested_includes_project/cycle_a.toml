@@ -1,0 +1,5 @@
+[tool.poe]
+include = ["cycle_b.toml"]
+
+[tool.poe.tasks]
+cycle_a_task = "poe_test_echo cycle_a"

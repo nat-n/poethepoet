@@ -1,0 +1,3 @@
+[tool.poe.tasks]
+shared_task = "poe_test_echo shared"
+dup_task = "poe_test_echo from_shared"

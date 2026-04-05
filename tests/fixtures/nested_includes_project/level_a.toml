@@ -1,0 +1,14 @@
+[tool.poe.env]
+A_ENV = "from_a"
+
+[tool.poe]
+include = [
+  { path = "level_b.toml", recursive = true },
+  "subdir/sub_level.toml",
+  "with_tool_poe.toml",
+  { path = "cwd_dir/cwd_tasks.toml", cwd = "cwd_dir" },
+]
+
+[tool.poe.tasks]
+a_task = "poe_test_echo a"
+override_task = "poe_test_echo a_loses"

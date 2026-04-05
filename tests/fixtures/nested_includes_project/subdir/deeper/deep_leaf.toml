@@ -1,0 +1,6 @@
+[tool.poe]
+envfile = "${POE_CONF_DIR}/deep_leaf.env"
+
+[tool.poe.tasks]
+deep_leaf_task = "poe_test_echo deep_leaf"
+deep_leaf_env_task = "poe_test_echo DEEP_VAL=${DEEP_VAL}"
