@@ -28,7 +28,10 @@ def test_task_from_second_level_include(run_poe):
 
 
 def test_task_from_third_level_include(run_poe):
-    """deep_leaf.toml is three levels deep: root -> level_a -> subdir/sub_level -> deeper/deep_leaf"""
+    """
+    deep_leaf.toml is three levels deep:
+    root -> level_a -> subdir/sub_level -> deeper/deep_leaf
+    """
     result = run_poe("deep_leaf_task", project="nested_includes")
     assert "Poe => poe_test_echo deep_leaf" in result.capture
     assert result.stdout == "deep_leaf\n"
@@ -72,14 +75,20 @@ def test_env_from_all_nesting_levels(run_poe):
 
 
 def test_envfile_with_poe_conf_dir_in_nested_include(run_poe):
-    """deep_leaf.toml uses envfile = '${POE_CONF_DIR}/deep_leaf.env' to load config-relative envfile."""
+    """
+    deep_leaf.toml uses envfile = '${POE_CONF_DIR}/deep_leaf.env'
+    to load config-relative envfile.
+    """
     result = run_poe("deep_leaf_env_task", project="nested_includes")
     assert result.stdout == "DEEP_VAL=from_deep\n"
     assert result.stderr == ""
 
 
 def test_bare_envfile_in_nested_include_resolves_from_project_root(run_poe):
-    """level_b.toml (nested via level_a) uses envfile = 'root_level.env' — resolves from project root."""
+    """
+    level_b.toml (nested via level_a) uses envfile = 'root_level.env'
+    which resolves from project root.
+    """
     result = run_poe("b_root_envfile_task", project="nested_includes")
     assert result.stdout == "ROOT_LEVEL_VAR=from_root_level\n"
     assert result.stderr == ""
@@ -114,7 +123,10 @@ def test_poe_root_in_nested_include(run_poe):
 
 
 def test_cwd_sets_poe_conf_dir(run_poe, is_windows):
-    """cwd_tasks.toml included via level_a with cwd='cwd_dir'. POE_CONF_DIR reflects cwd_dir."""
+    """
+    cwd_tasks.toml included via level_a with cwd='cwd_dir'.
+    POE_CONF_DIR reflects cwd_dir.
+    """
     result = run_poe("cwd_confdir_task", project="nested_includes")
     assert result.code == 0
     separator = "\\" if is_windows else "/"
@@ -122,7 +134,10 @@ def test_cwd_sets_poe_conf_dir(run_poe, is_windows):
 
 
 def test_cwd_envfile_in_nested_include(run_poe):
-    """Envfile 'cwd.env' in nested cwd_tasks.toml (included via level_a with cwd='cwd_dir') resolves relative to cwd."""
+    """
+    Envfile 'cwd.env' in nested cwd_tasks.toml
+    (included via level_a with cwd='cwd_dir') resolves relative to cwd.
+    """
     result = run_poe("cwd_env_task", project="nested_includes")
     assert result.stdout == "CWD_VAR=from_cwd_dir\n"
     assert result.stderr == ""
@@ -151,7 +166,10 @@ def test_direct_cycle_detected(run_poe, projects):
 
 
 def test_deep_cycle_detected(run_poe, projects):
-    """deep_cycle → chain_b → chain_c → deep_cycle/chain_b. Cycle is warned, not fatal."""
+    """
+    deep_cycle -> chain_b -> chain_c -> deep_cycle/chain_b.
+    Cycle is warned, not fatal.
+    """
     deep_cycle_dir = str(projects["nested_includes/deep_cycle"].parent)
     result = run_poe(f"-C={deep_cycle_dir}", "deep_root_task")
     assert result.code == 0
@@ -178,7 +196,10 @@ def test_shared_include_dag(run_poe):
 
 
 def test_first_included_task_wins(run_poe):
-    """dup_task defined in shared.toml and sibling_d.toml; shared.toml is included first (via level_b DFS)."""
+    """
+    dup_task defined in shared.toml and sibling_d.toml;
+    shared.toml is included first (via level_b DFS).
+    """
     result = run_poe("dup_task", project="nested_includes")
     assert result.code == 0
     assert result.stdout == "from_shared\n"
@@ -188,21 +209,14 @@ def test_first_included_task_wins(run_poe):
 
 
 def test_missing_nested_include_warns(run_poe):
-    """missing_ref.toml includes a nonexistent file. Warning is issued, surviving_task works."""
+    """
+    missing_ref.toml includes a nonexistent file.
+    Warning is issued, surviving_task works.
+    """
     result = run_poe("surviving_task", project="nested_includes")
     assert result.code == 0
     assert result.stdout == "survived\n"
     assert "does_not_exist.toml" in result.capture
-
-
-# -- Nested include_script --
-
-
-def test_nested_include_script(run_poe):
-    """with_include_script.toml (itself an included file) uses include_script."""
-    result = run_poe("scripted_task", project="nested_includes")
-    assert "Poe => poe_test_echo scripted" in result.capture
-    assert result.stdout == "scripted\n"
 
 
 # -- tool.poe namespacing --
@@ -238,7 +252,10 @@ def test_groups_in_nested_includes(run_poe):
 
 
 def test_recursive_true_explicit(run_poe):
-    """level_a includes level_b with explicit recursive=true. level_b's children (shared, poe_root_ref) are followed."""
+    """
+    level_a includes level_b with explicit recursive=true.
+    level_b's children (shared, poe_root_ref) are followed.
+    """
     result = run_poe("shared_task", project="nested_includes")
     assert result.code == 0
     assert result.stdout == "shared\n"
@@ -266,14 +283,6 @@ def test_recursive_false_blocks_grandchild(run_poe, projects):
     assert "nr_parent_task" in result.capture
     assert "nr_child_task" in result.capture
     assert "nr_grandchild_task" not in result.capture
-
-
-def test_recursive_false_blocks_include_script(run_poe, projects):
-    """recursive=false also prevents include_script entries from being followed."""
-    result = run_poe(
-        f"-C={projects['nested_includes/nonrecursive_parent']}",
-    )
-    assert "scripted_task" not in result.capture
 
 
 def test_recursive_false_on_root_include(run_poe):

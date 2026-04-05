@@ -6,7 +6,6 @@ include = [
   "level_a.toml",
   "sibling_d.toml",
   "missing_ref.toml",
-  "with_include_script.toml",
   "groups_nested.toml",
   { path = "nonrecursive_child.toml", recursive = false },
 ]

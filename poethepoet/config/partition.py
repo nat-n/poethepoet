@@ -333,7 +333,6 @@ class IncludedConfig(ConfigPartition):
         tasks: Mapping[str, Any] = EmptyDict
         groups: Mapping[str, TaskGroup] = EmptyDict
         include: str | Sequence[str] | Sequence[IncludeItem] = ()
-        include_script: str | Sequence[str | IncludeScriptItem] = ()
 
         @classmethod
         def normalize(
@@ -350,17 +349,10 @@ class IncludedConfig(ConfigPartition):
             """
             Validation rules that don't require any extra context go here.
             """
-            from ..executor import PoeExecutor
-
             super().validate()
 
             # Apply same validation to env option as for the main config
             ProjectConfig.ConfigOptions.validate_env(self.env)
-
-            # Validate include_script executor configs
-            for include_script in self.include_script:
-                if executor := include_script.get("executor"):
-                    PoeExecutor.validate_config(executor)
 
 
 class PackagedConfig(ConfigPartition):
@@ -409,10 +401,7 @@ def _normalize_included_config_path(config: dict) -> dict:
                 config["include_script"].append({"script": item})
             elif isinstance(executor_config := item.get("executor"), str):
                 config["include_script"].append(
-                    {
-                        "script": item["script"],
-                        "executor": {"type": executor_config},
-                    }
+                    {**item, "executor": {"type": executor_config}}
                 )
             else:
                 config["include_script"].append(item)

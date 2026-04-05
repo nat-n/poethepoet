@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -256,6 +255,8 @@ class PoeConfig:
             await self._load_include_script(include_script, strict=strict)
 
     async def _load_include_script(self, include_script: dict, strict: bool = True):
+        import json
+
         from ..helpers.script import parse_script_reference
 
         # Attempt to load tasks from the include_script
@@ -422,10 +423,9 @@ class PoeConfig:
                 path=config_file.path,
                 project_dir=self._project_dir,
                 cwd=(
-                    # TODO: think about whether source_config_dir here is correct?
-                    (source_config_dir or self._project_dir)
-                    .joinpath(include["cwd"])
-                    .resolve()
+                    self.resolve_git_path(
+                        include["cwd"], source_config_dir=source_config_dir
+                    )
                     if include.get("cwd")
                     else None
                 ),
@@ -436,23 +436,18 @@ class PoeConfig:
             if self._io:
                 self._io.print_debug(f"  Included config from {include_path}")
 
-            if include.get("recursive", True):
-                if child_includes := included_config.get("include"):
-                    # Recursively load any includes from the included config
-                    # Therefore includes are loaded depth-first
-                    for child_include in child_includes:
-                        await self._load_included_config(
-                            child_include,
-                            strict=strict,
-                            ancestors=(*ancestors, include_path),
-                            source_config_dir=include_path.parent,
-                        )
-
-                if child_include_scripts := included_config.get("include_script"):
-                    for child_include_script in child_include_scripts:
-                        await self._load_include_script(
-                            child_include_script, strict=strict
-                        )
+            if include.get("recursive", True) and (
+                child_includes := included_config.get("include")
+            ):
+                # Recursively load any includes from the included config
+                # Therefore includes are loaded depth-first
+                for child_include in child_includes:
+                    await self._load_included_config(
+                        child_include,
+                        strict=strict,
+                        ancestors=(*ancestors, include_path),
+                        source_config_dir=include_path.parent,
+                    )
 
         except (PoeException, KeyError) as error:
             if isinstance(error, ConfigValidationError) and error.filename:
