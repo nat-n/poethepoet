@@ -1,0 +1,2 @@
+[tool.poe.tasks]
+poe_root_task = "poe_test_echo poe_root"

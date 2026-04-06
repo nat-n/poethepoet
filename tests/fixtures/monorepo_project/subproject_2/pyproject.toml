@@ -1,5 +1,5 @@
 
-tool.poe.include = ["extra_tasks.toml", { path = "../pyproject.toml" }]
+tool.poe.include = ["extra_tasks.toml", { path = "../pyproject.toml", recursive = false }]
 tool.poe.default_task_type = "expr"
 
 [tool.poe.tasks]

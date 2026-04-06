@@ -1,0 +1,13 @@
+[tool.poe.env]
+B_ENV = "from_b"
+PRECEDENCE_ENV = "from_b"
+SIBLING_PRECEDENCE_ENV = "from_b"
+
+[tool.poe]
+envfile = "root_level.env"
+include = ["shared.toml", "${POE_ROOT}/poe_root_ref.toml"]
+
+[tool.poe.tasks]
+b_task = "poe_test_echo b"
+override_task = "poe_test_echo b_loses"
+b_root_envfile_task = "poe_test_echo ROOT_LEVEL_VAR=${ROOT_LEVEL_VAR}"

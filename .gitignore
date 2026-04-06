@@ -2,6 +2,7 @@ notes/
 tests/temp
 out.txt
 .claude/settings.local.json
+.serena
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

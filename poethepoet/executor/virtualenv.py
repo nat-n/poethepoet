@@ -59,6 +59,8 @@ class VirtualenvExecutor(PoeExecutor):
         project_dir = self.context.config.project_dir
 
         if location := self.options.get("location"):
+            # TODO: make this aware of the source config partition
+            # so POE_CONF_DIR works in included configs
             venv_location = self.context.config.resolve_git_path(location)
             venv = Virtualenv(project_dir.joinpath(venv_location))
             if venv.valid():

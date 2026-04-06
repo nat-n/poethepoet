@@ -1,0 +1,10 @@
+[tool.poe.env]
+D_ENV = "from_d"
+SIBLING_PRECEDENCE_ENV = "from_d"
+
+[tool.poe]
+include = ["shared.toml"]
+
+[tool.poe.tasks]
+d_task = "poe_test_echo d"
+dup_task = "poe_test_echo from_sibling_d"

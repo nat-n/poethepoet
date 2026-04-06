@@ -1,0 +1,7 @@
+[tool.poe]
+include = [
+  { path = "nonrecursive_child.toml", recursive = false },
+]
+
+[tool.poe.tasks]
+nr_parent_task = "poe_test_echo nr_parent"

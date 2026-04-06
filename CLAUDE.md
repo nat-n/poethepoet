@@ -79,6 +79,7 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
 
 - Don't use single character variable names
 - Do use the walrus operator whenever applicable
+- docstrings should start and end with a line with just the `"""`
 - This is a CLI, so be mindful of performance concerns
 - `poe lint` and `poe types` must pass
 - `poe format` should be run to ensure correct formatting

@@ -1,0 +1,2 @@
+[tool.poe.tasks]
+tool_poe_task = "poe_test_echo tool_poe_works"

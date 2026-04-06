@@ -1,0 +1,5 @@
+[tool.poe]
+include = ["deeper/deep_leaf.toml"]
+
+[tool.poe.tasks]
+sub_task = "poe_test_echo sub"
