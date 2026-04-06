@@ -3,6 +3,18 @@ Migration Guides
 
 As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
 
+0.44.0
+------
+
+This release adds support for recursive includes, which allows included files to themselves include other files. If a project includes config from another file which in turn includes config from other files then these transitive includes will now also be included in the main project by default. This new behavior can be disabled by setting ``recursive = false`` for a specific include, which will prevent any includes from that file from being followed. For more details see the :doc:`include guide<../guides/include_guide>`.
+
+.. code-block:: toml
+
+  [tool.poe]
+   include = [{ path = "external/tasks.toml", recursive = false }]
+
+When ``recursive`` is ``false``, the included file's own tasks and environment variables are still loaded, but any ``include`` entries within that file are not followed.
+
 
 0.43.0
 ------

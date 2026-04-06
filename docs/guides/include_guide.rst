@@ -47,9 +47,9 @@ Including tasks from a python package
 
 You can also include tasks from a python function originating either within the current project or from a dependency. This makes it much easier to share tasks across projects by distributing them as a python package, or to dynamically generate tasks depending on the context.
 
-For more details see the :doc:`include_scripts<../guides/packaged_tasks>` global option.
+For more details see the :doc:`include_script<../guides/packaged_tasks>` global option.
 
-The ``include_script`` option is ignored in included files due to the complexity of coordinating executors (for loading the scripts) across config files. So ``include_scripts`` can only be used in the main pyproject.toml file.
+The ``include_script`` option is ignored in included files due to the complexity of coordinating executors (for loading the scripts) across config files. So ``include_script`` can only be used in the main pyproject.toml file.
 
 
 Including multiple files
@@ -80,7 +80,7 @@ When including files from another location, you can also specify that tasks from
 
 The directory indicated by the ``cwd`` option will also be used as the base directory for global or task level ``envfile`` imports for tasks defined within an included file.
 
-Tasks and config in an included file can access the ``cwd`` value via the ``POE_CONF_DIR`` environment variable. When no ``cwd`` is set on the include then ``POE_CONF_DIR`` refers the to the parent directory of the config file where a task is defined.
+Tasks and config in an included file can access the ``cwd`` value via the ``POE_CONF_DIR`` environment variable. When no ``cwd`` is set on the include then ``POE_CONF_DIR`` refers to the parent directory of the config file where a task is defined.
 
 You can still specify that an envfile referenced within an included file should be imported relative to the main project root, using the ``POE_ROOT`` environment variable like so:
 

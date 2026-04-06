@@ -63,7 +63,7 @@ You can use the ``cwd`` option on an include_script to make the included tasks r
 Out-of-the-box tasks from *poethepoet-tasks*
 --------------------------------------------
 
-With ``include_scripts`` you can reuse common tasks in each new project by depending directly on a private or public *tasks package*. As an example the |poethepoet_tasks_link| package provides an opinionated collection of tasks to get you started, with two simple steps:
+With ``include_script`` you can reuse common tasks in each new project by depending directly on a private or public *tasks package*. As an example the |poethepoet_tasks_link| package provides an opinionated collection of tasks to get you started, with two simple steps:
 
 1. Add a dev dependency on ``poethepoet-tasks``
 
