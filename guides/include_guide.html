@@ -242,7 +242,7 @@
         <article role="main">
           <section id="loading-tasks-from-another-file">
 <h1>Loading tasks from another file<a class="headerlink" href="#loading-tasks-from-another-file" title="Link to this heading">¶</a></h1>
-<p>There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organise your code in a monorepo, or simply have a lot of tasks and don’t want the pyproject.toml to get too large. This can be achieved by creating a toml, yaml, or json file including the same structure for tasks as used in pyproject.toml</p>
+<p>There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organize your code in a monorepo, or simply have a lot of tasks and don’t want the pyproject.toml to get too large. This can be achieved by creating a toml, yaml, or json file including the same structure for tasks as used in pyproject.toml</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Imported toml, yaml, or json files are not required to namespace config under <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code>. However if config exists under this structure then it will be used.</p>
@@ -268,10 +268,21 @@
 <p class="admonition-title">Warning</p>
 <p>If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.</p>
 </div>
+<section id="disabling-recursion">
+<h2>Disabling recursion<a class="headerlink" href="#disabling-recursion" title="Link to this heading">¶</a></h2>
+<p>By default, includes are followed recursively. You can disable this for a specific include by setting <code class="docutils literal notranslate"><span class="pre">recursive</span> <span class="pre">=</span> <span class="pre">false</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[[tool.poe.include]]</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;external/tasks.toml&quot;</span>
+<span class="n">recursive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+</pre></div>
+</div>
+<p>When <code class="docutils literal notranslate"><span class="pre">recursive</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>, the included file’s own tasks and environment variables are still loaded, but any <code class="docutils literal notranslate"><span class="pre">include</span></code> entries within that file are not followed.</p>
+</section>
 <section id="including-tasks-from-a-python-package">
 <h2>Including tasks from a python package<a class="headerlink" href="#including-tasks-from-a-python-package" title="Link to this heading">¶</a></h2>
 <p>You can also include tasks from a python function originating either within the current project or from a dependency. This makes it much easier to share tasks across projects by distributing them as a python package, or to dynamically generate tasks depending on the context.</p>
-<p>For more details see the <a class="reference internal" href="packaged_tasks.html"><span class="doc">include_scripts</span></a> global option.</p>
+<p>For more details see the <a class="reference internal" href="packaged_tasks.html"><span class="doc">include_script</span></a> global option.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">include_script</span></code> option is ignored in included files due to the complexity of coordinating executors (for loading the scripts) across config files. So <code class="docutils literal notranslate"><span class="pre">include_script</span></code> can only be used in the main pyproject.toml file.</p>
 </section>
 <section id="including-multiple-files">
 <h2>Including multiple files<a class="headerlink" href="#including-multiple-files" title="Link to this heading">¶</a></h2>
@@ -281,7 +292,7 @@
 </pre></div>
 </div>
 <p>Files are loaded in the order specified. If an item already exists then the included value is ignored.</p>
-<p>If an included task file itself includes other files, these second order includes are <strong>not inherited</strong>, so circular includes are not a concern.</p>
+<p>Included files can themselves include other files, and these will be loaded before the parent file is loaded. Therefore if there are multiple includes then they are loaded depth first in the order specified.</p>
 </section>
 <section id="setting-a-working-directory-for-included-tasks">
 <h2>Setting a working directory for included tasks<a class="headerlink" href="#setting-a-working-directory-for-included-tasks" title="Link to this heading">¶</a></h2>
@@ -292,7 +303,7 @@
 </pre></div>
 </div>
 <p>The directory indicated by the <code class="docutils literal notranslate"><span class="pre">cwd</span></code> option will also be used as the base directory for global or task level <code class="docutils literal notranslate"><span class="pre">envfile</span></code> imports for tasks defined within an included file.</p>
-<p>Tasks and config in an included file can access the <code class="docutils literal notranslate"><span class="pre">cwd</span></code> value via the <code class="docutils literal notranslate"><span class="pre">POE_CONF_DIR</span></code> environment variable. When no <code class="docutils literal notranslate"><span class="pre">cwd</span></code> is set on the include then <code class="docutils literal notranslate"><span class="pre">POE_CONF_DIR</span></code> refers the to the parent directory of the config file where a task is defined.</p>
+<p>Tasks and config in an included file can access the <code class="docutils literal notranslate"><span class="pre">cwd</span></code> value via the <code class="docutils literal notranslate"><span class="pre">POE_CONF_DIR</span></code> environment variable. When no <code class="docutils literal notranslate"><span class="pre">cwd</span></code> is set on the include then <code class="docutils literal notranslate"><span class="pre">POE_CONF_DIR</span></code> refers to the parent directory of the config file where a task is defined.</p>
 <p>You can still specify that an envfile referenced within an included file should be imported relative to the main project root, using the <code class="docutils literal notranslate"><span class="pre">POE_ROOT</span></code> environment variable like so:</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="n">envfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${POE_ROOT}/.env&quot;</span>
@@ -378,6 +389,7 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Loading tasks from another file</a><ul>
+<li><a class="reference internal" href="#disabling-recursion">Disabling recursion</a></li>
 <li><a class="reference internal" href="#including-tasks-from-a-python-package">Including tasks from a python package</a></li>
 <li><a class="reference internal" href="#including-multiple-files">Including multiple files</a></li>
 <li><a class="reference internal" href="#setting-a-working-directory-for-included-tasks">Setting a working directory for included tasks</a></li>
@@ -393,7 +405,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=49c737da"></script>
+</div><script src="../_static/documentation_options.js?v=c79cc614"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

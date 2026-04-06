@@ -244,7 +244,16 @@
 <h1>Migration Guides<a class="headerlink" href="#migration-guides" title="Link to this heading">¶</a></h1>
 <p>As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.</p>
 <section id="id1">
-<h2>0.43.0<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<h2>0.44.0<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>This release adds support for recursive includes, which allows included files to themselves include other files. If a project includes config from another file which in turn includes config from other files then these transitive includes will now also be included in the main project by default. This new behavior can be disabled by setting <code class="docutils literal notranslate"><span class="pre">recursive</span> <span class="pre">=</span> <span class="pre">false</span></code> for a specific include, which will prevent any includes from that file from being followed. For more details see the <a class="reference internal" href="include_guide.html"><span class="doc">include guide</span></a>.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
+<span class="w"> </span><span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;external/tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">recursive</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
+<p>When <code class="docutils literal notranslate"><span class="pre">recursive</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>, the included file’s own tasks and environment variables are still loaded, but any <code class="docutils literal notranslate"><span class="pre">include</span></code> entries within that file are not followed.</p>
+</section>
+<section id="id2">
+<h2>0.43.0<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
 <p>This release included a major refactor of how variables are managed which could unexpectedly change behavior in some situations.</p>
 <section id="change-in-handling-of-boolean-args">
 <h3>Change in handling of boolean args<a class="headerlink" href="#change-in-handling-of-boolean-args" title="Link to this heading">¶</a></h3>
@@ -337,7 +346,8 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Migration Guides</a><ul>
-<li><a class="reference internal" href="#id1">0.43.0</a><ul>
+<li><a class="reference internal" href="#id1">0.44.0</a></li>
+<li><a class="reference internal" href="#id2">0.43.0</a><ul>
 <li><a class="reference internal" href="#change-in-handling-of-boolean-args">Change in handling of boolean args</a></li>
 <li><a class="reference internal" href="#introduction-of-private-variables">Introduction of private variables</a></li>
 </ul>
@@ -353,7 +363,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=49c737da"></script>
+</div><script src="../_static/documentation_options.js?v=c79cc614"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
