@@ -245,7 +245,7 @@ class PoeConfig:
                     f"No poe configuration found from location {self._project_dir}"
                 )
 
-        await self._load_includes(strict=strict)
+        self._load_includes(strict=strict)
         await self._load_packages(strict=strict)
 
     async def _load_packages(self, strict: bool = True):
@@ -378,12 +378,12 @@ class PoeConfig:
         elif self._io:
             self._io.print_debug(f" ! {msg}")
 
-    async def _load_includes(self, strict: bool = True):
+    def _load_includes(self, strict: bool = True):
         # Attempt to load each of the included configs
         for include in self._project_config.options.include:
-            await self._load_included_config(include, strict=strict)
+            self._load_included_config(include, strict=strict)
 
-    async def _load_included_config(
+    def _load_included_config(
         self,
         include: dict,
         strict: bool = True,
@@ -442,7 +442,7 @@ class PoeConfig:
                 # Recursively load any includes from the included config
                 # Therefore includes are loaded depth-first
                 for child_include in child_includes:
-                    await self._load_included_config(
+                    self._load_included_config(
                         child_include,
                         strict=strict,
                         ancestors=(*ancestors, include_path),

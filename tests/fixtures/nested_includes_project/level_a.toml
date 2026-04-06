@@ -1,5 +1,6 @@
 [tool.poe.env]
 A_ENV = "from_a"
+PRECEDENCE_ENV = "from_a"
 
 [tool.poe]
 include = [

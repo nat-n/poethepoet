@@ -1,5 +1,6 @@
 [tool.poe.env]
 D_ENV = "from_d"
+SIBLING_PRECEDENCE_ENV = "from_d"
 
 [tool.poe]
 include = ["shared.toml"]

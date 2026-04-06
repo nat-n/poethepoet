@@ -1,5 +1,7 @@
 [tool.poe.env]
 B_ENV = "from_b"
+PRECEDENCE_ENV = "from_b"
+SIBLING_PRECEDENCE_ENV = "from_b"
 
 [tool.poe]
 envfile = "root_level.env"

@@ -57,7 +57,37 @@ def test_dfs_task_ordering(run_poe):
     assert capture.index("b_task") < capture.index("d_task")
 
 
-# -- Env propagation --
+# -- Env and task precedence across nesting levels --
+
+
+def test_root_env_wins_over_nested(run_poe):
+    """
+    PRECEDENCE_ENV defined in root, level_a, and level_b.
+    Root config is applied last so its value wins.
+    """
+    result = run_poe("check_precedence", project="nested_includes")
+    words = result.stdout.split()
+    # Root's value wins over level_a and level_b
+    assert "PRECEDENCE=from_root" in words
+    # Verify the losing partitions are actually loaded (not silently broken)
+    result = run_poe("check_all_env", project="nested_includes")
+    words = result.stdout.split()
+    assert "A=from_a" in words
+    assert "B=from_b" in words
+
+
+def test_later_dfs_sibling_env_overwrites_earlier(run_poe):
+    """
+    SIBLING_PRECEDENCE_ENV defined in level_b (in level_a's subtree) and
+    sibling_d (root's next include after level_a). DFS processes level_a's
+    subtree first, so sibling_d is applied later and its value wins.
+    """
+    result = run_poe("check_precedence", project="nested_includes")
+    words = result.stdout.split()
+    assert "SIBLING=from_d" in words
+    # Verify level_b is actually loaded (its unique env var works)
+    result = run_poe("check_all_env", project="nested_includes")
+    assert "B=from_b" in result.stdout.split()
 
 
 def test_env_from_all_nesting_levels(run_poe):
@@ -233,7 +263,10 @@ def test_tool_poe_namespace_in_nested_include(run_poe):
 
 
 def test_groups_in_nested_includes(run_poe):
-    """groups_nested.toml defines a group; groups_child.toml adds to it."""
+    """
+    groups_nested.toml defines a group; groups_child.toml adds to it.
+    Both tasks are merged under the same heading.
+    """
     result = run_poe("compile_task", project="nested_includes")
     assert result.stdout == "compiling\n"
 
@@ -243,9 +276,14 @@ def test_groups_in_nested_includes(run_poe):
     result = run_poe("child_ungrouped", project="nested_includes")
     assert result.stdout == "child_ungrouped\n"
 
-    # Verify group heading appears in help
+    # Verify both grouped tasks appear after the heading (merged into one group)
     result = run_poe(project="nested_includes")
-    assert "Build Tasks" in result.capture
+    capture = result.capture
+    heading_pos = capture.index("Build Tasks")
+    assert capture.index("compile_task") > heading_pos
+    assert capture.index("package_task") > heading_pos
+    # Ungrouped task from child is listed before the group heading
+    assert capture.index("child_ungrouped") < heading_pos
 
 
 # -- recursive option --

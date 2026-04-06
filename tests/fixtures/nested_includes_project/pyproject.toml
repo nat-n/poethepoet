@@ -1,5 +1,6 @@
 [tool.poe.env]
 ROOT_ENV = "from_root"
+PRECEDENCE_ENV = "from_root"
 
 [tool.poe]
 include = [
@@ -14,3 +15,4 @@ include = [
 root_task = "poe_test_echo root"
 override_task = "poe_test_echo root_wins"
 check_all_env = "poe_test_echo ROOT=${ROOT_ENV} A=${A_ENV} B=${B_ENV} D=${D_ENV}"
+check_precedence = "poe_test_echo PRECEDENCE=${PRECEDENCE_ENV} SIBLING=${SIBLING_PRECEDENCE_ENV}"

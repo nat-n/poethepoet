@@ -1,7 +1,7 @@
 Loading tasks from another file
 ===============================
 
-There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organise your code in a monorepo, or simply have a lot of tasks and don't want the pyproject.toml to get too large. This can be achieved by creating a toml, yaml, or json file including the same structure for tasks as used in pyproject.toml
+There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organize your code in a monorepo, or simply have a lot of tasks and don't want the pyproject.toml to get too large. This can be achieved by creating a toml, yaml, or json file including the same structure for tasks as used in pyproject.toml
 
 .. tip::
 
@@ -28,6 +28,19 @@ Imported files may also specify environment variables via
 
   If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.
 
+Disabling recursion
+-------------------
+
+By default, includes are followed recursively. You can disable this for a specific include by setting ``recursive = false``:
+
+.. code-block:: toml
+
+  [[tool.poe.include]]
+  path = "external/tasks.toml"
+  recursive = false
+
+When ``recursive`` is ``false``, the included file's own tasks and environment variables are still loaded, but any ``include`` entries within that file are not followed.
+
 
 Including tasks from a python package
 -------------------------------------
@@ -35,6 +48,8 @@ Including tasks from a python package
 You can also include tasks from a python function originating either within the current project or from a dependency. This makes it much easier to share tasks across projects by distributing them as a python package, or to dynamically generate tasks depending on the context.
 
 For more details see the :doc:`include_scripts<../guides/packaged_tasks>` global option.
+
+The ``include_script`` option is ignored in included files due to the complexity of coordinating executors (for loading the scripts) across config files. So ``include_scripts`` can only be used in the main pyproject.toml file.
 
 
 Including multiple files
@@ -49,7 +64,7 @@ It's also possible to include tasks from multiple files by providing a list like
 
 Files are loaded in the order specified. If an item already exists then the included value is ignored.
 
-If an included task file itself includes other files, these second order includes are **not inherited**, so circular includes are not a concern.
+Included files can themselves include other files, and these will be loaded before the parent file is loaded. Therefore if there are multiple includes then they are loaded depth first in the order specified.
 
 
 Setting a working directory for included tasks

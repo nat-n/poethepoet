@@ -223,6 +223,22 @@ class ProjectConfig(ConfigPartition):
                     if isinstance(group_def.get("executor"), str):
                         group_def["executor"] = {"type": group_def["executor"]}
 
+            # > include_script: Union[str, Sequence[str], Sequence[IncludeScriptItem]]
+            #       => list[IncludeScriptItem]
+            if include_script := config.get("include_script"):
+                config["include_script"] = []
+                if not isinstance(include_script, list):
+                    include_script = [include_script]
+                for item in include_script:
+                    if isinstance(item, str):
+                        config["include_script"].append({"script": item})
+                    elif isinstance(executor_config := item.get("executor"), str):
+                        config["include_script"].append(
+                            {**item, "executor": {"type": executor_config}}
+                        )
+                    else:
+                        config["include_script"].append(item)
+
             config = _normalize_included_config_path(config)
 
             yield config
@@ -378,10 +394,8 @@ class PackagedConfig(ConfigPartition):
 
 def _normalize_included_config_path(config: dict) -> dict:
     """
-    Normalize include and include_script options if set:
+    Normalize include options if set:
     > include: Union[str, Sequence[str], Mapping[str, str]] => list[dict]
-    > include_script: Union[str, Sequence[str], Sequence[IncludeScriptItem]]
-          => list[IncludeScriptItem]
     """
 
     if includes := config.get("include"):
@@ -392,17 +406,4 @@ def _normalize_included_config_path(config: dict) -> dict:
                 {"path": item} if isinstance(item, str) else item for item in includes
             ]
 
-    if include_script := config.get("include_script"):
-        config["include_script"] = []
-        if not isinstance(include_script, list):
-            include_script = [include_script]
-        for item in include_script:
-            if isinstance(item, str):
-                config["include_script"].append({"script": item})
-            elif isinstance(executor_config := item.get("executor"), str):
-                config["include_script"].append(
-                    {**item, "executor": {"type": executor_config}}
-                )
-            else:
-                config["include_script"].append(item)
     return config

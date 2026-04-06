@@ -55,6 +55,8 @@ jobs:
 
       - name: Install uv for use in tests
         uses: astral-sh/setup-uv@v7
+        with:
+          cache-suffix: ${{ matrix.os }}-${{ matrix.python-version }}
 
       - name: Install poetry
         run: pipx install poetry
