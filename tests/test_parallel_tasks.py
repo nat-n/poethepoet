@@ -126,8 +126,8 @@ def generate_pyproject(temp_pyproject):
             else:
                 return ""
 
-        slow_delay = 5 * 50 * delay_factor
-        fail_delay = 2 * 50 * delay_factor
+        slow_delay = 5 * 100 * delay_factor
+        fail_delay = 2 * 100 * delay_factor
 
         project_tmpl = f"""
             [tool.poe.tasks]
@@ -165,7 +165,7 @@ def generate_pyproject(temp_pyproject):
 
 @pytest.mark.flaky(reruns=3, reruns_delay=1)
 def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
-    slow_delay = 5 * 50 * delay_factor
+    slow_delay = 5 * 100 * delay_factor
     project_path = generate_pyproject(delay_factor=delay_factor)
 
     result = run_poe_subproc("lvl1_seq", cwd=project_path)
@@ -297,7 +297,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
 
 @pytest.mark.flaky(reruns=3, reruns_delay=1)
 def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, delay_factor):
-    slow_delay = 5 * 50 * delay_factor
+    slow_delay = 5 * 100 * delay_factor
     project_path = generate_pyproject(
         delay_factor=delay_factor,
         seq1_ignore_fail=True,
@@ -420,7 +420,7 @@ def test_parallel_ignore_failures(run_poe_subproc, generate_pyproject, delay_fac
 def test_parallel_ignore_but_propagate_failures(
     run_poe_subproc, generate_pyproject, delay_factor
 ):
-    slow_delay = 5 * 50 * delay_factor
+    slow_delay = 5 * 100 * delay_factor
     project_path = generate_pyproject(
         delay_factor=delay_factor,
         seq1_ignore_fail=True,
