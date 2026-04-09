@@ -67,6 +67,12 @@ parallel = [
   { expr = "{'flag':flag, 'val':val}" },
 ]
 
+[tool.poe.tasks.echo-args]
+cmd = "poe_test_echo one two"
+
+[tool.poe.tasks.forward-free-args-par]
+parallel = ["echo-args", "echo-args"]
+
 [tool.poe.tasks.parallel_with_stdout_capture]
 parallel = [
   { cmd = "poe_test_echo \"1 going to stdout 1\"" },
