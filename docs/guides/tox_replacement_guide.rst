@@ -163,6 +163,32 @@ tox supports running tests in parallel using the ``-p`` option. Poe the Poet let
     [tool.poe.tasks.test-parallel]
     parallel = ["test-py39", "test-py310", "test-py311", "test-py312"]
 
+Passing extra arguments to all test variants
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can pass additional CLI arguments through to every task in a sequence (or parallel group) by separating them from any sequence-level arguments using :sh:`--`:
+
+.. code-block:: bash
+
+    poe test-all -- -k test_my_feature
+
+This forwards ``-k test_my_feature`` to each individual test task, so every ``pytest`` invocation receives the extra flag. This is equivalent to tox's ``tox -- -k test_my_feature`` syntax.
+
+For example, given the configuration from the :ref:`Basic migration` section:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.test-all]
+    sequence = ["test-py310", "test-py311", "test-py312"]
+
+Running:
+
+.. code-block:: bash
+
+    poe test-all -- -k test_my_feature --tb=short
+
+will run ``pytest tests --cov=mypackage -k test_my_feature --tb=short`` for each Python version.
+
 Environment variables
 ~~~~~~~~~~~~~~~~~~~~~
 

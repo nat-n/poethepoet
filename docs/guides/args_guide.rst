@@ -331,6 +331,17 @@ calling the task like so:
 
 will result in poe parsing the target_dir cli option, but appending the :sh:`--fix` flag to the ruff command without attempting to interpret it.
 
+For :doc:`sequence<../tasks/task_types/sequence>` and :doc:`parallel<../tasks/task_types/parallel>` tasks, free arguments are forwarded to every subtask in the sequence or parallel group. This enables patterns like passing extra flags to all sub-commands at once:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-all]
+  sequence = ["test-py311", "test-py312"]
+
+.. code-block:: sh
+
+  poe test-all -- -k test_my_feature  # -k flag is forwarded to every subtask
+
 .. note::
 
    Passing :sh:`--` in the arguments list to any other task type will simply result in any subsequent arguments being ignored.

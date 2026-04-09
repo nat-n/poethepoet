@@ -158,24 +158,22 @@ class ParallelTask(PoeTask):
     ):
         assert capture_stdout in (False, None)
         super().__init__(spec, invocation, ctx)
-        self._subtasks = [
-            task_spec.create_task(
-                invocation=(self._subtask_name(task_spec.name, index),),
-                ctx=TaskContext.from_task(self, task_spec),
-            )
-            for index, task_spec in enumerate(spec.subtasks)
-        ]
 
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
-        named_arg_values, _ = self.get_parsed_arguments(env)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.register_task_args(named_arg_values)
 
-        if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
-            raise PoeException(f"Parallel task {self.name!r} does not accept arguments")
+        subtasks = [
+            task_spec.create_task(
+                invocation=(self._subtask_name(task_spec.name, index), *extra_args),
+                ctx=TaskContext.from_task(self, task_spec),
+            )
+            for index, task_spec in enumerate(self.spec.subtasks)
+        ]
 
-        if len(self._subtasks) > 1:
+        if len(subtasks) > 1:
             # Indicate on the global context that there are multiple stages
             context.multistage = True
 
@@ -190,7 +188,7 @@ class ParallelTask(PoeTask):
         )
 
         with context.output_streaming(enabled=True) as streaming_enabled:
-            for subtask in self._subtasks:
+            for subtask in subtasks:
                 subtask_run: PoeTaskRun | None = None
                 try:
                     subtask_run = await subtask.run(context=context, parent_env=env)

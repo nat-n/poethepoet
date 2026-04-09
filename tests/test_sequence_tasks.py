@@ -204,3 +204,32 @@ def test_private_arg_inherited_can_be_remapped_public(run_poe, is_windows):
     if not is_windows:
         assert "_secret=hidden" not in result.stdout
     assert "public=hidden" in stdout_lower
+
+
+def test_sequence_forwards_free_args(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-seq", "extra1", "extra2", project="sequences"
+    )
+    assert result.capture == (
+        "Poe => poe_test_echo one two extra1 extra2\n"
+        "Poe => poe_test_echo one two extra1 extra2\n"
+    )
+    assert result.stdout == "one two extra1 extra2\none two extra1 extra2\n"
+    assert result.stderr == ""
+
+
+def test_sequence_with_named_args_forwards_free_args(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-seq-with-named",
+        "hi",
+        "--",
+        "extra1",
+        "extra2",
+        project="sequences",
+    )
+    assert result.capture == (
+        "Poe => poe_test_echo one two extra1 extra2\n"
+        "Poe => poe_test_echo one two extra1 extra2\n"
+    )
+    assert result.stdout == "one two extra1 extra2\none two extra1 extra2\n"
+    assert result.stderr == ""

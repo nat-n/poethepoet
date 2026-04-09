@@ -71,6 +71,16 @@ cwd = "my_package"
 default_item_type = "cmd"
 sequence = ["./tools/poetry-ci-install.sh"]
 
+[tool.poe.tasks.echo-args]
+cmd = "poe_test_echo one two"
+
+[tool.poe.tasks.forward-free-args-seq]
+sequence = ["echo-args", "echo-args"]
+
+[tool.poe.tasks.forward-free-args-seq-with-named]
+sequence = ["echo-args", "echo-args"]
+args = [{ name = "greeting", positional = true, default = "hello" }]
+
 [tool.poe.tasks.sequential_parallel]
 args = [
   { name = "d0", positional = true, default = "0" },

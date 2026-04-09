@@ -552,6 +552,23 @@ def test_parallel_bool_negate(run_poe):
     assert "{'flag': False, 'val': False}" in result.stdout
 
 
+def test_parallel_forwards_free_args(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-par",
+        "extra1",
+        "extra2",
+        project="parallel",
+        env={"NO_COLOR": "1"},
+    )
+    assert result.capture == (
+        "Poe => poe_test_echo one two extra1 extra2\n"
+        "Poe => poe_test_echo one two extra1 extra2\n"
+    )
+    assert result.stdout == (
+        "echo-args | one two extra1 extra2\necho-args | one two extra1 extra2\n"
+    )
+
+
 def sequences_are_similar(seq1: Sequence, seq2: Sequence, distance: int = 1):
     """
     Check if two sequences have the same items in almost the same order.

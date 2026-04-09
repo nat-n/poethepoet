@@ -73,6 +73,47 @@ If you want strings in the array to be interpreted as a task type other than :do
   release.default_item_type = "script"
 
 
+Forwarding free arguments to subtasks
+--------------------------------------
+
+Any free arguments passed to a sequence task (either all arguments when no named args are defined, or arguments passed after :sh:`--` when named args are defined) are forwarded to every subtask in the sequence.
+
+This is particularly useful when using a sequence task as a test runner that covers multiple environments, allowing extra arguments to be passed through to each test command:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-py311]
+  cmd = "pytest tests"
+  executor = { isolated = true, python = "3.11" }
+
+  [tool.poe.tasks.test-py312]
+  cmd = "pytest tests"
+  executor = { isolated = true, python = "3.12" }
+
+  [tool.poe.tasks.test-all]
+  sequence = ["test-py311", "test-py312"]
+
+Calling the task like:
+
+.. code-block:: sh
+
+  poe test-all -- -k test_my_feature
+
+will run both ``test-py311`` and ``test-py312`` with the extra ``-k test_my_feature`` argument appended to each ``pytest`` invocation.
+
+If the sequence task also defines its own named arguments, free arguments are separated from them using :sh:`--`:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-all]
+  sequence = ["test-py311", "test-py312"]
+  args = [{ name = "verbose", options = ["-v"], type = "boolean" }]
+
+.. code-block:: sh
+
+  poe test-all -v -- -k test_my_feature
+
+
 Sequence task as an array of tables
 -----------------------------------
 
