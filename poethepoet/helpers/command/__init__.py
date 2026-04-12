@@ -34,7 +34,14 @@ def resolve_command_tokens(
     patterns that are not escaped or quoted. In case there are glob patterns in the
     token, any escaped glob characters will have been escaped with [].
     """
-    from .ast import Glob, ParamArgument, ParamExpansion, ParseConfig, PythonGlob
+    from .ast import (
+        Glob,
+        ParamArgument,
+        ParamExpansion,
+        ParseConfig,
+        PythonGlob,
+        WhitespaceText,
+    )
 
     if not config:
         config = ParseConfig(substitute_nodes={Glob: PythonGlob})
@@ -87,6 +94,22 @@ def resolve_command_tokens(
 
         return param_value
 
+    def get_operation_argument(
+        element: ParamExpansion, env: Mapping[str, str]
+    ) -> ParamArgument | None:
+        """
+        If param expansion has an active :+/:- operation, return the argument
+        for inline expansion (to preserve quote structure).
+        """
+        if not element.operation:
+            return None
+        param_value = env.get(element.param_name, "")
+        if param_value and element.operation.operator == ":+":
+            return element.operation.argument
+        if not param_value and element.operation.operator == ":-":
+            return element.operation.argument
+        return None
+
     for line in lines:
         # Ignore line breaks, assuming they're only due to comments
         for word in line:
@@ -98,6 +121,79 @@ def resolve_command_tokens(
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):
+                        # For unquoted expansions with active operations,
+                        # expand the argument inline to preserve quote
+                        # structure (e.g. single-quoted strings within the
+                        # operation argument stay as single tokens).
+                        if not segment.is_quoted:
+                            op_arg = get_operation_argument(element, env)
+                            if op_arg is not None:
+                                for arg_seg in op_arg.segments:
+                                    for arg_el in arg_seg:
+                                        if isinstance(arg_el, ParamExpansion):
+                                            nested = resolve_param_value(
+                                                arg_el, env
+                                            )
+                                            if not nested:
+                                                continue
+                                            if arg_seg.is_quoted:
+                                                token_parts.append(
+                                                    (nested, False)
+                                                )
+                                            elif nested.isspace():
+                                                if token_parts:
+                                                    yield finalize_token(
+                                                        token_parts
+                                                    )
+                                            else:
+                                                if (
+                                                    nested[0].isspace()
+                                                    and token_parts
+                                                ):
+                                                    yield finalize_token(
+                                                        token_parts
+                                                    )
+                                                pwords = (
+                                                    (
+                                                        w,
+                                                        bool(
+                                                            glob_pattern.search(
+                                                                w
+                                                            )
+                                                        ),
+                                                    )
+                                                    for w in nested.split()
+                                                )
+                                                token_parts.append(
+                                                    next(pwords)
+                                                )
+                                                for pw in pwords:
+                                                    if token_parts:
+                                                        yield finalize_token(
+                                                            token_parts
+                                                        )
+                                                    token_parts.append(pw)
+                                                if (
+                                                    nested[-1].isspace()
+                                                    and token_parts
+                                                ):
+                                                    yield finalize_token(
+                                                        token_parts
+                                                    )
+                                        elif (
+                                            isinstance(arg_el, WhitespaceText)
+                                            and not arg_seg.is_quoted
+                                        ):
+                                            if token_parts:
+                                                yield finalize_token(
+                                                    token_parts
+                                                )
+                                        else:
+                                            token_parts.append(
+                                                (arg_el.content, False)
+                                            )
+                                continue
+
                         param_value = resolve_param_value(element, env)
                         if not param_value:
                             # Empty param value has no effect
