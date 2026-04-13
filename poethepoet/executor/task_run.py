@@ -194,7 +194,7 @@ class PoeTaskRun:
 
     async def _handle_asyncio_task_done(self):
         await self.finalize()
-        if self.asyncio_task.exception():
+        if self.asyncio_task.cancelled() or self.asyncio_task.exception():
             await self.kill()
 
     async def _watch_completion(self) -> None:

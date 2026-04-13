@@ -163,7 +163,6 @@ def generate_pyproject(temp_pyproject):
     return generator
 
 
-@pytest.mark.flaky(reruns=3, reruns_delay=1)
 def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
     slow_delay = 5 * 100 * delay_factor
     project_path = generate_pyproject(delay_factor=delay_factor)
@@ -209,8 +208,15 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
     assert result.code == 1
 
     result = run_poe_subproc("lvl2_seq", cwd=project_path)
+
+    # Sporadically there are warnings like:
+    #    Warning: Exception while closing stdin for 25569: [Errno 32] Broken pipe
+    # These need to be filtered out, as it is timing dependent if they occur or not.
+    lvl2_seq_capture_lines = filter_capture_lines(
+        result.capture_lines, "Warning: Exception while closing stdin"
+    )
     assert sequences_are_similar(
-        result.capture_lines,
+        lvl2_seq_capture_lines,
         (
             "Poe => echo 'Great success!'",
             f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
@@ -224,7 +230,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
             "     | From: ExecutionError(\"Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'\")",
         ),
     ) or sequences_are_similar(
-        result.capture_lines,
+        lvl2_seq_capture_lines,
         (
             "Poe => echo 'Great success!'",
             f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
@@ -248,8 +254,11 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
     assert result.code == 1
 
     result = run_poe_subproc("lvl2_para", cwd=project_path)
+    lvl2_para_capture_lines = filter_capture_lines(
+        result.capture_lines, "Warning: Exception while closing stdin"
+    )
     assert sequences_are_similar(
-        result.capture_lines,
+        lvl2_para_capture_lines,
         (
             f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
@@ -265,7 +274,7 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
             "Error: Parallel task 'lvl2_para' aborted after failed subtask 'lvl2_seq'",
         ),
     ) or sequences_are_similar(
-        result.capture_lines,
+        lvl2_para_capture_lines,
         (
             f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
             "Poe => echo 'Great success!'",
@@ -550,6 +559,12 @@ def test_parallel_bool_negate(run_poe):
     result = run_poe("bool_parallel", "--val", project="parallel")
     assert "cmd:unset:unset" in result.stdout
     assert "{'flag': False, 'val': False}" in result.stdout
+
+
+def filter_capture_lines(capture_lines: list[str], *prefixes: str) -> list[str]:
+    return [
+        line for line in capture_lines if not any(line.startswith(p) for p in prefixes)
+    ]
 
 
 def sequences_are_similar(seq1: Sequence, seq2: Sequence, distance: int = 1):
