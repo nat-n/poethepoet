@@ -149,6 +149,16 @@ def test_param_expansion_operations(
             ["echo", "pytest", "-m", "not build"],
             id="alt_value_nested_double_quoted",
         ),
+        # Nested operator expansion in an unquoted context: the inner
+        # ${B:+...} must also preserve its quoted regions, not just the
+        # outermost level. This validates that the fix composes recursively.
+        # Validated in bash 5.2: <echo><pytest><-m><not build>
+        pytest.param(
+            "echo pytest ${A:+ ${B:+ -m 'not build'}}",
+            {"A": "1", "B": "1"},
+            ["echo", "pytest", "-m", "not build"],
+            id="alt_value_nested_unquoted_operator",
+        ),
         # Nested expansion in a single-quoted region inside the operator argument:
         # the inner ${...} is NOT expanded, it is taken literally.
         # Validated in bash 5.2: <pytest><-m><${MARKER:-not build}>
