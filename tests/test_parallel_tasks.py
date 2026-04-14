@@ -244,12 +244,19 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
         ),
     )
 
+    # fast_success from lvl1_seq (running as a parallel subtask) may arrive before
+    # or after fast_fail depending on timing, so accept 2 or 3 fast_success lines.
     assert result.stdout.startswith(
         "Great success!\n"
         "fast_success | Great success!\n"
         "fast_success | Great success!\n"
         "fast_fail | failing fast with error\n"
-        # "fast_success | Great success!\n" # fast_success from lvl1_seq might get there
+    ) or result.stdout.startswith(
+        "Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_success | Great success!\n"
+        "fast_fail | failing fast with error\n"
     )
     assert result.code == 1
 
