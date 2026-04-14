@@ -200,11 +200,17 @@ class PoeTaskRun:
     async def _watch_completion(self) -> None:
         await self.wait()
 
-        event = (
-            PoeTaskRunCompletion(self.name)
-            if not self.has_failure
-            else PoeTaskRunError(self.name, exception=self.asyncio_task.exception())
-        )
+        if not self.has_failure:
+            event = PoeTaskRunCompletion(self.name)
+        else:
+            event = PoeTaskRunError(
+                self.name,
+                exception=(
+                    None
+                    if self.asyncio_task.cancelled()
+                    else self.asyncio_task.exception()
+                )
+            )
 
         await self._notify_and_clear_done_callbacks(event)
         self._clear_completion_watcher()
