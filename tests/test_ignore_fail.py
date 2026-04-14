@@ -545,13 +545,14 @@ def test_ref_parallel_return_non_zero_ignore(generate_composed_pyproject, run_po
     project_path = generate_composed_pyproject()
     result = run_poe("ref_par_return_non_zero_ignore", cwd=project_path)
     assert result.code == 0, "Expected zero result"
-    assert (
-        "Warning: Subtasks 'child_fail_a', 'child_fail_b' returned non-zero exit status"
-        in result.capture
-    ) or (
-        "Warning: Subtasks 'child_fail_b', 'child_fail_a' returned non-zero exit status"
-        in result.capture
+    possible_msgs = (
+        "Warning: Subtasks 'child_fail_a', 'child_fail_b' returned non-zero exit status",  # noqa: E501
+        "Warning: Subtasks 'child_fail_b', 'child_fail_a' returned non-zero exit status",  # noqa: E501
+        # On Windows only one subtask may complete before the parallel task is aborted
+        "Warning: Subtask 'child_fail_a' returned non-zero exit status",
+        "Warning: Subtask 'child_fail_b' returned non-zero exit status",
     )
+    assert any(msg in result.capture for msg in possible_msgs)
 
 
 def test_task_graph_dep_ignore(generate_composed_pyproject, run_poe):

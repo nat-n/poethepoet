@@ -201,10 +201,17 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
             "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
         ],
     )
-    assert set(result.output_lines) == {
-        "fast_success | Great success!",
-        "fast_fail | failing fast with error",
-    }
+    assert set(result.output_lines) in (
+        {
+            "fast_success | Great success!",
+            "fast_fail | failing fast with error",
+        },
+        {  # Sometimes the task takes longer to quit and we get more output
+            "fast_success | Great success!",
+            "fast_fail | failing fast with error",
+            "slow_success | Eventual success!",
+        },
+    )
     assert result.code == 1
 
     result = run_poe_subproc("lvl2_seq", cwd=project_path)
