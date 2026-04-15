@@ -22,6 +22,7 @@ class RefTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: bool = False
+        inherit_extra_args: bool = True
 
         def validate(self):
             """
@@ -84,15 +85,20 @@ class RefTask(PoeTask):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.register_task_args(named_arg_values)
 
-        ref_invocation = (
-            *(
-                env.fill_template(token)
-                for token in shlex.split(env.fill_template(self.spec.content.strip()))
-            ),
-            *extra_args,
+        ref_tokens = tuple(
+            env.fill_template(token)
+            for token in shlex.split(env.fill_template(self.spec.content.strip()))
         )
-
-        task_spec = self.ctx.specs.get(ref_invocation[0])
+        task_spec = self.ctx.specs.get(ref_tokens[0])
+        # When called as a subtask (spec has a parent), respect the target task's
+        # inherit_extra_args option. When called directly, always forward extra_args.
+        should_forward_extra_args = (
+            self.spec.parent is None or task_spec.options.inherit_extra_args
+        )
+        ref_invocation = (
+            *ref_tokens,
+            *(extra_args if should_forward_extra_args else ()),
+        )
         task = task_spec.create_task(
             invocation=ref_invocation,
             ctx=TaskContext.from_task(self, task_spec),

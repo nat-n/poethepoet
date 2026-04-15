@@ -137,7 +137,10 @@ class SequenceTask(PoeTask):
 
         subtasks: Sequence[PoeTask] = [
             task_spec.create_task(
-                invocation=(self._subtask_name(task_spec.name, index), *extra_args),
+                invocation=(
+                    self._subtask_name(task_spec.name, index),
+                    *(extra_args if task_spec.options.inherit_extra_args else ()),
+                ),
                 ctx=TaskContext.from_task(self, task_spec),
             )
             for index, task_spec in enumerate(self.spec.subtasks)

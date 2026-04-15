@@ -166,17 +166,29 @@ tox supports running tests in parallel using the ``-p`` option. Poe the Poet let
 Passing extra arguments to all test variants
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can pass additional CLI arguments through to every task in a sequence (or parallel group) by separating them from any sequence-level arguments using :sh:`--`:
+You can pass additional CLI arguments through to tasks in a sequence (or parallel group) by separating them from any sequence-level arguments using :sh:`--`. To enable a task to receive these forwarded arguments, set ``inherit-extra-args = true`` on that task:
 
 .. code-block:: bash
 
     poe test-all -- -k test_my_feature
 
-This forwards ``-k test_my_feature`` to each individual test task, so every ``pytest`` invocation receives the extra flag. This is equivalent to tox's ``tox -- -k test_my_feature`` syntax.
+This forwards ``-k test_my_feature`` to each individual test task that has opted in, so every matching ``pytest`` invocation receives the extra flag. This is equivalent to tox's ``tox -- -k test_my_feature`` syntax.
 
-For example, given the configuration from the :ref:`Basic migration` section:
+For example, given the configuration from the :ref:`Basic migration` section, add ``inherit-extra-args = true`` to the individual test tasks:
 
 .. code-block:: toml
+
+    [tool.poe.tasks.test-py310]
+    cmd = "pytest tests --cov=mypackage"
+    inherit-extra-args = true
+
+    [tool.poe.tasks.test-py311]
+    cmd = "pytest tests --cov=mypackage"
+    inherit-extra-args = true
+
+    [tool.poe.tasks.test-py312]
+    cmd = "pytest tests --cov=mypackage"
+    inherit-extra-args = true
 
     [tool.poe.tasks.test-all]
     sequence = ["test-py310", "test-py311", "test-py312"]

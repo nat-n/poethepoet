@@ -69,9 +69,16 @@ parallel = [
 
 [tool.poe.tasks.echo-args]
 cmd = "poe_test_echo one two"
+inherit-extra-args = true
+
+[tool.poe.tasks.echo-args-ignore-extra]
+cmd = "poe_test_echo one two"
 
 [tool.poe.tasks.forward-free-args-par]
 parallel = ["echo-args", "echo-args"]
+
+[tool.poe.tasks.forward-free-args-par-ignore-extra]
+parallel = ["echo-args-ignore-extra", "echo-args-ignore-extra"]
 
 [tool.poe.tasks.parallel_with_stdout_capture]
 parallel = [

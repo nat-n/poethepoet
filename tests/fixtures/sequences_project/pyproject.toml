@@ -73,9 +73,16 @@ sequence = ["./tools/poetry-ci-install.sh"]
 
 [tool.poe.tasks.echo-args]
 cmd = "poe_test_echo one two"
+inherit-extra-args = true
+
+[tool.poe.tasks.echo-args-ignore-extra]
+cmd = "poe_test_echo one two"
 
 [tool.poe.tasks.forward-free-args-seq]
 sequence = ["echo-args", "echo-args"]
+
+[tool.poe.tasks.forward-free-args-seq-ignore-extra]
+sequence = ["echo-args-ignore-extra", "echo-args-ignore-extra"]
 
 [tool.poe.tasks.forward-free-args-seq-with-named]
 sequence = ["echo-args", "echo-args"]

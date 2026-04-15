@@ -76,19 +76,21 @@ If you want strings in the array to be interpreted as a task type other than :do
 Forwarding free arguments to subtasks
 --------------------------------------
 
-Any free arguments passed to a sequence task (either all arguments when no named args are defined, or arguments passed after :sh:`--` when named args are defined) are forwarded to every subtask in the sequence.
+Any free arguments passed to a sequence task (either all arguments when no named args are defined, or arguments passed after :sh:`--` when named args are defined) are forwarded to subtasks that have :toml:`inherit-extra-args = true` set.
 
-This is particularly useful when using a sequence task as a test runner that covers multiple environments, allowing extra arguments to be passed through to each test command:
+By default, subtasks **do not** inherit free arguments from the parent sequence task (``inherit-extra-args`` defaults to ``false``). To opt a subtask into receiving the forwarded arguments, set ``inherit-extra-args = true`` on that task:
 
 .. code-block:: toml
 
   [tool.poe.tasks.test-py311]
   cmd = "pytest tests"
   executor = { isolated = true, python = "3.11" }
+  inherit-extra-args = true
 
   [tool.poe.tasks.test-py312]
   cmd = "pytest tests"
   executor = { isolated = true, python = "3.12" }
+  inherit-extra-args = true
 
   [tool.poe.tasks.test-all]
   sequence = ["test-py311", "test-py312"]
@@ -112,6 +114,13 @@ If the sequence task also defines its own named arguments, free arguments are se
 .. code-block:: sh
 
   poe test-all -v -- -k test_my_feature
+
+Tasks with ``inherit-extra-args = false`` (the default) simply discard any extra arguments they receive from the parent sequence or parallel task, making it safe to mix tasks that accept extra arguments with those that do not:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-all]
+  sequence = ["test-py311", "test-py312", "lint"]  # lint ignores extras by default
 
 
 Sequence task as an array of tables

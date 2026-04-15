@@ -592,6 +592,22 @@ def test_parallel_forwards_free_args(run_poe_subproc):
     )
 
 
+def test_parallel_inherit_extra_args_default(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-par-ignore-extra",
+        "extra1",
+        "extra2",
+        project="parallel",
+        env={"NO_COLOR": "1"},
+    )
+    assert result.capture == (
+        "Poe => poe_test_echo one two\nPoe => poe_test_echo one two\n"
+    )
+    assert result.stdout == (
+        "echo-args-ignor\u2026 | one two\necho-args-ignor\u2026 | one two\n"
+    )
+
+
 def filter_capture_lines(capture_lines: list[str], *prefixes: str) -> list[str]:
     return [
         line for line in capture_lines if not any(line.startswith(p) for p in prefixes)

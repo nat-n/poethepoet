@@ -331,16 +331,20 @@ calling the task like so:
 
 will result in poe parsing the target_dir cli option, but appending the :sh:`--fix` flag to the ruff command without attempting to interpret it.
 
-For :doc:`sequence<../tasks/task_types/sequence>` and :doc:`parallel<../tasks/task_types/parallel>` tasks, free arguments are forwarded to every subtask in the sequence or parallel group. This enables patterns like passing extra flags to all sub-commands at once:
+For :doc:`sequence<../tasks/task_types/sequence>` and :doc:`parallel<../tasks/task_types/parallel>` tasks, free arguments are forwarded to subtasks that have ``inherit-extra-args = true`` set. By default, subtasks do not inherit free arguments (``inherit-extra-args`` defaults to ``false``), so only subtasks explicitly opting in will receive them:
 
 .. code-block:: toml
+
+  [tool.poe.tasks.test-py311]
+  cmd = "pytest tests"
+  inherit-extra-args = true
 
   [tool.poe.tasks.test-all]
   sequence = ["test-py311", "test-py312"]
 
 .. code-block:: sh
 
-  poe test-all -- -k test_my_feature  # -k flag is forwarded to every subtask
+  poe test-all -- -k test_my_feature  # -k flag is forwarded only to test-py311
 
 .. note::
 

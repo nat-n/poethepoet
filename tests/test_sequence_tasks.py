@@ -233,3 +233,14 @@ def test_sequence_with_named_args_forwards_free_args(run_poe_subproc):
     )
     assert result.stdout == "one two extra1 extra2\none two extra1 extra2\n"
     assert result.stderr == ""
+
+
+def test_sequence_inherit_extra_args_default(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-seq-ignore-extra", "extra1", "extra2", project="sequences"
+    )
+    assert result.capture == (
+        "Poe => poe_test_echo one two\nPoe => poe_test_echo one two\n"
+    )
+    assert result.stdout == "one two\none two\n"
+    assert result.stderr == ""

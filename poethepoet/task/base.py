@@ -5,13 +5,14 @@ import sys
 from collections.abc import Iterator, Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, NamedTuple
 
 from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
 from ..exceptions import ConfigValidationError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
 from ..options import PoeOptions
+from ..options.annotations import Metadata
 
 if TYPE_CHECKING:
     from ..config import ConfigPartition, PoeConfig
@@ -184,6 +185,9 @@ class PoeTask(metaclass=MetaPoeTask):
         envfile: str | Sequence[str] | EnvfileOption = ()
         executor: Mapping[str, str | Sequence[str] | bool] | str | None = None
         help: str | None = None
+        inherit_extra_args: Annotated[
+            bool, Metadata(config_name="inherit-extra-args")
+        ] = False
         uses: Mapping[str, str] | None = None
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None
 
