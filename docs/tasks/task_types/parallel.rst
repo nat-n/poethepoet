@@ -87,6 +87,12 @@ Alternatively you can declare other task types inline like so:
   An array within a parallel task is interpreted as a :doc:`sequence<sequence>` task, so you can run certain parallel subtasks :ref:`with strict ordering<Composing tasks to run in parallel>`.
 
 
+Forwarding free arguments to subtasks
+--------------------------------------
+
+Free arguments can be forwarded to individual subtasks by setting ``inherit-extra-args = true`` on those subtasks. See :ref:`Forwarding free arguments to subtasks` in the :doc:`args guide<../../guides/args_guide>` for details.
+
+
 Customize output prefixing
 --------------------------
 

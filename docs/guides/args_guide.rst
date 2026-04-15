@@ -331,12 +331,25 @@ calling the task like so:
 
 will result in poe parsing the target_dir cli option, but appending the :sh:`--fix` flag to the ruff command without attempting to interpret it.
 
-For :doc:`sequence<../tasks/task_types/sequence>` and :doc:`parallel<../tasks/task_types/parallel>` tasks, free arguments are forwarded to subtasks that have ``inherit-extra-args = true`` set. By default, subtasks do not inherit free arguments (``inherit-extra-args`` defaults to ``false``), so only subtasks explicitly opting in will receive them:
+.. note::
+
+   Passing :sh:`--` in the arguments list to any other task type will simply result in any subsequent arguments being ignored.
+
+Forwarding free arguments to subtasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For :doc:`sequence<../tasks/task_types/sequence>` and :doc:`parallel<../tasks/task_types/parallel>` tasks, free arguments can be forwarded to individual subtasks. Because not every subtask in a group necessarily accepts extra arguments, forwarding is opt-in: a subtask must declare ``inherit-extra-args = true`` to receive them. By default ``inherit-extra-args`` is ``false``, so subtasks silently discard any extra arguments they receive.
+
+This is particularly useful when using a sequence or parallel task as a test runner that covers multiple Python versions, allowing extra arguments to be passed through to each test invocation:
 
 .. code-block:: toml
 
   [tool.poe.tasks.test-py311]
-  cmd = "pytest tests"
+  cmd = "pytest tests --cov=mypackage"
+  inherit-extra-args = true
+
+  [tool.poe.tasks.test-py312]
+  cmd = "pytest tests --cov=mypackage"
   inherit-extra-args = true
 
   [tool.poe.tasks.test-all]
@@ -344,8 +357,25 @@ For :doc:`sequence<../tasks/task_types/sequence>` and :doc:`parallel<../tasks/ta
 
 .. code-block:: sh
 
-  poe test-all -- -k test_my_feature  # -k flag is forwarded only to test-py311
+  poe test-all -- -k test_my_feature
 
-.. note::
+This forwards ``-k test_my_feature`` to both ``test-py311`` and ``test-py312``, so every ``pytest`` invocation receives the extra flag.
 
-   Passing :sh:`--` in the arguments list to any other task type will simply result in any subsequent arguments being ignored.
+If the sequence or parallel task also defines its own named arguments, free arguments must be separated from them using :sh:`--`:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-all]
+  sequence = ["test-py311", "test-py312"]
+  args = [{ name = "verbose", options = ["-v"], type = "boolean" }]
+
+.. code-block:: sh
+
+  poe test-all -v -- -k test_my_feature
+
+Tasks that do *not* set ``inherit-extra-args = true`` simply discard any extra arguments passed by the parent task, making it safe to mix subtasks that accept extra arguments with those that do not:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-all]
+  sequence = ["test-py311", "test-py312", "lint"]  # lint ignores extras by default

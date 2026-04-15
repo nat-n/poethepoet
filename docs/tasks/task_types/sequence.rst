@@ -76,51 +76,7 @@ If you want strings in the array to be interpreted as a task type other than :do
 Forwarding free arguments to subtasks
 --------------------------------------
 
-Any free arguments passed to a sequence task (either all arguments when no named args are defined, or arguments passed after :sh:`--` when named args are defined) are forwarded to subtasks that have :toml:`inherit-extra-args = true` set.
-
-By default, subtasks **do not** inherit free arguments from the parent sequence task (``inherit-extra-args`` defaults to ``false``). To opt a subtask into receiving the forwarded arguments, set ``inherit-extra-args = true`` on that task:
-
-.. code-block:: toml
-
-  [tool.poe.tasks.test-py311]
-  cmd = "pytest tests"
-  executor = { isolated = true, python = "3.11" }
-  inherit-extra-args = true
-
-  [tool.poe.tasks.test-py312]
-  cmd = "pytest tests"
-  executor = { isolated = true, python = "3.12" }
-  inherit-extra-args = true
-
-  [tool.poe.tasks.test-all]
-  sequence = ["test-py311", "test-py312"]
-
-Calling the task like:
-
-.. code-block:: sh
-
-  poe test-all -- -k test_my_feature
-
-will run both ``test-py311`` and ``test-py312`` with the extra ``-k test_my_feature`` argument appended to each ``pytest`` invocation.
-
-If the sequence task also defines its own named arguments, free arguments are separated from them using :sh:`--`:
-
-.. code-block:: toml
-
-  [tool.poe.tasks.test-all]
-  sequence = ["test-py311", "test-py312"]
-  args = [{ name = "verbose", options = ["-v"], type = "boolean" }]
-
-.. code-block:: sh
-
-  poe test-all -v -- -k test_my_feature
-
-Tasks with ``inherit-extra-args = false`` (the default) simply discard any extra arguments they receive from the parent sequence or parallel task, making it safe to mix tasks that accept extra arguments with those that do not:
-
-.. code-block:: toml
-
-  [tool.poe.tasks.test-all]
-  sequence = ["test-py311", "test-py312", "lint"]  # lint ignores extras by default
+Free arguments can be forwarded to individual subtasks by setting ``inherit-extra-args = true`` on those subtasks. See :ref:`Forwarding free arguments to subtasks` in the :doc:`args guide<../../guides/args_guide>` for details.
 
 
 Sequence task as an array of tables
