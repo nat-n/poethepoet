@@ -126,3 +126,9 @@ So running this task would look like:
   Poe <= flavor
   Poe => make_chocolate_icecream
   ...
+
+
+Forwarding free arguments to case tasks
+----------------------------------------
+
+Free arguments can be forwarded to individual case tasks by setting ``inherit-extra-args = true`` on those case tasks. See :ref:`Forwarding free arguments to subtasks` in the :doc:`args guide<../../guides/args_guide>` for details.

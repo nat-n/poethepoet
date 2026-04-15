@@ -140,3 +140,36 @@ args = [
 \\${tru}=${tru} \\${tru:+plus}=${tru:+plus} \\${tru:-minus}=${tru:-minus}\\
 \\${txt}=${txt} \\${txt:+plus}=${txt:+plus} \\${txt:-minus}=${txt:-minus}
 """
+
+[tool.poe.tasks.forward-free-args-switch]
+control.cmd = "poe_test_echo run"
+
+  [[tool.poe.tasks.forward-free-args-switch.switch]]
+  case = "run"
+  cmd = "poe_test_echo one two"
+  inherit-extra-args = true
+
+  [[tool.poe.tasks.forward-free-args-switch.switch]]
+  cmd = "poe_test_echo wrong"
+
+[tool.poe.tasks.forward-free-args-switch-ignore-extra]
+control.cmd = "poe_test_echo run"
+
+  [[tool.poe.tasks.forward-free-args-switch-ignore-extra.switch]]
+  case = "run"
+  cmd = "poe_test_echo one two"
+
+  [[tool.poe.tasks.forward-free-args-switch-ignore-extra.switch]]
+  cmd = "poe_test_echo wrong"
+
+[tool.poe.tasks.forward-free-args-switch-with-named]
+control.cmd = "poe_test_echo run"
+args = [{ name = "greeting", positional = true, default = "hello" }]
+
+  [[tool.poe.tasks.forward-free-args-switch-with-named.switch]]
+  case = "run"
+  cmd = "poe_test_echo one two"
+  inherit-extra-args = true
+
+  [[tool.poe.tasks.forward-free-args-switch-with-named.switch]]
+  cmd = "poe_test_echo wrong"

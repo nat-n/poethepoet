@@ -338,7 +338,7 @@ will result in poe parsing the target_dir cli option, but appending the :sh:`--f
 Forwarding free arguments to subtasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For :doc:`sequence<../tasks/task_types/sequence>` and :doc:`parallel<../tasks/task_types/parallel>` tasks, free arguments can be forwarded to individual subtasks. Because not every subtask in a group necessarily accepts extra arguments, forwarding is opt-in: a subtask must declare ``inherit-extra-args = true`` to receive them. By default ``inherit-extra-args`` is ``false``, so subtasks silently discard any extra arguments they receive.
+For :doc:`sequence<../tasks/task_types/sequence>`, :doc:`parallel<../tasks/task_types/parallel>`, and :doc:`switch<../tasks/task_types/switch>` tasks, free arguments can be forwarded to individual subtasks. Because not every subtask in a group necessarily accepts extra arguments, forwarding is opt-in: a subtask must declare ``inherit-extra-args = true`` to receive them. By default ``inherit-extra-args`` is ``false``, so subtasks silently discard any extra arguments they receive.
 
 This is particularly useful when using a sequence or parallel task as a test runner that covers multiple Python versions, allowing extra arguments to be passed through to each test invocation:
 

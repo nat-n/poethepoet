@@ -195,3 +195,41 @@ ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
         result.stdout
         == "{'case': True, 'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
     )
+
+
+def test_switch_forwards_free_args(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-switch", "extra1", "extra2", project="switch"
+    )
+    assert result.capture == (
+        "Poe <= poe_test_echo run\nPoe => poe_test_echo one two extra1 extra2\n"
+    )
+    assert result.stdout == "one two extra1 extra2\n"
+    assert result.stderr == ""
+
+
+def test_switch_with_named_args_forwards_free_args(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-switch-with-named",
+        "hi",
+        "--",
+        "extra1",
+        "extra2",
+        project="switch",
+    )
+    assert result.capture == (
+        "Poe <= poe_test_echo run\nPoe => poe_test_echo one two extra1 extra2\n"
+    )
+    assert result.stdout == "one two extra1 extra2\n"
+    assert result.stderr == ""
+
+
+def test_switch_inherit_extra_args_default(run_poe_subproc):
+    result = run_poe_subproc(
+        "forward-free-args-switch-ignore-extra", "extra1", "extra2", project="switch"
+    )
+    assert result.capture == (
+        "Poe <= poe_test_echo run\nPoe => poe_test_echo one two\n"
+    )
+    assert result.stdout == "one two\n"
+    assert result.stderr == ""

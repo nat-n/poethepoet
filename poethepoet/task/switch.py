@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from ..exceptions import ConfigValidationError, ExecutionError
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
@@ -173,8 +173,20 @@ class SwitchTask(PoeTask):
         control_task_name = f"{spec.name}[__control__]"
         control_invocation: tuple[str, ...] = (control_task_name,)
         options = self.spec.options
+        all_user_args = invocation[1:]
+
         if options.get("args"):
-            control_invocation = (*control_invocation, *invocation[1:])
+            try:
+                split_idx = all_user_args.index("--")
+                named_portion = all_user_args[:split_idx]
+                extra_portion = all_user_args[split_idx + 1 :]
+            except ValueError:
+                named_portion = all_user_args
+                extra_portion = ()
+            control_invocation = (*control_invocation, *named_portion)
+        else:
+            named_portion = ()
+            extra_portion = all_user_args
 
         self.control_task = self.spec.control_task_spec.create_task(
             invocation=control_invocation,
@@ -186,7 +198,17 @@ class SwitchTask(PoeTask):
         for case_keys, case_spec in spec.case_task_specs:
             task_invocation: tuple[str, ...] = (f"{spec.name}[{','.join(case_keys)}]",)
             if options.get("args"):
-                task_invocation = (*task_invocation, *invocation[1:])
+                if case_spec.options.inherit_extra_args and extra_portion:
+                    task_invocation = (
+                        *task_invocation,
+                        *named_portion,
+                        "--",
+                        *extra_portion,
+                    )
+                else:
+                    task_invocation = (*task_invocation, *named_portion)
+            elif case_spec.options.inherit_extra_args:
+                task_invocation = (*task_invocation, *extra_portion)
 
             case_task = case_spec.create_task(
                 invocation=task_invocation,
@@ -201,9 +223,6 @@ class SwitchTask(PoeTask):
     ):
         named_arg_values, _ = self.get_parsed_arguments(env)
         env.register_task_args(named_arg_values)
-
-        if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
-            raise PoeException(f"Switch task {self.name!r} does not accept arguments")
 
         # Indicate on the global context that there are multiple stages to this task
         context.multistage = True
