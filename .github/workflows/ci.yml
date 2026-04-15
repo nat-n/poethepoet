@@ -11,6 +11,7 @@ on:
       - development
     tags:
       - v*
+  workflow_dispatch:
 
 jobs:
   code-quality:
