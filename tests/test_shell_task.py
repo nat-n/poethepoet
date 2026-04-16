@@ -241,3 +241,19 @@ def test_shell_unset_semantics_pwsh_true(run_poe):
 def test_shell_unset_semantics_pwsh_false(run_poe):
     result = run_poe("bool_unset_semantics_pwsh", "--MY_FLAG", project="shells")
     assert _clean_shell_output(result.stdout) == "False|unset|fallback"
+
+
+def test_shell_task_extra_args_via_poe_extra_args(run_poe):
+    """Free args passed after -- are available in shell scripts via $POE_EXTRA_ARGS"""
+    result = run_poe("echo-extra-args", "--", "foo", "bar", project="shells")
+    assert result.capture == "Poe => poe_test_echo $target $POE_EXTRA_ARGS\n"
+    assert result.stdout == "default foo bar\n"
+    assert result.stderr == ""
+
+
+def test_shell_task_extra_args_via_poe_extra_args_without_named_args(run_poe):
+    """Shell task with $POE_EXTRA_ARGS but no named args accepts free args directly"""
+    result = run_poe("echo-extra-args-no-named", "foo", "bar", project="shells")
+    assert result.capture == "Poe => poe_test_echo $POE_EXTRA_ARGS\n"
+    assert result.stdout == "foo bar\n"
+    assert result.stderr == ""

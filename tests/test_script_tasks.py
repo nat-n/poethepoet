@@ -461,3 +461,13 @@ def test_script_env_access_unset_bool_arg_preserves_typed_false(run_poe):
     assert result.stdout == (
         "args ()\n" "kwargs {'typed': False, 'present': False, 'value': None}\n"
     )
+
+
+def test_script_task_extra_args_available_as_list_via_extra_args_var(run_poe):
+    """Free args are available as _extra_args (list[str]) in script task expressions"""
+    result = run_poe(
+        "echo-extra-args-script", "foo", "bar", project="scripts", env=no_venv
+    )
+    assert result.capture == "Poe => echo-extra-args-script foo bar\n"
+    assert result.stdout == "str: foo\nstr: bar\n"
+    assert result.stderr == ""

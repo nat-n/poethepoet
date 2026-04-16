@@ -575,6 +575,23 @@ def test_parallel_bool_negate(run_poe):
     assert "{'flag': False, 'val': False}" in result.stdout
 
 
+def test_parallel_task_forwards_extra_args_via_poe_extra_args(run_poe):
+    """Extra args passed to a parallel task are forwarded to subtasks via POE_EXTRA_ARGS"""
+    result = run_poe("extra-args-parallel", "hello", "world", project="parallel")
+    assert "extra: hello world" in result.stdout
+    assert "Let it be" in result.stdout
+    assert result.stderr == ""
+
+
+def test_parallel_task_forwards_extra_args_with_trailing_args(run_poe):
+    """$POE_EXTRA_ARGS in a parallel subtask can have args both before and after"""
+    result = run_poe(
+        "extra-args-parallel-trailing", "hello", "world", project="parallel"
+    )
+    assert "extra: before hello world after" in result.stdout
+    assert result.stderr == ""
+
+
 def filter_capture_lines(capture_lines: list[str], *prefixes: str) -> list[str]:
     return [
         line for line in capture_lines if not any(line.startswith(p) for p in prefixes)

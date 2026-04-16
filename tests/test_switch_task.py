@@ -195,3 +195,23 @@ ${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
         result.stdout
         == "{'case': True, 'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
     )
+
+
+def test_switch_task_forwards_extra_args_via_poe_extra_args(run_poe):
+    """Switch task forwards free args to selected branch via POE_EXTRA_ARGS"""
+    result = run_poe("echo-extra-branch", "foo", "bar", project="switch")
+    assert result.capture == (
+        "Poe <= poe_test_echo match\nPoe => poe_test_echo matched: foo bar\n"
+    )
+    assert result.stdout == "matched: foo bar\n"
+    assert result.stderr == ""
+
+
+def test_switch_task_forwards_extra_args_with_trailing_args(run_poe):
+    """$POE_EXTRA_ARGS in a switch branch can have args both before and after"""
+    result = run_poe("echo-extra-branch-trailing", "foo", "bar", project="switch")
+    assert result.capture == (
+        "Poe <= poe_test_echo match\nPoe => poe_test_echo before: foo bar :after\n"
+    )
+    assert result.stdout == "before: foo bar :after\n"
+    assert result.stderr == ""

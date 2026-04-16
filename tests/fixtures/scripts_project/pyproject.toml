@@ -282,6 +282,9 @@ args = [
 script = """pkg:echo_script(typed=MY_FLAG, present=('MY_FLAG' in environ), value=(environ['MY_FLAG'] if 'MY_FLAG' in environ else None))"""
 args = [{ name = "MY_FLAG", type = "boolean", default = true }]
 
+[tool.poe.tasks.echo-extra-args-script]
+script = "pkg:describe_args(*_extra_args)"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

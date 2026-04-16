@@ -161,3 +161,21 @@ def test_expr_env_access_uses_typed_and_templated_channels(run_poe):
 def test_expr_env_access_unset_bool_arg_preserves_typed_false(run_poe):
     result = run_poe("bool_env_access_expr", "--MY_FLAG", project="expr")
     assert result.stdout == "{'typed': False, 'templated': ''}\n"
+
+
+def test_expr_task_extra_args_available_as_list(run_poe):
+    """Free args are available as _extra_args (list[str]) in expr tasks"""
+    result = run_poe("count-extra-args", "foo", "bar", "baz", project="expr")
+    assert result.capture == "Poe => len(_extra_args)\n"
+    assert result.stdout == "3\n"
+    assert result.stderr == ""
+
+
+def test_expr_task_extra_args_combined_with_named_arg(run_poe):
+    """_extra_args can be used alongside named args in expr tasks"""
+    result = run_poe(
+        "label-extra-args", "--label=Sources", "--", "a.py", "b.py", project="expr"
+    )
+    assert result.capture == "Poe => f'{label}: {_extra_args}'\n"
+    assert result.stdout == "Sources: ['a.py', 'b.py']\n"
+    assert result.stderr == ""

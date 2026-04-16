@@ -141,3 +141,18 @@ args = [{ name = "_secret", default = "hidden" }]
 sequence = [
   { cmd = "poe_test_env", env = { public = "${_secret}" } },
 ]
+
+[tool.poe.tasks.echo-args]
+cmd = "poe_test_echo $POE_EXTRA_ARGS"
+
+[tool.poe.tasks.extra-args-via-ref]
+sequence = ["echo-args $POE_EXTRA_ARGS", "say --thing done"]
+
+[tool.poe.tasks.extra-args-trailing]
+sequence = ["echo-args before $POE_EXTRA_ARGS after", "say --thing done"]
+
+[tool.poe.tasks.extra-args-via-env]
+sequence = [
+  { cmd = "poe_test_echo ${POE_EXTRA_ARGS}" },
+  "say --thing done",
+]

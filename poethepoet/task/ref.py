@@ -82,15 +82,16 @@ class RefTask(PoeTask):
             task_state.ignore_failure(ignore_fail)
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values)
+        env.register_task_args(named_arg_values, extra_args)
 
-        ref_invocation = (
-            *(
-                env.fill_template(token)
-                for token in shlex.split(env.fill_template(self.spec.content.strip()))
-            ),
-            *extra_args,
+        expanded_content = env.fill_template(self.spec.content.strip())
+        invocation_tokens = tuple(
+            env.fill_template(token) for token in shlex.split(expanded_content)
         )
+        if "POE_EXTRA_ARGS" in self.spec.content:
+            ref_invocation = invocation_tokens
+        else:
+            ref_invocation = (*invocation_tokens, *extra_args)
 
         task_spec = self.ctx.specs.get(ref_invocation[0])
         task = task_spec.create_task(

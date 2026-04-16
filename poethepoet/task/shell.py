@@ -68,10 +68,14 @@ class ShellTask(PoeTask):
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
-        named_arg_values, _ = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        env.register_task_args(named_arg_values, extra_args)
 
-        if not named_arg_values and any(arg.strip() for arg in self.invocation[1:]):
+        if (
+            not named_arg_values
+            and "POE_EXTRA_ARGS" not in self.spec.content
+            and any(arg.strip() for arg in self.invocation[1:])
+        ):
             raise PoeException(
                 f"Shell task {self.spec.name!r} does not accept arguments"
             )

@@ -121,3 +121,13 @@ args = ["_secret", "_PUBLIC"]
 [tool.poe.tasks.private_explicit_option]
 cmd = "poe_test_echo ${_secret}"
 args = [{ name = "_secret", options = ["--_secret"] }]
+
+[tool.poe.tasks.echo-extra-args]
+cmd = "poe_test_echo extra: $POE_EXTRA_ARGS"
+
+[tool.poe.tasks.echo-extra-args-trailing]
+cmd = "poe_test_echo before: $POE_EXTRA_ARGS :after"
+
+[tool.poe.tasks.echo-extra-args-with-named]
+cmd = "poe_test_echo ${prefix} extra: $POE_EXTRA_ARGS"
+args = [{ name = "prefix", default = "result" }]

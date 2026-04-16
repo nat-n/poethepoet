@@ -185,6 +185,7 @@ ignore_messages  = [
   "Hyperlink target \"ref-env-vars\" is not referenced.",
   "Hyperlink target \"sequence-composition\" is not referenced.",
   "Hyperlink target \"graph-composition\" is not referenced.",
+  "Hyperlink target \"forwarding-free-arguments-via-poe-extra-args\" is not referenced.",
   "No directive entry for \"autoclass\" in module \"docutils.parsers.rst.languages.en\""
 ]
 ignore_directives = [

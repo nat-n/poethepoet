@@ -74,3 +74,19 @@ parallel = [
   { cmd = "poe_test_echo \"3 going to the void\"", capture_stdout = "/dev/null" },
   { cmd = "poe_test_echo \"4 going to stdout 4\"" },
 ]
+
+[tool.poe.tasks.echo-extra]
+cmd = "poe_test_echo extra: $POE_EXTRA_ARGS"
+
+[tool.poe.tasks.extra-args-parallel]
+parallel = [
+  "echo-extra $POE_EXTRA_ARGS",
+  "words-of-wisdom",
+]
+
+[tool.poe.tasks.extra-args-parallel-trailing]
+parallel = [
+  "echo-extra before $POE_EXTRA_ARGS after",
+  "words-of-wisdom",
+]
+

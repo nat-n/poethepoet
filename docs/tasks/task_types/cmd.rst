@@ -154,3 +154,11 @@ You can also ignore task failures just in case of one or more specific exit code
   [tool.poe.tasks.serve]
   cmd        = "pytest"
   ignore_fail = [4, 5] # don't fail if no tests are found
+
+
+Controlling placement of free arguments via ``$POE_EXTRA_ARGS``
+---------------------------------------------------------------
+
+By default, any free arguments passed to a ``cmd`` task are appended to the end of the command. However, if you reference ``$POE_EXTRA_ARGS`` explicitly in the command string, poe will expand it in place instead, and *not* additionally append the extra args at the end. This is useful when fixed options must follow the free arguments.
+
+See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
