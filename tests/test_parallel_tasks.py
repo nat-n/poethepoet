@@ -177,29 +177,45 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
     assert result.code == 1
 
     result = run_poe_subproc("lvl1_para", cwd=project_path)
-    assert sequences_are_similar(
-        result.capture_lines,
-        [
-            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'failing fast with error'; exit 1;",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'failing fast with error'; exit 1;",
-            "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
-            "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
-        ],
-    ) or sequences_are_similar(
-        result.capture_lines,
-        [
-            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'failing fast with error'; exit 1;",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'Great success!'",
-            "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
-            "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
-        ],
+    assert (
+        sequences_are_similar(
+            result.capture_lines,
+            [
+                f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
+                "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
+            ],
+        )
+        or sequences_are_similar(
+            result.capture_lines,
+            [
+                f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'Great success!'",
+                "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
+                "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
+            ],
+        )
+        or sequences_are_similar(
+            result.capture_lines,
+            [
+                f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'Great success!'",
+                "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
+                "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+            ],
+        )
     )
     assert set(result.output_lines) in (
         {
