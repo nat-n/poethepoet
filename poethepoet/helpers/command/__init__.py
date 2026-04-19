@@ -34,7 +34,14 @@ def resolve_command_tokens(
     patterns that are not escaped or quoted. In case there are glob patterns in the
     token, any escaped glob characters will have been escaped with [].
     """
-    from .ast import Glob, ParamArgument, ParamExpansion, ParseConfig, PythonGlob
+    from .ast import (
+        Glob,
+        ParamArgument,
+        ParamExpansion,
+        ParseConfig,
+        PythonGlob,
+        WhitespaceText,
+    )
 
     if not config:
         config = ParseConfig(substitute_nodes={Glob: PythonGlob})
@@ -60,32 +67,108 @@ def resolve_command_tokens(
         return (token, includes_glob)
 
     def resolve_param_argument(argument: ParamArgument, env: Mapping[str, str]):
-        token_parts = []
+        """
+        Flatten a ParamArgument to a string, discarding quote structure.
+        Used when the result will be placed in an already-quoted context.
+        """
+        parts: list[str] = []
         for segment in argument.segments:
             for element in segment:
                 if isinstance(element, ParamExpansion):
-                    token_parts.append(resolve_param_value(element, env))
+                    result = resolve_param_value(element, env)
+                    if isinstance(result, ParamArgument):
+                        parts.append(resolve_param_argument(result, env))
+                    else:
+                        parts.append(result)
                 else:
-                    token_parts.append(element.content)
+                    parts.append(element.content)
 
-        return "".join(token_parts)
+        return "".join(parts)
 
-    def resolve_param_value(element: ParamExpansion, env: Mapping[str, str]):
+    def resolve_param_value(
+        element: ParamExpansion, env: Mapping[str, str]
+    ) -> str | ParamArgument:
+        """
+        Returns a plain string for simple variable values, or a ParamArgument
+        when an operation's argument should be processed with its quoting intact.
+        """
         param_value = env.get(element.param_name, "")
 
         if element.operation:
             if param_value:
                 if element.operation.operator == ":+":
-                    # apply 'alternate value' operation
-                    param_value = resolve_param_argument(
-                        element.operation.argument, env
-                    )
-
+                    return element.operation.argument
             elif element.operation.operator == ":-":
-                # apply 'default value' operation
-                param_value = resolve_param_argument(element.operation.argument, env)
+                return element.operation.argument
 
         return param_value
+
+    def resolve_argument_tokens(
+        argument: ParamArgument,
+        env: Mapping[str, str],
+        token_parts: list[tuple[str, bool]],
+    ) -> Iterator[tuple[str, bool]]:
+        """
+        Process a ParamArgument's segments inline, respecting quoting.
+        Quoted segments are not word-split; unquoted WhitespaceText causes
+        word breaks.
+        """
+        for arg_segment in argument.segments:
+            if arg_segment.is_quoted:
+                for element in arg_segment:
+                    if isinstance(element, ParamExpansion):
+                        result = resolve_param_value(element, env)
+                        if isinstance(result, ParamArgument):
+                            flat = resolve_param_argument(result, env)
+                            if flat:
+                                token_parts.append((flat, False))
+                        elif result:
+                            token_parts.append((result, False))
+                    else:
+                        token_parts.append((element.content, False))
+            else:
+                for element in arg_segment:
+                    if isinstance(element, WhitespaceText):
+                        if token_parts:
+                            yield finalize_token(token_parts)
+                    elif isinstance(element, ParamExpansion):
+                        result = resolve_param_value(element, env)
+                        if isinstance(result, ParamArgument):
+                            yield from resolve_argument_tokens(result, env, token_parts)
+                        elif result:
+                            yield from _emit_unquoted_param_value(result, token_parts)
+                    else:
+                        token_parts.append((element.content, False))
+
+    def _emit_unquoted_param_value(
+        param_value: str,
+        token_parts: list[tuple[str, bool]],
+    ) -> Iterator[tuple[str, bool]]:
+        """
+        Handle an unquoted plain string param value: word-split on whitespace
+        and check for glob patterns.
+        """
+        if param_value.isspace():
+            if token_parts:
+                yield finalize_token(token_parts)
+            return
+
+        if param_value[0].isspace() and token_parts:
+            yield finalize_token(token_parts)
+
+        param_words = (
+            (word, bool(glob_pattern.search(word))) for word in param_value.split()
+        )
+
+        token_parts.append(next(param_words))
+
+        for param_word in param_words:
+            if token_parts:
+                yield finalize_token(token_parts)
+            token_parts.append(param_word)
+
+        if param_value[-1].isspace() and token_parts:
+            yield finalize_token(token_parts)
 
     for line in lines:
         # Ignore line breaks, assuming they're only due to comments
@@ -98,40 +181,29 @@ def resolve_command_tokens(
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):
-                        param_value = resolve_param_value(element, env)
+                        result = resolve_param_value(element, env)
+
+                        if isinstance(result, ParamArgument) and not segment.is_quoted:
+                            # In unquoted context, process argument
+                            # segments inline to preserve quoting
+                            yield from resolve_argument_tokens(result, env, token_parts)
+                            continue
+
+                        # Flatten ParamArgument to string for quoted
+                        # contexts (or use the string value directly)
+                        param_value = (
+                            resolve_param_argument(result, env)
+                            if isinstance(result, ParamArgument)
+                            else result
+                        )
                         if not param_value:
-                            # Empty param value has no effect
                             continue
                         if segment.is_quoted:
                             token_parts.append((param_value, False))
-                        elif param_value.isspace():
-                            # collapse whitespace value
-                            token_parts.append((" ", False))
                         else:
-                            # If the the param expansion it not quoted then:
-                            # - Whitespace inside a substituted param value results in
-                            #  a word break, regardless of quotes or backslashes
-                            # - glob patterns should be evaluated
-
-                            if param_value[0].isspace() and token_parts:
-                                # param_value starts with a word break
-                                yield finalize_token(token_parts)
-
-                            param_words = (
-                                (word, bool(glob_pattern.search(word)))
-                                for word in param_value.split()
+                            yield from _emit_unquoted_param_value(
+                                param_value, token_parts
                             )
-
-                            token_parts.append(next(param_words))
-
-                            for param_word in param_words:
-                                if token_parts:
-                                    yield finalize_token(token_parts)
-                                token_parts.append(param_word)
-
-                            if param_value[-1].isspace() and token_parts:
-                                # param_value ends with a word break
-                                yield finalize_token(token_parts)
 
                     elif isinstance(element, Glob):
                         token_parts.append((element.content, True))
