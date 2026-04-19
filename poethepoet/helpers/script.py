@@ -44,8 +44,13 @@ def parse_script_reference(
         raise ExpressionParseError(f"Invalid script reference: {script_ref.strip()!r}")
 
     if target_ref.isidentifier():
-        if parsed_args:
-            function_call = FunctionCall(f"{target_ref}(**({parsed_args}))", target_ref)
+        # _extra_args is framework-managed; exclude it from auto-kwargs so it
+        # doesn't pollute functions that use no explicit arg list
+        auto_kwargs = {
+            k: v for k, v in (parsed_args or {}).items() if k != "_extra_args"
+        }
+        if auto_kwargs:
+            function_call = FunctionCall(f"{target_ref}(**({auto_kwargs}))", target_ref)
         else:
             function_call = FunctionCall(f"{target_ref}()", target_ref)
     else:

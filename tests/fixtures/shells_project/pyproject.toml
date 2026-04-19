@@ -110,3 +110,10 @@ $fallback = if ($null -ne $env:MY_FLAG) { $env:MY_FLAG } else { "fallback" }
 poe_test_echo "$present|$value|$fallback"
 """
 args = [{ name = "MY_FLAG", type = "boolean", default = true }]
+
+[tool.poe.tasks.echo-extra-args]
+shell = "poe_test_echo $target $POE_EXTRA_ARGS"
+args = [{ name = "target", default = "default" }]
+
+[tool.poe.tasks.echo-extra-args-no-named]
+shell = "poe_test_echo $POE_EXTRA_ARGS"

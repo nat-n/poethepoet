@@ -586,7 +586,8 @@ class PoeTask(metaclass=MetaPoeTask):
 
         if self.__upstream_invocations is None:
             env = self.spec.get_task_env(context.env, io=self.ctx.io)
-            env.register_task_args(self.get_parsed_arguments(env)[0])
+            parsed_args, extra_args = self.get_parsed_arguments(env)
+            env.register_task_args(parsed_args, extra_args)
 
             self.__upstream_invocations = {
                 "deps": [

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 from collections.abc import (
     Callable,
     Iterable,
@@ -188,9 +189,13 @@ class TaskEnv(Mapping[str, str]):
                 self._private_vars.add(key)
             self._env_vars[key] = val
 
-    def register_task_args(self, args: Mapping[str, Any]):
+    def register_task_args(self, args: Mapping[str, Any], extra_args: Sequence[str]):
         """
         Track typed argument variables, and map to env vars.
+
+        extra_args are stored as a private _extra_args list (accessible in script &
+        expr tasks) and as POE_EXTRA_ARGS env var (accessible in all tasks as a
+        shell-quoted, space-delimited string), but only if non-empty.
         """
         for key, value in args.items():
             self._arg_vars[key] = value
@@ -202,6 +207,11 @@ class TaskEnv(Mapping[str, str]):
                 self.set(key, " ".join(str(item) for item in value))
             else:
                 self.set(key, str(value))
+
+        if extra_args:
+            self._arg_vars["_extra_args"] = list(extra_args)
+            self._private_vars.add("_extra_args")
+            self._env_vars["POE_EXTRA_ARGS"] = shlex.join(extra_args)
 
     def apply_env_config(
         self,

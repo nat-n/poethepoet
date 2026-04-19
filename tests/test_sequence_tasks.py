@@ -204,3 +204,33 @@ def test_private_arg_inherited_can_be_remapped_public(run_poe, is_windows):
     if not is_windows:
         assert "_secret=hidden" not in result.stdout
     assert "public=hidden" in stdout_lower
+
+
+def test_sequence_task_forwards_extra_args_via_poe_extra_args_in_ref(run_poe):
+    """Extra args passed to a sequence task are forwarded via $POE_EXTRA_ARGS in ref"""
+    result = run_poe("extra-args-via-ref", "hello", "world", project="sequences")
+    assert result.capture == (
+        "Poe => poe_test_echo hello world\nPoe => poe_test_echo done\n"
+    )
+    assert result.stdout == "hello world\ndone\n"
+    assert result.stderr == ""
+
+
+def test_sequence_task_forwards_extra_args_via_poe_extra_args_env(run_poe):
+    """Inline subtasks can access POE_EXTRA_ARGS set by the parent sequence task"""
+    result = run_poe("extra-args-via-env", "hello", "world", project="sequences")
+    assert result.capture == (
+        "Poe => poe_test_echo hello world\nPoe => poe_test_echo done\n"
+    )
+    assert result.stdout == "hello world\ndone\n"
+    assert result.stderr == ""
+
+
+def test_sequence_task_forwards_extra_args_with_trailing_args(run_poe):
+    """$POE_EXTRA_ARGS in a sequence subtask can have args both before and after"""
+    result = run_poe("extra-args-trailing", "hello", "world", project="sequences")
+    assert result.capture == (
+        "Poe => poe_test_echo before hello world after\nPoe => poe_test_echo done\n"
+    )
+    assert result.stdout == "before hello world after\ndone\n"
+    assert result.stderr == ""

@@ -120,6 +120,26 @@ args = [
   [[tool.poe.tasks.booleans-cmd.switch]]
   expr = """{'non':non, 'tru':tru, 'fal':fal, 'txt':txt}"""
 
+[tool.poe.tasks.echo-extra-branch]
+control.cmd = "poe_test_echo match"
+
+  [[tool.poe.tasks.echo-extra-branch.switch]]
+  case = "match"
+  cmd = "poe_test_echo matched: $POE_EXTRA_ARGS"
+
+  [[tool.poe.tasks.echo-extra-branch.switch]]
+  cmd = "poe_test_echo default: $POE_EXTRA_ARGS"
+
+[tool.poe.tasks.echo-extra-branch-trailing]
+control.cmd = "poe_test_echo match"
+
+  [[tool.poe.tasks.echo-extra-branch-trailing.switch]]
+  case = "match"
+  cmd = "poe_test_echo before: $POE_EXTRA_ARGS :after"
+
+  [[tool.poe.tasks.echo-extra-branch-trailing.switch]]
+  cmd = "poe_test_echo default: $POE_EXTRA_ARGS :after"
+
 [tool.poe.tasks.booleans-expr]
 control.expr = "tru"
 args = [

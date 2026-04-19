@@ -83,3 +83,10 @@ args = [
 [tool.poe.tasks.bool_env_access_expr]
 expr = "{'typed': MY_FLAG, 'templated': ([${MY_FLAG}] or [''])[0]}"
 args = [{ name = "MY_FLAG", type = "boolean", default = true }]
+
+[tool.poe.tasks.count-extra-args]
+expr = "len(_extra_args)"
+
+[tool.poe.tasks.label-extra-args]
+expr = "f'{label}: {_extra_args}'"
+args = [{ name = "label", default = "Files" }]

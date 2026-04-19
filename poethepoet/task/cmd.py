@@ -60,11 +60,14 @@ class CmdTask(PoeTask):
             task_state.ignore_failure(ignore_fail)
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values)
+        env.register_task_args(named_arg_values, extra_args)
 
         executor = self._get_executor(context, env)
 
-        cmd = (*self._resolve_commandline(context, env), *extra_args)
+        if "POE_EXTRA_ARGS" in self.spec.content:
+            cmd = tuple(self._resolve_commandline(context, env))
+        else:
+            cmd = (*self._resolve_commandline(context, env), *extra_args)
 
         self._print_action(shlex.join(cmd), context.dry)
 

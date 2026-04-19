@@ -177,29 +177,45 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
     assert result.code == 1
 
     result = run_poe_subproc("lvl1_para", cwd=project_path)
-    assert sequences_are_similar(
-        result.capture_lines,
-        [
-            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'failing fast with error'; exit 1;",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'failing fast with error'; exit 1;",
-            "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
-            "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
-        ],
-    ) or sequences_are_similar(
-        result.capture_lines,
-        [
-            f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'failing fast with error'; exit 1;",
-            "Poe => echo 'Great success!'",
-            "Poe => echo 'Great success!'",
-            "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
-            "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
-        ],
+    assert (
+        sequences_are_similar(
+            result.capture_lines,
+            [
+                f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
+                "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
+            ],
+        )
+        or sequences_are_similar(
+            result.capture_lines,
+            [
+                f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'Great success!'",
+                "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
+                "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
+            ],
+        )
+        or sequences_are_similar(
+            result.capture_lines,
+            [
+                f"Poe => poe_test_delayed_echo {slow_delay} 'Eventual success!'",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+                "Poe => echo 'Great success!'",
+                "Poe => echo 'Great success!'",
+                "Warning: Parallel subtask 'fast_fail' failed with non-zero exit status",
+                "Error: Parallel task 'lvl1_para' aborted after failed subtask 'fast_fail'",
+                "Poe => echo 'failing fast with error'; exit 1;",
+            ],
+        )
     )
     assert set(result.output_lines) in (
         {
@@ -253,17 +269,29 @@ def test_parallel_fail_all(run_poe_subproc, generate_pyproject, delay_factor):
 
     # fast_success from lvl1_seq (running as a parallel subtask) may arrive before
     # or after fast_fail depending on timing, so accept 2 or 3 fast_success lines.
-    assert result.stdout.startswith(
-        "Great success!\n"
-        "fast_success | Great success!\n"
-        "fast_success | Great success!\n"
-        "fast_fail | failing fast with error\n"
-    ) or result.stdout.startswith(
-        "Great success!\n"
-        "fast_success | Great success!\n"
-        "fast_success | Great success!\n"
-        "fast_success | Great success!\n"
-        "fast_fail | failing fast with error\n"
+    # slow_success may also complete before fast_fail on slower systems.
+    assert (
+        result.stdout.startswith(
+            "Great success!\n"
+            "fast_success | Great success!\n"
+            "fast_success | Great success!\n"
+            "fast_fail | failing fast with error\n"
+        )
+        or result.stdout.startswith(
+            "Great success!\n"
+            "fast_success | Great success!\n"
+            "fast_success | Great success!\n"
+            "fast_success | Great success!\n"
+            "fast_fail | failing fast with error\n"
+        )
+        or result.stdout.startswith(
+            "Great success!\n"
+            "fast_success | Great success!\n"
+            "fast_success | Great success!\n"
+            "fast_success | Great success!\n"
+            "slow_success | Eventual success!\n"
+            "fast_fail | failing fast with error\n"
+        )
     )
     assert result.code == 1
 
@@ -573,6 +601,23 @@ def test_parallel_bool_negate(run_poe):
     result = run_poe("bool_parallel", "--val", project="parallel")
     assert "cmd:unset:unset" in result.stdout
     assert "{'flag': False, 'val': False}" in result.stdout
+
+
+def test_parallel_task_forwards_extra_args_via_poe_extra_args(run_poe):
+    """Extra args passed to a parallel task are forwarded to subtasks via POE_EXTRA_ARGS"""
+    result = run_poe("extra-args-parallel", "hello", "world", project="parallel")
+    assert "extra: hello world" in result.stdout
+    assert "Let it be" in result.stdout
+    assert result.stderr == ""
+
+
+def test_parallel_task_forwards_extra_args_with_trailing_args(run_poe):
+    """$POE_EXTRA_ARGS in a parallel subtask can have args both before and after"""
+    result = run_poe(
+        "extra-args-parallel-trailing", "hello", "world", project="parallel"
+    )
+    assert "extra: before hello world after" in result.stdout
+    assert result.stderr == ""
 
 
 def filter_capture_lines(capture_lines: list[str], *prefixes: str) -> list[str]:

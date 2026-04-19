@@ -444,3 +444,34 @@ def test_multi_value_provided_empty(run_poe):
     """Multiple arg provided with no values (--items with nothing): env var is unset"""
     result = run_poe("multi_value_env", "--items", project="cmds")
     assert result.stdout.strip() == "False None"
+
+
+def test_cmd_task_with_poe_extra_args(run_poe):
+    """A cmd task referencing $POE_EXTRA_ARGS expands them rather than appending"""
+    result = run_poe("echo-extra-args", "foo", "bar", project="cmds")
+    assert result.capture == "Poe => poe_test_echo extra: foo bar\n"
+    assert result.stdout == "extra: foo bar\n"
+    assert result.stderr == ""
+
+
+def test_cmd_task_with_poe_extra_args_and_named_arg(run_poe):
+    """A cmd task with both named args and $POE_EXTRA_ARGS references works correctly"""
+    result = run_poe(
+        "echo-extra-args-with-named",
+        "--prefix=hello",
+        "--",
+        "foo",
+        "bar",
+        project="cmds",
+    )
+    assert result.capture == "Poe => poe_test_echo hello extra: foo bar\n"
+    assert result.stdout == "hello extra: foo bar\n"
+    assert result.stderr == ""
+
+
+def test_cmd_task_with_poe_extra_args_and_trailing_args(run_poe):
+    """$POE_EXTRA_ARGS in a cmd task can have args both before and after"""
+    result = run_poe("echo-extra-args-trailing", "foo", "bar", project="cmds")
+    assert result.capture == "Poe => poe_test_echo before: foo bar :after\n"
+    assert result.stdout == "before: foo bar :after\n"
+    assert result.stderr == ""
