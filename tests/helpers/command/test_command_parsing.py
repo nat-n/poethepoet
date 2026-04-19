@@ -77,3 +77,61 @@ def test_resolve_command_tokens():
         ("two", False),
         ("three", False),
     ]
+
+
+def test_resolve_alternate_value_preserves_quotes():
+    """
+    Quoted content inside :+ and :- operators should not be word-split.
+    See https://github.com/nat-n/poethepoet/issues/333
+
+    Each case is verified against bash behavior. Cases already covered by
+    integration tests in test_cmd_param_expansion.py are not repeated here.
+    """
+    # Default value not applied when var is set
+    line = parse_poe_cmd("echo ${FLAG:- -m 'not build'}")[0]
+    assert list(resolve_command_tokens([line], {"FLAG": "yes"})) == [
+        ("echo", False),
+        ("yes", False),
+    ]
+
+    # Expansion embedded in a word — leading/trailing text joins adjacent tokens
+    # bash: printf '[%s]\n' x${F:+ -m 'not build'}y → [x] [-m] [not buildy]
+    line = parse_poe_cmd("x${FLAG:+ -m 'not build'}y")[0]
+    assert list(resolve_command_tokens([line], {"FLAG": "yes"})) == [
+        ("x", False),
+        ("-m", False),
+        ("not buildy", False),
+    ]
+
+    # Nested expansion in alternate value — inner value is word-split
+    # bash: F=y O="hello world"; printf '[%s]\n' ${F:+ $O} → [hello] [world]
+    line = parse_poe_cmd("${FLAG:+ $OTHER}")[0]
+    assert list(
+        resolve_command_tokens([line], {"FLAG": "y", "OTHER": "hello world"})
+    ) == [
+        ("hello", False),
+        ("world", False),
+    ]
+
+    # Outer double quotes suppress word splitting of nested expansion
+    # bash: F=y O="hello world"; printf '[%s]\n' "${F:+ $O}" → [ hello world]
+    line = parse_poe_cmd('"${FLAG:+ $OTHER}"')[0]
+    assert list(
+        resolve_command_tokens([line], {"FLAG": "y", "OTHER": "hello world"})
+    ) == [
+        (" hello world", False),
+    ]
+
+    # Nested operations: alternate value containing default value with quotes
+    # bash: F=y; printf '[%s]\n' ${F:+${UNSET:-'hello world'}} → [hello world]
+    line = parse_poe_cmd("${FLAG:+${UNSET:-'hello world'}}")[0]
+    assert list(resolve_command_tokens([line], {"FLAG": "y"})) == [
+        ("hello world", False),
+    ]
+
+    # Empty alternate value produces nothing
+    # bash: F=y; printf '[%s]\n' A${F:+}B → [AB]
+    line = parse_poe_cmd("A${FLAG:+}B")[0]
+    assert list(resolve_command_tokens([line], {"FLAG": "y"})) == [
+        ("AB", False),
+    ]

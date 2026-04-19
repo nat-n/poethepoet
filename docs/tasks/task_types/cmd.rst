@@ -89,6 +89,10 @@ In the example below, it prints ``"hello!"`` if the ``--hello`` flag is present;
   cmd = "echo ${hello:-hello!}"
   args = [{ name = "hello", type = "boolean", default = "hi!" }]
 
+.. note::
+
+   Unlike bash, glob patterns (``*``, ``?``, ``[...]``) inside ``:-`` and ``:+`` operator arguments are treated as literal text and are not expanded.
+
 Glob expansion
 ~~~~~~~~~~~~~~
 
