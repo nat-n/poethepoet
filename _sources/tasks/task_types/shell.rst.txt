@@ -113,3 +113,11 @@ See the :doc:`args guide<../../guides/args_guide>` for full details on configuri
 .. warning::
 
   Unlike cmd, script, or expr tasks, shell tasks only access variables from the environment at runtime via the shell interpreter. Therefore ``_private`` environment variables cannot be accessed from shell task content, unless they are remapped to a normal environment variable via the ``env`` option.
+
+
+Accessing free arguments via ``$POE_EXTRA_ARGS``
+------------------------------------------------
+
+Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside shell task scripts as the ``$POE_EXTRA_ARGS`` environment variable. The value is a shell-quoted, space-delimited string, ready to be expanded inline.
+
+See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.

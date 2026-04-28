@@ -307,6 +307,11 @@
 <p>An array within a parallel task is interpreted as a <a class="reference internal" href="sequence.html"><span class="doc">sequence</span></a> task, so you can run certain parallel subtasks <a class="reference internal" href="../../guides/composition_guide.html#composing-tasks-to-run-in-parallel"><span class="std std-ref">with strict ordering</span></a>.</p>
 </div>
 </section>
+<section id="forwarding-free-arguments-to-subtasks">
+<h2>Forwarding free arguments to subtasks<a class="headerlink" href="#forwarding-free-arguments-to-subtasks" title="Link to this heading">¶</a></h2>
+<p>By default, free arguments passed to a parallel task are not forwarded to any of its subtasks. However, they can be forwarded selectively by referencing the special <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> environment variable in individual subtask definitions. Only subtasks that explicitly reference <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> will receive them.</p>
+<p>See the <a class="reference internal" href="../../guides/args_guide.html#forwarding-free-arguments-via-poe-extra-args"><span class="std std-ref">Forwarding free arguments via $POE_EXTRA_ARGS</span></a> section of the args guide for details and examples.</p>
+</section>
 <section id="customize-output-prefixing">
 <h2>Customize output prefixing<a class="headerlink" href="#customize-output-prefixing" title="Link to this heading">¶</a></h2>
 <p>When running multiple tasks in parallel a prefix is applied to each line of output to identify the origin. By default the prefix includes the task name and has a distinct color applied to it (6 colors in rotation).</p>
@@ -339,7 +344,7 @@
 </pre></div>
 </div>
 <p>will result in output rendered like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1:build] first task output line
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[1:build] first task output line
 [2:test] second task output line
 [3:deploy_…] third task output line
 </pre></div>
@@ -427,6 +432,7 @@
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
 <li><a class="reference internal" href="#continue-on-subtask-failure">Continue on subtask failure</a></li>
 <li><a class="reference internal" href="#changing-the-default-item-type">Changing the default item type</a></li>
+<li><a class="reference internal" href="#forwarding-free-arguments-to-subtasks">Forwarding free arguments to subtasks</a></li>
 <li><a class="reference internal" href="#customize-output-prefixing">Customize output prefixing</a></li>
 </ul>
 </li>
@@ -439,7 +445,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=c79cc614"></script>
+</div><script src="../../_static/documentation_options.js?v=b6498c4d"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

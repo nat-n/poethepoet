@@ -339,6 +339,11 @@ return non-zero if the result is False.</p>
 </pre></div>
 </div>
 </section>
+<section id="accessing-free-arguments-via-extra-args">
+<h2>Accessing free arguments via <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code><a class="headerlink" href="#accessing-free-arguments-via-extra-args" title="Link to this heading">¶</a></h2>
+<p>Free arguments (arguments not matched by any named arg definition, or arguments passed after <code class="code highlight sh docutils literal highlight-sh">--</code>) are available inside expr tasks as the <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code> variable — a <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>.</p>
+<p>See the <a class="reference internal" href="../../guides/args_guide.html#forwarding-free-arguments-via-poe-extra-args"><span class="std std-ref">Forwarding free arguments via $POE_EXTRA_ARGS</span></a> section of the args guide for details and examples.</p>
+</section>
 </section>
 
         </article>
@@ -414,6 +419,7 @@ return non-zero if the result is False.</p>
 <li><a class="reference internal" href="#referencing-imported-modules-in-an-expression">Referencing imported modules in an expression</a></li>
 <li><a class="reference internal" href="#fail-if-the-expression-result-is-falsey">Fail if the expression result is falsey</a></li>
 <li><a class="reference internal" href="#referencing-the-result-of-other-tasks-in-an-expression">Referencing the result of other tasks in an expression</a></li>
+<li><a class="reference internal" href="#accessing-free-arguments-via-extra-args">Accessing free arguments via <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -425,7 +431,7 @@ return non-zero if the result is False.</p>
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=c79cc614"></script>
+</div><script src="../../_static/documentation_options.js?v=b6498c4d"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

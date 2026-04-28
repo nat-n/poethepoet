@@ -305,6 +305,10 @@ Hello<span class="w"> </span>nat
 <span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hi!&quot;</span><span class="w"> </span><span class="p">}]</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Unlike bash, glob patterns (<code class="docutils literal notranslate"><span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">?</span></code>, <code class="docutils literal notranslate"><span class="pre">[...]</span></code>) inside <code class="docutils literal notranslate"><span class="pre">:-</span></code> and <code class="docutils literal notranslate"><span class="pre">:+</span></code> operator arguments are treated as literal text and are not expanded.</p>
+</div>
 </section>
 <section id="glob-expansion">
 <h3>Glob expansion<a class="headerlink" href="#glob-expansion" title="Link to this heading">¶</a></h3>
@@ -352,6 +356,11 @@ Hello<span class="w"> </span>nat
 <span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">]</span><span class="w"> </span><span class="c1"># don&#39;t fail if no tests are found</span>
 </pre></div>
 </div>
+</section>
+<section id="controlling-placement-of-free-arguments-via-poe-extra-args">
+<h2>Controlling placement of free arguments via <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code><a class="headerlink" href="#controlling-placement-of-free-arguments-via-poe-extra-args" title="Link to this heading">¶</a></h2>
+<p>By default, any free arguments passed to a <code class="docutils literal notranslate"><span class="pre">cmd</span></code> task are appended to the end of the command. However, if you reference <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> explicitly in the command string, poe will expand it in place instead, and <em>not</em> additionally append the extra args at the end. This is useful when fixed options must follow the free arguments.</p>
+<p>See the <a class="reference internal" href="../../guides/args_guide.html#forwarding-free-arguments-via-poe-extra-args"><span class="std std-ref">Forwarding free arguments via $POE_EXTRA_ARGS</span></a> section of the args guide for details and examples.</p>
 </section>
 </section>
 
@@ -431,6 +440,7 @@ Hello<span class="w"> </span>nat
 </ul>
 </li>
 <li><a class="reference internal" href="#ignore-task-failure">Ignore task failure</a></li>
+<li><a class="reference internal" href="#controlling-placement-of-free-arguments-via-poe-extra-args">Controlling placement of free arguments via <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -442,7 +452,7 @@ Hello<span class="w"> </span>nat
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=c79cc614"></script>
+</div><script src="../../_static/documentation_options.js?v=b6498c4d"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -120,6 +120,14 @@ Expr tasks can reference the results of other tasks by leveraging the :doc:`uses
   imports = ["json"]
 
 
+Accessing free arguments via ``_extra_args``
+--------------------------------------------
+
+Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside expr tasks as the ``_extra_args`` variable — a ``list[str]``.
+
+See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
+
+
 .. |sys_module_link| raw:: html
 
    <a href="https://docs.python.org/3/library/sys.html" target="_blank">sys module</a>

@@ -332,6 +332,11 @@
 <p>Unlike cmd, script, or expr tasks, shell tasks only access variables from the environment at runtime via the shell interpreter. Therefore <code class="docutils literal notranslate"><span class="pre">_private</span></code> environment variables cannot be accessed from shell task content, unless they are remapped to a normal environment variable via the <code class="docutils literal notranslate"><span class="pre">env</span></code> option.</p>
 </div>
 </section>
+<section id="accessing-free-arguments-via-poe-extra-args">
+<h2>Accessing free arguments via <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code><a class="headerlink" href="#accessing-free-arguments-via-poe-extra-args" title="Link to this heading">¶</a></h2>
+<p>Free arguments (arguments not matched by any named arg definition, or arguments passed after <code class="code highlight sh docutils literal highlight-sh">--</code>) are available inside shell task scripts as the <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> environment variable. The value is a shell-quoted, space-delimited string, ready to be expanded inline.</p>
+<p>See the <a class="reference internal" href="../../guides/args_guide.html#forwarding-free-arguments-via-poe-extra-args"><span class="std std-ref">Forwarding free arguments via $POE_EXTRA_ARGS</span></a> section of the args guide for details and examples.</p>
+</section>
 </section>
 
         </article>
@@ -405,6 +410,7 @@
 <li><a class="reference internal" href="#available-task-options">Available task options</a></li>
 <li><a class="reference internal" href="#using-a-different-shell-interpreter">Using a different shell interpreter</a></li>
 <li><a class="reference internal" href="#task-arguments">Task arguments</a></li>
+<li><a class="reference internal" href="#accessing-free-arguments-via-poe-extra-args">Accessing free arguments via <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -416,7 +422,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=c79cc614"></script>
+</div><script src="../../_static/documentation_options.js?v=b6498c4d"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

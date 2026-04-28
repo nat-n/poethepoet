@@ -87,6 +87,14 @@ Alternatively you can declare other task types inline like so:
   An array within a parallel task is interpreted as a :doc:`sequence<sequence>` task, so you can run certain parallel subtasks :ref:`with strict ordering<Composing tasks to run in parallel>`.
 
 
+Forwarding free arguments to subtasks
+--------------------------------------
+
+By default, free arguments passed to a parallel task are not forwarded to any of its subtasks. However, they can be forwarded selectively by referencing the special ``$POE_EXTRA_ARGS`` environment variable in individual subtask definitions. Only subtasks that explicitly reference ``$POE_EXTRA_ARGS`` will receive them.
+
+See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
+
+
 Customize output prefixing
 --------------------------
 
@@ -129,7 +137,7 @@ For example:
 
 will result in output rendered like:
 
-.. code-block::
+.. code-block:: text
 
   [1:build] first task output line
   [2:test] second task output line

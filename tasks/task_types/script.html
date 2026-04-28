@@ -360,6 +360,11 @@ function.</p></li>
 </ul>
 <p>See <a class="reference internal" href="../../guides/args_guide.html#arguments-for-script-tasks"><span class="std std-ref">Arguments for script tasks</span></a> for more details and examples.</p>
 </section>
+<section id="accessing-free-arguments-via-extra-args">
+<h2>Accessing free arguments via <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code><a class="headerlink" href="#accessing-free-arguments-via-extra-args" title="Link to this heading">¶</a></h2>
+<p>Free arguments (arguments not matched by any named arg definition, or arguments passed after <code class="code highlight sh docutils literal highlight-sh">--</code>) are available inside script tasks as the <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code> variable — a <code class="docutils literal notranslate"><span class="pre">list[str]</span></code> — in addition to the <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> environment variable.</p>
+<p>See the <a class="reference internal" href="../../guides/args_guide.html#forwarding-free-arguments-via-poe-extra-args"><span class="std std-ref">Forwarding free arguments via $POE_EXTRA_ARGS</span></a> section of the args guide for details and examples.</p>
+</section>
 </section>
 
         </article>
@@ -441,6 +446,7 @@ function.</p></li>
 </li>
 <li><a class="reference internal" href="#delegating-dry-run-behavior-to-a-script">Delegating dry-run behavior to a script</a></li>
 <li><a class="reference internal" href="#task-arguments">Task arguments</a></li>
+<li><a class="reference internal" href="#accessing-free-arguments-via-extra-args">Accessing free arguments via <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -452,7 +458,7 @@ function.</p></li>
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=c79cc614"></script>
+</div><script src="../../_static/documentation_options.js?v=b6498c4d"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -334,3 +334,87 @@ will result in poe parsing the target_dir cli option, but appending the :sh:`--f
 .. note::
 
    Passing :sh:`--` in the arguments list to any other task type will simply result in any subsequent arguments being ignored.
+
+
+.. _forwarding-free-arguments-via-poe-extra-args:
+
+Forwarding free arguments via ``$POE_EXTRA_ARGS``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When a task receives free arguments (i.e. arguments not matched by any named arg definition, or arguments passed after :sh:`--`), poe sets a special environment variable ``$POE_EXTRA_ARGS`` containing those arguments as a shell-quoted, space-delimited string. This variable is inherited by all subtasks and can be referenced explicitly wherever an environment variable can be used.
+
+``$POE_EXTRA_ARGS`` can be used in any task type that supports environment variable expansion: :doc:`cmd<../tasks/task_types/cmd>`, :doc:`ref<../tasks/task_types/ref>`, :doc:`shell<../tasks/task_types/shell>`. In :doc:`script<../tasks/task_types/script>` and :doc:`expr<../tasks/task_types/expr>` tasks free arguments are also accessible as the ``_extra_args`` variable (a ``list[str]``).
+
+
+Sequence, parallel and switch tasks
+""""""""""""""""""""""""""""""""""""
+
+Free arguments passed to a :doc:`sequence<../tasks/task_types/sequence>`, :doc:`parallel<../tasks/task_types/parallel>`, or :doc:`switch<../tasks/task_types/switch>` task are not forwarded to subtasks automatically. By referencing ``$POE_EXTRA_ARGS`` in individual subtask definitions you can choose which subtasks in the group receive the extra arguments:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-py39]
+  cmd = "pytest tests"
+  executor = { type = "uv", isolated = true, python = "3.9" }
+
+  [tool.poe.tasks.test-py310]
+  cmd = "pytest tests"
+  executor = { type = "uv", isolated = true, python = "3.10" }
+
+  [tool.poe.tasks.lint]
+  cmd = "ruff check ."
+
+  [tool.poe.tasks.test-all]
+  sequence = ["test-py39 $POE_EXTRA_ARGS", "test-py310 $POE_EXTRA_ARGS", "lint"]
+
+Calling this like:
+
+.. code-block:: sh
+
+  poe test-all --cov=mypackage -v
+
+forwards ``--cov=mypackage -v`` to ``test-py39`` and ``test-py310``, but not to ``lint``.
+
+``$POE_EXTRA_ARGS`` can appear anywhere in the subtask command string — including between other arguments — so it is possible to add fixed options before *and* after the forwarded arguments:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test-all]
+  sequence = [
+    "test-py39 --timeout=30 $POE_EXTRA_ARGS --tb=short",
+    "test-py310 --timeout=30 $POE_EXTRA_ARGS --tb=short",
+    "lint",
+  ]
+
+
+Cmd tasks
+"""""""""
+
+For :doc:`cmd<../tasks/task_types/cmd>` tasks, free arguments are appended to the end of the command by default. By referencing ``$POE_EXTRA_ARGS`` explicitly in the command string, poe expands it in place and does *not* additionally append the extra args at the end. This is useful when fixed options must follow the free arguments:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.coverage]
+  cmd = "pytest $POE_EXTRA_ARGS --cov=mypackage"
+
+Calling :sh:`poe coverage tests/unit -x` produces ``pytest tests/unit -x --cov=mypackage`` instead of ``pytest --cov=mypackage tests/unit -x``.
+
+
+Script and expr tasks
+"""""""""""""""""""""
+
+In :doc:`script<../tasks/task_types/script>` tasks free arguments are available as the ``_extra_args`` variable (a ``list[str]``) that can be referenced directly in the function call expression:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.run-tests]
+  script = "pytest:main(_extra_args)"
+
+Calling :sh:`poe run-tests tests/unit -x -v` will call ``pytest.main(["tests/unit", "-x", "-v"])``.
+
+:doc:`Expr<../tasks/task_types/expr>` tasks work the same way — ``_extra_args`` is available as a Python variable inside the expression:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.count-args]
+  expr = "len(_extra_args)"

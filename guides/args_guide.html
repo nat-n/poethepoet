@@ -546,6 +546,67 @@ example.</p>
 <p>Passing <code class="code highlight sh docutils literal highlight-sh">--</code> in the arguments list to any other task type will simply result in any subsequent arguments being ignored.</p>
 </div>
 </section>
+<section id="forwarding-free-arguments-via-poe-extra-args">
+<span id="id1"></span><h2>Forwarding free arguments via <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code><a class="headerlink" href="#forwarding-free-arguments-via-poe-extra-args" title="Link to this heading">¶</a></h2>
+<p>When a task receives free arguments (i.e. arguments not matched by any named arg definition, or arguments passed after <code class="code highlight sh docutils literal highlight-sh">--</code>), poe sets a special environment variable <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> containing those arguments as a shell-quoted, space-delimited string. This variable is inherited by all subtasks and can be referenced explicitly wherever an environment variable can be used.</p>
+<p><code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> can be used in any task type that supports environment variable expansion: <a class="reference internal" href="../tasks/task_types/cmd.html"><span class="doc">cmd</span></a>, <a class="reference internal" href="../tasks/task_types/ref.html"><span class="doc">ref</span></a>, <a class="reference internal" href="../tasks/task_types/shell.html"><span class="doc">shell</span></a>. In <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script</span></a> and <a class="reference internal" href="../tasks/task_types/expr.html"><span class="doc">expr</span></a> tasks free arguments are also accessible as the <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code> variable (a <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>).</p>
+<section id="sequence-parallel-and-switch-tasks">
+<h3>Sequence, parallel and switch tasks<a class="headerlink" href="#sequence-parallel-and-switch-tasks" title="Link to this heading">¶</a></h3>
+<p>Free arguments passed to a <a class="reference internal" href="../tasks/task_types/sequence.html"><span class="doc">sequence</span></a>, <a class="reference internal" href="../tasks/task_types/parallel.html"><span class="doc">parallel</span></a>, or <a class="reference internal" href="../tasks/task_types/switch.html"><span class="doc">switch</span></a> task are not forwarded to subtasks automatically. By referencing <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> in individual subtask definitions you can choose which subtasks in the group receive the extra arguments:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-py39]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.9&quot;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.test-py310]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest tests&quot;</span>
+<span class="n">executor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">isolated</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">python</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;3.10&quot;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="k">[tool.poe.tasks.lint]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;ruff check .&quot;</span>
+
+<span class="k">[tool.poe.tasks.test-all]</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;test-py39 $POE_EXTRA_ARGS&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;test-py310 $POE_EXTRA_ARGS&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;lint&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Calling this like:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>test-all<span class="w"> </span>--cov<span class="o">=</span>mypackage<span class="w"> </span>-v
+</pre></div>
+</div>
+<p>forwards <code class="docutils literal notranslate"><span class="pre">--cov=mypackage</span> <span class="pre">-v</span></code> to <code class="docutils literal notranslate"><span class="pre">test-py39</span></code> and <code class="docutils literal notranslate"><span class="pre">test-py310</span></code>, but not to <code class="docutils literal notranslate"><span class="pre">lint</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> can appear anywhere in the subtask command string — including between other arguments — so it is possible to add fixed options before <em>and</em> after the forwarded arguments:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.test-all]</span>
+<span class="n">sequence</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;test-py39 --timeout=30 $POE_EXTRA_ARGS --tb=short&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;test-py310 --timeout=30 $POE_EXTRA_ARGS --tb=short&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;lint&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="cmd-tasks">
+<h3>Cmd tasks<a class="headerlink" href="#cmd-tasks" title="Link to this heading">¶</a></h3>
+<p>For <a class="reference internal" href="../tasks/task_types/cmd.html"><span class="doc">cmd</span></a> tasks, free arguments are appended to the end of the command by default. By referencing <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code> explicitly in the command string, poe expands it in place and does <em>not</em> additionally append the extra args at the end. This is useful when fixed options must follow the free arguments:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.coverage]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest $POE_EXTRA_ARGS --cov=mypackage&quot;</span>
+</pre></div>
+</div>
+<p>Calling <code class="code highlight sh docutils literal highlight-sh">poe<span class="w"> </span>coverage<span class="w"> </span>tests/unit<span class="w"> </span>-x</code> produces <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">tests/unit</span> <span class="pre">-x</span> <span class="pre">--cov=mypackage</span></code> instead of <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">--cov=mypackage</span> <span class="pre">tests/unit</span> <span class="pre">-x</span></code>.</p>
+</section>
+<section id="script-and-expr-tasks">
+<h3>Script and expr tasks<a class="headerlink" href="#script-and-expr-tasks" title="Link to this heading">¶</a></h3>
+<p>In <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script</span></a> tasks free arguments are available as the <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code> variable (a <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>) that can be referenced directly in the function call expression:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.run-tests]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pytest:main(_extra_args)&quot;</span>
+</pre></div>
+</div>
+<p>Calling <code class="code highlight sh docutils literal highlight-sh">poe<span class="w"> </span>run-tests<span class="w"> </span>tests/unit<span class="w"> </span>-x<span class="w"> </span>-v</code> will call <code class="docutils literal notranslate"><span class="pre">pytest.main([&quot;tests/unit&quot;,</span> <span class="pre">&quot;-x&quot;,</span> <span class="pre">&quot;-v&quot;])</span></code>.</p>
+<p><a class="reference internal" href="../tasks/task_types/expr.html"><span class="doc">Expr</span></a> tasks work the same way — <code class="docutils literal notranslate"><span class="pre">_extra_args</span></code> is available as a Python variable inside the expression:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.count-args]</span>
+<span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;len(_extra_args)&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
 </section>
 
         </article>
@@ -629,6 +690,12 @@ example.</p>
 <li><a class="reference internal" href="#arguments-for-script-tasks">Arguments for script tasks</a></li>
 <li><a class="reference internal" href="#arguments-for-sequence-tasks">Arguments for sequence tasks</a></li>
 <li><a class="reference internal" href="#passing-free-arguments-in-addition-to-named-arguments">Passing free arguments in addition to named arguments</a></li>
+<li><a class="reference internal" href="#forwarding-free-arguments-via-poe-extra-args">Forwarding free arguments via <code class="docutils literal notranslate"><span class="pre">$POE_EXTRA_ARGS</span></code></a><ul>
+<li><a class="reference internal" href="#sequence-parallel-and-switch-tasks">Sequence, parallel and switch tasks</a></li>
+<li><a class="reference internal" href="#cmd-tasks">Cmd tasks</a></li>
+<li><a class="reference internal" href="#script-and-expr-tasks">Script and expr tasks</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -640,7 +707,7 @@ example.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=c79cc614"></script>
+</div><script src="../_static/documentation_options.js?v=b6498c4d"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

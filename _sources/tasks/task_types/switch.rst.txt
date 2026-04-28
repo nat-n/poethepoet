@@ -126,3 +126,11 @@ So running this task would look like:
   Poe <= flavor
   Poe => make_chocolate_icecream
   ...
+
+
+Forwarding free arguments via ``$POE_EXTRA_ARGS``
+-------------------------------------------------
+
+Free arguments passed to a switch task are available as ``$POE_EXTRA_ARGS`` and are inherited by the selected subtask. This makes it possible to forward arbitrary extra arguments to whichever branch is executed.
+
+See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.

@@ -104,6 +104,14 @@ When declaring more complex sequences the following syntax is often preferred.
   Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example ``help`` and ``args`` are forbidden because they don't make sense in this context.
 
 
+Forwarding free arguments to subtasks
+--------------------------------------
+
+By default, free arguments passed to a sequence task are not forwarded to any of its subtasks. However, they can be forwarded selectively by referencing the special ``$POE_EXTRA_ARGS`` environment variable in individual subtask definitions. Only subtasks that explicitly reference ``$POE_EXTRA_ARGS`` will receive them.
+
+See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
+
+
 Sequence task as an array of inline tables
 ------------------------------------------
 
