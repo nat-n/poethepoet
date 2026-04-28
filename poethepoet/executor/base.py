@@ -20,6 +20,41 @@ if TYPE_CHECKING:
     from ..io import PoeIO
 
 
+class PoeProcess:
+    """
+    Wraps asyncio.subprocess.Process with poe-specific metadata for shutdown handling.
+    """
+
+    def __init__(self, process: Process, *, no_console_ctrl: bool = False):
+        self._process = process
+        self.no_console_ctrl = no_console_ctrl
+
+    @property
+    def pid(self) -> int:
+        return self._process.pid
+
+    @property
+    def returncode(self) -> int | None:
+        return self._process.returncode
+
+    @property
+    def stdout(self) -> asyncio.StreamReader | None:
+        return self._process.stdout
+
+    @property
+    def stdin(self) -> asyncio.StreamWriter | None:
+        return self._process.stdin
+
+    async def wait(self) -> int:
+        return await self._process.wait()
+
+    def send_signal(self, signal: int) -> None:
+        self._process.send_signal(signal)
+
+    def kill(self) -> None:
+        self._process.kill()
+
+
 class MetaPoeExecutor(type):
     """
     This metaclass makes all descendants of PoeExecutor (task types) register themselves
@@ -152,7 +187,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
     async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> Process:
+    ) -> PoeProcess:
         """
         Execute the given cmd.
         """
@@ -168,7 +203,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         env: Mapping[str, str] | None = None,
         shell: bool = False,
         use_exec: bool = False,
-    ) -> Process:
+    ) -> PoeProcess:
         """
         Execute the given cmd either as a subprocess or use exec to replace the current
         process. Using exec supports fewer options, and doesn't work on windows.
@@ -236,12 +271,14 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         input: bytes | None = None,
         env: Mapping[str, str] | None = None,
         shell: bool = False,
-    ) -> Process:
+    ) -> PoeProcess:
         from subprocess import PIPE
 
         if self.dry:
             # A dry run doesn't execute the command, so we just return a dummy process
-            return await asyncio.create_subprocess_exec(sys.executable, "-c", "")
+            return PoeProcess(
+                await asyncio.create_subprocess_exec(sys.executable, "-c", "")
+            )
         popen_kwargs: MutableMapping[str, Any] = {}
         popen_kwargs["env"] = dict(
             (self.env.get_subprocess_env_vars() if env is None else env),
@@ -278,13 +315,6 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         else:
             proc = await asyncio.create_subprocess_exec(*cmd, **popen_kwargs)
 
-        if self._is_windows:
-            # Fix for issue #379 since ctrl+c can leave shell in a weird state
-            # so disable ctrl+c handling for subprocesses launched from batch files
-            cast("Any", proc)._poe_disable_console_ctrl = (
-                cmd[0].lower().endswith((".bat", ".cmd"))
-            )
-
         if input is not None:
             # TODO: Track the write task so we can cancel it if needed, and prevent GC
             #       from cleaning it up too early
@@ -294,7 +324,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             captured_stdout = await proc.stdout.read() if proc.stdout else b""
             self.context.save_task_output(self.invocation, captured_stdout)
 
-        return proc
+        no_console_ctrl = (
+            self._is_windows and not shell and cmd[0].lower().endswith((".bat", ".cmd"))
+        )
+        return PoeProcess(proc, no_console_ctrl=no_console_ctrl)
 
     async def _pass_input_to_proc(self, proc: Process, input: bytes):
         if not proc.stdin:

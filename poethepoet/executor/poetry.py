@@ -9,10 +9,10 @@ from ..exceptions import ExecutionError
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
-    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
+    from .base import PoeProcess
 
 
 class PoetryExecutor(PoeExecutor):
@@ -31,7 +31,7 @@ class PoetryExecutor(PoeExecutor):
 
     async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> Process:
+    ) -> PoeProcess:
         """
         Execute the given cmd as a subprocess inside the poetry managed dev environment
         """

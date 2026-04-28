@@ -11,12 +11,12 @@ from .io import PoeIO
 from .shutdown import ShutdownManager
 
 if TYPE_CHECKING:
-    from asyncio.subprocess import Process
     from collections.abc import Mapping
     from pathlib import Path
 
     from .config import PoeConfig
     from .env.task_env import TaskEnv
+    from .executor.base import PoeProcess
     from .ui import PoeUi
 
 
@@ -140,7 +140,7 @@ class RunContext:
         finally:
             context._shutdown_manager.restore_handler()
 
-    def register_subprocess(self, proc: Process):
+    def register_subprocess(self, proc: PoeProcess):
         self._shutdown_manager.processes.add(proc)
 
     def register_async_task(self, task: asyncio.Task[Any]):

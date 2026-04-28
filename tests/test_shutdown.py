@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import pytest
 
+from poethepoet.executor.base import PoeProcess
 from poethepoet.io import PoeIO
 from poethepoet.shutdown import ShutdownManager
 
@@ -43,12 +44,14 @@ def _pid_exists(pid: int) -> bool:
 
 
 def test_windows_shutdown_avoids_console_ctrl_for_batch_processes(monkeypatch):
+    ctrl_break_event = getattr(signal, "CTRL_BREAK_EVENT", 1)
+    monkeypatch.setattr(signal, "CTRL_BREAK_EVENT", ctrl_break_event, raising=False)
+
     class FakeProcess:
         def __init__(self):
             self.pid = 12345
             self.returncode = None
             self.signal_calls: list[int] = []
-            self._poe_disable_console_ctrl = True
 
         def send_signal(self, sig: int):
             self.signal_calls.append(sig)
@@ -63,14 +66,50 @@ def test_windows_shutdown_avoids_console_ctrl_for_batch_processes(monkeypatch):
     loop = asyncio.new_event_loop()
     manager = ShutdownManager(loop, PoeIO(make_default=False))
     manager._is_windows = True
-    process = FakeProcess()
-    manager.processes.add(cast("Any", process))
+    fake_proc = FakeProcess()
+    process = PoeProcess(cast("Any", fake_proc), no_console_ctrl=True)
+    manager.processes.add(process)
 
     manager._urgency = 1
     manager._shutdown()
 
-    assert process.signal_calls == []
-    assert taskkill_calls == [["taskkill", "/F", "/T", "/PID", str(process.pid)]]
+    assert fake_proc.signal_calls == []
+    assert taskkill_calls == [["taskkill", "/T", "/PID", str(process.pid)]]
+    loop.close()
+
+
+def test_windows_shutdown_sends_ctrl_break_for_normal_processes(monkeypatch):
+    ctrl_break_event = getattr(signal, "CTRL_BREAK_EVENT", 1)
+    monkeypatch.setattr(signal, "CTRL_BREAK_EVENT", ctrl_break_event, raising=False)
+
+    class FakeProcess:
+        def __init__(self):
+            self.pid = 12345
+            self.returncode = None
+            self.signal_calls: list[int] = []
+
+        def send_signal(self, sig: int):
+            self.signal_calls.append(sig)
+
+    taskkill_calls: list[list[str]] = []
+
+    def fake_taskkill(cmd: list[str], **_kwargs):
+        taskkill_calls.append(cmd)
+
+    monkeypatch.setattr("subprocess.run", fake_taskkill)
+
+    loop = asyncio.new_event_loop()
+    manager = ShutdownManager(loop, PoeIO(make_default=False))
+    manager._is_windows = True
+    fake_proc = FakeProcess()
+    process = PoeProcess(cast("Any", fake_proc))
+    manager.processes.add(process)
+
+    manager._urgency = 1
+    manager._shutdown()
+
+    assert fake_proc.signal_calls == [ctrl_break_event]
+    assert taskkill_calls == []
     loop.close()
 
 

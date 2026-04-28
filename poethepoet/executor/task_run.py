@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from poethepoet.helpers.eventloop import async_iter_merge, async_noop
 
 if TYPE_CHECKING:
-    from asyncio.subprocess import Process
     from collections.abc import (
         AsyncIterable,
         Awaitable,
@@ -16,6 +15,8 @@ if TYPE_CHECKING:
         Collection,
         Coroutine,
     )
+
+    from .base import PoeProcess
 
 
 class PoeTaskRunEvent:
@@ -73,7 +74,7 @@ class PoeTaskRun:
             )
         )
         self._children: list[PoeTaskRun] = []
-        self._processes: list[Process] = []
+        self._processes: list[PoeProcess] = []
         self._update_condition = asyncio.Condition()
         self._force_failure = False
         self._finalized = False
@@ -81,7 +82,7 @@ class PoeTaskRun:
         self._done_callbacks: list[
             Callable[[PoeTaskRunEvent], None] | Callable[[PoeTaskRunEvent], Awaitable]
         ] = []
-        self._new_process_callbacks: list[Callable[[Process], None]] = []
+        self._new_process_callbacks: list[Callable[[PoeProcess], None]] = []
 
     @property
     def parent(self) -> PoeTaskRun | None:
@@ -152,7 +153,7 @@ class PoeTaskRun:
             unsubscribe()
 
     def add_new_process_callback(
-        self, callback: Callable[[Process], None]
+        self, callback: Callable[[PoeProcess], None]
     ) -> Callable[[], None]:
         """
         Add a callback to be called when a new process is added to this task run.
@@ -166,7 +167,7 @@ class PoeTaskRun:
 
         return cancel_callback
 
-    def _notify_new_process(self, process: Process) -> None:
+    def _notify_new_process(self, process: PoeProcess) -> None:
         for callback in self._new_process_callbacks:
             callback(process)
 
@@ -272,7 +273,9 @@ class PoeTaskRun:
             self._force_failure
         )
 
-    async def add_process(self, process: Process, finalize: bool = False) -> PoeTaskRun:
+    async def add_process(
+        self, process: PoeProcess, finalize: bool = False
+    ) -> PoeTaskRun:
         if self._finalized:
             raise RuntimeError("Cannot add process to completed PoeTaskRun")
         self._processes.append(process)
@@ -351,7 +354,7 @@ class PoeTaskRun:
 
         return unsubscribe
 
-    async def processes(self) -> AsyncIterable[tuple[PoeTaskRun, Process]]:
+    async def processes(self) -> AsyncIterable[tuple[PoeTaskRun, PoeProcess]]:
         """
         Yield (task name, process) tuples for all processes involved in this task run or
         any child task runs.
@@ -380,7 +383,7 @@ class PoeTaskRun:
             else:
                 await self._wait_for_update()
 
-    async def _iter_processes(self) -> AsyncIterable[tuple[PoeTaskRun, Process]]:
+    async def _iter_processes(self) -> AsyncIterable[tuple[PoeTaskRun, PoeProcess]]:
         cursor = 0
         while cursor < len(self._processes) or not self.finalized():
             if cursor < len(self._processes):

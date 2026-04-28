@@ -6,10 +6,10 @@ from ..options.annotations import Metadata
 from .base import PoeExecutor
 
 if TYPE_CHECKING:
-    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
+    from .base import PoeProcess
 
 
 class UvExecutor(PoeExecutor):
@@ -46,7 +46,7 @@ class UvExecutor(PoeExecutor):
 
     async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> Process:
+    ) -> PoeProcess:
         """
         Execute the given cmd as a subprocess via `uv run`.
         """

@@ -9,13 +9,13 @@ from ..helpers.eventloop import DynamicTaskSet
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..config import ConfigPartition, PoeConfig
     from ..config.partition import GroupConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
+    from ..executor.base import PoeProcess
     from .base import TaskSpecFactory
 
 T = TypeVar("T")
@@ -271,7 +271,7 @@ class ParallelTask(PoeTask):
             )
 
     async def _format_output_lines(
-        self, task_name: str, subtask_index: int, subproc: Process
+        self, task_name: str, subtask_index: int, subproc: PoeProcess
     ):
         if not subproc.stdout:
             return

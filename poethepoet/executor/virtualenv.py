@@ -3,10 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ..exceptions import ExecutionError
-from .base import PoeExecutor
+from .base import PoeExecutor, PoeProcess
 
 if TYPE_CHECKING:
-    from asyncio.subprocess import Process
     from collections.abc import Sequence
 
     from ..context import ContextProtocol
@@ -31,7 +30,7 @@ class VirtualenvExecutor(PoeExecutor):
 
     async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False
-    ) -> Process:
+    ) -> PoeProcess:
         """
         Execute the given cmd as a subprocess inside the configured virtualenv
         """
