@@ -294,7 +294,7 @@ a sub-table.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>cook<span class="w"> </span>--food<span class="w"> </span>eggs
 </pre></div>
 </div>
-<p>Note that the leading underscore is stripped from the inferred CLI option.</p>
+<p>Note that the leading underscore is stripped from the inferred CLI option. The same stripping applies to positional args: a private positional arg called <code class="docutils literal notranslate"><span class="pre">_food</span></code> is displayed as <code class="docutils literal notranslate"><span class="pre">food</span></code> in help while still being treated as a private variable inside the task.</p>
 </section>
 <section id="array-of-inline-tables">
 <h3>Array of inline tables<a class="headerlink" href="#array-of-inline-tables" title="Link to this heading">¶</a></h3>

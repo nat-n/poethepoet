@@ -48,6 +48,6 @@ It seems unlikely that anyone would specifically need to pass variables like thi
 
 Using private variables is now encouraged as a best practice to avoid unintentionally setting environment variables on task subprocesses.
 
-Arg names are typically referenced within task content, and normally set as environment variables. However if an arg name is prefixed with an underscore to make it private, and there are no options explicitly configured for that arg, then any leading underscores will be stripped from the name when generating an option name from it. For example the arg name ``_flag`` will result in the cli option ``--flag``.
+Arg names are typically referenced within task content, and normally set as environment variables. However if an arg name is prefixed with an underscore to make it private, and there are no options explicitly configured for that arg, then any leading underscores will be stripped from the name when generating an option name from it. For example the arg name ``_flag`` will result in the cli option ``--flag``. The same applies to positional args: a private positional arg called ``_target`` will be displayed as ``target`` in help, while still being treated as a private variable inside the task.
 
 Since this can cause collisions between options, there is now a config validation to prevent collisions between cli options.

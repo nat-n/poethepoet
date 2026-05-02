@@ -62,7 +62,7 @@ This example can be invoked as
 
     poe cook --food eggs
 
-Note that the leading underscore is stripped from the inferred CLI option.
+Note that the leading underscore is stripped from the inferred CLI option. The same stripping applies to positional args: a private positional arg called ``_food`` is displayed as ``food`` in help while still being treated as a private variable inside the task.
 
 
 Array of inline tables
