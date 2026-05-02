@@ -51,14 +51,16 @@ def test_private_positional_arg_value_remains_private(
 
 def test_private_positional_dest_collision_is_rejected(temp_pyproject, run_poe):
     """Two positional args that strip to the same identifier are rejected."""
-    project_path = temp_pyproject("""
+    project_path = temp_pyproject(
+        """
             [tool.poe.tasks.bad]
             cmd = "poe_test_echo ok"
             args = [
               { name = "_target", positional = true },
               { name = "target", positional = true },
             ]
-        """)
+        """
+    )
     result = run_poe("bad", "a", "b", cwd=project_path)
     assert result.code == 1
     assert "same positional identifier 'target'" in result.capture
