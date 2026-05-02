@@ -99,6 +99,7 @@ class ArgSpec(PoeOptions):
         if strict:
             arg_names = set()
             option_args: dict[str, str] = {}
+            positional_dests: dict[str, str] = {}
             positional_multiple = None
             for arg in result:
                 if arg.name in arg_names:
@@ -119,6 +120,16 @@ class ArgSpec(PoeOptions):
                         option_args[option] = arg.name
 
                 if arg.positional:
+                    dest = arg.options[0]
+                    if dest in positional_dests:
+                        raise ConfigValidationError(
+                            f"Arguments {positional_dests[dest]!r} and"
+                            f" {arg.name!r} generate the same positional"
+                            f" identifier {dest!r}",
+                            context=f"Invalid argument {arg.name!r} declared",
+                        )
+                    positional_dests[dest] = arg.name
+
                     if positional_multiple:
                         raise ConfigValidationError(
                             f"Only the last positional arg of task may accept"
@@ -141,10 +152,13 @@ class ArgSpec(PoeOptions):
                 raise ConfigValidationError(
                     f"Positional argument {name!r} may not declare options"
                 )
-            # Fill in the options param in a way that makes sense for argparse
+            # Fill in the options param in a way that makes sense for argparse.
+            # Underscores are stripped from the dest so private positional args
+            # don't render as ``_foo`` in help; the original name is restored
+            # after parsing in PoeTaskArgs.parse so the var stays private.
             if isinstance(positional, str):
                 return [positional]
-            return [name]
+            return [stripped or name]
         return tuple(arg.get("options", [f"--{stripped}"]))
 
     def validate(self):
@@ -369,11 +383,11 @@ class PoeTaskArgs:
                     f"Invalid arguments for task {self._task_name!r}"
                 ) from error
 
-        # Ensure positional args are still exposed by name even if they were parsed with
-        # alternate identifiers
+        # Ensure positional args are still exposed by name even if they were parsed
+        # with alternate identifiers (via positional alias or stripped underscore)
         for arg in self._args:
-            if isinstance(arg.positional, str):
-                parsed_args[arg.name] = parsed_args[arg.positional]
-                del parsed_args[arg.positional]
+            if arg.positional and (dest := arg.options[0]) != arg.name:
+                parsed_args[arg.name] = parsed_args[dest]
+                del parsed_args[dest]
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}
