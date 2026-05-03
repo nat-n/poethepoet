@@ -608,3 +608,276 @@ def test_ast_node_inspection():
     assert tree[0][0][0][0] != 2
     assert len(tree.lines[0].words[0].segments[0]) == 1
     assert len(tree.lines[0].words[0].segments[0].children[0]) == 5
+
+
+# ---------------------------------------------------------------------------
+# Template AST node tests
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateParsing:
+    """
+    Tests for the Template and TemplateText AST nodes.
+    Template is a flat parser (no line/word/segment hierarchy) for template
+    strings that supports parameter expansion with :- and :+ operators.
+    """
+
+    @staticmethod
+    def _parse(source, require_braces=False):
+        from poethepoet.helpers.command.ast import Template
+
+        config = ParseConfig(require_braces=require_braces)
+        return Template(ParseCursor.from_string(source), config)
+
+    def test_plain_text(self):
+        """
+        Template with no parameter expansion is a single TemplateText child.
+        """
+        tree = self._parse("hello world")
+        assert len(tree) == 1
+        assert tree[0] == "hello world"
+
+    def test_empty_string(self):
+        """
+        Empty string produces an empty Template.
+        """
+        tree = self._parse("")
+        assert len(tree) == 0
+
+    def test_simple_braced_var(self):
+        """
+        ${VAR} is parsed as a ParamExpansion.
+        """
+        tree = self._parse("hello ${NAME} end")
+        assert len(tree) == 3
+        assert tree[0] == "hello "
+        assert tree[1].param_name == "NAME"
+        assert tree[1].operation is None
+        assert tree[2] == " end"
+
+    def test_bare_var(self):
+        """
+        $VAR (without braces) is parsed as a ParamExpansion.
+        """
+        tree = self._parse("hello $NAME end")
+        assert len(tree) == 3
+        assert tree[0] == "hello "
+        assert tree[1].param_name == "NAME"
+        assert tree[2] == " end"
+
+    def test_require_braces_rejects_bare_var(self):
+        """
+        With require_braces=True, bare $VAR is treated as literal text.
+        The $ creates a node boundary but the content is correct.
+        """
+        tree = self._parse("hello $NAME end", require_braces=True)
+        from poethepoet.helpers.command.ast import ParamExpansion
+
+        assert all(not isinstance(child, ParamExpansion) for child in tree)
+        assert "".join(child.content for child in tree) == "hello $NAME end"
+
+    def test_require_braces_accepts_braced_var(self):
+        """
+        With require_braces=True, ${VAR} still works.
+        """
+        tree = self._parse("hello ${NAME} end", require_braces=True)
+        assert len(tree) == 3
+        assert tree[0] == "hello "
+        assert tree[1].param_name == "NAME"
+        assert tree[2] == " end"
+
+    def test_default_operator(self):
+        """
+        ${VAR:-default} is parsed with a ParamOperation.
+        """
+        tree = self._parse("${NAME:-world}")
+        assert len(tree) == 1
+        assert tree[0].param_name == "NAME"
+        assert tree[0].operation is not None
+        assert tree[0].operation.operator == ":-"
+
+    def test_alternate_operator(self):
+        """
+        ${VAR:+alternate} is parsed with a ParamOperation.
+        """
+        tree = self._parse("${DEBUG:+--verbose}")
+        assert len(tree) == 1
+        assert tree[0].param_name == "DEBUG"
+        assert tree[0].operation is not None
+        assert tree[0].operation.operator == ":+"
+
+    def test_nested_operators(self):
+        """
+        Nested operators: ${A:-${B:-fallback}}.
+        """
+        tree = self._parse("${A:-${B:-fallback}}")
+        assert len(tree) == 1
+        assert tree[0].param_name == "A"
+        assert tree[0].operation.operator == ":-"
+        # The argument contains a nested ParamExpansion
+        inner_segments = tree[0].operation.argument.segments
+        assert len(inner_segments) == 1
+        # The inner segment has a ParamExpansion child
+        inner_param = inner_segments[0][0]
+        assert inner_param.param_name == "B"
+        assert inner_param.operation.operator == ":-"
+
+    def test_dollar_at_end(self):
+        """
+        A trailing $ is treated as literal text.
+        The $ creates a node boundary but all content is TemplateText.
+        """
+        tree = self._parse("price is $")
+        from poethepoet.helpers.command.ast import ParamExpansion
+
+        assert all(not isinstance(child, ParamExpansion) for child in tree)
+        assert "".join(child.content for child in tree) == "price is $"
+
+    def test_dollar_before_non_var_char(self):
+        """
+        $ followed by a non-variable character is literal.
+        """
+        tree = self._parse("cost is $5")
+        from poethepoet.helpers.command.ast import ParamExpansion
+
+        assert all(not isinstance(child, ParamExpansion) for child in tree)
+        assert "".join(child.content for child in tree) == "cost is $5"
+
+    def test_escape_dollar(self):
+        r"""
+        \$ is an escaped dollar sign, not a param expansion.
+        """
+        tree = self._parse(r"price is \$5")
+        assert len(tree) == 1
+        assert tree[0] == "price is $5"
+
+    def test_escape_backslash(self):
+        r"""
+        \\ is an escaped backslash.
+        """
+        tree = self._parse(r"path\\to")
+        assert len(tree) == 1
+        assert tree[0] == "path\\to"
+
+    def test_backslash_before_regular_char(self):
+        r"""
+        \x (where x is not $ or \) passes through literally as \x.
+        This matches the current regex template behavior.
+        """
+        tree = self._parse(r"hello\nworld")
+        assert len(tree) == 1
+        assert tree[0] == "hello\\nworld"
+
+    def test_no_quote_handling(self):
+        """
+        Single and double quotes are treated as literal characters.
+        Template does NOT parse quoting.
+        """
+        tree = self._parse('it\'s a "test"')
+        assert len(tree) == 1
+        assert tree[0] == 'it\'s a "test"'
+
+    def test_no_word_splitting(self):
+        """
+        Whitespace is preserved literally in Template, no word splitting.
+        """
+        tree = self._parse("hello   world\ttab")
+        assert len(tree) == 1
+        assert tree[0] == "hello   world\ttab"
+
+    def test_no_glob_handling(self):
+        """
+        Glob characters *, ?, [ are treated as literal.
+        """
+        tree = self._parse("files: *.py [a-z] foo?")
+        assert len(tree) == 1
+        assert tree[0] == "files: *.py [a-z] foo?"
+
+    def test_no_comment_handling(self):
+        """
+        # is treated as literal text, not a comment.
+        """
+        tree = self._parse("count # items")
+        assert len(tree) == 1
+        assert tree[0] == "count # items"
+
+    def test_no_semicolon_handling(self):
+        """
+        ; is treated as literal text, not a line separator.
+        """
+        tree = self._parse("a;b;c")
+        assert len(tree) == 1
+        assert tree[0] == "a;b;c"
+
+    def test_multiple_expansions(self):
+        """
+        Multiple param expansions in a single template.
+        """
+        tree = self._parse("${A}/${B}/${C}")
+        assert len(tree) == 5
+        assert tree[0].param_name == "A"
+        assert tree[1] == "/"
+        assert tree[2].param_name == "B"
+        assert tree[3] == "/"
+        assert tree[4].param_name == "C"
+
+    def test_adjacent_expansions(self):
+        """
+        Param expansions with no text between them.
+        """
+        tree = self._parse("${A}${B}")
+        assert len(tree) == 2
+        assert tree[0].param_name == "A"
+        assert tree[1].param_name == "B"
+
+    def test_operator_argument_preserves_special_chars(self):
+        """
+        Operator arguments can contain characters that would be special in
+        command parsing (semicolons, hashes, globs) but are treated literally
+        inside ${...:-...}. Quotes ARE still special (bash semantics).
+        """
+        tree = self._parse("${X:-#1; *.py}")
+        assert len(tree) == 1
+        assert tree[0].param_name == "X"
+        assert tree[0].operation.operator == ":-"
+        # Verify the argument captured the full content including special chars
+        argument_segments = tree[0].operation.argument.segments
+        assert len(argument_segments) == 1
+        argument_text = "".join(element.content for element in argument_segments[0])
+        assert argument_text == "#1; *.py"
+
+    def test_escaped_dollar_before_braced_var(self):
+        r"""
+        \${VAR} should produce literal ${VAR}, not an expansion.
+        """
+        tree = self._parse(r"\${NAME}")
+        assert len(tree) == 1
+        assert tree[0] == "${NAME}"
+
+    def test_mixed_escaped_and_real_expansions(self):
+        r"""
+        Mix of escaped and real expansions.
+        """
+        tree = self._parse(r"\${SKIP} but ${KEEP}")
+        from poethepoet.helpers.command.ast import ParamExpansion
+
+        # The escaped ${SKIP} is text, ${KEEP} is a real expansion
+        text_content = "".join(
+            child.content for child in tree if not isinstance(child, ParamExpansion)
+        )
+        param_names = [
+            child.param_name for child in tree if isinstance(child, ParamExpansion)
+        ]
+        assert text_content == "${SKIP} but "
+        assert param_names == ["KEEP"]
+
+    def test_double_backslash_before_dollar(self):
+        r"""
+        \\$FOO — the \\ is consumed as an escaped backslash producing a
+        single \, then $FOO is parsed as a param expansion.
+        """
+        tree = self._parse(r"\\$FOO")
+        # Two children: TemplateText("\") followed by ParamExpansion("FOO")
+        assert len(tree) == 2
+        assert tree[0] == "\\"
+        assert tree[1].param_name == "FOO"

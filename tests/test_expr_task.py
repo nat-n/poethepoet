@@ -178,4 +178,79 @@ def test_expr_task_extra_args_combined_with_named_arg(run_poe):
     )
     assert result.capture == "Poe => f'{label}: {_extra_args}'\n"
     assert result.stdout == "Sources: ['a.py', 'b.py']\n"
+
+
+# ---------------------------------------------------------------------------
+# Parameter expansion operators (:- and :+) in expr tasks
+# ---------------------------------------------------------------------------
+
+
+def test_expr_default_operator_in_env(temp_pyproject, run_poe):
+    """
+    ${VAR:-default} in an expr task's env: uses the default when the var is
+    unset, and the var's value when set.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.show]
+        expr = "'hello ' + ${GREETING}"
+
+        [tool.poe.tasks.show.env]
+        GREETING = "${NAME:-world}"
+        """
+    )
+    # When NAME is unset, the default "world" is used
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "hello world\n"
+    assert result.stderr == ""
+
+    # When NAME is set, its value is used instead
+    result = run_poe("show", cwd=project_path, env={"NAME": "alice"})
+    assert result.code == 0
+    assert result.stdout == "hello alice\n"
+    assert result.stderr == ""
+
+
+def test_expr_default_operator_in_content(temp_pyproject, run_poe):
+    """
+    ${VAR:-default} directly in expr content (require_braces context).
+    The default must be valid Python when substituted into the expression.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.show]
+        expr = "'count: ' + str(${COUNT:-42})"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "count: 42\n"
+    assert result.stderr == ""
+
+
+def test_expr_alternate_operator_in_env(temp_pyproject, run_poe):
+    """
+    ${VAR:+alternate} in an expr task's env: uses the alternate when the var
+    is set, and empty string when unset.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.show]
+        expr = "'mode: ' + ${MODE}"
+
+        [tool.poe.tasks.show.env]
+        MODE = "${DEBUG:+debug}"
+        """
+    )
+    # When DEBUG is set, the alternate "debug" is used
+    result = run_poe("show", cwd=project_path, env={"DEBUG": "1"})
+    assert result.code == 0
+    assert result.stdout == "mode: debug\n"
+    assert result.stderr == ""
+
+    # When DEBUG is unset, the result is empty
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "mode: \n"
     assert result.stderr == ""

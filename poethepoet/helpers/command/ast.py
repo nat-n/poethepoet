@@ -218,6 +218,12 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
     def _parse(self, chars: ParseCursor):
         assert chars.take() == "$"
 
+        if self.config.require_braces and chars.peek() != "{":
+            # In require_braces mode, bare $VAR is not a param expansion
+            chars.pushback("$")
+            self._cancelled = True
+            return
+
         param: list[str] = []
         if chars.peek() == "{":
             chars.take()
@@ -579,3 +585,62 @@ class Script(SyntaxNode[Line]):
 
             if line_node := LineCls(chars, self.config):
                 self._children.append(line_node)
+
+
+class TemplateText(ContentNode):
+    """
+    A content node for template strings that consumes everything except `$`.
+
+    Escaping is intentionally limited compared to bash: only `\\$` and `\\\\`
+    are treated as escape sequences. Other backslash sequences like `\\n` pass
+    through literally. This matches the existing regex-based template behavior.
+    """
+
+    def _parse(self, chars: ParseCursor):
+        content: list[str] = []
+        for char in chars:
+            if char == "$":
+                chars.pushback(char)
+                break
+
+            if char == "\\":
+                next_char = chars.peek()
+                if next_char in ("$", "\\"):
+                    content.append(chars.take())
+                    continue
+                # Other \X sequences pass through literally
+                content.append(char)
+                continue
+
+            content.append(char)
+
+        if content:
+            self._content = "".join(content)
+        else:
+            self._cancelled = True
+
+
+class Template(SyntaxNode[ContentNode]):
+    """
+    A flat template parser that interleaves TemplateText and ParamExpansion
+    children. Unlike Script, this does not handle line breaks, word splitting,
+    quoting, globs, or comments — it treats everything as a flat string with
+    only parameter expansion as special syntax.
+    """
+
+    def _parse(self, chars: ParseCursor):
+        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
+        TemplateTextCls = self.get_child_node_cls(TemplateText)
+
+        self._children = []
+        while chars.peek() is not None:
+            if chars.peek() == "$":
+                if param_node := ParamExpansionCls(chars, self.config):
+                    self._children.append(param_node)
+                else:
+                    # Bare $ that didn't form a valid expansion — consume as
+                    # text by escaping the $ so TemplateText accepts it
+                    chars.pushback("\\")
+                    self._children.append(TemplateTextCls(chars, self.config))
+            else:
+                self._children.append(TemplateTextCls(chars, self.config))

@@ -107,14 +107,17 @@ class ParseConfig:
 
     substitute_nodes: dict[type[AstNode], type[AstNode]]
     line_separators: str
+    require_braces: bool
 
     def __init__(
         self,
         substitute_nodes: dict[type[AstNode], type[AstNode]] | None = None,
         line_separators="",
+        require_braces: bool = False,
     ):
         self.substitute_nodes = substitute_nodes or {}
         self.line_separators = line_separators
+        self.require_braces = require_braces
 
     def resolve_node_cls(self, klass: type[AstNode]) -> type[AstNode]:
         return self.substitute_nodes.get(klass, klass)

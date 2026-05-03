@@ -221,3 +221,66 @@ def test_parse_invalid_env_files(example):
     # ruff: noqa: PT011
     with pytest.raises(ValueError):
         parse_env_file(example)
+
+
+# ---------------------------------------------------------------------------
+# Parameter expansion in envfile values
+# ---------------------------------------------------------------------------
+
+param_expansion_examples = [
+    # Basic forward reference
+    (
+        "BASE=/opt\nPATH_VAR=${BASE}/bin\n",
+        {"BASE": "/opt", "PATH_VAR": "/opt/bin"},
+    ),
+    # Default value operator
+    (
+        "RESULT=${MISSING:-fallback}\n",
+        {"RESULT": "fallback"},
+    ),
+    # Default value with existing var
+    (
+        "NAME=alice\nGREETING=${NAME:-world}\n",
+        {"NAME": "alice", "GREETING": "alice"},
+    ),
+    # Alternate value operator - var set
+    (
+        "DEBUG=1\nFLAG=${DEBUG:+--debug}\n",
+        {"DEBUG": "1", "FLAG": "--debug"},
+    ),
+    # Alternate value operator - var unset
+    (
+        "FLAG=${DEBUG:+--debug}\n",
+        {"FLAG": ""},
+    ),
+    # Nested default
+    (
+        "VAL=${A:-${B:-deep}}\n",
+        {"VAL": "deep"},
+    ),
+    # Expansion in double quotes
+    (
+        'HOST=example.com\nURL="https://${HOST}"\n',
+        {"HOST": "example.com", "URL": "https://example.com"},
+    ),
+    # No expansion in single quotes
+    (
+        "HOST=example.com\nLIT='${HOST}'\n",
+        {"HOST": "example.com", "LIT": "${HOST}"},
+    ),
+    # Bare $VAR expansion
+    (
+        "NAME=world\nMSG=hello $NAME\n",
+        {"NAME": "world", "MSG": "hello world"},
+    ),
+    # Default with empty argument
+    (
+        "RESULT=${MISSING:-}\n",
+        {"RESULT": ""},
+    ),
+]
+
+
+@pytest.mark.parametrize("example", param_expansion_examples)
+def test_parse_env_file_param_expansion(example):
+    assert parse_env_file(example[0]) == example[1]

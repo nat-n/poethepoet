@@ -24,6 +24,52 @@ def parse_poe_cmd(source: str, config: ParseConfig | None = None):
     return Script(ParseCursor.from_string(source), config)
 
 
+def resolve_template(
+    source: str,
+    env: Mapping[str, str],
+    require_braces: bool = False,
+) -> str:
+    """
+    Parse a template string and resolve parameter expansions (including :-
+    and :+ operators) against the given env mapping. Returns a flat string
+    with no word splitting or glob handling.
+    """
+    from .ast import ParamArgument, ParamExpansion, ParseConfig, ParseCursor, Template
+
+    config = ParseConfig(require_braces=require_braces)
+    tree = Template(ParseCursor.from_string(source), config)
+
+    def _resolve_param_argument(argument: ParamArgument, env: Mapping[str, str]) -> str:
+        parts: list[str] = []
+        for segment in argument.segments:
+            for element in segment:
+                if isinstance(element, ParamExpansion):
+                    parts.append(_resolve_param(element, env))
+                else:
+                    parts.append(element.content)
+        return "".join(parts)
+
+    def _resolve_param(element: ParamExpansion, env: Mapping[str, str]) -> str:
+        param_value = env.get(element.param_name, "")
+
+        if element.operation:
+            if param_value:
+                if element.operation.operator == ":+":
+                    return _resolve_param_argument(element.operation.argument, env)
+            elif element.operation.operator == ":-":
+                return _resolve_param_argument(element.operation.argument, env)
+
+        return param_value
+
+    parts: list[str] = []
+    for child in tree:
+        if isinstance(child, ParamExpansion):
+            parts.append(_resolve_param(child, env))
+        else:
+            parts.append(child.content)
+    return "".join(parts)
+
+
 def resolve_command_tokens(
     lines: Iterable[Line],
     env: Mapping[str, str],
