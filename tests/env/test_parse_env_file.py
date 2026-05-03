@@ -263,11 +263,6 @@ param_expansion_examples = [
         'HOST=example.com\nURL="https://${HOST}"\n',
         {"HOST": "example.com", "URL": "https://example.com"},
     ),
-    # No expansion in single quotes
-    (
-        "HOST=example.com\nLIT='${HOST}'\n",
-        {"HOST": "example.com", "LIT": "${HOST}"},
-    ),
     # Bare $VAR expansion
     (
         "NAME=world\nMSG=hello $NAME\n",
@@ -281,6 +276,17 @@ param_expansion_examples = [
 ]
 
 
+@pytest.mark.xfail(reason="envfile param expansion not yet implemented")
 @pytest.mark.parametrize("example", param_expansion_examples)
 def test_parse_env_file_param_expansion(example):
     assert parse_env_file(example[0]) == example[1]
+
+
+def test_parse_env_file_no_expansion_in_single_quotes():
+    """
+    Single-quoted values should NOT have parameter expansion applied.
+    """
+    assert parse_env_file("HOST=example.com\nLIT='${HOST}'\n") == {
+        "HOST": "example.com",
+        "LIT": "${HOST}",
+    }

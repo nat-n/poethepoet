@@ -11,8 +11,8 @@ from collections.abc import (
 )
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from ..helpers.command import resolve_template
 from ..io import PoeIO
-from .template import apply_envvars_to_template
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -170,7 +170,7 @@ class TaskEnv(Mapping[str, str]):
         """
         Resolve the given string remplate with available variables
         """
-        return apply_envvars_to_template(template, self)
+        return resolve_template(template, self)
 
     def set(self, key: str, value: str):
         """
@@ -232,9 +232,7 @@ class TaskEnv(Mapping[str, str]):
         if envfile_option:
             for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
                 resolved_envfile = config_working_dir.joinpath(
-                    apply_envvars_to_template(
-                        envfile_path, scoped_vars, require_braces=True
-                    )
+                    resolve_template(envfile_path, scoped_vars, require_braces=True)
                 )
                 self.update(self._envfiles.get(resolved_envfile, optional=is_optional))
 
@@ -250,7 +248,7 @@ class TaskEnv(Mapping[str, str]):
                 continue
 
             # TODO: think about how to support lazy eval from args here
-            resolved_value = apply_envvars_to_template(
+            resolved_value = resolve_template(
                 value_str, scoped_vars, require_braces=True
             )
             self.set(key, resolved_value)
