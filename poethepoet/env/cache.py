@@ -36,7 +36,7 @@ class EnvFileCache:
         if envfile_path.is_file():
             try:
                 with envfile_path.open(encoding="utf-8") as envfile_file:
-                    result = parse_env_file(envfile_file.readlines())
+                    result = parse_env_file(envfile_file.read())
                 self._io.print_debug(f" + Loaded Envfile from {envfile_path}")
             except ValueError as error:
                 message = error.args[0]

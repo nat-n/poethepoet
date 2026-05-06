@@ -89,6 +89,25 @@ In this case the referenced files will be loaded in the given order.
 
   The envfile option is also available with the same capabilities at :ref:`the task level<Loading environment variables from an env file>`.
 
+Parameter expansion in env files
+"""""""""""""""""""""""""""""""""
+
+Env file values support bash-style parameter expansion. Each variable can reference variables defined earlier in the same file using ``$VAR`` or ``${VAR}`` — note that host environment variables are not accessible during expansion. The standard default/alternate operators are supported:
+
+.. code-block:: bash
+
+   BASE=/opt/myapp
+   DATA_DIR=${BASE}/data         # expands to /opt/myapp/data
+   LOG_DIR=${BASE}/logs          # expands to /opt/myapp/logs
+
+   # Use a default when a variable is unset
+   HOST=${APP_HOST:-localhost}
+
+   # Use an alternate value when a variable is set
+   DEBUG_FLAG=${DEBUG:+--debug}
+
+Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``.
+
 Optional env files
 """"""""""""""""""
 

@@ -140,6 +140,8 @@ Normally envfile paths are resolved relative to the project root (that is the pa
 
 See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
 
+Env files support parameter expansion: ``$VAR``, ``${VAR}``, ``${VAR:-default}``, and ``${VAR:+alternate}`` are expanded in unquoted and double-quoted values. Each variable can reference variables defined earlier in the same file — host environment variables are not accessible during expansion. Single-quoted values are never expanded.
+
 .. important::
 
   For a more detailed explanation see the documentation for :ref:`the envfile global option<Loading external environment variables>` which works in the same way.

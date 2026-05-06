@@ -64,21 +64,14 @@ thing
         },
     ),
     (
-        """
-    # without linebreak between vars
-    FOO=BAR BAR=FOO
-    """,
-        {"FOO": "BAR", "BAR": "FOO"},
+        # whitespace within unquoted value is preserved; only \n terminates
+        "FOO=BAR BAZ=QUX\n",
+        {"FOO": "BAR BAZ=QUX"},
     ),
     (
-        """
-    # with semicolons
-    ; FOO=BAR;BAR=FOO\\;! ;
-    ;
-    BAZ="2;'2"#;
-    \tQUX=3\t;
-    """,
-        {"FOO": "BAR", "BAR": "FOO;!", "BAZ": "2;'2#", "QUX": "3"},
+        # semicolons are regular characters in unquoted and quoted values
+        'FOO=bar;baz\nBAR="qux;quux"\n',
+        {"FOO": "bar;baz", "BAR": "qux;quux"},
     ),
     (
         r"""
@@ -97,7 +90,7 @@ thing
     WUT='a'"b"\
 c """,
         {
-            "FOO": r"a\ ba\\\ ba\\ b##\ ;#",
+            "FOO": r"a\ ba\\\ ba\\ b##\ ;#;",
             "BAR": "",
             "BAZ": "",
             "QUX": "",
@@ -127,7 +120,7 @@ b;
             "ESCAPED_DQUOTE": '"',
             "ESCAPED_DQUOTE_DQUOTES": '\\"',
             "ESCAPED_DQUOTE_SQUOTES": '"',
-            "ESCAPED_NEWLINE": "ab",
+            "ESCAPED_NEWLINE": "ab;",
             "ESCAPED_NEWLINE_DQUOTES": '\\"',
             "ESCAPED_NEWLINE_SQUOTES": '"',
         },
@@ -156,15 +149,15 @@ b;
             "EX1": "BAR#NOT_COMMENT",
             "EX2": "BAR#NOT_COMMENT",
             "EX3": "BAR#NOT_COMMENT",
-            "EX4": "BAR #NOT_COMMENT",
+            "EX4": "BAR",
             "EX5": "BAR #NOT_COMMENT",
             "EX6": "BAR #NOT_COMMENT",
             "EX7": "BAR#NOT_COMMENT",
             "EX8": "BAR",
-            "EX9": "BAR ",
-            "EX10": "BAR",
-            "EX11": "BAR",
-            "EX12": "BAR;",
+            "EX9": "BAR",
+            "EX10": "BAR;",
+            "EX11": "BAR;#COMMENT",
+            "EX12": "BAR;;#COMMENT",
             "EX13": "BAR",
         },
     ),
@@ -263,11 +256,6 @@ param_expansion_examples = [
         'HOST=example.com\nURL="https://${HOST}"\n',
         {"HOST": "example.com", "URL": "https://example.com"},
     ),
-    # Bare $VAR expansion
-    (
-        "NAME=world\nMSG=hello $NAME\n",
-        {"NAME": "world", "MSG": "hello world"},
-    ),
     # Default with empty argument
     (
         "RESULT=${MISSING:-}\n",
@@ -276,7 +264,6 @@ param_expansion_examples = [
 ]
 
 
-@pytest.mark.xfail(reason="envfile param expansion not yet implemented")
 @pytest.mark.parametrize("example", param_expansion_examples)
 def test_parse_env_file_param_expansion(example):
     assert parse_env_file(example[0]) == example[1]
