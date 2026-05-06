@@ -144,6 +144,8 @@ See the documentation on :ref:`Special variables<Special variables>` for a full 
 
   Environment variables loaded from env files have higher precedence than any inherited from the host environment, but lower precedence than env defined directly in the pyproject.toml file. Similarly ``optional`` env files are loaded after ``expected`` ones, so variables defined in ``optional`` files can override those defined in ``expected`` files.
 
+  During parameter expansion within an env file, variables from lower-precedence sources (host env, previously loaded env files, and task-level env vars set before this file is loaded) are visible and can be referenced. In-file definitions always take precedence over these during expansion.
+
 
 Configure the executor
 ----------------------
