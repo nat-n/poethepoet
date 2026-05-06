@@ -277,3 +277,46 @@ def test_parse_env_file_no_expansion_in_single_quotes():
         "HOST": "example.com",
         "LIT": "${HOST}",
     }
+
+
+# ---------------------------------------------------------------------------
+# base_env: host / task-env vars are visible during expansion
+# ---------------------------------------------------------------------------
+
+base_env_examples = [
+    # host var from base_env is visible
+    (
+        "URL=https://${HOST}/api\n",
+        {"HOST": "example.com"},
+        {"URL": "https://example.com/api"},
+    ),
+    # in-file var takes precedence over base_env
+    (
+        "HOST=override\nURL=https://${HOST}\n",
+        {"HOST": "base"},
+        {"HOST": "override", "URL": "https://override"},
+    ),
+    # base_env var used with default operator
+    (
+        "GREETING=${NAME:-stranger}\n",
+        {"NAME": "alice"},
+        {"GREETING": "alice"},
+    ),
+    # base_env=None behaves like empty env (no regression)
+    (
+        "FOO=bar\n",
+        None,
+        {"FOO": "bar"},
+    ),
+    # alternate operator uses base_env var
+    (
+        "FLAG=${DEBUG:+--debug}\n",
+        {"DEBUG": "1"},
+        {"FLAG": "--debug"},
+    ),
+]
+
+
+@pytest.mark.parametrize(("content", "base_env", "expected"), base_env_examples)
+def test_parse_env_file_with_base_env(content, base_env, expected):
+    assert parse_env_file(content, base_env) == expected

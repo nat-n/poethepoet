@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from ..helpers.command.ast import (
+        EnvFile,
         EnvFileDQString,
         EnvFileValue,
         ParamArgument,
@@ -13,7 +14,9 @@ if TYPE_CHECKING:
     )
 
 
-def parse_env_file(content: str) -> dict[str, str]:
+def parse_env_file(
+    content: str, base_env: Mapping[str, str] | None = None
+) -> dict[str, str]:
     """
     Parse an envfile string and return a dict of variable assignments.
 
@@ -24,18 +27,27 @@ def parse_env_file(content: str) -> dict[str, str]:
     - Trailing whitespace stripped from unquoted suffixes
     - $VAR, ${VAR}, ${VAR:-default}, ${VAR:+alt} expanded progressively
     - Single-quoted values not expanded; double-quoted values expanded
+    - base_env vars are visible during expansion; in-file definitions take precedence
     """
+    return _resolve_ast(_parse_to_ast(content), base_env or {})
+
+
+def _parse_to_ast(content: str) -> EnvFile:
     from ..helpers.command.ast import EnvFile, ParseConfig, ParseCursor
     from ..helpers.command.ast_core import ParseError as AstParseError
 
     try:
-        tree = EnvFile(ParseCursor.from_string(content + "\n"), ParseConfig())
-        result: dict[str, str] = {}
-        for assignment in tree:
-            result[assignment.name] = _resolve_value(assignment.value, result)
-        return result
+        return EnvFile(ParseCursor.from_string(content + "\n"), ParseConfig())
     except AstParseError as error:
         raise ValueError(str(error)) from error
+
+
+def _resolve_ast(tree: EnvFile, base_env: Mapping[str, str]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for assignment in tree:
+        env = {**base_env, **result}
+        result[assignment.name] = _resolve_value(assignment.value, env)
+    return result
 
 
 def _resolve_value(value: EnvFileValue, env: Mapping[str, str]) -> str:

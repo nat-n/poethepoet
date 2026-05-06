@@ -92,7 +92,7 @@ In this case the referenced files will be loaded in the given order.
 Parameter expansion in env files
 """""""""""""""""""""""""""""""""
 
-Env file values support bash-style parameter expansion. Each variable can reference variables defined earlier in the same file using ``$VAR`` or ``${VAR}`` — note that host environment variables are not accessible during expansion. The standard default/alternate operators are supported:
+Env file values support bash-style parameter expansion. Each variable can reference variables defined earlier in the same file using ``$VAR`` or ``${VAR}``, as well as variables already set in the environment (host env vars, global env, or parent task env vars). The standard default/alternate operators are supported:
 
 .. code-block:: bash
 

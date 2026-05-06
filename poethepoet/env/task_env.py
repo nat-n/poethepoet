@@ -234,7 +234,11 @@ class TaskEnv(Mapping[str, str]):
                 resolved_envfile = config_working_dir.joinpath(
                     resolve_template(envfile_path, scoped_vars, require_braces=True)
                 )
-                self.update(self._envfiles.get(resolved_envfile, optional=is_optional))
+                self.update(
+                    self._envfiles.get(
+                        resolved_envfile, optional=is_optional, base_env=self
+                    )
+                )
 
         scoped_vars = self.clone()
         scoped_vars.set("POE_CONF_DIR", str(config_dir))
