@@ -2,9 +2,9 @@ from io import StringIO
 
 import pytest
 
-from poethepoet.helpers.command import parse_poe_cmd
-from poethepoet.helpers.command.ast import Glob, PythonGlob, Script
-from poethepoet.helpers.command.ast_core import ParseConfig, ParseCursor, ParseError
+from poethepoet.helpers.parse import parse_poe_cmd
+from poethepoet.helpers.parse.command import Glob, PythonGlob, Script
+from poethepoet.helpers.parse.core import ParseConfig, ParseCursor, ParseError
 
 
 def test_parse_comments():
@@ -624,7 +624,7 @@ class TestTemplateParsing:
 
     @staticmethod
     def _parse(source, require_braces=False):
-        from poethepoet.helpers.command.ast import Template
+        from poethepoet.helpers.parse.template import Template
 
         config = ParseConfig(require_braces=require_braces)
         return Template(ParseCursor.from_string(source), config)
@@ -671,7 +671,7 @@ class TestTemplateParsing:
         The $ creates a node boundary but the content is correct.
         """
         tree = self._parse("hello $NAME end", require_braces=True)
-        from poethepoet.helpers.command.ast import ParamExpansion
+        from poethepoet.helpers.parse.command import ParamExpansion
 
         assert all(not isinstance(child, ParamExpansion) for child in tree)
         assert "".join(child.content for child in tree) == "hello $NAME end"
@@ -728,7 +728,7 @@ class TestTemplateParsing:
         The $ creates a node boundary but all content is TemplateText.
         """
         tree = self._parse("price is $")
-        from poethepoet.helpers.command.ast import ParamExpansion
+        from poethepoet.helpers.parse.command import ParamExpansion
 
         assert all(not isinstance(child, ParamExpansion) for child in tree)
         assert "".join(child.content for child in tree) == "price is $"
@@ -738,7 +738,7 @@ class TestTemplateParsing:
         $ followed by a non-variable character is literal.
         """
         tree = self._parse("cost is $5")
-        from poethepoet.helpers.command.ast import ParamExpansion
+        from poethepoet.helpers.parse.command import ParamExpansion
 
         assert all(not isinstance(child, ParamExpansion) for child in tree)
         assert "".join(child.content for child in tree) == "cost is $5"
@@ -859,7 +859,7 @@ class TestTemplateParsing:
         Mix of escaped and real expansions.
         """
         tree = self._parse(r"\${SKIP} but ${KEEP}")
-        from poethepoet.helpers.command.ast import ParamExpansion
+        from poethepoet.helpers.parse.command import ParamExpansion
 
         # The escaped ${SKIP} is text, ${KEEP} is a real expansion
         text_content = "".join(

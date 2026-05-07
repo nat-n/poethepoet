@@ -5,13 +5,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from ..helpers.command.ast import (
-        EnvFile,
-        EnvFileDQString,
-        EnvFileValue,
-        ParamArgument,
-        ParamExpansion,
-    )
+    from ..helpers.parse.command import ParamArgument, ParamExpansion
+    from ..helpers.parse.envfile import EnvFile, EnvFileDQString, EnvFileValue
 
 
 def parse_env_file(
@@ -33,8 +28,9 @@ def parse_env_file(
 
 
 def _parse_to_ast(content: str) -> EnvFile:
-    from ..helpers.command.ast import EnvFile, ParseConfig, ParseCursor
-    from ..helpers.command.ast_core import ParseError as AstParseError
+    from ..helpers.parse.core import ParseConfig, ParseCursor
+    from ..helpers.parse.core import ParseError as AstParseError
+    from ..helpers.parse.envfile import EnvFile
 
     try:
         return EnvFile(ParseCursor.from_string(content + "\n"), ParseConfig())
@@ -51,7 +47,8 @@ def _resolve_ast(tree: EnvFile, base_env: Mapping[str, str]) -> dict[str, str]:
 
 
 def _resolve_value(value: EnvFileValue, env: Mapping[str, str]) -> str:
-    from ..helpers.command.ast import EnvFileDQString, ParamExpansion
+    from ..helpers.parse.command import ParamExpansion
+    from ..helpers.parse.envfile import EnvFileDQString
 
     parts: list[str] = []
     for child in value:
@@ -65,7 +62,7 @@ def _resolve_value(value: EnvFileValue, env: Mapping[str, str]) -> str:
 
 
 def _resolve_dq_string(dq: EnvFileDQString, env: Mapping[str, str]) -> str:
-    from ..helpers.command.ast import ParamExpansion
+    from ..helpers.parse.command import ParamExpansion
 
     parts: list[str] = []
     for child in dq:
@@ -93,7 +90,7 @@ def _resolve_param_argument(
     argument: ParamArgument,
     env: Mapping[str, str],
 ) -> str:
-    from ..helpers.command.ast import ParamExpansion
+    from ..helpers.parse.command import ParamExpansion
 
     parts: list[str] = []
     for segment in argument.segments:

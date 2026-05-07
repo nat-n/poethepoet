@@ -139,7 +139,7 @@ class ExprTask(PoeTask):
         """
 
         from ..env.template import SpyDict
-        from ..helpers.command import resolve_template
+        from ..helpers.parse import resolve_template
 
         # Spy on access to the env, so that instead of replacing template ${keys} with
         # the corresponding value, replace them with a python name and keep track of

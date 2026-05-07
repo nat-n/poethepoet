@@ -8,7 +8,7 @@ from ..exceptions import ExecutionError
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from ..helpers.command.ast import EnvFile
+    from ..helpers.parse.envfile import EnvFile
     from ..io import PoeIO
 
 

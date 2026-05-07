@@ -4,16 +4,16 @@ import re
 from glob import escape
 from typing import TYPE_CHECKING, cast
 
-from .ast import Comment
+from .command import Comment
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping
 
-    from .ast import Line, ParseConfig
+    from .command import Line, ParseConfig
 
 
 def parse_poe_cmd(source: str, config: ParseConfig | None = None):
-    from .ast import Glob, ParseConfig, ParseCursor, PythonGlob, Script
+    from .command import Glob, ParseConfig, ParseCursor, PythonGlob, Script
 
     if not config:
         # Poe cmd task content differs from POSIX command lines in that new lines are
@@ -34,7 +34,8 @@ def resolve_template(
     and :+ operators) against the given env mapping. Returns a flat string
     with no word splitting or glob handling.
     """
-    from .ast import ParamArgument, ParamExpansion, ParseConfig, ParseCursor, Template
+    from .command import ParamArgument, ParamExpansion, ParseConfig, ParseCursor
+    from .template import Template
 
     config = ParseConfig(require_braces=require_braces)
     tree = Template(ParseCursor.from_string(source), config)
@@ -80,7 +81,7 @@ def resolve_command_tokens(
     patterns that are not escaped or quoted. In case there are glob patterns in the
     token, any escaped glob characters will have been escaped with [].
     """
-    from .ast import (
+    from .command import (
         Glob,
         ParamArgument,
         ParamExpansion,

@@ -88,8 +88,8 @@ class CmdTask(PoeTask):
             )
 
     def _resolve_commandline(self, context: RunContext, env: TaskEnv):
-        from ..helpers.command import parse_poe_cmd, resolve_command_tokens
-        from ..helpers.command.ast_core import ParseError
+        from ..helpers.parse import parse_poe_cmd, resolve_command_tokens
+        from ..helpers.parse.core import ParseError
 
         self.__passed_unmatched_glob = False
 

@@ -11,7 +11,7 @@ from collections.abc import (
 )
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from ..helpers.command import resolve_template
+from ..helpers.parse import resolve_template
 from ..io import PoeIO
 
 if TYPE_CHECKING:

@@ -1,4 +1,4 @@
-from poethepoet.helpers.command import parse_poe_cmd, resolve_command_tokens
+from poethepoet.helpers.parse import parse_poe_cmd, resolve_command_tokens
 
 
 def test_resolve_command_tokens():
@@ -151,7 +151,7 @@ class TestResolveTemplate:
 
     @staticmethod
     def _resolve(source, env, require_braces=False):
-        from poethepoet.helpers.command import resolve_template
+        from poethepoet.helpers.parse import resolve_template
 
         return resolve_template(source, env, require_braces=require_braces)
 
@@ -302,7 +302,7 @@ class TestResolveTemplate:
         """
         import pytest
 
-        from poethepoet.helpers.command.ast_core import ParseError
+        from poethepoet.helpers.parse.core import ParseError
 
         with pytest.raises(ParseError, match="Unsupported operator"):
             self._resolve("${VAR:?error}", {})

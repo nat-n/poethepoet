@@ -486,7 +486,7 @@ class PoeConfig:
             git_repo = GitRepo(self._project_dir)
             available_vars["POE_GIT_ROOT"] = str(git_repo.main_path or "")
 
-        from ..helpers.command import resolve_template
+        from ..helpers.parse import resolve_template
 
         resource_path = resolve_template(
             resource_path, available_vars, require_braces=True

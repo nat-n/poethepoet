@@ -1,6 +1,6 @@
 """
 This module provides a framework for defining a hierarchical parser and AST.
-See sibling ast module for an example usage.
+See the sibling command, template, and envfile modules for example usage.
 """
 
 from __future__ import annotations
