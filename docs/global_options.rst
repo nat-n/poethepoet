@@ -89,6 +89,25 @@ In this case the referenced files will be loaded in the given order.
 
   The envfile option is also available with the same capabilities at :ref:`the task level<Loading environment variables from an env file>`.
 
+Parameter expansion in env files
+"""""""""""""""""""""""""""""""""
+
+Env file values support bash-style parameter expansion. Each variable can reference variables defined earlier in the same file using ``$VAR`` or ``${VAR}``, as well as variables already set in the environment (host env vars, global env, or parent task env vars). The standard default/alternate operators are supported:
+
+.. code-block:: bash
+
+   BASE=/opt/myapp
+   DATA_DIR=${BASE}/data         # expands to /opt/myapp/data
+   LOG_DIR=${BASE}/logs          # expands to /opt/myapp/logs
+
+   # Use a default when a variable is unset
+   HOST=${APP_HOST:-localhost}
+
+   # Use an alternate value when a variable is set
+   DEBUG_FLAG=${DEBUG:+--debug}
+
+Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``.
+
 Optional env files
 """"""""""""""""""
 
@@ -124,6 +143,8 @@ See the documentation on :ref:`Special variables<Special variables>` for a full 
 .. note::
 
   Environment variables loaded from env files have higher precedence than any inherited from the host environment, but lower precedence than env defined directly in the pyproject.toml file. Similarly ``optional`` env files are loaded after ``expected`` ones, so variables defined in ``optional`` files can override those defined in ``expected`` files.
+
+  During parameter expansion within an env file, variables from lower-precedence sources (host env, previously loaded env files, and task-level env vars set before this file is loaded) are visible and can be referenced. In-file definitions always take precedence over these during expansion.
 
 
 Configure the executor

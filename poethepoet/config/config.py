@@ -466,7 +466,7 @@ class PoeConfig:
         provided, otherwise against the project directory.
         """
 
-        from ..env.template import apply_envvars_to_template
+        from ..helpers.parse import resolve_template
 
         if source_config_dir is None:
             source_config_dir = self._project_dir
@@ -488,7 +488,7 @@ class PoeConfig:
             git_repo = GitRepo(self._project_dir)
             available_vars["POE_GIT_ROOT"] = str(git_repo.main_path or "")
 
-        resource_path = apply_envvars_to_template(
+        resource_path = resolve_template(
             resource_path, available_vars, require_braces=True
         )
 

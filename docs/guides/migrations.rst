@@ -3,6 +3,55 @@ Migration Guides
 
 As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
 
+0.46.0
+------
+
+This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. Two edge-case behaviours changed.
+
+Whitespace in unquoted values is now preserved
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, whitespace terminated an unquoted value, making it possible to write multiple assignments on a single line:
+
+.. code-block:: bash
+
+   # OLD: two assignments on one line (no longer supported)
+   FOO=bar BAZ=qux
+
+This is now parsed as a single assignment ``FOO`` with the value ``bar BAZ=qux``. Move such assignments to separate lines, or quote the value:
+
+.. code-block:: bash
+
+   # NEW: one assignment per line
+   FOO=bar
+   BAZ=qux
+
+Semicolons are no longer assignment separators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, ``;`` acted as an assignment separator (similar to shell statement separators), allowing constructs like:
+
+.. code-block:: bash
+
+   # OLD: two assignments separated by ; (no longer supported)
+   FOO=bar;BAZ=qux
+
+Semicolons are now treated as regular characters in unquoted values, so the above assigns ``bar;BAZ=qux`` to ``FOO``. Move assignments to separate lines:
+
+.. code-block:: bash
+
+   # NEW: one assignment per line
+   FOO=bar
+   BAZ=qux
+
+If you have a value that contains a literal semicolon, it now works without escaping:
+
+.. code-block:: bash
+
+   # NEW: semicolons in values need no special treatment
+   JDBC_URL=jdbc:postgresql://localhost:5432/mydb?options=first;second
+
+
 0.44.0
 ------
 

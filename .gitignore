@@ -3,6 +3,7 @@ tests/temp
 out.txt
 .claude/settings.local.json
 .serena
+.claude/worktrees/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

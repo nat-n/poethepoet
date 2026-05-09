@@ -64,21 +64,14 @@ thing
         },
     ),
     (
-        """
-    # without linebreak between vars
-    FOO=BAR BAR=FOO
-    """,
-        {"FOO": "BAR", "BAR": "FOO"},
+        # whitespace within unquoted value is preserved; only \n terminates
+        "FOO=BAR BAZ=QUX\n",
+        {"FOO": "BAR BAZ=QUX"},
     ),
     (
-        """
-    # with semicolons
-    ; FOO=BAR;BAR=FOO\\;! ;
-    ;
-    BAZ="2;'2"#;
-    \tQUX=3\t;
-    """,
-        {"FOO": "BAR", "BAR": "FOO;!", "BAZ": "2;'2#", "QUX": "3"},
+        # semicolons are regular characters in unquoted and quoted values
+        'FOO=bar;baz\nBAR="qux;quux"\n',
+        {"FOO": "bar;baz", "BAR": "qux;quux"},
     ),
     (
         r"""
@@ -97,7 +90,7 @@ thing
     WUT='a'"b"\
 c """,
         {
-            "FOO": r"a\ ba\\\ ba\\ b##\ ;#",
+            "FOO": r"a\ ba\\\ ba\\ b##\ ;#;",
             "BAR": "",
             "BAZ": "",
             "QUX": "",
@@ -127,7 +120,7 @@ b;
             "ESCAPED_DQUOTE": '"',
             "ESCAPED_DQUOTE_DQUOTES": '\\"',
             "ESCAPED_DQUOTE_SQUOTES": '"',
-            "ESCAPED_NEWLINE": "ab",
+            "ESCAPED_NEWLINE": "ab;",
             "ESCAPED_NEWLINE_DQUOTES": '\\"',
             "ESCAPED_NEWLINE_SQUOTES": '"',
         },
@@ -156,15 +149,15 @@ b;
             "EX1": "BAR#NOT_COMMENT",
             "EX2": "BAR#NOT_COMMENT",
             "EX3": "BAR#NOT_COMMENT",
-            "EX4": "BAR #NOT_COMMENT",
+            "EX4": "BAR",
             "EX5": "BAR #NOT_COMMENT",
             "EX6": "BAR #NOT_COMMENT",
             "EX7": "BAR#NOT_COMMENT",
             "EX8": "BAR",
-            "EX9": "BAR ",
-            "EX10": "BAR",
-            "EX11": "BAR",
-            "EX12": "BAR;",
+            "EX9": "BAR",
+            "EX10": "BAR;",
+            "EX11": "BAR;#COMMENT",
+            "EX12": "BAR;;#COMMENT",
             "EX13": "BAR",
         },
     ),
@@ -221,3 +214,109 @@ def test_parse_invalid_env_files(example):
     # ruff: noqa: PT011
     with pytest.raises(ValueError):
         parse_env_file(example)
+
+
+# ---------------------------------------------------------------------------
+# Parameter expansion in envfile values
+# ---------------------------------------------------------------------------
+
+param_expansion_examples = [
+    # Basic forward reference
+    (
+        "BASE=/opt\nPATH_VAR=${BASE}/bin\n",
+        {"BASE": "/opt", "PATH_VAR": "/opt/bin"},
+    ),
+    # Default value operator
+    (
+        "RESULT=${MISSING:-fallback}\n",
+        {"RESULT": "fallback"},
+    ),
+    # Default value with existing var
+    (
+        "NAME=alice\nGREETING=${NAME:-world}\n",
+        {"NAME": "alice", "GREETING": "alice"},
+    ),
+    # Alternate value operator - var set
+    (
+        "DEBUG=1\nFLAG=${DEBUG:+--debug}\n",
+        {"DEBUG": "1", "FLAG": "--debug"},
+    ),
+    # Alternate value operator - var unset
+    (
+        "FLAG=${DEBUG:+--debug}\n",
+        {"FLAG": ""},
+    ),
+    # Nested default
+    (
+        "VAL=${A:-${B:-deep}}\n",
+        {"VAL": "deep"},
+    ),
+    # Expansion in double quotes
+    (
+        'HOST=example.com\nURL="https://${HOST}"\n',
+        {"HOST": "example.com", "URL": "https://example.com"},
+    ),
+    # Default with empty argument
+    (
+        "RESULT=${MISSING:-}\n",
+        {"RESULT": ""},
+    ),
+]
+
+
+@pytest.mark.parametrize("example", param_expansion_examples)
+def test_parse_env_file_param_expansion(example):
+    assert parse_env_file(example[0]) == example[1]
+
+
+def test_parse_env_file_no_expansion_in_single_quotes():
+    """
+    Single-quoted values should NOT have parameter expansion applied.
+    """
+    assert parse_env_file("HOST=example.com\nLIT='${HOST}'\n") == {
+        "HOST": "example.com",
+        "LIT": "${HOST}",
+    }
+
+
+# ---------------------------------------------------------------------------
+# base_env: host / task-env vars are visible during expansion
+# ---------------------------------------------------------------------------
+
+base_env_examples = [
+    # host var from base_env is visible
+    (
+        "URL=https://${HOST}/api\n",
+        {"HOST": "example.com"},
+        {"URL": "https://example.com/api"},
+    ),
+    # in-file var takes precedence over base_env
+    (
+        "HOST=override\nURL=https://${HOST}\n",
+        {"HOST": "base"},
+        {"HOST": "override", "URL": "https://override"},
+    ),
+    # base_env var used with default operator
+    (
+        "GREETING=${NAME:-stranger}\n",
+        {"NAME": "alice"},
+        {"GREETING": "alice"},
+    ),
+    # base_env=None behaves like empty env (no regression)
+    (
+        "FOO=bar\n",
+        None,
+        {"FOO": "bar"},
+    ),
+    # alternate operator uses base_env var
+    (
+        "FLAG=${DEBUG:+--debug}\n",
+        {"DEBUG": "1"},
+        {"FLAG": "--debug"},
+    ),
+]
+
+
+@pytest.mark.parametrize(("content", "base_env", "expected"), base_env_examples)
+def test_parse_env_file_with_base_env(content, base_env, expected):
+    assert parse_env_file(content, base_env) == expected
