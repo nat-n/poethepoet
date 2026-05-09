@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_global_envfile_and_default(run_poe):
     result = run_poe("deploy-dev", project="envfile")
     assert (
@@ -71,13 +68,8 @@ def test_trying_to_load_nonexistent_envfiles(run_poe, projects):
 
 
 # ---------------------------------------------------------------------------
-# Parameter expansion in envfile values (not yet implemented)
+# Parameter expansion in envfile values
 # ---------------------------------------------------------------------------
-
-
-_xfail_envfile_expansion = pytest.mark.xfail(
-    reason="envfile param expansion not yet implemented"
-)
 
 
 def test_envfile_basic_param_expansion(temp_pyproject, run_poe, tmp_path):

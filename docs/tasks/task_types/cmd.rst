@@ -57,6 +57,8 @@ Parameter expansion can also be disabled by escaping the $ with a backslash like
   [tool.poe.tasks]
   greet = "echo Hello \\$USER"  # the backslash itself needs escaping for the toml parser
 
+.. _parameter-expansion-operators:
+
 Parameter expansion operators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

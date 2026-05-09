@@ -87,7 +87,7 @@ The previous example can be modified to only set the `PORT` variable if it is no
 Templating environment variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It is also possible to reference existing environment variables when defining a new environment variable for a task. This may be useful for aliasing or extending a variable already defined in the host environment, globally in the config, or in a referenced envfile. In the following example the value from $TF_VAR_service_port on the host environment is also made available as $FLASK_RUN_PORT within the task.
+It is also possible to reference existing environment variables when defining a new environment variable for a task, including using the :ref:`default and alternate value operators <parameter-expansion-operators>`. This may be useful for aliasing or extending a variable already defined in the host environment, globally in the config, or in a referenced envfile. In the following example the value from $TF_VAR_service_port on the host environment is also made available as $FLASK_RUN_PORT within the task.
 
 .. code-block:: toml
 
@@ -160,7 +160,7 @@ By default tasks are run from the project root – that is the parent directory 
 
 In this example, the npx executable is executed inside the :sh:`./client` subdirectory of the project (when ``cwd`` is a relative path, it gets resolved relatively to the project root), and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.
 
-The ``cwd`` option also accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}``.
+The ``cwd`` option also accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}``, including the :ref:`default and alternate value operators <parameter-expansion-operators>`.
 
 Poe provides its own :sh:`$POE_PWD` variable that is by default set to the directory, from which poe was executed; this may be overridden by setting the variable to a different value beforehand. Using :sh:`$POE_PWD`, a task's working directory may be set to the one from which it was executed like so:
 
@@ -184,7 +184,7 @@ You can configure poe to redirect the standard output of a task to a file on dis
 
 If a relative path is provided, as in the example above, then it will be resolved relative to the project root directory.
 
-The ``capture_stdout`` option supports referencing environment variables. For example setting ``capture_stdout = "${POE_PWD}/output.txt"`` will cause the output file to be created within the current working directory of the parent process.
+The ``capture_stdout`` option supports referencing environment variables, including the :ref:`default and alternate value operators <parameter-expansion-operators>`. For example setting ``capture_stdout = "${POE_PWD}/output.txt"`` will cause the output file to be created within the current working directory of the parent process.
 
 .. warning::
 
