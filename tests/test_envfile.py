@@ -65,3 +65,168 @@ def test_trying_to_load_nonexistent_envfiles(run_poe, projects):
     assert "lies.env" not in result.capture
     assert result.stdout == "OK\n"
     assert result.stderr == ""
+
+
+# ---------------------------------------------------------------------------
+# Parameter expansion in envfile values
+# ---------------------------------------------------------------------------
+
+
+def test_envfile_basic_param_expansion(temp_pyproject, run_poe, tmp_path):
+    """
+    Basic ${VAR} expansion within an envfile: later vars reference earlier ones.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text("BASE=/opt\nFULL=${BASE}/app\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{FULL}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "/opt/app\n"
+
+
+def test_envfile_default_value_operator(temp_pyproject, run_poe, tmp_path):
+    """
+    ${VAR:-default} in an envfile should use default when VAR is unset.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text("GREETING=${NAME:-world}\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{GREETING}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "world\n"
+
+
+def test_envfile_default_value_overridden(temp_pyproject, run_poe, tmp_path):
+    """
+    ${VAR:-default} in an envfile should use VAR when it was set earlier.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text("NAME=alice\nGREETING=${NAME:-world}\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{GREETING}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "alice\n"
+
+
+def test_envfile_alternate_value_operator(temp_pyproject, run_poe, tmp_path):
+    """
+    ${VAR:+alternate} in an envfile should use alternate when VAR is set.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text("DEBUG=1\nFLAG=${DEBUG:+--debug}\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{FLAG}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "--debug\n"
+
+
+def test_envfile_alternate_value_unset(temp_pyproject, run_poe, tmp_path):
+    """
+    ${VAR:+alternate} in an envfile should be empty when VAR is unset.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text("FLAG=${DEBUG:+--debug}\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo flag=${{FLAG}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "flag=\n"
+
+
+def test_envfile_expansion_in_double_quotes(temp_pyproject, run_poe, tmp_path):
+    """
+    ${VAR} expansion inside double-quoted envfile values.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text('HOST=example.com\nURL="https://${HOST}/api"\n')
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{URL}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "https://example.com/api\n"
+
+
+def test_envfile_no_expansion_in_single_quotes(temp_pyproject, run_poe, tmp_path):
+    """
+    ${VAR} inside single-quoted envfile values should NOT be expanded.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text("HOST=example.com\nLITERAL='${HOST}'\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{LITERAL}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "${HOST}\n"
+
+
+def test_envfile_nested_default_value(temp_pyproject, run_poe, tmp_path):
+    """
+    Nested :- operators in envfile: ${A:-${B:-fallback}}.
+    """
+    envfile = tmp_path / "test.env"
+    envfile.write_text("RESULT=${PRIMARY:-${SECONDARY:-fallback}}\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{RESULT}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "fallback\n"

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, cast
 
-from .ast_core import (
+from .core import (
     AnnotatedContentNode,
     ContentNode,
     ParseConfig,
@@ -217,6 +217,12 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
 
     def _parse(self, chars: ParseCursor):
         assert chars.take() == "$"
+
+        if self.config.require_braces and chars.peek() != "{":
+            # In require_braces mode, bare $VAR is not a param expansion
+            chars.pushback("$")
+            self._cancelled = True
+            return
 
         param: list[str] = []
         if chars.peek() == "{":
