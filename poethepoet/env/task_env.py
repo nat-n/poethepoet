@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
     from ..config import PoeConfig
     from ..config.primitives import EnvDefault, EnvfileOption
+    from ..helpers.parse.template import Template
     from .cache import EnvFileCache
 
 
@@ -166,11 +167,19 @@ class TaskEnv(Mapping[str, str]):
         """
         return dict(self._arg_vars)
 
-    def fill_template(self, template: str) -> str:
+    def fill_template(self, template: str | Template) -> str:
         """
-        Resolve the given string remplate with available variables
+        Resolve the given template with available variables.
+
+        Accepts either a raw string (which will be parsed) or a pre-parsed
+        Template AST node, avoiding a redundant parse when the caller already
+        holds the tree.
         """
-        return resolve_template(template, self)
+        from ..helpers.parse import parse_template, resolve_template_node
+
+        if isinstance(template, str):
+            template = parse_template(template)
+        return resolve_template_node(template, self)
 
     def set(self, key: str, value: str):
         """

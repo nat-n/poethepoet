@@ -129,3 +129,7 @@ args = [
   { name = "items", multiple = true },
   "label",
 ]
+
+[tool.poe.tasks.ref-with-custom-var-not-extra-args]
+ref = "greet $POE_EXTRA_ARGS_CUSTOM"
+env = { POE_EXTRA_ARGS_CUSTOM = "world" }

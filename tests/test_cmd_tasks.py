@@ -475,3 +475,19 @@ def test_cmd_task_with_poe_extra_args_and_trailing_args(run_poe):
     assert result.capture == "Poe => poe_test_echo before: foo bar :after\n"
     assert result.stdout == "before: foo bar :after\n"
     assert result.stderr == ""
+
+
+def test_cmd_task_with_similarly_named_var_still_appends_extra_args(run_poe):
+    """$POE_EXTRA_ARGS_CUSTOM is distinct; extra args must still be appended"""
+    result = run_poe("echo-custom-var-not-extra-args", "foo", "bar", project="cmds")
+    assert result.capture == "Poe => poe_test_echo custom: my-custom foo bar\n"
+    assert result.stdout == "custom: my-custom foo bar\n"
+    assert result.stderr == ""
+
+
+def test_cmd_task_with_extra_args_only_in_comment_still_appends_extra_args(run_poe):
+    """$POE_EXTRA_ARGS only in a comment must not suppress extra arg appending"""
+    result = run_poe("echo-comment-mentions-extra-args", "foo", "bar", project="cmds")
+    assert result.capture == "Poe => poe_test_echo actual foo bar\n"
+    assert result.stdout == "actual foo bar\n"
+    assert result.stderr == ""

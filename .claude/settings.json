@@ -1,11 +1,8 @@
 {
   "hooks": {
-    "PostToolUse":
-    [
+    "Stop": [
       {
-        "matcher": "Edit|Write",
-        "hooks":
-        [
+        "hooks": [
           {
             "type": "command",
             "command": "poe format"
@@ -15,8 +12,7 @@
     ]
   },
   "permissions": {
-    "allow":
-    [
+    "allow": [
       "Bash(poe *)"
     ]
   }

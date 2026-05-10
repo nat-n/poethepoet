@@ -69,6 +69,13 @@ class RefTask(PoeTask):
 
     spec: TaskSpec
 
+    def _parse_content(self):
+        if self._parsed_content is None:
+            from ..helpers.parse import parse_template
+
+            self._parsed_content = parse_template(self.spec.content.strip())
+        return self._parsed_content
+
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
@@ -84,7 +91,7 @@ class RefTask(PoeTask):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.register_task_args(named_arg_values, extra_args)
 
-        expanded_content = env.fill_template(self.spec.content.strip())
+        expanded_content = env.fill_template(self._parse_content())
         invocation_tokens = tuple(
             env.fill_template(token) for token in shlex.split(expanded_content)
         )

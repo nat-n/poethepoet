@@ -131,3 +131,10 @@ cmd = "poe_test_echo before: $POE_EXTRA_ARGS :after"
 [tool.poe.tasks.echo-extra-args-with-named]
 cmd = "poe_test_echo ${prefix} extra: $POE_EXTRA_ARGS"
 args = [{ name = "prefix", default = "result" }]
+
+[tool.poe.tasks.echo-custom-var-not-extra-args]
+cmd = "poe_test_echo custom: $POE_EXTRA_ARGS_CUSTOM"
+env = { POE_EXTRA_ARGS_CUSTOM = "my-custom" }
+
+[tool.poe.tasks.echo-comment-mentions-extra-args]
+cmd = "poe_test_echo actual # $POE_EXTRA_ARGS not used here"

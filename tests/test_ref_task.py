@@ -292,6 +292,16 @@ def test_ref_default_value_overridden(temp_pyproject, run_poe):
     assert result.stderr == ""
 
 
+def test_ref_with_similarly_named_var_still_appends_extra_args(run_poe):
+    """$POE_EXTRA_ARGS_CUSTOM in a ref is distinct; extra args must still be appended"""
+    result = run_poe(
+        "ref-with-custom-var-not-extra-args", "extra1", "extra2", project="refs"
+    )
+    assert result.capture == "Poe => poe_test_echo hi world extra1 extra2\n"
+    assert result.stdout == "hi world extra1 extra2\n"
+    assert result.stderr == ""
+
+
 def test_ref_alternate_value_operator(temp_pyproject, run_poe):
     project_path = temp_pyproject(
         """

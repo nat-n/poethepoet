@@ -369,3 +369,44 @@ class TestResolveTemplate:
         env = SpyDict({"X": "val"}, getitem_spy=spy)
         result = self._resolve("${MISSING:+replacement}", env, require_braces=True)
         assert result == ""
+
+
+class TestParseTemplateAndResolveNode:
+    """
+    Tests for parse_template() and resolve_template_node() — the two composable
+    halves of resolve_template().
+    """
+
+    def test_parse_template_returns_template_node(self):
+        from poethepoet.helpers.parse import parse_template
+        from poethepoet.helpers.parse.template import Template
+
+        tree = parse_template("hello $NAME")
+        assert isinstance(tree, Template)
+
+    def test_resolve_template_node_resolves_variables(self):
+        from poethepoet.helpers.parse import parse_template, resolve_template_node
+
+        tree = parse_template("hello $NAME")
+        assert resolve_template_node(tree, {"NAME": "alice"}) == "hello alice"
+
+    def test_compose_matches_resolve_template(self):
+        """parse_template + resolve_template_node == resolve_template for all inputs"""
+        from poethepoet.helpers.parse import (
+            parse_template,
+            resolve_template,
+            resolve_template_node,
+        )
+
+        source = "${SCHEME:-https}://${HOST:-localhost}:${PORT:-8080}"
+        env = {"HOST": "example.com"}
+        assert resolve_template_node(parse_template(source), env) == resolve_template(
+            source, env
+        )
+
+    def test_parse_template_require_braces_flows_through(self):
+        from poethepoet.helpers.parse import parse_template, resolve_template_node
+
+        tree = parse_template("$BARE ${BRACED}", require_braces=True)
+        result = resolve_template_node(tree, {"BARE": "x", "BRACED": "y"})
+        assert result == "$BARE y"

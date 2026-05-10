@@ -87,18 +87,25 @@ class CmdTask(PoeTask):
                 "More details: https://github.com/nat-n/poethepoet/discussions/314",
             )
 
+    def _parse_content(self):
+        if self._parsed_content is None:
+            from ..helpers.parse import parse_poe_cmd
+            from ..helpers.parse.core import ParseError
+
+            try:
+                self._parsed_content = parse_poe_cmd(self.spec.content)
+            except ParseError as error:
+                raise PoeException(
+                    f"Couldn't parse command line for task {self.name!r}", error
+                )
+        return self._parsed_content
+
     def _resolve_commandline(self, context: RunContext, env: TaskEnv):
-        from ..helpers.parse import parse_poe_cmd, resolve_command_tokens
-        from ..helpers.parse.core import ParseError
+        from ..helpers.parse import resolve_command_tokens
 
         self.__passed_unmatched_glob = False
 
-        try:
-            command_lines = parse_poe_cmd(self.spec.content).command_lines
-        except ParseError as error:
-            raise PoeException(
-                f"Couldn't parse command line for task {self.name!r}", error
-            )
+        command_lines = self._parse_content().command_lines
 
         if not command_lines:
             raise PoeException(

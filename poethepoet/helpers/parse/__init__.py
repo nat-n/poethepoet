@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping
 
     from .command import Line, ParseConfig
+    from .template import Template
 
 
 def parse_poe_cmd(source: str, config: ParseConfig | None = None):
@@ -24,21 +25,31 @@ def parse_poe_cmd(source: str, config: ParseConfig | None = None):
     return Script(ParseCursor.from_string(source), config)
 
 
-def resolve_template(
-    source: str,
-    env: Mapping[str, str],
-    require_braces: bool = False,
-) -> str:
+def parse_template(source: str, require_braces: bool = False) -> Template:
     """
-    Parse a template string and resolve parameter expansions (including :-
-    and :+ operators) against the given env mapping. Returns a flat string
-    with no word splitting or glob handling.
+    Parse a template string into a Template AST node.
+
+    The result can be passed to resolve_template_node() for resolution, or
+    inspected directly (e.g. to find ParamExpansion nodes by name).
     """
-    from .command import ParamArgument, ParamExpansion, ParseConfig, ParseCursor
+    from .command import ParseConfig, ParseCursor
     from .template import Template
 
     config = ParseConfig(require_braces=require_braces)
-    tree = Template(ParseCursor.from_string(source), config)
+    return Template(ParseCursor.from_string(source), config)
+
+
+def resolve_template_node(
+    tree: Template,
+    env: Mapping[str, str],
+) -> str:
+    """
+    Resolve a pre-parsed Template AST against the given env mapping.
+
+    Returns a flat string with no word splitting or glob handling.
+    Supports :- and :+ operators, including nested expansions.
+    """
+    from .command import ParamArgument, ParamExpansion
 
     def _resolve_param_argument(argument: ParamArgument, env: Mapping[str, str]) -> str:
         parts: list[str] = []
@@ -69,6 +80,19 @@ def resolve_template(
         else:
             parts.append(child.content)
     return "".join(parts)
+
+
+def resolve_template(
+    source: str,
+    env: Mapping[str, str],
+    require_braces: bool = False,
+) -> str:
+    """
+    Parse a template string and resolve parameter expansions (including :-
+    and :+ operators) against the given env mapping. Returns a flat string
+    with no word splitting or glob handling.
+    """
+    return resolve_template_node(parse_template(source, require_braces), env)
 
 
 def resolve_command_tokens(

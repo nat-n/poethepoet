@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ..config.partition import GroupConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
+    from ..helpers.parse.core import AstNode
     from ..ui import PoeUi
     from .args import PoeTaskArgs
 
@@ -389,6 +390,7 @@ class PoeTask(metaclass=MetaPoeTask):
     spec: TaskSpec
     ctx: TaskContext
     _parsed_args: tuple[dict[str, str], tuple[str, ...]] | None = None
+    _parsed_content: AstNode | None = None
 
     __task_types: ClassVar[dict[str, type[PoeTask]]] = {}
     __upstream_invocations: (
@@ -443,6 +445,16 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return None
 
+    def _parse_content(self) -> AstNode | None:
+        """
+        Parse and cache task content as an AST node for structured inspection.
+
+        Returns None by default. Subclasses with structured content (cmd, ref)
+        override this to return a parsed tree, enabling precise detection of
+        $POE_EXTRA_ARGS references that excludes comments and superset variable names.
+        """
+        return None
+
     def _content_uses_extra_args(self) -> bool:
         """
         Check if task content explicitly references $POE_EXTRA_ARGS.
@@ -451,6 +463,22 @@ class PoeTask(metaclass=MetaPoeTask):
         task content is already designed to include extra arguments, and that we
         should not append extra arguments automatically to the end of the content.
         """
+        if (tree := self._parse_content()) is not None:
+            from ..helpers.parse.command import ParamExpansion
+            from ..helpers.parse.core import SyntaxNode
+
+            stack: list[AstNode] = [tree]
+            while stack:
+                node = stack.pop()
+                if isinstance(node, ParamExpansion):
+                    if node.param_name == "POE_EXTRA_ARGS":
+                        return True
+                    if node.operation:
+                        stack.append(node.operation.argument)
+                elif isinstance(node, SyntaxNode):
+                    stack.extend(node)
+            return False
+
         content = self.spec.content
         return "$POE_EXTRA_ARGS" in content or "${POE_EXTRA_ARGS" in content
 
