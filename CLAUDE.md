@@ -47,7 +47,7 @@ Reference tests/README.md for instructions on how to write, run, and debug tests
 
 **Type hints** are used throughout. Circular imports are avoided with `TYPE_CHECKING` guards.
 
-**Lazy imports** are use strategically with the goal of reducing latency, since this is a CLI app
+**Lazy imports** are used strategically with the goal of reducing latency, since this is a CLI app. Note the distinction: imports only needed for type annotations belong in a `TYPE_CHECKING` block (with `from __future__ import annotations` at the top of the module), not as lazy runtime imports inside functions.
 
 ## Where to Look
 

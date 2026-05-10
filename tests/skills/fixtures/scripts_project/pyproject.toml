@@ -1,0 +1,6 @@
+[project]
+name = "dataproj"
+version = "0.1.0"
+
+[tool.uv]
+dev-dependencies = []

@@ -1,6 +1,6 @@
 [project]
 name            = "poethepoet"
-version         = "0.45.0"
+version         = "0.46.0"
 description     = "A task runner that works well with poetry and uv."
 authors         = [{ name = "Nat Noordanus", email = "n@noordan.us" }]
 requires-python = ">=3.10"
@@ -158,6 +158,14 @@ sequence = [
 ]
 ignore_fail = true
 
+[tool.poe.tasks.bump-version]
+help   = "Bump the package version across all source files before a release"
+script = "bump_version:main(version)"
+env.PYTHONPATH = "${POE_ROOT}/scripts"
+args = [
+  { name = "version", positional = true, help = "minor, tiny, or an explicit version string (e.g. 1.2.3)" },
+]
+
 [tool.poe.tasks.poe]
 help   = "Execute poe from this repo (useful for testing)"
 script = "poethepoet:main"
@@ -176,6 +184,17 @@ script = "bash_harness:task_bash_harness(path)"
 env.PYTHONPATH = "tests/completion"
 args = [{name="path", positional = true, help = "Path to script to test, or - for stdin"}]
 
+[tool.poe.tasks.eval-skill]
+help   = "Run poethepoet skill evals"
+script = "run_evals:main(evals, replicas, no_baseline, model, verbose)"
+env.PYTHONPATH = "${POE_ROOT}/tests/skills"
+args = [
+  { name = "evals", options = ["-e", "--eval"], multiple = true, type = "integer", help = "Eval IDs to run (default: all)" },
+  { name = "replicas", options = ["-r", "--replicas"], type = "integer", default = 1, help = "Number of runs per eval" },
+  { name = "no_baseline", options = ["--no-baseline"], type = "boolean", help = "Skip without-skill baseline runs" },
+  { name = "model", options = ["-m", "--model"], help = "Claude model to use" },
+  { name = "verbose", options = ["-v", "--verbose"], type = "boolean", help = "Print per-expectation results with evidence" },
+]
 
 [tool.rstcheck]
 ignore_messages  = [

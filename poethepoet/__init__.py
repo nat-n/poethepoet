@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from .__version__ import __version__
@@ -39,10 +41,10 @@ def _run_builtin_task(
     task_name: str, second_arg: str = "", third_arg: str = ""
 ) -> bool:
     """
-    Run a special builtin task for shell completion purposes.
+    Run a special builtin task.
 
     task_name: The name of the builtin task to run, e.g. "_list_tasks"
-    second_arg: config path or poe alias (depending on the task)
+    second_arg: config path, poe alias, or target directory (depending on the task)
     third_arg: path to alias config for bash completion
 
     returns True if the task was handled, False otherwise
@@ -69,6 +71,18 @@ def _run_builtin_task(
                 str(Path(third_arg).expanduser().resolve()) if third_arg else None
             )
             _describe_task_args(task_name=second_arg, target_path=target_path)
+        return True
+
+    if task_name == "_install_skill":
+        import sys
+
+        from .skills.install import install_skill
+
+        skill_args = sys.argv[2:]
+        upgrade = "--upgrade" in skill_args
+        positional = [a for a in skill_args if not a.startswith("--")]
+        skills_dir = Path(positional[0]) if positional else None
+        install_skill(skills_dir=skills_dir, upgrade=upgrade)
         return True
 
     target_path = ""

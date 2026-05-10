@@ -112,6 +112,6 @@ How to add a hot fix
 How to create release
 ~~~~~~~~~~~~~~~~~~~~~
 
-1. From the head of the *development* branch, create release commit that bumps the version in ``pyproject.toml`` and ``__version__.py`` (there’s a test to ensure these are in sync).
+1. From the head of the *development* branch, use the ``bump-version`` poe task to bump the version, then commit the result.
 2. Create a release (and tag) on GitHub, following the existing convention for naming and release notes format (use the *Generate release notes* button as a starting point), and the GitHub CI will do the rest.
 3. Unless it is a pre-release then the final step is to merge *development* into *main*.
