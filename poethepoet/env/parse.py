@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from ..helpers.parse.command import ParamArgument, ParamExpansion
     from ..helpers.parse.envfile import EnvFile, EnvFileDQString, EnvFileValue
 
 
@@ -53,7 +52,7 @@ def _resolve_value(value: EnvFileValue, env: Mapping[str, str]) -> str:
     parts: list[str] = []
     for child in value:
         if isinstance(child, ParamExpansion):
-            parts.append(_resolve_param(child, env))
+            parts.append(child.expand(env))
         elif isinstance(child, EnvFileDQString):
             parts.append(_resolve_dq_string(child, env))
         else:
@@ -64,39 +63,7 @@ def _resolve_value(value: EnvFileValue, env: Mapping[str, str]) -> str:
 def _resolve_dq_string(dq: EnvFileDQString, env: Mapping[str, str]) -> str:
     from ..helpers.parse.command import ParamExpansion
 
-    parts: list[str] = []
-    for child in dq:
-        if isinstance(child, ParamExpansion):
-            parts.append(_resolve_param(child, env))
-        else:
-            parts.append(str(child))
-    return "".join(parts)
-
-
-def _resolve_param(element: ParamExpansion, env: Mapping[str, str]) -> str:
-    param_value = env.get(element.param_name, "")
-
-    if element.operation:
-        if param_value:
-            if element.operation.operator == ":+":
-                return _resolve_param_argument(element.operation.argument, env)
-        elif element.operation.operator == ":-":
-            return _resolve_param_argument(element.operation.argument, env)
-
-    return param_value
-
-
-def _resolve_param_argument(
-    argument: ParamArgument,
-    env: Mapping[str, str],
-) -> str:
-    from ..helpers.parse.command import ParamExpansion
-
-    parts: list[str] = []
-    for segment in argument.segments:
-        for element in segment:
-            if isinstance(element, ParamExpansion):
-                parts.append(_resolve_param(element, env))
-            else:
-                parts.append(element.content)
-    return "".join(parts)
+    return "".join(
+        child.expand(env) if isinstance(child, ParamExpansion) else str(child)
+        for child in dq
+    )

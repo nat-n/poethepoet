@@ -138,8 +138,8 @@ class ExprTask(PoeTask):
         that class with the required attributes later.
         """
 
-        from ..env.template import SpyDict
-        from ..helpers.parse import resolve_template
+        from ..env.utils import SpyDict
+        from ..helpers.parse import parse_template
 
         # Spy on access to the env, so that instead of replacing template ${keys} with
         # the corresponding value, replace them with a python name and keep track of
@@ -150,10 +150,8 @@ class ExprTask(PoeTask):
             accessed_vars[key] = value
             return f"__env.{key}"
 
-        expression = resolve_template(
-            content,
-            SpyDict(env, getitem_spy=getitem_spy),
-            require_braces=True,
+        expression = parse_template(content, require_braces=True).resolve(
+            SpyDict(env, getitem_spy=getitem_spy)
         )
 
         return expression, accessed_vars

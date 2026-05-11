@@ -11,7 +11,7 @@ from collections.abc import (
 )
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from ..helpers.parse import resolve_template
+from ..helpers.parse import parse_template
 from ..io import PoeIO
 
 if TYPE_CHECKING:
@@ -175,11 +175,9 @@ class TaskEnv(Mapping[str, str]):
         Template AST node, avoiding a redundant parse when the caller already
         holds the tree.
         """
-        from ..helpers.parse import parse_template, resolve_template_node
-
         if isinstance(template, str):
             template = parse_template(template)
-        return resolve_template_node(template, self)
+        return template.resolve(self)
 
     def set(self, key: str, value: str):
         """
@@ -241,7 +239,9 @@ class TaskEnv(Mapping[str, str]):
         if envfile_option:
             for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
                 resolved_envfile = config_working_dir.joinpath(
-                    resolve_template(envfile_path, scoped_vars, require_braces=True)
+                    parse_template(envfile_path, require_braces=True).resolve(
+                        scoped_vars
+                    )
                 )
                 self.update(
                     self._envfiles.get(
@@ -261,8 +261,8 @@ class TaskEnv(Mapping[str, str]):
                 continue
 
             # TODO: think about how to support lazy eval from args here
-            resolved_value = resolve_template(
-                value_str, scoped_vars, require_braces=True
+            resolved_value = parse_template(value_str, require_braces=True).resolve(
+                scoped_vars
             )
             self.set(key, resolved_value)
             scoped_vars.set(key, resolved_value)
