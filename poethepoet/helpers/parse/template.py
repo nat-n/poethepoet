@@ -8,8 +8,13 @@ interpolation.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .command import ParamExpansion
 from .core import ContentNode, ParseCursor, SyntaxNode
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class TemplateText(ContentNode):
@@ -52,6 +57,18 @@ class Template(SyntaxNode[ContentNode]):
     quoting, globs, or comments — it treats everything as a flat string with
     only parameter expansion as special syntax.
     """
+
+    def resolve(self, env: Mapping[str, str]) -> str:
+        """
+        Resolve parameter expansions in this template against the given env mapping.
+
+        Returns a flat string with no word splitting or glob handling.
+        Supports :- and :+ operators, including nested expansions.
+        """
+        return "".join(
+            child.expand(env) if isinstance(child, ParamExpansion) else child.content
+            for child in self
+        )
 
     def _parse(self, chars: ParseCursor):
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)

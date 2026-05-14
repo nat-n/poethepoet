@@ -87,18 +87,23 @@ class CmdTask(PoeTask):
                 "More details: https://github.com/nat-n/poethepoet/discussions/314",
             )
 
-    def _resolve_commandline(self, context: RunContext, env: TaskEnv):
-        from ..helpers.parse import parse_poe_cmd, resolve_command_tokens
-        from ..helpers.parse.core import ParseError
+    def _parse_content(self):
+        if self._parsed_content is None:
+            from ..helpers.parse import parse_poe_cmd
+            from ..helpers.parse.core import ParseError
 
+            try:
+                self._parsed_content = parse_poe_cmd(self.spec.content)
+            except ParseError as error:
+                raise PoeException(
+                    f"Couldn't parse command line for task {self.name!r}", error
+                )
+        return self._parsed_content
+
+    def _resolve_commandline(self, context: RunContext, env: TaskEnv):
         self.__passed_unmatched_glob = False
 
-        try:
-            command_lines = parse_poe_cmd(self.spec.content).command_lines
-        except ParseError as error:
-            raise PoeException(
-                f"Couldn't parse command line for task {self.name!r}", error
-            )
+        command_lines = self._parse_content().command_lines
 
         if not command_lines:
             raise PoeException(
@@ -113,22 +118,23 @@ class CmdTask(PoeTask):
         working_dir = self.get_working_dir(env)
 
         result = []
-        for cmd_token, has_glob in resolve_command_tokens(command_lines, env):
-            if has_glob:
-                # Resolve glob pattern from the working directory
-                if matches := [str(match) for match in working_dir.glob(cmd_token)]:
-                    result.extend(matches)
-                elif self.spec.options.empty_glob == "fail":
-                    raise ExecutionError(
-                        f"Glob pattern {cmd_token!r} did not match any files in "
-                        f"working directory {working_dir!s}"
-                    )
-                elif self.spec.options.empty_glob == "pass":
-                    # If the glob pattern does not match any files, we just pass it
-                    # through as is
-                    self.__passed_unmatched_glob = True
+        for line in command_lines:
+            for cmd_token, has_glob in line.resolve_tokens(env):
+                if has_glob:
+                    # Resolve glob pattern from the working directory
+                    if matches := [str(match) for match in working_dir.glob(cmd_token)]:
+                        result.extend(matches)
+                    elif self.spec.options.empty_glob == "fail":
+                        raise ExecutionError(
+                            f"Glob pattern {cmd_token!r} did not match any files in "
+                            f"working directory {working_dir!s}"
+                        )
+                    elif self.spec.options.empty_glob == "pass":
+                        # If the glob pattern does not match any files, we just pass it
+                        # through as is
+                        self.__passed_unmatched_glob = True
+                        result.append(cmd_token)
+                else:
                     result.append(cmd_token)
-            else:
-                result.append(cmd_token)
 
         return result

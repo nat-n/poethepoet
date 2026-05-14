@@ -1,21 +1,31 @@
-from poethepoet.helpers.parse import parse_poe_cmd, resolve_command_tokens
+from poethepoet.helpers.parse import parse_poe_cmd
 
 
 def test_resolve_command_tokens():
-    line = parse_poe_cmd(
+    script = parse_poe_cmd(
         """
         abc${thing1}def *$thing2?
         """
-    )[0]
+    )
+    line = script.command_lines[0]
 
-    assert list(resolve_command_tokens([line], {"thing2": ""})) == [
+    assert list(line.resolve_tokens({"thing2": ""})) == [
         ("abcdef", False),
         ("*?", True),
     ]
 
-    assert list(
-        resolve_command_tokens([line], {"thing1": " space ", "thing2": "s p a c e"})
-    ) == [
+    assert list(line.resolve_tokens({"thing1": " space ", "thing2": "s p a c e"})) == [
+        ("abc", False),
+        ("space", False),
+        ("def", False),
+        ("*s", True),
+        ("p", False),
+        ("a", False),
+        ("c", False),
+        ("e?", True),
+    ]
+
+    assert list(line.resolve_tokens({"thing1": " space ", "thing2": "s p a c e"})) == [
         ("abc", False),
         ("space", False),
         ("def", False),
@@ -27,20 +37,7 @@ def test_resolve_command_tokens():
     ]
 
     assert list(
-        resolve_command_tokens([line], {"thing1": " space ", "thing2": "s p a c e"})
-    ) == [
-        ("abc", False),
-        ("space", False),
-        ("def", False),
-        ("*s", True),
-        ("p", False),
-        ("a", False),
-        ("c", False),
-        ("e?", True),
-    ]
-
-    assert list(
-        resolve_command_tokens([line], {"thing1": "x'[!] ]'y", "thing2": "z [foo ? "})
+        line.resolve_tokens({"thing1": "x'[!] ]'y", "thing2": "z [foo ? "})
     ) == [
         ("abcx'[!]", True),
         ("]'ydef", False),
@@ -54,15 +51,15 @@ def test_resolve_command_tokens():
         """
         "ab$thing1* and ${thing2}? '${thing1}'" '${thing1}' ""
         """
-    )[0]
+    ).command_lines[0]
 
-    assert list(resolve_command_tokens([line], {"thing1": r" *\o/", "thing2": ""})) == [
+    assert list(line.resolve_tokens({"thing1": r" *\o/", "thing2": ""})) == [
         (r"ab *\o/* and ? ' *\o/'", False),
         ("${thing1}", False),
         ("", False),
     ]
 
-    lines = parse_poe_cmd(
+    script = parse_poe_cmd(
         """
         # comment
         one # comment
@@ -72,7 +69,9 @@ def test_resolve_command_tokens():
         """
     )
 
-    assert list(resolve_command_tokens(lines, {})) == [
+    assert [
+        token for line in script.command_lines for token in line.resolve_tokens({})
+    ] == [
         ("one", False),
         ("two", False),
         ("three", False),
@@ -88,16 +87,16 @@ def test_resolve_alternate_value_preserves_quotes():
     integration tests in test_cmd_param_expansion.py are not repeated here.
     """
     # Default value not applied when var is set
-    line = parse_poe_cmd("echo ${FLAG:- -m 'not build'}")[0]
-    assert list(resolve_command_tokens([line], {"FLAG": "yes"})) == [
+    line = parse_poe_cmd("echo ${FLAG:- -m 'not build'}").command_lines[0]
+    assert list(line.resolve_tokens({"FLAG": "yes"})) == [
         ("echo", False),
         ("yes", False),
     ]
 
     # Expansion embedded in a word — leading/trailing text joins adjacent tokens
     # bash: printf '[%s]\n' x${F:+ -m 'not build'}y → [x] [-m] [not buildy]
-    line = parse_poe_cmd("x${FLAG:+ -m 'not build'}y")[0]
-    assert list(resolve_command_tokens([line], {"FLAG": "yes"})) == [
+    line = parse_poe_cmd("x${FLAG:+ -m 'not build'}y").command_lines[0]
+    assert list(line.resolve_tokens({"FLAG": "yes"})) == [
         ("x", False),
         ("-m", False),
         ("not buildy", False),
@@ -105,55 +104,51 @@ def test_resolve_alternate_value_preserves_quotes():
 
     # Nested expansion in alternate value — inner value is word-split
     # bash: F=y O="hello world"; printf '[%s]\n' ${F:+ $O} → [hello] [world]
-    line = parse_poe_cmd("${FLAG:+ $OTHER}")[0]
-    assert list(
-        resolve_command_tokens([line], {"FLAG": "y", "OTHER": "hello world"})
-    ) == [
+    line = parse_poe_cmd("${FLAG:+ $OTHER}").command_lines[0]
+    assert list(line.resolve_tokens({"FLAG": "y", "OTHER": "hello world"})) == [
         ("hello", False),
         ("world", False),
     ]
 
     # Outer double quotes suppress word splitting of nested expansion
     # bash: F=y O="hello world"; printf '[%s]\n' "${F:+ $O}" → [ hello world]
-    line = parse_poe_cmd('"${FLAG:+ $OTHER}"')[0]
-    assert list(
-        resolve_command_tokens([line], {"FLAG": "y", "OTHER": "hello world"})
-    ) == [
+    line = parse_poe_cmd('"${FLAG:+ $OTHER}"').command_lines[0]
+    assert list(line.resolve_tokens({"FLAG": "y", "OTHER": "hello world"})) == [
         (" hello world", False),
     ]
 
     # Nested operations: alternate value containing default value with quotes
     # bash: F=y; printf '[%s]\n' ${F:+${UNSET:-'hello world'}} → [hello world]
-    line = parse_poe_cmd("${FLAG:+${UNSET:-'hello world'}}")[0]
-    assert list(resolve_command_tokens([line], {"FLAG": "y"})) == [
+    line = parse_poe_cmd("${FLAG:+${UNSET:-'hello world'}}").command_lines[0]
+    assert list(line.resolve_tokens({"FLAG": "y"})) == [
         ("hello world", False),
     ]
 
     # Empty alternate value produces nothing
     # bash: F=y; printf '[%s]\n' A${F:+}B → [AB]
-    line = parse_poe_cmd("A${FLAG:+}B")[0]
-    assert list(resolve_command_tokens([line], {"FLAG": "y"})) == [
+    line = parse_poe_cmd("A${FLAG:+}B").command_lines[0]
+    assert list(line.resolve_tokens({"FLAG": "y"})) == [
         ("AB", False),
     ]
 
 
 # ---------------------------------------------------------------------------
-# resolve_template tests
+# Template.resolve tests
 # ---------------------------------------------------------------------------
 
 
 class TestResolveTemplate:
     """
-    Tests for resolve_template() which resolves a flat template string
+    Tests for Template.resolve() which resolves a flat template string
     against an env dict, supporting :- and :+ operators.
-    Unlike resolve_command_tokens, there is no word splitting or glob handling.
+    Unlike Line.resolve_tokens, there is no word splitting or glob handling.
     """
 
     @staticmethod
     def _resolve(source, env, require_braces=False):
-        from poethepoet.helpers.parse import resolve_template
+        from poethepoet.helpers.parse import parse_template
 
-        return resolve_template(source, env, require_braces=require_braces)
+        return parse_template(source, require_braces=require_braces).resolve(env)
 
     def test_plain_text(self):
         assert self._resolve("hello world", {}) == "hello world"
@@ -312,7 +307,7 @@ class TestResolveTemplate:
         SpyDict with :- when the var exists: spy intercepts the lookup
         and its return value is used instead of the default.
         """
-        from poethepoet.env.template import SpyDict
+        from poethepoet.env.utils import SpyDict
 
         accessed: dict[str, str] = {}
 
@@ -330,7 +325,7 @@ class TestResolveTemplate:
         SpyDict with :- when the var is missing: spy is not called,
         and the default value is used directly.
         """
-        from poethepoet.env.template import SpyDict
+        from poethepoet.env.utils import SpyDict
 
         accessed: dict[str, str] = {}
 
@@ -348,7 +343,7 @@ class TestResolveTemplate:
         SpyDict with :+ when the var exists: spy returns a truthy value,
         so the alternate is used (not the spy's return value).
         """
-        from poethepoet.env.template import SpyDict
+        from poethepoet.env.utils import SpyDict
 
         def spy(obj, key, value):
             return f"__env.{key}"
@@ -361,7 +356,7 @@ class TestResolveTemplate:
         """
         SpyDict with :+ when the var is missing: the expansion is empty.
         """
-        from poethepoet.env.template import SpyDict
+        from poethepoet.env.utils import SpyDict
 
         def spy(obj, key, value):
             return f"__env.{key}"
@@ -369,3 +364,42 @@ class TestResolveTemplate:
         env = SpyDict({"X": "val"}, getitem_spy=spy)
         result = self._resolve("${MISSING:+replacement}", env, require_braces=True)
         assert result == ""
+
+
+class TestParseTemplateAndResolve:
+    """
+    Tests for parse_template() and Template.resolve() as composable steps:
+    parse once, resolve many times.
+    """
+
+    def test_parse_template_returns_template_node(self):
+        from poethepoet.helpers.parse import parse_template
+        from poethepoet.helpers.parse.template import Template
+
+        tree = parse_template("hello $NAME")
+        assert isinstance(tree, Template)
+
+    def test_template_resolve_returns_resolved_string(self):
+        from poethepoet.helpers.parse import parse_template
+
+        tree = parse_template("hello $NAME")
+        assert tree.resolve({"NAME": "alice"}) == "hello alice"
+
+    def test_parse_once_resolve_multiple_times(self):
+        """A parsed Template can be resolved repeatedly with different envs."""
+        from poethepoet.helpers.parse import parse_template
+
+        source = "${SCHEME:-https}://${HOST:-localhost}:${PORT:-8080}"
+        tree = parse_template(source)
+        assert tree.resolve({"HOST": "example.com"}) == "https://example.com:8080"
+        assert (
+            tree.resolve({"HOST": "other.com", "PORT": "9000"})
+            == "https://other.com:9000"
+        )
+
+    def test_parse_template_require_braces_flows_through(self):
+        from poethepoet.helpers.parse import parse_template
+
+        tree = parse_template("$BARE ${BRACED}", require_braces=True)
+        result = tree.resolve({"BARE": "x", "BRACED": "y"})
+        assert result == "$BARE y"
