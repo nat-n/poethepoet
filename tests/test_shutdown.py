@@ -74,7 +74,7 @@ def test_windows_shutdown_avoids_console_ctrl_for_batch_processes(monkeypatch):
     manager._shutdown()
 
     assert fake_proc.signal_calls == []
-    assert taskkill_calls == [["taskkill", "/T", "/PID", str(process.pid)]]
+    assert taskkill_calls == [["taskkill", "/F", "/T", "/PID", str(process.pid)]]
     loop.close()
 
 

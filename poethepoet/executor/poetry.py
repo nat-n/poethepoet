@@ -57,11 +57,16 @@ class PoetryExecutor(PoeExecutor):
             return await self._execute_cmd(cmd, input=input, use_exec=use_exec)
 
         # Run this task with `poetry run`
-        return await self._execute_cmd(
+        result = await self._execute_cmd(
             (self._poetry_cmd(), "--no-plugins", "run", *cmd),
             input=input,
             use_exec=use_exec,
         )
+        # The inner cmd may be a .bat/.cmd but _exec_via_subproc only sees
+        # poetry.exe as cmd[0], so check the original command here
+        if self._is_windows and cmd[0].lower().endswith((".bat", ".cmd")):
+            result.no_console_ctrl = True
+        return result
 
     async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError

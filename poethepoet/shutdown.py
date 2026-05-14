@@ -46,7 +46,7 @@ class ShutdownManager:
             self._shutdown_loop(), name="ShutdownWorker"
         )
 
-    async def _shutdown_loop(self, escalation_interval_s: float = 1.0):
+    async def _shutdown_loop(self, escalation_interval_s: float = 0.8):
         """
         Call shutdown again every interval_s seconds until everything is dead
         """
@@ -64,12 +64,12 @@ class ShutdownManager:
                 if proc.returncode is None:
                     if proc.no_console_ctrl:
                         self._io.print_debug(
-                            " ! Terminating subprocess tree %s"
+                            " ! Force-terminating subprocess tree %s"
                             " to avoid console corruption",
                             proc.pid,
                         )
                         subprocess.run(
-                            ["taskkill", "/T", "/PID", str(proc.pid)],
+                            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
                             capture_output=True,
                         )
                     else:

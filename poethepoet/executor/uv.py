@@ -74,11 +74,16 @@ class UvExecutor(PoeExecutor):
         )
 
         # Run this task with `uv run`
-        return await self._execute_cmd(
+        result = await self._execute_cmd(
             (self._uv_cmd(), "run", *uv_run_options, *cmd),
             input=input,
             use_exec=use_exec,
         )
+        # The inner cmd may be a .bat/.cmd but _exec_via_subproc only sees uv.exe
+        # as cmd[0], so check the original command here
+        if self._is_windows and cmd[0].lower().endswith((".bat", ".cmd")):
+            result.no_console_ctrl = True
+        return result
 
     @classmethod
     def _uv_cmd(cls):
