@@ -82,3 +82,4 @@ dmypy.json
 /TODO.md
 Dockerfile
 .vscode/
+tests/skills/results/

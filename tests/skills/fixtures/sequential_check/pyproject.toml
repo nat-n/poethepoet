@@ -1,0 +1,19 @@
+[project]
+name = "myapp"
+version = "0.1.0"
+
+[tool.poe.tasks.lint]
+help = "Run linter"
+cmd  = "ruff check ."
+
+[tool.poe.tasks.types]
+help = "Run type checker"
+cmd  = "mypy ."
+
+[tool.poe.tasks.test]
+help = "Run tests"
+cmd  = "pytest"
+
+[tool.poe.tasks.check]
+help     = "Run all quality checks"
+sequence = ["lint", "types", "test"]

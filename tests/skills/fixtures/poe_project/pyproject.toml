@@ -1,0 +1,27 @@
+[project]
+name = "mylib"
+version = "0.1.0"
+
+[tool.poe.tasks.test]
+help = "Run the test suite"
+cmd  = "pytest"
+
+[tool.poe.tasks.test-quick]
+help = "Run tests, excluding slow ones"
+cmd  = "pytest -m 'not slow'"
+
+[tool.poe.tasks.lint]
+help = "Run linter"
+cmd  = "ruff check ."
+
+[tool.poe.tasks.types]
+help = "Run type checker"
+cmd  = "mypy ."
+
+[tool.poe.tasks.format]
+help = "Auto-format code"
+cmd  = "ruff format ."
+
+[tool.poe.tasks.check]
+help     = "Run all quality checks"
+sequence = ["lint", "types", "test"]
