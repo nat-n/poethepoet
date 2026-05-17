@@ -168,7 +168,7 @@ The fallback branch matches any dict that doesn't contain a recognized discrimin
 
 Each executor's definition is its `ExecutorOptions.__schema_fragment__(ctx)` with `properties.type: {const: <key>}` and `type` required. The enum values and the per-executor `$ref` list above are illustrative; the orchestrator generates both from `MetaPoeExecutor`'s registry at generation time, so newly registered executors appear automatically.
 
-**`tasks` and `groups` maps** — `patternProperties` for the validated name patterns (`^[A-Za-z_][\w\-:+]*$` for tasks; `[\w\-_]+` for groups) plus `additionalProperties: false`. The patterns come from `_TASK_NAME_PATTERN` in `task/base.py` and from `ProjectConfig.ConfigOptions.validate` respectively — both will move into declarative `Metadata` during Phase 1 cleanup so the source is single.
+**`tasks` and `groups` maps** — `patternProperties` for the validated name patterns (`^[A-Za-z_][\w\-:+]*$` for tasks; `[\w\-_]+` for groups) plus `additionalProperties: false`. The patterns come from `_TASK_NAME_PATTERN` in `task/base.py` and from `ProjectConfig.ConfigOptions.validate` respectively. These are dict-key constraints, not field-value constraints, so they don't fit the per-field `Metadata` model — they stay where they are, and the Phase 2 orchestrator imports them directly from those locations to emit the `patternProperties`. (If at some point we need this in more than one place, we can extract them to module-level constants for cleaner reuse.)
 
 **`env` map** — `additionalProperties: <env_value_schema>` where the value schema is `oneOf({type: string}, {$ref: "#/definitions/env_default"})`. Keys are unconstrained (env var names).
 
@@ -191,7 +191,7 @@ Options whose accepted values come from dynamic registries (`default_task_type`,
 
 | Field | Runtime behavior | Schema output |
 |---|---|---|
-| `pattern: str \| None` | `PrimitiveType.validate` checks `re.fullmatch` for str values | `pattern:` |
+| `pattern: str \| None` | `PrimitiveType.validate` checks `re.search` for str values (unanchored, matching JSON Schema `pattern:` semantics) | `pattern:` |
 | `minimum: int \| float \| None` | `PrimitiveType.validate` checks numeric lower bound | `minimum:` |
 | `maximum: int \| float \| None` | `PrimitiveType.validate` checks numeric upper bound | `maximum:` |
 | `min_length: int \| None` | `PrimitiveType`/`ListType` checks length lower bound | `minLength:` / `minItems:` |
@@ -268,6 +268,13 @@ cmd = "pytest -m 'not schema'"
 
 [tool.poe.tasks.test-schema]
 cmd = "pytest -m schema tests/schema/"
+```
+
+The existing `poe test-quick` task also needs updating to exclude the `schema` marker. Currently it's `pytest -m 'not (slow or flaky)'`; Phase 3 changes it to:
+
+```toml
+[tool.poe.tasks.test-quick]
+cmd = "pytest -m 'not (slow or flaky or schema)'"
 ```
 
 `poe check` includes both `test` and `test-schema` (exact composition follows the existing `poe check` structure).
