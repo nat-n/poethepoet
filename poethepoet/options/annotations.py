@@ -57,7 +57,7 @@ def register_type_alias(name: str, type_alias: Any) -> Any:
 
 
 class Metadata:
-    __slots__ = ("config_name", "examples", "pattern")
+    __slots__ = ("config_name", "examples", "maximum", "minimum", "pattern")
 
     def __init__(
         self,
@@ -65,10 +65,14 @@ class Metadata:
         config_name: str | None = None,
         pattern: str | None = None,
         examples: list[Any] | None = None,
+        minimum: float | None = None,
+        maximum: float | None = None,
     ):
         self.config_name = config_name
         self.pattern = pattern
         self.examples = examples
+        self.minimum = minimum
+        self.maximum = maximum
 
 
 class TypeAnnotation:
@@ -442,4 +446,20 @@ class PrimitiveType(TypeAnnotation):
                 yield (
                     f"Option {self._format_path(path)!r} value {value!r} "
                     f"does not match pattern {pattern!r}"
+                )
+
+        if self._annotation in (int, float):
+            if (
+                minimum := self.metadata_get("minimum")
+            ) is not None and value < minimum:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"is below minimum {minimum!r}"
+                )
+            if (
+                maximum := self.metadata_get("maximum")
+            ) is not None and value > maximum:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"is above maximum {maximum!r}"
                 )

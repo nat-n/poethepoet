@@ -134,3 +134,74 @@ def test_examples_stored_on_metadata():
     annotation = ExampledOptions.get_fields()["path"]
     examples = annotation.metadata_get("examples")
     assert examples == ["output.log", "${POE_PWD}/output.txt"]
+
+
+class BoundedIntOptions(PoeOptions):
+    count: Annotated[int, Metadata(minimum=0, maximum=100)] = 0
+
+
+def test_minimum_accepts_value_at_bound():
+    options = next(BoundedIntOptions.parse({"count": 0}))
+    assert options.get("count") == 0
+
+
+def test_minimum_rejects_value_below_bound():
+    with pytest.raises(ConfigValidationError) as exc_info:
+        list(BoundedIntOptions.parse({"count": -1}))
+    msg = str(exc_info.value)
+    assert "count" in msg
+    assert "0" in msg  # the bound
+
+
+def test_maximum_accepts_value_at_bound():
+    options = next(BoundedIntOptions.parse({"count": 100}))
+    assert options.get("count") == 100
+
+
+def test_maximum_rejects_value_above_bound():
+    with pytest.raises(ConfigValidationError) as exc_info:
+        list(BoundedIntOptions.parse({"count": 101}))
+    msg = str(exc_info.value)
+    assert "count" in msg
+    assert "100" in msg
+
+
+def test_bounds_apply_to_floats():
+    class BoundedFloatOptions(PoeOptions):
+        ratio: Annotated[float, Metadata(minimum=0.0, maximum=1.0)] = 0.5
+
+    next(BoundedFloatOptions.parse({"ratio": 0.5}))  # in range
+    next(BoundedFloatOptions.parse({"ratio": 0.0}))  # at minimum
+    next(BoundedFloatOptions.parse({"ratio": 1.0}))  # at maximum
+    with pytest.raises(ConfigValidationError):
+        list(BoundedFloatOptions.parse({"ratio": 1.1}))
+
+
+def test_bounds_not_applied_to_strings():
+    """
+    minimum/maximum apply only to numeric types; on a str field they're
+    silently ignored (the schema generator would also skip them).
+    """
+
+    class StringWithBoundsOptions(PoeOptions):
+        # Intentionally weird combination - runtime should not crash.
+        text: Annotated[str, Metadata(minimum=0, maximum=100)] = ""
+
+    options = next(StringWithBoundsOptions.parse({"text": "hello"}))
+    assert options.get("text") == "hello"
+
+
+def test_minimum_zero_is_enforced():
+    """
+    Regression test for the T4.5 metadata_get fix: minimum=0 must NOT
+    be silently dropped (which would happen with the old truthiness check).
+    """
+
+    class ZeroMinOptions(PoeOptions):
+        count: Annotated[int, Metadata(minimum=0)] = 0
+
+    # Zero is allowed (at the bound)
+    next(ZeroMinOptions.parse({"count": 0}))
+    # Negative is rejected
+    with pytest.raises(ConfigValidationError):
+        list(ZeroMinOptions.parse({"count": -1}))
