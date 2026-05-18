@@ -17,19 +17,20 @@ if TYPE_CHECKING:
     from .primitives import EnvfileOption
 
 
-ShellInterpreter = register_type_alias(
-    "ShellInterpreter",
-    Literal[
-        "posix",
-        "sh",
-        "bash",
-        "zsh",
-        "fish",
-        "pwsh",  # powershell >= 6
-        "powershell",  # any version of powershell
-        "python",
-    ],
-)
+ShellInterpreter = Literal[
+    "posix",
+    "sh",
+    "bash",
+    "zsh",
+    "fish",
+    "pwsh",  # powershell >= 6
+    "powershell",  # any version of powershell
+    "python",
+]
+# Register the alias for the PoeOptions annotation system (the helper returns
+# the alias unchanged, but assigning it inline confuses mypy when the name is
+# later used as a type annotation in this same module).
+register_type_alias("ShellInterpreter", ShellInterpreter)
 
 # Derived from the Literal so the tuple and the type stay in lockstep.
 KNOWN_SHELL_INTERPRETERS: tuple[str, ...] = get_args(ShellInterpreter)
@@ -203,7 +204,7 @@ class ProjectConfig(ConfigPartition):
         include_script: str | Sequence[str | IncludeScriptItem] = ()
         poetry_command: str = "poe"
         poetry_hooks: Mapping[str, str] = EmptyDict
-        shell_interpreter: str | Sequence[str] = "posix"
+        shell_interpreter: ShellInterpreter | Sequence[ShellInterpreter] = "posix"
         verbosity: Literal[-2, -1, 0, 1, 2] = 0
         tasks: Mapping[str, Any] = EmptyDict
         groups: Mapping[str, TaskGroup] = EmptyDict
@@ -285,21 +286,6 @@ class ProjectConfig(ConfigPartition):
                     f"{self.default_array_item_task_type!r}\n"
                     f"Expected one of {PoeTask.get_task_types(str)!r}"
                 )
-
-            # Validate shell_interpreter type
-            if self.shell_interpreter:
-                shell_interpreter = (
-                    (self.shell_interpreter,)
-                    if isinstance(self.shell_interpreter, str)
-                    else self.shell_interpreter
-                )
-                for interpreter in shell_interpreter:
-                    if interpreter not in KNOWN_SHELL_INTERPRETERS:
-                        raise ConfigValidationError(
-                            f"Unsupported value {interpreter!r} for option "
-                            "'shell_interpreter'\n"
-                            f"Expected one of {KNOWN_SHELL_INTERPRETERS!r}"
-                        )
 
             # Validate default verbosity.
             if self.verbosity < -2 or self.verbosity > 2:
