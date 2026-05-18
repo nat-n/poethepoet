@@ -106,12 +106,19 @@ def test_bad_interpreter_config(run_poe, projects):
         f"-C={projects['shells/bad_interpreter']}",
         "bad-interpreter",
     )
-    assert (
-        "Error: Invalid task 'bad-interpreter'\n"
-        "     | Invalid value for option 'interpreter',\n"
-        "     | Expected one of "
-        "('posix', 'sh', 'bash', 'zsh', 'fish', 'pwsh', 'powershell', 'python')\n"
-    ) in result.capture
+    assert "Error: Invalid task 'bad-interpreter'" in result.capture
+    assert "Option 'interpreter' must have a value of type:" in result.capture
+    for valid_value in (
+        "'posix'",
+        "'sh'",
+        "'bash'",
+        "'zsh'",
+        "'fish'",
+        "'pwsh'",
+        "'powershell'",
+        "'python'",
+    ):
+        assert valid_value in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
 
