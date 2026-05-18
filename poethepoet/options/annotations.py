@@ -57,10 +57,16 @@ def register_type_alias(name: str, type_alias: Any) -> Any:
 
 
 class Metadata:
-    __slots__ = ("config_name",)
+    __slots__ = ("config_name", "pattern")
 
-    def __init__(self, *, config_name: str | None = None):
+    def __init__(
+        self,
+        *,
+        config_name: str | None = None,
+        pattern: str | None = None,
+    ):
         self.config_name = config_name
+        self.pattern = pattern
 
 
 class TypeAnnotation:
@@ -421,3 +427,17 @@ class PrimitiveType(TypeAnnotation):
             yield (
                 f"Option {self._format_path(path)!r} must have a value of type: {self}"
             )
+            return
+
+        if (
+            self._annotation is str
+            and self._metadata is not None
+            and (pattern := getattr(self._metadata, "pattern", None)) is not None
+        ):
+            import re
+
+            if re.search(pattern, value) is None:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"does not match pattern {pattern!r}"
+                )
