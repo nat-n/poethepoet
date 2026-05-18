@@ -10,11 +10,13 @@ from .base import PoeTask
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Annotated
 
     from ..config import ShellInterpreter
     from ..context import RunContext
     from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
+    from ..options.annotations import Metadata
 
 
 class ShellTask(PoeTask):
@@ -27,7 +29,10 @@ class ShellTask(PoeTask):
     __key__ = "shell"
 
     class TaskOptions(PoeTask.TaskOptions):
-        interpreter: ShellInterpreter | Sequence[ShellInterpreter] | None = None
+        interpreter: Annotated[
+            ShellInterpreter | Sequence[ShellInterpreter] | None,
+            Metadata(min_length=1),
+        ] = None
         ignore_fail: bool | list[int] = False
 
     class TaskSpec(PoeTask.TaskSpec):

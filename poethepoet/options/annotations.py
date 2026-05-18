@@ -57,7 +57,15 @@ def register_type_alias(name: str, type_alias: Any) -> Any:
 
 
 class Metadata:
-    __slots__ = ("config_name", "examples", "maximum", "minimum", "pattern")
+    __slots__ = (
+        "config_name",
+        "examples",
+        "max_length",
+        "maximum",
+        "min_length",
+        "minimum",
+        "pattern",
+    )
 
     def __init__(
         self,
@@ -67,12 +75,16 @@ class Metadata:
         examples: list[Any] | None = None,
         minimum: float | None = None,
         maximum: float | None = None,
+        min_length: int | None = None,
+        max_length: int | None = None,
     ):
         self.config_name = config_name
         self.pattern = pattern
         self.examples = examples
         self.minimum = minimum
         self.maximum = maximum
+        self.min_length = min_length
+        self.max_length = max_length
 
 
 class TypeAnnotation:
@@ -301,6 +313,22 @@ class ListType(TypeAnnotation):
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
         if not isinstance(value, list | tuple):
             yield f"Option {self._format_path(path)!r} must be a list"
+            return
+
+        if (min_length := self.metadata_get("min_length")) is not None and len(
+            value
+        ) < min_length:
+            yield (
+                f"Option {self._format_path(path)!r} requires at least "
+                f"{min_length} item(s), got {len(value)}"
+            )
+        if (max_length := self.metadata_get("max_length")) is not None and len(
+            value
+        ) > max_length:
+            yield (
+                f"Option {self._format_path(path)!r} allows at most "
+                f"{max_length} item(s), got {len(value)}"
+            )
 
         if isinstance(self._value_type, AnyType):
             return
@@ -338,9 +366,20 @@ class UnionType(TypeAnnotation):
 
     def __init__(self, annotation: Any, metadata: Any = None):
         super().__init__(annotation, metadata)
+        # Propagate metadata to child types so constraints like min_length apply
+        # to whichever branch matches (e.g. for `str | list[str]`, a string-typed
+        # value validates against PrimitiveType with the metadata, and a list-typed
+        # value validates against ListType with the same metadata).
         self._value_types = tuple(
-            TypeAnnotation.parse(arg) for arg in get_args(annotation)
+            self._wrap_with_metadata(arg, metadata) for arg in get_args(annotation)
         )
+
+    @staticmethod
+    def _wrap_with_metadata(arg: Any, metadata: Any) -> TypeAnnotation:
+        child = TypeAnnotation.parse(arg)
+        if metadata is not None and child._metadata is None:
+            child._metadata = metadata
+        return child
 
     @property
     def is_optional(self) -> bool:
@@ -436,16 +475,28 @@ class PrimitiveType(TypeAnnotation):
             )
             return
 
-        if (
-            self._annotation is str
-            and (pattern := self.metadata_get("pattern")) is not None
-        ):
-            import re
+        if self._annotation is str:
+            if (pattern := self.metadata_get("pattern")) is not None:
+                import re
 
-            if re.search(pattern, value) is None:
+                if re.search(pattern, value) is None:
+                    yield (
+                        f"Option {self._format_path(path)!r} value {value!r} "
+                        f"does not match pattern {pattern!r}"
+                    )
+            if (min_length := self.metadata_get("min_length")) is not None and len(
+                value
+            ) < min_length:
                 yield (
                     f"Option {self._format_path(path)!r} value {value!r} "
-                    f"does not match pattern {pattern!r}"
+                    f"is shorter than minimum length {min_length}"
+                )
+            if (max_length := self.metadata_get("max_length")) is not None and len(
+                value
+            ) > max_length:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"is longer than maximum length {max_length}"
                 )
 
         if self._annotation in (int, float):

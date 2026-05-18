@@ -2,6 +2,7 @@
 Tests for Metadata-driven runtime constraints on PoeOptions fields.
 """
 
+from collections.abc import Sequence
 from typing import Annotated
 
 import pytest
@@ -17,12 +18,6 @@ def test_module_imports():
     assert Metadata is not None
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Empty-list rejection for shell interpreter not yet restored;"
-        " see Task 7 (min_length Metadata addition)"
-    )
-)
 def test_empty_interpreter_list_rejected():
     """
     Verify that an empty list passed as the shell interpreter option is rejected.
@@ -205,3 +200,67 @@ def test_minimum_zero_is_enforced():
     # Negative is rejected
     with pytest.raises(ConfigValidationError):
         list(ZeroMinOptions.parse({"count": -1}))
+
+
+def test_min_length_rejects_short_string():
+    class MinLenStrOptions(PoeOptions):
+        name: Annotated[str, Metadata(min_length=3)] = ""
+
+    next(MinLenStrOptions.parse({"name": "abc"}))  # at boundary
+    next(MinLenStrOptions.parse({"name": "abcd"}))  # above
+    with pytest.raises(ConfigValidationError) as exc_info:
+        list(MinLenStrOptions.parse({"name": "ab"}))
+    assert "name" in str(exc_info.value)
+    assert "3" in str(exc_info.value)
+
+
+def test_max_length_rejects_long_string():
+    class MaxLenStrOptions(PoeOptions):
+        name: Annotated[str, Metadata(max_length=5)] = ""
+
+    next(MaxLenStrOptions.parse({"name": "hello"}))  # at boundary
+    with pytest.raises(ConfigValidationError):
+        list(MaxLenStrOptions.parse({"name": "helloX"}))
+
+
+def test_min_length_rejects_short_list():
+    class MinLenListOptions(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(min_length=1)] = ()
+
+    next(MinLenListOptions.parse({"items": ["one"]}))  # at boundary
+    with pytest.raises(ConfigValidationError) as exc_info:
+        list(MinLenListOptions.parse({"items": []}))
+    assert "items" in str(exc_info.value)
+
+
+def test_max_length_rejects_long_list():
+    class MaxLenListOptions(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(max_length=2)] = ()
+
+    next(MaxLenListOptions.parse({"items": ["a", "b"]}))  # at boundary
+    with pytest.raises(ConfigValidationError):
+        list(MaxLenListOptions.parse({"items": ["a", "b", "c"]}))
+
+
+def test_length_zero_bounds_are_enforced():
+    """
+    Regression test for the T4.5 metadata_get fix applied to the length
+    bounds: min_length=0 and max_length=0 must NOT be silently dropped
+    (which would happen with a naive truthiness check).
+    """
+
+    class ZeroMaxStrOptions(PoeOptions):
+        name: Annotated[str, Metadata(max_length=0)] = ""
+
+    # Empty string is allowed (at the bound)
+    next(ZeroMaxStrOptions.parse({"name": ""}))
+    # Any non-empty string exceeds max_length=0 and is rejected
+    with pytest.raises(ConfigValidationError):
+        list(ZeroMaxStrOptions.parse({"name": "x"}))
+
+    class ZeroMinListOptions(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(min_length=0)] = ()
+
+    # min_length=0 allows the empty list (it's set, just to its lowest bound)
+    next(ZeroMinListOptions.parse({"items": []}))
+    next(ZeroMinListOptions.parse({"items": ["a"]}))
