@@ -64,7 +64,7 @@ class Metadata:
         *,
         config_name: str | None = None,
         pattern: str | None = None,
-        examples: list | None = None,
+        examples: list[Any] | None = None,
     ):
         self.config_name = config_name
         self.pattern = pattern
