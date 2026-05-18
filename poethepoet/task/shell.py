@@ -33,7 +33,16 @@ class ShellTask(PoeTask):
             ShellInterpreter | Sequence[ShellInterpreter] | None,
             Metadata(min_length=1),
         ] = None
+        """
+        Specify the shell interpreter that this task should execute with, or a list
+        of interpreters in order of preference.
+        """
+
         ignore_fail: bool | list[int] = False
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str

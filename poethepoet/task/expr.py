@@ -28,9 +28,30 @@ class ExprTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         imports: Sequence[str] = ()
+        """
+        A list of Python modules to be imported for use in the expression.
+        """
+
         assert_: Annotated[bool | int, Metadata(config_name="assert")] = False
+        """
+        A boolean indicating if the task will fail when the result of the
+        expression is falsy. If an integer is given, the task will exit with that
+        code when the result is falsy.
+        """
+
         use_exec: bool = False
+        """
+        Specify that this task should be executed in the same process, instead of
+        as a subprocess. Note: This feature has limitations, such as not being
+        compatible with tasks that are referenced by other tasks and not working on
+        Windows.
+        """
+
         ignore_fail: bool | list[int] = False
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
         def validate(self):
             super().validate()

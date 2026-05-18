@@ -22,18 +22,62 @@ class UvExecutor(PoeExecutor):
 
     class ExecutorOptions(PoeExecutor.ExecutorOptions):
         extra: str | list[str] | None = None
+        """
+        Include optional dependencies from the specified extra name.
+        """
+
         group: str | list[str] | None = None
+        """
+        Include dependencies from the specified dependency group.
+        """
+
         no_group: Annotated[
             str | list[str] | None, Metadata(config_name="no-group")
         ] = None
+        """
+        Disable the specified dependency group.
+        """
+
         with_: Annotated[str | list[str] | None, Metadata(config_name="with")] = None
+        """
+        Run with the given packages installed.
+        """
+
         isolated: bool = False
+        """
+        Run the command in an isolated virtual environment.
+        """
+
         exact: bool = False
+        """
+        Perform an exact sync, removing extraneous packages from the environment.
+        """
+
         no_sync: Annotated[bool, Metadata(config_name="no-sync")] = False
+        """
+        Avoid syncing the virtual environment.
+        """
+
         locked: bool = False
+        """
+        Assert that the uv.lock file is up to date; fail if it would need to be
+        updated.
+        """
+
         frozen: bool = False
+        """
+        Run without updating the uv.lock file.
+        """
+
         no_project: Annotated[bool, Metadata(config_name="no-project")] = False
+        """
+        Avoid discovering the project or workspace.
+        """
+
         python: str | None = None
+        """
+        The Python interpreter to use for the run environment.
+        """
 
     __uv_cli_options = ("extra", "group", "no-group", "with", "python")
     __uv_cli_flags = ("isolated", "exact", "no-sync", "locked", "frozen", "no-project")

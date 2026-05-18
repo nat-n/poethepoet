@@ -27,14 +27,52 @@ arg_types: dict[str, type] = {
 
 class ArgSpec(PoeOptions):
     default: str | int | float | bool | None = None
+    """
+    The default value for the argument when not provided.
+    """
+
     help: str = ""
+    """
+    A short description of the argument to include in the documentation of the
+    task.
+    """
+
     name: str
+    """
+    The name of the argument.
+    """
+
     options: Sequence[str]
+    """
+    A list of options to be provided along with the argument.
+    """
+
     positional: bool | str = False
+    """
+    Indicates if the argument is positional. If a string is provided, it is used
+    as the dest name for the argument in argparse.
+    """
+
     required: bool = False
+    """
+    Indicates if the argument is required.
+    """
+
     type: Literal["string", "float", "integer", "boolean"] = "string"
+    """
+    The type of the argument.
+    """
+
     multiple: bool | int = False
+    """
+    Indicates if multiple values are allowed for the argument. If an integer is
+    given, exactly that many values are expected.
+    """
+
     choices: Sequence[str] | Sequence[float] | Sequence[int] | None = None
+    """
+    Constrain the accepted values for an argument to a fixed set.
+    """
 
     @classmethod
     def normalize(

@@ -178,15 +178,67 @@ class PoeTask(metaclass=MetaPoeTask):
 
     class TaskOptions(PoeOptions):
         args: dict | list | None = None
+        """
+        Define CLI options, positional arguments, or flags that this task should
+        accept.
+        """
+
         capture_stdout: str | None = None
+        """
+        Redirects the task output to a file with the given path. Supports
+        environment variable interpolation.
+        """
+
         cwd: str | None = None
+        """
+        Specify the current working directory that this task should run with. This
+        can be a relative path from the project root or an absolute path, and
+        environment variables can be used in the format ${VAR_NAME}.
+        """
+
         deps: Sequence[str] | None = None
+        """
+        A list of task invocations that will be executed before this one. Each item
+        in the list is a reference to another task defined within the tasks object.
+        """
+
         env: Mapping[str, str | EnvDefault] = EmptyDict
+        """
+        A map of environment variables to be set for this task.
+        """
+
         envfile: str | Sequence[str] | EnvfileOption = ()
+        """
+        Provide one or more env files to be loaded before running this task. If an
+        array is provided, files will be loaded in the given order.
+        """
+
         executor: Mapping[str, str | Sequence[str] | bool] | str | None = None
+        """
+        Configure the executor type for running tasks. Can be 'auto', 'poetry',
+        'uv', 'virtualenv', or 'simple', with 'auto' being the default.
+        """
+
         help: str | None = None
+        """
+        Help text to be displayed next to the task name in the documentation when
+        poe is run without specifying a task.
+        """
+
         uses: Mapping[str, str] | None = None
+        """
+        Allows this task to use the output of other tasks which are executed first.
+        The values are references to the names of the tasks, and the keys are
+        environment variables by which the results of those tasks will be
+        accessible in this task.
+        """
+
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None
+        """
+        Specify the verbosity level for this task, from -2 (least verbose) to 2
+        (most verbose), overriding the project level verbosity setting, which
+        defaults to 0.
+        """
 
         def validate(self):
             """

@@ -26,8 +26,24 @@ class ScriptTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False
+        """
+        Specify that this task should be executed in the same process, instead of
+        as a subprocess. Note: This feature has limitations, such as not being
+        compatible with tasks that are referenced by other tasks and not working on
+        Windows.
+        """
+
         print_result: bool = False
+        """
+        If true then the return value of the Python callable will be output to
+        stdout, unless it is None.
+        """
+
         ignore_fail: bool | list[int] = False
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
         def validate(self):
             super().validate()

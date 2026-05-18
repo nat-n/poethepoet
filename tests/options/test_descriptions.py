@@ -91,3 +91,46 @@ def test_description_cache_is_populated_per_class():
     DescribedOptions.description_for_field("foo")
     # Cache attribute is set on the class's own __dict__ (not inherited).
     assert "_poe_field_descriptions" in DescribedOptions.__dict__
+
+
+def test_every_taskoptions_field_has_a_description():
+    """
+    Sanity check that backfill is comprehensive. Lists any field on a
+    PoeTask.TaskOptions subclass that lacks a description so gaps are
+    discoverable.
+    """
+
+    from poethepoet.task.base import PoeTask
+
+    # Walk all registered task types via the name-mangled registry.
+    missing: list[tuple[str, str]] = [
+        (task_cls.__name__, field_name)
+        for task_cls in PoeTask._PoeTask__task_types.values()
+        for field_name in task_cls.TaskOptions.get_fields()
+        if task_cls.TaskOptions.description_for_field(field_name) is None
+    ]
+
+    assert not missing, (
+        f"Found {len(missing)} TaskOptions fields without a description: "
+        f"{missing!r}. Add a class-attribute docstring immediately after "
+        "the annotation."
+    )
+
+
+def test_every_configoptions_field_has_a_description():
+    """
+    Sanity check for the root ConfigOptions on ProjectConfig.
+    """
+
+    from poethepoet.config.partition import ProjectConfig
+
+    missing: list[str] = [
+        field_name
+        for field_name in ProjectConfig.ConfigOptions.get_fields()
+        if ProjectConfig.ConfigOptions.description_for_field(field_name) is None
+    ]
+
+    assert not missing, (
+        f"Found ProjectConfig.ConfigOptions fields without a description: "
+        f"{missing!r}. Add a class-attribute docstring."
+    )

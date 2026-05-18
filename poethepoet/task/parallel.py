@@ -59,10 +59,33 @@ class ParallelTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
+        """
+        If set, the parallel task will continue running even if one of the subtasks
+        fails.
+        """
+
         default_item_type: str | None = None
+        """
+        Change the default item type that strings in the sequence are interpreted
+        as.
+        """
+
         prefix: str | Literal[False] = "{name}"
+        """
+        Set the prefix applied to each line of output from subtasks. By default
+        this is the task name. Set to false to disable prefixing.
+        """
+
         prefix_max: int = 16
+        """
+        Set the maximum width of the prefix. Longer prefixes will be truncated.
+        """
+
         prefix_template: str = "{color_start}{prefix}{color_end} | "
+        """
+        Specifies a template for how the prefix is applied after truncating it to
+        the prefix_max length.
+        """
 
         def validate(self):
             """

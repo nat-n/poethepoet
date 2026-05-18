@@ -39,8 +39,21 @@ KNOWN_SHELL_INTERPRETERS: tuple[str, ...] = get_args(ShellInterpreter)
 @option_annotation
 class IncludeScriptItem(TypedDict):
     script: str
+    """
+    A reference to a Python callable that returns toml or json-like config to be
+    merged into the project config.
+    """
+
     cwd: str
+    """
+    Specify the working directory for resolving relative paths referenced by the
+    included script.
+    """
+
     executor: str | dict
+    """
+    Configure the executor used when invoking the include_script callable.
+    """
 
 
 IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
@@ -49,8 +62,21 @@ IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
 @option_annotation
 class IncludeItem(TypedDict):
     path: str
+    """
+    The path to the toml or json config file to include, relative to the parent
+    config file.
+    """
+
     cwd: str
+    """
+    Specify the working directory for resolving relative paths referenced by the
+    included config.
+    """
+
     recursive: bool
+    """
+    If true, includes declared in the included file will also be loaded.
+    """
 
 
 IncludeItem.__optional_keys__ = frozenset({"cwd", "recursive"})
@@ -59,8 +85,19 @@ IncludeItem.__optional_keys__ = frozenset({"cwd", "recursive"})
 @option_annotation
 class TaskGroup(TypedDict):
     heading: str
+    """
+    A human-readable name for the group displayed in the help output.
+    """
+
     executor: Mapping[str, str | Sequence[str] | bool] | str | None = None  # type: ignore[misc]
+    """
+    Configure the executor used by tasks within this group.
+    """
+
     tasks: Mapping[str, Any] = EmptyDict  # type: ignore[misc]
+    """
+    The tasks defined within this group.
+    """
 
 
 TaskGroup.__optional_keys__ = frozenset({"executor", "tasks"})
@@ -193,21 +230,90 @@ class ProjectConfig(ConfigPartition):
         """
 
         default_task_type: str = "cmd"
+        """
+        Sets the default task type for tasks defined as strings. By default, tasks
+        are interpreted as shell commands ('cmd'). This can be overridden to
+        'script' or other supported types.
+        """
+
         default_array_task_type: str = "sequence"
+        """
+        When a task is declared as an array (instead of a table), then it is
+        interpreted as the default array task type, which will be 'sequence' unless
+        otherwise specified.
+        """
+
         default_array_item_task_type: str = "ref"
+        """
+        When a task is declared as a string inside an array (e.g. inline in a
+        sequence task), then it is interpreted as the default array item task type,
+        which will be 'ref' unless otherwise specified.
+        """
+
         env: Mapping[str, str | EnvDefault] = EmptyDict
+        """
+        A map of environment variables to be set for all tasks.
+        """
+
         envfile: str | Sequence[str] | EnvfileOption = ()
+        """
+        Provide one or more env files to be loaded before running tasks. If an
+        array is provided, files will be loaded in the given order.
+        """
+
         executor: Mapping[str, str | Sequence[str] | bool] | str = MappingProxyType(
             {"type": "auto"}
         )
+        """
+        Configure the executor type for running tasks. Can be 'auto', 'poetry',
+        'uv', 'virtualenv', or 'simple', with 'auto' being the default.
+        """
+
         include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        """
+        Specify one or more other toml or json files to load tasks from.
+        """
+
         include_script: str | Sequence[str | IncludeScriptItem] = ()
+        """
+        Load dynamically generated tasks from one or more python functions.
+        """
+
         poetry_command: str = "poe"
+        """
+        Change the name of the task poe registers with poetry when used as a
+        plugin.
+        """
+
         poetry_hooks: Mapping[str, str] = EmptyDict
+        """
+        Register tasks to run automatically before or after other poetry CLI
+        commands.
+        """
+
         shell_interpreter: ShellInterpreter | Sequence[ShellInterpreter] = "posix"
+        """
+        Change the default shell interpreter for executing shell tasks. Normally,
+        tasks are executed using a posix shell, but this can be overridden here.
+        """
+
         verbosity: Literal[-2, -1, 0, 1, 2] = 0
+        """
+        Sets the default verbosity level for all commands. '-1' is quieter, '0' is
+        the default level, and '1' is more verbose. The command line arguments are
+        incremental, with '--quiet' or '-q' decreasing verbosity, and '--verbose'
+        or '-v' increasing it.
+        """
+
         tasks: Mapping[str, Any] = EmptyDict
+        """
+        A mapping of task names to task definitions.
+        """
+
         groups: Mapping[str, TaskGroup] = EmptyDict
+        """
+        Define groups of tasks to be displayed together in the help output.
+        """
 
         @classmethod
         def normalize(
@@ -337,10 +443,33 @@ class IncludedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
+        """
+        A map of environment variables to be set for all tasks in the included
+        config.
+        """
+
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
+        """
+        Provide one or more env files to be loaded before running tasks from this
+        included config. If an array is provided, files will be loaded in the
+        given order.
+        """
+
         tasks: Mapping[str, Any] = EmptyDict
+        """
+        A mapping of task names to task definitions contributed by this included
+        config.
+        """
+
         groups: Mapping[str, TaskGroup] = EmptyDict
+        """
+        Define groups of tasks contributed by this included config.
+        """
+
         include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        """
+        Specify one or more other toml or json files to load tasks from.
+        """
 
         @classmethod
         def normalize(
@@ -370,9 +499,28 @@ class PackagedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
+        """
+        A map of environment variables to be set for all tasks in the packaged
+        config.
+        """
+
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
+        """
+        Provide one or more env files to be loaded before running tasks from this
+        packaged config. If an array is provided, files will be loaded in the
+        given order.
+        """
+
         tasks: Mapping[str, Any] = EmptyDict
+        """
+        A mapping of task names to task definitions contributed by this packaged
+        config.
+        """
+
         groups: Mapping[str, TaskGroup] = EmptyDict
+        """
+        Define groups of tasks contributed by this packaged config.
+        """
 
         def validate(self):
             """

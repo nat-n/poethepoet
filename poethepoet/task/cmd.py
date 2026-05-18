@@ -26,8 +26,27 @@ class CmdTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False
+        """
+        Specify that this task should be executed in the same process, instead of
+        as a subprocess. Note: This feature has limitations, such as not being
+        compatible with tasks that are referenced by other tasks and not working on
+        Windows.
+        """
+
         empty_glob: Literal["pass", "null", "fail"] = "pass"
+        """
+        Determines how to handle glob patterns with no matches. The default is
+        'pass', which causes unmatched patterns to be passed through to the command
+        (just like in bash). Setting it to 'null' will replace an unmatched pattern
+        with nothing, and setting it to 'fail' will cause the task to fail with an
+        error if there are no matches.
+        """
+
         ignore_fail: bool | list[int] = False
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
         def validate(self):
             """
