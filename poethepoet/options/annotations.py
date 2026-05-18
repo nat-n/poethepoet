@@ -36,9 +36,20 @@ def register_type_alias(name: str, type_alias: Any) -> Any:
     so they can't be registered via `option_annotation`. Class-like types
     should use `option_annotation` instead.
 
-    Returns the type unchanged, so it can be used inline at the definition site:
+    Recommended usage — split form (works for both cross-module and
+    same-module annotation use):
+
+        MyAlias = Literal["a", "b", "c"]
+        register_type_alias("MyAlias", MyAlias)
+
+    The inline form is also supported:
 
         MyAlias = register_type_alias("MyAlias", Literal["a", "b", "c"])
+
+    but causes mypy to type the LHS as ``Any`` (the function-call return
+    type), which breaks any same-module use of the name as a type
+    annotation. Prefer the split form unless the alias is only used
+    cross-module.
     """
 
     _registered_type_hint_globals[name] = type_alias
