@@ -154,9 +154,10 @@ class TypeAnnotation:
         self._metadata = metadata
 
     def metadata_get(self, key: str, default: Any = None) -> Any:
-        if self._metadata and (value := getattr(self._metadata, key, None)):
-            return value
-        return default
+        if self._metadata is None:
+            return default
+        value = getattr(self._metadata, key, default)
+        return default if value is None else value
 
     @property
     def is_optional(self) -> bool:
@@ -431,8 +432,7 @@ class PrimitiveType(TypeAnnotation):
 
         if (
             self._annotation is str
-            and self._metadata is not None
-            and (pattern := getattr(self._metadata, "pattern", None)) is not None
+            and (pattern := self.metadata_get("pattern")) is not None
         ):
             import re
 

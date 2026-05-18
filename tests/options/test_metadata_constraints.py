@@ -78,3 +78,39 @@ def test_pattern_not_checked_when_type_is_wrong():
         list(PatternedOptions.parse({"name": 123}))
     msg = str(exc_info.value)
     assert "str" in msg or "string" in msg  # type error, not pattern error
+
+
+def test_metadata_get_returns_falsy_value():
+    """
+    metadata_get must distinguish 'unset' from 'set to a falsy value'.
+    Returns the actual stored value (including 0, False, '') rather than
+    the default when the attribute is set.
+    """
+
+    # Use Metadata.config_name with an empty string to exercise the falsy-but-set case.
+    class ConfigNamedOptions(PoeOptions):
+        foo: Annotated[str, Metadata(config_name="")] = ""
+
+    annotation = ConfigNamedOptions.get_fields()["foo"]
+    # Truthiness-based metadata_get would return None for the empty config_name.
+    # Correct semantics: return "" because config_name was explicitly set.
+    assert annotation.metadata_get("config_name") == ""
+
+
+def test_pattern_silently_ignored_on_non_str_annotation():
+    """
+    Metadata(pattern=...) applies only to str fields. Attaching it to an
+    int annotation is a no-op (the pattern is not checked, the int value is
+    accepted as long as it has the right type).
+    """
+
+    class IntWithPatternOptions(PoeOptions):
+        count: Annotated[int, Metadata(pattern=r"[0-9]+")] = 0
+
+    # Pattern is ignored; int values pass through unchecked by pattern.
+    options = next(IntWithPatternOptions.parse({"count": 42}))
+    assert options.get("count") == 42
+
+    # The standard type check still fires for wrong types.
+    with pytest.raises(ConfigValidationError):
+        list(IntWithPatternOptions.parse({"count": "not an int"}))
