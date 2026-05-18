@@ -134,3 +134,86 @@ def test_every_configoptions_field_has_a_description():
         f"Found ProjectConfig.ConfigOptions fields without a description: "
         f"{missing!r}. Add a class-attribute docstring."
     )
+
+
+def test_every_executoroptions_field_has_a_description():
+    """
+    Sanity check for ExecutorOptions on every registered PoeExecutor.
+    """
+
+    from poethepoet.executor.base import PoeExecutor
+
+    missing: list[tuple[str, str]] = [
+        (executor_cls.__name__, field_name)
+        for executor_cls in PoeExecutor._PoeExecutor__executor_types.values()
+        for field_name in executor_cls.ExecutorOptions.get_fields()
+        if executor_cls.ExecutorOptions.description_for_field(field_name) is None
+    ]
+
+    assert not missing, (
+        f"Found {len(missing)} ExecutorOptions fields without a description: "
+        f"{missing!r}. Add a class-attribute docstring immediately after "
+        "the annotation."
+    )
+
+
+def test_every_argspec_and_secondary_config_field_has_a_description():
+    """
+    Sanity check for ArgSpec and the non-primary ConfigOptions classes
+    (IncludedConfig and PackagedConfig).
+    """
+
+    from poethepoet.config.partition import IncludedConfig, PackagedConfig
+    from poethepoet.task.args import ArgSpec
+
+    classes_to_check = (
+        ArgSpec,
+        IncludedConfig.ConfigOptions,
+        PackagedConfig.ConfigOptions,
+    )
+    missing: list[tuple[str, str]] = [
+        (cls.__name__, field_name)
+        for cls in classes_to_check
+        for field_name in cls.get_fields()
+        if cls.description_for_field(field_name) is None
+    ]
+
+    assert not missing, (
+        f"Found {len(missing)} fields without a description: {missing!r}. "
+        "Add a class-attribute docstring immediately after the annotation."
+    )
+
+
+def test_every_typeddict_field_has_a_description():
+    """
+    Sanity check for the TypedDict option shapes used in the schema. These
+    aren't PoeOptions subclasses, so they go through
+    extract_field_descriptions directly rather than the
+    PoeOptions.description_for_field helper.
+    """
+
+    from poethepoet.config.partition import IncludeItem, IncludeScriptItem, TaskGroup
+    from poethepoet.config.primitives import EnvDefault, EnvfileOption
+    from poethepoet.options._docstrings import extract_field_descriptions
+
+    typed_dicts = (
+        IncludeItem,
+        IncludeScriptItem,
+        TaskGroup,
+        EnvDefault,
+        EnvfileOption,
+    )
+    missing: list[tuple[str, str]] = []
+    for typed_dict in typed_dicts:
+        descriptions = extract_field_descriptions(typed_dict)
+        missing.extend(
+            (typed_dict.__name__, field_name)
+            for field_name in typed_dict.__annotations__
+            if field_name not in descriptions
+        )
+
+    assert not missing, (
+        f"Found {len(missing)} TypedDict fields without a description: "
+        f"{missing!r}. Add a class-attribute docstring immediately after "
+        "the annotation."
+    )

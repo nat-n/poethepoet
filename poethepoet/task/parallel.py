@@ -66,8 +66,9 @@ class ParallelTask(PoeTask):
 
         default_item_type: str | None = None
         """
-        Change the default item type that strings in the sequence are interpreted
-        as.
+        Change the default item type that strings in the parallel task are
+        interpreted as. By default this matches the project-level
+        `default_array_item_task_type` setting.
         """
 
         prefix: str | Literal[False] = "{name}"
