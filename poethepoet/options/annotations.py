@@ -27,6 +27,24 @@ def option_annotation(cls: T) -> T:
     return cls
 
 
+def register_type_alias(name: str, type_alias: Any) -> Any:
+    """
+    Register a named type alias (e.g. a Literal) so it can be referenced
+    by name in PoeOptions field annotations.
+
+    Use this for type aliases that have no `__name__` (Literals, Unions, etc.)
+    so they can't be registered via `option_annotation`. Class-like types
+    should use `option_annotation` instead.
+
+    Returns the type unchanged, so it can be used inline at the definition site:
+
+        MyAlias = register_type_alias("MyAlias", Literal["a", "b", "c"])
+    """
+
+    _registered_type_hint_globals[name] = type_alias
+    return type_alias
+
+
 class Metadata:
     __slots__ = ("config_name",)
 

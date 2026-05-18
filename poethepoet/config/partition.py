@@ -3,11 +3,11 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from ..options.annotations import option_annotation
+from ..options.annotations import option_annotation, register_type_alias
 from .primitives import EmptyDict, EnvDefault
 
 if TYPE_CHECKING:
@@ -17,16 +17,22 @@ if TYPE_CHECKING:
     from .primitives import EnvfileOption
 
 
-KNOWN_SHELL_INTERPRETERS = (
-    "posix",
-    "sh",
-    "bash",
-    "zsh",
-    "fish",
-    "pwsh",  # powershell >= 6
-    "powershell",  # any version of powershell
-    "python",
+ShellInterpreter = register_type_alias(
+    "ShellInterpreter",
+    Literal[
+        "posix",
+        "sh",
+        "bash",
+        "zsh",
+        "fish",
+        "pwsh",  # powershell >= 6
+        "powershell",  # any version of powershell
+        "python",
+    ],
 )
+
+# Derived from the Literal so the tuple and the type stay in lockstep.
+KNOWN_SHELL_INTERPRETERS: tuple[str, ...] = get_args(ShellInterpreter)
 
 
 @option_annotation
