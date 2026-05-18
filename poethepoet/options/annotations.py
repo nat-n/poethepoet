@@ -57,16 +57,18 @@ def register_type_alias(name: str, type_alias: Any) -> Any:
 
 
 class Metadata:
-    __slots__ = ("config_name", "pattern")
+    __slots__ = ("config_name", "examples", "pattern")
 
     def __init__(
         self,
         *,
         config_name: str | None = None,
         pattern: str | None = None,
+        examples: list | None = None,
     ):
         self.config_name = config_name
         self.pattern = pattern
+        self.examples = examples
 
 
 class TypeAnnotation:

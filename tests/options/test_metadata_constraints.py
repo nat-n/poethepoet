@@ -114,3 +114,23 @@ def test_pattern_silently_ignored_on_non_str_annotation():
     # The standard type check still fires for wrong types.
     with pytest.raises(ConfigValidationError):
         list(IntWithPatternOptions.parse({"count": "not an int"}))
+
+
+def test_examples_stored_on_metadata():
+    """examples is documentation-only — no runtime validation, just preserved
+    for downstream consumers (the schema generator).
+    """
+
+    class ExampledOptions(PoeOptions):
+        path: Annotated[
+            str, Metadata(examples=["output.log", "${POE_PWD}/output.txt"])
+        ] = ""
+
+    # Should parse without complaint.
+    options = next(ExampledOptions.parse({"path": "anything"}))
+    assert options.get("path") == "anything"
+
+    # The Metadata object is accessible through the field's TypeAnnotation:
+    annotation = ExampledOptions.get_fields()["path"]
+    examples = annotation.metadata_get("examples")
+    assert examples == ["output.log", "${POE_PWD}/output.txt"]
