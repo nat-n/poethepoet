@@ -199,6 +199,18 @@ class ArgSpec(PoeOptions):
             return [stripped or name]
         return tuple(arg.get("options", [f"--{stripped}"]))
 
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: `options` is normalizer-supplied (derived from `name`
+        if not provided), so it shouldn't be required in the schema.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["required"] = sorted(
+            key for key in fragment.get("required", []) if key != "options"
+        )
+        return fragment
+
     def validate(self):
         try:
             return self._validate()

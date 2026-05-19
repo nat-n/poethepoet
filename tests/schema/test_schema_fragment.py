@@ -196,3 +196,40 @@ def test_parallel_items_reference_task_def(ctx: SchemaContext) -> None:
     assert schema["properties"]["parallel"]["items"] == {
         "$ref": "#/definitions/task_def"
     }
+
+
+def test_argspec_schema_fragment_has_expected_properties(ctx: SchemaContext) -> None:
+    from poethepoet.task.args import ArgSpec
+
+    schema = ArgSpec.__schema_fragment__(ctx)
+    expected = {
+        "default", "help", "name", "options", "positional",
+        "required", "type", "multiple", "choices",
+    }
+    assert set(schema["properties"]) >= expected
+
+
+def test_argspec_options_field_not_in_required(ctx: SchemaContext) -> None:
+    """
+    `options` is normalizer-supplied; users typically don't write it
+    directly. Mark it optional in the schema.
+    """
+    from poethepoet.task.args import ArgSpec
+
+    schema = ArgSpec.__schema_fragment__(ctx)
+    assert "options" not in schema["required"]
+
+
+def test_argspec_type_field_is_enum_of_string_float_integer_boolean(
+    ctx: SchemaContext,
+) -> None:
+    """
+    `type` is Literal["string", "float", "integer", "boolean"], so the
+    schema property should be `{type: string, enum: [...]}`.
+    """
+    from poethepoet.task.args import ArgSpec
+
+    schema = ArgSpec.__schema_fragment__(ctx)
+    type_schema = schema["properties"]["type"]
+    assert type_schema["type"] == "string"
+    assert set(type_schema["enum"]) == {"string", "float", "integer", "boolean"}
