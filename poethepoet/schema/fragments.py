@@ -222,6 +222,50 @@ def args_option_schema(ctx: SchemaContext) -> dict:
     return result
 
 
+def tasks_map_schema(ctx: SchemaContext) -> dict:
+    """
+    Build the schema for the `tasks` map: keys match the task-name
+    pattern (imported from task/base.py — single source of truth),
+    values are task definitions.
+    """
+    from poethepoet.task.base import _TASK_NAME_PATTERN
+
+    result = {
+        "type": "object",
+        "additionalProperties": False,
+        "patternProperties": {
+            _TASK_NAME_PATTERN.pattern: {"$ref": "#/definitions/task_def"},
+        },
+    }
+    ctx.register("tasks_map", result)
+    return result
+
+
+def groups_map_schema(ctx: SchemaContext) -> dict:
+    """
+    Build the schema for the `groups` map: keys match the group-name
+    pattern (imported from config/partition.py — single source of truth),
+    values reference the task_group TypedDict.
+    """
+    from poethepoet.config.partition import _GROUP_NAME_PATTERN, TaskGroup
+    from poethepoet.options.annotations import TypeAnnotation
+    from poethepoet.schema.translate import translate_type
+
+    task_group_annotation = TypeAnnotation.parse(TaskGroup)
+    task_group_schema = translate_type(task_group_annotation, ctx)
+    ctx.register("task_group", task_group_schema)
+
+    result = {
+        "type": "object",
+        "additionalProperties": False,
+        "patternProperties": {
+            _GROUP_NAME_PATTERN.pattern: {"$ref": "#/definitions/task_group"},
+        },
+    }
+    ctx.register("groups_map", result)
+    return result
+
+
 def task_def_with_case_schema(ctx: SchemaContext) -> dict:
     """
     Like task_def, but every explicit task-variant branch additionally
