@@ -311,4 +311,7 @@ def task_def_with_case_schema(ctx: SchemaContext) -> dict:
         }
     )
 
-    return {"oneOf": branches}
+    result = {"oneOf": branches}
+    # Register under the name referenced by SwitchTask.__schema_fragment__.
+    ctx.register("task_def_with_case", result)
+    return result
