@@ -36,6 +36,19 @@ class SchemaContext:
         """
         return dict(self._definitions)
 
+    def mutate_definition(self, name: str, schema: dict) -> None:
+        """
+        Replace an existing definition with a new schema body.
+
+        This bypasses the duplicate-detection in `register` — only the
+        orchestrator should use this, to apply post-hoc swaps (e.g.
+        replacing inlined property schemas with $refs once cross-cutting
+        definitions are available).
+        """
+        if name not in self._definitions:
+            raise KeyError(f"No definition {name!r} to mutate")
+        self._definitions[name] = schema
+
     def register(self, name: str, schema: dict) -> str:
         """
         Add `schema` to `$defs` under `name` and return the `$ref` URI.
