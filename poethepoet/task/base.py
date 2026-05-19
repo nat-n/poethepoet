@@ -747,6 +747,39 @@ class PoeTask(metaclass=MetaPoeTask):
             )
         return tuple(task_type for task_type in cls.__task_types.keys())
 
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Emit the JSON Schema fragment for this task variant.
+
+        Composes `cls.TaskOptions.__schema_fragment__(ctx)` (which gives
+        the options-dict shape) with the discriminator key (`cls.__key__`)
+        typed by `cls.__content_type__`, and marks the discriminator as
+        required.
+
+        Subclasses with irregular content shape override this and call
+        `super().__schema_fragment__(ctx)` to get the base assembly,
+        then refine specific parts.
+        """
+        from poethepoet.options.annotations import TypeAnnotation
+        from poethepoet.schema.translate import translate_type
+
+        fragment = cls.TaskOptions.__schema_fragment__(ctx)
+
+        # The discriminator key (e.g. "cmd", "shell") with the right
+        # content type. We translate __content_type__ as a primitive
+        # annotation so str → string, list → array.
+        content_annotation = TypeAnnotation.parse(cls.__content_type__)
+        content_schema = translate_type(content_annotation, ctx)
+
+        fragment["properties"][cls.__key__] = content_schema
+        # Append the discriminator to required (sorted, no duplicates).
+        required = set(fragment.get("required", []))
+        required.add(cls.__key__)
+        fragment["required"] = sorted(required)
+
+        return fragment
+
     def _print_action(self, action: str, dry: bool, unresolved: bool = False):
         """
         Print the action taken by a task just before executing it.
