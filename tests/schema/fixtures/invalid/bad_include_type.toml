@@ -1,0 +1,3 @@
+# expected_error: Option 'include' must have a value of type
+[tool.poe]
+include = 123

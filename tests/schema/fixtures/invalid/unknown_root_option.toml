@@ -1,0 +1,3 @@
+# expected_error: Unrecognized option 'oops_invalid'
+[tool.poe]
+oops_invalid = "bad"
