@@ -178,3 +178,21 @@ def test_switch_task_includes_control_property(ctx: SchemaContext) -> None:
     schema = SwitchTask.__schema_fragment__(ctx)
     assert "control" in schema["properties"]
     assert "control" in schema["required"]
+
+
+def test_sequence_items_reference_task_def(ctx: SchemaContext) -> None:
+    from poethepoet.task.sequence import SequenceTask
+
+    schema = SequenceTask.__schema_fragment__(ctx)
+    assert schema["properties"]["sequence"]["items"] == {
+        "$ref": "#/definitions/task_def"
+    }
+
+
+def test_parallel_items_reference_task_def(ctx: SchemaContext) -> None:
+    from poethepoet.task.parallel import ParallelTask
+
+    schema = ParallelTask.__schema_fragment__(ctx)
+    assert schema["properties"]["parallel"]["items"] == {
+        "$ref": "#/definitions/task_def"
+    }

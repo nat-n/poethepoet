@@ -171,6 +171,17 @@ class ParallelTask(PoeTask):
 
                 subtask.validate(config, task_specs)
 
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: parallel items reference the recursive task_def union.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["parallel"]["items"] = {
+            "$ref": "#/definitions/task_def"
+        }
+        return fragment
+
     spec: TaskSpec
 
     def __init__(

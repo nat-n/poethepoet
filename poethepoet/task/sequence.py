@@ -125,6 +125,18 @@ class SequenceTask(PoeTask):
 
                 subtask.validate(config, task_specs)
 
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: sequence items reference the recursive task_def union
+        (registered by the orchestrator).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["sequence"]["items"] = {
+            "$ref": "#/definitions/task_def"
+        }
+        return fragment
+
     spec: TaskSpec
     _subtasks: Sequence[PoeTask]
 
