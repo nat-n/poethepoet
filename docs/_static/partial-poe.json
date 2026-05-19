@@ -322,11 +322,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -528,8 +548,19 @@
         },
         {
           "$ref": "#/definitions/executor_auto"
+        },
+        {
+          "$ref": "#/definitions/executor_partial"
         }
       ]
+    },
+    "executor_partial": {
+      "not": {
+        "required": [
+          "type"
+        ]
+      },
+      "type": "object"
     },
     "executor_poetry": {
       "additionalProperties": false,
@@ -800,11 +831,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -1007,11 +1058,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -1184,11 +1255,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -1345,11 +1436,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -1518,11 +1629,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -1718,11 +1849,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -1925,11 +2076,31 @@
         "case": {
           "anyOf": [
             {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
             },
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
               },
               "type": "array"
             }
@@ -2261,31 +2432,32 @@
         },
         {
           "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        {
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "cwd": {
-                "description": "Specify the working directory for resolving relative paths referenced by the\nincluded config.",
+            "anyOf": [
+              {
                 "type": "string"
               },
-              "path": {
-                "description": "The path to the toml or json config file to include, relative to the parent\nconfig file.",
-                "type": "string"
-              },
-              "recursive": {
-                "description": "If true, includes declared in the included file will also be loaded.",
-                "type": "boolean"
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "cwd": {
+                    "description": "Specify the working directory for resolving relative paths referenced by the\nincluded config.",
+                    "type": "string"
+                  },
+                  "path": {
+                    "description": "The path to the toml or json config file to include, relative to the parent\nconfig file.",
+                    "type": "string"
+                  },
+                  "recursive": {
+                    "description": "If true, includes declared in the included file will also be loaded.",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "type": "object"
               }
-            },
-            "required": [
-              "path"
-            ],
-            "type": "object"
+            ]
           },
           "type": "array"
         }

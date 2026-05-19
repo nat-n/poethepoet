@@ -283,7 +283,7 @@ class ProjectConfig(ConfigPartition):
         executor types accept additional configuration options.
         """
 
-        include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        include: str | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """
@@ -480,7 +480,7 @@ class IncludedConfig(ConfigPartition):
         Define groups of tasks contributed by this included config.
         """
 
-        include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        include: str | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """
