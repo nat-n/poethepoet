@@ -9,6 +9,9 @@ import pytest
 
 from poethepoet.schema.context import SchemaContext
 from poethepoet.schema.fragments import (
+    args_option_schema,
+    env_option_schema,
+    envfile_option_schema,
     executor_option_schema,
     task_def_schema,
     task_def_with_case_schema,
@@ -146,3 +149,56 @@ def test_executor_uv_type_is_const_uv(ctx: SchemaContext) -> None:
         {"type": "string", "enum": ["uv"]},
         {"const": "uv"},
     )
+
+
+def test_env_option_schema_accepts_string_and_env_default_values(
+    ctx: SchemaContext,
+) -> None:
+    schema = env_option_schema(ctx)
+    assert schema["type"] == "object"
+    # additionalProperties is a union: string OR env_default $ref
+    ap = schema["additionalProperties"]
+    assert "anyOf" in ap
+    branches = ap["anyOf"]
+    assert {"type": "string"} in branches
+    assert any("$ref" in b and b["$ref"].endswith("env_default") for b in branches)
+
+
+def test_env_default_registered(ctx: SchemaContext) -> None:
+    env_option_schema(ctx)
+    assert "env_default" in ctx.definitions
+    env_default = ctx.definitions["env_default"]
+    # The property schema may include a description; check the type is correct.
+    assert env_default["properties"]["default"]["type"] == "string"
+    assert env_default["required"] == ["default"]
+
+
+def test_envfile_option_schema_includes_three_shapes(ctx: SchemaContext) -> None:
+    schema = envfile_option_schema(ctx)
+    assert "anyOf" in schema
+    branches = schema["anyOf"]
+    # Bare string, array of strings, envfile_full TypedDict
+    assert {"type": "string"} in branches
+    assert any(
+        b.get("type") == "array" and b.get("items") == {"type": "string"}
+        for b in branches
+    )
+    assert any("$ref" in b for b in branches)
+
+
+def test_args_option_schema_accepts_list_or_dict(ctx: SchemaContext) -> None:
+    schema = args_option_schema(ctx)
+    assert "anyOf" in schema
+    branches = schema["anyOf"]
+    # List form: array of (string | args_item)
+    list_branches = [b for b in branches if b.get("type") == "array"]
+    assert list_branches
+    # Dict form: object mapping arg-name to args_item
+    dict_branches = [b for b in branches if b.get("type") == "object"]
+    assert dict_branches
+
+
+def test_args_item_registered(ctx: SchemaContext) -> None:
+    """The per-arg ArgSpec shape is in definitions."""
+    args_option_schema(ctx)
+    assert "args_item" in ctx.definitions

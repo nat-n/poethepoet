@@ -113,6 +113,115 @@ def executor_option_schema(ctx: SchemaContext) -> dict:
     return result
 
 
+def env_option_schema(ctx: SchemaContext) -> dict:
+    """
+    Build the env option's schema: `{type: object, additionalProperties:
+    <string | env_default>}`. Keys are unconstrained env var names.
+
+    Registers env_default in ctx.definitions.
+    """
+    from poethepoet.config.primitives import EnvDefault
+    from poethepoet.options.annotations import TypeAnnotation
+    from poethepoet.schema.translate import translate_type
+
+    # Translate EnvDefault as a TypedDict.
+    env_default_annotation = TypeAnnotation.parse(EnvDefault)
+    env_default_schema = translate_type(env_default_annotation, ctx)
+    ctx.register("env_default", env_default_schema)
+
+    value_schema = {
+        "anyOf": [
+            {"type": "string"},
+            {"$ref": "#/definitions/env_default"},
+        ]
+    }
+
+    result = {
+        "type": "object",
+        "additionalProperties": value_schema,
+    }
+    ctx.register("env_option", result)
+    return result
+
+
+def envfile_option_schema(ctx: SchemaContext) -> dict:
+    """
+    Build the envfile option's schema. Three accepted shapes:
+    - Bare string (one envfile path)
+    - Array of strings (multiple paths)
+    - EnvfileOption TypedDict with expected/optional keys
+
+    Registers envfile_full (the TypedDict shape) in ctx.definitions.
+    """
+    from poethepoet.config.primitives import EnvfileOption
+    from poethepoet.options.annotations import TypeAnnotation
+    from poethepoet.schema.translate import translate_type
+
+    envfile_full_annotation = TypeAnnotation.parse(EnvfileOption)
+    envfile_full_schema = translate_type(envfile_full_annotation, ctx)
+    ctx.register("envfile_full", envfile_full_schema)
+
+    result = {
+        "anyOf": [
+            {"type": "string"},
+            {"type": "array", "items": {"type": "string"}},
+            {"$ref": "#/definitions/envfile_full"},
+        ]
+    }
+    ctx.register("envfile_option", result)
+    return result
+
+
+def args_option_schema(ctx: SchemaContext) -> dict:
+    """
+    Build the args option's schema. Two accepted top-level shapes:
+    - List of (string | args_item) — each item declares one argument.
+    - Dict mapping arg-name to args_item (with `name` omitted from
+      the inner — it's the dict key).
+
+    Registers args_item (the ArgSpec shape) in ctx.definitions.
+    """
+    from poethepoet.task.args import ArgSpec
+
+    args_item_schema = ArgSpec.__schema_fragment__(ctx)
+    ctx.register("args_item", args_item_schema)
+
+    # For the dict form, the `name` key must NOT appear inside each value
+    # (it's the dict key). Build a separate args_item_no_name variant.
+    args_item_no_name = dict(args_item_schema)
+    args_item_no_name["properties"] = {
+        key: value
+        for key, value in args_item_schema["properties"].items()
+        if key != "name"
+    }
+    args_item_no_name["required"] = sorted(
+        key for key in args_item_schema.get("required", []) if key != "name"
+    )
+    ctx.register("args_item_no_name", args_item_no_name)
+
+    result = {
+        "anyOf": [
+            {
+                "type": "array",
+                "items": {
+                    "anyOf": [
+                        {"type": "string"},
+                        {"$ref": "#/definitions/args_item"},
+                    ],
+                },
+            },
+            {
+                "type": "object",
+                "additionalProperties": {
+                    "$ref": "#/definitions/args_item_no_name"
+                },
+            },
+        ]
+    }
+    ctx.register("args_option", result)
+    return result
+
+
 def task_def_with_case_schema(ctx: SchemaContext) -> dict:
     """
     Like task_def, but every explicit task-variant branch additionally
