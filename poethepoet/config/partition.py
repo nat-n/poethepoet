@@ -35,6 +35,14 @@ register_type_alias("ShellInterpreter", ShellInterpreter)
 # Derived from the Literal so the tuple and the type stay in lockstep.
 KNOWN_SHELL_INTERPRETERS: tuple[str, ...] = get_args(ShellInterpreter)
 
+_GROUP_NAME_PATTERN = re.compile(r"^[\w\-_]+$")
+"""
+Pattern for valid group names. Used by ProjectConfig.ConfigOptions.validate
+and (in Phase 2) by the schema generator's groups_map patternProperties.
+
+The anchors make the pattern usable with both re.fullmatch and re.match.
+"""
+
 
 @option_annotation
 class IncludeScriptItem(TypedDict):
@@ -413,7 +421,7 @@ class ProjectConfig(ConfigPartition):
 
             # Validate group names
             for group_name in self.groups.keys():
-                if not re.fullmatch(r"[\w\-_]+", group_name):
+                if not _GROUP_NAME_PATTERN.fullmatch(group_name):
                     raise ConfigValidationError(
                         f"Invalid group name {group_name!r}. Group names must contain "
                         "only letters, digits, hyphens, and underscores."
