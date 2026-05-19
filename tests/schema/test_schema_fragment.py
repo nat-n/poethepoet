@@ -156,3 +156,25 @@ def test_sequence_task_discriminator_is_array(ctx: SchemaContext) -> None:
     assert "sequence" in schema["properties"]
     assert schema["properties"]["sequence"]["type"] == "array"
     assert "sequence" in schema["required"]
+
+
+def test_switch_task_items_reference_task_def_with_case(ctx: SchemaContext) -> None:
+    """
+    SwitchTask's `switch` content is a list of case-items, each of which
+    is a task definition extended with an optional `case` key. The schema
+    references a dedicated `task_def_with_case` definition.
+    """
+    from poethepoet.task.switch import SwitchTask
+
+    schema = SwitchTask.__schema_fragment__(ctx)
+    items_schema = schema["properties"]["switch"]["items"]
+    assert items_schema == {"$ref": "#/definitions/task_def_with_case"}
+
+
+def test_switch_task_includes_control_property(ctx: SchemaContext) -> None:
+    """SwitchTask's TaskOptions has a `control` field that must appear."""
+    from poethepoet.task.switch import SwitchTask
+
+    schema = SwitchTask.__schema_fragment__(ctx)
+    assert "control" in schema["properties"]
+    assert "control" in schema["required"]
