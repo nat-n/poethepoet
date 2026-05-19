@@ -166,6 +166,19 @@ class SwitchTask(PoeTask):
             for _, case_task_spec in self.case_task_specs:
                 case_task_spec.validate(config, task_specs)
 
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: the `switch` content's items are case-aware task defs,
+        not plain task defs. Reference `task_def_with_case` (registered
+        by the orchestrator in build_schema).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["switch"]["items"] = {
+            "$ref": "#/definitions/task_def_with_case"
+        }
+        return fragment
+
     spec: TaskSpec
     control_task: PoeTask
     switch_tasks: dict[str, PoeTask]
