@@ -2094,6 +2094,82 @@
         }
       ]
     },
+    "task_def_with_case": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/cmd_task_with_case"
+        },
+        {
+          "$ref": "#/definitions/expr_task_with_case"
+        },
+        {
+          "$ref": "#/definitions/parallel_task_with_case"
+        },
+        {
+          "$ref": "#/definitions/ref_task_with_case"
+        },
+        {
+          "$ref": "#/definitions/script_task_with_case"
+        },
+        {
+          "$ref": "#/definitions/sequence_task_with_case"
+        },
+        {
+          "$ref": "#/definitions/shell_task_with_case"
+        },
+        {
+          "$ref": "#/definitions/switch_task_with_case"
+        },
+        {
+          "additionalProperties": true,
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "cmd"
+                ]
+              },
+              {
+                "required": [
+                  "expr"
+                ]
+              },
+              {
+                "required": [
+                  "parallel"
+                ]
+              },
+              {
+                "required": [
+                  "ref"
+                ]
+              },
+              {
+                "required": [
+                  "script"
+                ]
+              },
+              {
+                "required": [
+                  "sequence"
+                ]
+              },
+              {
+                "required": [
+                  "shell"
+                ]
+              },
+              {
+                "required": [
+                  "switch"
+                ]
+              }
+            ]
+          },
+          "type": "object"
+        }
+      ]
+    },
     "task_group": {
       "additionalProperties": false,
       "properties": {
