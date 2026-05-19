@@ -57,6 +57,7 @@ ruff                 = "^0.14.5"
 types-pyyaml         = "^6.0.12.20250915"
 
 [tool.poetry.group.test.dependencies]
+jsonschema           = "^4.0"
 poe_test_helpers     = { path = "./tests/fixtures/packages/poe_test_helpers" }
 pytest               = "^9.0.1"
 pytest-asyncio       = "^1.3.0"
@@ -219,7 +220,8 @@ omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"
 
 [tool.pytest.ini_options]
 markers = [
-  "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "schema: schema validation tests (slow; require jsonschema; auto-applied to parity tests in tests/schema/)",
 ]
 
 
