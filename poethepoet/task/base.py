@@ -23,7 +23,18 @@ if TYPE_CHECKING:
     from .args import PoeTaskArgs
 
 
-_TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")
+_TASK_NAME_PATTERN = re.compile(r"^[A-Za-z_][\w\-:+]*$")
+"""
+Pattern for valid task names: must start with an ASCII letter or
+underscore, followed by any combination of word chars, hyphen, colon,
+or plus. Used by both runtime validation and the schema generator's
+tasks_map patternProperties.
+
+Note: the previous pattern was Unicode-aware via `\\w` for the first
+char, combined with a separate `.isalpha()` runtime check. The unified
+form is ASCII-only — JSON Schema regex portability and de facto task
+naming conventions make ASCII-only the correct choice here.
+"""
 
 
 class MetaPoeTask(type):
@@ -368,15 +379,10 @@ class PoeTask(metaclass=MetaPoeTask):
             """
             Perform validations on this TaskSpec that apply to all task types
             """
-            if not (self.name[0].isalpha() or self.name[0] == "_"):
-                raise ConfigValidationError(
-                    "Task names must start with a letter or underscore."
-                )
-
             if not self.parent and not _TASK_NAME_PATTERN.match(self.name):
                 raise ConfigValidationError(
-                    "Task names characters must be alphanumeric, colon, underscore or "
-                    "dash."
+                    "Task names must start with a letter or underscore and contain "
+                    "only alphanumeric characters, colon, underscore, dash, or plus."
                 )
 
             if not isinstance(self.content, self.task_type.__content_type__):

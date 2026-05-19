@@ -275,3 +275,60 @@ def test_register_type_alias_makes_literal_resolvable_in_annotations():
 
     with pytest.raises(ConfigValidationError):
         list(ColouredOptions.parse({"favourite": "yellow"}))
+
+
+def test_group_name_pattern_constant_exposed() -> None:
+    """
+    The group name pattern is module-level so external consumers (e.g. the
+    Phase 2 schema generator) can import it as the single source of truth.
+    """
+    from poethepoet.config.partition import _GROUP_NAME_PATTERN
+
+    assert _GROUP_NAME_PATTERN.fullmatch("my_group")
+    assert _GROUP_NAME_PATTERN.fullmatch("my-group")
+    assert _GROUP_NAME_PATTERN.fullmatch("group123")
+    assert not _GROUP_NAME_PATTERN.fullmatch("bad group")  # space rejected
+    assert not _GROUP_NAME_PATTERN.fullmatch("")  # empty rejected
+
+
+def test_task_name_pattern_unified_encompasses_first_char_rule() -> None:
+    """
+    The unified _TASK_NAME_PATTERN enforces "letter or underscore first"
+    directly in the regex — no separate runtime check needed.
+    """
+    from poethepoet.task.base import _TASK_NAME_PATTERN
+
+    # Letter or underscore first: accepted.
+    assert _TASK_NAME_PATTERN.fullmatch("hello")
+    assert _TASK_NAME_PATTERN.fullmatch("_private")
+    assert _TASK_NAME_PATTERN.fullmatch("Task-1")
+    assert _TASK_NAME_PATTERN.fullmatch("name:with:colons")
+    assert _TASK_NAME_PATTERN.fullmatch("with+plus")
+
+    # Digit first: rejected by the regex itself (no separate check needed).
+    assert not _TASK_NAME_PATTERN.fullmatch("1bad")
+    # Punctuation / whitespace first: rejected.
+    assert not _TASK_NAME_PATTERN.fullmatch("-bad")
+    assert not _TASK_NAME_PATTERN.fullmatch(" bad")
+    # Empty: rejected.
+    assert not _TASK_NAME_PATTERN.fullmatch("")
+
+
+def test_runtime_still_rejects_invalid_task_names_via_unified_pattern() -> None:
+    """
+    After consolidation, the runtime continues to reject invalid task
+    names — just through the unified regex rather than a separate
+    isalpha() check.
+    """
+    from poethepoet.config import PoeConfig
+    from poethepoet.task.base import TaskSpecFactory
+
+    config = PoeConfig(
+        table={"tasks": {"1bad_name": {"cmd": "echo hi"}}},
+    )
+    factory = TaskSpecFactory(config)
+    factory.load_all()
+
+    spec = next(iter(factory))
+    with pytest.raises(ConfigValidationError):
+        spec.validate(config, factory)
