@@ -23,19 +23,23 @@ from poethepoet.schema import build_schema
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES_DIR = REPO_ROOT / "tests" / "fixtures"
 
-# Fixtures whose [tool.poe] configs use experimental or undocumented keys
-# that the runtime also rejects when executing tasks (strict=True). The
-# fixture project is exploratory/incomplete, not a stable contract, so we
-# xfail rather than fix the schema to accept these keys.
+# Fixtures whose [tool.poe] configs exercise features that are not yet
+# implemented in the runtime — they describe shapes the schema would
+# need to accept once the feature lands, but the current runtime would
+# reject (or ignore) the extra keys, and the schema correctly reflects
+# the current contract.
 #
-# Spec §7: JSON Schema can only express the static structure; undocumented
-# experimental extensions in fixture projects that the runtime would also
-# reject are better tracked here than widened in the schema.
+# When the underlying feature is implemented, the runtime will start
+# accepting these keys, the schema generator will pick them up (because
+# they'll appear in the PoeOptions definitions), and the xfail entry
+# can be removed.
 _XFAIL_FIXTURES: dict[str, str] = {
     "conditionals_project/pyproject.toml": (
-        "Uses experimental undocumented task keys ('cond', 'prereqs', 'target', "
-        "'check') that the runtime also rejects with strict=True. This is an "
-        "exploratory fixture for a future feature, not a stable runtime contract."
+        "Fixture for an unimplemented feature: task-level conditional "
+        "execution keys ('cond', 'prereqs', 'target', 'check'). The schema "
+        "rejects them because the runtime doesn't define them yet — when "
+        "the feature lands and PoeOptions adds these fields, regenerate the "
+        "schema and remove this xfail entry."
     ),
 }
 
