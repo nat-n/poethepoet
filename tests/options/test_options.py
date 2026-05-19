@@ -334,3 +334,17 @@ def test_runtime_still_rejects_invalid_task_names_via_unified_pattern() -> None:
     spec = next(iter(factory))
     with pytest.raises(ConfigValidationError):
         spec.validate(config, factory)
+
+
+def test_poe_task_get_task_class_returns_registered_class() -> None:
+    from poethepoet.task.base import PoeTask
+    from poethepoet.task.cmd import CmdTask
+
+    assert PoeTask.get_task_class("cmd") is CmdTask
+
+
+def test_poe_task_get_task_class_raises_for_unknown_key() -> None:
+    from poethepoet.task.base import PoeTask
+
+    with pytest.raises(KeyError, match="Unknown task type"):
+        PoeTask.get_task_class("not_a_real_task_type")

@@ -120,9 +120,9 @@ def test_cmd_task_schema_fragment_includes_standard_options(ctx: SchemaContext) 
     schema = CmdTask.__schema_fragment__(ctx)
     # Sampled inherited fields:
     for inherited in ("args", "cwd", "env", "deps", "help"):
-        assert inherited in schema["properties"], (
-            f"{inherited} should appear inlined on cmd_task"
-        )
+        assert (
+            inherited in schema["properties"]
+        ), f"{inherited} should appear inlined on cmd_task"
 
 
 def test_cmd_task_schema_includes_own_options(ctx: SchemaContext) -> None:
@@ -203,8 +203,15 @@ def test_argspec_schema_fragment_has_expected_properties(ctx: SchemaContext) -> 
 
     schema = ArgSpec.__schema_fragment__(ctx)
     expected = {
-        "default", "help", "name", "options", "positional",
-        "required", "type", "multiple", "choices",
+        "default",
+        "help",
+        "name",
+        "options",
+        "positional",
+        "required",
+        "type",
+        "multiple",
+        "choices",
     }
     assert set(schema["properties"]) >= expected
 

@@ -200,9 +200,7 @@ def _translate_union(annotation: UnionType, ctx: SchemaContext) -> dict[str, Any
     (no `anyOf` wrapper). If all branches are None, return a null schema.
     """
     non_none_branches = [
-        branch
-        for branch in annotation._value_types
-        if not isinstance(branch, NoneType)
+        branch for branch in annotation._value_types if not isinstance(branch, NoneType)
     ]
 
     if not non_none_branches:

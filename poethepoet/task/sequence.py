@@ -132,9 +132,7 @@ class SequenceTask(PoeTask):
         (registered by the orchestrator).
         """
         fragment = super().__schema_fragment__(ctx)
-        fragment["properties"]["sequence"]["items"] = {
-            "$ref": "#/definitions/task_def"
-        }
+        fragment["properties"]["sequence"]["items"] = {"$ref": "#/definitions/task_def"}
         return fragment
 
     spec: TaskSpec
