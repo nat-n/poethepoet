@@ -12,7 +12,7 @@ def test_package_imports() -> None:
 
 def test_package_submodules_importable() -> None:
     # These are the submodules subsequent tasks will populate.
-    import poethepoet.schema.context  # noqa: F401
-    import poethepoet.schema.fragments  # noqa: F401
-    import poethepoet.schema.generator  # noqa: F401
+    import poethepoet.schema.context
+    import poethepoet.schema.fragments
+    import poethepoet.schema.generator
     import poethepoet.schema.translate  # noqa: F401

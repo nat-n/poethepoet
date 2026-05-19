@@ -7,4 +7,4 @@ patternProperties for the tasks/groups maps.
 
 from __future__ import annotations
 
-# Implementation lands in Tasks 13–16.
+# Implementation lands in Tasks 13-16.
