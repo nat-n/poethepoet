@@ -59,6 +59,60 @@ def task_def_schema(ctx: SchemaContext) -> dict:
     return result
 
 
+def executor_option_schema(ctx: SchemaContext) -> dict:
+    """
+    Build the executor option's discriminated union — over the `type:`
+    field. Each registered executor becomes a `#/definitions/executor_<key>`.
+    A shorthand string form accepts the bare type name (`"poetry"`,
+    `"auto"`, etc.).
+
+    "auto" is a known exception: it's the user-facing default but is
+    handled specially by PoeExecutor.validate_config rather than being
+    registered as a PoeExecutor subclass. We synthesize a minimal
+    executor_auto definition for it.
+
+    Side effect: registers each per-executor definition in ctx.definitions
+    and registers the executor_option definition itself.
+    """
+    from poethepoet.executor.base import PoeExecutor
+
+    executor_keys = sorted(PoeExecutor.get_executor_types())
+    # Include "auto" in the shorthand-string enum even though it isn't
+    # in the registry.
+    enum_keys = sorted(set(executor_keys) | {"auto"})
+
+    branches: list[dict] = [
+        {"type": "string", "enum": enum_keys},
+    ]
+
+    for key in executor_keys:
+        executor_cls = PoeExecutor.get_executor_class(key)
+        executor_schema = executor_cls.ExecutorOptions.__schema_fragment__(ctx)
+        # Tighten the `type` property to a single-value enum (const
+        # equivalent in draft-07).
+        executor_schema["properties"] = dict(executor_schema["properties"])
+        executor_schema["properties"]["type"] = {
+            "type": "string",
+            "enum": [key],
+        }
+        ctx.register(f"executor_{key}", executor_schema)
+        branches.append({"$ref": f"#/definitions/executor_{key}"})
+
+    # Synthesize a minimal executor_auto definition since "auto" isn't a
+    # registered class.
+    ctx.register("executor_auto", {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["type"],
+        "properties": {"type": {"type": "string", "enum": ["auto"]}},
+    })
+    branches.append({"$ref": "#/definitions/executor_auto"})
+
+    result = {"oneOf": branches}
+    ctx.register("executor_option", result)
+    return result
+
+
 def task_def_with_case_schema(ctx: SchemaContext) -> dict:
     """
     Like task_def, but every explicit task-variant branch additionally

@@ -9,6 +9,7 @@ import pytest
 
 from poethepoet.schema.context import SchemaContext
 from poethepoet.schema.fragments import (
+    executor_option_schema,
     task_def_schema,
     task_def_with_case_schema,
 )
@@ -108,3 +109,40 @@ def test_task_def_with_case_schema_has_case_key_in_each_variant(
 def test_task_def_schema_registers_itself(ctx: SchemaContext) -> None:
     schema = task_def_schema(ctx)
     assert ctx.definitions["task_def"] == schema
+
+
+def test_executor_option_includes_shorthand_string(ctx: SchemaContext) -> None:
+    """A bare string like "poetry" or "auto" should be accepted."""
+    schema = executor_option_schema(ctx)
+    string_branches = [
+        b for b in schema["oneOf"]
+        if b.get("type") == "string" and "enum" in b
+    ]
+    assert len(string_branches) == 1
+    # Contains each registered executor key plus "auto".
+    enum_values = set(string_branches[0]["enum"])
+    assert "auto" in enum_values
+    assert "poetry" in enum_values
+    assert "uv" in enum_values
+
+
+def test_executor_option_includes_per_executor_dict_branches(
+    ctx: SchemaContext,
+) -> None:
+    schema = executor_option_schema(ctx)
+    ref_branches = {
+        b["$ref"] for b in schema["oneOf"] if "$ref" in b
+    }
+    # Each registered executor has its own definition.
+    assert "#/definitions/executor_poetry" in ref_branches
+    assert "#/definitions/executor_uv" in ref_branches
+
+
+def test_executor_uv_type_is_const_uv(ctx: SchemaContext) -> None:
+    """The `type` field on uv's executor branch is constrained."""
+    executor_option_schema(ctx)  # populates ctx.definitions
+    uv_schema = ctx.definitions["executor_uv"]
+    assert uv_schema["properties"]["type"] in (
+        {"type": "string", "enum": ["uv"]},
+        {"const": "uv"},
+    )

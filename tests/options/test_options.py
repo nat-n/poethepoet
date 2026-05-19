@@ -348,3 +348,27 @@ def test_poe_task_get_task_class_raises_for_unknown_key() -> None:
 
     with pytest.raises(KeyError, match="Unknown task type"):
         PoeTask.get_task_class("not_a_real_task_type")
+
+
+def test_poe_executor_get_executor_class_returns_registered_class() -> None:
+    from poethepoet.executor.base import PoeExecutor
+    from poethepoet.executor.poetry import PoetryExecutor
+
+    assert PoeExecutor.get_executor_class("poetry") is PoetryExecutor
+
+
+def test_poe_executor_get_executor_class_raises_for_unknown_key() -> None:
+    from poethepoet.executor.base import PoeExecutor
+
+    with pytest.raises(KeyError, match="Unknown executor type"):
+        PoeExecutor.get_executor_class("not_a_real_executor")
+
+
+def test_poe_executor_get_executor_types_includes_known_keys() -> None:
+    from poethepoet.executor.base import PoeExecutor
+
+    keys = set(PoeExecutor.get_executor_types())
+    # "auto" is intentionally NOT in the registry.
+    for expected in ("poetry", "uv", "virtualenv", "simple"):
+        assert expected in keys
+    assert "auto" not in keys
