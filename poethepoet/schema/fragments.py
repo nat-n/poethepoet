@@ -108,6 +108,16 @@ def executor_option_schema(ctx: SchemaContext) -> dict:
     })
     branches.append({"$ref": "#/definitions/executor_auto"})
 
+    # Fallback: an executor object without a `type` key inherits the type
+    # from the project or group level (see context._resolve_executor_config).
+    # Accept any object that has no `type` key — the remaining options will
+    # be applied on top of the inherited executor config at runtime.
+    ctx.register("executor_partial", {
+        "type": "object",
+        "not": {"required": ["type"]},
+    })
+    branches.append({"$ref": "#/definitions/executor_partial"})
+
     result = {"oneOf": branches}
     ctx.register("executor_option", result)
     return result
@@ -271,17 +281,28 @@ def task_def_with_case_schema(ctx: SchemaContext) -> dict:
     Like task_def, but every explicit task-variant branch additionally
     accepts an optional `case` key. Used inside switch tasks.
 
-    The case key accepts either a single string or a list of strings.
+    The case key accepts a single scalar value or a list of scalars.
+    The runtime converts any scalar to a string (str(case)), so integers,
+    booleans, and other non-string scalars are all valid case values per
+    the runtime implementation (see task/switch.py lines 110-114).
 
     Precondition: task_def_schema(ctx) must have been called first so
     the per-task `<key>_task` variants are in ctx.definitions.
     """
     from poethepoet.task.base import PoeTask
 
-    case_value_schema = {
+    # A single scalar value that will be str()-converted by the runtime.
+    _case_scalar = {
         "anyOf": [
             {"type": "string"},
-            {"type": "array", "items": {"type": "string"}},
+            {"type": "integer"},
+            {"type": "boolean"},
+        ]
+    }
+    case_value_schema = {
+        "anyOf": [
+            _case_scalar,
+            {"type": "array", "items": _case_scalar},
         ]
     }
 
