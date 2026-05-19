@@ -261,7 +261,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -382,7 +382,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -548,9 +548,6 @@
         },
         {
           "$ref": "#/definitions/executor_auto"
-        },
-        {
-          "$ref": "#/definitions/executor_partial"
         }
       ]
     },
@@ -591,6 +588,38 @@
         "type"
       ],
       "type": "object"
+    },
+    "executor_task_option": {
+      "oneOf": [
+        {
+          "enum": [
+            "auto",
+            "poetry",
+            "simple",
+            "uv",
+            "virtualenv"
+          ],
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/executor_poetry"
+        },
+        {
+          "$ref": "#/definitions/executor_simple"
+        },
+        {
+          "$ref": "#/definitions/executor_uv"
+        },
+        {
+          "$ref": "#/definitions/executor_virtualenv"
+        },
+        {
+          "$ref": "#/definitions/executor_auto"
+        },
+        {
+          "$ref": "#/definitions/executor_partial"
+        }
+      ]
     },
     "executor_uv": {
       "additionalProperties": false,
@@ -749,7 +778,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "expr": {
           "type": "string"
@@ -879,7 +908,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "expr": {
           "type": "string"
@@ -978,7 +1007,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1110,7 +1139,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1205,7 +1234,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1303,7 +1332,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1368,7 +1397,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1484,7 +1513,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1571,7 +1600,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1681,7 +1710,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1754,7 +1783,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -1897,7 +1926,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -2026,7 +2055,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
@@ -2143,7 +2172,7 @@
           "$ref": "#/definitions/envfile_option"
         },
         "executor": {
-          "$ref": "#/definitions/executor_option"
+          "$ref": "#/definitions/executor_task_option"
         },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",

@@ -100,26 +100,37 @@ def executor_option_schema(ctx: SchemaContext) -> dict:
 
     # Synthesize a minimal executor_auto definition since "auto" isn't a
     # registered class.
-    ctx.register("executor_auto", {
-        "type": "object",
-        "additionalProperties": False,
-        "required": ["type"],
-        "properties": {"type": {"type": "string", "enum": ["auto"]}},
-    })
+    ctx.register(
+        "executor_auto",
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["type"],
+            "properties": {"type": {"type": "string", "enum": ["auto"]}},
+        },
+    )
     branches.append({"$ref": "#/definitions/executor_auto"})
 
-    # Fallback: an executor object without a `type` key inherits the type
-    # from the project or group level (see context._resolve_executor_config).
-    # Accept any object that has no `type` key — the remaining options will
-    # be applied on top of the inherited executor config at runtime.
-    ctx.register("executor_partial", {
-        "type": "object",
-        "not": {"required": ["type"]},
-    })
-    branches.append({"$ref": "#/definitions/executor_partial"})
-
-    result = {"oneOf": branches}
+    # executor_option is the strict form used at root level: type is required.
+    # (PoeExecutor.validate_config enforces type at root config validation time.)
+    result = {"oneOf": list(branches)}
     ctx.register("executor_option", result)
+
+    # executor_task_option extends executor_option with a partial-override
+    # fallback. At task level, executor can omit `type` and inherit it from
+    # the project or group context (context._resolve_executor_config). Accept
+    # any object without a `type` key as a partial override.
+    ctx.register(
+        "executor_partial",
+        {
+            "type": "object",
+            "not": {"required": ["type"]},
+        },
+    )
+    task_branches = [*branches, {"$ref": "#/definitions/executor_partial"}]
+    task_result = {"oneOf": task_branches}
+    ctx.register("executor_task_option", task_result)
+
     return result
 
 
@@ -222,9 +233,7 @@ def args_option_schema(ctx: SchemaContext) -> dict:
             },
             {
                 "type": "object",
-                "additionalProperties": {
-                    "$ref": "#/definitions/args_item_no_name"
-                },
+                "additionalProperties": {"$ref": "#/definitions/args_item_no_name"},
             },
         ]
     }

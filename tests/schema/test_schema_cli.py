@@ -29,9 +29,7 @@ def test_main_writes_partial_poe_json_to_docs(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, (
-        f"stdout: {result.stdout}\nstderr: {result.stderr}"
-    )
+    assert result.returncode == 0, f"stdout: {result.stdout}\nstderr: {result.stderr}"
 
     output_file = target_dir / "partial-poe.json"
     assert output_file.exists()
@@ -53,13 +51,15 @@ def test_main_output_is_deterministic(tmp_path: Path) -> None:
 
     subprocess.run(
         [sys.executable, "-m", "poethepoet.schema"],
-        cwd=tmp_path, check=True,
+        cwd=tmp_path,
+        check=True,
     )
     first = (target_dir / "partial-poe.json").read_bytes()
 
     subprocess.run(
         [sys.executable, "-m", "poethepoet.schema"],
-        cwd=tmp_path, check=True,
+        cwd=tmp_path,
+        check=True,
     )
     second = (target_dir / "partial-poe.json").read_bytes()
 

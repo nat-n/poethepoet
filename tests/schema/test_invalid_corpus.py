@@ -24,7 +24,6 @@ except ImportError:
 from poethepoet.exceptions import ConfigValidationError
 from poethepoet.schema import build_schema
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 INVALID_DIR = REPO_ROOT / "tests" / "schema" / "fixtures" / "invalid"
 
@@ -43,7 +42,7 @@ def _discover_invalid_fixtures() -> list[tuple[str, Path, str]]:
                 f"Fixture {fixture.name} is missing the "
                 f"{prefix!r} annotation on its first line."
             )
-        expected = first_line[len(prefix):].strip()
+        expected = first_line[len(prefix) :].strip()
         results.append((fixture.stem, fixture, expected))
     return results
 
@@ -57,7 +56,7 @@ def validator() -> Draft7Validator:
 
 
 @pytest.mark.parametrize(
-    "test_id, fixture_path, expected_error",
+    ("test_id", "fixture_path", "expected_error"),
     _discover_invalid_fixtures(),
     ids=[name for name, _, _ in _discover_invalid_fixtures()],
 )
