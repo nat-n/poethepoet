@@ -97,3 +97,62 @@ def test_default_inherits_fields_from_base_class(ctx: SchemaContext) -> None:
 
     schema = _Child.__schema_fragment__(ctx)
     assert set(schema["properties"]) == {"name", "count", "extra"}
+
+
+def test_cmd_task_schema_fragment_includes_discriminator(ctx: SchemaContext) -> None:
+    from poethepoet.task.cmd import CmdTask
+
+    schema = CmdTask.__schema_fragment__(ctx)
+    assert schema["type"] == "object"
+    assert "cmd" in schema["properties"]
+    assert schema["properties"]["cmd"]["type"] == "string"
+    assert "cmd" in schema["required"]
+    assert schema["additionalProperties"] is False
+
+
+def test_cmd_task_schema_fragment_includes_standard_options(ctx: SchemaContext) -> None:
+    """
+    Approach B — full inlining. CmdTask's schema should include all
+    fields inherited from PoeTask.TaskOptions.
+    """
+    from poethepoet.task.cmd import CmdTask
+
+    schema = CmdTask.__schema_fragment__(ctx)
+    # Sampled inherited fields:
+    for inherited in ("args", "cwd", "env", "deps", "help"):
+        assert inherited in schema["properties"], (
+            f"{inherited} should appear inlined on cmd_task"
+        )
+
+
+def test_cmd_task_schema_includes_own_options(ctx: SchemaContext) -> None:
+    """CmdTask adds use_exec, empty_glob, ignore_fail."""
+    from poethepoet.task.cmd import CmdTask
+
+    schema = CmdTask.__schema_fragment__(ctx)
+    assert "use_exec" in schema["properties"]
+    assert "empty_glob" in schema["properties"]
+    assert "ignore_fail" in schema["properties"]
+
+
+def test_shell_task_discriminator_is_string() -> None:
+    """Validates the discriminator type matches __content_type__."""
+    from poethepoet.task.shell import ShellTask
+
+    assert ShellTask.__content_type__ is str
+
+
+def test_sequence_task_discriminator_is_array(ctx: SchemaContext) -> None:
+    """
+    For Sequence/Parallel, __content_type__ is list — the discriminator
+    appears with `type: array`. Detailed content shape (recursive
+    task_def items) is handled by the per-class override in Task 11.
+    """
+    from poethepoet.task.sequence import SequenceTask
+
+    schema = SequenceTask.__schema_fragment__(ctx)
+    # The discriminator key is `sequence` and it must be present and
+    # typed as array (the items refinement is the next task).
+    assert "sequence" in schema["properties"]
+    assert schema["properties"]["sequence"]["type"] == "array"
+    assert "sequence" in schema["required"]
