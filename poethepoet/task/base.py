@@ -748,6 +748,18 @@ class PoeTask(metaclass=MetaPoeTask):
         return tuple(task_type for task_type in cls.__task_types.keys())
 
     @classmethod
+    def get_task_class(cls, key: str) -> type[PoeTask]:
+        """
+        Look up a registered PoeTask subclass by its `__key__`.
+
+        Public read-side complement to MetaPoeTask's registration logic.
+        Raises KeyError if the key isn't registered.
+        """
+        if key not in cls.__task_types:
+            raise KeyError(f"Unknown task type {key!r}")
+        return cls.__task_types[key]
+
+    @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
         """
         Emit the JSON Schema fragment for this task variant.

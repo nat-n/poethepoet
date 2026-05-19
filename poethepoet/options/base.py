@@ -311,9 +311,7 @@ class PoeOptions:
 
         for attr_name, type_annotation in cls.get_fields().items():
             # Property name in the schema is the config_name if set.
-            schema_key = (
-                type_annotation.metadata_get("config_name") or attr_name
-            )
+            schema_key = type_annotation.metadata_get("config_name") or attr_name
 
             field_schema = translate_type(type_annotation, ctx)
             if description := cls.description_for_field(attr_name):
@@ -322,9 +320,7 @@ class PoeOptions:
 
             # A field is required iff: no class-level default value AND
             # its type isn't Optional. We mirror PoeOptions.parse's logic.
-            has_default = hasattr(
-                cls, cls.get_field_attribute(attr_name) or attr_name
-            )
+            has_default = hasattr(cls, cls.get_field_attribute(attr_name) or attr_name)
             if not has_default and not type_annotation.is_optional:
                 required.append(schema_key)
 

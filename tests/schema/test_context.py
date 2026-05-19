@@ -38,6 +38,7 @@ def test_register_rejects_duplicate_name_with_different_body() -> None:
     ctx = SchemaContext(version="0.46.0")
     ctx.register("name", {"type": "string"})
     import pytest
+
     with pytest.raises(ValueError, match="already registered"):
         ctx.register("name", {"type": "integer"})
 
@@ -52,10 +53,7 @@ def test_register_idempotent_for_identical_body() -> None:
 
 def test_description_for_poeoptions_uses_mro_aware_helper() -> None:
     ctx = SchemaContext(version="0.46.0")
-    assert (
-        ctx.description_for(_Sample, "foo")
-        == "The foo field — described here."
-    )
+    assert ctx.description_for(_Sample, "foo") == "The foo field — described here."
 
 
 def test_description_for_typeddict_uses_direct_extraction() -> None:
