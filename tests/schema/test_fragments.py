@@ -120,8 +120,7 @@ def test_executor_option_includes_shorthand_string(ctx: SchemaContext) -> None:
     """A bare string like "poetry" or "auto" should be accepted."""
     schema = executor_option_schema(ctx)
     string_branches = [
-        b for b in schema["oneOf"]
-        if b.get("type") == "string" and "enum" in b
+        b for b in schema["oneOf"] if b.get("type") == "string" and "enum" in b
     ]
     assert len(string_branches) == 1
     # Contains each registered executor key plus "auto".
@@ -135,9 +134,7 @@ def test_executor_option_includes_per_executor_dict_branches(
     ctx: SchemaContext,
 ) -> None:
     schema = executor_option_schema(ctx)
-    ref_branches = {
-        b["$ref"] for b in schema["oneOf"] if "$ref" in b
-    }
+    ref_branches = {b["$ref"] for b in schema["oneOf"] if "$ref" in b}
     # Each registered executor has its own definition.
     assert "#/definitions/executor_poetry" in ref_branches
     assert "#/definitions/executor_uv" in ref_branches

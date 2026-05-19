@@ -39,10 +39,20 @@ def test_build_schema_root_properties_include_known_options() -> None:
 
     schema = build_schema()
     expected = {
-        "default_task_type", "default_array_task_type",
-        "default_array_item_task_type", "env", "envfile", "executor",
-        "include", "include_script", "poetry_command", "poetry_hooks",
-        "shell_interpreter", "verbosity", "tasks", "groups",
+        "default_task_type",
+        "default_array_task_type",
+        "default_array_item_task_type",
+        "env",
+        "envfile",
+        "executor",
+        "include",
+        "include_script",
+        "poetry_command",
+        "poetry_hooks",
+        "shell_interpreter",
+        "verbosity",
+        "tasks",
+        "groups",
     }
     assert expected.issubset(schema["properties"].keys())
 

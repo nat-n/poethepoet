@@ -20,7 +20,6 @@ except ImportError:
 
 from poethepoet.schema import build_schema
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES_DIR = REPO_ROOT / "tests" / "fixtures"
 
@@ -88,7 +87,7 @@ def _make_params() -> list[tuple[str, Path] | pytest.param]:
     return params
 
 
-@pytest.mark.parametrize("test_id, config_path", _make_params())
+@pytest.mark.parametrize(("test_id", "config_path"), _make_params())
 def test_fixture_config_validates(
     test_id: str, config_path: Path, validator: Draft7Validator
 ) -> None:

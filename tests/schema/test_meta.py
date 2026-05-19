@@ -65,10 +65,8 @@ def _collect_dangling_refs(node: object, defined_names: set[str]) -> set[str]:
     dangling: set[str] = set()
     if isinstance(node, dict):
         if ref := node.get("$ref"):
-            assert ref.startswith("#/definitions/"), (
-                f"Unexpected $ref shape: {ref!r}"
-            )
-            name = ref[len("#/definitions/"):]
+            assert ref.startswith("#/definitions/"), f"Unexpected $ref shape: {ref!r}"
+            name = ref[len("#/definitions/") :]
             if name not in defined_names:
                 dangling.add(name)
         for value in node.values():
