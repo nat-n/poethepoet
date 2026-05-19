@@ -289,6 +289,8 @@ def test_group_name_pattern_constant_exposed() -> None:
     assert _GROUP_NAME_PATTERN.fullmatch("group123")
     assert not _GROUP_NAME_PATTERN.fullmatch("bad group")  # space rejected
     assert not _GROUP_NAME_PATTERN.fullmatch("")  # empty rejected
+    # Unicode letters: rejected (ASCII-only convention for JSON Schema portability).
+    assert not _GROUP_NAME_PATTERN.fullmatch("\u03b1_group")  # Greek alpha prefix
 
 
 def test_task_name_pattern_unified_encompasses_first_char_rule() -> None:
