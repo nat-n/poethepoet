@@ -41,11 +41,13 @@ The schema is consumed by editor integrations (most notably the VS Code Python/T
 poethepoet/schema/
 ├── __init__.py        # public API: build_schema() -> dict
 ├── __main__.py        # python -m poethepoet.schema → writes docs/_static/partial-poe.json
+├── context.py         # SchemaContext: definitions registry + description routing for PoeOptions and TypedDicts
 ├── generator.py       # orchestrator: walks PoeOptions classes, calls hooks, assembles root schema
 ├── translate.py       # TypeAnnotation → JSON Schema primitive translator
-├── docstrings.py      # AST-based class-attribute docstring extraction (per-class cache)
 └── fragments.py       # cross-cutting helpers (env_option, executor union, task fallback branch)
 ```
+
+AST-based docstring extraction lives in `poethepoet/options/_docstrings.py` (introduced in Phase 1). The schema package's `context.py` routes description lookups to either `PoeOptions.description_for_field` (for `PoeOptions` subclasses) or `extract_field_descriptions` (for TypedDicts) — addressing the Section 7 risk about emission-path divergence in one place.
 
 The package lives inside `poethepoet/` (not under `scripts/`) so it is importable from tests and so it can be extended later for the deferred secondary schemas. The package is **never imported during normal CLI invocations** — only by `poe build-schema` and by schema tests — so it has zero impact on CLI startup performance.
 
@@ -249,16 +251,28 @@ markers = [
 ]
 ```
 
-Apply it automatically to anything in `tests/schema/` via `conftest.py`:
+Apply it automatically — but only to the parity-test files — via `conftest.py`:
 
 ```python
+# Filenames containing parity tests (slow; require the full schema build
+# and the jsonschema library). Unit tests for the translator, hooks, and
+# SchemaContext also live under tests/schema/ but are NOT auto-marked —
+# they run on every `poe test`.
+PARITY_TEST_FILES = frozenset({
+    "test_meta.py",
+    "test_fixture_configs.py",
+    "test_invalid_corpus.py",
+    "test_mutation.py",
+})
+
+
 def pytest_collection_modifyitems(config, items):
     for item in items:
-        if "tests/schema/" in str(item.fspath):
+        if item.fspath.basename in PARITY_TEST_FILES:
             item.add_marker(pytest.mark.schema)
 ```
 
-Maintainers don't decorate individual tests. The marker composes — `pytest -m "schema or smoke"` works as expected.
+Maintainers don't decorate individual tests. The marker composes — `pytest -m "schema or smoke"` works as expected. New unit-test files added under `tests/schema/` are automatically left unmarked (and therefore run in the default suite); new parity-test files need to be added to the allowlist above.
 
 ### Poe tasks
 
@@ -288,7 +302,7 @@ The schema generator (in `poethepoet/schema/`) emits plain dicts and has no `jso
 - **`test_meta.py`** — `Draft7Validator.check_schema(build_schema())`; structural sanity (root has `definitions`, `additionalProperties: false`, exactly one `$schema` declaration, etc.).
 - **`test_fixture_configs.py`** — enumerate `tests/fixtures/*_project/` directories; find the `[tool.poe]` block (from `pyproject.toml` or `poe_tasks.*`); assert the schema accepts it. Parametrize so each fixture is its own test ID.
 - **`test_invalid_corpus.py`** — each `tests/schema/fixtures/invalid/*.toml` file contains a `[tool.poe]` block plus a `# expected_error: ...` annotation line. Test asserts both: PoeOptions raises `ConfigValidationError` *and* schema validation produces at least one error.
-- **`test_mutation.py`** — apply a small mutator library (delete required field, change type, replace enum value with garbage, etc.) to each seed config; assert schema and runtime agree on accept/reject. Known-divergent cases (cross-task validations the schema can't express) are marked `pytest.mark.xfail(reason=...)` so they're visibly tracked rather than silently skipped.
+- **`test_mutation.py`** — apply a small mutator library (delete required field, change type, replace enum value with garbage, etc.) to each seed config. Each (seed × mutator × applicable path) becomes its own parametrized test case so per-case visibility is preserved (a divergence shows up as a single failing or `xfail` test, not as one line in a multi-line failure dump). Known-divergent cases (cross-task validations the schema can't express) are wrapped in `pytest.param(..., marks=pytest.mark.xfail(reason=...))` with explicit reasons citing the relevant spec section.
 
 ### Deliberate gaps
 
