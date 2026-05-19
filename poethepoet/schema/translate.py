@@ -14,10 +14,13 @@ from typing import TYPE_CHECKING, Any
 
 from poethepoet.options.annotations import (
     AnyType,
+    DictType,
+    ListType,
     LiteralType,
     NoneType,
     PrimitiveType,
     TypeAnnotation,
+    TypedDictType,
 )
 
 if TYPE_CHECKING:
@@ -49,6 +52,12 @@ def translate_type(annotation: TypeAnnotation, ctx: SchemaContext) -> dict:
         return {}
     if isinstance(annotation, NoneType):
         return {"type": "null"}
+    if isinstance(annotation, ListType):
+        return _translate_list(annotation, ctx)
+    if isinstance(annotation, DictType):
+        return _translate_dict(annotation, ctx)
+    if isinstance(annotation, TypedDictType):
+        return _translate_typeddict(annotation, ctx)
     raise NotImplementedError(
         f"No translator yet for {type(annotation).__name__} (annotation: "
         f"{annotation!r})"
@@ -109,3 +118,68 @@ def _python_value_to_json_type(value: Any) -> str | None:
     if value is None:
         return "null"
     return None
+
+
+def _translate_list(annotation: ListType, ctx: SchemaContext) -> dict[str, Any]:
+    """
+    Translate a ListType / Sequence[X] / tuple[X, ...] annotation.
+    """
+    schema: dict[str, Any] = {"type": "array"}
+
+    if not isinstance(annotation._value_type, AnyType):
+        schema["items"] = translate_type(annotation._value_type, ctx)
+
+    if (min_length := annotation.metadata_get("min_length")) is not None:
+        schema["minItems"] = min_length
+    if (max_length := annotation.metadata_get("max_length")) is not None:
+        schema["maxItems"] = max_length
+    if (examples := annotation.metadata_get("examples")) is not None:
+        schema["examples"] = examples
+
+    return schema
+
+
+def _translate_dict(annotation: DictType, ctx: SchemaContext) -> dict[str, Any]:
+    """
+    Translate a DictType / Mapping[str, V] annotation.
+
+    Note: PoeOptions assumes all dict keys are strings; this matches
+    JSON's key-as-string constraint.
+    """
+    schema: dict[str, Any] = {"type": "object"}
+
+    if not isinstance(annotation._value_type, AnyType):
+        schema["additionalProperties"] = translate_type(annotation._value_type, ctx)
+
+    return schema
+
+
+def _translate_typeddict(
+    annotation: TypedDictType, ctx: SchemaContext
+) -> dict[str, Any]:
+    """
+    Translate a TypedDictType. The class is `annotation._annotation`;
+    fields and optional-key information are in `annotation._schema` /
+    `annotation._optional_keys`.
+
+    Descriptions are routed through ctx.description_for, which dispatches
+    to extract_field_descriptions directly for TypedDicts (no MRO walk).
+    """
+    cls = annotation._annotation
+    properties: dict[str, dict] = {}
+    required: list[str] = []
+
+    for field_name, field_annotation in annotation._schema.items():
+        field_schema = translate_type(field_annotation, ctx)
+        if description := ctx.description_for(cls, field_name):
+            field_schema["description"] = description
+        properties[field_name] = field_schema
+        if field_name not in annotation._optional_keys:
+            required.append(field_name)
+
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": sorted(required),
+        "additionalProperties": False,
+    }
