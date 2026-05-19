@@ -13,8 +13,10 @@ from poethepoet.schema.fragments import (
     env_option_schema,
     envfile_option_schema,
     executor_option_schema,
+    groups_map_schema,
     task_def_schema,
     task_def_with_case_schema,
+    tasks_map_schema,
 )
 
 
@@ -202,3 +204,43 @@ def test_args_item_registered(ctx: SchemaContext) -> None:
     """The per-arg ArgSpec shape is in definitions."""
     args_option_schema(ctx)
     assert "args_item" in ctx.definitions
+
+
+def test_tasks_map_schema_has_pattern_properties(ctx: SchemaContext) -> None:
+    import re
+
+    schema = tasks_map_schema(ctx)
+    assert schema["type"] == "object"
+    assert schema["additionalProperties"] is False
+    assert "patternProperties" in schema
+    # Exactly one pattern entry — the task-name regex.
+    assert len(schema["patternProperties"]) == 1
+    pattern, _value_schema = next(iter(schema["patternProperties"].items()))
+    # Pattern starts with letter or underscore.
+    compiled = re.compile(pattern)
+    assert compiled.fullmatch("my_task")
+    assert compiled.fullmatch("Task-1")
+    assert not compiled.fullmatch("1bad")  # digit-first rejected
+    assert not compiled.fullmatch("bad name")  # space rejected
+
+
+def test_tasks_map_values_reference_task_def(ctx: SchemaContext) -> None:
+    task_def_schema(ctx)  # populate task_def first
+    schema = tasks_map_schema(ctx)
+    value_schema = next(iter(schema["patternProperties"].values()))
+    assert value_schema == {"$ref": "#/definitions/task_def"}
+
+
+def test_groups_map_schema_imports_group_name_pattern(ctx: SchemaContext) -> None:
+    from poethepoet.config.partition import _GROUP_NAME_PATTERN
+
+    schema = groups_map_schema(ctx)
+    pattern = next(iter(schema["patternProperties"].keys()))
+    # The pattern from the constant should be the same regex.
+    assert pattern == _GROUP_NAME_PATTERN.pattern
+
+
+def test_groups_map_values_reference_task_group(ctx: SchemaContext) -> None:
+    schema = groups_map_schema(ctx)
+    value_schema = next(iter(schema["patternProperties"].values()))
+    assert value_schema == {"$ref": "#/definitions/task_group"}
