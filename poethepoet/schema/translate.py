@@ -21,6 +21,7 @@ from poethepoet.options.annotations import (
     PrimitiveType,
     TypeAnnotation,
     TypedDictType,
+    UnionType,
 )
 
 if TYPE_CHECKING:
@@ -58,6 +59,8 @@ def translate_type(annotation: TypeAnnotation, ctx: SchemaContext) -> dict:
         return _translate_dict(annotation, ctx)
     if isinstance(annotation, TypedDictType):
         return _translate_typeddict(annotation, ctx)
+    if isinstance(annotation, UnionType):
+        return _translate_union(annotation, ctx)
     raise NotImplementedError(
         f"No translator yet for {type(annotation).__name__} (annotation: "
         f"{annotation!r})"
@@ -183,3 +186,29 @@ def _translate_typeddict(
         "required": sorted(required),
         "additionalProperties": False,
     }
+
+
+def _translate_union(annotation: UnionType, ctx: SchemaContext) -> dict[str, Any]:
+    """
+    Translate a UnionType.
+
+    Drops `NoneType` branches — Optional handling lives at the parent
+    object level (a field's optionality is expressed by omitting it from
+    the parent's `required` list, not by including null in its schema).
+
+    If only one non-None branch remains, return that branch directly
+    (no `anyOf` wrapper). If all branches are None, return a null schema.
+    """
+    non_none_branches = [
+        branch
+        for branch in annotation._value_types
+        if not isinstance(branch, NoneType)
+    ]
+
+    if not non_none_branches:
+        return {"type": "null"}
+
+    if len(non_none_branches) == 1:
+        return translate_type(non_none_branches[0], ctx)
+
+    return {"anyOf": [translate_type(branch, ctx) for branch in non_none_branches]}

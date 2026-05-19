@@ -271,3 +271,92 @@ def test_typeddict_description_from_class_attribute_docstring(
     assert schema["properties"]["field"]["description"] == (
         "This description should appear in the schema."
     )
+
+
+# --- UnionType ---
+
+
+def test_union_of_str_and_int_to_anyof(ctx: SchemaContext) -> None:
+    annotation = TypeAnnotation.parse(str | int)
+    schema = translate_type(annotation, ctx)
+    assert schema == {
+        "anyOf": [
+            {"type": "string"},
+            {"type": "integer"},
+        ]
+    }
+
+
+def test_optional_str_collapses_to_str_schema(ctx: SchemaContext) -> None:
+    """
+    `Optional[str]` (i.e. `str | None`) translates to just the `str`
+    schema; the schema-fragment hook handles "field not required" at the
+    object level via the parent's `required` list.
+    """
+    annotation = TypeAnnotation.parse(str | None)
+    schema = translate_type(annotation, ctx)
+    assert schema == {"type": "string"}
+
+
+def test_optional_complex_union_drops_none_branch(ctx: SchemaContext) -> None:
+    """A multi-branch union with None should drop the None branch."""
+    annotation = TypeAnnotation.parse(str | int | None)  # str | int | None
+    schema = translate_type(annotation, ctx)
+    assert schema == {
+        "anyOf": [
+            {"type": "string"},
+            {"type": "integer"},
+        ]
+    }
+
+
+def test_pure_none_union_is_null(ctx: SchemaContext) -> None:
+    """Edge case: a union containing only None resolves to null."""
+    annotation = TypeAnnotation.parse(type(None) | None)
+    schema = translate_type(annotation, ctx)
+    assert schema == {"type": "null"}
+
+
+def test_all_type_annotation_subclasses_have_a_translator(ctx: SchemaContext) -> None:
+    """
+    If a new TypeAnnotation subclass is introduced, this test will fail
+    until a translator branch is added.
+    """
+    from poethepoet.options.annotations import TypeAnnotation
+
+    # Walk the TypeAnnotation subclass tree.
+    to_check = [TypeAnnotation]
+    leaves: list[type] = []
+    while to_check:
+        cls = to_check.pop()
+        subclasses = cls.__subclasses__()
+        if not subclasses:
+            leaves.append(cls)
+        else:
+            to_check.extend(subclasses)
+
+    # For each leaf, construct a representative annotation and translate.
+    # The exact construction varies per subclass; this loop simply asserts
+    # that NotImplementedError is never raised for known subclasses.
+    representative_annotations = {
+        "PrimitiveType": TypeAnnotation.parse(str),
+        "LiteralType": TypeAnnotation.parse(Literal["a"]),
+        "AnyType": TypeAnnotation.parse(Any),
+        "NoneType": TypeAnnotation.parse(None),
+        "ListType": TypeAnnotation.parse(list),
+        "DictType": TypeAnnotation.parse(dict),
+        # TypedDictType and UnionType are exercised by dedicated tests.
+    }
+
+    for cls in leaves:
+        name = cls.__name__
+        if name in ("TypedDictType", "UnionType"):
+            continue  # exercised by dedicated tests
+        annotation = representative_annotations.get(name)
+        assert annotation is not None, (
+            f"No representative annotation for {name} — add one to keep "
+            "this comprehensiveness test honest."
+        )
+        # Translation should not raise.
+        result = translate_type(annotation, ctx)
+        assert isinstance(result, dict)
