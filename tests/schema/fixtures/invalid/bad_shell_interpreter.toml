@@ -1,0 +1,3 @@
+# expected_error: must have a value of type
+[tool.poe]
+shell_interpreter = "bogus"
