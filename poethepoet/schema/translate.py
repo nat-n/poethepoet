@@ -1,12 +1,111 @@
 """
 TypeAnnotation → JSON Schema translation.
 
-Each `TypeAnnotation` subclass is translated by a corresponding function.
-The translator does not know about poe domain shapes (tasks, executors,
-etc.); it only emits the structural JSON Schema corresponding to a type
-annotation. Cross-cutting compositions live in `fragments.py`.
+Each TypeAnnotation subclass is translated by a dedicated function.
+Translators access internal attributes of TypeAnnotation subclasses
+(`_annotation`, `_values`, etc.) — this is intentional coupling: the
+translator is a privileged consumer of the TypeAnnotation hierarchy,
+on the same footing as `validate()` and `zero_value()`.
 """
 
 from __future__ import annotations
 
-# Implementation lands in Tasks 5–7.
+from typing import TYPE_CHECKING, Any
+
+from poethepoet.options.annotations import (
+    AnyType,
+    LiteralType,
+    NoneType,
+    PrimitiveType,
+    TypeAnnotation,
+)
+
+if TYPE_CHECKING:
+    from poethepoet.schema.context import SchemaContext
+
+# Mapping from Python primitive types to JSON Schema `type:` strings.
+_PRIMITIVE_TYPE_MAP: dict[type, str] = {
+    str: "string",
+    int: "integer",
+    float: "number",
+    bool: "boolean",
+}
+
+
+def translate_type(annotation: TypeAnnotation, ctx: SchemaContext) -> dict:
+    """
+    Translate a TypeAnnotation into a JSON Schema fragment (a dict).
+
+    The translator does NOT mutate `ctx.definitions` itself; that's the
+    schema-fragment hook's responsibility. The `ctx` parameter is passed
+    through so future translators (e.g. recursive references) can lift
+    definitions when needed.
+    """
+    if isinstance(annotation, PrimitiveType):
+        return _translate_primitive(annotation)
+    if isinstance(annotation, LiteralType):
+        return _translate_literal(annotation)
+    if isinstance(annotation, AnyType):
+        return {}
+    if isinstance(annotation, NoneType):
+        return {"type": "null"}
+    raise NotImplementedError(
+        f"No translator yet for {type(annotation).__name__} (annotation: "
+        f"{annotation!r})"
+    )
+
+
+def _translate_primitive(annotation: PrimitiveType) -> dict[str, Any]:
+    """Translate str/int/float/bool with Metadata-driven constraints."""
+    py_type = annotation._annotation
+    schema: dict[str, Any] = {"type": _PRIMITIVE_TYPE_MAP[py_type]}
+
+    # Layer in constraint metadata. Each is `None` if unset (the
+    # Phase 1 metadata_get bug fix ensures explicitly-zero values
+    # like minimum=0 are NOT silently dropped here).
+    if py_type is str:
+        if (pattern := annotation.metadata_get("pattern")) is not None:
+            schema["pattern"] = pattern
+        if (min_length := annotation.metadata_get("min_length")) is not None:
+            schema["minLength"] = min_length
+        if (max_length := annotation.metadata_get("max_length")) is not None:
+            schema["maxLength"] = max_length
+
+    if py_type in (int, float):
+        if (minimum := annotation.metadata_get("minimum")) is not None:
+            schema["minimum"] = minimum
+        if (maximum := annotation.metadata_get("maximum")) is not None:
+            schema["maximum"] = maximum
+
+    if (examples := annotation.metadata_get("examples")) is not None:
+        schema["examples"] = examples
+
+    return schema
+
+
+def _translate_literal(annotation: LiteralType) -> dict[str, Any]:
+    """
+    Translate a Literal type. Emit `{type: <shared>, enum: [...]}` when
+    all literal values share the same JSON type; emit just `{enum: [...]}`
+    when they span types.
+    """
+    values = list(annotation._values)
+    types = {_python_value_to_json_type(value) for value in values}
+    if len(types) == 1 and (only := next(iter(types))) is not None:
+        return {"type": only, "enum": values}
+    return {"enum": values}
+
+
+def _python_value_to_json_type(value: Any) -> str | None:
+    """Map a literal value to the corresponding JSON Schema `type:` string."""
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int):
+        return "integer"
+    if isinstance(value, float):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if value is None:
+        return "null"
+    return None
