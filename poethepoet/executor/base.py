@@ -393,7 +393,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             )
 
         else:
-            cls.__executor_types[executor_type].ExecutorOptions.parse(config)
+            next(cls.__executor_types[executor_type].ExecutorOptions.parse(config))
 
 
 def _stop_coverage():
