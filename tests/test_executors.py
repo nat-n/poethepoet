@@ -247,3 +247,32 @@ def test_global_executor_config_rejects_unknown_keys(temp_pyproject, run_poe):
     # would mean PoeExecutor.get() caught it instead of validate_config.
     assert "Couldn't parse executor options" not in result.capture
     assert result.stdout == ""
+
+
+def test_global_executor_config_rejects_wrong_value_type(temp_pyproject, run_poe):
+    """
+    The same generator-not-consumed bug that hid unknown keys also hid the
+    per-field value_type.validate(...) checks inside PoeOptions.parse. This
+    locks in that value-type errors on executor configs surface from
+    validate_config too (companion to #390).
+
+    Uses a bool value for `location` — accepted by the outer ConfigOptions
+    schema (which allows str/list[str]/bool for executor option values) but
+    invalid against the inner virtualenv ExecutorOptions schema (str | None).
+    Without the fix, the inner check is skipped and the error never surfaces.
+    """
+    project_path = temp_pyproject(
+        """
+            [tool.poe.executor]
+            type = "virtualenv"
+            location = true
+
+            [tool.poe.tasks]
+            greet = "poe_test_echo hi"
+        """
+    )
+    result = run_poe("-d", "greet", cwd=project_path)
+    assert result.code == 1
+    assert "Option 'location' must have a value of type" in result.capture
+    assert "Couldn't parse executor options" not in result.capture
+    assert result.stdout == ""
