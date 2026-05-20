@@ -217,3 +217,33 @@ def test_global_executor_config(run_poe):
     assert result.capture == "Poe => poe_test_env\n"
     assert "POE_ACTIVE=simple" in result.stdout
     assert result.stderr == ""
+
+
+def test_global_executor_config_rejects_unknown_keys(temp_pyproject, run_poe):
+    """
+    Unknown keys in tool.poe.executor must be rejected by validate_config at
+    config-parse time (regression test for #390).
+
+    Before the fix, validate_config silently accepted the bogus key (the
+    generator returned by ExecutorOptions.parse was never iterated) and the
+    error only surfaced later — wrapped — when PoeExecutor.get() finally
+    consumed the generator. The cleaner unwrapped error message confirms
+    validate_config itself raised.
+    """
+    project_path = temp_pyproject(
+        """
+            [tool.poe.executor]
+            type = "simple"
+            extra_bogus = "should be rejected"
+
+            [tool.poe.tasks]
+            greet = "poe_test_echo hi"
+        """
+    )
+    result = run_poe("-d", "greet", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Unrecognized option 'extra_bogus'" in result.capture
+    # The wrapped form would be "Couldn't parse executor options …" — that
+    # would mean PoeExecutor.get() caught it instead of validate_config.
+    assert "Couldn't parse executor options" not in result.capture
+    assert result.stdout == ""
