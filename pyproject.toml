@@ -129,11 +129,15 @@ script = """
 
 [tool.poe.tasks.test]
 help = "Run unit and feature tests"
-cmd  = "pytest"
+cmd  = "pytest -m 'not schema'"
 
 [tool.poe.tasks.test-quick]
 help = "Run unit and feature tests, excluding slow ones"
-cmd  = "pytest -m 'not (slow or flaky)'"
+cmd  = "pytest -m 'not (slow or flaky or schema)'"
+
+[tool.poe.tasks.test-schema]
+help = "Run the schema parity test suite"
+cmd  = "pytest -m schema tests/schema/"
 
 [tool.poe.tasks.types]
 help = "Run the type checker"
@@ -147,9 +151,20 @@ cmd  = "ruff check ."
 help = "Validate black code style"
 cmd  = "black . --check --diff"
 
+[tool.poe.tasks.build-schema]
+help = "Regenerate partial-poe.json from PoeOptions definitions"
+cmd  = "python -m poethepoet.schema"
+
+[tool.poe.tasks.check-schema-drift]
+help     = "Verify generated JSON Schema is up to date"
+sequence = [
+  { ref = "build-schema" },
+  { cmd = "git diff --exit-code docs/_static/partial-poe.json" },
+]
+
 [tool.poe.tasks.check]
 help     = "Run all checks on the code base"
-sequence = ["docs-check", "style", "types", "lint", "test"]
+sequence = ["docs-check", "style", "types", "lint", "check-schema-drift", "test", "test-schema"]
 
 [tool.poe.tasks.install-poetry-plugin]
 help = "Install or update this project as a plugin in poetry"

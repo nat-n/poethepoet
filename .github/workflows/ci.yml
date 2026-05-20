@@ -43,6 +43,12 @@ jobs:
       - name: Check rst syntax
         run: poetry --ansi run poe docs-check
 
+      - name: Check schema is up to date
+        run: poetry --ansi run poe check-schema-drift
+
+      - name: Run schema parity tests
+        run: poetry --ansi run poe test-schema
+
   run-tests:
     name: Run tests
     strategy:
@@ -71,7 +77,10 @@ jobs:
         run: poetry --ansi install --without docs --without ci
 
       - name: Run tests
-        run: poetry --ansi run pytest -v --color=yes
+        # Schema parity tests are excluded here — they're fast pure-Python
+        # validation and run once in the code-quality job rather than on
+        # every OS x Python matrix combination.
+        run: poetry --ansi run pytest -v --color=yes -m 'not schema'
 
   build:
     name: Build distribution
