@@ -28,7 +28,7 @@ def test_empty_interpreter_list_rejected():
     """
     Verify that an empty list passed as the shell interpreter option is rejected.
     Tracks the regression introduced when the bespoke validate() override was
-    removed; Task 7 restores this rule declaratively via Metadata(min_length=1).
+    removed; restored declaratively via Metadata(min_items=1) on the list branch.
     """
     from poethepoet.task.shell import ShellTask
 

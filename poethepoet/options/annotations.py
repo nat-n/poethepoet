@@ -147,7 +147,7 @@ class TypeAnnotation:
         origin = get_origin(annotation)
 
         # Support Annotated[T, Metadata(...)] so metadata can be
-        # propagated into created TypeAnnotation instances.
+        # attached to the created TypeAnnotation instance.
         metadata = None
         if origin is Annotated:
             args = get_args(annotation)
