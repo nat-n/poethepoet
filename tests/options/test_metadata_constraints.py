@@ -8,7 +8,13 @@ from typing import Annotated
 import pytest
 
 from poethepoet.exceptions import ConfigValidationError
-from poethepoet.options.annotations import Metadata
+from poethepoet.options.annotations import (
+    ListType,
+    Metadata,
+    PrimitiveType,
+    TypeAnnotation,
+    UnionType,
+)
 from poethepoet.options.base import PoeOptions
 
 
@@ -224,8 +230,13 @@ def test_max_length_rejects_long_string():
 
 
 def test_min_length_rejects_short_list():
+    """
+    min_items (not min_length) constrains list length — updated in Task 11
+    when min_length became string-only.
+    """
+
     class MinLenListOptions(PoeOptions):
-        items: Annotated[Sequence[str], Metadata(min_length=1)] = ()
+        items: Annotated[Sequence[str], Metadata(min_items=1)] = ()
 
     next(MinLenListOptions.parse({"items": ["one"]}))  # at boundary
     with pytest.raises(ConfigValidationError) as exc_info:
@@ -234,8 +245,13 @@ def test_min_length_rejects_short_list():
 
 
 def test_max_length_rejects_long_list():
+    """
+    max_items (not max_length) constrains list length — updated in Task 11
+    when max_length became string-only.
+    """
+
     class MaxLenListOptions(PoeOptions):
-        items: Annotated[Sequence[str], Metadata(max_length=2)] = ()
+        items: Annotated[Sequence[str], Metadata(max_items=2)] = ()
 
     next(MaxLenListOptions.parse({"items": ["a", "b"]}))  # at boundary
     with pytest.raises(ConfigValidationError):
@@ -259,8 +275,122 @@ def test_length_zero_bounds_are_enforced():
         list(ZeroMaxStrOptions.parse({"name": "x"}))
 
     class ZeroMinListOptions(PoeOptions):
-        items: Annotated[Sequence[str], Metadata(min_length=0)] = ()
+        items: Annotated[Sequence[str], Metadata(min_items=0)] = ()
 
-    # min_length=0 allows the empty list (it's set, just to its lowest bound)
+    # min_items=0 allows the empty list (it's set, just to its lowest bound)
     next(ZeroMinListOptions.parse({"items": []}))
     next(ZeroMinListOptions.parse({"items": ["a"]}))
+
+
+def test_annotated_nests_inside_union_branch_is_parsed() -> None:
+    """
+    Union-of-Annotated parses to a UnionType whose specific branch carries
+    the inner Metadata.
+    """
+
+    parsed = TypeAnnotation.parse(
+        str | Annotated[Sequence[str], Metadata(min_items=1)] | None
+    )
+    assert isinstance(parsed, UnionType)
+
+    list_branch = next(vt for vt in parsed._value_types if isinstance(vt, ListType))
+    assert list_branch.metadata_get("min_items") == 1
+
+    str_branch = next(vt for vt in parsed._value_types if isinstance(vt, PrimitiveType))
+    assert str_branch._metadata is None
+
+
+def test_union_does_not_propagate_metadata_to_children() -> None:
+    """
+    Metadata attached at Annotated[Union[...], Metadata(...)] stays on the
+    UnionType — it is NOT copied into child TypeAnnotations.
+    """
+
+    parsed = TypeAnnotation.parse(Annotated[str | int, Metadata(config_name="foo")])
+    assert isinstance(parsed, UnionType)
+    assert parsed.metadata_get("config_name") == "foo"
+    for branch in parsed._value_types:
+        assert branch._metadata is None
+
+
+def test_union_str_or_list_with_min_items_on_list_branch() -> None:
+    """
+    The motivating example: `min_items=1` lives on the list branch and
+    rejects empty lists, but the string branch is unaffected.
+    """
+
+    class StrOrListOpt(PoeOptions):
+        value: str | Annotated[Sequence[str], Metadata(min_items=1)] | None = None
+
+    # String branch — any string OK (even empty).
+    options = next(StrOrListOpt.parse({"value": ""}))
+    assert options.get("value") == ""
+
+    # List branch with items — OK.
+    options = next(StrOrListOpt.parse({"value": ["a"]}))
+    assert options.get("value") == ["a"]
+
+    # List branch empty — rejected.
+    with pytest.raises(ConfigValidationError):
+        list(StrOrListOpt.parse({"value": []}))
+
+
+def test_min_items_rejects_short_list() -> None:
+    """
+    min_items enforces a minimum number of elements for list/sequence fields.
+    """
+
+    class MinItemsOpt(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(min_items=2)] = ()
+
+    next(MinItemsOpt.parse({"items": ["a", "b"]}))  # at boundary
+    with pytest.raises(ConfigValidationError) as exc_info:
+        list(MinItemsOpt.parse({"items": ["a"]}))
+    assert "items" in str(exc_info.value)
+    assert "2" in str(exc_info.value)
+
+
+def test_max_items_rejects_long_list() -> None:
+    """
+    max_items enforces a maximum number of elements for list/sequence fields.
+    """
+
+    class MaxItemsOpt(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(max_items=2)] = ()
+
+    next(MaxItemsOpt.parse({"items": ["a", "b"]}))  # at boundary
+    with pytest.raises(ConfigValidationError):
+        list(MaxItemsOpt.parse({"items": ["a", "b", "c"]}))
+
+
+def test_min_length_does_not_apply_to_lists() -> None:
+    """
+    After the rename, min_length is exclusively a string constraint.
+    Attaching it to a list field has no effect at runtime (the schema
+    generator in Phase 2 raises on this mismatch — see spec §4).
+    """
+
+    class MinLengthOnListOpt(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(min_length=99)] = ()
+
+    # Empty list passes; min_length is ignored on lists.
+    options = next(MinLengthOnListOpt.parse({"items": []}))
+    assert options.get("items") == []
+
+
+def test_metadata_type_constraints_table() -> None:
+    """
+    Schema generator needs to know which constraints apply to which types.
+    Field-level metadata (config_name, examples) is NOT in this table.
+    """
+
+    constraints = Metadata.type_constraints()
+    assert constraints["pattern"] == frozenset({"string"})
+    assert constraints["min_length"] == frozenset({"string"})
+    assert constraints["max_length"] == frozenset({"string"})
+    assert constraints["minimum"] == frozenset({"integer", "number"})
+    assert constraints["maximum"] == frozenset({"integer", "number"})
+    assert constraints["min_items"] == frozenset({"array"})
+    assert constraints["max_items"] == frozenset({"array"})
+    assert "config_name" not in constraints
+    assert "examples" not in constraints

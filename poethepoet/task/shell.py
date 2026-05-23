@@ -29,10 +29,11 @@ class ShellTask(PoeTask):
     __key__ = "shell"
 
     class TaskOptions(PoeTask.TaskOptions):
-        interpreter: Annotated[
-            ShellInterpreter | Sequence[ShellInterpreter] | None,
-            Metadata(min_length=1),
-        ] = None
+        interpreter: (
+            ShellInterpreter
+            | Annotated[Sequence[ShellInterpreter], Metadata(min_items=1)]
+            | None
+        ) = None
         """
         Specify the shell interpreter that this task should execute with, or a list
         of interpreters in order of preference.

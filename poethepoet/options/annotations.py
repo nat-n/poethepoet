@@ -60,8 +60,10 @@ class Metadata:
     __slots__ = (
         "config_name",
         "examples",
+        "max_items",
         "max_length",
         "maximum",
+        "min_items",
         "min_length",
         "minimum",
         "pattern",
@@ -77,7 +79,9 @@ class Metadata:
         maximum: float | None = None,
         min_length: int | None = None,
         max_length: int | None = None,
-    ):
+        min_items: int | None = None,
+        max_items: int | None = None,
+    ) -> None:
         self.config_name = config_name
         self.pattern = pattern
         self.examples = examples
@@ -85,6 +89,30 @@ class Metadata:
         self.maximum = maximum
         self.min_length = min_length
         self.max_length = max_length
+        self.min_items = min_items
+        self.max_items = max_items
+
+    @classmethod
+    def type_constraints(cls) -> dict[str, frozenset[str]]:
+        """
+        Return a mapping from constraint name to the set of JSON Schema types
+        that constraint applies to.
+
+        Constructed on demand: only schema generation reads this, and that
+        runs offline. Keeping it out of the class body avoids paying the
+        construction cost on every CLI invocation. Field-level fields
+        (config_name, examples) are not listed — they apply to any field
+        regardless of value type.
+        """
+        return {
+            "pattern": frozenset({"string"}),
+            "minimum": frozenset({"integer", "number"}),
+            "maximum": frozenset({"integer", "number"}),
+            "min_length": frozenset({"string"}),
+            "max_length": frozenset({"string"}),
+            "min_items": frozenset({"array"}),
+            "max_items": frozenset({"array"}),
+        }
 
 
 class TypeAnnotation:
@@ -315,19 +343,19 @@ class ListType(TypeAnnotation):
             yield f"Option {self._format_path(path)!r} must be a list"
             return
 
-        if (min_length := self.metadata_get("min_length")) is not None and len(
+        if (min_items := self.metadata_get("min_items")) is not None and len(
             value
-        ) < min_length:
+        ) < min_items:
             yield (
                 f"Option {self._format_path(path)!r} requires at least "
-                f"{min_length} item(s), got {len(value)}"
+                f"{min_items} item(s), got {len(value)}"
             )
-        if (max_length := self.metadata_get("max_length")) is not None and len(
+        if (max_items := self.metadata_get("max_items")) is not None and len(
             value
-        ) > max_length:
+        ) > max_items:
             yield (
                 f"Option {self._format_path(path)!r} allows at most "
-                f"{max_length} item(s), got {len(value)}"
+                f"{max_items} item(s), got {len(value)}"
             )
 
         if isinstance(self._value_type, AnyType):
@@ -364,22 +392,11 @@ class LiteralType(TypeAnnotation):
 class UnionType(TypeAnnotation):
     __slots__ = ("_value_types",)
 
-    def __init__(self, annotation: Any, metadata: Any = None):
+    def __init__(self, annotation: Any, metadata: Any = None) -> None:
         super().__init__(annotation, metadata)
-        # Propagate metadata to child types so constraints like min_length apply
-        # to whichever branch matches (e.g. for `str | list[str]`, a string-typed
-        # value validates against PrimitiveType with the metadata, and a list-typed
-        # value validates against ListType with the same metadata).
         self._value_types = tuple(
-            self._wrap_with_metadata(arg, metadata) for arg in get_args(annotation)
+            TypeAnnotation.parse(arg) for arg in get_args(annotation)
         )
-
-    @staticmethod
-    def _wrap_with_metadata(arg: Any, metadata: Any) -> TypeAnnotation:
-        child = TypeAnnotation.parse(arg)
-        if metadata is not None and child._metadata is None:
-            child._metadata = metadata
-        return child
 
     @property
     def is_optional(self) -> bool:
