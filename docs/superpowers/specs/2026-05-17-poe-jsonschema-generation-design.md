@@ -189,20 +189,93 @@ Each executor's definition is its `ExecutorOptions.__schema_fragment__(ctx)` wit
 
 Options whose accepted values come from dynamic registries (`default_task_type`, etc.) stay as plain `str` at the annotation layer; the schema generator hardcodes the `enum` from the registry at generation time.
 
-**Metadata extensions** — add new fields to `poethepoet.options.annotations.Metadata`:
+**Metadata extensions** — add new fields to `poethepoet.options.annotations.Metadata`. Each field falls into one of two scopes with different semantics:
+
+*Field-level metadata* describes the option as a whole (its config key, documentation hints). It applies to any field regardless of value type, and may sit on an outer `Annotated[Union[...], Metadata(...)]` wrapping a union.
 
 | Field | Runtime behavior | Schema output |
 |---|---|---|
-| `pattern: str \| None` | `PrimitiveType.validate` checks `re.search` for str values (unanchored, matching JSON Schema `pattern:` semantics) | `pattern:` |
-| `minimum: int \| float \| None` | `PrimitiveType.validate` checks numeric lower bound | `minimum:` |
-| `maximum: int \| float \| None` | `PrimitiveType.validate` checks numeric upper bound | `maximum:` |
-| `min_length: int \| None` | `PrimitiveType`/`ListType` checks length lower bound | `minLength:` / `minItems:` |
-| `max_length: int \| None` | same, upper bound | `maxLength:` / `maxItems:` |
-| `examples: list[Any] \| None` | none (documentation-only — see below) | `examples:` |
+| `config_name: str \| None` | `PoeOptions.get_fields()` uses this to map TOML keys to attribute names | (consumed at field level; no direct emission) |
+| `examples: list[Any] \| None` | none (documentation-only) | `examples:` |
 
-**Note on `examples`:** this is the one exception to the "schema constraints must be runtime rules" principle, and it's justified because `examples` isn't a *constraint* — it's documentation metadata, conceptually the same as the existing `config_name` field on `Metadata` (which also has no runtime validation role; it just renames the key for parsing). The principle applies to *constraints*, not to *metadata*. We should resist further metadata-only fields without a similar justification.
+*Type-level metadata* constrains the runtime value. Each constraint applies to specific type kinds, so it must be attached to the matching branch via `Annotated[T, Metadata(...)]` where `T` is the concrete type — not to a surrounding union.
 
-**Validation message quality:** when a new constraint fails at runtime, the error message should be specific and actionable — at minimum naming the field, the constraint that failed, and the offending value. Existing custom `validate()` overrides whose work the new constraints replace likely produce better messages than a generic "`'interpreter'` does not match pattern" — the implementation must port those messages forward, not regress them.
+| Field | Applies to | Runtime behavior | Schema output |
+|---|---|---|---|
+| `pattern: str \| None` | string | `PrimitiveType.validate` checks `re.search` (unanchored, matching JSON Schema `pattern:` semantics) | `pattern:` |
+| `minimum: int \| float \| None` | integer/number | `PrimitiveType.validate` checks lower bound | `minimum:` |
+| `maximum: int \| float \| None` | integer/number | `PrimitiveType.validate` checks upper bound | `maximum:` |
+| `min_length: int \| None` | string | `PrimitiveType.validate` checks character-length lower bound | `minLength:` |
+| `max_length: int \| None` | string | same, upper bound | `maxLength:` |
+| `min_items: int \| None` | array | `ListType.validate` checks item-count lower bound | `minItems:` |
+| `max_items: int \| None` | array | same, upper bound | `maxItems:` |
+
+**Note on the `min_length` / `min_items` split.** JSON Schema treats `minLength` (string characters) and `minItems` (array items) as separate keywords with different semantics. PoeOptions mirrors that vocabulary: `min_length`/`max_length` are exclusively string constraints; `min_items`/`max_items` are exclusively array constraints. The single-constraint conflation that would otherwise arise on `str | list[str]` (where one `min_length` would have to mean two different things) is structurally impossible — they're different fields.
+
+**Note on `examples`:** documentation metadata, not a constraint. Conceptually the same as `config_name` (also field-level, also no runtime validation role). The principle "schema constraints must be runtime rules" applies to *constraints*, not to *metadata*. We should resist further metadata-only fields without a similar justification.
+
+**Validation message quality:** when a constraint fails at runtime, the error message should be specific and actionable — at minimum naming the field, the constraint that failed, and the offending value. Existing custom `validate()` overrides whose work the new constraints replace likely produce better messages than a generic "`'interpreter'` does not match pattern" — the implementation must port those messages forward, not regress them.
+
+### Annotated nesting and union-of-Annotated
+
+`typing.Annotated` nests naturally inside `Union`. For unions where one branch needs a type-level constraint, attach `Metadata` to that branch — not to the union:
+
+```python
+# Good: min_items lives on the list branch where it makes sense.
+interpreter: (
+    ShellInterpreter
+    | Annotated[Sequence[ShellInterpreter], Metadata(min_items=1)]
+    | None
+) = None
+
+# Bad: ambiguous at the union level. Which branch does min_length mean?
+interpreter: Annotated[
+    ShellInterpreter | Sequence[ShellInterpreter] | None,
+    Metadata(min_length=1),
+] = None
+```
+
+Field-level metadata on a union remains supported and idiomatic, because it describes the *option*, not a *value*:
+
+```python
+# Good: config_name is field-level — applies regardless of which branch matches.
+assert_: Annotated[bool | int, Metadata(config_name="assert")] = False
+```
+
+`UnionType` does not propagate any metadata into its child branches. The metadata stays exactly where it was authored:
+
+- The recipient of a type-level constraint sees it directly on its own `Annotated` wrapper (no surprises from a parent union pushing constraints down into a branch the author never intended to constrain).
+- Field-level metadata on `Annotated[Union[...], Metadata(...)]` remains on the `UnionType` itself for `get_fields()` to read.
+
+### Schema-side enforcement of constraint scope
+
+The runtime is permissive: a type-level constraint attached to a branch it doesn't apply to (e.g. `Annotated[str, Metadata(min_items=1)]`) is silently ignored — `PrimitiveType.validate` only knows about `min_length`, not `min_items`. This avoids per-parse overhead checking constraint applicability on every option, and keeps validation logic per-type local.
+
+The schema generator (Phase 2) provides the safety net: it inspects every constraint in context with its target type, and raises a clear error if a type-level constraint is attached to an incompatible type. This catches authoring mistakes at build time — when `poe build-schema` runs — before any drift can ship.
+
+The constraint-to-type mapping is exposed as a lazy classmethod on `Metadata`, so the schema generator looks it up at one source of truth rather than re-encoding the knowledge in a sibling module. Because the mapping is only needed during schema generation (an offline build step) — never on the CLI hot path — it's constructed on demand rather than eagerly at module import:
+
+```python
+class Metadata:
+    @classmethod
+    def type_constraints(cls) -> dict[str, frozenset[str]]:
+        # Constructed on demand: only schema generation reads this, and that
+        # runs offline. Keeping it out of the class body avoids paying the
+        # construction cost on every CLI invocation. Field-level fields
+        # (config_name, examples) are not listed — they apply to any field
+        # regardless of value type.
+        return {
+            "pattern":    frozenset({"string"}),
+            "minimum":    frozenset({"integer", "number"}),
+            "maximum":    frozenset({"integer", "number"}),
+            "min_length": frozenset({"string"}),
+            "max_length": frozenset({"string"}),
+            "min_items":  frozenset({"array"}),
+            "max_items":  frozenset({"array"}),
+        }
+```
+
+Adding a new type-level constraint is a three-line change: a slot, a kwarg, and an entry in `type_constraints()`. The schema generator picks it up automatically.
 
 **Docstring convention** — formalize class-attribute docstrings as the source of field descriptions:
 
@@ -299,7 +372,7 @@ The schema generator (in `poethepoet/schema/`) emits plain dicts and has no `jso
 
 ### Test specifics
 
-- **`test_meta.py`** — `Draft7Validator.check_schema(build_schema())`; structural sanity (root has `definitions`, `additionalProperties: false`, exactly one `$schema` declaration, etc.).
+- **`test_meta.py`** — `Draft7Validator.check_schema(build_schema())`; structural sanity (root has `definitions`, `additionalProperties: false`, exactly one `$schema` declaration, etc.). Also asserts that the schema builder raises a clear, named error when a type-level `Metadata` constraint is attached to an incompatible type (e.g. `Annotated[str, Metadata(min_items=1)]`), citing the field, the constraint, and the incompatible type — the safety net described in Section 4.
 - **`test_fixture_configs.py`** — enumerate `tests/fixtures/*_project/` directories; find the `[tool.poe]` block (from `pyproject.toml` or `poe_tasks.*`); assert the schema accepts it. Parametrize so each fixture is its own test ID.
 - **`test_invalid_corpus.py`** — each `tests/schema/fixtures/invalid/*.toml` file contains a `[tool.poe]` block plus a `# expected_error: ...` annotation line. Test asserts both: PoeOptions raises `ConfigValidationError` *and* schema validation produces at least one error.
 - **`test_mutation.py`** — apply a small mutator library (delete required field, change type, replace enum value with garbage, etc.) to each seed config. Each (seed × mutator × applicable path) becomes its own parametrized test case so per-case visibility is preserved (a divergence shows up as a single failing or `xfail` test, not as one line in a multi-line failure dump). Known-divergent cases (cross-task validations the schema can't express) are wrapped in `pytest.param(..., marks=pytest.mark.xfail(reason=...))` with explicit reasons citing the relevant spec section.
@@ -403,6 +476,7 @@ Ships independently as cleaner runtime behavior, fewer bespoke `validate()` over
 - New `poethepoet/schema/` package (`translate.py`, `generator.py`, `docstrings.py`, `fragments.py`, `__main__.py`).
 - Default `PoeOptions.__schema_fragment__` implementation; override on `PoeTask`; specific overrides on `SwitchTask`, `SequenceTask`, `ParallelTask`, `ArgSpec` as needed.
 - Orchestrator handles `task_def` union (incl. forward-compat fallback), executor tagged union, `env` value polymorphism, `tasks`/`groups` map shapes.
+- Constraint-scope safety check: the translator consults `Metadata.type_constraints()` and raises a clear, named error if a type-level constraint is attached to an incompatible type (e.g. `min_items` on a string).
 - Generated `docs/_static/partial-poe.json` committed to repo.
 - Full `tests/schema/` suite (meta, fixture-configs, invalid corpus, mutation).
 

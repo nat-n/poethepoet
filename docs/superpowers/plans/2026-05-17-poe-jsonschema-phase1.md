@@ -1522,6 +1522,351 @@ EOF
 
 ---
 
+### Task 11: Scope Metadata to specific branches; add `min_items` / `max_items`
+
+**Files:**
+- Modify: `poethepoet/options/annotations.py` (Metadata class, UnionType, ListType)
+- Modify: `poethepoet/task/shell.py:31-35` (move Metadata from union to list branch; rename `min_length` → `min_items`)
+- Test: `tests/options/test_metadata_constraints.py` (new tests for nested-Annotated parsing, propagation removal, `min_items`/`max_items`, `type_constraints()`)
+
+**Background:** Spec Section 4 documents the design intent: `Metadata` has two scopes (field-level and type-level), type-level constraints attach to the specific branch via `Annotated[T, Metadata(...)]`, and `UnionType` does not propagate metadata into its children. The implementation in Tasks 1–10 took a shortcut — `UnionType._wrap_with_metadata` pushed the outer metadata into every child — which works for the one current production callsite (`Sequence[ShellInterpreter]` happens to be the only branch that reads `min_length`) but creates a foot-gun for any future `str | list[str]` field where `min_length` would mean two different things. This task closes that gap.
+
+The task is TDD-style: write the failing tests for the intended semantics first, then implement. Some test cases exercise constraint shapes that don't appear in production code today — that's deliberate, since real usage isn't yet broad enough to surface the API surface.
+
+- [ ] **Step 1: Write failing test for nested-Annotated parsing**
+
+In `tests/options/test_metadata_constraints.py` (built up across Tasks 2–7), expand the existing `from poethepoet.options.annotations import Metadata` line to also import the type-annotation classes used below:
+
+```python
+from poethepoet.options.annotations import (
+    ListType,
+    Metadata,
+    PrimitiveType,
+    TypeAnnotation,
+    UnionType,
+)
+```
+
+`Annotated`, `Sequence`, `pytest`, `ConfigValidationError`, and `PoeOptions` are already imported at the top of the file from previous tasks — no new top-level imports beyond the line above.
+
+Append:
+
+```python
+def test_annotated_nests_inside_union_branch_is_parsed():
+    """Union-of-Annotated parses to a UnionType whose specific branch carries
+    the inner Metadata."""
+
+    parsed = TypeAnnotation.parse(
+        str | Annotated[Sequence[str], Metadata(min_items=1)] | None
+    )
+    assert isinstance(parsed, UnionType)
+
+    list_branch = next(
+        vt for vt in parsed._value_types if isinstance(vt, ListType)
+    )
+    assert list_branch.metadata_get("min_items") == 1
+
+    str_branch = next(
+        vt for vt in parsed._value_types if isinstance(vt, PrimitiveType)
+    )
+    assert str_branch._metadata is None
+```
+
+- [ ] **Step 2: Write failing tests for propagation removal**
+
+Continue appending to `tests/options/test_metadata_constraints.py`:
+
+```python
+def test_union_does_not_propagate_metadata_to_children():
+    """Metadata attached at Annotated[Union[...], Metadata(...)] stays on the
+    UnionType — it is NOT copied into child TypeAnnotations."""
+
+    parsed = TypeAnnotation.parse(
+        Annotated[str | int, Metadata(config_name="foo")]
+    )
+    assert isinstance(parsed, UnionType)
+    assert parsed.metadata_get("config_name") == "foo"
+    for branch in parsed._value_types:
+        assert branch._metadata is None
+
+
+def test_union_str_or_list_with_min_items_on_list_branch():
+    """The motivating example: `min_items=1` lives on the list branch and
+    rejects empty lists, but the string branch is unaffected."""
+
+    class StrOrListOpt(PoeOptions):
+        value: (
+            str | Annotated[Sequence[str], Metadata(min_items=1)] | None
+        ) = None
+
+    # String branch — any string OK (even empty).
+    options = next(StrOrListOpt.parse({"value": ""}))
+    assert options.get("value") == ""
+
+    # List branch with items — OK.
+    options = next(StrOrListOpt.parse({"value": ["a"]}))
+    assert options.get("value") == ["a"]
+
+    # List branch empty — rejected.
+    with pytest.raises(ConfigValidationError):
+        list(StrOrListOpt.parse({"value": []}))
+```
+
+- [ ] **Step 3: Write failing tests for `min_items` / `max_items`**
+
+```python
+def test_min_items_rejects_short_list():
+    class MinItemsOpt(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(min_items=2)] = ()
+
+    next(MinItemsOpt.parse({"items": ["a", "b"]}))  # at boundary
+    with pytest.raises(ConfigValidationError) as exc_info:
+        list(MinItemsOpt.parse({"items": ["a"]}))
+    assert "items" in str(exc_info.value)
+    assert "2" in str(exc_info.value)
+
+
+def test_max_items_rejects_long_list():
+    class MaxItemsOpt(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(max_items=2)] = ()
+
+    next(MaxItemsOpt.parse({"items": ["a", "b"]}))  # at boundary
+    with pytest.raises(ConfigValidationError):
+        list(MaxItemsOpt.parse({"items": ["a", "b", "c"]}))
+
+
+def test_min_length_does_not_apply_to_lists():
+    """After the rename, min_length is exclusively a string constraint.
+    Attaching it to a list field has no effect at runtime (the schema
+    generator in Phase 2 raises on this mismatch — see spec §4)."""
+
+    class MinLengthOnListOpt(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(min_length=99)] = ()
+
+    # Empty list passes; min_length is ignored on lists.
+    options = next(MinLengthOnListOpt.parse({"items": []}))
+    assert options.get("items") == []
+```
+
+- [ ] **Step 4: Write failing test for `type_constraints()` mapping**
+
+```python
+def test_metadata_type_constraints_table():
+    """Schema generator needs to know which constraints apply to which types.
+    Field-level metadata (config_name, examples) is NOT in this table."""
+
+    constraints = Metadata.type_constraints()
+    assert constraints["pattern"] == frozenset({"string"})
+    assert constraints["min_length"] == frozenset({"string"})
+    assert constraints["max_length"] == frozenset({"string"})
+    assert constraints["minimum"] == frozenset({"integer", "number"})
+    assert constraints["maximum"] == frozenset({"integer", "number"})
+    assert constraints["min_items"] == frozenset({"array"})
+    assert constraints["max_items"] == frozenset({"array"})
+    assert "config_name" not in constraints
+    assert "examples" not in constraints
+```
+
+- [ ] **Step 5: Run tests to confirm they fail**
+
+Run: `pytest tests/options/test_metadata_constraints.py -v -k "annotated_nests or propagate or str_or_list or min_items or max_items or min_length_does_not_apply or type_constraints"`
+
+Expected: FAIL on at least the `min_items`/`max_items`/`type_constraints` tests (those fields/methods don't exist yet), and on `propagate` (children currently inherit metadata).
+
+- [ ] **Step 6: Stop `UnionType` from propagating metadata**
+
+In `poethepoet/options/annotations.py`, replace `UnionType.__init__` (currently lines 367–375) with:
+
+```python
+def __init__(self, annotation: Any, metadata: Any = None):
+    super().__init__(annotation, metadata)
+    self._value_types = tuple(
+        TypeAnnotation.parse(arg) for arg in get_args(annotation)
+    )
+```
+
+Delete the `_wrap_with_metadata` staticmethod entirely (currently lines 377–382). The metadata stays on the `UnionType` itself (via `super().__init__`); child branches are parsed unmodified.
+
+Also delete the now-obsolete propagation comment immediately above the `tuple(...)` block.
+
+- [ ] **Step 7: Add `min_items`, `max_items`, and `type_constraints()` to `Metadata`**
+
+In `poethepoet/options/annotations.py`, replace the `Metadata` class (currently lines 59–87) with:
+
+```python
+class Metadata:
+    __slots__ = (
+        "config_name",
+        "examples",
+        "max_items",
+        "max_length",
+        "maximum",
+        "min_items",
+        "min_length",
+        "minimum",
+        "pattern",
+    )
+
+    def __init__(
+        self,
+        *,
+        config_name: str | None = None,
+        pattern: str | None = None,
+        examples: list[Any] | None = None,
+        minimum: float | None = None,
+        maximum: float | None = None,
+        min_length: int | None = None,
+        max_length: int | None = None,
+        min_items: int | None = None,
+        max_items: int | None = None,
+    ):
+        self.config_name = config_name
+        self.pattern = pattern
+        self.examples = examples
+        self.minimum = minimum
+        self.maximum = maximum
+        self.min_length = min_length
+        self.max_length = max_length
+        self.min_items = min_items
+        self.max_items = max_items
+
+    @classmethod
+    def type_constraints(cls) -> dict[str, frozenset[str]]:
+        # Constructed on demand: only schema generation reads this, and that
+        # runs offline. Keeping it out of the class body avoids paying the
+        # construction cost on every CLI invocation. Field-level fields
+        # (config_name, examples) are not listed — they apply to any field
+        # regardless of value type.
+        return {
+            "pattern":    frozenset({"string"}),
+            "minimum":    frozenset({"integer", "number"}),
+            "maximum":    frozenset({"integer", "number"}),
+            "min_length": frozenset({"string"}),
+            "max_length": frozenset({"string"}),
+            "min_items":  frozenset({"array"}),
+            "max_items":  frozenset({"array"}),
+        }
+```
+
+No new top-level imports are needed.
+
+- [ ] **Step 8: Migrate `ListType.validate` from `min_length`/`max_length` to `min_items`/`max_items`**
+
+In `poethepoet/options/annotations.py`, replace `ListType.validate` (currently lines 313–337) with:
+
+```python
+def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
+    if not isinstance(value, list | tuple):
+        yield f"Option {self._format_path(path)!r} must be a list"
+        return
+
+    if (min_items := self.metadata_get("min_items")) is not None and len(
+        value
+    ) < min_items:
+        yield (
+            f"Option {self._format_path(path)!r} requires at least "
+            f"{min_items} item(s), got {len(value)}"
+        )
+    if (max_items := self.metadata_get("max_items")) is not None and len(
+        value
+    ) > max_items:
+        yield (
+            f"Option {self._format_path(path)!r} allows at most "
+            f"{max_items} item(s), got {len(value)}"
+        )
+
+    if isinstance(self._value_type, AnyType):
+        return
+
+    for idx, item in enumerate(value):
+        yield from self._value_type.validate((*path, idx), item)
+```
+
+Only the keys read from `metadata_get` and the error-message text change. `min_length`/`max_length` continue to be read by `PrimitiveType.validate` for string fields and are unchanged there.
+
+- [ ] **Step 9: Migrate `task/shell.py` to union-of-Annotated**
+
+In `poethepoet/task/shell.py`, find the `TaskOptions` class (currently around lines 31–35):
+
+```python
+class TaskOptions(PoeTask.TaskOptions):
+    interpreter: Annotated[
+        ShellInterpreter | Sequence[ShellInterpreter] | None,
+        Metadata(min_length=1),
+    ] = None
+    ignore_fail: bool | list[int] = False
+```
+
+Replace it with:
+
+```python
+class TaskOptions(PoeTask.TaskOptions):
+    interpreter: (
+        ShellInterpreter
+        | Annotated[Sequence[ShellInterpreter], Metadata(min_items=1)]
+        | None
+    ) = None
+    ignore_fail: bool | list[int] = False
+```
+
+The constraint now lives on the branch it applies to, with the name (`min_items`) that names what it actually constrains.
+
+- [ ] **Step 10: Run tests**
+
+Run: `pytest tests/options/test_metadata_constraints.py -v`
+
+Expected: PASS — including `test_empty_interpreter_list_rejected` from Task 7 (which previously passed via propagation and now passes via direct attachment to the list branch).
+
+Run: `poe test`
+
+Expected: PASS — no regression.
+
+Run: `poe types`
+
+Expected: PASS.
+
+Run: `poe lint`
+
+Expected: PASS.
+
+- [ ] **Step 11: Verify no other production callsite carries type-level metadata on a union**
+
+Run:
+
+```bash
+grep -nE "Annotated\[[^]]*\|[^]]*,\s*Metadata\(" poethepoet/ -r --include='*.py'
+```
+
+For each match, inspect: the `Metadata(...)` kwargs must contain only field-level keys (`config_name`, `examples`). Any type-level key on a union is a bug — surface it.
+
+Expected: only `executor/uv.py:35,41` and `task/expr.py:35` remain, all using `config_name` only.
+
+- [ ] **Step 12: Commit**
+
+```bash
+git add poethepoet/options/annotations.py poethepoet/task/shell.py tests/options/test_metadata_constraints.py
+git commit -m "$(cat <<'EOF'
+refactor: scope Metadata to specific branches; add min_items/max_items
+
+Metadata splits into field-level (config_name, examples) and type-level
+(pattern, minimum, maximum, min_length, max_length, min_items, max_items)
+fields. UnionType no longer propagates outer Metadata into child branches:
+type-level constraints must be attached to the specific branch via
+Annotated[T, Metadata(...)] inside the union. Adds min_items/max_items
+for arrays — mirroring JSON Schema's separate vocabulary — and migrates
+ShellTask.interpreter to the union-of-Annotated form.
+Metadata.type_constraints() is the single source of truth the Phase 2
+schema generator will use to validate that constraints are attached to
+compatible types. It's a lazy classmethod so the construction cost is
+deferred out of the CLI startup path.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
 ## Final verification
 
 - [ ] **Step 1: Run the full quality suite**
@@ -1554,7 +1899,7 @@ Expected: three non-`None` description strings printed.
 
 Run: `git log --oneline development..HEAD`
 
-Expected: roughly 10–11 commits, in this approximate order:
+Expected: roughly 11–12 commits, in this approximate order:
 1. Introduce `ShellInterpreter` Literal alias + `register_type_alias` helper
 2. Tighten `ShellTask` interpreter to Literal
 3. Tighten `ProjectConfig` shell_interpreter to Literal
@@ -1566,6 +1911,7 @@ Expected: roughly 10–11 commits, in this approximate order:
 9. Add class-attribute docstring extraction
 10. Backfill docstrings on PoeOptions classes
 11. Document docstring convention in CLAUDE.md
+12. Scope Metadata to specific branches; add `min_items`/`max_items`
 
 Each commit should be reviewable on its own. If any commit bundles unrelated changes, consider rebasing to split before opening a PR.
 
@@ -1577,7 +1923,9 @@ Phase 1 is complete.
 
 Phase 2 will assume:
 - `PoeOptions.description_for_field(name)` returns docstring text for every annotated field on every PoeOptions subclass (no `None` for fields that ship in production code — only for synthetic test classes).
-- `Metadata` exposes `pattern`, `examples`, `minimum`, `maximum`, `min_length`, `max_length` as documented attributes, each `None` when unset.
+- `Metadata` exposes `pattern`, `examples`, `minimum`, `maximum`, `min_length`, `max_length`, `min_items`, `max_items` as documented attributes, each `None` when unset.
+- `Metadata.type_constraints()` returns the source-of-truth mapping from type-level constraint name to applicable JSON Schema type kinds. The schema generator consumes this directly to validate that constraints are attached to compatible types and raises a clear error on mismatch. It's a classmethod (lazy) rather than a class attribute, since the mapping is only needed during offline schema generation.
+- `UnionType` does not propagate metadata into its child branches — type-level constraints live on the specific branch via `Annotated[T, Metadata(...)]`. The schema generator can treat each branch's metadata as authoritative for that branch.
 - `ShellInterpreter` is importable from `poethepoet.config` (alongside `KNOWN_SHELL_INTERPRETERS`).
 - `PrimitiveType.validate` and `ListType.validate` enforce Metadata constraints, with messages that name the field, the constraint, and the offending value.
 
