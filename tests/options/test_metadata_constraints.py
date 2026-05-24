@@ -18,9 +18,7 @@ from poethepoet.options.annotations import (
 from poethepoet.options.base import PoeOptions
 
 
-# Placeholder import sentinel: this module is intentionally minimal until
-# Tasks 4-7 add the corresponding Metadata fields.
-def test_module_imports():
+def test_module_imports() -> None:
     assert Metadata is not None
 
 
@@ -229,38 +227,9 @@ def test_max_length_rejects_long_string():
         list(MaxLenStrOptions.parse({"name": "helloX"}))
 
 
-def test_min_length_rejects_short_list():
+def test_length_zero_bounds_are_enforced() -> None:
     """
-    min_items (not min_length) constrains list length — updated in Task 11
-    when min_length became string-only.
-    """
-
-    class MinLenListOptions(PoeOptions):
-        items: Annotated[Sequence[str], Metadata(min_items=1)] = ()
-
-    next(MinLenListOptions.parse({"items": ["one"]}))  # at boundary
-    with pytest.raises(ConfigValidationError) as exc_info:
-        list(MinLenListOptions.parse({"items": []}))
-    assert "items" in str(exc_info.value)
-
-
-def test_max_length_rejects_long_list():
-    """
-    max_items (not max_length) constrains list length — updated in Task 11
-    when max_length became string-only.
-    """
-
-    class MaxLenListOptions(PoeOptions):
-        items: Annotated[Sequence[str], Metadata(max_items=2)] = ()
-
-    next(MaxLenListOptions.parse({"items": ["a", "b"]}))  # at boundary
-    with pytest.raises(ConfigValidationError):
-        list(MaxLenListOptions.parse({"items": ["a", "b", "c"]}))
-
-
-def test_length_zero_bounds_are_enforced():
-    """
-    Regression test for the T4.5 metadata_get fix applied to the length
+    Regression for the metadata_get falsy-value fix applied to string length
     bounds: min_length=0 and max_length=0 must NOT be silently dropped
     (which would happen with a naive truthiness check).
     """
@@ -274,12 +243,28 @@ def test_length_zero_bounds_are_enforced():
     with pytest.raises(ConfigValidationError):
         list(ZeroMaxStrOptions.parse({"name": "x"}))
 
+
+def test_items_zero_bounds_are_enforced() -> None:
+    """
+    Regression for the metadata_get falsy-value fix applied to list item
+    bounds: min_items=0 and max_items=0 must NOT be silently dropped
+    (which would happen with a naive truthiness check).
+    """
+
     class ZeroMinListOptions(PoeOptions):
         items: Annotated[Sequence[str], Metadata(min_items=0)] = ()
 
     # min_items=0 allows the empty list (it's set, just to its lowest bound)
     next(ZeroMinListOptions.parse({"items": []}))
     next(ZeroMinListOptions.parse({"items": ["a"]}))
+
+    class ZeroMaxListOptions(PoeOptions):
+        items: Annotated[Sequence[str], Metadata(max_items=0)] = ()
+
+    # max_items=0 allows only the empty list
+    next(ZeroMaxListOptions.parse({"items": []}))
+    with pytest.raises(ConfigValidationError):
+        list(ZeroMaxListOptions.parse({"items": ["a"]}))
 
 
 def test_annotated_nests_inside_union_branch_is_parsed() -> None:
@@ -303,14 +288,32 @@ def test_annotated_nests_inside_union_branch_is_parsed() -> None:
 def test_union_does_not_propagate_metadata_to_children() -> None:
     """
     Metadata attached at Annotated[Union[...], Metadata(...)] stays on the
-    UnionType — it is NOT copied into child TypeAnnotations.
+    UnionType — it is NOT copied into child TypeAnnotations, regardless of
+    whether the metadata is field-level (config_name) or type-level (min_items).
+    A regression that special-cased one scope but not the other would slip
+    past a single-scope check.
     """
 
-    parsed = TypeAnnotation.parse(Annotated[str | int, Metadata(config_name="foo")])
-    assert isinstance(parsed, UnionType)
-    assert parsed.metadata_get("config_name") == "foo"
-    for branch in parsed._value_types:
+    field_level = TypeAnnotation.parse(
+        Annotated[str | int, Metadata(config_name="foo")]
+    )
+    assert isinstance(field_level, UnionType)
+    assert field_level.metadata_get("config_name") == "foo"
+    for branch in field_level._value_types:
         assert branch._metadata is None
+
+    type_level = TypeAnnotation.parse(
+        Annotated[str | Sequence[str], Metadata(min_items=1)]
+    )
+    assert isinstance(type_level, UnionType)
+    assert type_level.metadata_get("min_items") == 1
+    for branch in type_level._value_types:
+        assert branch._metadata is None
+    # Consequently, the list branch reads no min_items at validation time.
+    list_branch = next(
+        vt for vt in type_level._value_types if isinstance(vt, ListType)
+    )
+    assert list_branch.metadata_get("min_items") is None
 
 
 def test_union_str_or_list_with_min_items_on_list_branch() -> None:
@@ -333,6 +336,15 @@ def test_union_str_or_list_with_min_items_on_list_branch() -> None:
     # List branch empty — rejected.
     with pytest.raises(ConfigValidationError):
         list(StrOrListOpt.parse({"value": []}))
+
+    # Pin behavior, not coincidence: the string branch carries no metadata,
+    # so the runtime can't conflate it with the list branch's constraint.
+    parsed = StrOrListOpt.get_fields()["value"]
+    assert isinstance(parsed, UnionType)
+    str_branch = next(
+        vt for vt in parsed._value_types if isinstance(vt, PrimitiveType)
+    )
+    assert str_branch.metadata_get("min_items") is None
 
 
 def test_min_items_rejects_short_list() -> None:
@@ -359,15 +371,19 @@ def test_max_items_rejects_long_list() -> None:
         items: Annotated[Sequence[str], Metadata(max_items=2)] = ()
 
     next(MaxItemsOpt.parse({"items": ["a", "b"]}))  # at boundary
-    with pytest.raises(ConfigValidationError):
+    with pytest.raises(ConfigValidationError) as exc_info:
         list(MaxItemsOpt.parse({"items": ["a", "b", "c"]}))
+    msg = str(exc_info.value)
+    assert "items" in msg
+    assert "2" in msg  # the max bound
+    assert "3" in msg  # the actual offending length
 
 
 def test_min_length_does_not_apply_to_lists() -> None:
     """
-    After the rename, min_length is exclusively a string constraint.
-    Attaching it to a list field has no effect at runtime (the schema
-    generator in Phase 2 raises on this mismatch — see spec §4).
+    min_length is exclusively a string constraint. Attaching it to a list
+    field has no effect at runtime — the schema generator raises on this
+    mismatch at build time (runtime silently ignores it, the permissive contract).
     """
 
     class MinLengthOnListOpt(PoeOptions):
@@ -376,6 +392,54 @@ def test_min_length_does_not_apply_to_lists() -> None:
     # Empty list passes; min_length is ignored on lists.
     options = next(MinLengthOnListOpt.parse({"items": []}))
     assert options.get("items") == []
+
+
+def test_type_level_metadata_on_outer_union_is_silently_ignored() -> None:
+    """
+    A type-level constraint attached to the outer Annotated[Union[...]]
+    is not propagated to child branches, so the runtime never enforces it.
+    The schema generator surfaces this as an error at build time — at
+    runtime it is silently a no-op (the permissive contract from the spec).
+    """
+
+    class OuterMetadataOpt(PoeOptions):
+        value: Annotated[str | Sequence[str], Metadata(min_items=1)] = ""
+
+    # Empty list passes — min_items=1 on the outer union does not constrain.
+    options = next(OuterMetadataOpt.parse({"value": []}))
+    assert options.get("value") == []
+
+
+def test_interpreter_single_string_accepted() -> None:
+    """A single Literal-matching interpreter string parses cleanly."""
+    from poethepoet.task.shell import ShellTask
+
+    parsed = next(ShellTask.TaskOptions.parse({"interpreter": "bash"}))
+    assert parsed.get("interpreter") == "bash"
+
+
+def test_interpreter_list_of_strings_accepted() -> None:
+    """A non-empty list of Literal-matching strings parses cleanly."""
+    from poethepoet.task.shell import ShellTask
+
+    parsed = next(ShellTask.TaskOptions.parse({"interpreter": ["bash", "sh"]}))
+    assert list(parsed.get("interpreter")) == ["bash", "sh"]
+
+
+def test_interpreter_none_accepted() -> None:
+    """The None branch of the union is honored (interpreter is optional)."""
+    from poethepoet.task.shell import ShellTask
+
+    parsed = next(ShellTask.TaskOptions.parse({"interpreter": None}))
+    assert parsed.get("interpreter") is None
+
+
+def test_interpreter_unknown_string_rejected() -> None:
+    """LiteralType still enforces membership after the refactor."""
+    from poethepoet.task.shell import ShellTask
+
+    with pytest.raises(ConfigValidationError):
+        list(ShellTask.TaskOptions.parse({"interpreter": "not_a_real_shell"}))
 
 
 def test_metadata_type_constraints_table() -> None:
