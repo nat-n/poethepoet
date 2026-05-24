@@ -1,0 +1,5 @@
+# expected_error: Unknown executor type
+[tool.poe]
+include_script = [
+  { script = "tasks:tasks1", executor = { type = "totally_invalid_executor" } },
+]

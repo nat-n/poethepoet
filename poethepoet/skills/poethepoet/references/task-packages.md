@@ -15,17 +15,20 @@ See [https://poethepoet.natn.io/guides/include_guide.html](this official guide) 
 The quickest way to bootstrap a standard dev workflow.
 
 **Install:**
+
 ```bash
 uv add --dev poethepoet-tasks   # or: poetry add --group dev poethepoet-tasks
 ```
 
 **Enable all tasks:**
+
 ```toml
 [tool.poe]
 include_script = "poethepoet_tasks:tasks"
 ```
 
 **Filter by tag** (exclusion takes precedence over inclusion):
+
 ```toml
 # Only ruff formatting, no black:
 include_script = "poethepoet_tasks.tasks:tasks(exclude_tags=['black'])"
@@ -35,6 +38,7 @@ include_script = "poethepoet_tasks.tasks:tasks(include_tags=['task-test'])"
 ```
 
 **Override tool config via env:**
+
 ```toml
 [tool.poe]
 env = { RUFF_CONFIG = "path/to/ruff.toml" }
@@ -45,7 +49,6 @@ Pin to a specific version — available tasks can change between releases.
 
 You can see example how the provided tasks are defined [here](https://raw.githubusercontent.com/nat-n/poethepoet-tasks/refs/heads/main/src/poethepoet_tasks/tasks.py) which is also a good example of how to use TaskCollection.
 
-
 **Tip**: include_script just loads the referenced python function from the project environment and executed it, expecting to get back a JSON structure matching how tasks are usually defined. You can do the same if necessary to debug generated tasks.
 
 ---
@@ -55,6 +58,7 @@ You can see example how the provided tasks are defined [here](https://raw.github
 Create a `TaskCollection` in a Python file, then point `include_script` at it.
 
 **tasks.py** (project root, or `src/mypkg/tasks.py`):
+
 ```python
 from poethepoet_tasks import TaskCollection
 
@@ -71,6 +75,7 @@ tasks.add(
 ```
 
 **pyproject.toml:**
+
 ```toml
 [tool.poe]
 include_script = "tasks:tasks()"
@@ -110,6 +115,7 @@ def greet(
 ```
 
 What poe infers automatically:
+
 - **Positional vs option**: parameters before `*` become positional args; after `*` become `--option` flags
 - **Type**: `str`, `int`, `float`, `bool` → correct arg type (bool → flag)
 - **Required vs optional**: no default → required; default provided → optional
@@ -117,6 +123,7 @@ What poe infers automatically:
 - **Task name**: function name converted to kebab-case (`greet-someone` for `greet_someone`)
 
 Override any inferred value via decorator kwargs:
+
 ```python
 @tasks.script(task_name="hi", help="Say hello", tags=["greet"])
 def greet(...):

@@ -14,13 +14,14 @@
 
 **Branching:** Branch from `feature/jsonschema-phase1` so the Phase 2 PR can be stacked on Phase 1 if the latter hasn't merged yet.
 
-**Out of scope for this plan:** the `poe build-schema` task definition, CI drift check, `poe test-schema` task, integration with `poe check`, modification of `poe test-quick`. Those land in Phase 3. **`poe build-schema` is invoked manually in this plan as `python -m poethepoet.schema`** at the point where the initial generated file is committed.
+**Out of scope for this plan:** the `poe schema-build` task definition, CI drift check, `poe test-schema` task, integration with `poe check`, modification of `poe test-quick`. Those land in Phase 3. **`poe schema-build` is invoked manually in this plan as `python -m poethepoet.schema`** at the point where the initial generated file is committed.
 
 ---
 
 ## Files touched
 
 **New files (production):**
+
 - `poethepoet/schema/__init__.py` — public API: re-exports `build_schema()` from `generator`.
 - `poethepoet/schema/__main__.py` — `python -m poethepoet.schema` entry point; writes `docs/_static/partial-poe.json`.
 - `poethepoet/schema/context.py` — `SchemaContext` class (definitions registry, `$ref` lifting, description routing for both `PoeOptions` and TypedDict classes).
@@ -30,6 +31,7 @@
 - `docs/_static/partial-poe.json` — generated output, committed to repo.
 
 **New files (tests):**
+
 - `tests/schema/conftest.py` — session-scoped `built_schema` and `validator` fixtures; auto-applies `pytest.mark.schema` to parity-test files only.
 - `tests/schema/test_translate.py` — unit tests for the type translator (NOT marked `schema`; runs in default `poe test`).
 - `tests/schema/test_context.py` — unit tests for `SchemaContext` (NOT marked).
@@ -42,6 +44,7 @@
 - `tests/schema/fixtures/seeds/*.toml` — valid configs used as mutation starting points.
 
 **Modified files:**
+
 - `poethepoet/config/partition.py` — lift group-name regex to a module-level `_GROUP_NAME_PATTERN` constant so `fragments.py` can import it.
 - `poethepoet/options/base.py` — add `PoeOptions.__schema_fragment__` classmethod (default implementation).
 - `poethepoet/task/base.py` — add `PoeTask.__schema_fragment__` override (wraps `TaskOptions` shape with discriminator key + content schema).
@@ -56,14 +59,16 @@
 ## Task 1: Unify task/group name regexes as single sources of truth
 
 **Files:**
+
 - Modify: `poethepoet/config/partition.py` (lift inline group-name regex to module-level constant)
 - Modify: `poethepoet/task/base.py` (consolidate `_TASK_NAME_PATTERN` to encompass the first-char rule currently checked separately at line 319)
 
 **Why:** Phase 2's orchestrator needs to emit `patternProperties` for the `tasks` and `groups` maps. The schema patterns must come from a single source of truth — if the runtime check changes, the schema should automatically follow.
 
 Two related fixes:
+
 1. **Group name pattern:** currently inline at `ProjectConfig.ConfigOptions.validate`; lift to module-level `_GROUP_NAME_PATTERN` so `fragments.py` can import it.
-2. **Task name pattern:** currently `_TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")` at `task/base.py:26`, plus a separate `if not (self.name[0].isalpha() or self.name[0] == "_"):` first-char check at `task/base.py:319`. The schema's `patternProperties` needs the *combined* rule — letter or underscore first, followed by word chars / dash / colon / plus. Consolidate into one regex: `r"^[A-Za-z_][\w\-:+]*$"` and remove the redundant runtime check.
+2. **Task name pattern:** currently `_TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")` at `task/base.py:26`, plus a separate `if not (self.name[0].isalpha() or self.name[0] == "_"):` first-char check at `task/base.py:319`. The schema's `patternProperties` needs the _combined_ rule — letter or underscore first, followed by word chars / dash / colon / plus. Consolidate into one regex: `r"^[A-Za-z_][\w\-:+]*$"` and remove the redundant runtime check.
 
 **Behavior change note:** the unified task-name regex uses ASCII `[A-Za-z_]` for the first char rather than the Unicode-aware `.isalpha()`. The existing runtime accepts Unicode letters as the first char (e.g. `αlpha_task`); the new rule rejects them. This is a deliberate tightening — JSON Schema regex implementations across editors handle Unicode `\w`/`\W` inconsistently, and ASCII-only task names are the de facto convention. Worth flagging in the commit message.
 
@@ -72,6 +77,7 @@ Two related fixes:
 Run: `grep -n 'group_name\|_TASK_NAME_PATTERN\|isalpha' poethepoet/config/partition.py poethepoet/task/base.py | head -20`
 
 You should see:
+
 - `poethepoet/task/base.py:26: _TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")`
 - `poethepoet/task/base.py:319: if not (self.name[0].isalpha() or self.name[0] == "_"):`
 - The inline `re.fullmatch(r"[\w\-_]+", group_name)` somewhere in `partition.py`'s `ProjectConfig.ConfigOptions.validate`
@@ -144,6 +150,7 @@ def test_runtime_still_rejects_invalid_task_names_via_unified_pattern() -> None:
 Run: `poe test tests/options/test_options.py -k "group_name_pattern or task_name_pattern or runtime_still_rejects"`
 
 Expected:
+
 - `test_group_name_pattern_constant_exposed`: ImportError (constant doesn't exist yet).
 - `test_task_name_pattern_unified_encompasses_first_char_rule`: PASS or FAIL — the current regex `^\w[\w\d\-\_\+\:]*$` allows digit-first (`\w` includes digits), so `_TASK_NAME_PATTERN.fullmatch("1bad")` returns a match → assertion fails.
 - `test_runtime_still_rejects_invalid_task_names_via_unified_pattern`: PASS (current behavior already rejects via the line 319 check).
@@ -249,6 +256,7 @@ EOF
 ## Task 2: Add `jsonschema` dev dependency and register the `schema` pytest marker
 
 **Files:**
+
 - Modify: `pyproject.toml`
 
 **Why:** The parity tests need a JSON Schema validator (`jsonschema.Draft7Validator`). End users never see this dependency — it's dev-only. Registering the `schema` marker silences pytest's "unknown marker" warning when we use it later.
@@ -322,6 +330,7 @@ EOF
 ## Task 3: Create the schema package skeleton and tests directory
 
 **Files:**
+
 - Create: `poethepoet/schema/__init__.py`
 - Create: `poethepoet/schema/context.py`
 - Create: `poethepoet/schema/translate.py`
@@ -467,7 +476,7 @@ Create `poethepoet/schema/__main__.py`:
 """
 `python -m poethepoet.schema` — regenerate docs/_static/partial-poe.json.
 
-Phase 3 will add a `poe build-schema` task that wraps this entry point.
+Phase 3 will add a `poe schema-build` task that wraps this entry point.
 """
 
 from __future__ import annotations
@@ -555,10 +564,12 @@ EOF
 ## Task 4: Implement `SchemaContext`
 
 **Files:**
+
 - Modify: `poethepoet/schema/context.py`
 - Create: `tests/schema/test_context.py`
 
 **Why:** Subsequent tasks (translator, fragment hooks, orchestrator) need a shared object that owns:
+
 1. The `definitions` registry: `register(name: str, schema: dict) -> str` returning the `$ref` URI.
 2. Description routing: `description_for(cls: type, field_name: str) -> str | None` that dispatches to `PoeOptions.description_for_field` (which walks MRO) for `PoeOptions` subclasses, and to `extract_field_descriptions` directly for TypedDict classes (which have no MRO walk needed).
 3. The poe `__version__` string for the `$comment` line.
@@ -767,6 +778,7 @@ EOF
 ## Task 5: Translate `PrimitiveType`, `LiteralType`, `AnyType`, `NoneType`
 
 **Files:**
+
 - Modify: `poethepoet/schema/translate.py`
 - Create: `tests/schema/test_translate.py`
 
@@ -1081,6 +1093,7 @@ EOF
 ## Task 6: Translate `ListType`, `DictType`, `TypedDictType`
 
 **Files:**
+
 - Modify: `poethepoet/schema/translate.py`
 - Modify: `tests/schema/test_translate.py`
 
@@ -1324,6 +1337,7 @@ EOF
 ## Task 7: Translate `UnionType` (with `Optional` collapse)
 
 **Files:**
+
 - Modify: `poethepoet/schema/translate.py`
 - Modify: `tests/schema/test_translate.py`
 
@@ -1527,6 +1541,7 @@ EOF
 ## Task 8: Default `PoeOptions.__schema_fragment__`
 
 **Files:**
+
 - Modify: `poethepoet/options/base.py`
 - Create: `tests/schema/test_schema_fragment.py`
 
@@ -1736,6 +1751,7 @@ EOF
 ## Task 9: `PoeTask.__schema_fragment__` — wrap TaskOptions with discriminator
 
 **Files:**
+
 - Modify: `poethepoet/task/base.py`
 - Modify: `tests/schema/test_schema_fragment.py`
 
@@ -1811,7 +1827,7 @@ def test_sequence_task_discriminator_is_array(ctx: SchemaContext) -> None:
 
 Run: `poe test tests/schema/test_schema_fragment.py -k "cmd_task or shell_task or sequence_task"`
 
-Expected: All FAIL — the PoeTask wrapper isn't defined yet, and the default PoeOptions.__schema_fragment__ won't include the discriminator.
+Expected: All FAIL — the PoeTask wrapper isn't defined yet, and the default PoeOptions.**schema_fragment** won't include the discriminator.
 
 - [ ] **Step 3: Implement `PoeTask.__schema_fragment__`**
 
@@ -1900,16 +1916,19 @@ EOF
 ## Task 10: `SwitchTask.__schema_fragment__` override
 
 **Files:**
+
 - Modify: `poethepoet/task/switch.py`
 - Modify: `tests/schema/test_schema_fragment.py`
 
 **Why:** The `switch` content is `list[dict]` where each item has an optional `case` key alongside an embedded task definition. The default (after Task 11's Sequence/Parallel override) emits `items: {$ref: task_def}`, but switch items have additional structure beyond a plain task — specifically the `case` key. The override emits a dedicated `switch_case_item` definition.
 
 `switch_case_item` shape:
+
 - A `case: str | list[str]` key (optional — its absence means the default branch)
 - All the task-def keys (cmd, shell, etc. — i.e. a task_def itself)
 
 In JSON Schema:
+
 ```json
 "switch_case_item": {
   "allOf": [
@@ -2009,6 +2028,7 @@ EOF
 ## Task 11: `SequenceTask` and `ParallelTask` overrides — recursive `task_def` items
 
 **Files:**
+
 - Modify: `poethepoet/task/sequence.py`
 - Modify: `poethepoet/task/parallel.py`
 - Modify: `tests/schema/test_schema_fragment.py`
@@ -2106,12 +2126,13 @@ EOF
 ## Task 12: `ArgSpec.__schema_fragment__` override
 
 **Files:**
+
 - Modify: `poethepoet/task/args.py`
 - Modify: `tests/schema/test_schema_fragment.py`
 
 **Why:** `ArgSpec` is a `PoeOptions` subclass, so the default `__schema_fragment__` mostly works for the per-arg dict shape. The wrinkle: the `options` field is computed by the normalizer (it's set from the `name` field if not provided), so for the SCHEMA we shouldn't mark `options` as required — users don't provide it directly in most cases. Confirm by reading args.py: `options: Sequence[str]` has no default, but the normalizer always fills it in. From a schema perspective, accepting input where `options` is absent is correct.
 
-The outer list-vs-dict polymorphism of the `args` *field* (a task-level option) is handled by the orchestrator in Task 13 — NOT by ArgSpec itself.
+The outer list-vs-dict polymorphism of the `args` _field_ (a task-level option) is handled by the orchestrator in Task 13 — NOT by ArgSpec itself.
 
 - [ ] **Step 1: Add a failing test for ArgSpec's fragment**
 
@@ -2205,6 +2226,7 @@ EOF
 ## Task 13: `task_def` union with forward-compat fallback
 
 **Files:**
+
 - Modify: `poethepoet/task/base.py` (add `PoeTask.get_task_class` public accessor)
 - Modify: `poethepoet/schema/fragments.py`
 - Create: `tests/schema/test_fragments.py`
@@ -2554,6 +2576,7 @@ EOF
 ## Task 14: Executor tagged union
 
 **Files:**
+
 - Modify: `poethepoet/executor/base.py` (add `PoeExecutor.get_executor_class` public accessor)
 - Modify: `poethepoet/schema/fragments.py`
 - Modify: `tests/schema/test_fragments.py`
@@ -2773,6 +2796,7 @@ EOF
 ## Task 15: `env_option`, `envfile_option`, and `args_option` polymorphism
 
 **Files:**
+
 - Modify: `poethepoet/schema/fragments.py`
 - Modify: `tests/schema/test_fragments.py`
 
@@ -2994,6 +3018,7 @@ EOF
 ## Task 16: `tasks_map_schema` and `groups_map_schema` with patternProperties
 
 **Files:**
+
 - Modify: `poethepoet/schema/fragments.py`
 - Modify: `tests/schema/test_fragments.py`
 
@@ -3139,6 +3164,7 @@ EOF
 ## Task 17: Root schema assembly in `build_schema()`
 
 **Files:**
+
 - Modify: `poethepoet/schema/generator.py`
 - Modify: `tests/schema/test_smoke.py` (extend with structural assertions)
 
@@ -3468,11 +3494,12 @@ EOF
 ## Task 18: `__main__.py` writes the schema to `docs/_static/partial-poe.json`
 
 **Files:**
+
 - Modify: `poethepoet/schema/__main__.py`
 
-**Why:** This is the entry point that `python -m poethepoet.schema` (and in Phase 3, `poe build-schema`) invokes. Deterministic output: sorted keys, 2-space indent, trailing newline.
+**Why:** This is the entry point that `python -m poethepoet.schema` (and in Phase 3, `poe schema-build`) invokes. Deterministic output: sorted keys, 2-space indent, trailing newline.
 
-- [ ] **Step 1: Write a failing test for the __main__ entry point**
+- [ ] **Step 1: Write a failing test for the **main** entry point**
 
 Create `tests/schema/test_cli.py`:
 
@@ -3557,7 +3584,7 @@ Replace the contents of `poethepoet/schema/__main__.py` with:
 `python -m poethepoet.schema` — regenerate docs/_static/partial-poe.json
 from the current PoeOptions definitions.
 
-Phase 3 will add a `poe build-schema` task that wraps this entry point.
+Phase 3 will add a `poe schema-build` task that wraps this entry point.
 """
 
 from __future__ import annotations
@@ -3638,6 +3665,7 @@ EOF
 ## Task 19: Meta-validation test — `test_meta.py`
 
 **Files:**
+
 - Create: `tests/schema/test_meta.py`
 
 **Why:** The first parity test. Asserts the generated schema is itself a valid draft-07 JSON Schema (via `Draft7Validator.check_schema`), plus structural sanity checks. Auto-marked `schema` by the conftest.
@@ -3750,6 +3778,7 @@ EOF
 ## Task 20: Fixture config validation test — `test_fixture_configs.py`
 
 **Files:**
+
 - Create: `tests/schema/test_fixture_configs.py`
 
 **Why:** For every `tests/fixtures/*_project/` config (pyproject.toml or poe_tasks.toml), assert the generated schema accepts the `[tool.poe]` block. Catches gaps where the runtime parses a config that the schema would reject.
@@ -3851,6 +3880,7 @@ Expected: most/all PASS. Some may fail; that's the value of the test — it tell
 - [ ] **Step 3: Investigate any failures**
 
 For each failure, the test message shows the path and error. Decide per-case:
+
 - If the schema is wrong: fix the relevant fragment / hook / translator.
 - If the fixture is wrong (i.e. the runtime would also reject it in strict mode): note it as an `xfail` with a TODO comment.
 - If it's a known runtime-only rule that JSON Schema can't express: same — `xfail` with a clear `reason=` indicating which spec section calls it out (Section 7 of the design doc).
@@ -3895,6 +3925,7 @@ EOF
 ## Task 21: Invalid corpus test — `test_invalid_corpus.py`
 
 **Files:**
+
 - Create: `tests/schema/fixtures/invalid/*.toml` (multiple files; see step 1)
 - Create: `tests/schema/test_invalid_corpus.py`
 
@@ -4065,6 +4096,7 @@ Expected: All tests PASS.
 - [ ] **Step 4: If any fixture fails — investigate**
 
 If the runtime accepts but the schema rejects, or vice versa, that's a real parity bug. Fix either:
+
 - The fixture (if it was wrong about what's invalid)
 - The schema (if the rejection should propagate)
 - The expected_error annotation (if the wording changed)
@@ -4094,6 +4126,7 @@ EOF
 ## Task 22: Mutation testing — `test_mutation.py`
 
 **Files:**
+
 - Create: `tests/schema/fixtures/seeds/*.toml`
 - Create: `tests/schema/test_mutation.py`
 
@@ -4102,6 +4135,7 @@ EOF
 Each (seed × mutator × applicable path) becomes its own parametrized test case, so a single divergence shows up as a single failing pytest item with a clear ID — not as one line in a multi-line failure dump. Known-divergent cases (cross-task rules the schema can't express) are wrapped in `pytest.param(..., marks=pytest.mark.xfail(reason=...))` with explicit reasons citing the relevant spec section.
 
 Mutator library (small first pass; grow as gaps surface):
+
 1. `mutator_delete_field` — drop a key from an object
 2. `mutator_replace_str_with_int` — replace a string value with an integer (type violation)
 3. `mutator_add_unexpected_key` — add a property to an object with additionalProperties:false
@@ -4398,6 +4432,7 @@ Expected: each (seed × mutator × applicable path) appears as its own pytest it
 - [ ] **Step 4: If any mutation case fails**
 
 Each failure is a single pytest item with a clear ID like `complex-mutator_delete_field-tasks/deploy/deps/0`. Decide per-case:
+
 - **Schema too lax (runtime rejects, schema accepts)** → fix the schema by tightening the relevant fragment / hook / translator. Regenerate `partial-poe.json`. The test will pass on the next run.
 - **Schema too strict (runtime accepts, schema rejects)** → fix the schema by loosening the constraint.
 - **Runtime rule not expressible in JSON Schema** → add an entry to `KNOWN_RUNTIME_ONLY_MISMATCHES`. The key is `(seed_id, mutator_name, "/"-joined-path)` — extract these three values from the failing test ID (split on `-`). The value is a short string explaining WHY, citing the relevant spec section.
@@ -4460,7 +4495,7 @@ allowlist with strict=True so obsolete entries surface as XPASS).
 
 Closes Phase 2 of the JSON Schema generation work — the generator,
 hook protocol, and parity test suite are now in place. Phase 3
-(lifecycle integration: poe build-schema, CI drift check, poe
+(lifecycle integration: poe schema-build, CI drift check, poe
 test-schema) is a separate plan.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
@@ -4482,8 +4517,8 @@ After Task 22, the Phase 2 work is complete:
 
 **Open follow-ups for Phase 3 (separate plan):**
 
-- `poe build-schema` task definition
-- CI drift check (`poe build-schema && git diff --exit-code docs/_static/partial-poe.json`)
+- `poe schema-build` task definition
+- CI drift check (`poe schema-build && git diff --exit-code docs/_static/partial-poe.json`)
 - `poe test-schema` task with `pytest -m schema`
 - Update `poe test` to exclude the schema marker
 - Update `poe test-quick` to exclude the schema marker
