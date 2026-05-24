@@ -1,0 +1,7 @@
+[tool.poe.tasks.choose_env]
+control = { expr = "os.environ.get('ENV', 'dev')" }
+switch = [
+  { case = "dev", cmd = "echo dev" },
+  { case = ["staging", "prod"], cmd = "echo nonlocal" },
+  { case = 1, cmd = "echo one" },
+]

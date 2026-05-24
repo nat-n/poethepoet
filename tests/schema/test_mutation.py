@@ -135,16 +135,38 @@ KNOWN_RUNTIME_ONLY_MISMATCHES: dict[tuple[str, str, str], str] = {
         "Runtime defers task option validation to task-load time. "
         "Schema correctly rejects unexpected keys on task dicts."
     ),
-    # --- Group C: executor extra keys (runtime generator bug) --------------
-    # PoeExecutor.validate_config calls ExecutorOptions.parse() but does not
-    # iterate the returned generator, so the validation body never executes.
-    # BUG: poethepoet/executor/base.py line 427 — result of parse() is not
-    # consumed. Schema correctly rejects extra keys in executor objects.
-    ("executors", "executor", "add_unexpected_key"): (
-        "Runtime has a generator-not-iterated bug in "
-        "PoeExecutor.validate_config (base.py:427): ExecutorOptions.parse() "
-        "returns a generator that is never consumed, so extra keys on executor "
-        "objects are silently accepted. Schema correctly rejects them."
+    ("switch", "tasks.choose_env", "add_unexpected_key"): (
+        "Runtime defers SwitchTask option validation to task-load time. "
+        "Schema correctly rejects unexpected keys on task dicts."
+    ),
+    ("switch", "tasks.choose_env.switch.0", "add_unexpected_key"): (
+        "Runtime defers switch-case dict validation to task-load time. "
+        "Schema correctly rejects unexpected keys on case dicts."
+    ),
+    ("switch", "tasks.choose_env.switch.1", "add_unexpected_key"): (
+        "Runtime defers switch-case dict validation to task-load time. "
+        "Schema correctly rejects unexpected keys on case dicts."
+    ),
+    ("switch", "tasks.choose_env.switch.2", "add_unexpected_key"): (
+        "Runtime defers switch-case dict validation to task-load time. "
+        "Schema correctly rejects unexpected keys on case dicts."
+    ),
+    # --- Group C: switch task content + structure --------------------------
+    ("switch", "tasks.choose_env.control", "delete_field"): (
+        "Runtime defers SwitchTask required-field checks to task-load time. "
+        "Schema correctly rejects a switch task missing the control field."
+    ),
+    ("switch", "tasks.choose_env.switch.0.cmd", "replace_str_with_int"): (
+        "Runtime defers CmdTask content validation to task-load time. "
+        "Schema correctly rejects integer for cmd content inside switch case."
+    ),
+    ("switch", "tasks.choose_env.switch.1.cmd", "replace_str_with_int"): (
+        "Runtime defers CmdTask content validation to task-load time. "
+        "Schema correctly rejects integer for cmd content inside switch case."
+    ),
+    ("switch", "tasks.choose_env.switch.2.cmd", "replace_str_with_int"): (
+        "Runtime defers CmdTask content validation to task-load time. "
+        "Schema correctly rejects integer for cmd content inside switch case."
     ),
 }
 
@@ -282,7 +304,7 @@ def _load_seed(name: str) -> dict:
     return data.get("tool", {}).get("poe", {})
 
 
-_SEED_NAMES = ("simple", "executors", "complex")
+_SEED_NAMES = ("simple", "executors", "complex", "switch")
 
 
 # ---------------------------------------------------------------------------

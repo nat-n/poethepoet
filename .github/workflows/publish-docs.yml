@@ -7,7 +7,6 @@ on:
       - doc/init-sphinx
 
 jobs:
-
   publish-docs:
     name: Publish docs
     runs-on: ubuntu-latest

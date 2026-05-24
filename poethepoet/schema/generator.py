@@ -23,6 +23,7 @@ _ROOT_PROPERTY_REFS: dict[str, str] = {
     "executor": "executor_option",
     "tasks": "tasks_map",
     "groups": "groups_map",
+    "include_script": "include_script",
 }
 
 
@@ -36,6 +37,16 @@ _TASK_PROPERTY_REFS: dict[str, str] = {
     "envfile": "envfile_option",
     "executor": "executor_task_option",
     "args": "args_option",
+}
+
+
+# Properties on task_group that should reference shared definitions
+# rather than re-translating from TaskGroup TypedDict annotations.
+# Without this, group executors emit an undiscriminated `anyOf` and
+# nested-in-group tasks bypass task_def validation entirely.
+_TASK_GROUP_PROPERTY_REFS: dict[str, str] = {
+    "executor": "executor_task_option",
+    "tasks": "tasks_map",
 }
 
 
@@ -54,6 +65,7 @@ def build_schema() -> dict:
         envfile_option_schema,
         executor_option_schema,
         groups_map_schema,
+        include_script_schema,
         task_def_schema,
         task_def_with_case_schema,
         tasks_map_schema,
@@ -63,7 +75,8 @@ def build_schema() -> dict:
 
     # Build cross-cutting definitions in dependency order. task_def must
     # come before task_def_with_case (which inspects ctx.definitions for
-    # the per-task variants).
+    # the per-task variants). include_script_schema must come after
+    # executor_option_schema (depends on executor_task_option).
     env_option_schema(ctx)
     envfile_option_schema(ctx)
     executor_option_schema(ctx)
@@ -72,10 +85,13 @@ def build_schema() -> dict:
     task_def_with_case_schema(ctx)
     tasks_map_schema(ctx)
     groups_map_schema(ctx)
+    include_script_schema(ctx)
 
     # Apply the $ref swaps inside each task variant: env, envfile,
     # executor, args.
     _apply_task_property_refs(ctx)
+    # Same swap on task_group: executor and tasks.
+    _apply_task_group_property_refs(ctx)
 
     # Walk ProjectConfig.ConfigOptions for the root properties.
     from poethepoet.config.partition import ProjectConfig
@@ -139,6 +155,15 @@ def _apply_task_property_refs(ctx: SchemaContext) -> None:
 
     task_keys = list(PoeTask.get_task_types())
     for key in task_keys:
+        # task_def_schema registers every task type as `{key}_task`, so a
+        # missing entry signals a registration bug that would otherwise
+        # silently leave that task variant with the inline (laxer) shape.
+        # task_def_with_case only covers switch-inner variants, so the
+        # absence there is expected.
+        assert f"{key}_task" in ctx.definitions, (
+            f"Task {key!r} registered with PoeTask but missing the "
+            f"`{key}_task` schema definition — did __schema_fragment__ run?"
+        )
         for def_name in (f"{key}_task", f"{key}_task_with_case"):
             existing = ctx.definitions
             if def_name not in existing:
@@ -150,3 +175,24 @@ def _apply_task_property_refs(ctx: SchemaContext) -> None:
                     new_properties[prop] = {"$ref": f"#/definitions/{ref_target}"}
             variant["properties"] = new_properties
             ctx.mutate_definition(def_name, variant)
+
+
+def _apply_task_group_property_refs(ctx: SchemaContext) -> None:
+    """
+    Swap task_group properties for $refs to shared definitions: the
+    executor field gets the discriminated executor_task_option union,
+    and the tasks field gets tasks_map (patternProperties +
+    `$ref: task_def`). Without this, group executors are
+    undiscriminated and nested-in-group tasks bypass task_def
+    validation.
+    """
+    existing = ctx.definitions
+    if "task_group" not in existing:
+        return
+    variant = dict(existing["task_group"])
+    new_properties = dict(variant["properties"])
+    for prop, ref_target in _TASK_GROUP_PROPERTY_REFS.items():
+        if prop in new_properties:
+            new_properties[prop] = {"$ref": f"#/definitions/{ref_target}"}
+    variant["properties"] = new_properties
+    ctx.mutate_definition("task_group", variant)

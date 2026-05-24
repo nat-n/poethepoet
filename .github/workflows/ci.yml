@@ -28,6 +28,12 @@ jobs:
           python-version: 3.13
           cache: poetry
 
+      # poe schema-build (run by schema-check-drift and test-schema) shells out to
+      # `npx prettier` for SchemaStore-compatible formatting.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
       - name: Install dependencies
         run: poetry --ansi install
 
@@ -44,7 +50,7 @@ jobs:
         run: poetry --ansi run poe docs-check
 
       - name: Check schema is up to date
-        run: poetry --ansi run poe check-schema-drift
+        run: poetry --ansi run poe schema-check-drift
 
       - name: Run schema parity tests
         run: poetry --ansi run poe test-schema

@@ -5,6 +5,7 @@ out.txt
 .serena
 .claude/worktrees/
 .claude/scheduled_tasks.lock
+docs/_static/partial-poe-comparison.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

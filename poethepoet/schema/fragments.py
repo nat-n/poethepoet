@@ -85,6 +85,10 @@ def executor_option_schema(ctx: SchemaContext) -> dict:
         {"type": "string", "enum": enum_keys},
     ]
 
+    # Collected as we go so we can build executor_partial as an anyOf
+    # over per-executor partial overrides.
+    partial_refs: list[dict] = []
+
     for key in executor_keys:
         executor_cls = PoeExecutor.get_executor_class(key)
         executor_schema = executor_cls.ExecutorOptions.__schema_fragment__(ctx)
@@ -98,8 +102,26 @@ def executor_option_schema(ctx: SchemaContext) -> dict:
         ctx.register(f"executor_{key}", executor_schema)
         branches.append({"$ref": f"#/definitions/executor_{key}"})
 
+        # Partial-override twin: same properties minus `type`, and
+        # `type` removed from required. additionalProperties:false here
+        # is what makes the partial reject `{garbage: ...}` — and also
+        # naturally prevents it from re-matching `{type: "<key>", ...}`,
+        # so the outer oneOf still picks the full executor_<key> form.
+        partial_properties = dict(executor_schema["properties"])
+        partial_properties.pop("type", None)
+        ctx.register(
+            f"executor_{key}_partial",
+            {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": partial_properties,
+            },
+        )
+        partial_refs.append({"$ref": f"#/definitions/executor_{key}_partial"})
+
     # Synthesize a minimal executor_auto definition since "auto" isn't a
-    # registered class.
+    # registered class. Auto has no executor-specific options, so its
+    # partial accepts only the empty object.
     ctx.register(
         "executor_auto",
         {
@@ -110,23 +132,29 @@ def executor_option_schema(ctx: SchemaContext) -> dict:
         },
     )
     branches.append({"$ref": "#/definitions/executor_auto"})
+    ctx.register(
+        "executor_auto_partial",
+        {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {},
+        },
+    )
+    partial_refs.append({"$ref": "#/definitions/executor_auto_partial"})
 
     # executor_option is the strict form used at root level: type is required.
     # (PoeExecutor.validate_config enforces type at root config validation time.)
     result = {"oneOf": list(branches)}
     ctx.register("executor_option", result)
 
-    # executor_task_option extends executor_option with a partial-override
-    # fallback. At task level, executor can omit `type` and inherit it from
-    # the project or group context (context._resolve_executor_config). Accept
-    # any object without a `type` key as a partial override.
-    ctx.register(
-        "executor_partial",
-        {
-            "type": "object",
-            "not": {"required": ["type"]},
-        },
-    )
+    # executor_partial — at task level, `executor` can omit `type` and
+    # inherit it from the project or group context
+    # (context._resolve_executor_config). Each branch is a per-executor
+    # partial: its `additionalProperties:false` rejects keys foreign to
+    # that executor, so typos like `{isolatd: true}` surface in editors
+    # rather than silently slipping through. A bare `{}` matches all
+    # partials (every partial accepts an empty object).
+    ctx.register("executor_partial", {"anyOf": list(partial_refs)})
     task_branches = [*branches, {"$ref": "#/definitions/executor_partial"}]
     task_result = {"oneOf": task_branches}
     ctx.register("executor_task_option", task_result)
@@ -282,6 +310,46 @@ def groups_map_schema(ctx: SchemaContext) -> dict:
         },
     }
     ctx.register("groups_map", result)
+    return result
+
+
+def include_script_schema(ctx: SchemaContext) -> dict:
+    """
+    Build the schema for the `include_script` field. Registers the
+    item dict shape as `include_script_item` so its `executor` field can
+    `$ref` the discriminated executor union (rather than the bare
+    `{anyOf: [string, object]}` the translator would inline).
+
+    Precondition: executor_option_schema(ctx) must have run first so
+    `executor_task_option` is in ctx.definitions.
+    """
+    from poethepoet.config.partition import IncludeScriptItem
+    from poethepoet.options.annotations import TypeAnnotation
+    from poethepoet.schema.translate import translate_type
+
+    item_annotation = TypeAnnotation.parse(IncludeScriptItem)
+    item_schema = translate_type(item_annotation, ctx)
+    item_schema["properties"] = dict(item_schema["properties"])
+    item_schema["properties"]["executor"] = {
+        "$ref": "#/definitions/executor_task_option"
+    }
+    ctx.register("include_script_item", item_schema)
+
+    result = {
+        "anyOf": [
+            {"type": "string"},
+            {
+                "type": "array",
+                "items": {
+                    "anyOf": [
+                        {"type": "string"},
+                        {"$ref": "#/definitions/include_script_item"},
+                    ]
+                },
+            },
+        ]
+    }
+    ctx.register("include_script", result)
     return result
 
 

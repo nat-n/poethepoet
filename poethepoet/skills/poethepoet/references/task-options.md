@@ -8,11 +8,11 @@ All options are available on any task type unless noted.
 
 Parameter expansion is the default across poe: task bodies (`cmd`, `ref`, `expr`) and most config options (`env` values, `cwd`, `capture_stdout`, `envfile` paths and values, arg `default` values, include paths) all support it. When you need to make something conditional on an environment variable, reach for expansion first.
 
-| Syntax | Meaning |
-|--------|---------|
-| `${VAR}` | Value of VAR |
-| `${VAR:-default}` | Value of VAR, or `default` if unset/empty |
-| `${VAR:+alt}` | `alt` if VAR is set and non-empty, otherwise empty string |
+| Syntax            | Meaning                                                   |
+| ----------------- | --------------------------------------------------------- |
+| `${VAR}`          | Value of VAR                                              |
+| `${VAR:-default}` | Value of VAR, or `default` if unset/empty                 |
+| `${VAR:+alt}`     | `alt` if VAR is set and non-empty, otherwise empty string |
 
 These are especially useful for optional feature flags, environment-specific paths, and conditional arguments:
 
@@ -50,18 +50,21 @@ env = { PORT = "8080", DEBUG = "1" }
 ```
 
 **Default value** (only set if not already in the environment):
+
 ```toml
 [tool.poe.tasks.serve.env]
 PORT.default = "8080"
 ```
 
 **Reference other variables**:
+
 ```toml
 [tool.poe.tasks.deploy]
 env.REGION = "${AWS_DEFAULT_REGION:-us-east-1}"
 ```
 
 **Private variables** (lowercase + `_` prefix): available in task config expansion but NOT exposed to subprocesses — useful for sensitive values or just to avoid spamming the environment with unnecessary variables:
+
 ```toml
 env = { _token = "${SECRET_TOKEN}" }  # use as ${_token} in cmd, invisible to shell tasks
 ```
@@ -157,12 +160,14 @@ executor = { type = "virtualenv", location = ".venv-special" }
 Valid types: `auto` (detect automatically), `poetry`, `uv`, `virtualenv`, `simple`
 
 **uv executor options**: `extra`, `group`, `no-group`, `with`, `isolated`, `exact`, `no-sync`, `locked`, `frozen`, `no-project`, `python`
-  - These map onto `uv run` cli options, and can be used to force tasks to run with different a venv managed by uv
-  - To see how the uv executor can be configured to manage task specific envs see this guide: https://poethepoet.natn.io/guides/tox_replacement_guide.html
+
+- These map onto `uv run` cli options, and can be used to force tasks to run with different a venv managed by uv
+- To see how the uv executor can be configured to manage task specific envs see this guide: https://poethepoet.natn.io/guides/tox_replacement_guide.html
 
 **virtualenv executor options**: `location` (path to venv; default: `.venv` or `venv`)
 
 **Global default** (in `[tool.poe]`):
+
 ```toml
 [tool.poe]
 executor = "auto"   # or force: "uv", "poetry", etc.
@@ -201,12 +206,14 @@ verbosity = -1   # suppress poe's output header for this task
 Allow the task to fail without aborting the parent sequence/parallel.
 
 For `cmd`/`shell`/`script`/`expr` tasks:
+
 ```toml
 ignore_fail = true       # ignore any non-zero exit code
 ignore_fail = [1, 2]     # ignore specific exit codes only
 ```
 
 For `sequence`/`parallel` tasks:
+
 - `true` — continue running; return 0 if remaining tasks succeed
 - `"return_zero"` — always return 0 regardless of failures
 - `"return_non_zero"` — continue but propagate failure in exit code
