@@ -265,8 +265,9 @@ class ProjectConfig(ConfigPartition):
             {"type": "auto"}
         )
         """
-        Configure the executor type for running tasks. Can be 'auto', 'poetry',
-        'uv', 'virtualenv', or 'simple', with 'auto' being the default.
+        Configure the executor for running tasks. The type can be 'auto', 'poetry',
+        'uv', 'virtualenv', or 'simple', with 'auto' being the default. Some
+        executor types accept additional configuration options.
         """
 
         include: str | Sequence[str] | Sequence[IncludeItem] = ()
