@@ -23,18 +23,7 @@ if TYPE_CHECKING:
     from .args import PoeTaskArgs
 
 
-_TASK_NAME_PATTERN = re.compile(r"^[A-Za-z_][\w\-:+]*$")
-"""
-Pattern for valid task names: must start with an ASCII letter or
-underscore, followed by any combination of word chars, hyphen, colon,
-or plus. Used by both runtime validation and the schema generator's
-tasks_map patternProperties.
-
-Note: the previous pattern was Unicode-aware via `\\w` for the first
-char, combined with a separate `.isalpha()` runtime check. The unified
-form is ASCII-only — JSON Schema regex portability and de facto task
-naming conventions make ASCII-only the correct choice here.
-"""
+_TASK_NAME_PATTERN = re.compile(r"^[^\W\d][\w:+-]*$")
 
 
 class MetaPoeTask(type):

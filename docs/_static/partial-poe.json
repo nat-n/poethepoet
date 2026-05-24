@@ -969,7 +969,7 @@
     "groups_map": {
       "additionalProperties": false,
       "patternProperties": {
-        "^[A-Za-z0-9_\\-]+$": {
+        "^[\\w-]+$": {
           "$ref": "#/definitions/task_group"
         }
       },
@@ -1832,7 +1832,6 @@
                 ],
                 "type": "string"
               },
-              "minItems": 1,
               "type": "array"
             }
           ],
@@ -1975,7 +1974,6 @@
                 ],
                 "type": "string"
               },
-              "minItems": 1,
               "type": "array"
             }
           ],
@@ -2417,7 +2415,7 @@
     "tasks_map": {
       "additionalProperties": false,
       "patternProperties": {
-        "^[A-Za-z_][\\w\\-:+]*$": {
+        "^[^\\W\\d][\\w:+-]*$": {
           "$ref": "#/definitions/task_def"
         }
       },
@@ -2448,7 +2446,7 @@
     },
     "executor": {
       "$ref": "#/definitions/executor_option",
-      "description": "Configure the executor type for running tasks. Can be 'auto', 'poetry',\n'uv', 'virtualenv', or 'simple', with 'auto' being the default."
+      "description": "Configure the executor for running tasks. The type can be 'auto', 'poetry',\n'uv', 'virtualenv', or 'simple', with 'auto' being the default. Some\nexecutor types accept additional configuration options."
     },
     "groups": {
       "$ref": "#/definitions/groups_map",

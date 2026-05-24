@@ -35,18 +35,7 @@ register_type_alias("ShellInterpreter", ShellInterpreter)
 # Derived from the Literal so the tuple and the type stay in lockstep.
 KNOWN_SHELL_INTERPRETERS: tuple[str, ...] = get_args(ShellInterpreter)
 
-_GROUP_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_\-]+$")
-"""
-Pattern for valid group names. Used by ProjectConfig.ConfigOptions.validate
-and (in Phase 2) by the schema generator's groups_map patternProperties.
-
-ASCII-only (no Unicode ``\\w``) so the pattern behaves identically in Python
-and in editor-side JSON Schema validators, which use ECMA-262's ASCII-only
-``\\w``.
-This matches the same convention used by `_TASK_NAME_PATTERN` in task/base.py.
-
-The anchors make the pattern usable with both re.fullmatch and re.match.
-"""
+_GROUP_NAME_PATTERN = re.compile(r"^[\w-]+$")
 
 
 @option_annotation
