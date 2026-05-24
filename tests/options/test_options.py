@@ -279,48 +279,100 @@ def test_register_type_alias_makes_literal_resolvable_in_annotations():
 
 def test_group_name_pattern_constant_exposed() -> None:
     """
-    The group name pattern is module-level so external consumers (e.g. the
-    Phase 2 schema generator) can import it as the single source of truth.
+    Module-level so the schema generator can import it as the single
+    source of truth.
     """
     from poethepoet.config.partition import _GROUP_NAME_PATTERN
 
     assert _GROUP_NAME_PATTERN.fullmatch("my_group")
     assert _GROUP_NAME_PATTERN.fullmatch("my-group")
     assert _GROUP_NAME_PATTERN.fullmatch("group123")
-    assert not _GROUP_NAME_PATTERN.fullmatch("bad group")  # space rejected
-    assert not _GROUP_NAME_PATTERN.fullmatch("")  # empty rejected
-    # Unicode letters: rejected (ASCII-only convention for JSON Schema portability).
-    assert not _GROUP_NAME_PATTERN.fullmatch("\u03b1_group")  # Greek alpha prefix
+    assert not _GROUP_NAME_PATTERN.fullmatch("bad group")
+    assert not _GROUP_NAME_PATTERN.fullmatch("")
+
+
+def test_group_name_pattern_accepts_unicode_at_runtime() -> None:
+    """
+    Python's ``\\w`` is Unicode-aware, so the runtime accepts group names
+    from any script. The schema's ECMA-262 ``\\w`` is ASCII-only, so
+    editor validators end up slightly stricter \u2014 intentional.
+    """
+    from poethepoet.config.partition import _GROUP_NAME_PATTERN
+
+    assert _GROUP_NAME_PATTERN.fullmatch("\u03b1_group")
+    assert _GROUP_NAME_PATTERN.fullmatch("caf\u00e9")
+    assert _GROUP_NAME_PATTERN.fullmatch("\u65e5\u672c\u8a9e")
+
+
+def test_project_config_accepts_unicode_group_name() -> None:
+    """
+    End-to-end runtime guard: a Unicode-letter group key is accepted by
+    ``ProjectConfig.ConfigOptions.parse``.
+    """
+    from poethepoet.config.partition import ProjectConfig
+
+    config = {
+        "tasks": {"hello": "echo hi"},
+        "groups": {"\u03b1_group": {"heading": "Greek-named group"}},
+    }
+    parsed = next(ProjectConfig.ConfigOptions.parse(config, strict=True))
+    assert "\u03b1_group" in parsed.get("groups")
 
 
 def test_task_name_pattern_unified_encompasses_first_char_rule() -> None:
     """
-    The unified _TASK_NAME_PATTERN enforces "letter or underscore first"
-    directly in the regex — no separate runtime check needed.
+    The regex enforces "letter or underscore first" on its own — no
+    separate runtime check needed.
     """
     from poethepoet.task.base import _TASK_NAME_PATTERN
 
-    # Letter or underscore first: accepted.
     assert _TASK_NAME_PATTERN.fullmatch("hello")
     assert _TASK_NAME_PATTERN.fullmatch("_private")
     assert _TASK_NAME_PATTERN.fullmatch("Task-1")
     assert _TASK_NAME_PATTERN.fullmatch("name:with:colons")
     assert _TASK_NAME_PATTERN.fullmatch("with+plus")
 
-    # Digit first: rejected by the regex itself (no separate check needed).
     assert not _TASK_NAME_PATTERN.fullmatch("1bad")
-    # Punctuation / whitespace first: rejected.
     assert not _TASK_NAME_PATTERN.fullmatch("-bad")
     assert not _TASK_NAME_PATTERN.fullmatch(" bad")
-    # Empty: rejected.
     assert not _TASK_NAME_PATTERN.fullmatch("")
+
+
+def test_task_name_pattern_accepts_unicode_first_char() -> None:
+    """
+    Python's ``\\w`` is Unicode-aware, so a task name can start with a
+    letter from any script. The schema's ECMA-262 ``\\w`` collapses
+    ``[^\\W\\d]`` to ``[A-Za-z_]`` — schema is the stricter side.
+    """
+    from poethepoet.task.base import _TASK_NAME_PATTERN
+
+    assert _TASK_NAME_PATTERN.fullmatch("αlpha_task")  # noqa: RUF001
+    assert _TASK_NAME_PATTERN.fullmatch("café_run")
+    assert _TASK_NAME_PATTERN.fullmatch("日本語")
+
+
+def test_runtime_accepts_unicode_first_char_task_name() -> None:
+    """
+    End-to-end guard: TaskSpecFactory validates a Unicode-named task
+    without raising.
+    """
+    from poethepoet.config import PoeConfig
+    from poethepoet.task.base import TaskSpecFactory
+
+    config = PoeConfig(
+        table={"tasks": {"αlpha_task": {"cmd": "echo hi"}}},  # noqa: RUF001
+    )
+    factory = TaskSpecFactory(config)
+    factory.load_all()
+
+    spec = next(iter(factory))
+    spec.validate(config, factory)
 
 
 def test_runtime_still_rejects_invalid_task_names_via_unified_pattern() -> None:
     """
-    After consolidation, the runtime continues to reject invalid task
-    names — just through the unified regex rather than a separate
-    isalpha() check.
+    Digit-first task names are rejected by the regex itself, with no
+    separate ``isalpha()`` check.
     """
     from poethepoet.config import PoeConfig
     from poethepoet.task.base import TaskSpecFactory

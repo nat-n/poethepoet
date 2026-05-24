@@ -310,9 +310,7 @@ def test_union_does_not_propagate_metadata_to_children() -> None:
     for branch in type_level._value_types:
         assert branch._metadata is None
     # Consequently, the list branch reads no min_items at validation time.
-    list_branch = next(
-        vt for vt in type_level._value_types if isinstance(vt, ListType)
-    )
+    list_branch = next(vt for vt in type_level._value_types if isinstance(vt, ListType))
     assert list_branch.metadata_get("min_items") is None
 
 
@@ -341,9 +339,7 @@ def test_union_str_or_list_with_min_items_on_list_branch() -> None:
     # so the runtime can't conflate it with the list branch's constraint.
     parsed = StrOrListOpt.get_fields()["value"]
     assert isinstance(parsed, UnionType)
-    str_branch = next(
-        vt for vt in parsed._value_types if isinstance(vt, PrimitiveType)
-    )
+    str_branch = next(vt for vt in parsed._value_types if isinstance(vt, PrimitiveType))
     assert str_branch.metadata_get("min_items") is None
 
 
