@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 
 class SequenceTask(PoeTask):
     """
-    A task consisting of a sequence of other tasks
+    Runs an array of subtasks one after the other. Items may be inline task
+    definitions, task references by name. Nested arrays are run as parallel
+    tasks.
     """
 
     content: list[str | dict[str, Any]]

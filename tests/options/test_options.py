@@ -336,6 +336,40 @@ def test_project_config_accepts_group_without_heading() -> None:
     assert "mygroup" in parsed.get("groups")
 
 
+def test_project_config_accepts_envfile_mixed_list() -> None:
+    """
+    A list of envfile entries may mix bare paths with ``{expected,
+    optional}`` objects — e.g. ``envfile = ["base.env", {expected =
+    "prod.env"}]``. Project, task, and included config envfile options
+    should all accept this shape.
+    """
+    from poethepoet.config.partition import ProjectConfig
+
+    config = {
+        "envfile": ["base.env", {"expected": "prod.env"}],
+    }
+    parsed = next(ProjectConfig.ConfigOptions.parse(config, strict=True))
+    assert list(parsed.get("envfile")) == ["base.env", {"expected": "prod.env"}]
+
+
+def test_project_config_rejects_switch_as_default_array_task_type() -> None:
+    """
+    A switch task isn't expressible as a bare array — it requires both
+    ``switch`` (case list) and ``control`` — so using it as
+    ``default_array_task_type`` produces ill-formed tasks the moment a
+    bare-array task_def is encountered. The runtime must reject it at
+    config-load time rather than letting the bug surface deep in parsing.
+    """
+    import pytest
+
+    from poethepoet.config.partition import ProjectConfig
+    from poethepoet.exceptions import ConfigValidationError
+
+    config = {"default_array_task_type": "switch"}
+    with pytest.raises(ConfigValidationError, match="default_array_task_type"):
+        list(ProjectConfig.ConfigOptions.parse(config, strict=True))
+
+
 def test_task_name_pattern_unified_encompasses_first_char_rule() -> None:
     """
     The regex enforces "letter or underscore first" on its own — no

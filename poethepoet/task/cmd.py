@@ -16,10 +16,18 @@ if TYPE_CHECKING:
 
 class CmdTask(PoeTask):
     """
-    A task consisting of a reference to a shell command
+    Executes a single command as a subprocess without a shell. Supports glob
+    patterns for filesystem paths, parameter expansion of environment variable
+    or private variables.
     """
 
     __key__ = "cmd"
+    __schema_title__ = "Command to execute"
+    __schema_examples__ = (
+        "rm -rf ./**/*.pyc",
+        "echo Hello ${USER}",
+        "echo Hello \\${USER}",
+    )
 
     # Track if we encountered a glob pattern when parsing the command line
     __passed_unmatched_glob = False

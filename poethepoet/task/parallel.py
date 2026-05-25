@@ -47,7 +47,9 @@ class ColorCycle:
 
 class ParallelTask(PoeTask):
     """
-    A task consisting of multiple tasks that run in parallel
+    Runs an array of subtasks concurrently. Each subtask runs in its own
+    subprocess; output lines are interleaved and prefixed with the subtask
+    name by default.
     """
 
     content: list[str | dict[str, Any]]

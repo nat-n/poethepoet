@@ -276,16 +276,24 @@ def test_env_default_registered(ctx: SchemaContext) -> None:
 
 
 def test_envfile_option_schema_includes_three_shapes(ctx: SchemaContext) -> None:
+    """
+    envfile_option has three top-level shapes (bare string, array,
+    envfile_full TypedDict). The array branch accepts items that are
+    themselves string OR envfile_full, mirroring the runtime type
+    ``str | EnvfileOption | Sequence[str | EnvfileOption]``.
+    """
     schema = envfile_option_schema(ctx)
-    assert "anyOf" in schema
-    branches = schema["anyOf"]
-    # Bare string, array of strings, envfile_full TypedDict
+    assert "oneOf" in schema
+    branches = schema["oneOf"]
     assert {"type": "string"} in branches
-    assert any(
-        b.get("type") == "array" and b.get("items") == {"type": "string"}
-        for b in branches
-    )
     assert any("$ref" in b for b in branches)
+    array_branches = [b for b in branches if b.get("type") == "array"]
+    assert len(array_branches) == 1
+    items = array_branches[0]["items"]
+    assert "oneOf" in items, f"Expected mixed-item array, got {items!r}"
+    item_alts = items["oneOf"]
+    assert {"type": "string"} in item_alts
+    assert any("$ref" in alt for alt in item_alts)
 
 
 def test_args_option_schema_accepts_list_or_dict(ctx: SchemaContext) -> None:

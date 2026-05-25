@@ -66,6 +66,77 @@ def test_build_schema_definitions_include_per_task_variants() -> None:
         assert f"{key}_task" in schema["definitions"]
 
 
+def test_build_schema_discriminator_carries_title_and_examples_when_set() -> None:
+    """
+    Task classes may optionally declare ``__schema_title__`` (string) and
+    ``__schema_examples__`` (sequence). When set, they appear on the
+    discriminator field schema as ``title`` and ``examples``; when unset,
+    those keywords are omitted.
+    """
+    from poethepoet.schema import build_schema
+    from poethepoet.task.base import PoeTask
+
+    schema = build_schema()
+    for key in PoeTask.get_task_types():
+        task_cls = PoeTask.get_task_class(key)
+        field = schema["definitions"][f"{key}_task"]["properties"][key]
+
+        expected_title: str = getattr(task_cls, "__schema_title__", "")
+        if expected_title:
+            assert (
+                field.get("title") == expected_title
+            ), f"{key} missing title from __schema_title__"
+        else:
+            assert "title" not in field, f"{key} has unexpected title"
+
+        expected_examples: tuple = getattr(task_cls, "__schema_examples__", ())
+        if expected_examples:
+            assert field.get("examples") == list(
+                expected_examples
+            ), f"{key} examples mismatch __schema_examples__"
+        else:
+            assert "examples" not in field, f"{key} has unexpected examples"
+
+
+def test_build_schema_cmd_discriminator_has_examples_and_title() -> None:
+    """
+    CmdTask, the most common task type, carries a SchemaStore-style title
+    and examples on its discriminator field.
+    """
+    from poethepoet.schema import build_schema
+
+    schema = build_schema()
+    field = schema["definitions"]["cmd_task"]["properties"]["cmd"]
+    assert field.get("title") == "Command to execute"
+    examples = field.get("examples", [])
+    assert isinstance(examples, list)
+    assert len(examples) >= 2, examples
+
+
+def test_build_schema_discriminator_fields_carry_class_docstring() -> None:
+    """
+    Each task's discriminator property (cmd, expr, ref, script, shell,
+    sequence, parallel, switch) carries a description sourced from the
+    task class' docstring. Without this, IDE hover on the discriminator
+    key shows nothing — the highest-traffic surface for task-authoring.
+    """
+    import inspect
+
+    from poethepoet.schema import build_schema
+    from poethepoet.task.base import PoeTask
+
+    schema = build_schema()
+    for key in PoeTask.get_task_types():
+        task_cls = PoeTask.get_task_class(key)
+        expected = inspect.cleandoc(task_cls.__doc__ or "")
+        assert expected, f"{task_cls.__name__} has no class docstring"
+        field_schema = schema["definitions"][f"{key}_task"]["properties"][key]
+        assert field_schema.get("description") == expected, (
+            f"{key} discriminator missing description from "
+            f"{task_cls.__name__}.__doc__"
+        )
+
+
 def test_build_schema_env_property_refs_env_option() -> None:
     from poethepoet.schema import build_schema
 
@@ -88,3 +159,51 @@ def test_build_schema_executor_property_refs_executor_option() -> None:
     assert schema["properties"]["executor"].get("$ref") == (
         "#/definitions/executor_option"
     )
+
+
+def test_build_schema_default_task_type_enum_matches_registry() -> None:
+    """
+    ``default_task_type`` accepts any string-content task type registered
+    via ``MetaPoeTask``. The schema's enum must be sourced from the live
+    registry (cmd, expr, ref, script, shell) rather than a hardcoded copy.
+    """
+    from poethepoet.schema import build_schema
+    from poethepoet.task.base import PoeTask
+
+    schema = build_schema()
+    field_schema = schema["properties"]["default_task_type"]
+    expected = list(PoeTask.get_task_types(content_type=str))
+    assert field_schema["enum"] == expected
+    assert field_schema["type"] == "string"
+
+
+def test_build_schema_default_array_task_type_enum_excludes_switch() -> None:
+    """
+    ``default_array_task_type`` accepts list-content task types whose
+    bare-array form is well-formed — sequence and parallel. Switch is a
+    list-content task but isn't valid here: it requires both ``switch``
+    and ``control`` keys, neither of which a bare array can supply.
+    """
+    from poethepoet.schema import build_schema
+
+    schema = build_schema()
+    field_schema = schema["properties"]["default_array_task_type"]
+    assert field_schema["enum"] == ["parallel", "sequence"]
+    assert field_schema["type"] == "string"
+    assert "switch" not in field_schema["enum"]
+
+
+def test_build_schema_default_array_item_task_type_enum_matches_registry() -> None:
+    """
+    ``default_array_item_task_type`` accepts string-content task types
+    (same set as default_task_type). The schema's enum is sourced from
+    the registry.
+    """
+    from poethepoet.schema import build_schema
+    from poethepoet.task.base import PoeTask
+
+    schema = build_schema()
+    field_schema = schema["properties"]["default_array_item_task_type"]
+    expected = list(PoeTask.get_task_types(content_type=str))
+    assert field_schema["enum"] == expected
+    assert field_schema["type"] == "string"

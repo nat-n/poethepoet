@@ -176,6 +176,12 @@ class PoeTask(metaclass=MetaPoeTask):
     __key__: ClassVar[str]
     __content_type__: ClassVar[type] = str
 
+    # Optional schema-only metadata for the discriminator field. Subclasses
+    # may override to surface a JSON Schema ``title`` and ``examples`` on
+    # the field IDEs hover over when the user starts typing the task key.
+    __schema_title__: ClassVar[str] = ""
+    __schema_examples__: ClassVar[tuple[Any, ...]] = ()
+
     class TaskOptions(PoeOptions):
         args: dict | list | None = None
         """
@@ -207,7 +213,7 @@ class PoeTask(metaclass=MetaPoeTask):
         A map of environment variables to be set for this task.
         """
 
-        envfile: str | Sequence[str] | EnvfileOption = ()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
         Provide one or more env files to be loaded before running this task. If an
         array is provided, files will be loaded in the given order.
@@ -749,6 +755,30 @@ class PoeTask(metaclass=MetaPoeTask):
         return cls.__task_types[key]
 
     @classmethod
+    def get_default_array_task_types(cls) -> tuple[str, ...]:
+        """
+        List-content task types whose bare-array form is well-formed —
+        the set of values that may appear as ``default_array_task_type``.
+
+        Switch is list-content but excluded: its ``control`` field is
+        required, and a bare array (``tasks.foo = [...]``) has no way to
+        supply it.
+        """
+        valid: list[str] = []
+        for task_key, task_cls in cls.__task_types.items():
+            if task_cls.__content_type__ is not list:
+                continue
+            options_cls = task_cls.TaskOptions
+            for attr_name, type_annotation in options_cls.get_fields().items():
+                attr = options_cls.get_field_attribute(attr_name) or attr_name
+                has_default = hasattr(options_cls, attr)
+                if not has_default and not type_annotation.is_optional:
+                    break
+            else:
+                valid.append(task_key)
+        return tuple(valid)
+
+    @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
         """
         Emit the JSON Schema fragment for this task variant.
@@ -762,6 +792,8 @@ class PoeTask(metaclass=MetaPoeTask):
         `super().__schema_fragment__(ctx)` to get the base assembly,
         then refine specific parts.
         """
+        import inspect
+
         from poethepoet.options.annotations import TypeAnnotation
         from poethepoet.schema.translate import translate_type
 
@@ -769,9 +801,17 @@ class PoeTask(metaclass=MetaPoeTask):
 
         # The discriminator key (e.g. "cmd", "shell") with the right
         # content type. We translate __content_type__ as a primitive
-        # annotation so str → string, list → array.
+        # annotation so str → string, list → array. The task class'
+        # docstring becomes the field description — it's what an IDE
+        # surfaces on hover when the user types the discriminator key.
         content_annotation = TypeAnnotation.parse(cls.__content_type__)
         content_schema = translate_type(content_annotation, ctx)
+        if docstring := inspect.cleandoc(cls.__doc__ or ""):
+            content_schema["description"] = docstring
+        if cls.__schema_title__:
+            content_schema["title"] = cls.__schema_title__
+        if cls.__schema_examples__:
+            content_schema["examples"] = list(cls.__schema_examples__)
 
         fragment["properties"][cls.__key__] = content_schema
         # Append the discriminator to required (sorted, no duplicates).

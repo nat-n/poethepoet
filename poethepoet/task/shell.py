@@ -21,12 +21,18 @@ if TYPE_CHECKING:
 
 class ShellTask(PoeTask):
     """
-    A task consisting of a reference to a shell command
+    Executes the content as a shell scripts inside a new shell interpreter.
+    Normally the bash interpreter to used unless specified otherwise.
     """
 
     content: str
 
     __key__ = "shell"
+    __schema_examples__ = (
+        "echo 'Hello World'",
+        "cat foo.txt | grep bar",
+        'for i in {1..5}; do echo "Welcome $i times"; done',
+    )
 
     class TaskOptions(PoeTask.TaskOptions):
         interpreter: (
