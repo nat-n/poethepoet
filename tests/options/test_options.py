@@ -319,6 +319,23 @@ def test_project_config_accepts_unicode_group_name() -> None:
     assert "\u03b1_group" in parsed.get("groups")
 
 
+def test_project_config_accepts_group_without_heading() -> None:
+    """
+    The ``heading`` field on a group is optional; the runtime must accept
+    a group config that omits it. ``GroupConfig`` falls back to the
+    group's own name when ``heading`` is absent, so the field carries no
+    information the runtime can't infer.
+    """
+    from poethepoet.config.partition import ProjectConfig
+
+    config = {
+        "tasks": {"hello": "echo hi"},
+        "groups": {"mygroup": {"tasks": {"foo": "echo foo"}}},
+    }
+    parsed = next(ProjectConfig.ConfigOptions.parse(config, strict=True))
+    assert "mygroup" in parsed.get("groups")
+
+
 def test_task_name_pattern_unified_encompasses_first_char_rule() -> None:
     """
     The regex enforces "letter or underscore first" on its own — no

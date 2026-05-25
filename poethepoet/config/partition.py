@@ -102,7 +102,7 @@ class TaskGroup(TypedDict):
     """
 
 
-TaskGroup.__optional_keys__ = frozenset({"executor", "tasks"})
+TaskGroup.__optional_keys__ = frozenset({"heading", "executor", "tasks"})
 
 
 class GroupConfig:
