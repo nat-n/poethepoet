@@ -127,6 +127,10 @@
     },
     "cmd_task": {
       "additionalProperties": false,
+      "if": {
+        "properties": { "use_exec": { "const": true } },
+        "required": ["use_exec"]
+      },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -134,7 +138,7 @@
           "type": "string"
         },
         "cmd": {
-          "description": "Executes a single command as a subprocess without a shell. Supports\nglob patterns, environment variable templating, and argument\nsubstitution.",
+          "description": "Executes a single command as a subprocess without a shell. Supports glob\npatterns for filesystem paths, parameter expansion of environment variable\nor private variables.",
           "examples": [
             "rm -rf ./**/*.pyc",
             "echo Hello ${USER}",
@@ -145,6 +149,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -187,10 +192,15 @@
         }
       },
       "required": ["cmd"],
+      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "cmd_task_with_case": {
       "additionalProperties": false,
+      "if": {
+        "properties": { "use_exec": { "const": true } },
+        "required": ["use_exec"]
+      },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -219,7 +229,7 @@
           ]
         },
         "cmd": {
-          "description": "Executes a single command as a subprocess without a shell. Supports\nglob patterns, environment variable templating, and argument\nsubstitution.",
+          "description": "Executes a single command as a subprocess without a shell. Supports glob\npatterns for filesystem paths, parameter expansion of environment variable\nor private variables.",
           "examples": [
             "rm -rf ./**/*.pyc",
             "echo Hello ${USER}",
@@ -230,6 +240,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -272,6 +283,7 @@
         }
       },
       "required": ["cmd"],
+      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "env_default": {
@@ -546,6 +558,10 @@
     },
     "expr_task": {
       "additionalProperties": false,
+      "if": {
+        "properties": { "use_exec": { "const": true } },
+        "required": ["use_exec"]
+      },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "assert": {
@@ -558,6 +574,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -569,7 +586,7 @@
         "envfile": { "$ref": "#/definitions/envfile_option" },
         "executor": { "$ref": "#/definitions/executor_task_option" },
         "expr": {
-          "description": "Evaluates a Python expression to produce a result. Can reference\nenvironment variables and arguments.",
+          "description": "Evaluates a Python expression to produce a result. Can reference\nenvironment variables and arguments, and leverage most python builtins.",
           "type": "string"
         },
         "help": {
@@ -604,10 +621,15 @@
         }
       },
       "required": ["expr"],
+      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "expr_task_with_case": {
       "additionalProperties": false,
+      "if": {
+        "properties": { "use_exec": { "const": true } },
+        "required": ["use_exec"]
+      },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "assert": {
@@ -641,6 +663,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -652,7 +675,7 @@
         "envfile": { "$ref": "#/definitions/envfile_option" },
         "executor": { "$ref": "#/definitions/executor_task_option" },
         "expr": {
-          "description": "Evaluates a Python expression to produce a result. Can reference\nenvironment variables and arguments.",
+          "description": "Evaluates a Python expression to produce a result. Can reference\nenvironment variables and arguments, and leverage most python builtins.",
           "type": "string"
         },
         "help": {
@@ -687,6 +710,7 @@
         }
       },
       "required": ["expr"],
+      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "groups_map": {
@@ -715,6 +739,7 @@
       "properties": {
         "cwd": {
           "description": "Specify the working directory for resolving relative paths referenced by the\nincluded script.",
+          "pattern": "\\S",
           "type": "string"
         },
         "executor": { "$ref": "#/definitions/executor_task_option" },
@@ -736,6 +761,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "default_item_type": {
@@ -759,8 +785,13 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "parallel": {
-          "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are prefixed with the subtask name by\ndefault.",
-          "items": { "$ref": "#/definitions/task_def" },
+          "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are interleaved and prefixed with the subtask\nname by default.",
+          "items": {
+            "allOf": [
+              { "$ref": "#/definitions/task_def" },
+              { "not": { "required": ["args"], "type": "object" } }
+            ]
+          },
           "type": "array"
         },
         "prefix": {
@@ -823,6 +854,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "default_item_type": {
@@ -846,8 +878,13 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "parallel": {
-          "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are prefixed with the subtask name by\ndefault.",
-          "items": { "$ref": "#/definitions/task_def" },
+          "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are interleaved and prefixed with the subtask\nname by default.",
+          "items": {
+            "allOf": [
+              { "$ref": "#/definitions/task_def" },
+              { "not": { "required": ["args"], "type": "object" } }
+            ]
+          },
           "type": "array"
         },
         "prefix": {
@@ -889,6 +926,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -898,7 +936,6 @@
         },
         "env": { "$ref": "#/definitions/env_option" },
         "envfile": { "$ref": "#/definitions/envfile_option" },
-        "executor": { "$ref": "#/definitions/executor_task_option" },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
           "type": "string"
@@ -908,7 +945,7 @@
           "type": "boolean"
         },
         "ref": {
-          "description": "Invokes another task by name, with optional arguments appended. The\ndefault task type inside a sequence.",
+          "description": "Invokes another task by name, with or without arguments.",
           "type": "string"
         },
         "uses": {
@@ -956,6 +993,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -965,7 +1003,6 @@
         },
         "env": { "$ref": "#/definitions/env_option" },
         "envfile": { "$ref": "#/definitions/envfile_option" },
-        "executor": { "$ref": "#/definitions/executor_task_option" },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
           "type": "string"
@@ -975,7 +1012,7 @@
           "type": "boolean"
         },
         "ref": {
-          "description": "Invokes another task by name, with optional arguments appended. The\ndefault task type inside a sequence.",
+          "description": "Invokes another task by name, with or without arguments.",
           "type": "string"
         },
         "uses": {
@@ -994,6 +1031,10 @@
     },
     "script_task": {
       "additionalProperties": false,
+      "if": {
+        "properties": { "use_exec": { "const": true } },
+        "required": ["use_exec"]
+      },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -1002,6 +1043,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -1028,11 +1070,11 @@
           "type": "boolean"
         },
         "script": {
-          "description": "Imports and invokes a Python callable, optionally with values or\nexpressions passed as arguments. Async callables are run via\n``asyncio.run``.",
+          "description": "Invokes a Python callable or module, optionally with values or expressions\npassed as arguments.",
           "examples": [
-            "my_pkg.my_module.my_func",
-            "my_pkg.scripts:main",
-            "my_pkg.scripts:main(only='images', log_env={'LOG_PATH':'/var/log'})"
+            "my_pkg.my_module",
+            "my_pkg.my_module:main",
+            "my_pkg.my_module:main(only='images', log_env={'LOG_PATH':'/var/log'})"
           ],
           "type": "string"
         },
@@ -1052,10 +1094,15 @@
         }
       },
       "required": ["script"],
+      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "script_task_with_case": {
       "additionalProperties": false,
+      "if": {
+        "properties": { "use_exec": { "const": true } },
+        "required": ["use_exec"]
+      },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -1085,6 +1132,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -1111,11 +1159,11 @@
           "type": "boolean"
         },
         "script": {
-          "description": "Imports and invokes a Python callable, optionally with values or\nexpressions passed as arguments. Async callables are run via\n``asyncio.run``.",
+          "description": "Invokes a Python callable or module, optionally with values or expressions\npassed as arguments.",
           "examples": [
-            "my_pkg.my_module.my_func",
-            "my_pkg.scripts:main",
-            "my_pkg.scripts:main(only='images', log_env={'LOG_PATH':'/var/log'})"
+            "my_pkg.my_module",
+            "my_pkg.my_module:main",
+            "my_pkg.my_module:main(only='images', log_env={'LOG_PATH':'/var/log'})"
           ],
           "type": "string"
         },
@@ -1135,6 +1183,7 @@
         }
       },
       "required": ["script"],
+      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "sequence_task": {
@@ -1147,6 +1196,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "default_item_type": {
@@ -1170,8 +1220,13 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "sequence": {
-          "description": "Runs an array of subtasks one after the other. Items may be inline\ntask definitions, task references by name, or nested sequences.",
-          "items": { "$ref": "#/definitions/task_def" },
+          "description": "Runs an array of subtasks one after the other. Items may be inline task\ndefinitions, task references by name. Nested arrays are run as parallel\ntasks.",
+          "items": {
+            "allOf": [
+              { "$ref": "#/definitions/task_def" },
+              { "not": { "required": ["args"], "type": "object" } }
+            ]
+          },
           "type": "array"
         },
         "uses": {
@@ -1219,6 +1274,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "default_item_type": {
@@ -1242,8 +1298,13 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "sequence": {
-          "description": "Runs an array of subtasks one after the other. Items may be inline\ntask definitions, task references by name, or nested sequences.",
-          "items": { "$ref": "#/definitions/task_def" },
+          "description": "Runs an array of subtasks one after the other. Items may be inline task\ndefinitions, task references by name. Nested arrays are run as parallel\ntasks.",
+          "items": {
+            "allOf": [
+              { "$ref": "#/definitions/task_def" },
+              { "not": { "required": ["args"], "type": "object" } }
+            ]
+          },
           "type": "array"
         },
         "uses": {
@@ -1270,6 +1331,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -1326,7 +1388,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes one or more statements inside a new shell interpreter. Can\nleverage shell syntax such as pipes, command substitution, and\nbackground processes.",
+          "description": "Executes the content as a shell scripts inside a new shell interpreter.\nNormally the bash interpreter to used unless specified otherwise.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",
@@ -1379,6 +1441,7 @@
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "deps": {
@@ -1435,7 +1498,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes one or more statements inside a new shell interpreter. Can\nleverage shell syntax such as pipes, command substitution, and\nbackground processes.",
+          "description": "Executes the content as a shell scripts inside a new shell interpreter.\nNormally the bash interpreter to used unless specified otherwise.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",
@@ -1466,11 +1529,17 @@
           "type": "string"
         },
         "control": {
-          "anyOf": [{ "type": "string" }, { "type": "object" }],
-          "description": "A required definition for a task to be executed to determine which case\ntask to run."
+          "description": "A required definition for a task to be executed to determine which case\ntask to run.",
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/expr_task" },
+            { "$ref": "#/definitions/cmd_task" },
+            { "$ref": "#/definitions/script_task" }
+          ]
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "default": {
@@ -1492,7 +1561,14 @@
         },
         "switch": {
           "description": "Runs one of several subtasks based on the output of a control task.\nThe control task is executed first; its output is matched against\neach case to select which subtask to run.",
-          "items": { "$ref": "#/definitions/task_def_with_case" },
+          "items": {
+            "allOf": [
+              { "$ref": "#/definitions/task_def_with_case" },
+              { "not": { "required": ["args"], "type": "object" } },
+              { "not": { "required": ["uses"], "type": "object" } },
+              { "not": { "required": ["deps"], "type": "object" } }
+            ]
+          },
           "type": "array"
         },
         "uses": {
@@ -1539,11 +1615,17 @@
           ]
         },
         "control": {
-          "anyOf": [{ "type": "string" }, { "type": "object" }],
-          "description": "A required definition for a task to be executed to determine which case\ntask to run."
+          "description": "A required definition for a task to be executed to determine which case\ntask to run.",
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/expr_task" },
+            { "$ref": "#/definitions/cmd_task" },
+            { "$ref": "#/definitions/script_task" }
+          ]
         },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
           "type": "string"
         },
         "default": {
@@ -1565,7 +1647,14 @@
         },
         "switch": {
           "description": "Runs one of several subtasks based on the output of a control task.\nThe control task is executed first; its output is matched against\neach case to select which subtask to run.",
-          "items": { "$ref": "#/definitions/task_def_with_case" },
+          "items": {
+            "allOf": [
+              { "$ref": "#/definitions/task_def_with_case" },
+              { "not": { "required": ["args"], "type": "object" } },
+              { "not": { "required": ["uses"], "type": "object" } },
+              { "not": { "required": ["deps"], "type": "object" } }
+            ]
+          },
           "type": "array"
         },
         "uses": {
@@ -1706,6 +1795,7 @@
                 "properties": {
                   "cwd": {
                     "description": "Specify the working directory for resolving relative paths referenced by the\nincluded config.",
+                    "pattern": "\\S",
                     "type": "string"
                   },
                   "path": {

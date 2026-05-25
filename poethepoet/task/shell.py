@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from os import environ
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import PoeException
 from .base import PoeTask
@@ -28,11 +28,6 @@ class ShellTask(PoeTask):
     content: str
 
     __key__ = "shell"
-    __schema_examples__ = (
-        "echo 'Hello World'",
-        "cat foo.txt | grep bar",
-        'for i in {1..5}; do echo "Welcome $i times"; done',
-    )
 
     class TaskOptions(PoeTask.TaskOptions):
         interpreter: (
@@ -54,6 +49,20 @@ class ShellTask(PoeTask):
     class TaskSpec(PoeTask.TaskSpec):
         content: str
         options: ShellTask.TaskOptions
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: attach shell-script examples on the ``shell``
+        discriminator field.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["shell"]["examples"] = [
+            "echo 'Hello World'",
+            "cat foo.txt | grep bar",
+            'for i in {1..5}; do echo "Welcome $i times"; done',
+        ]
+        return fragment
 
     spec: TaskSpec
 

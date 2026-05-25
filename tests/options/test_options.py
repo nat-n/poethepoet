@@ -352,6 +352,28 @@ def test_project_config_accepts_envfile_mixed_list() -> None:
     assert list(parsed.get("envfile")) == ["base.env", {"expected": "prod.env"}]
 
 
+def test_task_options_reject_blank_cwd() -> None:
+    """
+    Task-level ``cwd`` must contain at least one non-whitespace character.
+    Empty or whitespace-only values fall through to opaque subprocess
+    failures at execution time; reject them at parse time.
+    """
+    import pytest
+
+    from poethepoet.exceptions import ConfigValidationError
+    from poethepoet.task.cmd import CmdTask
+
+    for blank in ("", "   "):
+        with pytest.raises(ConfigValidationError, match="cwd"):
+            next(
+                CmdTask.TaskOptions.parse(
+                    {"cmd": "echo", "cwd": blank},
+                    extra_keys=("cmd",),
+                    strict=True,
+                )
+            )
+
+
 def test_project_config_rejects_switch_as_default_array_task_type() -> None:
     """
     A switch task isn't expressible as a bare array — it requires both

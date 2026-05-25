@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from .base import TaskSpecFactory
 
 
+SUBTASK_OPTIONS_BLOCKLIST = ("args",)
+
+
 class SequenceTask(PoeTask):
     """
     Runs an array of subtasks one after the other. Items may be inline task
@@ -131,10 +134,21 @@ class SequenceTask(PoeTask):
     def __schema_fragment__(cls, ctx: Any) -> dict:
         """
         Override: sequence items reference the recursive task_def union
-        (registered by the orchestrator).
+        (registered by the orchestrator), with subtask-level options
+        forbidden per ``SUBTASK_OPTIONS_BLOCKLIST``. The
+        ``{not: {type: object, required: [X]}}`` form leaves bare-string
+        refs and inline arrays alone — only object items are constrained.
         """
         fragment = super().__schema_fragment__(ctx)
-        fragment["properties"]["sequence"]["items"] = {"$ref": "#/definitions/task_def"}
+        fragment["properties"]["sequence"]["items"] = {
+            "allOf": [
+                {"$ref": "#/definitions/task_def"},
+                *(
+                    {"not": {"type": "object", "required": [opt]}}
+                    for opt in SUBTASK_OPTIONS_BLOCKLIST
+                ),
+            ],
+        }
         return fragment
 
     spec: TaskSpec

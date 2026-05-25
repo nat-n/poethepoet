@@ -75,6 +75,20 @@ class ExprTask(PoeTask):
             except (ValueError, ExpressionParseError) as error:
                 raise ConfigValidationError(f"Invalid expression: {error}")
 
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: forbid the ``use_exec`` + ``capture_stdout`` combination
+        (runtime ``TaskOptions.validate`` rejects it too).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["if"] = {
+            "properties": {"use_exec": {"const": True}},
+            "required": ["use_exec"],
+        }
+        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        return fragment
+
     spec: TaskSpec
 
     async def _handle_run(
