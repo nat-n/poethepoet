@@ -3,11 +3,11 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict, get_args
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from ..options.annotations import option_annotation, register_type_alias
+from ..options.annotations import Metadata, option_annotation, register_type_alias
 from .primitives import EmptyDict, EnvDefault
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class IncludeScriptItem(TypedDict):
     merged into the project config.
     """
 
-    cwd: str
+    cwd: Annotated[str, Metadata(pattern=r"\S")]
     """
     Specify the working directory for resolving relative paths referenced by the
     included script.
@@ -69,7 +69,7 @@ class IncludeItem(TypedDict):
     config file.
     """
 
-    cwd: str
+    cwd: Annotated[str, Metadata(pattern=r"\S")]
     """
     Specify the working directory for resolving relative paths referenced by the
     included config.

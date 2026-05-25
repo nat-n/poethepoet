@@ -139,6 +139,10 @@ KNOWN_RUNTIME_ONLY_MISMATCHES: dict[tuple[str, str, str], str] = {
         "Runtime defers SwitchTask option validation to task-load time. "
         "Schema correctly rejects unexpected keys on task dicts."
     ),
+    ("switch", "tasks.choose_env.control", "add_unexpected_key"): (
+        "Runtime defers control-task option validation to task-load time. "
+        "Schema correctly rejects unexpected keys on the control task dict."
+    ),
     ("switch", "tasks.choose_env.switch.0", "add_unexpected_key"): (
         "Runtime defers switch-case dict validation to task-load time. "
         "Schema correctly rejects unexpected keys on case dicts."
@@ -155,6 +159,15 @@ KNOWN_RUNTIME_ONLY_MISMATCHES: dict[tuple[str, str, str], str] = {
     ("switch", "tasks.choose_env.control", "delete_field"): (
         "Runtime defers SwitchTask required-field checks to task-load time. "
         "Schema correctly rejects a switch task missing the control field."
+    ),
+    ("switch", "tasks.choose_env.control.expr", "delete_field"): (
+        "Runtime defers ExprTask required-field checks to task-load time. "
+        "Schema correctly rejects a control expr task missing the expr field."
+    ),
+    ("switch", "tasks.choose_env.control.expr", "replace_str_with_int"): (
+        "Runtime defers ExprTask content validation to task-load time. "
+        "Schema correctly rejects integer for expr content inside the "
+        "control task."
     ),
     ("switch", "tasks.choose_env.switch.0.cmd", "replace_str_with_int"): (
         "Runtime defers CmdTask content validation to task-load time. "

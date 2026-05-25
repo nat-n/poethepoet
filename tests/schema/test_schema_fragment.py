@@ -162,13 +162,15 @@ def test_switch_task_items_reference_task_def_with_case(ctx: SchemaContext) -> N
     """
     SwitchTask's `switch` content is a list of case-items, each of which
     is a task definition extended with an optional `case` key. The schema
-    references a dedicated `task_def_with_case` definition.
+    references a dedicated `task_def_with_case` definition. The override
+    wraps the reference in allOf alongside subtask-option blocklist
+    constraints; this test only asserts the reference is present.
     """
     from poethepoet.task.switch import SwitchTask
 
     schema = SwitchTask.__schema_fragment__(ctx)
-    items_schema = schema["properties"]["switch"]["items"]
-    assert items_schema == {"$ref": "#/definitions/task_def_with_case"}
+    branches = schema["properties"]["switch"]["items"]["allOf"]
+    assert {"$ref": "#/definitions/task_def_with_case"} in branches
 
 
 def test_switch_task_includes_control_property(ctx: SchemaContext) -> None:
@@ -184,18 +186,16 @@ def test_sequence_items_reference_task_def(ctx: SchemaContext) -> None:
     from poethepoet.task.sequence import SequenceTask
 
     schema = SequenceTask.__schema_fragment__(ctx)
-    assert schema["properties"]["sequence"]["items"] == {
-        "$ref": "#/definitions/task_def"
-    }
+    branches = schema["properties"]["sequence"]["items"]["allOf"]
+    assert {"$ref": "#/definitions/task_def"} in branches
 
 
 def test_parallel_items_reference_task_def(ctx: SchemaContext) -> None:
     from poethepoet.task.parallel import ParallelTask
 
     schema = ParallelTask.__schema_fragment__(ctx)
-    assert schema["properties"]["parallel"]["items"] == {
-        "$ref": "#/definitions/task_def"
-    }
+    branches = schema["properties"]["parallel"]["items"]["allOf"]
+    assert {"$ref": "#/definitions/task_def"} in branches
 
 
 def test_argspec_schema_fragment_has_expected_properties(ctx: SchemaContext) -> None:

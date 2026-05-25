@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 DEFAULT_CASE = "__default__"
 SUBTASK_OPTIONS_BLOCKLIST = ("args", "uses", "deps")
+CONTROL_TASK_TYPES = ("expr", "cmd", "script")
 
 
 class SwitchTask(PoeTask):
@@ -130,14 +131,10 @@ class SwitchTask(PoeTask):
         def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             from collections import defaultdict
 
-            allowed_control_task_types = ("expr", "cmd", "script")
-            if (
-                self.control_task_spec.task_type.__key__
-                not in allowed_control_task_types
-            ):
+            if self.control_task_spec.task_type.__key__ not in CONTROL_TASK_TYPES:
                 raise ConfigValidationError(
                     f"Control task must have a type that is one of "
-                    f"{allowed_control_task_types!r}"
+                    f"{CONTROL_TASK_TYPES!r}"
                 )
 
             cases: MutableMapping[Any, int] = defaultdict(int)
@@ -172,12 +169,30 @@ class SwitchTask(PoeTask):
         """
         Override: the `switch` content's items are case-aware task defs,
         not plain task defs. Reference `task_def_with_case` (registered
-        by the orchestrator in build_schema).
+        by the orchestrator in build_schema). The `control` field is
+        constrained to the task types the runtime accepts as a control
+        task, sourced from ``CONTROL_TASK_TYPES``.
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["properties"]["switch"]["items"] = {
-            "$ref": "#/definitions/task_def_with_case"
+            "allOf": [
+                {"$ref": "#/definitions/task_def_with_case"},
+                *(
+                    {"not": {"type": "object", "required": [opt]}}
+                    for opt in SUBTASK_OPTIONS_BLOCKLIST
+                ),
+            ],
         }
+        control_description = fragment["properties"]["control"].get("description")
+        control_schema: dict[str, Any] = {
+            "oneOf": [
+                {"type": "string"},
+                *({"$ref": f"#/definitions/{key}_task"} for key in CONTROL_TASK_TYPES),
+            ],
+        }
+        if control_description:
+            control_schema["description"] = control_description
+        fragment["properties"]["control"] = control_schema
         return fragment
 
     spec: TaskSpec

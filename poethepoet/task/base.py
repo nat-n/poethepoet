@@ -5,13 +5,14 @@ import sys
 from collections.abc import Iterator, Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, NamedTuple
 
 from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
 from ..exceptions import ConfigValidationError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
 from ..options import PoeOptions
+from ..options.annotations import Metadata
 
 if TYPE_CHECKING:
     from ..config import ConfigPartition, PoeConfig
@@ -176,12 +177,6 @@ class PoeTask(metaclass=MetaPoeTask):
     __key__: ClassVar[str]
     __content_type__: ClassVar[type] = str
 
-    # Optional schema-only metadata for the discriminator field. Subclasses
-    # may override to surface a JSON Schema ``title`` and ``examples`` on
-    # the field IDEs hover over when the user starts typing the task key.
-    __schema_title__: ClassVar[str] = ""
-    __schema_examples__: ClassVar[tuple[Any, ...]] = ()
-
     class TaskOptions(PoeOptions):
         args: dict | list | None = None
         """
@@ -195,7 +190,7 @@ class PoeTask(metaclass=MetaPoeTask):
         environment variable interpolation.
         """
 
-        cwd: str | None = None
+        cwd: Annotated[str, Metadata(pattern=r"\S")] | None = None
         """
         Specify the current working directory that this task should run with. This
         can be a relative path from the project root or an absolute path, and
@@ -808,10 +803,6 @@ class PoeTask(metaclass=MetaPoeTask):
         content_schema = translate_type(content_annotation, ctx)
         if docstring := inspect.cleandoc(cls.__doc__ or ""):
             content_schema["description"] = docstring
-        if cls.__schema_title__:
-            content_schema["title"] = cls.__schema_title__
-        if cls.__schema_examples__:
-            content_schema["examples"] = list(cls.__schema_examples__)
 
         fragment["properties"][cls.__key__] = content_schema
         # Append the discriminator to required (sorted, no duplicates).
