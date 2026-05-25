@@ -22,8 +22,9 @@ SUBTASK_OPTIONS_BLOCKLIST = ("args", "uses", "deps")
 
 class SwitchTask(PoeTask):
     """
-    A task that runs one of several `case` subtasks depending on the output of a
-    `switch` subtask.
+    Runs one of several subtasks based on the output of a control task.
+    The control task is executed first; its output is matched against
+    each case to select which subtask to run.
     """
 
     __key__ = "switch"

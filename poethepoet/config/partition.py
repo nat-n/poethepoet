@@ -257,7 +257,7 @@ class ProjectConfig(ConfigPartition):
         A map of environment variables to be set for all tasks.
         """
 
-        envfile: str | Sequence[str] | EnvfileOption = ()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
         Provide one or more env files to be loaded before running tasks. If an
         array is provided, files will be loaded in the given order.
@@ -376,15 +376,16 @@ class ProjectConfig(ConfigPartition):
                     f"Expected one of {PoeTask.get_task_types(str)!r}"
                 )
 
-            # Validate default_array_task_type value
-            if not PoeTask.is_task_type(
-                self.default_array_task_type, content_type=list
-            ):
-                raise ConfigValidationError(
-                    "Invalid value for option 'default_array_task_type': "
-                    f"{self.default_array_task_type!r}\n"
-                    f"Expected one of {PoeTask.get_task_types(list)!r}"
-                )
+            # Validate default_array_task_type value (only if user-set;
+            # the class default is valid by construction).
+            if "default_array_task_type" in self.__dict__:
+                valid_array_task_types = PoeTask.get_default_array_task_types()
+                if self.default_array_task_type not in valid_array_task_types:
+                    raise ConfigValidationError(
+                        "Invalid value for option 'default_array_task_type': "
+                        f"{self.default_array_task_type!r}\n"
+                        f"Expected one of {valid_array_task_types!r}"
+                    )
 
             # Validate default_array_item_task_type value
             if not PoeTask.is_task_type(
@@ -437,6 +438,26 @@ class ProjectConfig(ConfigPartition):
                         f"Value of {key!r} in option 'env' should be a string, "
                         f"but found {type(value).__name__!r}"
                     )
+
+        @classmethod
+        def __schema_fragment__(cls, ctx: Any) -> dict[str, Any]:
+            """
+            Attach enums for the three ``default_*_task_type`` options to
+            the default schema fragment, sourced from the same registry
+            queries that ``validate()`` uses so the schema can never drift
+            from the runtime contract.
+            """
+            from ..task.base import PoeTask
+
+            fragment = super().__schema_fragment__(ctx)
+            properties = fragment["properties"]
+            string_task_types = list(PoeTask.get_task_types(content_type=str))
+            properties["default_task_type"]["enum"] = string_task_types
+            properties["default_array_task_type"]["enum"] = list(
+                PoeTask.get_default_array_task_types()
+            )
+            properties["default_array_item_task_type"]["enum"] = string_task_types
+            return fragment
 
 
 class IncludedConfig(ConfigPartition):

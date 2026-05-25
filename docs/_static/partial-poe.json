@@ -133,7 +133,16 @@
           "description": "Redirects the task output to a file with the given path. Supports\nenvironment variable interpolation.",
           "type": "string"
         },
-        "cmd": { "type": "string" },
+        "cmd": {
+          "description": "Executes a single command as a subprocess without a shell. Supports\nglob patterns, environment variable templating, and argument\nsubstitution.",
+          "examples": [
+            "rm -rf ./**/*.pyc",
+            "echo Hello ${USER}",
+            "echo Hello \\${USER}"
+          ],
+          "title": "Command to execute",
+          "type": "string"
+        },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
           "type": "string"
@@ -209,7 +218,16 @@
             }
           ]
         },
-        "cmd": { "type": "string" },
+        "cmd": {
+          "description": "Executes a single command as a subprocess without a shell. Supports\nglob patterns, environment variable templating, and argument\nsubstitution.",
+          "examples": [
+            "rm -rf ./**/*.pyc",
+            "echo Hello ${USER}",
+            "echo Hello \\${USER}"
+          ],
+          "title": "Command to execute",
+          "type": "string"
+        },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
           "type": "string"
@@ -295,10 +313,18 @@
       "type": "object"
     },
     "envfile_option": {
-      "anyOf": [
+      "oneOf": [
         { "type": "string" },
-        { "items": { "type": "string" }, "type": "array" },
-        { "$ref": "#/definitions/envfile_full" }
+        { "$ref": "#/definitions/envfile_full" },
+        {
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              { "$ref": "#/definitions/envfile_full" }
+            ]
+          },
+          "type": "array"
+        }
       ]
     },
     "executor_auto": {
@@ -542,7 +568,10 @@
         "env": { "$ref": "#/definitions/env_option" },
         "envfile": { "$ref": "#/definitions/envfile_option" },
         "executor": { "$ref": "#/definitions/executor_task_option" },
-        "expr": { "type": "string" },
+        "expr": {
+          "description": "Evaluates a Python expression to produce a result. Can reference\nenvironment variables and arguments.",
+          "type": "string"
+        },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
           "type": "string"
@@ -622,7 +651,10 @@
         "env": { "$ref": "#/definitions/env_option" },
         "envfile": { "$ref": "#/definitions/envfile_option" },
         "executor": { "$ref": "#/definitions/executor_task_option" },
-        "expr": { "type": "string" },
+        "expr": {
+          "description": "Evaluates a Python expression to produce a result. Can reference\nenvironment variables and arguments.",
+          "type": "string"
+        },
         "help": {
           "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
           "type": "string"
@@ -727,6 +759,7 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "parallel": {
+          "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are prefixed with the subtask name by\ndefault.",
           "items": { "$ref": "#/definitions/task_def" },
           "type": "array"
         },
@@ -813,6 +846,7 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "parallel": {
+          "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are prefixed with the subtask name by\ndefault.",
           "items": { "$ref": "#/definitions/task_def" },
           "type": "array"
         },
@@ -873,7 +907,10 @@
           "description": "If true the failure of the referenced task will be ignored and the ref task\nwill return exit code 0.",
           "type": "boolean"
         },
-        "ref": { "type": "string" },
+        "ref": {
+          "description": "Invokes another task by name, with optional arguments appended. The\ndefault task type inside a sequence.",
+          "type": "string"
+        },
         "uses": {
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
@@ -937,7 +974,10 @@
           "description": "If true the failure of the referenced task will be ignored and the ref task\nwill return exit code 0.",
           "type": "boolean"
         },
-        "ref": { "type": "string" },
+        "ref": {
+          "description": "Invokes another task by name, with optional arguments appended. The\ndefault task type inside a sequence.",
+          "type": "string"
+        },
         "uses": {
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
@@ -987,7 +1027,15 @@
           "description": "If true then the return value of the Python callable will be output to\nstdout, unless it is None.",
           "type": "boolean"
         },
-        "script": { "type": "string" },
+        "script": {
+          "description": "Imports and invokes a Python callable, optionally with values or\nexpressions passed as arguments. Async callables are run via\n``asyncio.run``.",
+          "examples": [
+            "my_pkg.my_module.my_func",
+            "my_pkg.scripts:main",
+            "my_pkg.scripts:main(only='images', log_env={'LOG_PATH':'/var/log'})"
+          ],
+          "type": "string"
+        },
         "use_exec": {
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
@@ -1062,7 +1110,15 @@
           "description": "If true then the return value of the Python callable will be output to\nstdout, unless it is None.",
           "type": "boolean"
         },
-        "script": { "type": "string" },
+        "script": {
+          "description": "Imports and invokes a Python callable, optionally with values or\nexpressions passed as arguments. Async callables are run via\n``asyncio.run``.",
+          "examples": [
+            "my_pkg.my_module.my_func",
+            "my_pkg.scripts:main",
+            "my_pkg.scripts:main(only='images', log_env={'LOG_PATH':'/var/log'})"
+          ],
+          "type": "string"
+        },
         "use_exec": {
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
@@ -1114,6 +1170,7 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "sequence": {
+          "description": "Runs an array of subtasks one after the other. Items may be inline\ntask definitions, task references by name, or nested sequences.",
           "items": { "$ref": "#/definitions/task_def" },
           "type": "array"
         },
@@ -1185,6 +1242,7 @@
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
         "sequence": {
+          "description": "Runs an array of subtasks one after the other. Items may be inline\ntask definitions, task references by name, or nested sequences.",
           "items": { "$ref": "#/definitions/task_def" },
           "type": "array"
         },
@@ -1267,7 +1325,15 @@
           ],
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
-        "shell": { "type": "string" },
+        "shell": {
+          "description": "Executes one or more statements inside a new shell interpreter. Can\nleverage shell syntax such as pipes, command substitution, and\nbackground processes.",
+          "examples": [
+            "echo 'Hello World'",
+            "cat foo.txt | grep bar",
+            "for i in {1..5}; do echo \"Welcome $i times\"; done"
+          ],
+          "type": "string"
+        },
         "uses": {
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
@@ -1368,7 +1434,15 @@
           ],
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
-        "shell": { "type": "string" },
+        "shell": {
+          "description": "Executes one or more statements inside a new shell interpreter. Can\nleverage shell syntax such as pipes, command substitution, and\nbackground processes.",
+          "examples": [
+            "echo 'Hello World'",
+            "cat foo.txt | grep bar",
+            "for i in {1..5}; do echo \"Welcome $i times\"; done"
+          ],
+          "type": "string"
+        },
         "uses": {
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
@@ -1417,6 +1491,7 @@
           "type": "string"
         },
         "switch": {
+          "description": "Runs one of several subtasks based on the output of a control task.\nThe control task is executed first; its output is matched against\neach case to select which subtask to run.",
           "items": { "$ref": "#/definitions/task_def_with_case" },
           "type": "array"
         },
@@ -1489,6 +1564,7 @@
           "type": "string"
         },
         "switch": {
+          "description": "Runs one of several subtasks based on the output of a control task.\nThe control task is executed first; its output is matched against\neach case to select which subtask to run.",
           "items": { "$ref": "#/definitions/task_def_with_case" },
           "type": "array"
         },
@@ -1589,14 +1665,17 @@
   "properties": {
     "default_array_item_task_type": {
       "description": "When a task is declared as a string inside an array (e.g. inline in a\nsequence task), then it is interpreted as the default array item task type,\nwhich will be 'ref' unless otherwise specified.",
+      "enum": ["cmd", "expr", "ref", "script", "shell"],
       "type": "string"
     },
     "default_array_task_type": {
       "description": "When a task is declared as an array (instead of a table), then it is\ninterpreted as the default array task type, which will be 'sequence' unless\notherwise specified.",
+      "enum": ["parallel", "sequence"],
       "type": "string"
     },
     "default_task_type": {
       "description": "Sets the default task type for tasks defined as strings. By default, tasks\nare interpreted as shell commands ('cmd'). This can be overridden to\n'script' or other supported types.",
+      "enum": ["cmd", "expr", "ref", "script", "shell"],
       "type": "string"
     },
     "env": {

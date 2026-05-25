@@ -17,12 +17,18 @@ if TYPE_CHECKING:
 
 class ScriptTask(PoeTask):
     """
-    A task consisting of a reference to a python script
+    Invokes a Python callable or module, optionally with values or expressions
+    passed as arguments.
     """
 
     content: str
 
     __key__ = "script"
+    __schema_examples__ = (
+        "my_pkg.my_module",
+        "my_pkg.my_module:main",
+        "my_pkg.my_module:main(only='images', log_env={'LOG_PATH':'/var/log'})",
+    )
 
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False

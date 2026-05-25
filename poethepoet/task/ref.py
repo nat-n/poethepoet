@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class RefTask(PoeTask):
     """
-    A task consisting of a reference to another task
+    Invokes another task by name, with or without arguments.
     """
 
     __key__ = "ref"

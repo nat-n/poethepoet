@@ -19,7 +19,8 @@ if TYPE_CHECKING:
 
 class ExprTask(PoeTask):
     """
-    A task consisting of a python expression
+    Evaluates a Python expression to produce a result. Can reference
+    environment variables and arguments, and leverage most python builtins.
     """
 
     content: str

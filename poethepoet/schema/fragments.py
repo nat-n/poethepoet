@@ -195,10 +195,11 @@ def env_option_schema(ctx: SchemaContext) -> dict:
 
 def envfile_option_schema(ctx: SchemaContext) -> dict:
     """
-    Build the envfile option's schema. Three accepted shapes:
+    Build the envfile option's schema. Three accepted shapes, mutually
+    exclusive by type:
     - Bare string (one envfile path)
-    - Array of strings (multiple paths)
     - EnvfileOption TypedDict with expected/optional keys
+    - Array of (string | EnvfileOption), mixing both freely
 
     Registers envfile_full (the TypedDict shape) in ctx.definitions.
     """
@@ -211,10 +212,18 @@ def envfile_option_schema(ctx: SchemaContext) -> dict:
     ctx.register("envfile_full", envfile_full_schema)
 
     result = {
-        "anyOf": [
+        "oneOf": [
             {"type": "string"},
-            {"type": "array", "items": {"type": "string"}},
             {"$ref": "#/definitions/envfile_full"},
+            {
+                "type": "array",
+                "items": {
+                    "oneOf": [
+                        {"type": "string"},
+                        {"$ref": "#/definitions/envfile_full"},
+                    ],
+                },
+            },
         ]
     }
     ctx.register("envfile_option", result)

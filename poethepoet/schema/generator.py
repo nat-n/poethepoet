@@ -93,36 +93,28 @@ def build_schema() -> dict:
     # Same swap on task_group: executor and tasks.
     _apply_task_group_property_refs(ctx)
 
-    # Walk ProjectConfig.ConfigOptions for the root properties.
+    # Base root-property schemas come from ProjectConfig.ConfigOptions'
+    # __schema_fragment__ hook so subclass overrides (e.g. enums sourced
+    # from the task-type registry) are picked up automatically.
     from poethepoet.config.partition import ProjectConfig
-    from poethepoet.schema.translate import translate_type
 
-    root_properties: dict[str, dict] = {}
-    root_required: list[str] = []
     cls = ProjectConfig.ConfigOptions
+    fragment = cls.__schema_fragment__(ctx)
+    root_properties: dict[str, dict] = dict(fragment["properties"])
+    root_required: list[str] = list(fragment.get("required", []))
 
+    # Replace properties listed in _ROOT_PROPERTY_REFS with $refs, preserving
+    # the description backfill. $ref-only schemas can't carry sibling
+    # keywords under strict draft-07 semantics, but description on $ref is
+    # widely supported by editors and meta-validation is permissive.
     for attr_name, type_annotation in cls.get_fields().items():
         schema_key = type_annotation.metadata_get("config_name") or attr_name
-
-        # Use a $ref for cross-cutting properties.
         if schema_key in _ROOT_PROPERTY_REFS:
             ref_target = _ROOT_PROPERTY_REFS[schema_key]
             field_schema: dict[str, Any] = {"$ref": f"#/definitions/{ref_target}"}
-        else:
-            field_schema = translate_type(type_annotation, ctx)
-
-        if description := cls.description_for_field(attr_name):
-            # $ref-only schemas can't carry sibling keywords in strict
-            # draft-07, but description on $ref is widely supported by
-            # editors. Emit it; meta-validation is permissive.
-            field_schema["description"] = description
-
-        root_properties[schema_key] = field_schema
-
-        # Required-ness mirrors PoeOptions.parse logic.
-        has_default = hasattr(cls, cls.get_field_attribute(attr_name) or attr_name)
-        if not has_default and not type_annotation.is_optional:
-            root_required.append(schema_key)
+            if description := cls.description_for_field(attr_name):
+                field_schema["description"] = description
+            root_properties[schema_key] = field_schema
 
     # Assemble the root schema.
     schema: dict[str, Any] = {
