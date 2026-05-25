@@ -1574,7 +1574,7 @@
         },
         "tasks": { "$ref": "#/definitions/tasks_map" }
       },
-      "required": ["heading"],
+      "required": [],
       "type": "object"
     },
     "tasks_map": {
