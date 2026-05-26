@@ -320,9 +320,22 @@ class PoeOptions:
 
             # A field is required iff: no class-level default value AND
             # its type isn't Optional. We mirror PoeOptions.parse's logic.
-            has_default = hasattr(cls, cls.get_field_attribute(attr_name) or attr_name)
+            resolved_attr = cls.get_field_attribute(attr_name) or attr_name
+            has_default = hasattr(cls, resolved_attr)
             if not has_default and not type_annotation.is_optional:
                 required.append(schema_key)
+
+            # Surface JSON-primitive class-level defaults as ``default:``
+            # annotations. Skip ``None`` (typically means "inherit from
+            # parent scope", not "literal null") and skip non-primitive
+            # values like ``EmptyDict``, ``()``, or ``MappingProxyType``
+            # — emitting those adds noise without documentation value.
+            if has_default:
+                default_value = getattr(cls, resolved_attr)
+                # ``type(...) is`` (not isinstance) keeps bool out of
+                # the int branch and excludes int/str subclasses.
+                if type(default_value) in (bool, int, float, str):
+                    field_schema["default"] = default_value
 
         result: dict[str, Any] = {
             "type": "object",

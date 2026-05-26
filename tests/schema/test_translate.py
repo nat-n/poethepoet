@@ -171,7 +171,7 @@ def test_list_with_min_max_items(ctx: SchemaContext) -> None:
     from collections.abc import Sequence
 
     annotation = TypeAnnotation.parse(
-        Annotated[Sequence[str], Metadata(min_length=1, max_length=10)]
+        Annotated[Sequence[str], Metadata(min_items=1, max_items=10)]
     )
     schema = translate_type(annotation, ctx)
     assert schema == {
@@ -315,6 +315,114 @@ def test_pure_none_union_is_null(ctx: SchemaContext) -> None:
     annotation = TypeAnnotation.parse(type(None) | None)
     schema = translate_type(annotation, ctx)
     assert schema == {"type": "null"}
+
+
+# --- Metadata.type_constraints() ↔ translator round-trip ---
+
+
+# Map snake_case constraint names to the JSON Schema keywords the
+# translator must emit. Kept inside the test module so the asserted
+# contract lives next to the test, not buried in the translator.
+_CONSTRAINT_TO_JSON_KEY: dict[str, str] = {
+    "pattern": "pattern",
+    "min_length": "minLength",
+    "max_length": "maxLength",
+    "minimum": "minimum",
+    "maximum": "maximum",
+    "min_items": "minItems",
+    "max_items": "maxItems",
+}
+
+
+# Representative Python annotation for each JSON Schema type the
+# constraint table references. Used to build a sample annotation per
+# (constraint, type) pair so we can ask the translator to handle it.
+def _annotation_for_json_type(json_type: str) -> Any:
+    from collections.abc import Sequence
+
+    return {
+        "string": str,
+        "integer": int,
+        "number": float,
+        "array": Sequence[str],
+    }[json_type]
+
+
+# Sample value used when applying a constraint. Picked to be obviously
+# non-default so a forgotten emission shows up as a missing key rather
+# than a value-comparison flake (e.g. min_items=0 might be the zero
+# value of some implicit code path).
+_CONSTRAINT_SAMPLE_VALUE: dict[str, Any] = {
+    "pattern": r"\d+",
+    "min_length": 1,
+    "max_length": 50,
+    "minimum": 5,
+    "maximum": 100,
+    "min_items": 1,
+    "max_items": 10,
+}
+
+
+def _round_trip_cases() -> list[tuple[str, str]]:
+    """
+    Flatten Metadata.type_constraints() into (constraint, json_type)
+    pairs so each cell of the table becomes a parametrized test case.
+    """
+    from poethepoet.options.annotations import Metadata
+
+    return [
+        (constraint, json_type)
+        for constraint, json_types in Metadata.type_constraints().items()
+        for json_type in sorted(json_types)
+    ]
+
+
+@pytest.mark.parametrize(("constraint", "json_type"), _round_trip_cases())
+def test_metadata_type_constraints_round_trip(
+    constraint: str, json_type: str, ctx: SchemaContext
+) -> None:
+    """
+    Every cell of ``Metadata.type_constraints()`` must round-trip
+    through the translator: applying the constraint as ``Metadata(**{
+    constraint: value})`` to an annotation of the declared JSON type
+    produces a schema fragment containing the corresponding JSON
+    Schema keyword with that value.
+
+    This guards against silent drift between the constraint table and
+    the per-type translator branches (the ``min_items`` vs
+    ``min_length`` typo that previously dropped ``minItems`` on shell
+    interpreter arrays would have been caught here).
+    """
+    py_type = _annotation_for_json_type(json_type)
+    sample = _CONSTRAINT_SAMPLE_VALUE[constraint]
+    expected_key = _CONSTRAINT_TO_JSON_KEY[constraint]
+
+    annotation = TypeAnnotation.parse(
+        Annotated[py_type, Metadata(**{constraint: sample})]
+    )
+    schema = translate_type(annotation, ctx)
+    assert schema.get(expected_key) == sample, (
+        f"{constraint!r} on JSON type {json_type!r} did not produce "
+        f"{expected_key!r}={sample!r}: {schema!r}"
+    )
+
+
+def test_metadata_type_constraints_keys_match_constraint_table() -> None:
+    """
+    The local ``_CONSTRAINT_TO_JSON_KEY`` mapping must list exactly
+    the constraints declared in ``Metadata.type_constraints()``. If a
+    new constraint is added to the runtime table without a JSON-key
+    mapping (or vice versa), this test fails — surfacing the gap
+    instead of letting the parametrized round-trip silently skip it.
+    """
+    from poethepoet.options.annotations import Metadata
+
+    table_keys = set(Metadata.type_constraints().keys())
+    mapping_keys = set(_CONSTRAINT_TO_JSON_KEY.keys())
+    assert table_keys == mapping_keys, (
+        f"constraint table {table_keys!r} and JSON-key mapping "
+        f"{mapping_keys!r} are out of sync"
+    )
 
 
 def test_all_type_annotation_subclasses_have_a_translator(ctx: SchemaContext) -> None:

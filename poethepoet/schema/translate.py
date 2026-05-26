@@ -131,10 +131,10 @@ def _translate_list(annotation: ListType, ctx: SchemaContext) -> dict[str, Any]:
     if not isinstance(annotation._value_type, AnyType):
         schema["items"] = translate_type(annotation._value_type, ctx)
 
-    if (min_length := annotation.metadata_get("min_length")) is not None:
-        schema["minItems"] = min_length
-    if (max_length := annotation.metadata_get("max_length")) is not None:
-        schema["maxItems"] = max_length
+    if (min_items := annotation.metadata_get("min_items")) is not None:
+        schema["minItems"] = min_items
+    if (max_items := annotation.metadata_get("max_items")) is not None:
+        schema["maxItems"] = max_items
     if (examples := annotation.metadata_get("examples")) is not None:
         schema["examples"] = examples
 

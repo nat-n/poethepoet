@@ -138,8 +138,12 @@ class SequenceTask(PoeTask):
         forbidden per ``SUBTASK_OPTIONS_BLOCKLIST``. The
         ``{not: {type: object, required: [X]}}`` form leaves bare-string
         refs and inline arrays alone — only object items are constrained.
+        Also drops ``capture_stdout`` from the inherited properties so
+        the existing ``additionalProperties: false`` rejects the key —
+        ``TaskOptions.validate`` raises if it's set at runtime.
         """
         fragment = super().__schema_fragment__(ctx)
+        fragment["properties"].pop("capture_stdout", None)
         fragment["properties"]["sequence"]["items"] = {
             "allOf": [
                 {"$ref": "#/definitions/task_def"},

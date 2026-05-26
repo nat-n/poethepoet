@@ -25,11 +25,13 @@
           "description": "The default value for the argument when not provided."
         },
         "help": {
+          "default": "",
           "description": "A short description of the argument to include in the documentation of the\ntask.",
           "type": "string"
         },
         "multiple": {
           "anyOf": [{ "type": "boolean" }, { "type": "integer" }],
+          "default": false,
           "description": "Indicates if multiple values are allowed for the argument. If an integer is\ngiven, exactly that many values are expected."
         },
         "name": {
@@ -43,13 +45,16 @@
         },
         "positional": {
           "anyOf": [{ "type": "boolean" }, { "type": "string" }],
+          "default": false,
           "description": "Indicates if the argument is positional. If a string is provided, it is used\nas the dest name for the argument in argparse."
         },
         "required": {
+          "default": false,
           "description": "Indicates if the argument is required.",
           "type": "boolean"
         },
         "type": {
+          "default": "string",
           "description": "The type of the argument.",
           "enum": ["string", "float", "integer", "boolean"],
           "type": "string"
@@ -79,11 +84,13 @@
           "description": "The default value for the argument when not provided."
         },
         "help": {
+          "default": "",
           "description": "A short description of the argument to include in the documentation of the\ntask.",
           "type": "string"
         },
         "multiple": {
           "anyOf": [{ "type": "boolean" }, { "type": "integer" }],
+          "default": false,
           "description": "Indicates if multiple values are allowed for the argument. If an integer is\ngiven, exactly that many values are expected."
         },
         "options": {
@@ -93,13 +100,16 @@
         },
         "positional": {
           "anyOf": [{ "type": "boolean" }, { "type": "string" }],
+          "default": false,
           "description": "Indicates if the argument is positional. If a string is provided, it is used\nas the dest name for the argument in argparse."
         },
         "required": {
+          "default": false,
           "description": "Indicates if the argument is required.",
           "type": "boolean"
         },
         "type": {
+          "default": "string",
           "description": "The type of the argument.",
           "enum": ["string", "float", "integer", "boolean"],
           "type": "string"
@@ -158,6 +168,7 @@
           "type": "array"
         },
         "empty_glob": {
+          "default": "pass",
           "description": "Determines how to handle glob patterns with no matches. The default is\n'pass', which causes unmatched patterns to be passed through to the command\n(just like in bash). Setting it to 'null' will replace an unmatched pattern\nwith nothing, and setting it to 'fail' will cause the task to fail with an\nerror if there are no matches.",
           "enum": ["pass", "null", "fail"],
           "type": "string"
@@ -174,9 +185,11 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "use_exec": {
+          "default": false,
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
         },
@@ -249,6 +262,7 @@
           "type": "array"
         },
         "empty_glob": {
+          "default": "pass",
           "description": "Determines how to handle glob patterns with no matches. The default is\n'pass', which causes unmatched patterns to be passed through to the command\n(just like in bash). Setting it to 'null' will replace an unmatched pattern\nwith nothing, and setting it to 'fail' will cause the task to fail with an\nerror if there are no matches.",
           "enum": ["pass", "null", "fail"],
           "type": "string"
@@ -265,9 +279,11 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "use_exec": {
+          "default": false,
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
         },
@@ -412,6 +428,7 @@
       "additionalProperties": false,
       "properties": {
         "exact": {
+          "default": false,
           "description": "Perform an exact sync, removing extraneous packages from the environment.",
           "type": "boolean"
         },
@@ -423,6 +440,7 @@
           "description": "Include optional dependencies from the specified extra name."
         },
         "frozen": {
+          "default": false,
           "description": "Run without updating the uv.lock file.",
           "type": "boolean"
         },
@@ -434,10 +452,12 @@
           "description": "Include dependencies from the specified dependency group."
         },
         "isolated": {
+          "default": false,
           "description": "Run the command in an isolated virtual environment.",
           "type": "boolean"
         },
         "locked": {
+          "default": false,
           "description": "Assert that the uv.lock file is up to date; fail if it would need to be\nupdated.",
           "type": "boolean"
         },
@@ -449,10 +469,12 @@
           "description": "Disable the specified dependency group."
         },
         "no-project": {
+          "default": false,
           "description": "Avoid discovering the project or workspace.",
           "type": "boolean"
         },
         "no-sync": {
+          "default": false,
           "description": "Avoid syncing the virtual environment.",
           "type": "boolean"
         },
@@ -476,6 +498,7 @@
       "additionalProperties": false,
       "properties": {
         "exact": {
+          "default": false,
           "description": "Perform an exact sync, removing extraneous packages from the environment.",
           "type": "boolean"
         },
@@ -487,6 +510,7 @@
           "description": "Include optional dependencies from the specified extra name."
         },
         "frozen": {
+          "default": false,
           "description": "Run without updating the uv.lock file.",
           "type": "boolean"
         },
@@ -498,10 +522,12 @@
           "description": "Include dependencies from the specified dependency group."
         },
         "isolated": {
+          "default": false,
           "description": "Run the command in an isolated virtual environment.",
           "type": "boolean"
         },
         "locked": {
+          "default": false,
           "description": "Assert that the uv.lock file is up to date; fail if it would need to be\nupdated.",
           "type": "boolean"
         },
@@ -513,10 +539,12 @@
           "description": "Disable the specified dependency group."
         },
         "no-project": {
+          "default": false,
           "description": "Avoid discovering the project or workspace.",
           "type": "boolean"
         },
         "no-sync": {
+          "default": false,
           "description": "Avoid syncing the virtual environment.",
           "type": "boolean"
         },
@@ -566,6 +594,7 @@
         "args": { "$ref": "#/definitions/args_option" },
         "assert": {
           "anyOf": [{ "type": "boolean" }, { "type": "integer" }],
+          "default": false,
           "description": "A boolean indicating if the task will fail when the result of the\nexpression is falsy. If an integer is given, the task will exit with that\ncode when the result is falsy."
         },
         "capture_stdout": {
@@ -598,6 +627,7 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "imports": {
@@ -606,6 +636,7 @@
           "type": "array"
         },
         "use_exec": {
+          "default": false,
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
         },
@@ -634,6 +665,7 @@
         "args": { "$ref": "#/definitions/args_option" },
         "assert": {
           "anyOf": [{ "type": "boolean" }, { "type": "integer" }],
+          "default": false,
           "description": "A boolean indicating if the task will fail when the result of the\nexpression is falsy. If an integer is given, the task will exit with that\ncode when the result is falsy."
         },
         "capture_stdout": {
@@ -687,6 +719,7 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "imports": {
@@ -695,6 +728,7 @@
           "type": "array"
         },
         "use_exec": {
+          "default": false,
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
         },
@@ -755,10 +789,6 @@
       "additionalProperties": false,
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
-        "capture_stdout": {
-          "description": "Redirects the task output to a file with the given path. Supports\nenvironment variable interpolation.",
-          "type": "string"
-        },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
           "pattern": "\\S",
@@ -781,6 +811,7 @@
           "type": "string"
         },
         "ignore_fail": {
+          "default": false,
           "description": "If set, the parallel task will continue running even if one of the subtasks\nfails.",
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
@@ -799,13 +830,16 @@
             { "type": "string" },
             { "enum": [false], "type": "boolean" }
           ],
+          "default": "{name}",
           "description": "Set the prefix applied to each line of output from subtasks. By default\nthis is the task name. Set to false to disable prefixing."
         },
         "prefix_max": {
+          "default": 16,
           "description": "Set the maximum width of the prefix. Longer prefixes will be truncated.",
           "type": "integer"
         },
         "prefix_template": {
+          "default": "{color_start}{prefix}{color_end} | ",
           "description": "Specifies a template for how the prefix is applied after truncating it to\nthe prefix_max length.",
           "type": "string"
         },
@@ -827,10 +861,6 @@
       "additionalProperties": false,
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
-        "capture_stdout": {
-          "description": "Redirects the task output to a file with the given path. Supports\nenvironment variable interpolation.",
-          "type": "string"
-        },
         "case": {
           "anyOf": [
             {
@@ -874,6 +904,7 @@
           "type": "string"
         },
         "ignore_fail": {
+          "default": false,
           "description": "If set, the parallel task will continue running even if one of the subtasks\nfails.",
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
@@ -892,13 +923,16 @@
             { "type": "string" },
             { "enum": [false], "type": "boolean" }
           ],
+          "default": "{name}",
           "description": "Set the prefix applied to each line of output from subtasks. By default\nthis is the task name. Set to false to disable prefixing."
         },
         "prefix_max": {
+          "default": 16,
           "description": "Set the maximum width of the prefix. Longer prefixes will be truncated.",
           "type": "integer"
         },
         "prefix_template": {
+          "default": "{color_start}{prefix}{color_end} | ",
           "description": "Specifies a template for how the prefix is applied after truncating it to\nthe prefix_max length.",
           "type": "string"
         },
@@ -941,6 +975,7 @@
           "type": "string"
         },
         "ignore_fail": {
+          "default": false,
           "description": "If true the failure of the referenced task will be ignored and the ref task\nwill return exit code 0.",
           "type": "boolean"
         },
@@ -1008,6 +1043,7 @@
           "type": "string"
         },
         "ignore_fail": {
+          "default": false,
           "description": "If true the failure of the referenced task will be ignored and the ref task\nwill return exit code 0.",
           "type": "boolean"
         },
@@ -1063,9 +1099,11 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "print_result": {
+          "default": false,
           "description": "If true then the return value of the Python callable will be output to\nstdout, unless it is None.",
           "type": "boolean"
         },
@@ -1079,6 +1117,7 @@
           "type": "string"
         },
         "use_exec": {
+          "default": false,
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
         },
@@ -1152,9 +1191,11 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "print_result": {
+          "default": false,
           "description": "If true then the return value of the Python callable will be output to\nstdout, unless it is None.",
           "type": "boolean"
         },
@@ -1168,6 +1209,7 @@
           "type": "string"
         },
         "use_exec": {
+          "default": false,
           "description": "Specify that this task should be executed in the same process, instead of\nas a subprocess. Note: This feature has limitations, such as not being\ncompatible with tasks that are referenced by other tasks and not working on\nWindows.",
           "type": "boolean"
         },
@@ -1190,10 +1232,6 @@
       "additionalProperties": false,
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
-        "capture_stdout": {
-          "description": "Redirects the task output to a file with the given path. Supports\nenvironment variable interpolation.",
-          "type": "string"
-        },
         "cwd": {
           "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
           "pattern": "\\S",
@@ -1216,6 +1254,7 @@
           "type": "string"
         },
         "ignore_fail": {
+          "default": false,
           "description": "If set, the sequence will continue running even if one of the tasks fails.",
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
@@ -1247,10 +1286,6 @@
       "additionalProperties": false,
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
-        "capture_stdout": {
-          "description": "Redirects the task output to a file with the given path. Supports\nenvironment variable interpolation.",
-          "type": "string"
-        },
         "case": {
           "anyOf": [
             {
@@ -1294,6 +1329,7 @@
           "type": "string"
         },
         "ignore_fail": {
+          "default": false,
           "description": "If set, the sequence will continue running even if one of the tasks fails.",
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
@@ -1351,6 +1387,7 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "interpreter": {
@@ -1382,6 +1419,7 @@
                 ],
                 "type": "string"
               },
+              "minItems": 1,
               "type": "array"
             }
           ],
@@ -1461,6 +1499,7 @@
             { "type": "boolean" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
+          "default": false,
           "description": "Return exit code 0 even if the task fails, or specify a list of task exit\ncodes to ignore."
         },
         "interpreter": {
@@ -1492,6 +1531,7 @@
                 ],
                 "type": "string"
               },
+              "minItems": 1,
               "type": "array"
             }
           ],
@@ -1543,6 +1583,7 @@
           "type": "string"
         },
         "default": {
+          "default": "fail",
           "description": "Defines the default behavior if no cases are matched. Can either pass or\nfail.",
           "enum": ["pass", "fail"],
           "type": "string"
@@ -1629,6 +1670,7 @@
           "type": "string"
         },
         "default": {
+          "default": "fail",
           "description": "Defines the default behavior if no cases are matched. Can either pass or\nfail.",
           "enum": ["pass", "fail"],
           "type": "string"
@@ -1753,16 +1795,19 @@
   "description": "Configuration for Poe the Poet, a task runner that works well with `pyproject.toml` files.",
   "properties": {
     "default_array_item_task_type": {
+      "default": "ref",
       "description": "When a task is declared as a string inside an array (e.g. inline in a\nsequence task), then it is interpreted as the default array item task type,\nwhich will be 'ref' unless otherwise specified.",
       "enum": ["cmd", "expr", "ref", "script", "shell"],
       "type": "string"
     },
     "default_array_task_type": {
+      "default": "sequence",
       "description": "When a task is declared as an array (instead of a table), then it is\ninterpreted as the default array task type, which will be 'sequence' unless\notherwise specified.",
       "enum": ["parallel", "sequence"],
       "type": "string"
     },
     "default_task_type": {
+      "default": "cmd",
       "description": "Sets the default task type for tasks defined as strings. By default, tasks\nare interpreted as shell commands ('cmd'). This can be overridden to\n'script' or other supported types.",
       "enum": ["cmd", "expr", "ref", "script", "shell"],
       "type": "string"
@@ -1822,6 +1867,7 @@
       "description": "Load dynamically generated tasks from one or more python functions."
     },
     "poetry_command": {
+      "default": "poe",
       "description": "Change the name of the task poe registers with poetry when used as a\nplugin.",
       "type": "string"
     },
@@ -1862,6 +1908,7 @@
           "type": "array"
         }
       ],
+      "default": "posix",
       "description": "Change the default shell interpreter for executing shell tasks. Normally,\ntasks are executed using a posix shell, but this can be overridden here."
     },
     "tasks": {
@@ -1869,6 +1916,7 @@
       "description": "A mapping of task names to task definitions."
     },
     "verbosity": {
+      "default": 0,
       "description": "Sets the default verbosity level for all commands. '-1' is quieter, '0' is\nthe default level, and '1' is more verbose. The command line arguments are\nincremental, with '--quiet' or '-q' decreasing verbosity, and '--verbose'\nor '-v' increasing it.",
       "enum": [-2, -1, 0, 1, 2],
       "type": "integer"

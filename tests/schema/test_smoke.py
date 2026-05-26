@@ -227,6 +227,134 @@ def test_build_schema_ref_task_forbids_executor() -> None:
     assert ref_task["additionalProperties"] is False
 
 
+def test_build_schema_primitive_defaults_propagate() -> None:
+    """
+    PoeOptions class-level defaults whose value is a JSON primitive
+    (bool, int, float, str — including Literal-typed strings) appear
+    as ``default:`` annotations on the corresponding schema property.
+    Sentinel defaults (``EmptyDict``, ``()``, ``MappingProxyType``) and
+    ``None`` defaults are skipped (``None`` typically means "inherit"
+    rather than "value is null"). Verified by sampling representative
+    fields from across the task / project / arg layers.
+    """
+    from poethepoet.schema import build_schema
+
+    schema = build_schema()
+
+    # Project-level: bare string default sourced from class attribute.
+    assert schema["properties"]["default_task_type"].get("default") == "cmd"
+    assert schema["properties"]["default_array_item_task_type"].get("default") == "ref"
+    assert schema["properties"]["default_array_task_type"].get("default") == "sequence"
+    assert schema["properties"]["verbosity"].get("default") == 0
+    assert schema["properties"]["poetry_command"].get("default") == "poe"
+    assert schema["properties"]["shell_interpreter"].get("default") == "posix"
+
+    # Parallel task: the case that originally motivated this work.
+    parallel_props = schema["definitions"]["parallel_task"]["properties"]
+    assert parallel_props["prefix"].get("default") == "{name}"
+    assert parallel_props["prefix_max"].get("default") == 16
+    assert (
+        parallel_props["prefix_template"].get("default")
+        == "{color_start}{prefix}{color_end} | "
+    ), "prefix_template default must include the runtime trailing space"
+    assert parallel_props["ignore_fail"].get("default") is False
+
+    # Cmd task: Literal-typed default + bool default.
+    cmd_props = schema["definitions"]["cmd_task"]["properties"]
+    assert cmd_props["empty_glob"].get("default") == "pass"
+    assert cmd_props["use_exec"].get("default") is False
+
+    # Switch task: Literal default.
+    switch_props = schema["definitions"]["switch_task"]["properties"]
+    assert switch_props["default"].get("default") == "fail"
+
+    # Args item: bool + Literal-string defaults.
+    args_props = schema["definitions"]["args_item"]["properties"]
+    assert args_props["required"].get("default") is False
+    assert args_props["type"].get("default") == "string"
+
+    # Annotated-renamed field: class attr is ``assert_`` with default
+    # ``False``; the schema property is ``assert`` per ``config_name``.
+    assert (
+        schema["definitions"]["expr_task"]["properties"]["assert"].get("default")
+        is False
+    )
+
+
+def test_build_schema_no_default_for_sentinels_or_none() -> None:
+    """
+    Fields whose class-level default is a non-primitive sentinel
+    (``EmptyDict``, ``()``, ``MappingProxyType``) or ``None`` must NOT
+    carry a ``default:`` annotation. Emitting ``default: {}`` /
+    ``default: []`` / ``default: null`` adds noise without value, and
+    ``None`` would be actively misleading (it usually means "inherit"
+    at runtime, not "literal null").
+    """
+    from poethepoet.schema import build_schema
+
+    schema = build_schema()
+
+    # env / envfile / executor / include — sentinel-defaulted maps/seqs.
+    for key in ("env", "envfile", "include", "include_script"):
+        assert "default" not in schema["properties"][key], key
+
+    # cwd / capture_stdout — declared as ``X | None = None``.
+    cmd_props = schema["definitions"]["cmd_task"]["properties"]
+    assert "default" not in cmd_props["cwd"], cmd_props["cwd"]
+    assert "default" not in cmd_props["capture_stdout"], cmd_props["capture_stdout"]
+
+
+def test_build_schema_shell_interpreter_array_min_items() -> None:
+    """
+    The array branch of ``shell_task.interpreter`` must carry
+    ``minItems: 1`` — the runtime annotation is
+    ``Annotated[Sequence[ShellInterpreter], Metadata(min_items=1)]``
+    (``shell.py:33-37``). Empty interpreter lists would surface as
+    opaque execution-time failures, so the constraint belongs at the
+    schema layer too.
+    """
+    from poethepoet.schema import build_schema
+
+    schema = build_schema()
+    interpreter = schema["definitions"]["shell_task"]["properties"]["interpreter"]
+    assert "anyOf" in interpreter, interpreter
+    array_branches = [
+        branch for branch in interpreter["anyOf"] if branch.get("type") == "array"
+    ]
+    assert (
+        len(array_branches) == 1
+    ), f"expected one array branch for interpreter, got {array_branches!r}"
+    assert array_branches[0].get("minItems") == 1, array_branches[0]
+
+
+def test_build_schema_sequence_and_parallel_forbid_capture_stdout() -> None:
+    """
+    Sequence and parallel tasks can't declare ``capture_stdout`` — the
+    runtime rejects it in ``SequenceTask.TaskOptions.validate``
+    (``sequence.py:58-61``) and ``ParallelTask.TaskOptions.validate``
+    (``parallel.py:107-110``). The schema must drop ``capture_stdout``
+    from both task properties (and from the ``_with_case`` shadows used
+    inside switches) so the existing ``additionalProperties: false``
+    surfaces the error at edit time. Mirrors the ref-task / executor
+    treatment in ``ref.py:40-49``.
+    """
+    from poethepoet.schema import build_schema
+
+    schema = build_schema()
+    for key in ("sequence_task", "parallel_task"):
+        variant = schema["definitions"][key]
+        assert (
+            "capture_stdout" not in variant["properties"]
+        ), f"{key} should not list capture_stdout in properties"
+        assert (
+            variant["additionalProperties"] is False
+        ), f"{key} must keep additionalProperties: false"
+        shadow = schema["definitions"][f"{key}_with_case"]
+        assert (
+            "capture_stdout" not in shadow["properties"]
+        ), f"{key}_with_case should not list capture_stdout in properties"
+
+
 def test_build_schema_switch_control_constrained_to_allowed_task_types() -> None:
     """
     The switch_task ``control`` field is restricted to the task types the
