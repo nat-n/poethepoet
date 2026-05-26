@@ -1,5 +1,5 @@
 """
-Phase 2 smoke test — verifies the schema package layout is importable.
+Smoke tests — verifies the schema package layout is importable.
 This file is intentionally not marked `schema` (it's a fast smoke check).
 """
 

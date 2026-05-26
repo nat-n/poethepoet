@@ -70,8 +70,8 @@ def test_int_with_minimum_maximum(ctx: SchemaContext) -> None:
 
 def test_int_with_zero_minimum_not_dropped(ctx: SchemaContext) -> None:
     """
-    Guards against the falsy-value regression that Phase 1 fixed in
-    metadata_get; minimum=0 must appear in the output.
+    Guards against falsy-value handling in metadata_get;
+    minimum=0 must appear in the output, not be silently dropped.
     """
     annotation = TypeAnnotation.parse(Annotated[int, Metadata(minimum=0)])
     schema = translate_type(annotation, ctx)
@@ -135,9 +135,9 @@ def test_none_translates_to_null_schema(ctx: SchemaContext) -> None:
 
 def test_shell_interpreter_literal_alias_translates(ctx: SchemaContext) -> None:
     """
-    Verifies the register_type_alias mechanism from Phase 1 works
-    end-to-end: ShellInterpreter is a registered alias for a Literal,
-    and translation should produce the expected enum schema.
+    Verifies the register_type_alias mechanism works end-to-end:
+    ShellInterpreter is a registered alias for a Literal, and translation
+    should produce the expected enum schema.
     """
     from poethepoet.config.partition import ShellInterpreter
 
