@@ -72,9 +72,8 @@ def _translate_primitive(annotation: PrimitiveType) -> dict[str, Any]:
     py_type = annotation._annotation
     schema: dict[str, Any] = {"type": _PRIMITIVE_TYPE_MAP[py_type]}
 
-    # Layer in constraint metadata. Each is `None` if unset (the
-    # Phase 1 metadata_get bug fix ensures explicitly-zero values
-    # like minimum=0 are NOT silently dropped here).
+    # Layer in constraint metadata. Each is `None` if unset (explicitly-zero
+    # values like minimum=0 are preserved, not silently dropped).
     if py_type is str:
         if (pattern := annotation.metadata_get("pattern")) is not None:
             schema["pattern"] = pattern

@@ -8,7 +8,6 @@ so they continue to run under the default `poe test` invocation.
 import pytest
 
 # Filenames containing parity tests (slow, require the full schema build).
-# Phase 3 will configure `poe test-quick` to exclude the `schema` marker.
 _PARITY_TEST_FILES = frozenset(
     {
         "test_meta.py",
