@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from poethepoet.schema.context import SchemaContext
+    from .context import SchemaContext
 
 
 # Properties on the root config that should reference shared definitions
@@ -57,9 +57,9 @@ def build_schema() -> dict:
     Returns a self-contained draft-07 schema as a dict. Stable across
     runs (sorted keys at serialization) so committed output diffs cleanly.
     """
-    from poethepoet import __version__
-    from poethepoet.schema.context import SchemaContext
-    from poethepoet.schema.fragments import (
+    from .. import __version__
+    from .context import SchemaContext
+    from .fragments import (
         args_option_schema,
         env_option_schema,
         envfile_option_schema,
@@ -96,7 +96,7 @@ def build_schema() -> dict:
     # Base root-property schemas come from ProjectConfig.ConfigOptions'
     # __schema_fragment__ hook so subclass overrides (e.g. enums sourced
     # from the task-type registry) are picked up automatically.
-    from poethepoet.config.partition import ProjectConfig
+    from ..config.partition import ProjectConfig
 
     cls = ProjectConfig.ConfigOptions
     fragment = cls.__schema_fragment__(ctx)
@@ -143,7 +143,7 @@ def _apply_task_property_refs(ctx: SchemaContext) -> None:
     definitions (env_option, envfile_option, executor_option,
     args_option) are registered.
     """
-    from poethepoet.task.base import PoeTask
+    from ..task.base import PoeTask
 
     task_keys = list(PoeTask.get_task_types())
     for key in task_keys:

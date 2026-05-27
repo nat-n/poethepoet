@@ -79,8 +79,8 @@ class SchemaContext:
         # Local imports keep the schema package decoupled from PoeOptions
         # at module-load time (important for performance — see PoeOptions
         # docs on lazy imports).
-        from poethepoet.options import PoeOptions
-        from poethepoet.options._docstrings import extract_field_descriptions
+        from ..options import PoeOptions
+        from ..options._docstrings import extract_field_descriptions
 
         if isinstance(cls, type) and issubclass(cls, PoeOptions):
             return cls.description_for_field(field_name)

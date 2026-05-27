@@ -304,7 +304,7 @@ class PoeOptions:
         should call `super().__schema_fragment__(ctx)` to obtain the
         default and then mutate the parts that need customizing.
         """
-        from poethepoet.schema.translate import translate_type
+        from ..schema.translate import translate_type
 
         properties: dict[str, dict] = {}
         required: list[str] = []

@@ -20,7 +20,7 @@ import json
 import sys
 from pathlib import Path
 
-from poethepoet.schema.generator import build_schema
+from .generator import build_schema
 
 __all__ = ["build_schema", "write_schema"]
 

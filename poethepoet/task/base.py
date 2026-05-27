@@ -789,8 +789,8 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         import inspect
 
-        from poethepoet.options.annotations import TypeAnnotation
-        from poethepoet.schema.translate import translate_type
+        from ..options.annotations import TypeAnnotation
+        from ..schema.translate import translate_type
 
         fragment = cls.TaskOptions.__schema_fragment__(ctx)
 

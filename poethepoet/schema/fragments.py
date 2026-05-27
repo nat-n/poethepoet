@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from poethepoet.schema.context import SchemaContext
+    from .context import SchemaContext
 
 
 def task_def_schema(ctx: SchemaContext) -> dict:
@@ -24,7 +24,7 @@ def task_def_schema(ctx: SchemaContext) -> dict:
     ctx.definitions, plus task_def itself is registered (so recursive
     `{"$ref": "#/definitions/task_def"}` resolves).
     """
-    from poethepoet.task.base import PoeTask
+    from ..task.base import PoeTask
 
     # Register each task variant under "<key>_task" in $defs.
     task_keys = sorted(PoeTask.get_task_types())
@@ -74,7 +74,7 @@ def executor_option_schema(ctx: SchemaContext) -> dict:
     Side effect: registers each per-executor definition in ctx.definitions
     and registers the executor_option definition itself.
     """
-    from poethepoet.executor.base import PoeExecutor
+    from ..executor.base import PoeExecutor
 
     executor_keys = sorted(PoeExecutor.get_executor_types())
     # Include "auto" in the shorthand-string enum even though it isn't
@@ -169,9 +169,9 @@ def env_option_schema(ctx: SchemaContext) -> dict:
 
     Registers env_default in ctx.definitions.
     """
-    from poethepoet.config.primitives import EnvDefault
-    from poethepoet.options.annotations import TypeAnnotation
-    from poethepoet.schema.translate import translate_type
+    from ..config.primitives import EnvDefault
+    from ..options.annotations import TypeAnnotation
+    from .translate import translate_type
 
     # Translate EnvDefault as a TypedDict.
     env_default_annotation = TypeAnnotation.parse(EnvDefault)
@@ -203,9 +203,9 @@ def envfile_option_schema(ctx: SchemaContext) -> dict:
 
     Registers envfile_full (the TypedDict shape) in ctx.definitions.
     """
-    from poethepoet.config.primitives import EnvfileOption
-    from poethepoet.options.annotations import TypeAnnotation
-    from poethepoet.schema.translate import translate_type
+    from ..config.primitives import EnvfileOption
+    from ..options.annotations import TypeAnnotation
+    from .translate import translate_type
 
     envfile_full_annotation = TypeAnnotation.parse(EnvfileOption)
     envfile_full_schema = translate_type(envfile_full_annotation, ctx)
@@ -239,7 +239,7 @@ def args_option_schema(ctx: SchemaContext) -> dict:
 
     Registers args_item (the ArgSpec shape) in ctx.definitions.
     """
-    from poethepoet.task.args import ArgSpec
+    from ..task.args import ArgSpec
 
     args_item_schema = ArgSpec.__schema_fragment__(ctx)
     ctx.register("args_item", args_item_schema)
@@ -284,7 +284,7 @@ def tasks_map_schema(ctx: SchemaContext) -> dict:
     pattern (imported from task/base.py — single source of truth),
     values are task definitions.
     """
-    from poethepoet.task.base import _TASK_NAME_PATTERN
+    from ..task.base import _TASK_NAME_PATTERN
 
     result = {
         "type": "object",
@@ -303,9 +303,9 @@ def groups_map_schema(ctx: SchemaContext) -> dict:
     pattern (imported from config/partition.py — single source of truth),
     values reference the task_group TypedDict.
     """
-    from poethepoet.config.partition import _GROUP_NAME_PATTERN, TaskGroup
-    from poethepoet.options.annotations import TypeAnnotation
-    from poethepoet.schema.translate import translate_type
+    from ..config.partition import _GROUP_NAME_PATTERN, TaskGroup
+    from ..options.annotations import TypeAnnotation
+    from .translate import translate_type
 
     task_group_annotation = TypeAnnotation.parse(TaskGroup)
     task_group_schema = translate_type(task_group_annotation, ctx)
@@ -332,9 +332,9 @@ def include_script_schema(ctx: SchemaContext) -> dict:
     Precondition: executor_option_schema(ctx) must have run first so
     `executor_task_option` is in ctx.definitions.
     """
-    from poethepoet.config.partition import IncludeScriptItem
-    from poethepoet.options.annotations import TypeAnnotation
-    from poethepoet.schema.translate import translate_type
+    from ..config.partition import IncludeScriptItem
+    from ..options.annotations import TypeAnnotation
+    from .translate import translate_type
 
     item_annotation = TypeAnnotation.parse(IncludeScriptItem)
     item_schema = translate_type(item_annotation, ctx)
@@ -375,7 +375,7 @@ def task_def_with_case_schema(ctx: SchemaContext) -> dict:
     Precondition: task_def_schema(ctx) must have been called first so
     the per-task `<key>_task` variants are in ctx.definitions.
     """
-    from poethepoet.task.base import PoeTask
+    from ..task.base import PoeTask
 
     # A single scalar value that will be str()-converted by the runtime.
     _case_scalar = {

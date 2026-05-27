@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from poethepoet.options.annotations import (
+from ..options.annotations import (
     AnyType,
     DictType,
     ListType,
@@ -25,7 +25,7 @@ from poethepoet.options.annotations import (
 )
 
 if TYPE_CHECKING:
-    from poethepoet.schema.context import SchemaContext
+    from .context import SchemaContext
 
 # Mapping from Python primitive types to JSON Schema `type:` strings.
 _PRIMITIVE_TYPE_MAP: dict[type, str] = {
