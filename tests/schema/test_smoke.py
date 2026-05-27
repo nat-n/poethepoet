@@ -3,6 +3,12 @@ Smoke tests — verifies the schema package layout is importable.
 This file is intentionally not marked `schema` (it's a fast smoke check).
 """
 
+import inspect
+
+from poethepoet.schema import build_schema
+from poethepoet.task import parallel, sequence, switch
+from poethepoet.task.base import PoeTask
+
 
 def test_package_imports() -> None:
     from poethepoet.schema import build_schema
@@ -20,8 +26,6 @@ def test_package_submodules_importable() -> None:
 
 def test_build_schema_has_required_root_keys() -> None:
     """The generated schema includes the standard top-level keys."""
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     assert schema["$schema"] == "http://json-schema.org/draft-07/schema#"
     assert schema["$id"] == "https://json.schemastore.org/partial-poe.json"
@@ -35,8 +39,6 @@ def test_build_schema_has_required_root_keys() -> None:
 
 def test_build_schema_root_properties_include_known_options() -> None:
     """Root-level config keys appear in properties."""
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     expected = {
         "default_task_type",
@@ -58,9 +60,6 @@ def test_build_schema_root_properties_include_known_options() -> None:
 
 
 def test_build_schema_definitions_include_per_task_variants() -> None:
-    from poethepoet.schema import build_schema
-    from poethepoet.task.base import PoeTask
-
     schema = build_schema()
     for key in PoeTask.get_task_types():
         assert f"{key}_task" in schema["definitions"]
@@ -71,8 +70,6 @@ def test_build_schema_cmd_discriminator_has_examples_and_title() -> None:
     CmdTask, the most common task type, carries a SchemaStore-style title
     and examples on its discriminator field.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     field = schema["definitions"]["cmd_task"]["properties"]["cmd"]
     assert field.get("title") == "Command to execute"
@@ -88,11 +85,6 @@ def test_build_schema_discriminator_fields_carry_class_docstring() -> None:
     task class' docstring. Without this, IDE hover on the discriminator
     key shows nothing — the highest-traffic surface for task-authoring.
     """
-    import inspect
-
-    from poethepoet.schema import build_schema
-    from poethepoet.task.base import PoeTask
-
     schema = build_schema()
     for key in PoeTask.get_task_types():
         task_cls = PoeTask.get_task_class(key)
@@ -106,23 +98,17 @@ def test_build_schema_discriminator_fields_carry_class_docstring() -> None:
 
 
 def test_build_schema_env_property_refs_env_option() -> None:
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     # The $ref may have a sibling description; check the $ref key only.
     assert schema["properties"]["env"].get("$ref") == "#/definitions/env_option"
 
 
 def test_build_schema_tasks_property_refs_tasks_map() -> None:
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     assert schema["properties"]["tasks"].get("$ref") == "#/definitions/tasks_map"
 
 
 def test_build_schema_executor_property_refs_executor_option() -> None:
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     assert schema["properties"]["executor"].get("$ref") == (
         "#/definitions/executor_option"
@@ -136,8 +122,6 @@ def test_build_schema_cwd_fields_require_non_whitespace() -> None:
     to opaque execution-time failures; rejecting them at the schema
     level surfaces the problem in the editor.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     cmd_cwd = schema["definitions"]["cmd_task"]["properties"]["cwd"]
     assert cmd_cwd.get("pattern") == r"\S", cmd_cwd
@@ -157,15 +141,6 @@ def test_build_schema_subtask_options_blocklist() -> None:
     item, using ``{not: {type: object, required: [X]}}`` so bare-string
     refs and inline arrays still pass.
     """
-    from poethepoet.schema import build_schema
-    from poethepoet.task.parallel import (
-        SUBTASK_OPTIONS_BLOCKLIST as PARALLEL_BLOCKLIST,
-    )
-    from poethepoet.task.sequence import (
-        SUBTASK_OPTIONS_BLOCKLIST as SEQUENCE_BLOCKLIST,
-    )
-    from poethepoet.task.switch import SUBTASK_OPTIONS_BLOCKLIST as SWITCH_BLOCKLIST
-
     schema = build_schema()
 
     def assert_items_forbid(items: dict, blocklist: tuple[str, ...]) -> None:
@@ -178,15 +153,15 @@ def test_build_schema_subtask_options_blocklist() -> None:
 
     assert_items_forbid(
         schema["definitions"]["sequence_task"]["properties"]["sequence"]["items"],
-        SEQUENCE_BLOCKLIST,
+        sequence.SUBTASK_OPTIONS_BLOCKLIST,
     )
     assert_items_forbid(
         schema["definitions"]["parallel_task"]["properties"]["parallel"]["items"],
-        PARALLEL_BLOCKLIST,
+        parallel.SUBTASK_OPTIONS_BLOCKLIST,
     )
     assert_items_forbid(
         schema["definitions"]["switch_task"]["properties"]["switch"]["items"],
-        SWITCH_BLOCKLIST,
+        switch.SUBTASK_OPTIONS_BLOCKLIST,
     )
 
 
@@ -198,8 +173,6 @@ def test_build_schema_use_exec_and_capture_stdout_are_mutex() -> None:
     this via an if/then constraint that forbids ``capture_stdout`` when
     ``use_exec`` is true.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     for key in ("cmd", "script", "expr"):
         variant = schema["definitions"][f"{key}_task"]
@@ -219,8 +192,6 @@ def test_build_schema_ref_task_forbids_executor() -> None:
     ``executor`` from ``ref_task`` properties so the existing
     ``additionalProperties: false`` catches it at file-author time.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     ref_task = schema["definitions"]["ref_task"]
     assert "executor" not in ref_task["properties"]
@@ -237,8 +208,6 @@ def test_build_schema_primitive_defaults_propagate() -> None:
     rather than "value is null"). Verified by sampling representative
     fields from across the task / project / arg layers.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
 
     # Project-level: bare string default sourced from class attribute.
@@ -290,8 +259,6 @@ def test_build_schema_no_default_for_sentinels_or_none() -> None:
     ``None`` would be actively misleading (it usually means "inherit"
     at runtime, not "literal null").
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
 
     # env / envfile / executor / include — sentinel-defaulted maps/seqs.
@@ -313,8 +280,6 @@ def test_build_schema_shell_interpreter_array_min_items() -> None:
     opaque execution-time failures, so the constraint belongs at the
     schema layer too.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     interpreter = schema["definitions"]["shell_task"]["properties"]["interpreter"]
     assert "anyOf" in interpreter, interpreter
@@ -338,8 +303,6 @@ def test_build_schema_sequence_and_parallel_forbid_capture_stdout() -> None:
     surfaces the error at edit time. Mirrors the ref-task / executor
     treatment in ``ref.py:40-49``.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     for key in ("sequence_task", "parallel_task"):
         variant = schema["definitions"][key]
@@ -362,9 +325,6 @@ def test_build_schema_switch_control_constrained_to_allowed_task_types() -> None
     ``switch.py:CONTROL_TASK_TYPES``) plus the bare-string form. Other
     task types are excluded.
     """
-    from poethepoet.schema import build_schema
-    from poethepoet.task.switch import CONTROL_TASK_TYPES
-
     schema = build_schema()
     control = schema["definitions"]["switch_task"]["properties"]["control"]
     assert "oneOf" in control
@@ -372,7 +332,7 @@ def test_build_schema_switch_control_constrained_to_allowed_task_types() -> None
     refs = {b["$ref"] for b in branches if "$ref" in b}
     types = {b["type"] for b in branches if "type" in b}
     assert "string" in types
-    expected = {f"#/definitions/{key}_task" for key in CONTROL_TASK_TYPES}
+    expected = {f"#/definitions/{key}_task" for key in switch.CONTROL_TASK_TYPES}
     assert refs == expected, f"expected {expected}, got {refs}"
 
 
@@ -382,9 +342,6 @@ def test_build_schema_default_task_type_enum_matches_registry() -> None:
     via ``MetaPoeTask``. The schema's enum must be sourced from the live
     registry (cmd, expr, ref, script, shell) rather than a hardcoded copy.
     """
-    from poethepoet.schema import build_schema
-    from poethepoet.task.base import PoeTask
-
     schema = build_schema()
     field_schema = schema["properties"]["default_task_type"]
     expected = list(PoeTask.get_task_types(content_type=str))
@@ -399,8 +356,6 @@ def test_build_schema_default_array_task_type_enum_excludes_switch() -> None:
     list-content task but isn't valid here: it requires both ``switch``
     and ``control`` keys, neither of which a bare array can supply.
     """
-    from poethepoet.schema import build_schema
-
     schema = build_schema()
     field_schema = schema["properties"]["default_array_task_type"]
     assert field_schema["enum"] == ["parallel", "sequence"]
@@ -414,9 +369,6 @@ def test_build_schema_default_array_item_task_type_enum_matches_registry() -> No
     (same set as default_task_type). The schema's enum is sourced from
     the registry.
     """
-    from poethepoet.schema import build_schema
-    from poethepoet.task.base import PoeTask
-
     schema = build_schema()
     field_schema = schema["properties"]["default_array_item_task_type"]
     expected = list(PoeTask.get_task_types(content_type=str))

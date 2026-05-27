@@ -368,8 +368,6 @@ def _round_trip_cases() -> list[tuple[str, str]]:
     Flatten Metadata.type_constraints() into (constraint, json_type)
     pairs so each cell of the table becomes a parametrized test case.
     """
-    from poethepoet.options.annotations import Metadata
-
     return [
         (constraint, json_type)
         for constraint, json_types in Metadata.type_constraints().items()
@@ -415,8 +413,6 @@ def test_metadata_type_constraints_keys_match_constraint_table() -> None:
     mapping (or vice versa), this test fails — surfacing the gap
     instead of letting the parametrized round-trip silently skip it.
     """
-    from poethepoet.options.annotations import Metadata
-
     table_keys = set(Metadata.type_constraints().keys())
     mapping_keys = set(_CONSTRAINT_TO_JSON_KEY.keys())
     assert table_keys == mapping_keys, (
@@ -430,8 +426,6 @@ def test_all_type_annotation_subclasses_have_a_translator(ctx: SchemaContext) ->
     If a new TypeAnnotation subclass is introduced, this test will fail
     until a translator branch is added.
     """
-    from poethepoet.options.annotations import TypeAnnotation
-
     # Walk the TypeAnnotation subclass tree.
     to_check = [TypeAnnotation]
     leaves: list[type] = []
