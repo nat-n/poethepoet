@@ -5,15 +5,18 @@ from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..exceptions import ConfigValidationError, PoeException
+from ..exceptions import PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Annotated
 
+    from ..config import ShellInterpreter
     from ..context import RunContext
     from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
+    from ..options.annotations import Metadata
 
 
 class ShellTask(PoeTask):
@@ -26,35 +29,21 @@ class ShellTask(PoeTask):
     __key__ = "shell"
 
     class TaskOptions(PoeTask.TaskOptions):
-        interpreter: str | Sequence[str] | None = None
+        interpreter: (
+            ShellInterpreter
+            | Annotated[Sequence[ShellInterpreter], Metadata(min_items=1)]
+            | None
+        ) = None
+        """
+        Specify the shell interpreter that this task should execute with, or a list
+        of interpreters in order of preference.
+        """
+
         ignore_fail: bool | list[int] = False
-
-        def validate(self):
-            super().validate()
-
-            from ..config import KNOWN_SHELL_INTERPRETERS as VALID_INTERPRETERS
-
-            if (
-                isinstance(self.interpreter, str)
-                and self.interpreter not in VALID_INTERPRETERS
-            ):
-                raise ConfigValidationError(
-                    "Invalid value for option 'interpreter',\n"
-                    f"Expected one of {VALID_INTERPRETERS}"
-                )
-
-            if isinstance(self.interpreter, list):
-                if len(self.interpreter) == 0:
-                    raise ConfigValidationError(
-                        "Invalid value for option 'interpreter',\n"
-                        "Expected at least one item in list."
-                    )
-                for item in self.interpreter:
-                    if item not in VALID_INTERPRETERS:
-                        raise ConfigValidationError(
-                            f"Invalid item {item!r} in option 'interpreter',\n"
-                            f"Expected one of {VALID_INTERPRETERS!r}"
-                        )
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str

@@ -31,7 +31,16 @@ class SwitchTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         control: str | dict
+        """
+        A required definition for a task to be executed to determine which case
+        task to run.
+        """
+
         default: Literal["pass", "fail"] = "fail"
+        """
+        Defines the default behavior if no cases are matched. Can either pass or
+        fail.
+        """
 
         @classmethod
         def normalize(

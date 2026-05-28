@@ -252,3 +252,26 @@ def test_duplicate_config_name_between_fields_not_tolerated():
 
     with pytest.raises(RuntimeError):
         CollideConfigNames.get_field_attribute("a")
+
+
+def test_register_type_alias_makes_literal_resolvable_in_annotations():
+    """Verify that an alias registered via register_type_alias is findable
+    when PoeOptions resolves annotation strings."""
+
+    from typing import Literal
+
+    from poethepoet.options import PoeOptions
+    from poethepoet.options.annotations import register_type_alias
+
+    Colour = register_type_alias(  # noqa: N806
+        "Colour", Literal["red", "green", "blue"]
+    )
+
+    class ColouredOptions(PoeOptions):
+        favourite: Colour = "red"
+
+    options = next(ColouredOptions.parse({"favourite": "green"}))
+    assert options.get("favourite") == "green"
+
+    with pytest.raises(ConfigValidationError):
+        list(ColouredOptions.parse({"favourite": "yellow"}))

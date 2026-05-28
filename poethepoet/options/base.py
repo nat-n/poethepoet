@@ -34,6 +34,7 @@ class PoeOptions:
 
     __fields: dict[str, TypeAnnotation]
     __field_attributes: dict[str, str]
+    _poe_field_descriptions: dict[str, str]
 
     def __init__(self, **options: Any):
         for key in self.get_fields():
@@ -253,3 +254,32 @@ class PoeOptions:
                 cls.__field_attributes[attribute] = attribute
 
         return cls.__field_attributes.get(field_name)
+
+    @classmethod
+    def description_for_field(cls, field_name: str) -> str | None:
+        """
+        Return the class-attribute docstring associated with the field, if any.
+
+        Walks the MRO so that an inherited field resolves to its description
+        on the nearest ancestor that defines it. Returns None if no description
+        is found.
+
+        The first call per class populates a per-class cache stored as
+        `cls._poe_field_descriptions`.
+        """
+
+        from ._docstrings import extract_field_descriptions
+
+        # Use cls.__dict__ rather than hasattr() so the cache is per-class
+        # (not inherited from an ancestor that happened to compute it first).
+        # Single leading underscore avoids Python's name-mangling rules.
+        if "_poe_field_descriptions" not in cls.__dict__:
+            merged: dict[str, str] = {}
+            # Reverse MRO so subclass entries override ancestor entries.
+            for ancestor in reversed(cls.__mro__):
+                if ancestor is object:
+                    continue
+                merged.update(extract_field_descriptions(ancestor))
+            cls._poe_field_descriptions = merged
+
+        return cls._poe_field_descriptions.get(field_name)

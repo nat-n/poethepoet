@@ -82,6 +82,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
     class ExecutorOptions(PoeOptions):
         type: str
+        """
+        Specifies the executor type. 'auto' uses the most appropriate executor,
+        'poetry' uses the poetry environment, 'uv' uses `uv run` to run tasks,
+        'virtualenv' specifies a virtual environment, and 'simple' runs tasks
+        without any specific environment setup.
+        """
 
     def __init__(
         self,

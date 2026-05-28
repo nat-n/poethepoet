@@ -4,6 +4,7 @@ out.txt
 .claude/settings.local.json
 .serena
 .claude/worktrees/
+.claude/scheduled_tasks.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -22,6 +22,10 @@ class RefTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: bool = False
+        """
+        If true the failure of the referenced task will be ignored and the ref task
+        will return exit code 0.
+        """
 
         def validate(self):
             """

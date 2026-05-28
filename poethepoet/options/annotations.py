@@ -27,11 +27,92 @@ def option_annotation(cls: T) -> T:
     return cls
 
 
-class Metadata:
-    __slots__ = ("config_name",)
+def register_type_alias(name: str, type_alias: Any) -> Any:
+    """
+    Register a named type alias (e.g. a Literal) so it can be referenced
+    by name in PoeOptions field annotations.
 
-    def __init__(self, *, config_name: str | None = None):
+    Use this for type aliases that have no `__name__` (Literals, Unions, etc.)
+    so they can't be registered via `option_annotation`. Class-like types
+    should use `option_annotation` instead.
+
+    Recommended usage — split form (works for both cross-module and
+    same-module annotation use):
+
+        MyAlias = Literal["a", "b", "c"]
+        register_type_alias("MyAlias", MyAlias)
+
+    The inline form is also supported:
+
+        MyAlias = register_type_alias("MyAlias", Literal["a", "b", "c"])
+
+    but causes mypy to type the LHS as ``Any`` (the function-call return
+    type), which breaks any same-module use of the name as a type
+    annotation. Prefer the split form unless the alias is only used
+    cross-module.
+    """
+
+    _registered_type_hint_globals[name] = type_alias
+    return type_alias
+
+
+class Metadata:
+    __slots__ = (
+        "config_name",
+        "examples",
+        "max_items",
+        "max_length",
+        "maximum",
+        "min_items",
+        "min_length",
+        "minimum",
+        "pattern",
+    )
+
+    def __init__(
+        self,
+        *,
+        config_name: str | None = None,
+        pattern: str | None = None,
+        examples: list[Any] | None = None,
+        minimum: float | None = None,
+        maximum: float | None = None,
+        min_length: int | None = None,
+        max_length: int | None = None,
+        min_items: int | None = None,
+        max_items: int | None = None,
+    ) -> None:
         self.config_name = config_name
+        self.pattern = pattern
+        self.examples = examples
+        self.minimum = minimum
+        self.maximum = maximum
+        self.min_length = min_length
+        self.max_length = max_length
+        self.min_items = min_items
+        self.max_items = max_items
+
+    @classmethod
+    def type_constraints(cls) -> dict[str, frozenset[str]]:
+        """
+        Return a mapping from constraint name to the set of JSON Schema types
+        that constraint applies to.
+
+        Constructed on demand: only schema generation reads this, and that
+        runs offline. Keeping it out of the class body avoids paying the
+        construction cost on every CLI invocation. Field-level fields
+        (config_name, examples) are not listed — they apply to any field
+        regardless of value type.
+        """
+        return {
+            "pattern": frozenset({"string"}),
+            "minimum": frozenset({"integer", "number"}),
+            "maximum": frozenset({"integer", "number"}),
+            "min_length": frozenset({"string"}),
+            "max_length": frozenset({"string"}),
+            "min_items": frozenset({"array"}),
+            "max_items": frozenset({"array"}),
+        }
 
 
 class TypeAnnotation:
@@ -66,7 +147,7 @@ class TypeAnnotation:
         origin = get_origin(annotation)
 
         # Support Annotated[T, Metadata(...)] so metadata can be
-        # propagated into created TypeAnnotation instances.
+        # attached to the created TypeAnnotation instance.
         metadata = None
         if origin is Annotated:
             args = get_args(annotation)
@@ -119,9 +200,10 @@ class TypeAnnotation:
         self._metadata = metadata
 
     def metadata_get(self, key: str, default: Any = None) -> Any:
-        if self._metadata and (value := getattr(self._metadata, key, None)):
-            return value
-        return default
+        if self._metadata is None:
+            return default
+        value = getattr(self._metadata, key, default)
+        return default if value is None else value
 
     @property
     def is_optional(self) -> bool:
@@ -259,6 +341,22 @@ class ListType(TypeAnnotation):
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
         if not isinstance(value, list | tuple):
             yield f"Option {self._format_path(path)!r} must be a list"
+            return
+
+        if (min_items := self.metadata_get("min_items")) is not None and len(
+            value
+        ) < min_items:
+            yield (
+                f"Option {self._format_path(path)!r} requires at least "
+                f"{min_items} item(s), got {len(value)}"
+            )
+        if (max_items := self.metadata_get("max_items")) is not None and len(
+            value
+        ) > max_items:
+            yield (
+                f"Option {self._format_path(path)!r} allows at most "
+                f"{max_items} item(s), got {len(value)}"
+            )
 
         if isinstance(self._value_type, AnyType):
             return
@@ -294,7 +392,7 @@ class LiteralType(TypeAnnotation):
 class UnionType(TypeAnnotation):
     __slots__ = ("_value_types",)
 
-    def __init__(self, annotation: Any, metadata: Any = None):
+    def __init__(self, annotation: Any, metadata: Any = None) -> None:
         super().__init__(annotation, metadata)
         self._value_types = tuple(
             TypeAnnotation.parse(arg) for arg in get_args(annotation)
@@ -392,3 +490,44 @@ class PrimitiveType(TypeAnnotation):
             yield (
                 f"Option {self._format_path(path)!r} must have a value of type: {self}"
             )
+            return
+
+        if self._annotation is str:
+            if (pattern := self.metadata_get("pattern")) is not None:
+                import re
+
+                if re.search(pattern, value) is None:
+                    yield (
+                        f"Option {self._format_path(path)!r} value {value!r} "
+                        f"does not match pattern {pattern!r}"
+                    )
+            if (min_length := self.metadata_get("min_length")) is not None and len(
+                value
+            ) < min_length:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"is shorter than minimum length {min_length}"
+                )
+            if (max_length := self.metadata_get("max_length")) is not None and len(
+                value
+            ) > max_length:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"is longer than maximum length {max_length}"
+                )
+
+        if self._annotation in (int, float):
+            if (
+                minimum := self.metadata_get("minimum")
+            ) is not None and value < minimum:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"is below minimum {minimum!r}"
+                )
+            if (
+                maximum := self.metadata_get("maximum")
+            ) is not None and value > maximum:
+                yield (
+                    f"Option {self._format_path(path)!r} value {value!r} "
+                    f"is above maximum {maximum!r}"
+                )

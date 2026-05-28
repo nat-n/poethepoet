@@ -83,6 +83,14 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
 - This is a CLI, so be mindful of performance concerns
 - `poe lint` and `poe types` must pass
 - `poe format` should be run to ensure correct formatting
+- `PoeOptions` fields use class-attribute docstrings (PEP 257-style) placed immediately after the annotation. These are extracted by `PoeOptions.description_for_field()` and consumed by the JSON Schema generator, so every field on a `PoeOptions` subclass should have one — the description backfill tests catch gaps. Example:
+  ```python
+  class TaskOptions(PoeOptions):
+      cwd: str | None = None
+      """
+      Working directory the task runs in. Relative to the project root unless absolute.
+      """
+  ```
 
 ## Development tasks
 

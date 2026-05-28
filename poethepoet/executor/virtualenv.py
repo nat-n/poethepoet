@@ -21,6 +21,10 @@ class VirtualenvExecutor(PoeExecutor):
 
     class ExecutorOptions(PoeExecutor.ExecutorOptions):
         location: str | None = None
+        """
+        Specifies the location of the virtualenv relative to the parent directory.
+        Relevant when 'type' is set to 'virtualenv'.
+        """
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:

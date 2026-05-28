@@ -28,7 +28,15 @@ class SequenceTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
+        """
+        If set, the sequence will continue running even if one of the tasks fails.
+        """
+
         default_item_type: str | None = None
+        """
+        Change the default item type that strings in the sequence are interpreted
+        as.
+        """
 
         def validate(self):
             """
