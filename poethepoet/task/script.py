@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError
 from ..helpers.script import parse_script_reference
@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 
 class ScriptTask(PoeTask):
     """
-    A task consisting of a reference to a python script
+    Invokes a Python callable or module, optionally with values or expressions
+    passed as arguments.
     """
 
     content: str
@@ -71,6 +72,27 @@ class ScriptTask(PoeTask):
                     "Script task referencing a module (instead of a function) cannot "
                     "declare arguments."
                 )
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: attach python-callable examples on the ``script``
+        discriminator field, and forbid the ``use_exec`` +
+        ``capture_stdout`` combination (runtime ``TaskOptions.validate``
+        rejects it too).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["script"]["examples"] = [
+            "my_pkg.my_module",
+            "my_pkg.my_module:main",
+            "my_pkg.my_module:main(only='images', log_env={'LOG_PATH':'/var/log'})",
+        ]
+        fragment["if"] = {
+            "properties": {"use_exec": {"const": True}},
+            "required": ["use_exec"],
+        }
+        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        return fragment
 
     spec: TaskSpec
 

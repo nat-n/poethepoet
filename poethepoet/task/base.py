@@ -5,13 +5,14 @@ import sys
 from collections.abc import Iterator, Mapping, Sequence
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, NamedTuple
 
 from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
 from ..exceptions import ConfigValidationError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
 from ..options import PoeOptions
+from ..options.annotations import Metadata
 
 if TYPE_CHECKING:
     from ..config import ConfigPartition, PoeConfig
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from .args import PoeTaskArgs
 
 
-_TASK_NAME_PATTERN = re.compile(r"^\w[\w\d\-\_\+\:]*$")
+_TASK_NAME_PATTERN = re.compile(r"^[^\W\d][\w:+-]*$")
 
 
 class MetaPoeTask(type):
@@ -189,7 +190,7 @@ class PoeTask(metaclass=MetaPoeTask):
         environment variable interpolation.
         """
 
-        cwd: str | None = None
+        cwd: Annotated[str, Metadata(pattern=r"\S")] | None = None
         """
         Specify the current working directory that this task should run with. This
         can be a relative path from the project root or an absolute path, and
@@ -207,7 +208,7 @@ class PoeTask(metaclass=MetaPoeTask):
         A map of environment variables to be set for this task.
         """
 
-        envfile: str | Sequence[str] | EnvfileOption = ()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
         Provide one or more env files to be loaded before running this task. If an
         array is provided, files will be loaded in the given order.
@@ -368,15 +369,10 @@ class PoeTask(metaclass=MetaPoeTask):
             """
             Perform validations on this TaskSpec that apply to all task types
             """
-            if not (self.name[0].isalpha() or self.name[0] == "_"):
-                raise ConfigValidationError(
-                    "Task names must start with a letter or underscore."
-                )
-
             if not self.parent and not _TASK_NAME_PATTERN.match(self.name):
                 raise ConfigValidationError(
-                    "Task names characters must be alphanumeric, colon, underscore or "
-                    "dash."
+                    "Task names must start with a letter or underscore and contain "
+                    "only alphanumeric characters, colon, underscore, dash, or plus."
                 )
 
             if not isinstance(self.content, self.task_type.__content_type__):
@@ -740,6 +736,81 @@ class PoeTask(metaclass=MetaPoeTask):
                 if task_cls.__content_type__ is content_type
             )
         return tuple(task_type for task_type in cls.__task_types.keys())
+
+    @classmethod
+    def get_task_class(cls, key: str) -> type[PoeTask]:
+        """
+        Look up a registered PoeTask subclass by its `__key__`.
+
+        Public read-side complement to MetaPoeTask's registration logic.
+        Raises KeyError if the key isn't registered.
+        """
+        if key not in cls.__task_types:
+            raise KeyError(f"Unknown task type {key!r}")
+        return cls.__task_types[key]
+
+    @classmethod
+    def get_default_array_task_types(cls) -> tuple[str, ...]:
+        """
+        List-content task types whose bare-array form is well-formed —
+        the set of values that may appear as ``default_array_task_type``.
+
+        Switch is list-content but excluded: its ``control`` field is
+        required, and a bare array (``tasks.foo = [...]``) has no way to
+        supply it.
+        """
+        valid: list[str] = []
+        for task_key, task_cls in cls.__task_types.items():
+            if task_cls.__content_type__ is not list:
+                continue
+            options_cls = task_cls.TaskOptions
+            for attr_name, type_annotation in options_cls.get_fields().items():
+                attr = options_cls.get_field_attribute(attr_name) or attr_name
+                has_default = hasattr(options_cls, attr)
+                if not has_default and not type_annotation.is_optional:
+                    break
+            else:
+                valid.append(task_key)
+        return tuple(valid)
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Emit the JSON Schema fragment for this task variant.
+
+        Composes `cls.TaskOptions.__schema_fragment__(ctx)` (which gives
+        the options-dict shape) with the discriminator key (`cls.__key__`)
+        typed by `cls.__content_type__`, and marks the discriminator as
+        required.
+
+        Subclasses with irregular content shape override this and call
+        `super().__schema_fragment__(ctx)` to get the base assembly,
+        then refine specific parts.
+        """
+        import inspect
+
+        from ..options.annotations import TypeAnnotation
+        from ..schema.translate import translate_type
+
+        fragment = cls.TaskOptions.__schema_fragment__(ctx)
+
+        # The discriminator key (e.g. "cmd", "shell") with the right
+        # content type. We translate __content_type__ as a primitive
+        # annotation so str → string, list → array. The task class'
+        # docstring becomes the field description — it's what an IDE
+        # surfaces on hover when the user types the discriminator key.
+        content_annotation = TypeAnnotation.parse(cls.__content_type__)
+        content_schema = translate_type(content_annotation, ctx)
+        if docstring := inspect.cleandoc(cls.__doc__ or ""):
+            content_schema["description"] = docstring
+
+        fragment["properties"][cls.__key__] = content_schema
+        # Append the discriminator to required (sorted, no duplicates).
+        required = set(fragment.get("required", []))
+        required.add(cls.__key__)
+        fragment["required"] = sorted(required)
+
+        return fragment
 
     def _print_action(self, action: str, dry: bool, unresolved: bool = False):
         """

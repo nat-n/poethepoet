@@ -10,18 +10,20 @@
 
 **Spec reference:** `docs/superpowers/specs/2026-05-17-poe-jsonschema-generation-design.md` Section 4.
 
-**Out of scope for this plan:** the schema generator package, schema tests, the `poe build-schema` task, CI drift checks. Those land in Phase 2 and Phase 3.
+**Out of scope for this plan:** the schema generator package, schema tests, the `poe schema-build` task, CI drift checks. Those land in Phase 2 and Phase 3.
 
 ---
 
 ## Files touched
 
 **New files:**
+
 - `poethepoet/options/_docstrings.py` — internal helpers for AST-based class-attribute docstring extraction.
 - `tests/options/test_metadata_constraints.py` — tests for the new `Metadata` constraint fields.
 - `tests/options/test_descriptions.py` — tests for `PoeOptions.description_for_field()`.
 
 **Modified files:**
+
 - `poethepoet/options/annotations.py` — extend `Metadata`; add new constraint enforcement in `PrimitiveType.validate` and `ListType.validate`.
 - `poethepoet/options/base.py` — add `PoeOptions.description_for_field()` classmethod.
 - `poethepoet/config/partition.py` — introduce `ShellInterpreter` Literal type alias; rebuild `KNOWN_SHELL_INTERPRETERS` from it; tighten `ProjectConfig.ConfigOptions.shell_interpreter`; remove bespoke validation.
@@ -34,6 +36,7 @@
 ### Task 1: Add `register_type_alias` helper and `ShellInterpreter` Literal type alias
 
 **Files:**
+
 - Modify: `poethepoet/options/annotations.py:18-27` (helpers near `option_annotation`)
 - Modify: `poethepoet/config/partition.py:20-29` (replace `KNOWN_SHELL_INTERPRETERS`)
 
@@ -212,6 +215,7 @@ EOF
 ### Task 2: Tighten `ShellTask.TaskOptions.interpreter` to use `ShellInterpreter`
 
 **Files:**
+
 - Modify: `poethepoet/task/shell.py:28-57`
 
 - [ ] **Step 1: Locate the current code**
@@ -347,6 +351,7 @@ EOF
 ### Task 3: Tighten `ProjectConfig.ConfigOptions.shell_interpreter`
 
 **Files:**
+
 - Modify: `poethepoet/config/partition.py:200` and `:283-296`
 
 - [ ] **Step 1: Locate the current declaration and validation**
@@ -354,6 +359,7 @@ EOF
 Run: `sed -n '195,310p' poethepoet/config/partition.py`
 
 Confirm:
+
 - Line ~200: `shell_interpreter: str | Sequence[str] = "posix"`
 - Lines ~283–296: a block inside `validate()` that loops over `shell_interpreter` items and rejects unknown values.
 
@@ -428,6 +434,7 @@ grep -rnE "if .* not in [A-Z_][A-Z_0-9]+" poethepoet --include="*.py" | grep -v 
 ```
 
 This finds bespoke value-membership checks against module-level constants. For each match, judge whether:
+
 - The constant is a static, exhaustive list (a candidate for `Literal[...]`), AND
 - The field being checked is annotated as plain `str` (not already a Literal)
 
@@ -449,6 +456,7 @@ Expected: PASS.
 ### Task 4: Add `Metadata.pattern` with runtime enforcement
 
 **Files:**
+
 - Modify: `poethepoet/options/annotations.py:30-35` (Metadata class) and `:383-394` (PrimitiveType.validate)
 - Test: `tests/options/test_metadata_constraints.py`
 
@@ -584,6 +592,7 @@ EOF
 ### Task 5: Add `Metadata.examples` (documentation-only)
 
 **Files:**
+
 - Modify: `poethepoet/options/annotations.py:30-40` (Metadata class)
 - Test: `tests/options/test_metadata_constraints.py`
 
@@ -667,6 +676,7 @@ EOF
 ### Task 6: Add `Metadata.minimum` and `Metadata.maximum` for numeric types
 
 **Files:**
+
 - Modify: `poethepoet/options/annotations.py` (Metadata class + PrimitiveType.validate)
 - Test: `tests/options/test_metadata_constraints.py`
 
@@ -827,6 +837,7 @@ EOF
 ### Task 7: Add `Metadata.min_length` and `Metadata.max_length`
 
 **Files:**
+
 - Modify: `poethepoet/options/annotations.py` (Metadata class, PrimitiveType.validate, ListType.validate)
 - Modify: `poethepoet/task/shell.py` (apply min_length=1 to interpreter; remove xfail)
 - Test: `tests/options/test_metadata_constraints.py`
@@ -1061,6 +1072,7 @@ EOF
 ### Task 8: Implement class-attribute docstring extraction
 
 **Files:**
+
 - Create: `poethepoet/options/_docstrings.py`
 - Modify: `poethepoet/options/base.py` (add `description_for_field` classmethod)
 - Test: `tests/options/test_descriptions.py`
@@ -1333,6 +1345,7 @@ EOF
 ### Task 9: Backfill PoeOptions class-attribute docstrings
 
 **Files:**
+
 - Modify (add docstrings to existing field declarations): `poethepoet/config/partition.py`, `poethepoet/task/base.py`, `poethepoet/task/cmd.py`, `poethepoet/task/shell.py`, `poethepoet/task/sequence.py`, `poethepoet/task/parallel.py`, `poethepoet/task/ref.py`, `poethepoet/task/script.py`, `poethepoet/task/expr.py`, `poethepoet/task/switch.py`, `poethepoet/task/args.py`, `poethepoet/executor/base.py`, `poethepoet/executor/uv.py`, `poethepoet/executor/virtualenv.py`, `poethepoet/config/primitives.py`
 
 - [ ] **Step 1: Fetch the existing schemastore schema as reference**
@@ -1344,41 +1357,42 @@ Open `/tmp/existing-partial-poe.json` in a viewer. For each field on each `TaskO
 - [ ] **Step 2: Map fields to source**
 
 For each PoeOptions class, identify every annotated field and either:
+
 - Copy the existing schema's description verbatim into a class-attribute docstring, OR
 - Write a new docstring if no existing description fits (rare).
 
 The mapping (existing schema location → code location):
 
-| Field | Existing schema path | Code location |
-|---|---|---|
-| `cwd` | `definitions.standard_options.properties.cwd.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.cwd` |
-| `deps` | `definitions.standard_options.properties.deps.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.deps` |
-| `env` | `definitions.standard_options.properties.env.description` (under `env_option`) | `poethepoet/task/base.py` `PoeTask.TaskOptions.env` |
-| `envfile` | `definitions.envfile_option.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.envfile` |
-| `executor` | `definitions.executor_option.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.executor` |
-| `help` | `definitions.standard_options.properties.help.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.help` |
-| `uses` | `definitions.standard_options.properties.uses.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.uses` |
-| `verbosity` | `definitions.standard_options.properties.verbosity.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.verbosity` |
-| `args` | `definitions.standard_options.properties.args.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.args` |
-| `capture_stdout` | `definitions.capture_stdout_option.properties.capture_stdout.description` | `poethepoet/task/base.py` `PoeTask.TaskOptions.capture_stdout` |
-| `use_exec` | `definitions.use_exec_option.properties.use_exec.description` | `poethepoet/task/cmd.py`, `script.py`, `expr.py` `TaskOptions.use_exec` |
-| `empty_glob` | `definitions.cmd_task.properties.empty_glob.description` | `poethepoet/task/cmd.py` `CmdTask.TaskOptions.empty_glob` |
-| `ignore_fail` | varies per task | each task's `TaskOptions.ignore_fail` |
-| `interpreter` | `definitions.shell_task.properties.interpreter.description` | `poethepoet/task/shell.py` `ShellTask.TaskOptions.interpreter` |
-| `default_item_type` | `definitions.sequence_task.properties.default_item_type.description` | `poethepoet/task/sequence.py`, `parallel.py` |
-| `prefix`, `prefix_max`, `prefix_template` | `definitions.parallel_task.properties.*` | `poethepoet/task/parallel.py` |
-| `print_result` | `definitions.script_task.properties.print_result.description` | `poethepoet/task/script.py` |
-| `imports`, `assert` | `definitions.expr_task.properties.*` | `poethepoet/task/expr.py` |
-| `control`, `default` | `definitions.switch_task.properties.*` | `poethepoet/task/switch.py` |
-| `default_task_type`, `default_array_task_type`, `default_array_item_task_type` | root-level `properties.*` | `poethepoet/config/partition.py` `ProjectConfig.ConfigOptions` |
-| `include`, `include_script` | root-level `properties.*` | same |
-| `poetry_command`, `poetry_hooks` | root-level | same |
-| `shell_interpreter` | root-level | same |
-| `tasks`, `groups`, `verbosity` | root-level | same |
-| `name`, `default`, `help`, `options`, `positional`, `required`, `type`, `multiple`, `choices` on `ArgSpec` | `definitions.standard_options.properties.args.definitions.args.properties.*` | `poethepoet/task/args.py` |
-| `type` (executor discriminator) | `definitions.executor_*.properties.type.description` | `poethepoet/executor/base.py` `PoeExecutor.ExecutorOptions.type` |
-| Each uv executor field | `definitions.executor_uv.properties.*` | `poethepoet/executor/uv.py` |
-| `location` (virtualenv) | `definitions.executor_virtualenv.properties.location` | `poethepoet/executor/virtualenv.py` |
+| Field                                                                                                      | Existing schema path                                                           | Code location                                                           |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `cwd`                                                                                                      | `definitions.standard_options.properties.cwd.description`                      | `poethepoet/task/base.py` `PoeTask.TaskOptions.cwd`                     |
+| `deps`                                                                                                     | `definitions.standard_options.properties.deps.description`                     | `poethepoet/task/base.py` `PoeTask.TaskOptions.deps`                    |
+| `env`                                                                                                      | `definitions.standard_options.properties.env.description` (under `env_option`) | `poethepoet/task/base.py` `PoeTask.TaskOptions.env`                     |
+| `envfile`                                                                                                  | `definitions.envfile_option.description`                                       | `poethepoet/task/base.py` `PoeTask.TaskOptions.envfile`                 |
+| `executor`                                                                                                 | `definitions.executor_option.description`                                      | `poethepoet/task/base.py` `PoeTask.TaskOptions.executor`                |
+| `help`                                                                                                     | `definitions.standard_options.properties.help.description`                     | `poethepoet/task/base.py` `PoeTask.TaskOptions.help`                    |
+| `uses`                                                                                                     | `definitions.standard_options.properties.uses.description`                     | `poethepoet/task/base.py` `PoeTask.TaskOptions.uses`                    |
+| `verbosity`                                                                                                | `definitions.standard_options.properties.verbosity.description`                | `poethepoet/task/base.py` `PoeTask.TaskOptions.verbosity`               |
+| `args`                                                                                                     | `definitions.standard_options.properties.args.description`                     | `poethepoet/task/base.py` `PoeTask.TaskOptions.args`                    |
+| `capture_stdout`                                                                                           | `definitions.capture_stdout_option.properties.capture_stdout.description`      | `poethepoet/task/base.py` `PoeTask.TaskOptions.capture_stdout`          |
+| `use_exec`                                                                                                 | `definitions.use_exec_option.properties.use_exec.description`                  | `poethepoet/task/cmd.py`, `script.py`, `expr.py` `TaskOptions.use_exec` |
+| `empty_glob`                                                                                               | `definitions.cmd_task.properties.empty_glob.description`                       | `poethepoet/task/cmd.py` `CmdTask.TaskOptions.empty_glob`               |
+| `ignore_fail`                                                                                              | varies per task                                                                | each task's `TaskOptions.ignore_fail`                                   |
+| `interpreter`                                                                                              | `definitions.shell_task.properties.interpreter.description`                    | `poethepoet/task/shell.py` `ShellTask.TaskOptions.interpreter`          |
+| `default_item_type`                                                                                        | `definitions.sequence_task.properties.default_item_type.description`           | `poethepoet/task/sequence.py`, `parallel.py`                            |
+| `prefix`, `prefix_max`, `prefix_template`                                                                  | `definitions.parallel_task.properties.*`                                       | `poethepoet/task/parallel.py`                                           |
+| `print_result`                                                                                             | `definitions.script_task.properties.print_result.description`                  | `poethepoet/task/script.py`                                             |
+| `imports`, `assert`                                                                                        | `definitions.expr_task.properties.*`                                           | `poethepoet/task/expr.py`                                               |
+| `control`, `default`                                                                                       | `definitions.switch_task.properties.*`                                         | `poethepoet/task/switch.py`                                             |
+| `default_task_type`, `default_array_task_type`, `default_array_item_task_type`                             | root-level `properties.*`                                                      | `poethepoet/config/partition.py` `ProjectConfig.ConfigOptions`          |
+| `include`, `include_script`                                                                                | root-level `properties.*`                                                      | same                                                                    |
+| `poetry_command`, `poetry_hooks`                                                                           | root-level                                                                     | same                                                                    |
+| `shell_interpreter`                                                                                        | root-level                                                                     | same                                                                    |
+| `tasks`, `groups`, `verbosity`                                                                             | root-level                                                                     | same                                                                    |
+| `name`, `default`, `help`, `options`, `positional`, `required`, `type`, `multiple`, `choices` on `ArgSpec` | `definitions.standard_options.properties.args.definitions.args.properties.*`   | `poethepoet/task/args.py`                                               |
+| `type` (executor discriminator)                                                                            | `definitions.executor_*.properties.type.description`                           | `poethepoet/executor/base.py` `PoeExecutor.ExecutorOptions.type`        |
+| Each uv executor field                                                                                     | `definitions.executor_uv.properties.*`                                         | `poethepoet/executor/uv.py`                                             |
+| `location` (virtualenv)                                                                                    | `definitions.executor_virtualenv.properties.location`                          | `poethepoet/executor/virtualenv.py`                                     |
 
 For TypedDicts (`IncludeItem`, `IncludeScriptItem`, `TaskGroup`, `EnvDefault`, `EnvfileOption`) the AST-based extractor only sees them if they're parseable — TypedDict fields can carry class-attribute docstrings the same way. Backfill these too.
 
@@ -1401,6 +1415,7 @@ class TaskOptions(PoeOptions):
 ```
 
 Take care to:
+
 - Use the existing schemastore description verbatim where possible (preserves editor experience).
 - Keep docstrings as PEP 257-style triple-quoted strings on the line(s) immediately after the annotation.
 - For multi-line descriptions, use real line breaks inside the triple-quoted string.
@@ -1481,6 +1496,7 @@ EOF
 ### Task 10: Document the docstring convention in CLAUDE.md
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Read the current CLAUDE.md to find the right insertion point**
@@ -1493,16 +1509,19 @@ Identify the section that documents code conventions (likely under "Code style" 
 
 In `CLAUDE.md`, add the following bullet under the "Code style" section:
 
-```markdown
+````markdown
 - `PoeOptions` fields use class-attribute docstrings (PEP 257-style) immediately after the annotation. These are extracted by `PoeOptions.description_for_field()` and consumed by the JSON Schema generator. Every field on a `PoeOptions` subclass should have one; the description backfill tests catch gaps.
 
   Example:
+
   ```python
   class TaskOptions(PoeOptions):
       cwd: str | None = None
       """Working directory the task runs in. Relative to the project root unless absolute."""
   ```
-```
+````
+
+````
 
 - [ ] **Step 3: Commit**
 
@@ -1518,13 +1537,14 @@ need to document them inline.
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
 )"
-```
+````
 
 ---
 
 ### Task 11: Scope Metadata to specific branches; add `min_items` / `max_items`
 
 **Files:**
+
 - Modify: `poethepoet/options/annotations.py` (Metadata class, UnionType, ListType)
 - Modify: `poethepoet/task/shell.py:31-35` (move Metadata from union to list branch; rename `min_length` → `min_items`)
 - Test: `tests/options/test_metadata_constraints.py` (new tests for nested-Annotated parsing, propagation removal, `min_items`/`max_items`, `type_constraints()`)
@@ -1900,6 +1920,7 @@ Expected: three non-`None` description strings printed.
 Run: `git log --oneline development..HEAD`
 
 Expected: roughly 11–12 commits, in this approximate order:
+
 1. Introduce `ShellInterpreter` Literal alias + `register_type_alias` helper
 2. Tighten `ShellTask` interpreter to Literal
 3. Tighten `ProjectConfig` shell_interpreter to Literal
@@ -1922,6 +1943,7 @@ Phase 1 is complete.
 ## What Phase 2 expects from this work
 
 Phase 2 will assume:
+
 - `PoeOptions.description_for_field(name)` returns docstring text for every annotated field on every PoeOptions subclass (no `None` for fields that ship in production code — only for synthetic test classes).
 - `Metadata` exposes `pattern`, `examples`, `minimum`, `maximum`, `min_length`, `max_length`, `min_items`, `max_items` as documented attributes, each `None` when unset.
 - `Metadata.type_constraints()` returns the source-of-truth mapping from type-level constraint name to applicable JSON Schema type kinds. The schema generator consumes this directly to validate that constraints are attached to compatible types and raises a clear error on mismatch. It's a classmethod (lazy) rather than a class attribute, since the mapping is only needed during offline schema generation.

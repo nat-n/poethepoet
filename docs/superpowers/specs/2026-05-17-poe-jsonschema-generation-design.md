@@ -18,14 +18,14 @@ The schema is consumed by editor integrations (most notably the VS Code Python/T
 - Per-class docstring extraction via `ast`, so class-attribute docstrings become JSON Schema `description` properties.
 - `additionalProperties: false` everywhere structural. A single deliberate exception: a forward-compat fallback branch for task dicts that don't match any known task-type discriminator key.
 - Full parity test suite under `tests/schema/`, gated by a `pytest.mark.schema` marker auto-applied via `conftest.py`.
-- A `poe build-schema` task; a CI drift check; a `poe test-schema` task; integration with `poe check`.
+- A `poe schema-build` task; a CI drift check; a `poe test-schema` task; integration with `poe check`.
 - Cleanup-first work in `PoeOptions`: tighten runtime-validated string options to `Literal[...]` where the set is static, add new `Metadata` constraint fields (`pattern`, `examples`, `minimum`, `maximum`, `min_length`, `max_length`) that serve both runtime validation and schema generation.
 
 ### Deferred
 
 - Standalone schemas for `poe_tasks.{toml,yaml,json}` and for included config files (secondary goal noted by the maintainer).
 - Automation for opening PRs to schemastore.org on release (manual submit per release is fine for now).
-- Integration of `poe build-schema` into the existing `poe bump-version` flow (the maintainer will wire this in themselves).
+- Integration of `poe schema-build` into the existing `poe bump-version` flow (the maintainer will wire this in themselves).
 
 ### Out of scope
 
@@ -49,24 +49,24 @@ poethepoet/schema/
 
 AST-based docstring extraction lives in `poethepoet/options/_docstrings.py` (introduced in Phase 1). The schema package's `context.py` routes description lookups to either `PoeOptions.description_for_field` (for `PoeOptions` subclasses) or `extract_field_descriptions` (for TypedDicts) — addressing the Section 7 risk about emission-path divergence in one place.
 
-The package lives inside `poethepoet/` (not under `scripts/`) so it is importable from tests and so it can be extended later for the deferred secondary schemas. The package is **never imported during normal CLI invocations** — only by `poe build-schema` and by schema tests — so it has zero impact on CLI startup performance.
+The package lives inside `poethepoet/` (not under `scripts/`) so it is importable from tests and so it can be extended later for the deferred secondary schemas. The package is **never imported during normal CLI invocations** — only by `poe schema-build` and by schema tests — so it has zero impact on CLI startup performance.
 
 ### Type translation
 
 `translate.py` is a generic translator with no domain knowledge:
 
-| TypeAnnotation | JSON Schema output |
-|---|---|
-| `PrimitiveType(str/int/float/bool)` | `{"type": ...}` (with `pattern`/`minimum`/etc. layered in from Metadata) |
-| `LiteralType` | `{"enum": [...]}` (with `type:` if all values share one) |
-| `ListType` | `{"type": "array", "items": ...}` (with `minItems` etc. from Metadata) |
-| `DictType` | `{"type": "object", "additionalProperties": <value schema>}` |
-| `TypedDictType` | `{"type": "object", "properties": ..., "required": ..., "additionalProperties": false}` |
-| `UnionType` (plain) | `{"anyOf": [...]}` |
-| `UnionType` (tagged) | `{"oneOf": [...]}` — used when the orchestrator knows there's a discriminator |
-| `UnionType` with `NoneType` | the `NoneType` branch is removed and the field becomes optional at the parent level |
-| `AnyType` | `{}` (matches anything) |
-| `NoneType` | handled inside Union resolution; never emitted standalone |
+| TypeAnnotation                      | JSON Schema output                                                                      |
+| ----------------------------------- | --------------------------------------------------------------------------------------- |
+| `PrimitiveType(str/int/float/bool)` | `{"type": ...}` (with `pattern`/`minimum`/etc. layered in from Metadata)                |
+| `LiteralType`                       | `{"enum": [...]}` (with `type:` if all values share one)                                |
+| `ListType`                          | `{"type": "array", "items": ...}` (with `minItems` etc. from Metadata)                  |
+| `DictType`                          | `{"type": "object", "additionalProperties": <value schema>}`                            |
+| `TypedDictType`                     | `{"type": "object", "properties": ..., "required": ..., "additionalProperties": false}` |
+| `UnionType` (plain)                 | `{"anyOf": [...]}`                                                                      |
+| `UnionType` (tagged)                | `{"oneOf": [...]}` — used when the orchestrator knows there's a discriminator           |
+| `UnionType` with `NoneType`         | the `NoneType` branch is removed and the field becomes optional at the parent level     |
+| `AnyType`                           | `{}` (matches anything)                                                                 |
+| `NoneType`                          | handled inside Union resolution; never emitted standalone                               |
 
 ### Generator orchestrator
 
@@ -176,7 +176,7 @@ Each executor's definition is its `ExecutorOptions.__schema_fragment__(ctx)` wit
 
 ## 4. PoeOptions cleanup and annotation expressivity
 
-**Principle:** *Schema constraints must be real runtime rules.* If a constraint appears in the generated schema, it must also be enforced by `PoeOptions` at parse time. This rules out schema-only annotations (no "documentation pattern that the runtime ignores"). The benefit: one source of truth, no possibility of schema/runtime drift on constraints, and contributors who add a new `Metadata` constraint know it will tighten runtime behavior.
+**Principle:** _Schema constraints must be real runtime rules._ If a constraint appears in the generated schema, it must also be enforced by `PoeOptions` at parse time. This rules out schema-only annotations (no "documentation pattern that the runtime ignores"). The benefit: one source of truth, no possibility of schema/runtime drift on constraints, and contributors who add a new `Metadata` constraint know it will tighten runtime behavior.
 
 ### Cleanup items (Phase 1)
 
@@ -191,28 +191,28 @@ Options whose accepted values come from dynamic registries (`default_task_type`,
 
 **Metadata extensions** — add new fields to `poethepoet.options.annotations.Metadata`. Each field falls into one of two scopes with different semantics:
 
-*Field-level metadata* describes the option as a whole (its config key, documentation hints). It applies to any field regardless of value type, and may sit on an outer `Annotated[Union[...], Metadata(...)]` wrapping a union.
+_Field-level metadata_ describes the option as a whole (its config key, documentation hints). It applies to any field regardless of value type, and may sit on an outer `Annotated[Union[...], Metadata(...)]` wrapping a union.
 
-| Field | Runtime behavior | Schema output |
-|---|---|---|
-| `config_name: str \| None` | `PoeOptions.get_fields()` uses this to map TOML keys to attribute names | (consumed at field level; no direct emission) |
-| `examples: list[Any] \| None` | none (documentation-only) | `examples:` |
+| Field                         | Runtime behavior                                                        | Schema output                                 |
+| ----------------------------- | ----------------------------------------------------------------------- | --------------------------------------------- |
+| `config_name: str \| None`    | `PoeOptions.get_fields()` uses this to map TOML keys to attribute names | (consumed at field level; no direct emission) |
+| `examples: list[Any] \| None` | none (documentation-only)                                               | `examples:`                                   |
 
-*Type-level metadata* constrains the runtime value. Each constraint applies to specific type kinds, so it must be attached to the matching branch via `Annotated[T, Metadata(...)]` where `T` is the concrete type — not to a surrounding union.
+_Type-level metadata_ constrains the runtime value. Each constraint applies to specific type kinds, so it must be attached to the matching branch via `Annotated[T, Metadata(...)]` where `T` is the concrete type — not to a surrounding union.
 
-| Field | Applies to | Runtime behavior | Schema output |
-|---|---|---|---|
-| `pattern: str \| None` | string | `PrimitiveType.validate` checks `re.search` (unanchored, matching JSON Schema `pattern:` semantics) | `pattern:` |
-| `minimum: int \| float \| None` | integer/number | `PrimitiveType.validate` checks lower bound | `minimum:` |
-| `maximum: int \| float \| None` | integer/number | `PrimitiveType.validate` checks upper bound | `maximum:` |
-| `min_length: int \| None` | string | `PrimitiveType.validate` checks character-length lower bound | `minLength:` |
-| `max_length: int \| None` | string | same, upper bound | `maxLength:` |
-| `min_items: int \| None` | array | `ListType.validate` checks item-count lower bound | `minItems:` |
-| `max_items: int \| None` | array | same, upper bound | `maxItems:` |
+| Field                           | Applies to     | Runtime behavior                                                                                    | Schema output |
+| ------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- | ------------- |
+| `pattern: str \| None`          | string         | `PrimitiveType.validate` checks `re.search` (unanchored, matching JSON Schema `pattern:` semantics) | `pattern:`    |
+| `minimum: int \| float \| None` | integer/number | `PrimitiveType.validate` checks lower bound                                                         | `minimum:`    |
+| `maximum: int \| float \| None` | integer/number | `PrimitiveType.validate` checks upper bound                                                         | `maximum:`    |
+| `min_length: int \| None`       | string         | `PrimitiveType.validate` checks character-length lower bound                                        | `minLength:`  |
+| `max_length: int \| None`       | string         | same, upper bound                                                                                   | `maxLength:`  |
+| `min_items: int \| None`        | array          | `ListType.validate` checks item-count lower bound                                                   | `minItems:`   |
+| `max_items: int \| None`        | array          | same, upper bound                                                                                   | `maxItems:`   |
 
 **Note on the `min_length` / `min_items` split.** JSON Schema treats `minLength` (string characters) and `minItems` (array items) as separate keywords with different semantics. PoeOptions mirrors that vocabulary: `min_length`/`max_length` are exclusively string constraints; `min_items`/`max_items` are exclusively array constraints. The single-constraint conflation that would otherwise arise on `str | list[str]` (where one `min_length` would have to mean two different things) is structurally impossible — they're different fields.
 
-**Note on `examples`:** documentation metadata, not a constraint. Conceptually the same as `config_name` (also field-level, also no runtime validation role). The principle "schema constraints must be runtime rules" applies to *constraints*, not to *metadata*. We should resist further metadata-only fields without a similar justification.
+**Note on `examples`:** documentation metadata, not a constraint. Conceptually the same as `config_name` (also field-level, also no runtime validation role). The principle "schema constraints must be runtime rules" applies to _constraints_, not to _metadata_. We should resist further metadata-only fields without a similar justification.
 
 **Validation message quality:** when a constraint fails at runtime, the error message should be specific and actionable — at minimum naming the field, the constraint that failed, and the offending value. Existing custom `validate()` overrides whose work the new constraints replace likely produce better messages than a generic "`'interpreter'` does not match pattern" — the implementation must port those messages forward, not regress them.
 
@@ -235,7 +235,7 @@ interpreter: Annotated[
 ] = None
 ```
 
-Field-level metadata on a union remains supported and idiomatic, because it describes the *option*, not a *value*:
+Field-level metadata on a union remains supported and idiomatic, because it describes the _option_, not a _value_:
 
 ```python
 # Good: config_name is field-level — applies regardless of which branch matches.
@@ -251,7 +251,7 @@ assert_: Annotated[bool | int, Metadata(config_name="assert")] = False
 
 The runtime is permissive: a type-level constraint attached to a branch it doesn't apply to (e.g. `Annotated[str, Metadata(min_items=1)]`) is silently ignored — `PrimitiveType.validate` only knows about `min_length`, not `min_items`. This avoids per-parse overhead checking constraint applicability on every option, and keeps validation logic per-type local.
 
-The schema generator (Phase 2) provides the safety net: it inspects every constraint in context with its target type, and raises a clear error if a type-level constraint is attached to an incompatible type. This catches authoring mistakes at build time — when `poe build-schema` runs — before any drift can ship.
+The schema generator (Phase 2) provides the safety net: it inspects every constraint in context with its target type, and raises a clear error if a type-level constraint is attached to an incompatible type. This catches authoring mistakes at build time — when `poe schema-build` runs — before any drift can ship.
 
 The constraint-to-type mapping is exposed as a lazy classmethod on `Metadata`, so the schema generator looks it up at one source of truth rather than re-encoding the knowledge in a sibling module. Because the mapping is only needed during schema generation (an offline build step) — never on the CLI hot path — it's constructed on demand rather than eagerly at module import:
 
@@ -374,7 +374,7 @@ The schema generator (in `poethepoet/schema/`) emits plain dicts and has no `jso
 
 - **`test_meta.py`** — `Draft7Validator.check_schema(build_schema())`; structural sanity (root has `definitions`, `additionalProperties: false`, exactly one `$schema` declaration, etc.). Also asserts that the schema builder raises a clear, named error when a type-level `Metadata` constraint is attached to an incompatible type (e.g. `Annotated[str, Metadata(min_items=1)]`), citing the field, the constraint, and the incompatible type — the safety net described in Section 4.
 - **`test_fixture_configs.py`** — enumerate `tests/fixtures/*_project/` directories; find the `[tool.poe]` block (from `pyproject.toml` or `poe_tasks.*`); assert the schema accepts it. Parametrize so each fixture is its own test ID.
-- **`test_invalid_corpus.py`** — each `tests/schema/fixtures/invalid/*.toml` file contains a `[tool.poe]` block plus a `# expected_error: ...` annotation line. Test asserts both: PoeOptions raises `ConfigValidationError` *and* schema validation produces at least one error.
+- **`test_invalid_corpus.py`** — each `tests/schema/fixtures/invalid/*.toml` file contains a `[tool.poe]` block plus a `# expected_error: ...` annotation line. Test asserts both: PoeOptions raises `ConfigValidationError` _and_ schema validation produces at least one error.
 - **`test_mutation.py`** — apply a small mutator library (delete required field, change type, replace enum value with garbage, etc.) to each seed config. Each (seed × mutator × applicable path) becomes its own parametrized test case so per-case visibility is preserved (a divergence shows up as a single failing or `xfail` test, not as one line in a multi-line failure dump). Known-divergent cases (cross-task validations the schema can't express) are wrapped in `pytest.param(..., marks=pytest.mark.xfail(reason=...))` with explicit reasons citing the relevant spec section.
 
 ### Deliberate gaps
@@ -384,10 +384,10 @@ The schema generator (in `poethepoet/schema/`) emits plain dicts and has no `jso
 
 ## 6. Lifecycle: regeneration and drift prevention
 
-### `poe build-schema` task
+### `poe schema-build` task
 
 ```toml
-[tool.poe.tasks.build-schema]
+[tool.poe.tasks.schema-build]
 cmd = "python -m poethepoet.schema"
 help = "Regenerate docs/_static/partial-poe.json from PoeOptions definitions"
 ```
@@ -399,13 +399,13 @@ help = "Regenerate docs/_static/partial-poe.json from PoeOptions definitions"
 A CI step (in the existing quality job or a dedicated `schema-drift` job) runs:
 
 ```bash
-poe build-schema
+poe schema-build
 git diff --exit-code docs/_static/partial-poe.json
 ```
 
 On a non-empty diff, the job fails with:
 
-> `docs/_static/partial-poe.json` is out of date. Run `poe build-schema` and commit the result.
+> `docs/_static/partial-poe.json` is out of date. Run `poe schema-build` and commit the result.
 
 This is the sole automated enforcement preventing drift between `PoeOptions` changes and the committed schema. If a contributor adds an option but doesn't regenerate, CI catches it on every PR.
 
@@ -415,7 +415,7 @@ Both `test-schema` and the drift check participate in the umbrella quality task.
 
 ### Release flow (out of scope for this work)
 
-The integration of `poe build-schema` into `poe bump-version` (so the release commit always contains an up-to-date schema as a safety net beyond CI) will be done by the maintainer themselves. This spec records that it's a logical follow-up but doesn't deliver it.
+The integration of `poe schema-build` into `poe bump-version` (so the release commit always contains an up-to-date schema as a safety net beyond CI) will be done by the maintainer themselves. This spec records that it's a logical follow-up but doesn't deliver it.
 
 The maintainer-driven flow for actually publishing to schemastore (forking schemastore/schemastore, copying the file, opening a PR) is also out of scope. Long-term, this is automatable with a GitHub Action.
 
@@ -452,7 +452,7 @@ The `$id` stays stable across releases so editor integrations continue to resolv
 ### Open implementation questions
 
 - Exact mutator library for `test_mutation.py` — start small, expand as gaps surface.
-- Whether the `args` option's list-vs-dict polymorphism is best expressed via an `ArgSpec.__schema_fragment__` override or as orchestrator composition (probably orchestrator, since the polymorphism is at the *outer* `args` field, not in `ArgSpec` itself).
+- Whether the `args` option's list-vs-dict polymorphism is best expressed via an `ArgSpec.__schema_fragment__` override or as orchestrator composition (probably orchestrator, since the polymorphism is at the _outer_ `args` field, not in `ArgSpec` itself).
 
 None are blockers.
 
@@ -484,7 +484,7 @@ Ships independently as the feature itself.
 
 ### Phase 3 — Lifecycle integration
 
-- `poe build-schema` task.
+- `poe schema-build` task.
 - `poe test-schema` task with marker auto-application.
 - CI drift check job.
 - Integration into `poe check`.

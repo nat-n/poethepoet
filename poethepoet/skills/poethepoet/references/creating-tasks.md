@@ -18,11 +18,11 @@ ls poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null
 
 **Project type determines the poe command and how to add dependencies:**
 
-| Project type | poe command | Add dev dependency |
-|-------------|-------------|-------------------|
-| uv (`uv.lock` or `[tool.uv]`) | `uv run poe` | `uv add --dev <pkg>` |
-| poetry (`poetry.lock` or `[tool.poetry]`) | `poetry run poe` | `poetry add --group dev <pkg>` |
-| standalone (neither) | `poe` (if globally installed) | User decides |
+| Project type                              | poe command                   | Add dev dependency             |
+| ----------------------------------------- | ----------------------------- | ------------------------------ |
+| uv (`uv.lock` or `[tool.uv]`)             | `uv run poe`                  | `uv add --dev <pkg>`           |
+| poetry (`poetry.lock` or `[tool.poetry]`) | `poetry run poe`              | `poetry add --group dev <pkg>` |
+| standalone (neither)                      | `poe` (if globally installed) | User decides                   |
 
 ---
 
@@ -34,6 +34,7 @@ ls poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null
 - **Complex task sets warranting separation** → create `poe_tasks.toml` (exclude from `[tool.poe]` in pyproject.toml)
 
 For standalone task files, you don't need the `[tool.poe]` namespace:
+
 ```toml
 # poe_tasks.toml
 [tasks.test]
@@ -47,15 +48,15 @@ help = "Run the test suite"
 
 Use `cmd` by default. Only reach for other types when you genuinely need their features:
 
-| Need | Use |
-|------|-----|
-| Run a CLI command | **`cmd`** (default) |
-| Shell pipes, loops, conditionals | **`shell`** |
-| Python logic or async | **`script`** |
-| Run A then B | **`sequence`** (or array shorthand) |
-| Run A and B simultaneously | **`parallel`** |
-| Platform-specific behavior or switching task content based on conditions | **`switch`** |
-| Computed output | **`expr`** |
+| Need                                                                     | Use                                 |
+| ------------------------------------------------------------------------ | ----------------------------------- |
+| Run a CLI command                                                        | **`cmd`** (default)                 |
+| Shell pipes, loops, conditionals                                         | **`shell`**                         |
+| Python logic or async                                                    | **`script`**                        |
+| Run A then B                                                             | **`sequence`** (or array shorthand) |
+| Run A and B simultaneously                                               | **`parallel`**                      |
+| Platform-specific behavior or switching task content based on conditions | **`switch`**                        |
+| Computed output                                                          | **`expr`**                          |
 
 **When in doubt, use `cmd`.** It's portable, predictable, and the right choice for the vast majority of tasks.
 
@@ -72,6 +73,8 @@ cmd = "pytest"
 ```
 
 Keep help text to a single, clear line. It appears in `poe` listing and `poe --help <task>`.
+
+**Don't add `#` comments around or inside task definitions** (TOML, YAML, or JSON) unless the user asks or some detail about how the task works really needs explanation to avoid problematic confusion. `help` is the canonical place for task documentation (though it should usually just describe the purpose of the task) — it surfaces to users; config-file comments don't. If a task seems to need a comment to explain what it does, that's usually a signal to rename it, refine its `help`, or split it.
 
 ---
 
@@ -90,6 +93,7 @@ help = "Run the test suite"
 ```
 
 With coverage:
+
 ```toml
 [tool.poe.tasks.test]
 cmd = "pytest --cov=src --cov-report=term-missing"
@@ -97,6 +101,7 @@ help = "Run the test suite with coverage"
 ```
 
 Extra args (like `-x`, `-k`, `-v`) are auto-forwarded to `cmd` tasks:
+
 ```bash
 poe test -x -k "my_feature"   # works automatically
 ```
@@ -112,6 +117,7 @@ help = "Run linter"
 ```
 
 With auto-fix support:
+
 ```toml
 [tool.poe.tasks.lint]
 cmd = "ruff check . $POE_EXTRA_ARGS"
@@ -156,6 +162,7 @@ help = "Run all quality checks"
 ```
 
 Sequential takes longer but gives clearer output:
+
 ```toml
 [tool.poe.tasks.check]
 sequence = ["lint", "types", "test"]
@@ -190,7 +197,7 @@ help = "Run all quality checks"
 
 ## Adding dependencies
 
-**Never hand-edit dependency arrays in `pyproject.toml`.** This applies to *all* dependency tables, including:
+**Never hand-edit dependency arrays in `pyproject.toml`.** This applies to _all_ dependency tables, including:
 
 - `[project.dependencies]` and `[project.optional-dependencies]`
 - `[tool.uv].dev-dependencies` and `[dependency-groups]`
@@ -263,6 +270,7 @@ help    = "Output format (html, csv, json)"
 ```
 
 Now users get a fully documented CLI:
+
 ```bash
 poe process data.csv                          # defaults
 poe process data.csv --output-dir results -v  # with options
@@ -270,6 +278,7 @@ poe process --help                            # auto-generated help
 ```
 
 Key points:
+
 - Arg names use `_` prefix (private) — private args are **not** set as environment variables, so their values don't leak to subprocesses or shell tasks. The CLI flags drop the underscore: `--output-dir`, `--verbose`
 - The explicit call expression `main(_input_file, _output_dir, _verbose, _format)` is required because the `_`-prefixed poe arg names don't match the Python parameter names; passing positionally bridges this gap
 - `env.PYTHONPATH = "${POE_ROOT}/scripts"` adds `scripts/` to the path so `process` is importable directly. Alternatively, use `"${POE_ROOT}"` and reference as `scripts.process:main` — this requires `scripts/__init__.py`
@@ -289,6 +298,7 @@ def main():
 ```
 
 Advantages over `shell`:
+
 - Proper Python error handling and type annotations
 - Async support via `asyncio.run()`
 - Testable
@@ -365,6 +375,7 @@ help = "Format all code"
 ```
 
 Use the `cwd` option when including a subproject's tasks:
+
 ```toml
 [[tool.poe.include]]
 path = "frontend/pyproject.toml"

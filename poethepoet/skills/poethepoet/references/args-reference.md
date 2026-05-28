@@ -5,12 +5,14 @@ Args let users pass parameters to a task at the command line: `poe <task> --arg-
 ## Syntax options
 
 **Abbreviated** (array of strings — creates `--name` options with no defaults):
+
 ```toml
 args = ["host", "port"]
 # Usage: poe serve --host 0.0.0.0 --port 8001
 ```
 
 **Inline tables** (array of dicts — add defaults, types, help):
+
 ```toml
 args = [
   { name = "host", default = "localhost", help = "Host to bind" },
@@ -19,6 +21,7 @@ args = [
 ```
 
 **Array of tables** (full control):
+
 ```toml
 [[tool.poe.tasks.serve.args]]
 name = "host"
@@ -35,6 +38,7 @@ help = "Port to listen on"
 ```
 
 **Subtable form** (alternative full syntax):
+
 ```toml
 [tool.poe.tasks.serve.args.host]
 options = ["-h", "--host"]
@@ -46,17 +50,17 @@ help = "Host to bind"
 
 ## All arg options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `name` | string | Arg name — required in array form |
-| `options` | list[str] | CLI flags, e.g. `["-h", "--host"]`. Default: `["--name"]` |
-| `default` | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators|
-| `help` | string | Help text in `poe --help <task>` |
-| `type` | string | `"string"` (default), `"integer"`, `"float"`, `"boolean"` |
-| `positional` | bool | Positional arg — no flag needed |
-| `required` | bool | Fail if not provided |
-| `choices` | list | Restrict to these values (enforced) |
-| `multiple` | bool or int | Accept multiple values; int = exact count |
+| Option       | Type               | Description                                                                    |
+| ------------ | ------------------ | ------------------------------------------------------------------------------ |
+| `name`       | string             | Arg name — required in array form                                              |
+| `options`    | list[str]          | CLI flags, e.g. `["-h", "--host"]`. Default: `["--name"]`                      |
+| `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators |
+| `help`       | string             | Help text in `poe --help <task>`                                               |
+| `type`       | string             | `"string"` (default), `"integer"`, `"float"`, `"boolean"`                      |
+| `positional` | bool               | Positional arg — no flag needed                                                |
+| `required`   | bool               | Fail if not provided                                                           |
+| `choices`    | list               | Restrict to these values (enforced)                                            |
+| `multiple`   | bool or int        | Accept multiple values; int = exact count                                      |
 
 By default the options are inferred from the name, e.g. if the name is `"level"` options will be `["--level"]` unless specified.
 
@@ -74,6 +78,7 @@ choices = ["staging", "production"]
 required = true
 help = "Target environment"
 ```
+
 Usage: `poe deploy production`
 
 Only one positional arg can have `multiple = true`, and it must be last.
@@ -124,14 +129,14 @@ args = [{ name = "_target", positional = true }]
 
 ## How args are available by task type
 
-| Task type | How to access args |
-|-----------|-------------------|
-| `cmd` | `${name}` in parameter expansion |
-| `shell` | `${name}` environment variable (public args only) |
-| `script` | As kwargs when no parens: `script = "module:fn"` with `args = ["x"]` → `fn(x=val)` |
-| `script` (with parens) | Explicitly in call: `"module:fn(_x, y=_y)"` |
-| `expr` | As Python variables: `name` is directly accessible |
-| `sequence`/`parallel` | Via env vars, or forwarded via `$POE_EXTRA_ARGS` |
+| Task type              | How to access args                                                                 |
+| ---------------------- | ---------------------------------------------------------------------------------- |
+| `cmd`                  | `${name}` in parameter expansion                                                   |
+| `shell`                | `${name}` environment variable (public args only)                                  |
+| `script`               | As kwargs when no parens: `script = "module:fn"` with `args = ["x"]` → `fn(x=val)` |
+| `script` (with parens) | Explicitly in call: `"module:fn(_x, y=_y)"`                                        |
+| `expr`                 | As Python variables: `name` is directly accessible                                 |
+| `sequence`/`parallel`  | Via env vars, or forwarded via `$POE_EXTRA_ARGS`                                   |
 
 ---
 
@@ -144,11 +149,13 @@ poe test -- -x -k "my_test"    # -x and -k "my_test" are free args
 ```
 
 How they're available:
+
 - **`cmd` tasks**: Auto-appended to the command. Use `$POE_EXTRA_ARGS` for explicit placement
 - **`shell` tasks**: Available as `$POE_EXTRA_ARGS`
 - **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`)
 
 **Forwarding to subtasks** — only subtasks that explicitly reference `$POE_EXTRA_ARGS` receive free args:
+
 ```toml
 [tool.poe.tasks.check]
 sequence = [
@@ -172,8 +179,7 @@ args = [{ name = "AWS_REGION", options = ["--region", "-r"] default = "${AWS_DEF
 
 The fact that args are normally exposed as environment variables can be useful when the task explicitly needed, for example calling an arg `"AWS_REGION"` will set that environment variable for all subprocesses of the task.
 
-If provided the default value will be appended in the help messages automatically.
----
+## If provided the default value will be appended in the help messages automatically.
 
 ## Constrained choices
 
@@ -194,4 +200,4 @@ Poe validates the value at runtime and shows the choices in help output.
 - The `choices` arg option should be used whenever a small set of allowed options is known.
 - The inline tables syntax is usually the best.
 - Help text should be limited to 1 line (<80 chars) when possible.
-- prefer _private arg names for most tasks types when there is no need to access the variables from the environment at runtime. - **NEVER** use _private arg names with shell tasks which can only access variables from the environment at runtime.
+- prefer \_private arg names for most tasks types when there is no need to access the variables from the environment at runtime. - **NEVER** use \_private arg names with shell tasks which can only access variables from the environment at runtime.

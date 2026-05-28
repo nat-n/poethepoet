@@ -3,11 +3,11 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, get_args
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict, get_args
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from ..options.annotations import option_annotation, register_type_alias
+from ..options.annotations import Metadata, option_annotation, register_type_alias
 from .primitives import EmptyDict, EnvDefault
 
 if TYPE_CHECKING:
@@ -35,6 +35,8 @@ register_type_alias("ShellInterpreter", ShellInterpreter)
 # Derived from the Literal so the tuple and the type stay in lockstep.
 KNOWN_SHELL_INTERPRETERS: tuple[str, ...] = get_args(ShellInterpreter)
 
+_GROUP_NAME_PATTERN = re.compile(r"^[\w-]+$")
+
 
 @option_annotation
 class IncludeScriptItem(TypedDict):
@@ -44,7 +46,7 @@ class IncludeScriptItem(TypedDict):
     merged into the project config.
     """
 
-    cwd: str
+    cwd: Annotated[str, Metadata(pattern=r"\S")]
     """
     Specify the working directory for resolving relative paths referenced by the
     included script.
@@ -67,7 +69,7 @@ class IncludeItem(TypedDict):
     config file.
     """
 
-    cwd: str
+    cwd: Annotated[str, Metadata(pattern=r"\S")]
     """
     Specify the working directory for resolving relative paths referenced by the
     included config.
@@ -100,7 +102,7 @@ class TaskGroup(TypedDict):
     """
 
 
-TaskGroup.__optional_keys__ = frozenset({"executor", "tasks"})
+TaskGroup.__optional_keys__ = frozenset({"heading", "executor", "tasks"})
 
 
 class GroupConfig:
@@ -255,7 +257,7 @@ class ProjectConfig(ConfigPartition):
         A map of environment variables to be set for all tasks.
         """
 
-        envfile: str | Sequence[str] | EnvfileOption = ()
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
         Provide one or more env files to be loaded before running tasks. If an
         array is provided, files will be loaded in the given order.
@@ -270,7 +272,7 @@ class ProjectConfig(ConfigPartition):
         executor types accept additional configuration options.
         """
 
-        include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        include: str | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """
@@ -374,15 +376,16 @@ class ProjectConfig(ConfigPartition):
                     f"Expected one of {PoeTask.get_task_types(str)!r}"
                 )
 
-            # Validate default_array_task_type value
-            if not PoeTask.is_task_type(
-                self.default_array_task_type, content_type=list
-            ):
-                raise ConfigValidationError(
-                    "Invalid value for option 'default_array_task_type': "
-                    f"{self.default_array_task_type!r}\n"
-                    f"Expected one of {PoeTask.get_task_types(list)!r}"
-                )
+            # Validate default_array_task_type value (only if user-set;
+            # the class default is valid by construction).
+            if "default_array_task_type" in self.__dict__:
+                valid_array_task_types = PoeTask.get_default_array_task_types()
+                if self.default_array_task_type not in valid_array_task_types:
+                    raise ConfigValidationError(
+                        "Invalid value for option 'default_array_task_type': "
+                        f"{self.default_array_task_type!r}\n"
+                        f"Expected one of {valid_array_task_types!r}"
+                    )
 
             # Validate default_array_item_task_type value
             if not PoeTask.is_task_type(
@@ -413,7 +416,7 @@ class ProjectConfig(ConfigPartition):
 
             # Validate group names
             for group_name in self.groups.keys():
-                if not re.fullmatch(r"[\w\-_]+", group_name):
+                if not _GROUP_NAME_PATTERN.fullmatch(group_name):
                     raise ConfigValidationError(
                         f"Invalid group name {group_name!r}. Group names must contain "
                         "only letters, digits, hyphens, and underscores."
@@ -435,6 +438,26 @@ class ProjectConfig(ConfigPartition):
                         f"Value of {key!r} in option 'env' should be a string, "
                         f"but found {type(value).__name__!r}"
                     )
+
+        @classmethod
+        def __schema_fragment__(cls, ctx: Any) -> dict[str, Any]:
+            """
+            Attach enums for the three ``default_*_task_type`` options to
+            the default schema fragment, sourced from the same registry
+            queries that ``validate()`` uses so the schema can never drift
+            from the runtime contract.
+            """
+            from ..task.base import PoeTask
+
+            fragment = super().__schema_fragment__(ctx)
+            properties = fragment["properties"]
+            string_task_types = list(PoeTask.get_task_types(content_type=str))
+            properties["default_task_type"]["enum"] = string_task_types
+            properties["default_array_task_type"]["enum"] = list(
+                PoeTask.get_default_array_task_types()
+            )
+            properties["default_array_item_task_type"]["enum"] = string_task_types
+            return fragment
 
 
 class IncludedConfig(ConfigPartition):
@@ -467,7 +490,7 @@ class IncludedConfig(ConfigPartition):
         Define groups of tasks contributed by this included config.
         """
 
-        include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        include: str | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """

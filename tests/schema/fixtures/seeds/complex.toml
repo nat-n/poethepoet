@@ -1,0 +1,12 @@
+[tool.poe.env]
+PYTHONPATH = "src"
+LOG_LEVEL = { default = "info" }
+
+[tool.poe.tasks]
+clean = "rm -rf dist build"
+build = { script = "build:main", help = "Run the build" }
+publish = ["build", "clean"]
+
+[tool.poe.tasks.deploy]
+shell = "deploy.sh"
+deps = ["build"]

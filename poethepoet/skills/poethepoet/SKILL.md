@@ -146,6 +146,8 @@ Before creating tasks, read `references/creating-tasks.md` — it covers:
 
 **Never hand-edit dependency arrays** in `pyproject.toml` (including `[tool.uv].dev-dependencies`, `[dependency-groups]`, and `[tool.poetry.group.*.dependencies]`). Always use `uv add --dev <pkg>` or `poetry add --group dev <pkg>` so the lockfile stays in sync. This applies to poethepoet itself too.
 
+**Don't add comments to task config (TOML/YAML/JSON) unless the user asks.** Task documentation belongs in the `help` field — that's what surfaces in `poe` listing and `poe --help <task>`; config-file `#` comments don't appear anywhere a user looks and just add noise to the config. If a task can't be described in a one-line `help`, simplify or split it rather than reaching for a comment.
+
 ## Key task options
 
 | Option     | Purpose                                                       |

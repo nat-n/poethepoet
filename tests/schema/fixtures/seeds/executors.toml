@@ -1,0 +1,6 @@
+[tool.poe]
+executor = { type = "poetry" }
+verbosity = 1
+
+[tool.poe.tasks.test]
+cmd = "pytest"

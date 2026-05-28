@@ -1,0 +1,3 @@
+# expected_error: must be one of (-2, -1, 0, 1, 2)
+[tool.poe]
+verbosity = 99

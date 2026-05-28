@@ -19,7 +19,8 @@ if TYPE_CHECKING:
 
 class ExprTask(PoeTask):
     """
-    A task consisting of a python expression
+    Evaluates a Python expression to produce a result. Can reference
+    environment variables and arguments, and leverage most python builtins.
     """
 
     content: str
@@ -73,6 +74,20 @@ class ExprTask(PoeTask):
                 self.task_type._substitute_env_vars(self.content.strip(), {})  # type: ignore[attr-defined]
             except (ValueError, ExpressionParseError) as error:
                 raise ConfigValidationError(f"Invalid expression: {error}")
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: forbid the ``use_exec`` + ``capture_stdout`` combination
+        (runtime ``TaskOptions.validate`` rejects it too).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["if"] = {
+            "properties": {"use_exec": {"const": True}},
+            "required": ["use_exec"],
+        }
+        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        return fragment
 
     spec: TaskSpec
 

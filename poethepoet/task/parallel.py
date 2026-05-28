@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
+SUBTASK_OPTIONS_BLOCKLIST = ("args",)
+
 
 class ColorCycle:
     def __init__(self):
@@ -47,7 +49,9 @@ class ColorCycle:
 
 class ParallelTask(PoeTask):
     """
-    A task consisting of multiple tasks that run in parallel
+    Runs an array of subtasks concurrently. Each subtask runs in its own
+    subprocess; output lines are interleaved and prefixed with the subtask
+    name by default.
     """
 
     content: list[str | dict[str, Any]]
@@ -170,6 +174,31 @@ class ParallelTask(PoeTask):
                     )
 
                 subtask.validate(config, task_specs)
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: parallel items reference the recursive task_def union,
+        with subtask-level options forbidden per
+        ``SUBTASK_OPTIONS_BLOCKLIST``. The
+        ``{not: {type: object, required: [X]}}`` form leaves bare-string
+        refs and inline arrays alone — only object items are constrained.
+        Also drops ``capture_stdout`` from the inherited properties so
+        the existing ``additionalProperties: false`` rejects the key —
+        ``TaskOptions.validate`` raises if it's set at runtime.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"].pop("capture_stdout", None)
+        fragment["properties"]["parallel"]["items"] = {
+            "allOf": [
+                {"$ref": "#/definitions/task_def"},
+                *(
+                    {"not": {"type": "object", "required": [opt]}}
+                    for opt in SUBTASK_OPTIONS_BLOCKLIST
+                ),
+            ],
+        }
+        return fragment
 
     spec: TaskSpec
 

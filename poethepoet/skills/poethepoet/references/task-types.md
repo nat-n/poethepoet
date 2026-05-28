@@ -17,6 +17,7 @@ help = "Build distribution packages"
 ```
 
 **Parameter expansion** (bash-like operators):
+
 ```toml
 # Default value if VAR is unset:
 tables = "aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}"
@@ -26,11 +27,13 @@ debug_flag = "server ${DEBUG:+--debug}"
 ```
 
 **Glob expansion**: Patterns like `*.py`, `**/*.txt` are expanded via Python's glob module.
+
 - `empty_glob = "null"` — treat no-match as empty string (like shell nullglob)
 - `empty_glob = "fail"` — fail the task if pattern matches nothing
 - `empty_glob = "pass"` — pass pattern through unchanged (default)
 
 **Extra args**: Free args (after `--`) are auto-appended. Use `$POE_EXTRA_ARGS` for explicit placement:
+
 ```toml
 cmd = "pytest $POE_EXTRA_ARGS --cov=src"  # extra args before --cov, not after
 ```
@@ -56,6 +59,7 @@ script = "http.server"                           # runs module's __main__
 ```
 
 **With task args** (passed as keyword args when no parentheses):
+
 ```toml
 [tool.poe.tasks.deploy]
 script = "deploy:main"
@@ -67,6 +71,7 @@ args = [
 ```
 
 **Private args in call expression**:
+
 ```toml
 script = "deploy:main(_env, dry_run=_dry_run)"
 args = [
@@ -76,6 +81,7 @@ args = [
 ```
 
 **Options**:
+
 - `print_result = true` — print return value to stdout (useful for computed outputs)
 - Async functions are automatically run with `asyncio.run()`
 
@@ -97,6 +103,7 @@ help = "Show project statistics"
 ```
 
 **Interpreter options** (task-level or global):
+
 ```toml
 # Task-level:
 [tool.poe.tasks.install-win]
@@ -128,6 +135,7 @@ help = "Test, build, and publish"
 ```
 
 **Mixed inline tasks** (using array of tables):
+
 ```toml
 [[tool.poe.tasks.check.sequence]]
 cmd = "ruff check ."
@@ -140,11 +148,13 @@ ref = "test"
 ```
 
 **ignore_fail options**:
+
 - `true` — continue on failure; return 0 if all other tasks succeed
 - `"return_zero"` — always return 0 regardless of failures
 - `"return_non_zero"` — continue but return non-zero if any task failed
 
 **Forwarding extra args to subtasks**:
+
 ```toml
 [tool.poe.tasks.check]
 sequence = ["lint $POE_EXTRA_ARGS", "test $POE_EXTRA_ARGS"]
@@ -165,17 +175,20 @@ help = "Run all checks in parallel"
 ```
 
 **Output prefix customization**:
+
 ```toml
 [tool.poe.tasks.check]
 parallel = ["lint", "test"]
 prefix_template = "{color_start}[{prefix}]{color_end} "
 prefix_max = 12
 ```
+
 Available tags: `{name}`, `{index}`, `{color_start}`, `{color_end}`
 
 **ignore_fail**: same options as sequence.
 
 **Nested composition**: sequences can contain parallel tasks and vice versa:
+
 ```toml
 [tool.poe.tasks.ci]
 sequence = [
@@ -233,6 +246,7 @@ control.expr = "sys.platform"
 ```
 
 **Switch on environment variable or arg**:
+
 ```toml
 [tool.poe.tasks.deploy]
 control.expr = "${STAGE}"
@@ -269,6 +283,7 @@ help = "Count hidden files in the project root"
 ```
 
 **With assert** (fail if result is falsey):
+
 ```toml
 [tool.poe.tasks.check-venv]
 expr = "${VIRTUAL_ENV}.endswith('.venv')"
@@ -277,6 +292,7 @@ help = "Verify the correct virtualenv is active"
 ```
 
 **Options**:
+
 - `imports` — list of modules to import before evaluating
 - `assert = true` — fail task if result is falsey
 - `sys` is always available; Python builtins are available

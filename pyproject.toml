@@ -57,6 +57,7 @@ ruff                 = "^0.14.5"
 types-pyyaml         = "^6.0.12.20250915"
 
 [tool.poetry.group.test.dependencies]
+jsonschema           = "^4.0"
 poe_test_helpers     = { path = "./tests/fixtures/packages/poe_test_helpers" }
 pytest               = "^9.0.1"
 pytest-asyncio       = "^1.3.0"
@@ -128,11 +129,15 @@ script = """
 
 [tool.poe.tasks.test]
 help = "Run unit and feature tests"
-cmd  = "pytest"
+cmd  = "pytest -m 'not schema'"
 
 [tool.poe.tasks.test-quick]
 help = "Run unit and feature tests, excluding slow ones"
-cmd  = "pytest -m 'not (slow or flaky)'"
+cmd  = "pytest -m 'not (slow or flaky or schema)'"
+
+[tool.poe.tasks.test-schema]
+help = "Run the schema parity test suite"
+cmd  = "pytest -m schema tests/schema/"
 
 [tool.poe.tasks.types]
 help = "Run the type checker"
@@ -146,9 +151,48 @@ cmd  = "ruff check ."
 help = "Validate black code style"
 cmd  = "black . --check --diff"
 
+[tool.poe.tasks.schema-build]
+help     = "Regenerate partial-poe.json from PoeOptions definitions"
+args     = [{ name = "_output", positional = true, default = "docs/_static/partial-poe.json", help = "Where to write the schema file" }]
+sequence = [
+  { script = "poethepoet.schema:write_schema(_output)" },
+  "_schema-format ${_output}",
+]
+
+[tool.poe.tasks._schema-format]
+help  = "Apply SchemaStore-compatible prettier formatting to a generated JSON Schema"
+args  = [{ name = "schema_path", positional = true, default = "docs/_static/partial-poe.json", help = "Path of the schema file to format in place" }]
+shell = '''
+npx --yes \
+  --package "prettier@${PRETTIER_VERSION}" \
+  --package "prettier-plugin-sort-json@${SORT_PLUGIN_VERSION}" \
+  -- bash -c 'prettier \
+    --plugin "$(dirname "$(dirname "$(which prettier)")")/prettier-plugin-sort-json/dist/index.js" \
+    --ignore-path /dev/null \
+    --object-wrap collapse \
+    --json-recursive-sort \
+    --json-sort-order "$SCHEMA_SORT_ORDER" \
+    --write "'"${schema_path}"'"'
+'''
+[tool.poe.tasks._schema-format.env]
+PRETTIER_VERSION  = "3.8.3"
+SORT_PLUGIN_VERSION = "4.2.0"
+SCHEMA_SORT_ORDER = '{"$schema":null,"$id":null,"$comment":null,"$ref":null,"/^\\\\$.*/":null,"/^[^\\\\d+]/":"none","/^\\\\d+/":"none","if":null,"then":null,"else":null}'
+
+# Regenerates the schema to a gitignored side-channel path and diffs it
+# against the committed file. Doesn't touch the real partial-poe.json,
+# so it can be safely run with uncommitted local changes.
+[tool.poe.tasks.schema-check-drift]
+help     = "Verify generated JSON Schema is up to date with PoeOptions"
+env      = { _comparison_path = "docs/_static/partial-poe-comparison.json", GIT_PAGER = "cat" }
+sequence = [
+  "schema-build ${_comparison_path}",
+  { cmd = "git diff --no-index docs/_static/partial-poe.json ${_comparison_path}" },
+]
+
 [tool.poe.tasks.check]
 help     = "Run all checks on the code base"
-sequence = ["docs-check", "style", "types", "lint", "test"]
+sequence = ["docs-check", "style", "types", "lint", "schema-check-drift", "test", "test-schema"]
 
 [tool.poe.tasks.install-poetry-plugin]
 help = "Install or update this project as a plugin in poetry"
@@ -169,8 +213,6 @@ args = [
 [tool.poe.tasks.poe]
 help   = "Execute poe from this repo (useful for testing)"
 script = "poethepoet:main"
-
-
 
 [tool.poe.tasks.zsh-harness]
 help   = "Run zsh completion script through test harness for debugging"
@@ -219,7 +261,8 @@ omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"
 
 [tool.pytest.ini_options]
 markers = [
-  "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "schema: schema validation tests (slow; require jsonschema; auto-applied to parity tests in tests/schema/)",
 ]
 
 

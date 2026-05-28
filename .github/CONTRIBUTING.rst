@@ -32,6 +32,8 @@ Development process
 
 4. Run ``poetry install`` to setup your development environment. (`install poetry <https://python-poetry.org/docs/#installation>`__)
 
+   The ``poe schema-build`` task — also invoked by ``poe check`` via ``poe schema-check-drift`` — postprocesses the generated JSON Schema with prettier (run through ``npx``). This requires `Node.js <https://nodejs.org>`__ on your PATH. Install Node.js if you plan to touch anything that affects schema generation.
+
 5. Do your code.
 
 6. If you’ve added a feature then before it can be including in a release we will need:

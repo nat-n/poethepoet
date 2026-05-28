@@ -5,7 +5,7 @@ import contextlib
 import inspect
 from typing import TYPE_CHECKING
 
-from poethepoet.helpers.eventloop import async_iter_merge, async_noop
+from ..helpers.eventloop import async_iter_merge, async_noop
 
 if TYPE_CHECKING:
     from collections.abc import (

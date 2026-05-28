@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask
@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 
 class CmdTask(PoeTask):
     """
-    A task consisting of a reference to a shell command
+    Executes a single command as a subprocess without a shell. Supports glob
+    patterns for filesystem paths, parameter expansion of environment variable
+    or private variables.
     """
 
     __key__ = "cmd"
@@ -69,6 +71,28 @@ class CmdTask(PoeTask):
             """
             if not self.content.strip():
                 raise ConfigValidationError("Task has no content")
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: attach a SchemaStore-style title and shell-command
+        examples on the ``cmd`` discriminator field, and forbid the
+        ``use_exec`` + ``capture_stdout`` combination (runtime
+        ``TaskOptions.validate`` rejects it too).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["cmd"]["title"] = "Command to execute"
+        fragment["properties"]["cmd"]["examples"] = [
+            "rm -rf ./**/*.pyc",
+            "echo Hello ${USER}",
+            "echo Hello \\${USER}",
+        ]
+        fragment["if"] = {
+            "properties": {"use_exec": {"const": True}},
+            "required": ["use_exec"],
+        }
+        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        return fragment
 
     spec: TaskSpec
 

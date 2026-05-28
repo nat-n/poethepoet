@@ -275,3 +275,225 @@ def test_register_type_alias_makes_literal_resolvable_in_annotations():
 
     with pytest.raises(ConfigValidationError):
         list(ColouredOptions.parse({"favourite": "yellow"}))
+
+
+def test_group_name_pattern_constant_exposed() -> None:
+    """
+    Module-level so the schema generator can import it as the single
+    source of truth.
+    """
+    from poethepoet.config.partition import _GROUP_NAME_PATTERN
+
+    assert _GROUP_NAME_PATTERN.fullmatch("my_group")
+    assert _GROUP_NAME_PATTERN.fullmatch("my-group")
+    assert _GROUP_NAME_PATTERN.fullmatch("group123")
+    assert not _GROUP_NAME_PATTERN.fullmatch("bad group")
+    assert not _GROUP_NAME_PATTERN.fullmatch("")
+
+
+def test_group_name_pattern_accepts_unicode_at_runtime() -> None:
+    """
+    Python's ``\\w`` is Unicode-aware, so the runtime accepts group names
+    from any script. The schema's ECMA-262 ``\\w`` is ASCII-only, so
+    editor validators end up slightly stricter \u2014 intentional.
+    """
+    from poethepoet.config.partition import _GROUP_NAME_PATTERN
+
+    assert _GROUP_NAME_PATTERN.fullmatch("\u03b1_group")
+    assert _GROUP_NAME_PATTERN.fullmatch("caf\u00e9")
+    assert _GROUP_NAME_PATTERN.fullmatch("\u65e5\u672c\u8a9e")
+
+
+def test_project_config_accepts_unicode_group_name() -> None:
+    """
+    End-to-end runtime guard: a Unicode-letter group key is accepted by
+    ``ProjectConfig.ConfigOptions.parse``.
+    """
+    from poethepoet.config.partition import ProjectConfig
+
+    config = {
+        "tasks": {"hello": "echo hi"},
+        "groups": {"\u03b1_group": {"heading": "Greek-named group"}},
+    }
+    parsed = next(ProjectConfig.ConfigOptions.parse(config, strict=True))
+    assert "\u03b1_group" in parsed.get("groups")
+
+
+def test_project_config_accepts_group_without_heading() -> None:
+    """
+    The ``heading`` field on a group is optional; the runtime must accept
+    a group config that omits it. ``GroupConfig`` falls back to the
+    group's own name when ``heading`` is absent, so the field carries no
+    information the runtime can't infer.
+    """
+    from poethepoet.config.partition import ProjectConfig
+
+    config = {
+        "tasks": {"hello": "echo hi"},
+        "groups": {"mygroup": {"tasks": {"foo": "echo foo"}}},
+    }
+    parsed = next(ProjectConfig.ConfigOptions.parse(config, strict=True))
+    assert "mygroup" in parsed.get("groups")
+
+
+def test_project_config_accepts_envfile_mixed_list() -> None:
+    """
+    A list of envfile entries may mix bare paths with ``{expected,
+    optional}`` objects — e.g. ``envfile = ["base.env", {expected =
+    "prod.env"}]``. Project, task, and included config envfile options
+    should all accept this shape.
+    """
+    from poethepoet.config.partition import ProjectConfig
+
+    config = {
+        "envfile": ["base.env", {"expected": "prod.env"}],
+    }
+    parsed = next(ProjectConfig.ConfigOptions.parse(config, strict=True))
+    assert list(parsed.get("envfile")) == ["base.env", {"expected": "prod.env"}]
+
+
+def test_task_options_reject_blank_cwd() -> None:
+    """
+    Task-level ``cwd`` must contain at least one non-whitespace character.
+    Empty or whitespace-only values fall through to opaque subprocess
+    failures at execution time; reject them at parse time.
+    """
+    import pytest
+
+    from poethepoet.exceptions import ConfigValidationError
+    from poethepoet.task.cmd import CmdTask
+
+    for blank in ("", "   "):
+        with pytest.raises(ConfigValidationError, match="cwd"):
+            next(
+                CmdTask.TaskOptions.parse(
+                    {"cmd": "echo", "cwd": blank},
+                    extra_keys=("cmd",),
+                    strict=True,
+                )
+            )
+
+
+def test_project_config_rejects_switch_as_default_array_task_type() -> None:
+    """
+    A switch task isn't expressible as a bare array — it requires both
+    ``switch`` (case list) and ``control`` — so using it as
+    ``default_array_task_type`` produces ill-formed tasks the moment a
+    bare-array task_def is encountered. The runtime must reject it at
+    config-load time rather than letting the bug surface deep in parsing.
+    """
+    import pytest
+
+    from poethepoet.config.partition import ProjectConfig
+    from poethepoet.exceptions import ConfigValidationError
+
+    config = {"default_array_task_type": "switch"}
+    with pytest.raises(ConfigValidationError, match="default_array_task_type"):
+        list(ProjectConfig.ConfigOptions.parse(config, strict=True))
+
+
+def test_task_name_pattern_unified_encompasses_first_char_rule() -> None:
+    """
+    The regex enforces "letter or underscore first" on its own — no
+    separate runtime check needed.
+    """
+    from poethepoet.task.base import _TASK_NAME_PATTERN
+
+    assert _TASK_NAME_PATTERN.fullmatch("hello")
+    assert _TASK_NAME_PATTERN.fullmatch("_private")
+    assert _TASK_NAME_PATTERN.fullmatch("Task-1")
+    assert _TASK_NAME_PATTERN.fullmatch("name:with:colons")
+    assert _TASK_NAME_PATTERN.fullmatch("with+plus")
+
+    assert not _TASK_NAME_PATTERN.fullmatch("1bad")
+    assert not _TASK_NAME_PATTERN.fullmatch("-bad")
+    assert not _TASK_NAME_PATTERN.fullmatch(" bad")
+    assert not _TASK_NAME_PATTERN.fullmatch("")
+
+
+def test_task_name_pattern_accepts_unicode_first_char() -> None:
+    """
+    Python's ``\\w`` is Unicode-aware, so a task name can start with a
+    letter from any script. The schema's ECMA-262 ``\\w`` collapses
+    ``[^\\W\\d]`` to ``[A-Za-z_]`` — schema is the stricter side.
+    """
+    from poethepoet.task.base import _TASK_NAME_PATTERN
+
+    assert _TASK_NAME_PATTERN.fullmatch("αlpha_task")  # noqa: RUF001
+    assert _TASK_NAME_PATTERN.fullmatch("café_run")
+    assert _TASK_NAME_PATTERN.fullmatch("日本語")
+
+
+def test_runtime_accepts_unicode_first_char_task_name() -> None:
+    """
+    End-to-end guard: TaskSpecFactory validates a Unicode-named task
+    without raising.
+    """
+    from poethepoet.config import PoeConfig
+    from poethepoet.task.base import TaskSpecFactory
+
+    config = PoeConfig(
+        table={"tasks": {"αlpha_task": {"cmd": "echo hi"}}},  # noqa: RUF001
+    )
+    factory = TaskSpecFactory(config)
+    factory.load_all()
+
+    spec = next(iter(factory))
+    spec.validate(config, factory)
+
+
+def test_runtime_still_rejects_invalid_task_names_via_unified_pattern() -> None:
+    """
+    Digit-first task names are rejected by the regex itself, with no
+    separate ``isalpha()`` check.
+    """
+    from poethepoet.config import PoeConfig
+    from poethepoet.task.base import TaskSpecFactory
+
+    config = PoeConfig(
+        table={"tasks": {"1bad_name": {"cmd": "echo hi"}}},
+    )
+    factory = TaskSpecFactory(config)
+    factory.load_all()
+
+    spec = next(iter(factory))
+    with pytest.raises(ConfigValidationError):
+        spec.validate(config, factory)
+
+
+def test_poe_task_get_task_class_returns_registered_class() -> None:
+    from poethepoet.task.base import PoeTask
+    from poethepoet.task.cmd import CmdTask
+
+    assert PoeTask.get_task_class("cmd") is CmdTask
+
+
+def test_poe_task_get_task_class_raises_for_unknown_key() -> None:
+    from poethepoet.task.base import PoeTask
+
+    with pytest.raises(KeyError, match="Unknown task type"):
+        PoeTask.get_task_class("not_a_real_task_type")
+
+
+def test_poe_executor_get_executor_class_returns_registered_class() -> None:
+    from poethepoet.executor.base import PoeExecutor
+    from poethepoet.executor.poetry import PoetryExecutor
+
+    assert PoeExecutor.get_executor_class("poetry") is PoetryExecutor
+
+
+def test_poe_executor_get_executor_class_raises_for_unknown_key() -> None:
+    from poethepoet.executor.base import PoeExecutor
+
+    with pytest.raises(KeyError, match="Unknown executor type"):
+        PoeExecutor.get_executor_class("not_a_real_executor")
+
+
+def test_poe_executor_get_executor_types_includes_known_keys() -> None:
+    from poethepoet.executor.base import PoeExecutor
+
+    keys = set(PoeExecutor.get_executor_types())
+    # "auto" is intentionally NOT in the registry.
+    for expected in ("poetry", "uv", "virtualenv", "simple"):
+        assert expected in keys
+    assert "auto" not in keys
