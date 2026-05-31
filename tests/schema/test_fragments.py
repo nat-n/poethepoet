@@ -69,12 +69,11 @@ def test_task_def_includes_forward_compat_fallback(ctx: SchemaContext) -> None:
     fallbacks = [
         branch
         for branch in schema["oneOf"]
-        if branch.get("type") == "object" and "not" in branch
+        if branch.get("type") == "object" and "properties" in branch
     ]
     assert len(fallbacks) == 1
-    not_clause = fallbacks[0]["not"]
-    assert "anyOf" in not_clause
-    forbidden_keys = {clause["required"][0] for clause in not_clause["anyOf"]}
+    properties = fallbacks[0]["properties"]
+    forbidden_keys = {key for key, sub in properties.items() if sub is False}
     assert forbidden_keys == set(PoeTask.get_task_types())
 
 

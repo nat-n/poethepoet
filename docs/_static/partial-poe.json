@@ -247,7 +247,7 @@
         }
       },
       "required": ["cmd"],
-      "then": { "not": { "required": ["capture_stdout"] } },
+      "then": { "properties": { "capture_stdout": false } },
       "type": "object"
     },
     "cmd_task_with_case": {
@@ -341,7 +341,7 @@
         }
       },
       "required": ["cmd"],
-      "then": { "not": { "required": ["capture_stdout"] } },
+      "then": { "properties": { "capture_stdout": false } },
       "type": "object"
     },
     "env_default": {
@@ -694,7 +694,7 @@
         }
       },
       "required": ["expr"],
-      "then": { "not": { "required": ["capture_stdout"] } },
+      "then": { "properties": { "capture_stdout": false } },
       "type": "object"
     },
     "expr_task_with_case": {
@@ -786,7 +786,7 @@
         }
       },
       "required": ["expr"],
-      "then": { "not": { "required": ["capture_stdout"] } },
+      "then": { "properties": { "capture_stdout": false } },
       "type": "object"
     },
     "groups_map": {
@@ -862,7 +862,10 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
-              { "not": { "required": ["args"], "type": "object" } }
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "args": false }, "type": "object" }
+              }
             ]
           },
           "type": "array"
@@ -955,7 +958,10 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
-              { "not": { "required": ["args"], "type": "object" } }
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "args": false }, "type": "object" }
+              }
             ]
           },
           "type": "array"
@@ -1115,14 +1121,14 @@
             "properties": { "use_exec": { "const": true } },
             "required": ["use_exec"]
           },
-          "then": { "not": { "required": ["capture_stdout"] } }
+          "then": { "properties": { "capture_stdout": false } }
         },
         {
           "if": {
             "properties": { "script": { "pattern": "^[^:]*$" } },
             "required": ["script"]
           },
-          "then": { "not": { "required": ["print_result"] } }
+          "then": { "properties": { "print_result": false } }
         }
       ],
       "properties": {
@@ -1197,14 +1203,14 @@
             "properties": { "use_exec": { "const": true } },
             "required": ["use_exec"]
           },
-          "then": { "not": { "required": ["capture_stdout"] } }
+          "then": { "properties": { "capture_stdout": false } }
         },
         {
           "if": {
             "properties": { "script": { "pattern": "^[^:]*$" } },
             "required": ["script"]
           },
-          "then": { "not": { "required": ["print_result"] } }
+          "then": { "properties": { "print_result": false } }
         }
       ],
       "properties": {
@@ -1327,7 +1333,10 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
-              { "not": { "required": ["args"], "type": "object" } }
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "args": false }, "type": "object" }
+              }
             ]
           },
           "type": "array"
@@ -1402,7 +1411,10 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
-              { "not": { "required": ["args"], "type": "object" } }
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "args": false }, "type": "object" }
+              }
             ]
           },
           "type": "array"
@@ -1669,9 +1681,18 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def_with_case" },
-              { "not": { "required": ["args"], "type": "object" } },
-              { "not": { "required": ["uses"], "type": "object" } },
-              { "not": { "required": ["deps"], "type": "object" } }
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "args": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "uses": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "deps": false }, "type": "object" }
+              }
             ]
           },
           "type": "array"
@@ -1756,9 +1777,18 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def_with_case" },
-              { "not": { "required": ["args"], "type": "object" } },
-              { "not": { "required": ["uses"], "type": "object" } },
-              { "not": { "required": ["deps"], "type": "object" } }
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "args": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "uses": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "deps": false }, "type": "object" }
+              }
             ]
           },
           "type": "array"
@@ -1791,17 +1821,15 @@
         { "$ref": "#/definitions/switch_task" },
         {
           "additionalProperties": true,
-          "not": {
-            "anyOf": [
-              { "required": ["cmd"] },
-              { "required": ["expr"] },
-              { "required": ["parallel"] },
-              { "required": ["ref"] },
-              { "required": ["script"] },
-              { "required": ["sequence"] },
-              { "required": ["shell"] },
-              { "required": ["switch"] }
-            ]
+          "properties": {
+            "cmd": false,
+            "expr": false,
+            "parallel": false,
+            "ref": false,
+            "script": false,
+            "sequence": false,
+            "shell": false,
+            "switch": false
           },
           "type": "object"
         }
@@ -1819,17 +1847,15 @@
         { "$ref": "#/definitions/switch_task_with_case" },
         {
           "additionalProperties": true,
-          "not": {
-            "anyOf": [
-              { "required": ["cmd"] },
-              { "required": ["expr"] },
-              { "required": ["parallel"] },
-              { "required": ["ref"] },
-              { "required": ["script"] },
-              { "required": ["sequence"] },
-              { "required": ["shell"] },
-              { "required": ["switch"] }
-            ]
+          "properties": {
+            "cmd": false,
+            "expr": false,
+            "parallel": false,
+            "ref": false,
+            "script": false,
+            "sequence": false,
+            "shell": false,
+            "switch": false
           },
           "type": "object"
         }
@@ -1856,7 +1882,7 @@
       "type": "object"
     }
   },
-  "description": "Configuration for Poe the Poet, a task runner that works well with `pyproject.toml` files.",
+  "description": "Poe the Poet is a task runner that integrates well with uv, poetry, or any project using pyproject.toml",
   "properties": {
     "default_array_item_task_type": {
       "default": "ref",

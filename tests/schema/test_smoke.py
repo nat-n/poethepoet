@@ -134,11 +134,8 @@ def test_build_schema_cwd_fields_require_non_whitespace() -> None:
 def test_build_schema_subtask_options_blocklist() -> None:
     """
     Subtasks declared inside sequence/parallel can't have ``args``, and
-    switch case items can't have ``args``/``uses``/``deps`` (runtime:
-    sequence.py / parallel.py has_args check, switch.py
-    SUBTASK_OPTIONS_BLOCKLIST). The schema wraps each container's
-    ``items`` reference in an ``allOf`` that forbids these keys per
-    item, using ``{not: {type: object, required: [X]}}`` so bare-string
+    switch case items can't have ``args``/``uses``/``deps``. The schema
+    encodes this on each container's ``items`` allOf so bare-string
     refs and inline arrays still pass.
     """
     schema = build_schema()
@@ -148,8 +145,9 @@ def test_build_schema_subtask_options_blocklist() -> None:
         branches = items["allOf"]
         for opt in blocklist:
             assert {
-                "not": {"type": "object", "required": [opt]}
-            } in branches, f"missing not-required for {opt!r}"
+                "if": {"type": "object"},
+                "then": {"type": "object", "properties": {opt: False}},
+            } in branches, f"missing forbidden-property for {opt!r}"
 
     assert_items_forbid(
         schema["definitions"]["sequence_task"]["properties"]["sequence"]["items"],
@@ -180,7 +178,7 @@ def test_build_schema_use_exec_and_capture_stdout_are_mutex() -> None:
             "properties": {"use_exec": {"const": True}},
             "required": ["use_exec"],
         },
-        "then": {"not": {"required": ["capture_stdout"]}},
+        "then": {"properties": {"capture_stdout": False}},
     }
     for key in ("cmd", "script", "expr"):
         variant = schema["definitions"][f"{key}_task"]
@@ -208,7 +206,7 @@ def test_build_schema_script_module_forbids_print_result() -> None:
             "properties": {"script": {"pattern": "^[^:]*$"}},
             "required": ["script"],
         },
-        "then": {"not": {"required": ["print_result"]}},
+        "then": {"properties": {"print_result": False}},
     }
     assert expected_clause in variant.get(
         "allOf", []

@@ -178,7 +178,10 @@ class SwitchTask(PoeTask):
             "allOf": [
                 {"$ref": "#/definitions/task_def_with_case"},
                 *(
-                    {"not": {"type": "object", "required": [opt]}}
+                    {
+                        "if": {"type": "object"},
+                        "then": {"type": "object", "properties": {opt: False}},
+                    }
                     for opt in SUBTASK_OPTIONS_BLOCKLIST
                 ),
             ],

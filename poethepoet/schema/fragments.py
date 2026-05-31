@@ -44,19 +44,26 @@ def task_def_schema(ctx: SchemaContext) -> dict:
 
     # Forward-compat fallback: a dict that has none of the known
     # discriminator keys.
-    branches.append(
-        {
-            "type": "object",
-            "additionalProperties": True,
-            "not": {
-                "anyOf": [{"required": [key]} for key in task_keys],
-            },
-        }
-    )
+    branches.append(_residual_object_branch(task_keys))
 
     result = {"oneOf": branches}
     ctx.register("task_def", result)
     return result
+
+
+def _residual_object_branch(task_keys: list[str]) -> dict:
+    """
+    Object branch for task_def / task_def_with_case unions that matches
+    any object NOT carrying a known discriminator key. Each discriminator
+    name is mapped to a property schema of ``false`` (i.e. forbidden);
+    ajv strict mode accepts this encoding where the equivalent
+    ``not: {anyOf: [{required: [X]}]}`` form fails strictRequired.
+    """
+    return {
+        "type": "object",
+        "additionalProperties": True,
+        "properties": dict.fromkeys(task_keys, False),
+    }
 
 
 def executor_option_schema(ctx: SchemaContext) -> dict:
@@ -408,15 +415,7 @@ def task_def_with_case_schema(ctx: SchemaContext) -> dict:
         branches.append({"$ref": f"#/definitions/{key}_task_with_case"})
 
     # Forward-compat fallback — same shape as in task_def_schema.
-    branches.append(
-        {
-            "type": "object",
-            "additionalProperties": True,
-            "not": {
-                "anyOf": [{"required": [key]} for key in task_keys],
-            },
-        }
-    )
+    branches.append(_residual_object_branch(task_keys))
 
     result = {"oneOf": branches}
     # Register under the name referenced by SwitchTask.__schema_fragment__.
