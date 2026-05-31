@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "src-layout-project"
+version = "0.1.0"
+description = "Test fixture for src-layout script task path resolution"
+authors = []
+
+[tool.poe.tasks.callable-task]
+script = "mypkg:main"
+
+[tool.poe.tasks.callable-task-with-cwd]
+script = "mypkg:main"
+cwd = "subdir"
+
+[tool.poe.tasks.module-task]
+script = "mypkg"
+
+[tool.poe.tasks.module-task-with-cwd]
+script = "mypkg"
+cwd = "subdir"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

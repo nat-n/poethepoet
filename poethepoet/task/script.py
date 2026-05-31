@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shlex
 from typing import TYPE_CHECKING
 
@@ -85,11 +86,13 @@ class ScriptTask(PoeTask):
             *(env.fill_template(token) for token in self.invocation[1:]),
         ]
 
-        # TODO: check whether the project really does use src layout, and don't do
-        #       sys.path.append('src') if it doesn't
-
         has_dry_run_ref = "_dry_run" in function_call.referenced_globals
         dry_run = self.ctx.ui["dry_run"]
+
+        src_path = self.ctx.config.project_dir / "src"
+        src_path_append = (
+            f"sys.path.append({str(src_path)!r});" if src_path.is_dir() else ""
+        )
 
         script = [
             "import asyncio,os,sys;",
@@ -97,7 +100,7 @@ class ScriptTask(PoeTask):
             "from importlib import import_module as _i;",
             "environ = os.environ;",
             f"_dry_run = {'True' if dry_run else 'False'};" if has_dry_run_ref else "",
-            f"sys.argv = {argv!r}; sys.path.append('src');",
+            f"sys.argv = {argv!r};{src_path_append}",
             f"{format_class(named_arg_values)}",
             f"_m = _i('{target_module}');",
             f"_r = asyncio.run(_m.{function_call.expression}) if _c(_m.{function_ref})",
@@ -127,6 +130,17 @@ class ScriptTask(PoeTask):
         """
         Execute the python module referenced by the task content
         """
+
+        src_path = self.ctx.config.project_dir / "src"
+        if src_path.is_dir():
+            src_path_str = str(src_path)
+            existing_pythonpath = env.get("PYTHONPATH", "")
+            env.set(
+                "PYTHONPATH",
+                f"{src_path_str}{os.pathsep}{existing_pythonpath}"
+                if existing_pythonpath
+                else src_path_str,
+            )
 
         argv = [
             *(env.fill_template(token) for token in self.invocation[1:]),

@@ -471,3 +471,31 @@ def test_script_task_extra_args_available_as_list_via_extra_args_var(run_poe):
     assert result.capture == "Poe => echo-extra-args-script foo bar\n"
     assert result.stdout == "str: foo\nstr: bar\n"
     assert result.stderr == ""
+
+
+def test_callable_script_task_finds_src_layout_modules(run_poe_subproc):
+    result = run_poe_subproc("callable-task", project="src_layout", env=no_venv)
+    assert result.code == 0
+    assert result.stdout == "callable ok\n"
+    assert result.stderr == ""
+
+
+def test_callable_script_task_finds_src_layout_modules_with_cwd(run_poe_subproc):
+    result = run_poe_subproc("callable-task-with-cwd", project="src_layout", env=no_venv)
+    assert result.code == 0
+    assert result.stdout == "callable ok\n"
+    assert result.stderr == ""
+
+
+def test_module_script_task_finds_src_layout_modules(run_poe_subproc):
+    result = run_poe_subproc("module-task", project="src_layout", env=no_venv)
+    assert result.code == 0
+    assert result.stdout == "module ok\n"
+    assert result.stderr == ""
+
+
+def test_module_script_task_finds_src_layout_modules_with_cwd(run_poe_subproc):
+    result = run_poe_subproc("module-task-with-cwd", project="src_layout", env=no_venv)
+    assert result.code == 0
+    assert result.stdout == "module ok\n"
+    assert result.stderr == ""
