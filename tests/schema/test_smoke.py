@@ -171,18 +171,48 @@ def test_build_schema_use_exec_and_capture_stdout_are_mutex() -> None:
     mutual exclusion at runtime
     (``cmd.py:58``, ``script.py:51``, ``expr.py:59``). The schema mirrors
     this via an if/then constraint that forbids ``capture_stdout`` when
-    ``use_exec`` is true.
+    ``use_exec`` is true. Some task variants encode multiple such
+    constraints via ``allOf``; collect the conditional clauses uniformly.
     """
     schema = build_schema()
-    for key in ("cmd", "script", "expr"):
-        variant = schema["definitions"][f"{key}_task"]
-        assert variant.get("if") == {
+    expected_clause = {
+        "if": {
             "properties": {"use_exec": {"const": True}},
             "required": ["use_exec"],
-        }, f"{key} missing if-clause"
-        assert variant.get("then") == {
-            "not": {"required": ["capture_stdout"]}
-        }, f"{key} missing then-clause"
+        },
+        "then": {"not": {"required": ["capture_stdout"]}},
+    }
+    for key in ("cmd", "script", "expr"):
+        variant = schema["definitions"][f"{key}_task"]
+        clauses = (
+            variant["allOf"]
+            if "allOf" in variant
+            else [{"if": variant.get("if"), "then": variant.get("then")}]
+        )
+        assert (
+            expected_clause in clauses
+        ), f"{key} missing use_exec/capture_stdout mutex clause"
+
+
+def test_build_schema_script_module_forbids_print_result() -> None:
+    """
+    ``print_result`` is meaningless on a module-style script task (the
+    runtime rejects it in ``_task_validations``). The schema encodes the
+    same restriction with an if/then clause that triggers when the
+    ``script`` reference contains no ``:``.
+    """
+    schema = build_schema()
+    variant = schema["definitions"]["script_task"]
+    expected_clause = {
+        "if": {
+            "properties": {"script": {"pattern": "^[^:]*$"}},
+            "required": ["script"],
+        },
+        "then": {"not": {"required": ["print_result"]}},
+    }
+    assert expected_clause in variant.get(
+        "allOf", []
+    ), "script_task missing module/print_result clause"
 
 
 def test_build_schema_ref_task_forbids_executor() -> None:

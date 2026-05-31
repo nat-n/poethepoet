@@ -441,3 +441,50 @@ class PoeTaskArgs:
                 del parsed_args[dest]
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}
+
+    def format_argv(self, values: Mapping[str, Any]) -> list[str]:
+        """
+        Re-emit parsed argument values as CLI tokens — the inverse of
+        :meth:`parse`. Used to forward declared args (with defaults already
+        applied by the parser) into a subprocess that does its own CLI
+        parsing, e.g. ``python -m some_module``.
+
+        Conventions: positionals are emitted in declared order; option args
+        use the first entry of their ``options`` list as the flag name;
+        boolean flags are emitted iff the resolved value differs from the
+        declared default (i.e. the user provided the flag on the CLI);
+        multi-value args are emitted space-separated, matching argparse's
+        ``nargs="+"`` style.
+        """
+
+        result: list[str] = []
+        for arg in self._args:
+            if arg.name not in values:
+                continue
+            value = values[arg.name]
+
+            if arg.type == "boolean":
+                # bool() mirrors the parser builder's coercion (args.py
+                # "if default:"), so an undeclared default is treated as
+                # False — matching the argparse store_true default.
+                if value != bool(arg.default):
+                    result.append(arg.options[0])
+                continue
+
+            if arg.positional:
+                if arg.multiple:
+                    result.extend(str(item) for item in value)
+                elif value is not None:
+                    result.append(str(value))
+                continue
+
+            flag = arg.options[0]
+            if arg.multiple:
+                if value:
+                    result.append(flag)
+                    result.extend(str(item) for item in value)
+            elif value is not None:
+                result.append(flag)
+                result.append(str(value))
+
+        return result

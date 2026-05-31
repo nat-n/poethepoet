@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shlex
 from typing import TYPE_CHECKING, Any
 
@@ -67,19 +68,22 @@ class ScriptTask(PoeTask):
 
             validate_script_or_module_reference(self.content)
 
-            if ":" not in self.content and self.has_args:
+            if ":" not in self.content and self.options.get("print_result"):
                 raise ConfigValidationError(
-                    "Script task referencing a module (instead of a function) cannot "
-                    "declare arguments."
+                    "'print_result' is not supported on a script task that "
+                    "references a module (it only makes sense when the task "
+                    "calls a python callable that returns a value)."
                 )
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
         """
         Override: attach python-callable examples on the ``script``
-        discriminator field, and forbid the ``use_exec`` +
-        ``capture_stdout`` combination (runtime ``TaskOptions.validate``
-        rejects it too).
+        discriminator field, and encode two mutually-exclusive option
+        combinations that the runtime also rejects:
+        ``use_exec`` + ``capture_stdout`` (``TaskOptions.validate``);
+        and ``print_result`` on a module-style script — recognised by the
+        ``script`` reference containing no ``:`` (``_task_validations``).
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["properties"]["script"]["examples"] = [
@@ -87,11 +91,22 @@ class ScriptTask(PoeTask):
             "my_pkg.my_module:main",
             "my_pkg.my_module:main(only='images', log_env={'LOG_PATH':'/var/log'})",
         ]
-        fragment["if"] = {
-            "properties": {"use_exec": {"const": True}},
-            "required": ["use_exec"],
-        }
-        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        fragment["allOf"] = [
+            {
+                "if": {
+                    "properties": {"use_exec": {"const": True}},
+                    "required": ["use_exec"],
+                },
+                "then": {"not": {"required": ["capture_stdout"]}},
+            },
+            {
+                "if": {
+                    "properties": {"script": {"pattern": "^[^:]*$"}},
+                    "required": ["script"],
+                },
+                "then": {"not": {"required": ["print_result"]}},
+            },
+        ]
         return fragment
 
     spec: TaskSpec
@@ -166,8 +181,24 @@ class ScriptTask(PoeTask):
         Execute the python module referenced by the task content
         """
 
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        env.register_task_args(named_arg_values, extra_args)
+
+        # Mirror the callable path's sys.path.append('src') by prepending
+        # 'src' to PYTHONPATH. Unlike a sys.path append it can't be done
+        # in-process for `python -m`, so it has to be set on the subprocess env.
+        # TODO: only do this when the project actually uses src layout
+        #       (same caveat as the callable path).
+        existing_pythonpath = env.to_dict().get("PYTHONPATH", "")
+        env.set(
+            "PYTHONPATH",
+            f"src{os.pathsep}{existing_pythonpath}" if existing_pythonpath else "src",
+        )
+
+        declared_args = self.spec.get_args(self.ctx.io)
         argv = [
-            *(env.fill_template(token) for token in self.invocation[1:]),
+            *(declared_args.format_argv(named_arg_values) if declared_args else ()),
+            *extra_args,
         ]
         cmd = ("python", "-m", self.spec.content, *argv)
 
