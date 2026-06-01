@@ -585,9 +585,7 @@ def test_module_script_boolean_argv(
     assert f"argv: {expected_argv}" in result.stdout
 
 
-def test_module_script_task_no_args_forwards_extras_verbatim(
-    temp_pyproject, run_poe
-):
+def test_module_script_task_no_args_forwards_extras_verbatim(temp_pyproject, run_poe):
     """
     A module-style task with no declared args forwards CLI tokens to the
     module verbatim. Specifically, literal `${...}` references are NOT

@@ -135,6 +135,7 @@ args = [{ name = "_target", positional = true }]
 | `shell`                | `${name}` environment variable (public args only)                                  |
 | `script`               | As kwargs when no parens: `script = "module:fn"` with `args = ["x"]` → `fn(x=val)` |
 | `script` (with parens) | Explicitly in call: `"module:fn(_x, y=_y)"`                                        |
+| `script` (module form) | Re-emitted on the module's `sys.argv` (with defaults applied)                      |
 | `expr`                 | As Python variables: `name` is directly accessible                                 |
 | `sequence`/`parallel`  | Via env vars, or forwarded via `$POE_EXTRA_ARGS`                                   |
 
