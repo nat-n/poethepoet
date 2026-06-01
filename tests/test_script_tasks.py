@@ -481,7 +481,9 @@ def test_callable_script_task_finds_src_layout_modules(run_poe_subproc):
 
 
 def test_callable_script_task_finds_src_layout_modules_with_cwd(run_poe_subproc):
-    result = run_poe_subproc("callable-task-with-cwd", project="src_layout", env=no_venv)
+    result = run_poe_subproc(
+        "callable-task-with-cwd", project="src_layout", env=no_venv
+    )
     assert result.code == 0
     assert result.stdout == "callable ok\n"
     assert result.stderr == ""

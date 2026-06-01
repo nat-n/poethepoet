@@ -137,9 +137,11 @@ class ScriptTask(PoeTask):
             existing_pythonpath = env.get("PYTHONPATH", "")
             env.set(
                 "PYTHONPATH",
-                f"{src_path_str}{os.pathsep}{existing_pythonpath}"
-                if existing_pythonpath
-                else src_path_str,
+                (
+                    f"{src_path_str}{os.pathsep}{existing_pythonpath}"
+                    if existing_pythonpath
+                    else src_path_str
+                ),
             )
 
         argv = [
