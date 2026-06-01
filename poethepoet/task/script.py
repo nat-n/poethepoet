@@ -189,7 +189,7 @@ class ScriptTask(PoeTask):
         # in-process for `python -m`, so it has to be set on the subprocess env.
         # TODO: only do this when the project actually uses src layout
         #       (same caveat as the callable path).
-        existing_pythonpath = env.to_dict().get("PYTHONPATH", "")
+        existing_pythonpath = env.get("PYTHONPATH", "")
         env.set(
             "PYTHONPATH",
             f"src{os.pathsep}{existing_pythonpath}" if existing_pythonpath else "src",

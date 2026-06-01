@@ -585,6 +585,35 @@ def test_module_script_boolean_argv(
     assert f"argv: {expected_argv}" in result.stdout
 
 
+def test_module_script_task_no_args_forwards_extras_verbatim(
+    temp_pyproject, run_poe
+):
+    """
+    A module-style task with no declared args forwards CLI tokens to the
+    module verbatim. Specifically, literal `${...}` references are NOT
+    template-expanded into argv — matching the `cmd` task precedent
+    (`cmd.py:113`). The `${MAYBE}` token below would have been expanded
+    by the previous behavior because `MAYBE` is set on the task env.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.run]
+        script = "mymod"
+        env = { MAYBE = "expanded" }
+        """
+    )
+    module_dir = project_path / "mymod"
+    module_dir.mkdir()
+    (module_dir / "__init__.py").touch()
+    (module_dir / "__main__.py").write_text(
+        "import sys\nprint('argv:', sys.argv[1:])\n"
+    )
+
+    result = run_poe("run", "--foo", "cheese", "${MAYBE}", cwd=project_path)
+    assert result.code == 0, result.capture + result.stderr
+    assert "argv: ['--foo', 'cheese', '${MAYBE}']" in result.stdout
+
+
 def test_module_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
     """
     Module-style script tasks should be able to import modules from a src/
