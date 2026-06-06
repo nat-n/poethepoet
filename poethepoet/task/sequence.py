@@ -133,14 +133,10 @@ class SequenceTask(PoeTask):
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
         """
-        Override: sequence items reference the recursive task_def union
-        (registered by the orchestrator), with subtask-level options
-        forbidden per ``SUBTASK_OPTIONS_BLOCKLIST``. The
-        ``{not: {type: object, required: [X]}}`` form leaves bare-string
-        refs and inline arrays alone — only object items are constrained.
-        Also drops ``capture_stdout`` from the inherited properties so
-        the existing ``additionalProperties: false`` rejects the key —
-        ``TaskOptions.validate`` raises if it's set at runtime.
+        Override: sequence items reference the recursive task_def union,
+        with subtask-level options forbidden per
+        ``SUBTASK_OPTIONS_BLOCKLIST``. Also drops ``capture_stdout``
+        which the runtime rejects on sequence tasks.
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["properties"].pop("capture_stdout", None)
@@ -148,7 +144,10 @@ class SequenceTask(PoeTask):
             "allOf": [
                 {"$ref": "#/definitions/task_def"},
                 *(
-                    {"not": {"type": "object", "required": [opt]}}
+                    {
+                        "if": {"type": "object"},
+                        "then": {"type": "object", "properties": {opt: False}},
+                    }
                     for opt in SUBTASK_OPTIONS_BLOCKLIST
                 ),
             ],

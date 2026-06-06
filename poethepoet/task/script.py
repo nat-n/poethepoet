@@ -91,20 +91,23 @@ class ScriptTask(PoeTask):
             "my_pkg.my_module:main",
             "my_pkg.my_module:main(only='images', log_env={'LOG_PATH':'/var/log'})",
         ]
+        # Encode the forbidden properties as `{X: false}` rather than
+        # `{not: {required: [X]}}`: semantically identical, but the latter
+        # fails ajv's strictRequired in schemastore.
         fragment["allOf"] = [
             {
                 "if": {
                     "properties": {"use_exec": {"const": True}},
                     "required": ["use_exec"],
                 },
-                "then": {"not": {"required": ["capture_stdout"]}},
+                "then": {"properties": {"capture_stdout": False}},
             },
             {
                 "if": {
                     "properties": {"script": {"pattern": "^[^:]*$"}},
                     "required": ["script"],
                 },
-                "then": {"not": {"required": ["print_result"]}},
+                "then": {"properties": {"print_result": False}},
             },
         ]
         return fragment

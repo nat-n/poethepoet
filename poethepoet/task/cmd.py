@@ -91,7 +91,10 @@ class CmdTask(PoeTask):
             "properties": {"use_exec": {"const": True}},
             "required": ["use_exec"],
         }
-        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        # Encode the forbidden property as `{capture_stdout: false}`
+        # rather than `{not: {required: [capture_stdout]}}`: semantically
+        # identical, but the later fails ajv's strictRequired in schemastore
+        fragment["then"] = {"properties": {"capture_stdout": False}}
         return fragment
 
     spec: TaskSpec
