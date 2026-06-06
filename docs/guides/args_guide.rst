@@ -193,7 +193,9 @@ Named arguments support the following configuration options:
    If true then not providing the argument will result in an error. Arguments are not required by default.
 
 - **type** : ``Literal["string", "float", "integer", "boolean"]``
-   The type that the provided value will be cast to. If not provided then the default behaviour is to keep values as strings. Setting the type to ``"boolean"`` makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. :toml:`"true"` if no default value is given, or :toml:`false` if :toml:`default = true`.
+   The type that the provided value will be cast to. If not provided then the default behaviour is to keep values as strings. Setting the type to ``"boolean"`` makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. :toml:`true` if no default value is given, or :toml:`false` if :toml:`default = true`.
+
+   When ``type = "boolean"``, the ``default`` option (if set) must be a TOML boolean, or one of the following case-insensitive string literals (also accepting surrounding whitespace): ``"t"``, ``"true"``, ``"1"`` for true, and ``"f"``, ``"false"``, ``"0"``, ``""`` for false. A templated string (e.g. ``"${SOME_VAR}"``) is also accepted and re-checked against this same set once the template has been resolved.
 
 .. note::
 

@@ -60,7 +60,9 @@ For example, the following task will run the ``http.server`` module as a script 
     { name = "bind", options = ["-b", "--bind"], default = "127.0.0.1" },
   ]
 
-When :doc:`args <../options>` are declared on the task, the parsed values (with defaults applied) are re-emitted onto the module's :python:`sys.argv`.
+When :doc:`args <../options>` are declared on the task, the parsed values (with defaults applied) are re-emitted onto the module's :python:`sys.argv`. CLI tokens that aren't matched by a declared arg, and any tokens that follow :sh:`--`, are forwarded to the module verbatim.
+
+Like the callable form, the module form also implicitly adds :sh:`<project_root>/src` to the subprocess :sh:`PYTHONPATH` so that modules placed in a ``src/`` directory at the project root are importable without extra configuration.
 
 
 Output the return value

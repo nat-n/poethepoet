@@ -95,6 +95,8 @@ args = [{ name = "verbose", options = ["-v", "--verbose"], type = "boolean" }]
 
 Usage: `poe test --verbose` (true) or `poe test` (false / default)
 
+The `default` for a boolean arg must be a TOML bool, or a case-insensitive string literal (with optional surrounding whitespace) from `"t"`/`"true"`/`"1"` (true) or `"f"`/`"false"`/`"0"`/`""` (false). Templated strings (e.g. `"${VAR}"`) are also accepted and re-checked once resolved.
+
 In script/expr tasks the resulting pythonic variable will have type the declared type (e.g. boolean). However when accessed via parameter expansion or as an environment variable at runtime, the variable will be `"True"` if truthy, or unset of falsey, so that `:-` and `:+` parameter expansion operators work seamlessly, and for consistent semantics across interpreters in shell tasks.
 
 ---
