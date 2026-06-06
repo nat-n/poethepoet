@@ -194,14 +194,15 @@ class ScriptTask(PoeTask):
         # regardless of internal order, so an installed package can still be
         # shadowed by a local src/ — fully mirroring append semantics would
         # require a wrapper script.
-        if (src_path := str(self.ctx.config.project_dir / "src")).is_dir()
+        if (src_path := self.ctx.config.project_dir / "src").is_dir():
+            src_path_str = str(src_path)
             existing_pythonpath = env.get("PYTHONPATH", "")
             env.set(
                 "PYTHONPATH",
                 (
-                    f"{existing_pythonpath}{os.pathsep}{src_path}"
+                    f"{existing_pythonpath}{os.pathsep}{src_path_str}"
                     if existing_pythonpath
-                    else src_path
+                    else src_path_str
                 ),
             )
 

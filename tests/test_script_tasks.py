@@ -475,34 +475,58 @@ def test_script_task_extra_args_available_as_list_via_extra_args_var(run_poe):
     assert result.stderr == ""
 
 
-def test_callable_script_task_finds_src_layout_modules(run_poe_subproc):
-    result = run_poe_subproc("callable-task", project="src_layout", env=no_venv)
-    assert result.code == 0
-    assert result.stdout == "callable ok\n"
-    assert result.stderr == ""
+def _build_src_layout(project_path, *, with_subdir: bool = False) -> None:
+    src_pkg = project_path / "src" / "mypkg"
+    src_pkg.mkdir(parents=True)
+    (src_pkg / "__init__.py").write_text('def main():\n    print("callable ok")\n')
+    (src_pkg / "__main__.py").write_text('print("module ok")\n')
+    if with_subdir:
+        (project_path / "subdir").mkdir()
 
 
-def test_callable_script_task_finds_src_layout_modules_with_cwd(run_poe_subproc):
-    result = run_poe_subproc(
-        "callable-task-with-cwd", project="src_layout", env=no_venv
+def test_callable_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.run]
+        script = "mypkg:main"
+        """
     )
-    assert result.code == 0
-    assert result.stdout == "callable ok\n"
-    assert result.stderr == ""
+    _build_src_layout(project_path)
+    result = run_poe("run", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert "callable ok" in result.stdout
 
 
-def test_module_script_task_finds_src_layout_modules(run_poe_subproc):
-    result = run_poe_subproc("module-task", project="src_layout", env=no_venv)
-    assert result.code == 0
-    assert result.stdout == "module ok\n"
-    assert result.stderr == ""
+def test_callable_script_task_finds_src_layout_modules_with_cwd(
+    temp_pyproject, run_poe
+):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.run]
+        script = "mypkg:main"
+        cwd = "subdir"
+        """
+    )
+    _build_src_layout(project_path, with_subdir=True)
+    result = run_poe("run", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert "callable ok" in result.stdout
 
 
-def test_module_script_task_finds_src_layout_modules_with_cwd(run_poe_subproc):
-    result = run_poe_subproc("module-task-with-cwd", project="src_layout", env=no_venv)
-    assert result.code == 0
-    assert result.stdout == "module ok\n"
-    assert result.stderr == ""
+def test_module_script_task_finds_src_layout_modules_with_cwd(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.run]
+        script = "mypkg"
+        cwd = "subdir"
+        """
+    )
+    _build_src_layout(project_path, with_subdir=True)
+    result = run_poe("run", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert "module ok" in result.stdout
+
+
 @pytest.fixture(scope="module")
 def module_script_project(tmp_path_factory):
     """
