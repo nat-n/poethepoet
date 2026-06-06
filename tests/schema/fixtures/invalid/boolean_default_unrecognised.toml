@@ -1,0 +1,4 @@
+# expected_error: Cannot interpret 'yes' as a boolean
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${flag}"
+args = [{ name = "flag", type = "boolean", default = "yes" }]

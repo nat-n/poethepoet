@@ -233,85 +233,58 @@ def test_cmd_with_empty_glob_fail(run_poe):
     assert result.stderr == ""
 
 
-def test_cmd_boolean_flag(run_poe):
-    result = run_poe(
-        "booleans",
-        "--non",
-        "--tru",
-        "--fal",
-        "--txt",
-        project="cmds",
-    )
-    assert result.capture == (
-        r"""Poe => poe_test_echo '
-${non}=True' '${non:+plus}=plus' '${non:-minus}=True
-${fal}=True' '${fal:+plus}=plus' '${fal:-minus}=True
-${tru}=' '${tru:+plus}=' '${tru:-minus}=minus
-${txt}=' '${txt:+plus}=' '${txt:-minus}=minus'
-"""
-    )
-    assert result.stdout.endswith(
-        """
-${non}=True ${non:+plus}=plus ${non:-minus}=True
+@pytest.mark.parametrize(
+    ("cli_args", "expected_env_lines"),
+    [
+        pytest.param(
+            (),
+            """${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}=True ${txt:+plus}=plus ${txt:-minus}=True
+""",
+            id="defaults",
+        ),
+        pytest.param(
+            ("--non", "--tru", "--fal", "--txt"),
+            """${non}=True ${non:+plus}=plus ${non:-minus}=True
 ${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
 ${tru}= ${tru:+plus}= ${tru:-minus}=minus
 ${txt}= ${txt:+plus}= ${txt:-minus}=minus
-""".lstrip()
-    )
-
-
-def test_cmd_boolean_flag_default_value(run_poe):
-    result = run_poe("booleans", project="cmds")
-    assert result.capture == (
-        r"""Poe => poe_test_echo '
-${non}=' '${non:+plus}=' '${non:-minus}=minus
-${fal}=' '${fal:+plus}=' '${fal:-minus}=minus
-${tru}=True' '${tru:+plus}=plus' '${tru:-minus}=True
-${txt}=text' '${txt:+plus}=plus' '${txt:-minus}=text'
-"""
-    )
-    assert result.stdout.endswith(
-        """
-${non}= ${non:+plus}= ${non:-minus}=minus
-${fal}= ${fal:+plus}= ${fal:-minus}=minus
-${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
-${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
-""".lstrip()
-    )
-
-
-def test_cmd_boolean_flag_partial_negate_true(run_poe):
-    """Only --tru passed: negates default=true to False (unset), others keep defaults"""
-    result = run_poe(
-        "booleans",
-        "--tru",
-        project="cmds",
-    )
-    assert result.stdout.endswith(
-        """
-${non}= ${non:+plus}= ${non:-minus}=minus
+""",
+            id="all_toggled",
+        ),
+        pytest.param(
+            ("--tru",),
+            """${non}= ${non:+plus}= ${non:-minus}=minus
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus
 ${tru}= ${tru:+plus}= ${tru:-minus}=minus
-${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
-""".lstrip()
-    )
-
-
-def test_cmd_boolean_flag_partial_negate_string(run_poe):
-    """--txt negates default="text" to False (unset), others keep defaults"""
-    result = run_poe(
-        "booleans",
-        "--txt",
-        project="cmds",
-    )
-    assert result.stdout.endswith(
-        """
-${non}= ${non:+plus}= ${non:-minus}=minus
+${txt}=True ${txt:+plus}=plus ${txt:-minus}=True
+""",
+            id="negate_tru",
+        ),
+        pytest.param(
+            ("--txt",),
+            """${non}= ${non:+plus}= ${non:-minus}=minus
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus
 ${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
 ${txt}= ${txt:+plus}= ${txt:-minus}=minus
-""".lstrip()
-    )
+""",
+            id="negate_txt",
+        ),
+    ],
+)
+def test_cmd_boolean_flag(
+    run_poe, cli_args: tuple[str, ...], expected_env_lines: str
+) -> None:
+    """
+    Boolean args toggle: --flag flips a default-truthy value to False (env
+    var unset) and a default-falsy value to True (env var "True"). Holds
+    regardless of whether the default was written as a TOML bool (``tru``)
+    or as a recognised string literal (``txt`` → ``"true"``).
+    """
+    result = run_poe("booleans", *cli_args, project="cmds")
+    assert result.stdout.endswith(expected_env_lines)
 
 
 def test_cmd_int_zero_default(run_poe):

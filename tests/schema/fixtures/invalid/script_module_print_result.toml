@@ -1,0 +1,4 @@
+# expected_error: 'print_result' is not supported on a script task that references a module
+[tool.poe.tasks.bad]
+script = "some_module"
+print_result = true

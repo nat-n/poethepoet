@@ -6,6 +6,27 @@
   "definitions": {
     "args_item": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "boolean" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [
+                  { "type": "boolean" },
+                  {
+                    "pattern": "^(\\s*([Tt]([Rr][Uu][Ee])?|[Ff]([Aa][Ll][Ss][Ee])?|0|1)?\\s*|.*\\$\\{.*)$",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "choices": {
           "anyOf": [
@@ -65,6 +86,27 @@
     },
     "args_item_no_name": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "boolean" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [
+                  { "type": "boolean" },
+                  {
+                    "pattern": "^(\\s*([Tt]([Rr][Uu][Ee])?|[Ff]([Aa][Ll][Ss][Ee])?|0|1)?\\s*|.*\\$\\{.*)$",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "choices": {
           "anyOf": [
@@ -1067,10 +1109,22 @@
     },
     "script_task": {
       "additionalProperties": false,
-      "if": {
-        "properties": { "use_exec": { "const": true } },
-        "required": ["use_exec"]
-      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "use_exec": { "const": true } },
+            "required": ["use_exec"]
+          },
+          "then": { "not": { "required": ["capture_stdout"] } }
+        },
+        {
+          "if": {
+            "properties": { "script": { "pattern": "^[^:]*$" } },
+            "required": ["script"]
+          },
+          "then": { "not": { "required": ["print_result"] } }
+        }
+      ],
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -1133,15 +1187,26 @@
         }
       },
       "required": ["script"],
-      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "script_task_with_case": {
       "additionalProperties": false,
-      "if": {
-        "properties": { "use_exec": { "const": true } },
-        "required": ["use_exec"]
-      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "use_exec": { "const": true } },
+            "required": ["use_exec"]
+          },
+          "then": { "not": { "required": ["capture_stdout"] } }
+        },
+        {
+          "if": {
+            "properties": { "script": { "pattern": "^[^:]*$" } },
+            "required": ["script"]
+          },
+          "then": { "not": { "required": ["print_result"] } }
+        }
+      ],
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -1225,7 +1290,6 @@
         }
       },
       "required": ["script"],
-      "then": { "not": { "required": ["capture_stdout"] } },
       "type": "object"
     },
     "sequence_task": {

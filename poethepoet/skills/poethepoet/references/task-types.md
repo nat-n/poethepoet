@@ -82,7 +82,7 @@ args = [
 
 **Options**:
 
-- `print_result = true` — print return value to stdout (useful for computed outputs)
+- `print_result = true` — print return value to stdout (callable form only; rejected on module form, since `python -m` has no return value)
 - Async functions are automatically run with `asyncio.run()`
 
 ---

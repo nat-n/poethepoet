@@ -1,0 +1,5 @@
+# expected_error: 'use_exec' and 'capture_stdout' options cannot be both provided
+[tool.poe.tasks.bad]
+cmd = "echo hi"
+use_exec = true
+capture_stdout = "out.log"

@@ -93,6 +93,15 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
       """
   ```
 
+### Schema/runtime validation parity
+
+Runtime validation and the generated JSON Schema (`poethepoet/schema/`) are kept in parity by `tests/schema/test_invalid_corpus.py` ("if the runtime rejects it, the schema should too"). When you add or change validation in `PoeOptions.validate()`, `_task_validations`, or `PoeOptions.parse`:
+
+- prefer expressing simple constraints (pattern, min/max, length, item count, etc.) via `Annotated[T, Metadata(...)]` on the field — `PoeOptions.parse` enforces these at runtime AND the schema generator picks them up from the same annotation, so parity is automatic. Reserve bespoke `validate()` overrides for cross-field rules or constraints that don't fit `Metadata`.
+- when bespoke validation is needed, update the matching `__schema_fragment__` (or generator logic) to encode the same constraint
+- add a fixture to `tests/schema/fixtures/invalid/` with a `# expected_error:` header so the parity test pins the new case
+- check `tests/schema/test_mutation.py` for intentional structural gaps before assuming any mismatch is a bug
+
 ## Development tasks
 
 - This project uses poe tasks to manage project tasks. Always check if there is an applicable poe task for a common action, e.g. running servers, tests or other quality checks.

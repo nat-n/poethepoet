@@ -1,5 +1,7 @@
 import difflib
 
+import pytest
+
 no_venv = {"POETRY_VIRTUALENVS_CREATE": "false"}
 
 
@@ -434,7 +436,7 @@ def test_script_boolean_flag_default_value(run_poe):
     result = run_poe("booleans", project="scripts", env=no_venv)
     assert result.capture == "Poe => booleans\n"
     assert result.stdout == (
-        "args ()\n" "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
+        "args ()\n" "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': True}\n"
     )
 
 
@@ -471,3 +473,161 @@ def test_script_task_extra_args_available_as_list_via_extra_args_var(run_poe):
     assert result.capture == "Poe => echo-extra-args-script foo bar\n"
     assert result.stdout == "str: foo\nstr: bar\n"
     assert result.stderr == ""
+
+
+@pytest.fixture(scope="module")
+def module_script_project(tmp_path_factory):
+    """
+    Project with a `mymod` package whose __main__ prints sys.argv[1:], plus a
+    matrix of module-style script tasks declaring different arg shapes. Shared
+    across the module-script argv-serialization tests so we pay the fixture
+    cost once per test module. Tests do not mutate the project dir and each
+    run_poe call uses a fresh PoeThePoet instance, so module scope preserves
+    isolation.
+    """
+    project_path = tmp_path_factory.mktemp("module_script_project")
+    (project_path / "pyproject.toml").write_text(
+        """
+        [tool.poe.tasks.positional]
+        script = "mymod"
+        args = [{ name = "target", positional = true, default = "world" }]
+
+        [tool.poe.tasks.pos_multi]
+        script = "mymod"
+        args = [{ name = "items", positional = true, multiple = true }]
+
+        [tool.poe.tasks.opt_default]
+        script = "mymod"
+        args = [{ name = "out", options = ["-o", "--out"], default = "build" }]
+
+        [tool.poe.tasks.opt_long_first]
+        script = "mymod"
+        args = [{ name = "out", options = ["--out", "-o"], default = "build" }]
+
+        [tool.poe.tasks.opt_multi]
+        script = "mymod"
+        args = [{ name = "files", options = ["-f", "--files"], multiple = true }]
+
+        [tool.poe.tasks.bool_default_false]
+        script = "mymod"
+        args = [
+          { name = "flag", options = ["--flag"], type = "boolean", default = false },
+        ]
+
+        [tool.poe.tasks.bool_default_true]
+        script = "mymod"
+        args = [
+          { name = "flag", options = ["--flag"], type = "boolean", default = true },
+        ]
+        """
+    )
+    module_dir = project_path / "mymod"
+    module_dir.mkdir()
+    (module_dir / "__init__.py").touch()
+    (module_dir / "__main__.py").write_text(
+        "import sys\nprint('argv:', sys.argv[1:])\n"
+    )
+    return project_path
+
+
+@pytest.mark.parametrize(
+    ("task", "cli", "expected_argv"),
+    [
+        ("positional", (), "['world']"),
+        ("positional", ("alice",), "['alice']"),
+        ("pos_multi", ("a", "b", "c"), "['a', 'b', 'c']"),
+        ("opt_default", (), "['-o', 'build']"),
+        ("opt_long_first", (), "['--out', 'build']"),
+        ("opt_multi", ("-f", "x", "y"), "['-f', 'x', 'y']"),
+        (
+            "positional",
+            ("alice", "--", "extra1", "extra2"),
+            "['alice', 'extra1', 'extra2']",
+        ),
+    ],
+)
+def test_module_script_argv_serialization(
+    task, cli, expected_argv, module_script_project, run_poe
+):
+    """
+    A module-style script task that declares args re-serializes the parsed
+    values (with defaults applied) into the module's sys.argv following the
+    conventions: positionals in declared order, options as
+    `<first-declared-name> value`, multi-value space-separated, post-`--`
+    extras appended verbatim.
+    """
+    result = run_poe(task, *cli, cwd=module_script_project)
+    assert result.code == 0, result.capture + result.stderr
+    assert f"argv: {expected_argv}" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("task", "cli", "expected_argv"),
+    [
+        # default = false: flag absent → omit; flag present → emit
+        ("bool_default_false", (), "[]"),
+        ("bool_default_false", ("--flag",), "['--flag']"),
+        # default = true: flag absent → omit; flag present (toggles to false) → emit
+        ("bool_default_true", (), "[]"),
+        ("bool_default_true", ("--flag",), "['--flag']"),
+    ],
+)
+def test_module_script_boolean_argv(
+    task, cli, expected_argv, module_script_project, run_poe
+):
+    """
+    Boolean flags are emitted into argv iff the resolved value differs from
+    the declared default — which corresponds to "the user provided the flag
+    on the CLI" regardless of whether the default is true or false.
+    """
+    result = run_poe(task, *cli, cwd=module_script_project)
+    assert result.code == 0, result.capture + result.stderr
+    assert f"argv: {expected_argv}" in result.stdout
+
+
+def test_module_script_task_no_args_forwards_extras_verbatim(temp_pyproject, run_poe):
+    """
+    A module-style task with no declared args forwards CLI tokens to the
+    module verbatim. Specifically, literal `${...}` references are NOT
+    template-expanded into argv — matching the `cmd` task precedent
+    (`cmd.py:113`). The `${MAYBE}` token below would have been expanded
+    by the previous behavior because `MAYBE` is set on the task env.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.run]
+        script = "mymod"
+        env = { MAYBE = "expanded" }
+        """
+    )
+    module_dir = project_path / "mymod"
+    module_dir.mkdir()
+    (module_dir / "__init__.py").touch()
+    (module_dir / "__main__.py").write_text(
+        "import sys\nprint('argv:', sys.argv[1:])\n"
+    )
+
+    result = run_poe("run", "--foo", "cheese", "${MAYBE}", cwd=project_path)
+    assert result.code == 0, result.capture + result.stderr
+    assert "argv: ['--foo', 'cheese', '${MAYBE}']" in result.stdout
+
+
+def test_module_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
+    """
+    Module-style script tasks should be able to import modules from a src/
+    layout, matching the callable-script path which adds 'src' to sys.path.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.run]
+        script = "srcmod"
+        """
+    )
+    src_module = project_path / "src" / "srcmod"
+    src_module.mkdir(parents=True)
+    (src_module / "__init__.py").touch()
+    (src_module / "__main__.py").write_text("print('hello from src layout')\n")
+
+    result = run_poe("run", cwd=project_path)
+    assert result.code == 0, result.capture + result.stderr
+    assert "hello from src layout" in result.stdout
