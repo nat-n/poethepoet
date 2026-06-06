@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_expr_with_args(run_poe):
     result = run_poe("expr_with_args", project="expr")
     assert result.capture == (
@@ -102,23 +105,37 @@ def test_christmas_tree_expr(run_poe):
     assert result.code == 0
 
 
-def test_expr_boolean_flag(run_poe):
-    result = run_poe("booleans", "--non", "--tru", "--fal", "--txt", project="expr")
+@pytest.mark.parametrize(
+    ("cli_args", "expected_dict"),
+    [
+        pytest.param(
+            (),
+            "{'non': False, 'tru': True, 'fal': False, 'txt': True}",
+            id="defaults",
+        ),
+        pytest.param(
+            ("--non", "--tru", "--fal", "--txt"),
+            "{'non': True, 'tru': False, 'fal': True, 'txt': False}",
+            id="all_toggled",
+        ),
+        pytest.param(
+            ("--non", "--tru"),
+            "{'non': True, 'tru': False, 'fal': False, 'txt': True}",
+            id="partial",
+        ),
+    ],
+)
+def test_expr_boolean_flag(
+    run_poe, cli_args: tuple[str, ...], expected_dict: str
+) -> None:
+    """
+    Boolean args reach an expr task as real Python bools — the parser
+    coerces both TOML bools (``tru``) and recognised string literals
+    (``txt`` → ``"true"``) to True/False before the expr is evaluated.
+    """
+    result = run_poe("booleans", *cli_args, project="expr")
     assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
-    assert result.stdout == "{'non': True, 'tru': False, 'fal': True, 'txt': False}\n"
-
-
-def test_expr_boolean_flag_default_value(run_poe):
-    result = run_poe("booleans", project="expr")
-    assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
-    assert result.stdout == "{'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
-
-
-def test_expr_boolean_flag_partial(run_poe):
-    """--non toggles False->True, --tru negates True->False, fal/txt keep defaults"""
-    result = run_poe("booleans", "--non", "--tru", project="expr")
-    assert result.capture == "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
-    assert result.stdout == "{'non': True, 'tru': False, 'fal': False, 'txt': 'text'}\n"
+    assert result.stdout == f"{expected_dict}\n"
 
 
 def test_expr_multi_value_typed_list(run_poe):

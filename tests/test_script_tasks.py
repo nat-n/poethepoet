@@ -436,7 +436,7 @@ def test_script_boolean_flag_default_value(run_poe):
     result = run_poe("booleans", project="scripts", env=no_venv)
     assert result.capture == "Poe => booleans\n"
     assert result.stdout == (
-        "args ()\n" "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
+        "args ()\n" "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': True}\n"
     )
 
 

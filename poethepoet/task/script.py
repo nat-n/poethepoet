@@ -184,20 +184,33 @@ class ScriptTask(PoeTask):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.register_task_args(named_arg_values, extra_args)
 
-        # Mirror the callable path's sys.path.append('src') by prepending
-        # 'src' to PYTHONPATH. Unlike a sys.path append it can't be done
-        # in-process for `python -m`, so it has to be set on the subprocess env.
+        # Approximate the callable path's sys.path.append('src') by appending
+        # '<project_root>/src' to PYTHONPATH. The absolute form means a task
+        # with its own cwd (or invoking poe from a subdirectory) still resolves
+        # to the project's src/, rather than the subprocess's cwd-relative src/.
+        # All PYTHONPATH entries collectively precede site-packages in sys.path
+        # regardless of internal order, so an installed package can still be
+        # shadowed by a local src/ — fully mirroring append semantics would
+        # require a wrapper script.
         # TODO: only do this when the project actually uses src layout
         #       (same caveat as the callable path).
+        src_path = str(self.ctx.config.project_dir / "src")
         existing_pythonpath = env.get("PYTHONPATH", "")
         env.set(
             "PYTHONPATH",
-            f"src{os.pathsep}{existing_pythonpath}" if existing_pythonpath else "src",
+            (
+                f"{existing_pythonpath}{os.pathsep}{src_path}"
+                if existing_pythonpath
+                else src_path
+            ),
         )
 
-        declared_args = self.spec.get_args(self.ctx.io)
         argv = [
-            *(declared_args.format_argv(named_arg_values) if declared_args else ()),
+            *(
+                task_args.format_argv(named_arg_values, env)
+                if (task_args := self.task_args)
+                else ()
+            ),
             *extra_args,
         ]
         cmd = ("python", "-m", self.spec.content, *argv)

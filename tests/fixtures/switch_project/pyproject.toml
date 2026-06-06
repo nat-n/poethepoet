@@ -105,12 +105,12 @@ args = [
   { name = "non", type = "boolean" },
   { name = "tru", type = "boolean", default = true },
   { name = "fal", type = "boolean", default = false },
-  { name = "txt", type = "boolean", default = "text" },
+  { name = "txt", type = "boolean", default = "true" },
 ]
 
   [[tool.poe.tasks.booleans-cmd.switch]]
-  case = "text"
-  cmd = """poe_test_echo case=text\\
+  case = "True"
+  cmd = """poe_test_echo case=True\\
 \\${non}=${non} \\${non:+plus}=${non:+plus} \\${non:-minus}=${non:-minus}\\
 \\${fal}=${fal} \\${fal:+plus}=${fal:+plus} \\${fal:-minus}=${fal:-minus}\\
 \\${tru}=${tru} \\${tru:+plus}=${tru:+plus} \\${tru:-minus}=${tru:-minus}\\
@@ -146,7 +146,7 @@ args = [
   { name = "non", type = "boolean" },
   { name = "tru", type = "boolean", default = true },
   { name = "fal", type = "boolean", default = false },
-  { name = "txt", type = "boolean", default = "text" },
+  { name = "txt", type = "boolean", default = "true" },
 ]
 
   [[tool.poe.tasks.booleans-expr.switch]]

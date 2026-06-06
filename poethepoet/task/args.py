@@ -266,6 +266,16 @@ class ArgSpec(PoeOptions):
                 "Argument with type 'boolean' may not declare option 'multiple'"
             )
 
+        # Templated defaults are checked at runtime once the template has
+        # been resolved (see _get_argument_params).
+        if (
+            self.type == "boolean"
+            and self.default is not None
+            and not isinstance(self.default, bool)
+            and not (isinstance(self.default, str) and "${" in self.default)
+        ):
+            _coerce_bool(self.default)
+
         # Ensure choices are compatible with type
         if self.choices is not None:
             arg_type = arg_types.get(self.type, str)
@@ -407,8 +417,16 @@ class PoeTaskArgs:
             result["choices"] = arg.choices
 
         if arg_type == "boolean":
-            if default:
+            try:
+                coerced_default = (
+                    _coerce_bool(default) if default is not None else False
+                )
+            except ConfigValidationError as error:
+                error.context = f"Invalid default for argument {arg.name!r}"
+                raise
+            if coerced_default:
                 result["action"] = "store_false"
+                result["default"] = True
             else:
                 result["action"] = "store_true"
                 result["default"] = False
@@ -442,7 +460,7 @@ class PoeTaskArgs:
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}
 
-    def format_argv(self, values: Mapping[str, Any]) -> list[str]:
+    def format_argv(self, values: Mapping[str, Any], env: TaskEnv) -> list[str]:
         """
         Re-emit parsed argument values as CLI tokens — the inverse of
         :meth:`parse`. Used to forward declared args (with defaults already
@@ -464,10 +482,17 @@ class PoeTaskArgs:
             value = values[arg.name]
 
             if arg.type == "boolean":
-                # bool() mirrors the parser builder's coercion (args.py
-                # "if default:"), so an undeclared default is treated as
-                # False — matching the argparse store_true default.
-                if value != bool(arg.default):
+                raw_default = arg.get("default")
+                if isinstance(raw_default, str):
+                    raw_default = env.fill_template(raw_default)
+                try:
+                    default_bool = (
+                        _coerce_bool(raw_default) if raw_default is not None else False
+                    )
+                except ConfigValidationError as error:
+                    error.context = f"Invalid default for argument {arg.name!r}"
+                    raise
+                if value != default_bool:
                     result.append(arg.options[0])
                 continue
 
@@ -488,3 +513,30 @@ class PoeTaskArgs:
                 result.append(str(value))
 
         return result
+
+
+_BOOL_TRUE_LITERALS = frozenset({"t", "true", "1"})
+_BOOL_FALSE_LITERALS = frozenset({"f", "false", "0", ""})
+
+
+def _coerce_bool(value: Any) -> bool:
+    """
+    Coerce a config-supplied value to a real bool.
+
+    Accepts Python bools as-is, and a small set of case-insensitive string
+    literals (stripped of surrounding whitespace): ``t``/``true``/``1`` for
+    True and ``f``/``false``/``0``/``""`` for False. Anything else raises
+    ``ConfigValidationError``.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in _BOOL_TRUE_LITERALS:
+            return True
+        if normalized in _BOOL_FALSE_LITERALS:
+            return False
+    raise ConfigValidationError(
+        f"Cannot interpret {value!r} as a boolean — expected a boolean or one of "
+        "'true'/'1'/'t' or 'false'/'0'/'f'/'' (case-insensitive)"
+    )

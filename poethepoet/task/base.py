@@ -437,6 +437,8 @@ class PoeTask(metaclass=MetaPoeTask):
 
     spec: TaskSpec
     ctx: TaskContext
+
+    _task_args: PoeTaskArgs | None = None
     _parsed_args: tuple[dict[str, str], tuple[str, ...]] | None = None
     _parsed_content: AstNode | None = None
 
@@ -530,6 +532,17 @@ class PoeTask(metaclass=MetaPoeTask):
         content = self.spec.content
         return "$POE_EXTRA_ARGS" in content or "${POE_EXTRA_ARGS" in content
 
+    @property
+    def task_args(self) -> PoeTaskArgs | None:
+        """
+        Lazily-resolved ``PoeTaskArgs`` for this task — ``None`` if no args
+        are declared. Cached per task run so the parse and re-emit paths
+        share one instance.
+        """
+        if self._task_args is None:
+            self._task_args = self.spec.get_args(self.ctx.io)
+        return self._task_args
+
     def get_parsed_arguments(
         self, env: TaskEnv
     ) -> tuple[dict[str, Any], tuple[str, ...]]:
@@ -543,7 +556,7 @@ class PoeTask(metaclass=MetaPoeTask):
         if self._parsed_args is None:
             all_args = self.invocation[1:]
 
-            if task_args := self.spec.get_args(self.ctx.io):
+            if task_args := self.task_args:
                 try:
                     split_index = all_args.index("--")
                     option_args = all_args[:split_index]
