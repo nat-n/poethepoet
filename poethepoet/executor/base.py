@@ -82,6 +82,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
     class ExecutorOptions(PoeOptions):
         type: str
+        """
+        Specifies the executor type. 'auto' uses the most appropriate executor,
+        'poetry' uses the poetry environment, 'uv' uses `uv run` to run tasks,
+        'virtualenv' specifies a virtual environment, and 'simple' runs tasks
+        without any specific environment setup.
+        """
 
     def __init__(
         self,
@@ -370,6 +376,31 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             yield shutil.which(executable) or executable
 
     @classmethod
+    def get_executor_class(cls, key: str) -> type[PoeExecutor]:
+        """
+        Look up a registered PoeExecutor subclass by its `__key__`.
+
+        Public read-side complement to MetaPoeExecutor's registration logic.
+        Raises KeyError if the key isn't registered.
+
+        Note: "auto" is NOT registered as a PoeExecutor subclass — it's a
+        meta-option that PoeExecutor.validate_config resolves to one of the
+        concrete subclasses at runtime. Callers that need to enumerate
+        "every accepted executor type" must add "auto" explicitly.
+        """
+        if key not in cls.__executor_types:
+            raise KeyError(f"Unknown executor type {key!r}")
+        return cls.__executor_types[key]
+
+    @classmethod
+    def get_executor_types(cls) -> tuple[str, ...]:
+        """
+        Return all registered executor keys (in registration order).
+        Mirrors PoeTask.get_task_types().
+        """
+        return tuple(cls.__executor_types.keys())
+
+    @classmethod
     def validate_config(cls, config: dict[str, Any]):
         if "type" not in config:
             raise ConfigValidationError(
@@ -393,7 +424,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             )
 
         else:
-            cls.__executor_types[executor_type].ExecutorOptions.parse(config)
+            next(cls.__executor_types[executor_type].ExecutorOptions.parse(config))
 
 
 def _stop_coverage():

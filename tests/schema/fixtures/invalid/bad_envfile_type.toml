@@ -1,0 +1,3 @@
+# expected_error: Option 'envfile' must have a value of type
+[tool.poe]
+envfile = 123

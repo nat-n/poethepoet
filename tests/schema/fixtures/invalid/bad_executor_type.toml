@@ -1,0 +1,3 @@
+# expected_error: Unknown executor type
+[tool.poe]
+executor = { type = "totally_invalid_executor" }

@@ -18,12 +18,14 @@ if TYPE_CHECKING:
 
 DEFAULT_CASE = "__default__"
 SUBTASK_OPTIONS_BLOCKLIST = ("args", "uses", "deps")
+CONTROL_TASK_TYPES = ("expr", "cmd", "script")
 
 
 class SwitchTask(PoeTask):
     """
-    A task that runs one of several `case` subtasks depending on the output of a
-    `switch` subtask.
+    Runs one of several subtasks based on the output of a control task.
+    The control task is executed first; its output is matched against
+    each case to select which subtask to run.
     """
 
     __key__ = "switch"
@@ -31,7 +33,16 @@ class SwitchTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         control: str | dict
+        """
+        A required definition for a task to be executed to determine which case
+        task to run.
+        """
+
         default: Literal["pass", "fail"] = "fail"
+        """
+        Defines the default behavior if no cases are matched. Can either pass or
+        fail.
+        """
 
         @classmethod
         def normalize(
@@ -120,14 +131,10 @@ class SwitchTask(PoeTask):
         def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             from collections import defaultdict
 
-            allowed_control_task_types = ("expr", "cmd", "script")
-            if (
-                self.control_task_spec.task_type.__key__
-                not in allowed_control_task_types
-            ):
+            if self.control_task_spec.task_type.__key__ not in CONTROL_TASK_TYPES:
                 raise ConfigValidationError(
                     f"Control task must have a type that is one of "
-                    f"{allowed_control_task_types!r}"
+                    f"{CONTROL_TASK_TYPES!r}"
                 )
 
             cases: MutableMapping[Any, int] = defaultdict(int)
@@ -156,6 +163,37 @@ class SwitchTask(PoeTask):
             self.control_task_spec.validate(config, task_specs)
             for _, case_task_spec in self.case_task_specs:
                 case_task_spec.validate(config, task_specs)
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: the `switch` content's items are case-aware task defs,
+        not plain task defs. Reference `task_def_with_case` (registered
+        by the orchestrator in build_schema). The `control` field is
+        constrained to the task types the runtime accepts as a control
+        task, sourced from ``CONTROL_TASK_TYPES``.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["switch"]["items"] = {
+            "allOf": [
+                {"$ref": "#/definitions/task_def_with_case"},
+                *(
+                    {"not": {"type": "object", "required": [opt]}}
+                    for opt in SUBTASK_OPTIONS_BLOCKLIST
+                ),
+            ],
+        }
+        control_description = fragment["properties"]["control"].get("description")
+        control_schema: dict[str, Any] = {
+            "oneOf": [
+                {"type": "string"},
+                *({"$ref": f"#/definitions/{key}_task"} for key in CONTROL_TASK_TYPES),
+            ],
+        }
+        if control_description:
+            control_schema["description"] = control_description
+        fragment["properties"]["control"] = control_schema
+        return fragment
 
     spec: TaskSpec
     control_task: PoeTask

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask
@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 
 class CmdTask(PoeTask):
     """
-    A task consisting of a reference to a shell command
+    Executes a single command as a subprocess without a shell. Supports glob
+    patterns for filesystem paths, parameter expansion of environment variable
+    or private variables.
     """
 
     __key__ = "cmd"
@@ -26,8 +28,27 @@ class CmdTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False
+        """
+        Specify that this task should be executed in the same process, instead of
+        as a subprocess. Note: This feature has limitations, such as not being
+        compatible with tasks that are referenced by other tasks and not working on
+        Windows.
+        """
+
         empty_glob: Literal["pass", "null", "fail"] = "pass"
+        """
+        Determines how to handle glob patterns with no matches. The default is
+        'pass', which causes unmatched patterns to be passed through to the command
+        (just like in bash). Setting it to 'null' will replace an unmatched pattern
+        with nothing, and setting it to 'fail' will cause the task to fail with an
+        error if there are no matches.
+        """
+
         ignore_fail: bool | list[int] = False
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
         def validate(self):
             """
@@ -50,6 +71,28 @@ class CmdTask(PoeTask):
             """
             if not self.content.strip():
                 raise ConfigValidationError("Task has no content")
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: attach a SchemaStore-style title and shell-command
+        examples on the ``cmd`` discriminator field, and forbid the
+        ``use_exec`` + ``capture_stdout`` combination (runtime
+        ``TaskOptions.validate`` rejects it too).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["cmd"]["title"] = "Command to execute"
+        fragment["properties"]["cmd"]["examples"] = [
+            "rm -rf ./**/*.pyc",
+            "echo Hello ${USER}",
+            "echo Hello \\${USER}",
+        ]
+        fragment["if"] = {
+            "properties": {"use_exec": {"const": True}},
+            "required": ["use_exec"],
+        }
+        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        return fragment
 
     spec: TaskSpec
 
@@ -87,18 +130,23 @@ class CmdTask(PoeTask):
                 "More details: https://github.com/nat-n/poethepoet/discussions/314",
             )
 
-    def _resolve_commandline(self, context: RunContext, env: TaskEnv):
-        from ..helpers.command import parse_poe_cmd, resolve_command_tokens
-        from ..helpers.command.ast_core import ParseError
+    def _parse_content(self):
+        if self._parsed_content is None:
+            from ..helpers.parse import parse_poe_cmd
+            from ..helpers.parse.core import ParseError
 
+            try:
+                self._parsed_content = parse_poe_cmd(self.spec.content)
+            except ParseError as error:
+                raise PoeException(
+                    f"Couldn't parse command line for task {self.name!r}", error
+                )
+        return self._parsed_content
+
+    def _resolve_commandline(self, context: RunContext, env: TaskEnv):
         self.__passed_unmatched_glob = False
 
-        try:
-            command_lines = parse_poe_cmd(self.spec.content).command_lines
-        except ParseError as error:
-            raise PoeException(
-                f"Couldn't parse command line for task {self.name!r}", error
-            )
+        command_lines = self._parse_content().command_lines
 
         if not command_lines:
             raise PoeException(
@@ -113,22 +161,23 @@ class CmdTask(PoeTask):
         working_dir = self.get_working_dir(env)
 
         result = []
-        for cmd_token, has_glob in resolve_command_tokens(command_lines, env):
-            if has_glob:
-                # Resolve glob pattern from the working directory
-                if matches := [str(match) for match in working_dir.glob(cmd_token)]:
-                    result.extend(matches)
-                elif self.spec.options.empty_glob == "fail":
-                    raise ExecutionError(
-                        f"Glob pattern {cmd_token!r} did not match any files in "
-                        f"working directory {working_dir!s}"
-                    )
-                elif self.spec.options.empty_glob == "pass":
-                    # If the glob pattern does not match any files, we just pass it
-                    # through as is
-                    self.__passed_unmatched_glob = True
+        for line in command_lines:
+            for cmd_token, has_glob in line.resolve_tokens(env):
+                if has_glob:
+                    # Resolve glob pattern from the working directory
+                    if matches := [str(match) for match in working_dir.glob(cmd_token)]:
+                        result.extend(matches)
+                    elif self.spec.options.empty_glob == "fail":
+                        raise ExecutionError(
+                            f"Glob pattern {cmd_token!r} did not match any files in "
+                            f"working directory {working_dir!s}"
+                        )
+                    elif self.spec.options.empty_glob == "pass":
+                        # If the glob pattern does not match any files, we just pass it
+                        # through as is
+                        self.__passed_unmatched_glob = True
+                        result.append(cmd_token)
+                else:
                     result.append(cmd_token)
-            else:
-                result.append(cmd_token)
 
         return result

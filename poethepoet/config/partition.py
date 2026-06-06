@@ -3,11 +3,11 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict, get_args
 
 from ..exceptions import ConfigValidationError
 from ..options import NoValue, PoeOptions
-from ..options.annotations import option_annotation
+from ..options.annotations import Metadata, option_annotation, register_type_alias
 from .primitives import EmptyDict, EnvDefault
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from .primitives import EnvfileOption
 
 
-KNOWN_SHELL_INTERPRETERS = (
+ShellInterpreter = Literal[
     "posix",
     "sh",
     "bash",
@@ -26,14 +26,36 @@ KNOWN_SHELL_INTERPRETERS = (
     "pwsh",  # powershell >= 6
     "powershell",  # any version of powershell
     "python",
-)
+]
+# Register the alias for the PoeOptions annotation system (the helper returns
+# the alias unchanged, but assigning it inline confuses mypy when the name is
+# later used as a type annotation in this same module).
+register_type_alias("ShellInterpreter", ShellInterpreter)
+
+# Derived from the Literal so the tuple and the type stay in lockstep.
+KNOWN_SHELL_INTERPRETERS: tuple[str, ...] = get_args(ShellInterpreter)
+
+_GROUP_NAME_PATTERN = re.compile(r"^[\w-]+$")
 
 
 @option_annotation
 class IncludeScriptItem(TypedDict):
     script: str
-    cwd: str
+    """
+    A reference to a Python callable that returns toml or json-like config to be
+    merged into the project config.
+    """
+
+    cwd: Annotated[str, Metadata(pattern=r"\S")]
+    """
+    Specify the working directory for resolving relative paths referenced by the
+    included script.
+    """
+
     executor: str | dict
+    """
+    Configure the executor used when invoking the include_script callable.
+    """
 
 
 IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
@@ -42,8 +64,21 @@ IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
 @option_annotation
 class IncludeItem(TypedDict):
     path: str
-    cwd: str
+    """
+    The path to the toml or json config file to include, relative to the parent
+    config file.
+    """
+
+    cwd: Annotated[str, Metadata(pattern=r"\S")]
+    """
+    Specify the working directory for resolving relative paths referenced by the
+    included config.
+    """
+
     recursive: bool
+    """
+    If true, includes declared in the included file will also be loaded.
+    """
 
 
 IncludeItem.__optional_keys__ = frozenset({"cwd", "recursive"})
@@ -52,11 +87,22 @@ IncludeItem.__optional_keys__ = frozenset({"cwd", "recursive"})
 @option_annotation
 class TaskGroup(TypedDict):
     heading: str
+    """
+    A human-readable name for the group displayed in the help output.
+    """
+
     executor: Mapping[str, str | Sequence[str] | bool] | str | None = None  # type: ignore[misc]
+    """
+    Configure the executor used by tasks within this group.
+    """
+
     tasks: Mapping[str, Any] = EmptyDict  # type: ignore[misc]
+    """
+    The tasks defined within this group.
+    """
 
 
-TaskGroup.__optional_keys__ = frozenset({"executor", "tasks"})
+TaskGroup.__optional_keys__ = frozenset({"heading", "executor", "tasks"})
 
 
 class GroupConfig:
@@ -186,21 +232,91 @@ class ProjectConfig(ConfigPartition):
         """
 
         default_task_type: str = "cmd"
+        """
+        Sets the default task type for tasks defined as strings. By default, tasks
+        are interpreted as shell commands ('cmd'). This can be overridden to
+        'script' or other supported types.
+        """
+
         default_array_task_type: str = "sequence"
+        """
+        When a task is declared as an array (instead of a table), then it is
+        interpreted as the default array task type, which will be 'sequence' unless
+        otherwise specified.
+        """
+
         default_array_item_task_type: str = "ref"
+        """
+        When a task is declared as a string inside an array (e.g. inline in a
+        sequence task), then it is interpreted as the default array item task type,
+        which will be 'ref' unless otherwise specified.
+        """
+
         env: Mapping[str, str | EnvDefault] = EmptyDict
-        envfile: str | Sequence[str] | EnvfileOption = ()
+        """
+        A map of environment variables to be set for all tasks.
+        """
+
+        envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
+        """
+        Provide one or more env files to be loaded before running tasks. If an
+        array is provided, files will be loaded in the given order.
+        """
+
         executor: Mapping[str, str | Sequence[str] | bool] | str = MappingProxyType(
             {"type": "auto"}
         )
-        include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        """
+        Configure the executor for running tasks. The type can be 'auto', 'poetry',
+        'uv', 'virtualenv', or 'simple', with 'auto' being the default. Some
+        executor types accept additional configuration options.
+        """
+
+        include: str | Sequence[str | IncludeItem] = ()
+        """
+        Specify one or more other toml or json files to load tasks from.
+        """
+
         include_script: str | Sequence[str | IncludeScriptItem] = ()
+        """
+        Load dynamically generated tasks from one or more python functions.
+        """
+
         poetry_command: str = "poe"
+        """
+        Change the name of the task poe registers with poetry when used as a
+        plugin.
+        """
+
         poetry_hooks: Mapping[str, str] = EmptyDict
-        shell_interpreter: str | Sequence[str] = "posix"
+        """
+        Register tasks to run automatically before or after other poetry CLI
+        commands.
+        """
+
+        shell_interpreter: ShellInterpreter | Sequence[ShellInterpreter] = "posix"
+        """
+        Change the default shell interpreter for executing shell tasks. Normally,
+        tasks are executed using a posix shell, but this can be overridden here.
+        """
+
         verbosity: Literal[-2, -1, 0, 1, 2] = 0
+        """
+        Sets the default verbosity level for all commands. '-1' is quieter, '0' is
+        the default level, and '1' is more verbose. The command line arguments are
+        incremental, with '--quiet' or '-q' decreasing verbosity, and '--verbose'
+        or '-v' increasing it.
+        """
+
         tasks: Mapping[str, Any] = EmptyDict
+        """
+        A mapping of task names to task definitions.
+        """
+
         groups: Mapping[str, TaskGroup] = EmptyDict
+        """
+        Define groups of tasks to be displayed together in the help output.
+        """
 
         @classmethod
         def normalize(
@@ -260,15 +376,16 @@ class ProjectConfig(ConfigPartition):
                     f"Expected one of {PoeTask.get_task_types(str)!r}"
                 )
 
-            # Validate default_array_task_type value
-            if not PoeTask.is_task_type(
-                self.default_array_task_type, content_type=list
-            ):
-                raise ConfigValidationError(
-                    "Invalid value for option 'default_array_task_type': "
-                    f"{self.default_array_task_type!r}\n"
-                    f"Expected one of {PoeTask.get_task_types(list)!r}"
-                )
+            # Validate default_array_task_type value (only if user-set;
+            # the class default is valid by construction).
+            if "default_array_task_type" in self.__dict__:
+                valid_array_task_types = PoeTask.get_default_array_task_types()
+                if self.default_array_task_type not in valid_array_task_types:
+                    raise ConfigValidationError(
+                        "Invalid value for option 'default_array_task_type': "
+                        f"{self.default_array_task_type!r}\n"
+                        f"Expected one of {valid_array_task_types!r}"
+                    )
 
             # Validate default_array_item_task_type value
             if not PoeTask.is_task_type(
@@ -279,21 +396,6 @@ class ProjectConfig(ConfigPartition):
                     f"{self.default_array_item_task_type!r}\n"
                     f"Expected one of {PoeTask.get_task_types(str)!r}"
                 )
-
-            # Validate shell_interpreter type
-            if self.shell_interpreter:
-                shell_interpreter = (
-                    (self.shell_interpreter,)
-                    if isinstance(self.shell_interpreter, str)
-                    else self.shell_interpreter
-                )
-                for interpreter in shell_interpreter:
-                    if interpreter not in KNOWN_SHELL_INTERPRETERS:
-                        raise ConfigValidationError(
-                            f"Unsupported value {interpreter!r} for option "
-                            "'shell_interpreter'\n"
-                            f"Expected one of {KNOWN_SHELL_INTERPRETERS!r}"
-                        )
 
             # Validate default verbosity.
             if self.verbosity < -2 or self.verbosity > 2:
@@ -314,7 +416,7 @@ class ProjectConfig(ConfigPartition):
 
             # Validate group names
             for group_name in self.groups.keys():
-                if not re.fullmatch(r"[\w\-_]+", group_name):
+                if not _GROUP_NAME_PATTERN.fullmatch(group_name):
                     raise ConfigValidationError(
                         f"Invalid group name {group_name!r}. Group names must contain "
                         "only letters, digits, hyphens, and underscores."
@@ -337,6 +439,26 @@ class ProjectConfig(ConfigPartition):
                         f"but found {type(value).__name__!r}"
                     )
 
+        @classmethod
+        def __schema_fragment__(cls, ctx: Any) -> dict[str, Any]:
+            """
+            Attach enums for the three ``default_*_task_type`` options to
+            the default schema fragment, sourced from the same registry
+            queries that ``validate()`` uses so the schema can never drift
+            from the runtime contract.
+            """
+            from ..task.base import PoeTask
+
+            fragment = super().__schema_fragment__(ctx)
+            properties = fragment["properties"]
+            string_task_types = list(PoeTask.get_task_types(content_type=str))
+            properties["default_task_type"]["enum"] = string_task_types
+            properties["default_array_task_type"]["enum"] = list(
+                PoeTask.get_default_array_task_types()
+            )
+            properties["default_array_item_task_type"]["enum"] = string_task_types
+            return fragment
+
 
 class IncludedConfig(ConfigPartition):
     class ConfigOptions(PoeOptions):
@@ -345,10 +467,33 @@ class IncludedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
+        """
+        A map of environment variables to be set for all tasks in the included
+        config.
+        """
+
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
+        """
+        Provide one or more env files to be loaded before running tasks from this
+        included config. If an array is provided, files will be loaded in the
+        given order.
+        """
+
         tasks: Mapping[str, Any] = EmptyDict
+        """
+        A mapping of task names to task definitions contributed by this included
+        config.
+        """
+
         groups: Mapping[str, TaskGroup] = EmptyDict
-        include: str | Sequence[str] | Sequence[IncludeItem] = ()
+        """
+        Define groups of tasks contributed by this included config.
+        """
+
+        include: str | Sequence[str | IncludeItem] = ()
+        """
+        Specify one or more other toml or json files to load tasks from.
+        """
 
         @classmethod
         def normalize(
@@ -378,9 +523,28 @@ class PackagedConfig(ConfigPartition):
         """
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
+        """
+        A map of environment variables to be set for all tasks in the packaged
+        config.
+        """
+
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
+        """
+        Provide one or more env files to be loaded before running tasks from this
+        packaged config. If an array is provided, files will be loaded in the
+        given order.
+        """
+
         tasks: Mapping[str, Any] = EmptyDict
+        """
+        A mapping of task names to task definitions contributed by this packaged
+        config.
+        """
+
         groups: Mapping[str, TaskGroup] = EmptyDict
+        """
+        Define groups of tasks contributed by this packaged config.
+        """
 
         def validate(self):
             """

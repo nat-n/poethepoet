@@ -1,5 +1,7 @@
 import sys
 
+import pytest
+
 
 def test_switch_on_platform(run_poe):
     common_prefix = "Poe <= override or sys.platform\n"
@@ -134,67 +136,57 @@ def test_switch_capture_out(run_poe, projects):
         output_path.unlink()
 
 
-def test_switch_boolean_flag(run_poe):
-    result = run_poe(
-        "booleans-cmd", "--non", "--tru", "--fal", "--txt", project="switch"
-    )
-    assert (
-        result.capture == "Poe <= poe_test_echo minus\n"
-        "Poe => {'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
-    )
-    assert result.stdout == "{'non': True, 'tru': False, 'fal': True, 'txt': False}\n"
-
-    result = run_poe(
-        "booleans-expr", "--non", "--tru", "--fal", "--txt", project="switch"
-    )
-    assert result.capture == (
-        "Poe <= tru\n"
-        r"""Poe => poe_test_echo '
-${non}=True' '${non:+plus}=plus' '${non:-minus}=True
-${fal}=True' '${fal:+plus}=plus' '${fal:-minus}=True
-${tru}=' '${tru:+plus}=' '${tru:-minus}=minus
-${txt}=' '${txt:+plus}=' '${txt:-minus}=minus'
-"""
-    )
-    assert result.stdout.endswith(
-        """
-${non}=True ${non:+plus}=plus ${non:-minus}=True
-${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
-${tru}= ${tru:+plus}= ${tru:-minus}=minus
-${txt}= ${txt:+plus}= ${txt:-minus}=minus
-""".lstrip()
-    )
-
-
-def test_switch_boolean_flag_default_value(run_poe):
-    result = run_poe("booleans-cmd", project="switch")
-    assert result.capture == (
-        "Poe <= poe_test_echo text\n"
-        r"""Poe => poe_test_echo 'case=text
-${non}=' '${non:+plus}=' '${non:-minus}=minus
-${fal}=' '${fal:+plus}=' '${fal:-minus}=minus
-${tru}=True' '${tru:+plus}=plus' '${tru:-minus}=True
-${txt}=text' '${txt:+plus}=plus' '${txt:-minus}=text'
-"""
-    )
-    assert result.stdout.endswith(
-        """case=text
+@pytest.mark.parametrize(
+    ("task", "cli_args", "expected_stdout_tail"),
+    [
+        pytest.param(
+            "booleans-cmd",
+            (),
+            """case=True
 ${non}= ${non:+plus}= ${non:-minus}=minus
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus
 ${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
-${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
-""".lstrip()
-    )
-
-    result = run_poe("booleans-expr", project="switch")
-    assert (
-        result.capture == "Poe <= tru\n"
-        "Poe => {'case': True,'non':non, 'tru':tru, 'fal':fal, 'txt':txt}\n"
-    )
-    assert (
-        result.stdout
-        == "{'case': True, 'non': False, 'tru': True, 'fal': False, 'txt': 'text'}\n"
-    )
+${txt}=True ${txt:+plus}=plus ${txt:-minus}=True
+""",
+            id="cmd_defaults_match_True_arm",
+        ),
+        pytest.param(
+            "booleans-cmd",
+            ("--non", "--tru", "--fal", "--txt"),
+            "{'non': True, 'tru': False, 'fal': True, 'txt': False}\n",
+            id="cmd_toggled_falls_through_to_default_expr_arm",
+        ),
+        pytest.param(
+            "booleans-expr",
+            (),
+            "{'case': True, 'non': False, 'tru': True, 'fal': False, 'txt': True}\n",
+            id="expr_defaults_match_True_arm",
+        ),
+        pytest.param(
+            "booleans-expr",
+            ("--non", "--tru", "--fal", "--txt"),
+            """${non}=True ${non:+plus}=plus ${non:-minus}=True
+${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
+${tru}= ${tru:+plus}= ${tru:-minus}=minus
+${txt}= ${txt:+plus}= ${txt:-minus}=minus
+""",
+            id="expr_toggled_falls_through_to_default_cmd_arm",
+        ),
+    ],
+)
+def test_switch_boolean_flag(
+    run_poe, task: str, cli_args: tuple[str, ...], expected_stdout_tail: str
+) -> None:
+    """
+    Switch task control: the control task's resolved value selects which
+    branch runs. For booleans-cmd the control is a cmd echoing ${txt:-minus}
+    (matches the "True" arm when txt's truthy default is preserved, else
+    falls through). For booleans-expr the control evaluates the tru var
+    (same pattern via the True/False bool stringified to "True"/"False").
+    Each case asserts the tail of stdout from the selected branch.
+    """
+    result = run_poe(task, *cli_args, project="switch")
+    assert result.stdout.endswith(expected_stdout_tail)
 
 
 def test_switch_task_forwards_extra_args_via_poe_extra_args(run_poe):

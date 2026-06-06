@@ -251,3 +251,69 @@ def test_ref_error_on_sequence_with_capture_stdout(run_poe):
     assert result.stdout == ""
     assert result.stderr == ""
     assert not (result.path / "echo.txt").exists()
+
+
+# ---------------------------------------------------------------------------
+# Parameter expansion operators (:- and :+) in ref definitions
+# ---------------------------------------------------------------------------
+
+
+def test_ref_default_value_operator(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.greet]
+        cmd = "poe_test_echo hi ${subject}"
+        args = ["subject"]
+
+        [tool.poe.tasks.greet-default]
+        ref = "greet --subject ${NAME:-world}"
+        """
+    )
+    result = run_poe("greet-default", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "hi world\n"
+    assert result.stderr == ""
+
+
+def test_ref_default_value_overridden(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.greet]
+        cmd = "poe_test_echo hi ${subject}"
+        args = ["subject"]
+
+        [tool.poe.tasks.greet-default]
+        ref = "greet --subject ${NAME:-world}"
+        """
+    )
+    result = run_poe("greet-default", cwd=project_path, env={"NAME": "alice"})
+    assert result.code == 0
+    assert result.stdout == "hi alice\n"
+    assert result.stderr == ""
+
+
+def test_ref_with_similarly_named_var_still_appends_extra_args(run_poe):
+    """$POE_EXTRA_ARGS_CUSTOM in a ref is distinct; extra args must still be appended"""
+    result = run_poe(
+        "ref-with-custom-var-not-extra-args", "extra1", "extra2", project="refs"
+    )
+    assert result.capture == "Poe => poe_test_echo hi world extra1 extra2\n"
+    assert result.stdout == "hi world extra1 extra2\n"
+    assert result.stderr == ""
+
+
+def test_ref_alternate_value_operator(temp_pyproject, run_poe):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.greet]
+        cmd = "poe_test_echo hi ${subject}"
+        args = ["subject"]
+
+        [tool.poe.tasks.greet-maybe]
+        ref = "greet --subject ${NAME:+friend}"
+        """
+    )
+    result = run_poe("greet-maybe", cwd=project_path, env={"NAME": "alice"})
+    assert result.code == 0
+    assert result.stdout == "hi friend\n"
+    assert result.stderr == ""

@@ -24,7 +24,7 @@
 - directly access whatever arguments were passed to the task from `sys.argv`
 - reference values of named args as Python variables with a Python type matching the configured arg type
 - include environment variables as string values that are injected into the expression
-  using the usual templating syntax ``${...}``
+  using the usual templating syntax ``${...}``, including the :ref:`default and alternate value operators <parameter-expansion-operators>`
 
 Available task options
 ----------------------

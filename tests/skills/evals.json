@@ -1,0 +1,66 @@
+{
+  "skill_name": "poethepoet",
+  "skill_path": "poethepoet/skills/poethepoet",
+  "evals": [
+    {
+      "id": 1,
+      "fixture": "poe_project",
+      "prompt": "I need to run just the tests with 'config' in the name — not the full suite. How do I do that?",
+      "expected_output": "Agent discovers available poe tasks by running poe first, then explains how to forward extra args to the test task (poe test -k config or poe test -- -k config). Should recommend the poe task rather than running pytest directly.",
+      "expectations": [
+        "Response mentions running `poe` or `poe --help` to discover available tasks",
+        "Response recommends using `poe test` rather than calling pytest directly",
+        "Response shows how to pass `-k config` as an extra argument"
+      ]
+    },
+    {
+      "id": 2,
+      "fixture": "uv_with_test",
+      "prompt": "I want to add a 'lint' task that runs `ruff check .` by default, but also lets me pass --fix when I want to auto-fix issues.",
+      "expected_output": "Agent adds a lint task using cmd type with $POE_EXTRA_ARGS so the user can run `poe lint` normally or `poe lint -- --fix`. Includes help text. Uses correct TOML syntax.",
+      "expectations": [
+        "Response includes a lint task definition in TOML",
+        "Response defines the lint task so --fix can be passed at the CLI (not hard-coded in the command)",
+        "Response includes a help = line for the task"
+      ]
+    },
+    {
+      "id": 3,
+      "fixture": "sequential_check",
+      "prompt": "The `check` task runs lint, types, and test sequentially but it's slow. I want lint and types to run in parallel, then test after both finish.",
+      "expected_output": "Agent rewrites the check task to use a sequence containing a nested parallel block for lint+types, followed by test. Correct TOML syntax with nested composition.",
+      "expectations": [
+        "Response includes `parallel` in the task definition",
+        "Response includes `sequence` in the task definition",
+        "Response includes a help = line on the check task"
+      ]
+    },
+    {
+      "id": 4,
+      "fixture": "bare_uv",
+      "prompt": "This is a new project. It uses uv, pytest for testing, ruff for linting and formatting, and mypy for type checking. Can you set up the standard development tasks?",
+      "expected_output": "Agent sets up test, lint, types, format tasks plus a combined check task (parallel where appropriate). Adds help text to all tasks. Uses uv add for any missing dependencies rather than editing pyproject.toml directly.",
+      "expectations": [
+        "Response defines a test task",
+        "Response defines a lint task",
+        "Response defines a types task",
+        "Response defines a format task",
+        "Response defines a check task that combines the above",
+        "Response includes help = on each task",
+        "Response does not suggest editing pyproject.toml dependencies directly (uses uv add)"
+      ]
+    },
+    {
+      "id": 5,
+      "fixture": "scripts_project",
+      "prompt": "I have a Python script at `data-scripts/process.py` with a `main(input_file, output_dir='reports', verbose=False, format='html')` function. Create a poe task called `process` that exposes all these parameters on the CLI.",
+      "expected_output": "Agent creates a script task pointing at process:main, defines poe args matching the function signature including types, adds help text, and sets env.PYTHONPATH to data-scripts so the module is importable (the dirname is not a valid Python identifier, so a dotted import like `data-scripts.process` is not an option).",
+      "expectations": [
+        "Response uses a script task type pointing to the main function",
+        "Response defines args matching the function parameters",
+        "Response includes a help = line for the task",
+        "Response sets PYTHONPATH or otherwise makes the scripts module importable"
+      ]
+    }
+  ]
+}

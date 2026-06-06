@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import shlex
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError
 from ..helpers.script import parse_script_reference
@@ -18,7 +18,8 @@ if TYPE_CHECKING:
 
 class ScriptTask(PoeTask):
     """
-    A task consisting of a reference to a python script
+    Invokes a Python callable or module, optionally with values or expressions
+    passed as arguments.
     """
 
     content: str
@@ -27,8 +28,24 @@ class ScriptTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         use_exec: bool = False
+        """
+        Specify that this task should be executed in the same process, instead of
+        as a subprocess. Note: This feature has limitations, such as not being
+        compatible with tasks that are referenced by other tasks and not working on
+        Windows.
+        """
+
         print_result: bool = False
+        """
+        If true then the return value of the Python callable will be output to
+        stdout, unless it is None.
+        """
+
         ignore_fail: bool | list[int] = False
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
         def validate(self):
             super().validate()
@@ -51,11 +68,46 @@ class ScriptTask(PoeTask):
 
             validate_script_or_module_reference(self.content)
 
-            if ":" not in self.content and self.has_args:
+            if ":" not in self.content and self.options.get("print_result"):
                 raise ConfigValidationError(
-                    "Script task referencing a module (instead of a function) cannot "
-                    "declare arguments."
+                    "'print_result' is not supported on a script task that "
+                    "references a module (it only makes sense when the task "
+                    "calls a python callable that returns a value)."
                 )
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: attach python-callable examples on the ``script``
+        discriminator field, and encode two mutually-exclusive option
+        combinations that the runtime also rejects:
+        ``use_exec`` + ``capture_stdout`` (``TaskOptions.validate``);
+        and ``print_result`` on a module-style script — recognised by the
+        ``script`` reference containing no ``:`` (``_task_validations``).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"]["script"]["examples"] = [
+            "my_pkg.my_module",
+            "my_pkg.my_module:main",
+            "my_pkg.my_module:main(only='images', log_env={'LOG_PATH':'/var/log'})",
+        ]
+        fragment["allOf"] = [
+            {
+                "if": {
+                    "properties": {"use_exec": {"const": True}},
+                    "required": ["use_exec"],
+                },
+                "then": {"not": {"required": ["capture_stdout"]}},
+            },
+            {
+                "if": {
+                    "properties": {"script": {"pattern": "^[^:]*$"}},
+                    "required": ["script"],
+                },
+                "then": {"not": {"required": ["print_result"]}},
+            },
+        ]
+        return fragment
 
     spec: TaskSpec
 
@@ -131,21 +183,35 @@ class ScriptTask(PoeTask):
         Execute the python module referenced by the task content
         """
 
-        src_path = self.ctx.config.project_dir / "src"
-        if src_path.is_dir():
-            src_path_str = str(src_path)
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        env.register_task_args(named_arg_values, extra_args)
+
+        # Approximate the callable path's sys.path.append('src') by appending
+        # '<project_root>/src' to PYTHONPATH. The absolute form means a task
+        # with its own cwd (or invoking poe from a subdirectory) still resolves
+        # to the project's src/, rather than the subprocess's cwd-relative src/.
+        # All PYTHONPATH entries collectively precede site-packages in sys.path
+        # regardless of internal order, so an installed package can still be
+        # shadowed by a local src/ — fully mirroring append semantics would
+        # require a wrapper script.
+        if (src_path := str(self.ctx.config.project_dir / "src")).is_dir()
             existing_pythonpath = env.get("PYTHONPATH", "")
             env.set(
                 "PYTHONPATH",
                 (
-                    f"{src_path_str}{os.pathsep}{existing_pythonpath}"
+                    f"{existing_pythonpath}{os.pathsep}{src_path}"
                     if existing_pythonpath
-                    else src_path_str
+                    else src_path
                 ),
             )
 
         argv = [
-            *(env.fill_template(token) for token in self.invocation[1:]),
+            *(
+                task_args.format_argv(named_arg_values, env)
+                if (task_args := self.task_args)
+                else ()
+            ),
+            *extra_args,
         ]
         cmd = ("python", "-m", self.spec.content, *argv)
 

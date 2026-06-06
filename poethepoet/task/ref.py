@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
 from .base import PoeTask, TaskContext
@@ -15,13 +15,17 @@ if TYPE_CHECKING:
 
 class RefTask(PoeTask):
     """
-    A task consisting of a reference to another task
+    Invokes another task by name, with or without arguments.
     """
 
     __key__ = "ref"
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: bool = False
+        """
+        If true the failure of the referenced task will be ignored and the ref task
+        will return exit code 0.
+        """
 
         def validate(self):
             """
@@ -31,6 +35,18 @@ class RefTask(PoeTask):
                 raise ConfigValidationError(
                     "Option 'executor' cannot be set on a ref task"
                 )
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: ref tasks cannot declare an executor (see
+        ``TaskOptions.validate``). Drop it from the inherited properties so
+        the existing ``additionalProperties: false`` rejects the key at
+        schema-validation time.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"].pop("executor", None)
+        return fragment
 
     class TaskSpec(PoeTask.TaskSpec):
         content: str
@@ -69,6 +85,13 @@ class RefTask(PoeTask):
 
     spec: TaskSpec
 
+    def _parse_content(self):
+        if self._parsed_content is None:
+            from ..helpers.parse import parse_template
+
+            self._parsed_content = parse_template(self.spec.content.strip())
+        return self._parsed_content
+
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
@@ -84,7 +107,7 @@ class RefTask(PoeTask):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         env.register_task_args(named_arg_values, extra_args)
 
-        expanded_content = env.fill_template(self.spec.content.strip())
+        expanded_content = env.fill_template(self._parse_content())
         invocation_tokens = tuple(
             env.fill_template(token) for token in shlex.split(expanded_content)
         )

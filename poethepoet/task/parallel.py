@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
+SUBTASK_OPTIONS_BLOCKLIST = ("args",)
+
 
 class ColorCycle:
     def __init__(self):
@@ -47,7 +49,9 @@ class ColorCycle:
 
 class ParallelTask(PoeTask):
     """
-    A task consisting of multiple tasks that run in parallel
+    Runs an array of subtasks concurrently. Each subtask runs in its own
+    subprocess; output lines are interleaved and prefixed with the subtask
+    name by default.
     """
 
     content: list[str | dict[str, Any]]
@@ -59,10 +63,34 @@ class ParallelTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
+        """
+        If set, the parallel task will continue running even if one of the subtasks
+        fails.
+        """
+
         default_item_type: str | None = None
+        """
+        Change the default item type that strings in the parallel task are
+        interpreted as. By default this matches the project-level
+        `default_array_item_task_type` setting.
+        """
+
         prefix: str | Literal[False] = "{name}"
+        """
+        Set the prefix applied to each line of output from subtasks. By default
+        this is the task name. Set to false to disable prefixing.
+        """
+
         prefix_max: int = 16
+        """
+        Set the maximum width of the prefix. Longer prefixes will be truncated.
+        """
+
         prefix_template: str = "{color_start}{prefix}{color_end} | "
+        """
+        Specifies a template for how the prefix is applied after truncating it to
+        the prefix_max length.
+        """
 
         def validate(self):
             """
@@ -146,6 +174,31 @@ class ParallelTask(PoeTask):
                     )
 
                 subtask.validate(config, task_specs)
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: parallel items reference the recursive task_def union,
+        with subtask-level options forbidden per
+        ``SUBTASK_OPTIONS_BLOCKLIST``. The
+        ``{not: {type: object, required: [X]}}`` form leaves bare-string
+        refs and inline arrays alone — only object items are constrained.
+        Also drops ``capture_stdout`` from the inherited properties so
+        the existing ``additionalProperties: false`` rejects the key —
+        ``TaskOptions.validate`` raises if it's set at runtime.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"].pop("capture_stdout", None)
+        fragment["properties"]["parallel"]["items"] = {
+            "allOf": [
+                {"$ref": "#/definitions/task_def"},
+                *(
+                    {"not": {"type": "object", "required": [opt]}}
+                    for opt in SUBTASK_OPTIONS_BLOCKLIST
+                ),
+            ],
+        }
+        return fragment
 
     spec: TaskSpec
 

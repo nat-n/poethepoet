@@ -47,6 +47,14 @@ Passing arguments
 
 By default any arguments passed to a ref task will be forwarded to the referenced task, allowing it to function as a task alias. If named arguments are configured for the ref task then additional arguments can still be passed to the referenced task after ``--`` on the command line.
 
+Ref tasks support parameter expansion just like cmd tasks, including the :ref:`default and alternate value operators <parameter-expansion-operators>`. This makes it possible to pass arguments to the referenced task conditionally. For example:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.deploy]
+  ref = "build ${_target:-production}"
+  args = [{ name = "_target", positional = true, default = "" }]
+
 
 Ignore reference task failure
 -----------------------------

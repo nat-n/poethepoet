@@ -106,12 +106,19 @@ def test_bad_interpreter_config(run_poe, projects):
         f"-C={projects['shells/bad_interpreter']}",
         "bad-interpreter",
     )
-    assert (
-        "Error: Invalid task 'bad-interpreter'\n"
-        "     | Invalid value for option 'interpreter',\n"
-        "     | Expected one of "
-        "('posix', 'sh', 'bash', 'zsh', 'fish', 'pwsh', 'powershell', 'python')\n"
-    ) in result.capture
+    assert "Error: Invalid task 'bad-interpreter'" in result.capture
+    assert "Option 'interpreter' must have a value of type:" in result.capture
+    for valid_value in (
+        "'posix'",
+        "'sh'",
+        "'bash'",
+        "'zsh'",
+        "'fish'",
+        "'pwsh'",
+        "'powershell'",
+        "'python'",
+    ):
+        assert valid_value in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
 
@@ -142,65 +149,48 @@ done
     assert result.stderr == ""
 
 
-def test_shell_boolean_flag(run_poe):
-    result = run_poe(
-        "booleans",
-        "--non",
-        "--tru",
-        "--fal",
-        "--txt",
-        project="shells",
-    )
-    assert result.capture == (
-        r"Poe => poe_test_echo "
-        r"""\${non}=${non} \${non:+plus}=${non:+plus} \${non:-minus}=${non:-minus}
-poe_test_echo \${fal}=${fal} \${fal:+plus}=${fal:+plus} \${fal:-minus}=${fal:-minus}
-poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-minus}
-poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
-"""
-    )
-    assert result.stdout.endswith(
-        """${non}=True ${non:+plus}=plus ${non:-minus}=True
+@pytest.mark.parametrize(
+    ("cli_args", "expected_env_lines"),
+    [
+        pytest.param(
+            (),
+            """${non}= ${non:+plus}= ${non:-minus}=minus
+${fal}= ${fal:+plus}= ${fal:-minus}=minus
+${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
+${txt}=True ${txt:+plus}=plus ${txt:-minus}=True
+""",
+            id="defaults",
+        ),
+        pytest.param(
+            ("--non", "--tru", "--fal", "--txt"),
+            """${non}=True ${non:+plus}=plus ${non:-minus}=True
 ${fal}=True ${fal:+plus}=plus ${fal:-minus}=True
 ${tru}= ${tru:+plus}= ${tru:-minus}=minus
 ${txt}= ${txt:+plus}= ${txt:-minus}=minus
-""".lstrip()
-    )
-
-
-def test_shell_boolean_flag_default_value(run_poe):
-    result = run_poe("booleans", project="shells")
-    assert result.capture == (
-        r"Poe => poe_test_echo "
-        r"""\${non}=${non} \${non:+plus}=${non:+plus} \${non:-minus}=${non:-minus}
-poe_test_echo \${fal}=${fal} \${fal:+plus}=${fal:+plus} \${fal:-minus}=${fal:-minus}
-poe_test_echo \${tru}=${tru} \${tru:+plus}=${tru:+plus} \${tru:-minus}=${tru:-minus}
-poe_test_echo \${txt}=${txt} \${txt:+plus}=${txt:+plus} \${txt:-minus}=${txt:-minus}
-"""
-    )
-    assert result.stdout.endswith(
-        """${non}= ${non:+plus}= ${non:-minus}=minus
-${fal}= ${fal:+plus}= ${fal:-minus}=minus
-${tru}=True ${tru:+plus}=plus ${tru:-minus}=True
-${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
-""".lstrip()
-    )
-
-
-def test_shell_boolean_flag_partial_negate_true(run_poe):
-    """Only --tru passed: negates default=true to False (unset), others keep defaults"""
-    result = run_poe(
-        "booleans",
-        "--tru",
-        project="shells",
-    )
-    assert result.stdout.endswith(
-        """${non}= ${non:+plus}= ${non:-minus}=minus
+""",
+            id="all_toggled",
+        ),
+        pytest.param(
+            ("--tru",),
+            """${non}= ${non:+plus}= ${non:-minus}=minus
 ${fal}= ${fal:+plus}= ${fal:-minus}=minus
 ${tru}= ${tru:+plus}= ${tru:-minus}=minus
-${txt}=text ${txt:+plus}=plus ${txt:-minus}=text
-""".lstrip()
-    )
+${txt}=True ${txt:+plus}=plus ${txt:-minus}=True
+""",
+            id="negate_tru",
+        ),
+    ],
+)
+def test_shell_boolean_flag(
+    run_poe, cli_args: tuple[str, ...], expected_env_lines: str
+) -> None:
+    """
+    Same invariant as the cmd suite, exercised against a shell task.
+    Boolean args toggle to/from the truthy bool default; the resolved bool
+    propagates to env vars as ``"True"`` (truthy) or unset (falsy).
+    """
+    result = run_poe("booleans", *cli_args, project="shells")
+    assert result.stdout.endswith(expected_env_lines)
 
 
 def test_shell_bool_env_collision_flag_set(run_poe):

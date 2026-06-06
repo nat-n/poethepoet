@@ -34,6 +34,7 @@ class PoeOptions:
 
     __fields: dict[str, TypeAnnotation]
     __field_attributes: dict[str, str]
+    _poe_field_descriptions: dict[str, str]
 
     def __init__(self, **options: Any):
         for key in self.get_fields():
@@ -253,3 +254,94 @@ class PoeOptions:
                 cls.__field_attributes[attribute] = attribute
 
         return cls.__field_attributes.get(field_name)
+
+    @classmethod
+    def description_for_field(cls, field_name: str) -> str | None:
+        """
+        Return the class-attribute docstring associated with the field, if any.
+
+        Walks the MRO so that an inherited field resolves to its description
+        on the nearest ancestor that defines it. Returns None if no description
+        is found.
+
+        The first call per class populates a per-class cache stored as
+        `cls._poe_field_descriptions`.
+        """
+
+        from ._docstrings import extract_field_descriptions
+
+        # Use cls.__dict__ rather than hasattr() so the cache is per-class
+        # (not inherited from an ancestor that happened to compute it first).
+        # Single leading underscore avoids Python's name-mangling rules.
+        if "_poe_field_descriptions" not in cls.__dict__:
+            merged: dict[str, str] = {}
+            # Reverse MRO so subclass entries override ancestor entries.
+            for ancestor in reversed(cls.__mro__):
+                if ancestor is object:
+                    continue
+                merged.update(extract_field_descriptions(ancestor))
+            cls._poe_field_descriptions = merged
+
+        return cls._poe_field_descriptions.get(field_name)
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict[str, Any]:
+        """
+        Emit a JSON Schema fragment describing this options dict.
+
+        Default behavior:
+        - Each field becomes a property; the property key is the
+          field's config_name if set, else the Python attribute name.
+        - Each property's schema is produced by `translate_type` and
+          augmented with a description sourced from class-attribute
+          docstrings (via `description_for_field`, which walks the MRO).
+        - Fields with no class-level default value AND not Optional
+          are placed in `required`.
+        - `additionalProperties` is `false`.
+
+        Subclasses may override this to handle irregular shapes (e.g.
+        switch task case items, recursive task_def references); they
+        should call `super().__schema_fragment__(ctx)` to obtain the
+        default and then mutate the parts that need customizing.
+        """
+        from ..schema.translate import translate_type
+
+        properties: dict[str, dict] = {}
+        required: list[str] = []
+
+        for attr_name, type_annotation in cls.get_fields().items():
+            # Property name in the schema is the config_name if set.
+            schema_key = type_annotation.metadata_get("config_name") or attr_name
+
+            field_schema = translate_type(type_annotation, ctx)
+            if description := cls.description_for_field(attr_name):
+                field_schema["description"] = description
+            properties[schema_key] = field_schema
+
+            # A field is required iff: no class-level default value AND
+            # its type isn't Optional. We mirror PoeOptions.parse's logic.
+            resolved_attr = cls.get_field_attribute(attr_name) or attr_name
+            has_default = hasattr(cls, resolved_attr)
+            if not has_default and not type_annotation.is_optional:
+                required.append(schema_key)
+
+            # Surface JSON-primitive class-level defaults as ``default:``
+            # annotations. Skip ``None`` (typically means "inherit from
+            # parent scope", not "literal null") and skip non-primitive
+            # values like ``EmptyDict``, ``()``, or ``MappingProxyType``
+            # — emitting those adds noise without documentation value.
+            if has_default:
+                default_value = getattr(cls, resolved_attr)
+                # ``type(...) is`` (not isinstance) keeps bool out of
+                # the int branch and excludes int/str subclasses.
+                if type(default_value) in (bool, int, float, str):
+                    field_schema["default"] = default_value
+
+        result: dict[str, Any] = {
+            "type": "object",
+            "properties": properties,
+            "additionalProperties": False,
+        }
+        # Always include `required` (possibly empty) for explicit clarity.
+        result["required"] = sorted(required)
+        return result

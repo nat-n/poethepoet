@@ -1,0 +1,3 @@
+[tool.poe.tasks]
+hello = "echo hi"
+build = { cmd = "make build", help = "Build the project" }

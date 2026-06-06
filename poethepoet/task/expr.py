@@ -19,7 +19,8 @@ if TYPE_CHECKING:
 
 class ExprTask(PoeTask):
     """
-    A task consisting of a python expression
+    Evaluates a Python expression to produce a result. Can reference
+    environment variables and arguments, and leverage most python builtins.
     """
 
     content: str
@@ -28,9 +29,30 @@ class ExprTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         imports: Sequence[str] = ()
+        """
+        A list of Python modules to be imported for use in the expression.
+        """
+
         assert_: Annotated[bool | int, Metadata(config_name="assert")] = False
+        """
+        A boolean indicating if the task will fail when the result of the
+        expression is falsy. If an integer is given, the task will exit with that
+        code when the result is falsy.
+        """
+
         use_exec: bool = False
+        """
+        Specify that this task should be executed in the same process, instead of
+        as a subprocess. Note: This feature has limitations, such as not being
+        compatible with tasks that are referenced by other tasks and not working on
+        Windows.
+        """
+
         ignore_fail: bool | list[int] = False
+        """
+        Return exit code 0 even if the task fails, or specify a list of task exit
+        codes to ignore.
+        """
 
         def validate(self):
             super().validate()
@@ -52,6 +74,20 @@ class ExprTask(PoeTask):
                 self.task_type._substitute_env_vars(self.content.strip(), {})  # type: ignore[attr-defined]
             except (ValueError, ExpressionParseError) as error:
                 raise ConfigValidationError(f"Invalid expression: {error}")
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: forbid the ``use_exec`` + ``capture_stdout`` combination
+        (runtime ``TaskOptions.validate`` rejects it too).
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["if"] = {
+            "properties": {"use_exec": {"const": True}},
+            "required": ["use_exec"],
+        }
+        fragment["then"] = {"not": {"required": ["capture_stdout"]}}
+        return fragment
 
     spec: TaskSpec
 
@@ -138,7 +174,8 @@ class ExprTask(PoeTask):
         that class with the required attributes later.
         """
 
-        from ..env.template import SpyDict, apply_envvars_to_template
+        from ..env.utils import SpyDict
+        from ..helpers.parse import parse_template
 
         # Spy on access to the env, so that instead of replacing template ${keys} with
         # the corresponding value, replace them with a python name and keep track of
@@ -149,10 +186,8 @@ class ExprTask(PoeTask):
             accessed_vars[key] = value
             return f"__env.{key}"
 
-        expression = apply_envvars_to_template(
-            content=content,
-            env=SpyDict(env, getitem_spy=getitem_spy),
-            require_braces=True,
+        expression = parse_template(content, require_braces=True).resolve(
+            SpyDict(env, getitem_spy=getitem_spy)
         )
 
         return expression, accessed_vars

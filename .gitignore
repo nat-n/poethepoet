@@ -3,6 +3,9 @@ tests/temp
 out.txt
 .claude/settings.local.json
 .serena
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+docs/_static/partial-poe-comparison.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -81,3 +84,4 @@ dmypy.json
 /TODO.md
 Dockerfile
 .vscode/
+tests/skills/results/

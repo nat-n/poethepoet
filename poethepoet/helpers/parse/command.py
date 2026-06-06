@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, cast
 
-from .ast_core import (
+from .core import (
     AnnotatedContentNode,
     ContentNode,
     ParseConfig,
@@ -24,7 +24,7 @@ from .ast_core import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator, Mapping
 
 
 PARAM_INIT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
@@ -215,8 +215,40 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
     def operation(self) -> ParamOperation | None:
         return self._annotation
 
+    def active_argument(self, env: Mapping[str, str]) -> ParamArgument | None:
+        """
+        Return the operator argument if it is active for the given env, else None.
+
+        :+ is active when the variable is set and non-empty.
+        :- is active when the variable is unset or empty.
+        """
+        param_value = env.get(self.param_name, "")
+        if self.operation and (
+            (param_value and self.operation.operator == ":+")
+            or (not param_value and self.operation.operator == ":-")
+        ):
+            return self.operation.argument
+        return None
+
+    def expand(self, env: Mapping[str, str]) -> str:
+        """
+        Resolve this parameter expansion to a flat string.
+
+        Handles :- and :+ operators by delegating to the active argument's
+        flatten() when applicable.
+        """
+        if argument := self.active_argument(env):
+            return argument.flatten(env)
+        return env.get(self.param_name, "")
+
     def _parse(self, chars: ParseCursor):
         assert chars.take() == "$"
+
+        if self.config.require_braces and chars.peek() != "{":
+            # In require_braces mode, bare $VAR is not a param expansion
+            chars.pushback("$")
+            self._cancelled = True
+            return
 
         param: list[str] = []
         if chars.peek() == "{":
@@ -441,6 +473,23 @@ class ParamArgument(SyntaxNode[ParamArgumentSegment]):
     def segments(self) -> tuple[ParamArgumentSegment, ...]:
         return tuple(self._children)
 
+    def flatten(self, env: Mapping[str, str]) -> str:
+        """
+        Resolve this argument to a flat string, discarding quote structure.
+
+        Used when the argument appears in an already-quoted context and
+        word-splitting is not needed.
+        """
+        return "".join(
+            (
+                element.expand(env)
+                if isinstance(element, ParamExpansion)
+                else element.content
+            )
+            for segment in self.segments
+            for element in segment
+        )
+
     def _parse(self, chars: ParseCursor):
         SegmentCls = self.get_child_node_cls(ParamArgumentSegment)
 
@@ -522,6 +571,111 @@ class Line(SyntaxNode[Word | Comment]):
     @property
     def terminator(self):
         return self._terminator
+
+    def resolve_tokens(self, env: Mapping[str, str]) -> Iterator[tuple[str, bool]]:
+        """
+        Resolve parameter expansions in this line against env and yield
+        (token, has_glob) pairs. Glob patterns embedded in literal text are
+        flagged; glob characters inside expanded variable values are also
+        detected and the surrounding literal portions are escaped so they can
+        be passed safely to the glob engine.
+        """
+        import re
+        from glob import escape
+
+        glob_cls = cast("type[Glob]", self.config.resolve_node_cls(Glob))
+        glob_pattern = re.compile(glob_cls.PATTERN)
+
+        def finalize_token(token_parts):
+            includes_glob = any(has_glob for _, has_glob in token_parts)
+            token = "".join(
+                (
+                    (escape(part) if not has_glob else part)
+                    for part, has_glob in token_parts
+                )
+                if includes_glob
+                else (part for part, _ in token_parts)
+            )
+            token_parts.clear()
+            return (token, includes_glob)
+
+        def resolve_argument_tokens(
+            argument: ParamArgument,
+            token_parts: list[tuple[str, bool]],
+        ) -> Iterator[tuple[str, bool]]:
+            for arg_segment in argument.segments:
+                if arg_segment.is_quoted:
+                    for element in arg_segment:
+                        if isinstance(element, ParamExpansion):
+                            if flat := element.expand(env):
+                                token_parts.append((flat, False))
+                        else:
+                            token_parts.append((element.content, False))
+                else:
+                    for element in arg_segment:
+                        if isinstance(element, WhitespaceText):
+                            if token_parts:
+                                yield finalize_token(token_parts)
+                        elif isinstance(element, ParamExpansion):
+                            if arg := element.active_argument(env):
+                                yield from resolve_argument_tokens(arg, token_parts)
+                            elif param_value := element.expand(env):
+                                yield from emit_unquoted_param_value(
+                                    param_value, token_parts
+                                )
+                        else:
+                            token_parts.append((element.content, False))
+
+        def emit_unquoted_param_value(
+            param_value: str,
+            token_parts: list[tuple[str, bool]],
+        ) -> Iterator[tuple[str, bool]]:
+            if param_value.isspace():
+                if token_parts:
+                    yield finalize_token(token_parts)
+                return
+            if param_value[0].isspace() and token_parts:
+                yield finalize_token(token_parts)
+            param_words = (
+                (word, bool(glob_pattern.search(word))) for word in param_value.split()
+            )
+            token_parts.append(next(param_words))
+            for param_word in param_words:
+                if token_parts:
+                    yield finalize_token(token_parts)
+                token_parts.append(param_word)
+            if param_value[-1].isspace() and token_parts:
+                yield finalize_token(token_parts)
+
+        for word in self:
+            if isinstance(word, Comment):
+                continue
+
+            token_parts: list[tuple[str, bool]] = []
+            for segment in word:
+                for element in segment:
+                    if isinstance(element, ParamExpansion):
+                        if not segment.is_quoted and (
+                            arg := element.active_argument(env)
+                        ):
+                            yield from resolve_argument_tokens(arg, token_parts)
+                            continue
+                        if param_value := element.expand(env):
+                            if segment.is_quoted:
+                                token_parts.append((param_value, False))
+                            else:
+                                yield from emit_unquoted_param_value(
+                                    param_value, token_parts
+                                )
+
+                    elif isinstance(element, Glob):
+                        token_parts.append((element.content, True))
+
+                    else:
+                        token_parts.append((element.content, False))
+
+            if token_parts:
+                yield finalize_token(token_parts)
 
     def _parse(self, chars: ParseCursor):
         WordCls = self.get_child_node_cls(Word)

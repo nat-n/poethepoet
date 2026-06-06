@@ -16,9 +16,14 @@ if TYPE_CHECKING:
     from .base import TaskSpecFactory
 
 
+SUBTASK_OPTIONS_BLOCKLIST = ("args",)
+
+
 class SequenceTask(PoeTask):
     """
-    A task consisting of a sequence of other tasks
+    Runs an array of subtasks one after the other. Items may be inline task
+    definitions, task references by name. Nested arrays are run as parallel
+    tasks.
     """
 
     content: list[str | dict[str, Any]]
@@ -28,7 +33,15 @@ class SequenceTask(PoeTask):
 
     class TaskOptions(PoeTask.TaskOptions):
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
+        """
+        If set, the sequence will continue running even if one of the tasks fails.
+        """
+
         default_item_type: str | None = None
+        """
+        Change the default item type that strings in the sequence are interpreted
+        as.
+        """
 
         def validate(self):
             """
@@ -116,6 +129,31 @@ class SequenceTask(PoeTask):
                     )
 
                 subtask.validate(config, task_specs)
+
+    @classmethod
+    def __schema_fragment__(cls, ctx: Any) -> dict:
+        """
+        Override: sequence items reference the recursive task_def union
+        (registered by the orchestrator), with subtask-level options
+        forbidden per ``SUBTASK_OPTIONS_BLOCKLIST``. The
+        ``{not: {type: object, required: [X]}}`` form leaves bare-string
+        refs and inline arrays alone — only object items are constrained.
+        Also drops ``capture_stdout`` from the inherited properties so
+        the existing ``additionalProperties: false`` rejects the key —
+        ``TaskOptions.validate`` raises if it's set at runtime.
+        """
+        fragment = super().__schema_fragment__(ctx)
+        fragment["properties"].pop("capture_stdout", None)
+        fragment["properties"]["sequence"]["items"] = {
+            "allOf": [
+                {"$ref": "#/definitions/task_def"},
+                *(
+                    {"not": {"type": "object", "required": [opt]}}
+                    for opt in SUBTASK_OPTIONS_BLOCKLIST
+                ),
+            ],
+        }
+        return fragment
 
     spec: TaskSpec
     _subtasks: Sequence[PoeTask]
