@@ -10,7 +10,7 @@ A **Parallel task** is defined by an array of other tasks to be run concurrently
 
 By default the contents of the array are interpreted as references to other tasks (actually an inline :doc:`ref<ref>` task). However, this behaviour can be altered by setting the :toml:`default_item_type` option locally on the parallel task.
 
-Subtask outputs are streamed to the console as they arrive with a prefix identifying the task.
+Subtask outputs are streamed to the console by default as they arrive with a prefix identifying the task.
 
 
 Available task options
@@ -25,6 +25,9 @@ The following options are also accepted:
 
 **default_item_type** : ``str`` :ref:`📖<Changing the default item type>`
   Change the task type that is applied to string array items in this parallel group.
+
+**output_mode** : ``Literal["stream", "buffer"]`` :ref:`📖<Buffer subtask output>`
+  Controls how subtask stdout is rendered. The default ``stream`` mode prints each line as it arrives, while ``buffer`` keeps each leaf task's stdout grouped together and prints it later with the usual prefixes.
 
 **prefix** : ``str`` :ref:`📖<Customize output prefixing>`
   Set the prefix applied to each line of output from subtasks. By default this is the task name.
@@ -93,6 +96,24 @@ Forwarding free arguments to subtasks
 By default, free arguments passed to a parallel task are not forwarded to any of its subtasks. However, they can be forwarded selectively by referencing the special ``$POE_EXTRA_ARGS`` environment variable in individual subtask definitions. Only subtasks that explicitly reference ``$POE_EXTRA_ARGS`` will receive them.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
+
+
+Buffer subtask output
+---------------------
+
+By default a parallel task prints each subtask output line as soon as it is available. This maximizes immediacy, but lines from different leaf tasks can become interleaved.
+
+If you prefer each leaf task to print as one contiguous block after it finishes, set :toml:`output_mode` to :toml:`"buffer"`:
+
+.. code-block:: toml
+
+  [tool.poe.tasks]
+  test-matrix.parallel = ["test-py310", "test-py311"]
+  test-matrix.output_mode = "buffer"
+
+In buffered mode each flushed line still receives the configured prefix, but stdout is held back until the leaf task exits, fails, or is cancelled.
+
+To avoid unbounded memory use, Poe keeps approximately up to 4 MiB of stdout per leaf task in memory. If adding another complete line would exceed that limit then the current buffered lines are flushed early and buffering continues with later output. The limit is approximate because buffering is line-based, so an individual line may exceed 4 MiB and will still be flushed whole.
 
 
 Customize output prefixing

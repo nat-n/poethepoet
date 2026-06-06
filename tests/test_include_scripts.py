@@ -1,8 +1,28 @@
 import shutil
+import socket
 
 import pytest
 
 
+def _uv_integration_available():
+    if not shutil.which("uv"):
+        return False
+
+    try:
+        sock = socket.create_connection(("pypi.org", 443), timeout=1)
+    except OSError:
+        return False
+    else:
+        sock.close()
+        return True
+
+
+UV_INTEGRATION_AVAILABLE = _uv_integration_available()
+
+
+@pytest.mark.skipif(
+    not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
+)
 def test_docs_with_included_tasks(run_poe, projects):
     result = run_poe(project="include_scripts")
     assert (
@@ -24,7 +44,9 @@ def test_docs_with_included_tasks(run_poe, projects):
     assert result.stdout == ""
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+@pytest.mark.skipif(
+    not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
+)
 def test_config_level_env_and_envfile(run_poe, projects):
     result = run_poe("check-vars", project="include_scripts")
     assert (
@@ -34,7 +56,9 @@ def test_config_level_env_and_envfile(run_poe, projects):
     assert result.stdout == "ENV_VAR:ENV_VAL\nENVFILE_VAR:ENVFILE_VAL\n"
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+@pytest.mark.skipif(
+    not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
+)
 def test_task_with_and_without_executor(run_poe, projects):
     result = run_poe("script-executor", project="include_scripts")
     assert "Poe => poe_test_echo build_time:uv" in result.capture
@@ -45,7 +69,9 @@ def test_task_with_and_without_executor(run_poe, projects):
     assert result.stdout.startswith("build_time:simple, run_time:uv")
 
 
-@pytest.mark.skipif(not shutil.which("uv"), reason="No uv available")
+@pytest.mark.skipif(
+    not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
+)
 def test_included_script_with_cwd(run_poe, projects, is_windows):
     # check the cwd gets set properly for the task when cwd option set on include
     result = run_poe("cwd", project="include_scripts")

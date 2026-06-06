@@ -3,6 +3,15 @@ from collections.abc import Sequence
 
 import pytest
 
+BUFFER_LIMIT = 4 * 1024 * 1024
+BUFFER_LIMIT_OVERRIDE_ENV = {"POE_TEST_BUFFERED_STDOUT_LIMIT": "64"}
+
+
+def format_parallel_prefix(task_name: str, prefix_max: int = 16) -> str:
+    if len(task_name) > prefix_max:
+        task_name = task_name[: prefix_max - 1] + "…"
+    return f"{task_name} | "
+
 
 @pytest.mark.flaky(reruns=3, reruns_delay=1)
 def test_parallel_task_parallelism(run_poe_subproc, delay_factor):
@@ -51,6 +60,120 @@ def test_parallel_task_with_redirected_outputs(run_poe, tests_temp_dir):
     )
     with tests_temp_dir.joinpath("captured2.txt").open("r") as f:
         assert f.read() == "2 going to file\n"
+
+
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_task_buffered_output_mode(
+    run_poe_subproc, temp_pyproject, delay_factor
+):
+    slow_delay = 80 * delay_factor
+    fast_delay = 20 * delay_factor
+    project_path = temp_pyproject(
+        f"""
+            [tool.poe.tasks.buffered]
+            parallel = [
+              {{ shell = "poe_test_echo slow-1 && poe_test_delayed_echo {slow_delay} slow-2" }},
+              {{ shell = "poe_test_delayed_echo {fast_delay} fast-1 && poe_test_delayed_echo {fast_delay} fast-2" }},
+            ]
+            output_mode = "buffer"
+        """
+    )
+
+    result = run_poe_subproc("buffered", cwd=project_path)
+
+    assert result.stdout == (
+        "buffered[1] | fast-1\n"
+        "buffered[1] | fast-2\n"
+        "buffered[0] | slow-1\n"
+        "buffered[0] | slow-2\n"
+    )
+
+
+def test_parallel_task_buffered_output_flushes_on_failure(
+    run_poe_subproc, temp_pyproject
+):
+    project_path = temp_pyproject(
+        """
+            [tool.poe.tasks.buffered_failure]
+            parallel = [
+              { shell = "import sys; print('before-fail'); sys.exit(3)", interpreter = "python" },
+            ]
+            output_mode = "buffer"
+        """
+    )
+
+    result = run_poe_subproc("buffered_failure", cwd=project_path)
+
+    assert (
+        result.stdout == f"{format_parallel_prefix('buffered_failure[0]')}before-fail\n"
+    )
+    assert result.capture_lines == [
+        "Poe => import sys; print('before-fail'); sys.exit(3)",
+        "Warning: Parallel subtask 'buffered_failure[0]' failed with non-zero exit status",
+        "Error: Parallel task 'buffered_failure' aborted after failed subtask 'buffered_failure[0]'",
+    ]
+    assert result.code == 1
+
+
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_task_buffered_output_flushes_large_buffers_by_line(
+    run_poe_subproc_handle, temp_pyproject
+):
+    line_size = 40
+    project_path = temp_pyproject(
+        f"""
+            [tool.poe.tasks.buffered_large]
+            parallel = [
+              {{ shell = "import time; print('A' * {line_size}, flush=True); time.sleep(0.2); print('B' * {line_size}, flush=True); time.sleep(1.0); print('C' * {line_size}, flush=True)", interpreter = "python" }},
+            ]
+            output_mode = "buffer"
+        """
+    )
+
+    expected_prefix = format_parallel_prefix("buffered_large[0]")
+    first_output_line = f"{expected_prefix}{'A' * line_size}\n"
+    expected_output = first_output_line + (
+        f"{expected_prefix}{'B' * line_size}\n" f"{expected_prefix}{'C' * line_size}\n"
+    )
+
+    handle = run_poe_subproc_handle(
+        "buffered_large",
+        cwd=str(project_path),
+        env=BUFFER_LIMIT_OVERRIDE_ENV,
+    )
+    assert handle.process.stdout is not None
+
+    first_line = handle.process.stdout.readline().decode(errors="ignore")
+    assert first_line.replace("\r\n", "\n") == first_output_line
+    assert handle.process.poll() is None
+
+    result = handle.result(timeout=10)
+    assert first_line.replace("\r\n", "\n") + result.stdout == expected_output
+
+
+def test_parallel_task_buffered_output_flushes_single_oversized_line_whole(
+    run_poe_subproc, temp_pyproject
+):
+    line_size = 128
+    project_path = temp_pyproject(
+        f"""
+            [tool.poe.tasks.buffered_huge_line]
+            parallel = [
+              {{ shell = "print('X' * {line_size}, flush=True)", interpreter = "python" }},
+            ]
+            output_mode = "buffer"
+        """
+    )
+
+    result = run_poe_subproc(
+        "buffered_huge_line",
+        cwd=project_path,
+        env=BUFFER_LIMIT_OVERRIDE_ENV,
+    )
+
+    assert result.stdout == (
+        f"{format_parallel_prefix('buffered_huge_line[0]')}{'X' * line_size}\n"
+    )
 
 
 @pytest.mark.flaky(reruns=3, reruns_delay=1)

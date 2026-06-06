@@ -146,10 +146,45 @@ def build_poe_test_env(env: Mapping[str, str] | None = None) -> dict[str, str]:
     for var_name in ("VIRTUAL_ENV", "POE_CWD", "POE_PWD", "POE_PROJECT_DIR"):
         base_env.pop(var_name, None)
 
+    xdg_cache = PROJECT_ROOT / "tests" / "temp" / "xdg_cache"
+    uv_cache = PROJECT_ROOT / "tests" / "temp" / "uv_cache"
+    xdg_cache.mkdir(parents=True, exist_ok=True)
+    uv_cache.mkdir(parents=True, exist_ok=True)
+    base_env.setdefault("XDG_CACHE_HOME", str(xdg_cache))
+    base_env.setdefault("UV_CACHE_DIR", str(uv_cache))
+
     if env:
         base_env.update(env)
 
     return base_env
+
+
+def _get_poetry_tool_site_packages() -> Path | None:
+    if not (poetry_path := shutil.which("poetry")):
+        return None
+
+    with open(poetry_path, encoding="utf-8") as poetry_file:
+        interpreter_line = poetry_file.readline().strip()
+
+    if not interpreter_line.startswith("#!"):
+        return None
+
+    interpreter_path = Path(interpreter_line[2:])
+    version = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    site_packages = interpreter_path.parent.parent / "lib" / version / "site-packages"
+    return site_packages if site_packages.is_dir() else None
+
+
+def _with_poetry_build_backend(env: Mapping[str, str]) -> dict[str, str]:
+    result = dict(env)
+    if not (site_packages := _get_poetry_tool_site_packages()):
+        return result
+
+    python_path_parts = [str(site_packages)]
+    if existing_python_path := result.get("PYTHONPATH"):
+        python_path_parts.append(existing_python_path)
+    result["PYTHONPATH"] = os.pathsep.join(python_path_parts)
+    return result
 
 
 @contextmanager
@@ -409,6 +444,15 @@ def run_poetry(use_venv, poe_project_path, version):
         ],
         require_empty=True,
     ):
+        if (smoke_test_result := run_poetry(["--version"], cwd=poe_project_path)).code:
+            pytest.skip(
+                "Poetry test virtualenv could not be prepared in this environment: "
+                + (
+                    smoke_test_result.stderr.strip()
+                    or smoke_test_result.stdout.strip()
+                    or "unknown error"
+                )
+            )
         yield run_poetry
 
 
@@ -436,12 +480,24 @@ def esc_prefix(is_windows):
 def install_into_virtualenv():
     def install_into_virtualenv(location: Path, contents: list[str]):
         venv = Virtualenv(location)
-        Popen(
-            (venv.resolve_executable("pip"), "install", *contents),
-            env=venv.get_env_vars(os.environ),
+        install_proc = Popen(
+            (
+                venv.resolve_executable("pip"),
+                "install",
+                "--no-build-isolation",
+                "--no-deps",
+                *contents,
+            ),
+            env=_with_poetry_build_backend(venv.get_env_vars(os.environ)),
             stdout=PIPE,
             stderr=PIPE,
-        ).communicate(timeout=120)
+        )
+        install_out, install_err = install_proc.communicate(timeout=120)
+        assert install_proc.returncode == 0, (
+            f"Failed to install {contents!r} into virtualenv {location}.\n"
+            f"stdout:\n{install_out.decode(errors='ignore')}\n"
+            f"stderr:\n{install_err.decode(errors='ignore')}"
+        )
 
     return install_into_virtualenv
 

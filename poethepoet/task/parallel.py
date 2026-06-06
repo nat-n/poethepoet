@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
@@ -9,7 +10,7 @@ from ..helpers.eventloop import DynamicTaskSet
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from ..config import ConfigPartition, PoeConfig
     from ..config.partition import GroupConfig
@@ -21,6 +22,13 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 SUBTASK_OPTIONS_BLOCKLIST = ("args",)
+
+
+def _get_buffered_stdout_limit() -> int:
+    return int(os.environ.get("POE_TEST_BUFFERED_STDOUT_LIMIT", 4 * 1024 * 1024))
+
+
+BUFFERED_STDOUT_LIMIT = _get_buffered_stdout_limit()
 
 
 class ColorCycle:
@@ -73,6 +81,11 @@ class ParallelTask(PoeTask):
         Change the default item type that strings in the parallel task are
         interpreted as. By default this matches the project-level
         `default_array_item_task_type` setting.
+        """
+        output_mode: Literal["stream", "buffer"] = "stream"
+        """
+        Controls how leaf-task stdout is emitted: either streamed line-by-line
+        or buffered and flushed in chunks.
         """
 
         prefix: str | Literal[False] = "{name}"
@@ -351,15 +364,71 @@ class ParallelTask(PoeTask):
 
         write = sys.stdout.buffer.write
         flush = sys.stdout.flush
+        if self.spec.options.output_mode == "buffer":
+            buffered_lines: list[bytes] = []
+            buffered_size = 0
+            try:
+                async for line in self._iter_output_lines(subproc.stdout):
+                    if (
+                        buffered_size
+                        and buffered_size + len(line) > BUFFERED_STDOUT_LIMIT
+                    ):
+                        self._flush_output_buffer(write, flush, prefix, buffered_lines)
+                        buffered_lines = []
+                        buffered_size = 0
+
+                    buffered_lines.append(line)
+                    buffered_size += len(line)
+
+                    if (
+                        buffered_size >= BUFFERED_STDOUT_LIMIT
+                        and len(buffered_lines) == 1
+                    ):
+                        self._flush_output_buffer(write, flush, prefix, buffered_lines)
+                        buffered_lines = []
+                        buffered_size = 0
+            finally:
+                self._flush_output_buffer(write, flush, prefix, buffered_lines)
+            return
+
         if prefix:
-            while line := await subproc.stdout.readline():
+            async for line in self._iter_output_lines(subproc.stdout):
                 write(prefix)
                 write(line)
                 flush()
+            return
+
+        async for line in self._iter_output_lines(subproc.stdout):
+            write(line)
+            flush()
+
+    async def _iter_output_lines(self, stdout):
+        buffered_output = bytearray()
+        while chunk := await stdout.read(64 * 1024):
+            buffered_output.extend(chunk)
+            while (newline_index := buffered_output.find(b"\n")) != -1:
+                newline_end = newline_index + 1
+                yield bytes(buffered_output[:newline_end])
+                del buffered_output[:newline_end]
+
+        if buffered_output:
+            yield bytes(buffered_output)
+
+    def _flush_output_buffer(
+        self,
+        write: Callable[[bytes], int],
+        flush: Callable[[], None],
+        prefix: bytes,
+        buffered_lines: Sequence[bytes],
+    ):
+        if not buffered_lines:
+            return
+
+        if prefix:
+            write(b"".join(prefix + line for line in buffered_lines))
         else:
-            while line := await subproc.stdout.readline():
-                write(line)
-                flush()
+            write(b"".join(buffered_lines))
+        flush()
 
     @classmethod
     def _subtask_name(cls, task_name: str, index: int):
