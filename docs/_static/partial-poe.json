@@ -6,6 +6,27 @@
   "definitions": {
     "args_item": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "boolean" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [
+                  { "type": "boolean" },
+                  {
+                    "pattern": "^(\\s*([Tt]([Rr][Uu][Ee])?|[Ff]([Aa][Ll][Ss][Ee])?|0|1)?\\s*|.*\\$\\{.*)$",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "choices": {
           "anyOf": [
@@ -65,6 +86,27 @@
     },
     "args_item_no_name": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "boolean" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [
+                  { "type": "boolean" },
+                  {
+                    "pattern": "^(\\s*([Tt]([Rr][Uu][Ee])?|[Ff]([Aa][Ll][Ss][Ee])?|0|1)?\\s*|.*\\$\\{.*)$",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "choices": {
           "anyOf": [

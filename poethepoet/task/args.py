@@ -204,11 +204,44 @@ class ArgSpec(PoeOptions):
         """
         Override: `options` is normalizer-supplied (derived from `name`
         if not provided), so it shouldn't be required in the schema.
+
+        Also encode the runtime constraint that boolean defaults must be
+        either a real bool or a recognised string literal — the same set
+        accepted by ``_coerce_bool``. Template-shaped strings (containing
+        ``${``) are passed through; their resolved value is re-checked at
+        runtime. The pattern uses explicit case alternation rather than
+        ``(?i)`` because JSON Schema mandates ECMA-262 regex, which does
+        not support inline flags.
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["required"] = sorted(
             key for key in fragment.get("required", []) if key != "options"
         )
+        fragment["allOf"] = [
+            {
+                "if": {
+                    "properties": {"type": {"const": "boolean"}},
+                    "required": ["type"],
+                },
+                "then": {
+                    "properties": {
+                        "default": {
+                            "anyOf": [
+                                {"type": "boolean"},
+                                {
+                                    "type": "string",
+                                    "pattern": (
+                                        r"^(\s*([Tt]([Rr][Uu][Ee])?"
+                                        r"|[Ff]([Aa][Ll][Ss][Ee])?|0|1)?\s*"
+                                        r"|.*\$\{.*)$"
+                                    ),
+                                },
+                            ]
+                        }
+                    }
+                },
+            }
+        ]
         return fragment
 
     def validate(self):
