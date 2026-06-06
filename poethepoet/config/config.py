@@ -286,11 +286,15 @@ class PoeConfig:
                 io=PoeIO(parent=self._io, verbosity_offset=-1),
             )
 
+            src_path = self._project_dir / "src"
+            src_path_append = (
+                f"sys.path.append({str(src_path)!r});" if src_path.is_dir() else ""
+            )
             script = (
                 "import os,sys,json;"
                 "environ=os.environ;"
                 "from importlib import import_module as _i;"
-                f"sys.path.append('src');"
+                f"{src_path_append}"
                 "_o=sys.stdout;sys.stdout=sys.stderr;"
                 f"_m = _i('{target_module}');"
                 "sys.stdout=_o;"

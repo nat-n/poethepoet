@@ -111,8 +111,13 @@ class ExprTask(PoeTask):
             *(env.fill_template(token) for token in self.invocation[1:]),
         ]
 
+        src_path = self.ctx.config.project_dir / "src"
+        src_path_append = (
+            f"sys.path.append({str(src_path)!r});" if src_path.is_dir() else ""
+        )
+
         script = [
-            f"import sys;sys.path.append('src');sys.argv = {argv!r};",
+            f"import sys;{src_path_append}sys.argv = {argv!r};",
             (f"import {', '.join(imports)}; " if imports else ""),
             f"{format_class(named_arg_values)}",
             f"{format_class(env_values, classname='__env')}",
