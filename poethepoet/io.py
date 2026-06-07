@@ -15,6 +15,10 @@ def guess_ansi_support(file) -> bool:
         # https://no-color.org/
         return False
 
+    if os.environ.get("FORCE_COLOR", "0")[0] != "0":
+        # https://force-color.org/
+        return True
+
     if (
         os.environ.get("GITHUB_ACTIONS", "false") == "true"
         and "PYTEST_CURRENT_TEST" not in os.environ
