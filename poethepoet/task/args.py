@@ -432,12 +432,20 @@ class PoeTaskArgs:
         arg_type = str(arg.get("type"))
 
         if multiple is True:
-            if required:
-                result["nargs"] = "+"
-            else:
-                result["nargs"] = "*"
+            # action="extend" so each repeated occurrence of the flag extends the
+            # accumulator (rather than overwriting it as the default action would).
+            # This lets the three CLI styles — space-separated values, repeated
+            # flag, and a mix — all work, e.g. `--foo a b`, `--foo a --foo b`, or
+            # `--foo a --foo b c`.
+            result["nargs"] = "+" if required else "*"
+            result["action"] = "extend"
         elif multiple and isinstance(multiple, int):
-            result["nargs"] = multiple
+            # For an exact-count multi (multiple = N), accept any combination of
+            # styles as long as the total count equals N. argparse can't express
+            # "exactly N total" natively, so use nargs="*" + extend here and
+            # validate the total post-parse in `parse()`.
+            result["nargs"] = "*"
+            result["action"] = "extend"
 
         if arg.get("positional", False):
             if not multiple and not required:
@@ -474,11 +482,11 @@ class PoeTaskArgs:
             if self._io.verbosity > -3
             else cast("IO[str]", os.devnull)
         )
+        parser = self.build_parser(env, program_name)
         with redirect_stderr(error_stream):
             try:
-                parsed_args = vars(
-                    self.build_parser(env, program_name).parse_args(args)
-                )
+                parsed_args = vars(parser.parse_args(args))
+                self._validate_exact_count(parsed_args, parser)
             except SystemExit as error:
                 raise ExecutionError(
                     f"Invalid arguments for task {self._task_name!r}"
@@ -492,6 +500,35 @@ class PoeTaskArgs:
                 del parsed_args[dest]
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}
+
+    def _validate_exact_count(self, parsed_args: dict, parser: ArgumentParser) -> None:
+        """
+        Enforce the "exactly N values" rule for args declared with
+        ``multiple = N``. argparse can't express this constraint across
+        repeated flag occurrences, so it's checked here after parsing.
+
+        Calls ``parser.error(...)`` on a mismatch, which prints a
+        ``poe <task>: error: ...`` message in argparse's own style and
+        raises ``SystemExit`` — caught by the caller and reraised as
+        :class:`ExecutionError`.
+        """
+        for arg in self._args:
+            multi = arg.multiple
+            # `bool` is a subclass of `int`, so guard against multiple=True
+            # being treated as multiple=1 here.
+            if not isinstance(multi, int) or isinstance(multi, bool):
+                continue
+            # dest is `arg.name` for option args (set in `_get_argument_params`)
+            # and the first entry of `options` for positionals (argparse default).
+            key = arg.options[0] if arg.positional else arg.name
+            value = parsed_args.get(key)
+            if value is None:
+                continue
+            if len(value) != multi:
+                parser.error(
+                    f"argument {arg.options[0]}: expected {multi} values,"
+                    f" got {len(value)}"
+                )
 
     def format_argv(self, values: Mapping[str, Any], env: TaskEnv) -> list[str]:
         """

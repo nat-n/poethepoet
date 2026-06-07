@@ -112,6 +112,14 @@ Usage: `poe process file1.txt file2.txt`
 - In `cmd` tasks: exposed as space-delimited string `${files}`
 - In `script` tasks: passed as `list[str]`
 
+For option args (flags), values can be supplied in any of three styles, freely mixed:
+
+- Space-separated: `poe task --engines v2 v8`
+- Repeated flag: `poe task --engines v2 --engines v8`
+- Mixed: `poe task --engines v2 v8 --engines v10`
+
+When `multiple = N` (an exact count), the **total** number of values across all occurrences must equal N — e.g. with `multiple = 2`, both `--widgets a b` and `--widgets a --widgets b` are valid.
+
 ---
 
 ## Private args (config-only variables)

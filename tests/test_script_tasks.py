@@ -353,16 +353,18 @@ def test_script_with_multi_value_args(run_poe):
         env=no_venv,
     )
     assert (
-        "poe multiple-value-args: error: argument --widgets: expected 2 arguments"
-        in result.capture
+        "poe multiple-value-args: error: argument --widgets: expected 2 values,"
+        " got 0" in result.capture
     )
     assert result.stdout == ""
     assert result.stderr == ""
 
-    # Too many values for option: 3
+    # Too many values for option: 3 (all consumed by --widgets under the
+    # new action="extend" + post-parse exact-count check, so the error pins
+    # the count mismatch on --widgets rather than the trailing positional).
     result = run_poe(
         "multiple-value-args",
-        "bloop",  # without the first arg, dong gets read an positional
+        "bloop",
         "--engines",
         "v2",
         "--widgets",
@@ -372,12 +374,9 @@ def test_script_with_multi_value_args(run_poe):
         project="scripts",
         env=no_venv,
     )
-    # accomodate difference in argparse output between python versions
     assert (
-        "poe multiple-value-args: error: argument second: invalid int value: 'dong'"
-        in result.capture
-    ) or (
-        "poe multiple-value-args: error: unrecognized arguments: dong" in result.capture
+        "poe multiple-value-args: error: argument --widgets: expected 2 values,"
+        " got 3" in result.capture
     )
     assert result.stdout == ""
     assert result.stderr == ""
@@ -398,6 +397,98 @@ def test_script_with_multi_value_args(run_poe):
     )
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_script_with_repeated_flag_accumulates(run_poe):
+    # multiple=true should accumulate values across repeated occurrences of the
+    # same flag, mirroring how most modern CLIs (git, kubectl) handle multi
+    # flags. Previously each --engines occurrence overwrote the prior; values
+    # were silently dropped.
+    result = run_poe(
+        "multiple-value-args",
+        "hey",
+        "1",
+        "--engines",
+        "v2",
+        "--engines",
+        "v8",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.stdout == (
+        "args ('hey', [1])\nkwargs {'widgets': None, 'engines': ['v2', 'v8']}\n"
+    )
+    assert result.stderr == ""
+
+
+def test_script_with_mixed_multi_styles(run_poe):
+    # Space-separated values and repeated flags should be combinable in one
+    # invocation — each occurrence extends the accumulator.
+    result = run_poe(
+        "multiple-value-args",
+        "hey",
+        "1",
+        "--engines",
+        "v2",
+        "v8",
+        "--engines",
+        "v10",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.stdout == (
+        "args ('hey', [1])\n"
+        "kwargs {'widgets': None, 'engines': ['v2', 'v8', 'v10']}\n"
+    )
+    assert result.stderr == ""
+
+
+def test_script_with_exact_count_across_occurrences(run_poe):
+    # multiple=N (here widgets has multiple=2) should accept any combination of
+    # styles as long as the TOTAL value count equals N. Two repeated flags with
+    # one value each is a valid way to satisfy multiple=2.
+    result = run_poe(
+        "multiple-value-args",
+        "hey",
+        "1",
+        "--widgets",
+        "cow",
+        "--widgets",
+        "dog",
+        "--engines",
+        "v2",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.stdout == (
+        "args ('hey', [1])\n" "kwargs {'widgets': ['cow', 'dog'], 'engines': ['v2']}\n"
+    )
+    assert result.stderr == ""
+
+
+def test_script_exact_count_wrong_total_errors(run_poe):
+    # multiple=2 with a total of 3 values across occurrences must fail with a
+    # clear error about the count mismatch — not a confusing unrecognized-arg
+    # or invalid-int message.
+    result = run_poe(
+        "multiple-value-args",
+        "hey",
+        "1",
+        "--widgets",
+        "cow",
+        "--widgets",
+        "dog",
+        "--widgets",
+        "pig",
+        "--engines",
+        "v2",
+        project="scripts",
+        env=no_venv,
+    )
+    assert (
+        "argument --widgets: expected 2 values, got 3" in result.capture
+    ), result.capture
+    assert result.stdout == ""
 
 
 def test_async_script_task(run_poe, projects):
