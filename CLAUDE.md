@@ -59,6 +59,17 @@ Reference tests/README.md for instructions on how to write, run, and debug tests
 | Change config parsing             | `config/config.py`                 |
 | Add environment variable handling | `env/manager.py`                   |
 | Fix shell completion              | `completion/`                      |
+| Edit the bundled Agent Skill      | `poethepoet/skills/poethepoet/`    |
+
+## Bundled Agent Skill
+
+This project ships an Agent Skill at `poethepoet/skills/poethepoet/` that teaches AI coding assistants how to use poe. End-users install it via `poe _install_skill`, which copies the tree into a detected `.claude/skills/`, `.codex/skills/`, etc. (see `poethepoet/skills/install.py`).
+
+- **Skill content**: `SKILL.md` + `references/*.md` (task-types, task-options, args-reference, creating-tasks, task-packages).
+- **Pinned version**: `poethepoet/skills/poethepoet/version.txt` — kept in step with poe's user-facing surface. Bump it when skill content changes meaningfully.
+- **Evals**: `tests/skills/evals.json` (corpus) and `tests/skills/run_evals.py` (runner). The runner copies the skill into a fixture project's `.claude/skills/` and shells out to `claude -p`, so it exercises the real discovery path. Run via `poe eval-skill`.
+
+When you change poe's behaviour, syntax, or user-facing semantics, check whether the skill's reference docs still describe it correctly — drift here causes downstream agents to hedge or generate broken configs. If you spot a gap while working on the skill, the canonical answer is in the installed source (`poethepoet/task/*.py`) and the published docs (https://poethepoet.natn.io); verify before paraphrasing.
 
 ## Test Fixtures
 

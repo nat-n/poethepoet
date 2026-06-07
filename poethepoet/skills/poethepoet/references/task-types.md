@@ -58,6 +58,8 @@ script = "my_pkg.deploy:run(env, dry_run=True)"  # with inline args
 script = "http.server"                           # runs module's __main__
 ```
 
+When the call expression names a **module** (no `:` or `()`), poe runs `python -m <module>` and any declared args are re-emitted on `sys.argv` (with defaults applied) — useful for delegating to existing CLI modules. With a callable form, declared args are passed as kwargs (no parens) or by reference in the call (with parens). See `args-reference.md` for the full table.
+
 **With task args** (passed as keyword args when no parentheses):
 
 ```toml
@@ -90,6 +92,8 @@ args = [
 ## shell — Shell Script
 
 Runs a full shell script via the configured interpreter. Task args are accessible as environment variables.
+
+Note: only **public** args reach a shell task. Private `_`-prefixed args are deliberately not exported to the environment, so a shell task can't see them — use a `script` or `expr` task if you need to consume a private arg.
 
 Use when: you need shell features — pipes, conditionals, loops, process substitution. Otherwise, prefer `cmd`.
 
@@ -249,7 +253,9 @@ control.expr = "sys.platform"
 
 ```toml
 [tool.poe.tasks.deploy]
-control.expr = "${STAGE}"
+# ✅ Reference the arg by bare variable name. Do NOT write `${STAGE}` here —
+#    that routes through the environment and silently breaks for private args.
+control.expr = "STAGE"
 args = [{ name = "STAGE", positional = true, choices = ["staging", "production"] }]
 
   [[tool.poe.tasks.deploy.switch]]
@@ -263,6 +269,29 @@ args = [{ name = "STAGE", positional = true, choices = ["staging", "production"]
 
 **default option**: `"pass"` (succeed silently with no match) or `"fail"` (fail if no case matched). Default is `"fail"`.
 
+**Constraints**:
+
+- Control task type must be `expr`, `cmd`, or `script`.
+- Matching is by string comparison: the control output is `str()`-ed and compared against each `case` value (also `str()`-ed).
+- `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, or `deps`.
+
+**Branching on a private (`_`-prefixed) arg**: in an `expr` control, reference it by **bare variable name**, never `${...}`. Private args aren't exported as env vars, so `control.expr = "${_target}"` silently resolves to an empty string and the switch falls through to `default`. Use the bare-variable form:
+
+```toml
+[tool.poe.tasks.deploy]
+control.expr = "_target"          # ✅ bare variable — works for both public and private args
+# control.expr = "${_target}"     # ❌ broken: ${_target} routes through env, silent empty for private args
+args = [{ name = "_target", positional = true, choices = ["dev", "prod"] }]
+
+  [[tool.poe.tasks.deploy.switch]]
+  case = "dev"
+  cmd = "deploy --env dev"
+
+  [[tool.poe.tasks.deploy.switch]]
+  case = "prod"
+  cmd = "deploy --env prod"
+```
+
 ---
 
 ## expr — Python Expression
@@ -270,6 +299,19 @@ args = [{ name = "STAGE", positional = true, choices = ["staging", "production"]
 Evaluates a Python expression and prints the result to stdout.
 
 Use when: outputting computed values, platform checks, file counts, or lightweight validation.
+
+> **Common misconception — `${VAR}` is NOT textual substitution.** It is tempting to assume `${STAGE}` gets pasted into the Python source so that `expr = "${STAGE}"` becomes the bare name `staging` and raises `NameError` (so you'd need to "quote it" as `expr = "'${STAGE}'"`). **This is wrong.** `${VAR}` is rewritten to an *attribute reference* on an injected class — internally `${STAGE}` becomes `__env.STAGE`, which evaluates to the string value at runtime. Compare:
+>
+> - ✅ `expr = "${STAGE}"` → Python source becomes `__env.STAGE` → yields the string value (e.g. `"staging"`).
+> - ❌ `expr = "'${STAGE}'"` → Python source becomes `'__env.STAGE'` → yields the **literal string** `"__env.STAGE"` (NOT the value of `STAGE`). The "defensive" outer quotes actively break the expression.
+>
+> To call a method on the value, do **not** wrap it: `expr = "${STAGE}.upper()"` → `__env.STAGE.upper()` → yields `"STAGING"`. (Writing `"'${STAGE}'.upper()"` would call `.upper()` on the literal string `"__env.STAGE"` and return `"__ENV.STAGE"` — broken.)
+
+**Referencing declared args.** A declared arg is in scope as a **bare Python variable** under its declared name. The canonical form is `expr = "AWS_REGION"`, not `expr = "${AWS_REGION}"`.
+
+> The `${AWS_REGION}` form routes through the *environment* (not the args namespace). For a **public** arg this coincides because public args are also exported to env — but for a **private `_`-prefixed arg it silently breaks**: private args are deliberately not exported, so `${_target}` resolves to an empty/missing env var rather than the arg's value. Always use the bare-variable form when an `expr` references an arg.
+
+See `args-reference.md` for the full per-task-type table.
 
 ```toml
 [tool.poe.tasks.platform]

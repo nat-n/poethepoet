@@ -61,6 +61,28 @@
         "Response includes a help = line for the task",
         "Response sets PYTHONPATH or otherwise makes the scripts module importable"
       ]
+    },
+    {
+      "id": 6,
+      "fixture": "poe_project",
+      "prompt": "In a poe `expr` task, do I need to quote `${STAGE}` so the expression doesn't fail with a NameError? Like `expr = \"'${STAGE}'\"` versus `expr = \"${STAGE}\"`.",
+      "expected_output": "Agent explains that ${VAR} inside an expr is NOT a textual substitution — it resolves to a string-valued attribute on an injected class (__env.STAGE under the hood). So expr = \"${STAGE}\" is safe and no extra quoting is required. May also note that if STAGE is a declared arg, the canonical form is the bare-variable form `expr = \"STAGE\"`.",
+      "expectations": [
+        "Response explains that ${VAR} in expr resolves to a string value (not source-text substitution)",
+        "Response confirms `expr = \"${STAGE}\"` works without extra quoting",
+        "Response does not recommend wrapping the reference in single or double quotes as a fix"
+      ]
+    },
+    {
+      "id": 7,
+      "fixture": "poe_project",
+      "prompt": "I'm building a `switch` task whose control branches on a private arg called `_target` (positional, choices: 'dev' or 'prod'). What should `control` look like, and where do the args go?",
+      "expected_output": "Agent uses the bare-variable form on the control expr (e.g. control.expr = \"_target\"), NOT ${_target} — because private `_`-prefixed args are deliberately not exported as environment variables and the ${...} env-route silently fails for them. Declares args on the switch task (not on individual cases), since args on a switch propagate automatically to the control task and every case task, and cases may not redeclare args.",
+      "expectations": [
+        "Response uses the bare-variable form for the control (e.g. expr = \"_target\"), not ${_target}",
+        "Response declares args on the switch task, not on individual case tasks",
+        "Response does not place args on case tasks"
+      ]
     }
   ]
 }
