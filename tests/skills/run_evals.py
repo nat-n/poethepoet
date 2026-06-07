@@ -80,6 +80,12 @@ def run_claude(prompt: str, cwd: Path, model: str | None = None) -> dict[str, An
         "json",
         "--permission-mode",
         "bypassPermissions",
+        # Skip user-level settings so the eval runs against a clean baseline
+        # (otherwise the caller's output style, hooks, env, etc. leak into the
+        # subprocess and confound results). Project + local sources still apply
+        # so the skill installed at the fixture's .claude/skills/ is discovered.
+        "--setting-sources",
+        "project,local",
     ]
     if model:
         cmd.extend(["--model", model])
@@ -140,11 +146,54 @@ def grade(response_text: str, expectations: list[str]) -> list[dict[str, Any]]:
     return [_check(response_text, exp) for exp in expectations]
 
 
+_COUNTER_EXAMPLE_MARKERS = (
+    "wrong",
+    "broken",
+    "❌",
+    "don't",
+    "do not",
+    "avoid",
+    "incorrect",
+    "fails silently",
+    "not recommended",
+)
+
+
+def _is_labeled_counter_example(text: str, search: str) -> bool:
+    """
+    Return True if every occurrence of *search* in *text* sits on a line that
+    also contains a counter-example marker (e.g. "wrong", "broken", "❌"). Used
+    by negate-mode heuristics to avoid penalising responses that show the
+    forbidden pattern as an explicit ❌-labelled contrast rather than as a
+    recommendation.
+
+    Conservative: a single un-labelled occurrence means False (recommendation).
+    """
+    needle = search.lstrip("\n")
+    idx = 0
+    found_any = False
+    while True:
+        pos = text.find(needle, idx)
+        if pos == -1:
+            break
+        found_any = True
+        line_start = text.rfind("\n", 0, pos) + 1
+        line_end = text.find("\n", pos)
+        line = text[line_start : line_end if line_end != -1 else len(text)].lower()
+        if not any(marker in line for marker in _COUNTER_EXAMPLE_MARKERS):
+            return False
+        idx = pos + len(needle)
+    return found_any
+
+
 def _check(text: str, expectation: str) -> dict[str, Any]:
     exp_lower = expectation.lower()
 
-    # Ordered list of (trigger phrase, search term, description)
-    heuristics: list[tuple[str, str]] = [
+    # Each entry is (trigger, search) — passes when `search` is found in `text`,
+    # or (trigger, search, "negate") — passes when `search` is NOT found
+    # (catches "Response does not X" style expectations by detecting the
+    # forbidden pattern). First matching trigger wins.
+    heuristics: list[tuple] = [
         ("$poe_extra_args", "$POE_EXTRA_ARGS"),
         ("parallel", "parallel"),
         ("sequence", "sequence"),
@@ -165,16 +214,55 @@ def _check(text: str, expectation: str) -> dict[str, Any]:
         ("defines a types task", "[tool.poe.tasks.types]"),
         ("defines a format task", "[tool.poe.tasks.format]"),
         ("defines a check task", "[tool.poe.tasks.check]"),
+        # Negative heuristics — pass when the forbidden pattern is NOT present.
+        # The leading "\n" requires the pattern to be on its own line (typical
+        # of an agent's recommended TOML block) so inline prose discussions of
+        # the wrong form (e.g. "don't write `control.expr = \"${_target}\"`")
+        # don't false-fail correct responses.
+        #
+        # Eval 6: agent must not recommend wrapping ${VAR} in quotes inside an expr.
+        ("without extra quoting", "\nexpr = \"'${STAGE}'\"", "negate"),
+        ("does not recommend wrapping", "\nexpr = \"'${STAGE}'\"", "negate"),
+        # Eval 7: control.expr on a private arg must use the bare variable form,
+        # not the ${...} env-route (which silently fails for private args).
+        ("bare-variable form", '\ncontrol.expr = "${_target}"', "negate"),
     ]
 
-    for trigger, search in heuristics:
+    for entry in heuristics:
+        trigger, search = entry[0], entry[1]
+        negate = len(entry) > 2 and entry[2] == "negate"
         if trigger in exp_lower:
             found = search in text
-            status = "Found" if found else "Not found"
+            if negate and found and _is_labeled_counter_example(text, search):
+                # The forbidden pattern appears as an explicit ❌/broken/wrong
+                # counter-example (often shown next to the ✅ form to teach the
+                # contrast). That's the gold-standard didactic answer, not a
+                # genuine recommendation — pass.
+                return {
+                    "text": expectation,
+                    "passed": True,
+                    "evidence": (
+                        f"Forbidden pattern {search!r} present but labeled "
+                        f"as a counter-example (wrong/broken/❌/don't)"
+                    ),
+                }
+            passed = (not found) if negate else found
+            if negate:
+                status = (
+                    f"Forbidden pattern {search!r} not in response"
+                    if not found
+                    else f"Forbidden pattern {search!r} found in response"
+                )
+            else:
+                status = (
+                    f"Found {search!r} in response"
+                    if found
+                    else f"Not found {search!r} in response"
+                )
             return {
                 "text": expectation,
-                "passed": found,
-                "evidence": f"{status} {search!r} in response",
+                "passed": passed,
+                "evidence": status,
             }
 
     return {
