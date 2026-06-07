@@ -11,6 +11,16 @@ Poe recognizes uv and poetry projects, or the presence of venv in the project, a
 
 **This skill targets poe 0.46.0.** Full documentation: https://poethepoet.natn.io
 
+## When poe behaviour is unclear
+
+Don't speculate or hedge — poe's behaviour is cheaply verifiable:
+
+- Official docs: https://poethepoet.natn.io
+- Installed source: `python -c "import poethepoet, os; print(os.path.dirname(poethepoet.__file__))"` — then read `task/*.py` for the relevant task type.
+- A 30-second behavioural probe in a throwaway `poe_tasks.toml` settles most questions.
+
+Verify, then state the answer plainly. Don't attach "I'll need to check this" caveats to behaviour you can simply check.
+
 ## Step 0: Orient yourself (do this first)
 
 Run these to understand the environment before doing anything else:
@@ -78,6 +88,10 @@ If `poe` output doesn't give enough detail (e.g. you need to understand a task's
 | `switch`   | Conditional branching             | `task.switch = [...]`         |
 
 See `references/task-types.md` for full details, syntax, and examples for each type.
+
+**Referencing args inside `expr`, a parens-form `script` call (`"module:fn(arg1)"`), or `switch.control.expr`**: use the **bare variable name**, not `${name}`. `expr = "AWS_REGION"` is correct; `expr = "${AWS_REGION}"` routes through the environment and silently fails for private `_`-prefixed args. The `${VAR}` form is for env vars (in any task type), not for args inside Python-evaluating tasks. (For the no-parens form `script = "module:fn"`, args are auto-passed as kwargs — you never write the arg name into the call expression.) See `references/task-types.md` for the mechanism.
+
+**Referencing env vars inside `expr`**: write `${VAR}` and **never quote it**. `expr = "${STAGE}"` is correct — it resolves to the string value (internally `${VAR}` is rewritten to `__env.VAR`, an attribute reference on an injected class, not a textual paste). `expr = "'${STAGE}'"` is **broken**: the inner quotes turn it into the literal string `"__env.STAGE"`, not the value of `STAGE`. To call a method, do it directly: `expr = "${STAGE}.upper()"` (not `"'${STAGE}'.upper()"`).
 
 ## Common task patterns
 
