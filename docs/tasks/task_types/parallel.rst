@@ -22,11 +22,12 @@ Subtask outputs are streamed to the console as they arrive with a prefix identif
 
     [tool.poe.tasks.check]
     parallel = [
-      { cmd = "ruff check", env = { FORCE_COLOR = "1" } },
+      { cmd = "ruff check" },
       { cmd = "mypy" },
     ]
+    env = { FORCE_COLOR = "1" }
 
-  Alternatively, set ``FORCE_COLOR`` at the global or project level if all subtasks should use it.
+  Alternatively, set ``FORCE_COLOR`` at the global or project level if all tasks should use it.
 
 
 Available task options
