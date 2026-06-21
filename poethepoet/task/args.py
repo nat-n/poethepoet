@@ -436,14 +436,12 @@ class PoeTaskArgs:
             # accumulator (rather than overwriting it as the default action would).
             # This lets the three CLI styles — space-separated values, repeated
             # flag, and a mix — all work, e.g. `--foo a b`, `--foo a --foo b`, or
-            # `--foo a --foo b c`.
             result["nargs"] = "+" if required else "*"
             result["action"] = "extend"
         elif multiple and isinstance(multiple, int):
             # For an exact-count multi (multiple = N), accept any combination of
             # styles as long as the total count equals N. argparse can't express
             # "exactly N total" natively, so use nargs="*" + extend here and
-            # validate the total post-parse in `parse()`.
             result["nargs"] = "*"
             result["action"] = "extend"
 
