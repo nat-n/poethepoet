@@ -310,7 +310,7 @@ Make the module importable by ensuring `scripts/__init__.py` exists or configuri
 
 ## Private tasks
 
-Prefix task names with `_` to hide them from `poe` listing while keeping them usable for composition:
+Prefix a task name with `_` to make it **composition-only**: it's hidden from the `poe` listing **and cannot be run directly** (`poe _get-bucket-name` errors with "Tasks prefixed with `_` cannot be executed directly"). It exists purely to be referenced by other tasks via `deps`, `uses`, `ref`, or a sequence/parallel.
 
 ```toml
 [tool.poe.tasks._get-bucket-name]
@@ -321,6 +321,37 @@ cmd = "aws s3 sync ./build s3://${_bucket}"
 uses = { _bucket = "_get-bucket-name" }
 help = "Deploy to S3"
 ```
+
+The `_` prefix is the same "internal, not public" convention used by [private args](args-reference.md) (kept out of the environment) and private env/`uses` vars (not exported to subprocesses).
+
+---
+
+## Compose tasks; don't call poe recursively
+
+When a task needs to run another task, compose them with `deps`, `uses`, `ref`, or a `sequence`/`parallel` block. **Don't** invoke poe from inside a task body:
+
+```toml
+# ❌ Don't: shell out to a second poe process
+[tool.poe.tasks.release]
+shell = "poe test && poe build"
+
+# ✅ Do: let poe orchestrate
+[tool.poe.tasks.release]
+sequence = ["test", "build"]
+help = "Test then build"
+```
+
+Invoking poe from inside a task body starts a fresh poe process that re-reads config and re-resolves the executor/venv, and the dependency is invisible to poe's own graph — so you lose dependency dedup, ordering guarantees, dry-run visibility (`poe -d`), and completion. It also can't reach a private `_`-task at all, since those refuse direct invocation.
+
+---
+
+## Keep the task set clean
+
+The finished task set is something a teammate reads to understand the project's workflow, so curate it:
+
+- **Remove scaffolding.** If you created throwaway tasks to experiment or debug while building the real ones, delete them before you finish.
+- **Every task should pull its weight.** Prefer a small set of clearly-purposed tasks over many tiny, overlapping, or one-off ones. If two tasks do nearly the same thing, merge or parameterize them with `args`.
+- **Make the organizing principle legible.** A newcomer skimming `poe` should be able to tell why each task exists and how they group together (use `help` text and, when the list is long, `groups`).
 
 ---
 
@@ -360,10 +391,17 @@ Tasks without a group appear first under an implicit heading.
 
 For large projects with many tasks, you can organize tasks across multiple files and include them. This is useful in monorepo contexts to reuse tasks across multiple python .projects.
 
+The `include` key takes either a single path or a list of paths:
+
 ```toml
-# pyproject.toml
+# pyproject.toml — single file
 [tool.poe]
 include = "tasks/common.toml"
+```
+
+```toml
+# pyproject.toml — multiple files
+[tool.poe]
 include = ["tasks/backend.toml", "tasks/frontend.toml"]
 ```
 

@@ -156,26 +156,50 @@ Useful for composite tasks (like `check`) that should automatically drop exclude
 
 ---
 
-## Mixing task collections
+## Composing collections with `.include()`
 
-Extend or modify an existing `TaskCollection` before including it:
+`TaskCollection.include(other)` merges another collection into this one and returns `self`, so calls chain. Use it to build on a third-party collection **and** to combine several of your own into one.
+
+**There are two ways to combine collections — choose by the flexibility you need:**
+
+- **Multiple `include_script` (or `include`) entries** keep each source independent and configured *in TOML at the consumer*: each entry can carry its own tag filter and args (via the function-ref string), `cwd`, or `executor`. This is the more flexible, declarative option — natural when the sources are independent (different packages/teams) or a monorepo subproject needs its own working directory. The cost: poe spawns a separate Python subprocess per entry, on every invocation including tab completion (noticeable, especially under poetry).
+
+- **Python `.include()` into one collection** merges everything behind a single entry point and a single subprocess. Reach for it when you control the collections and want them merged uniformly, or when startup cost matters — accepting that per-entry TOML knobs (tags, args, `cwd`, `executor`) are no longer available unless you re-express them in code.
+
+The composed form:
 
 ```python
-from poethepoet_tasks import TaskCollection, tasks as base_tasks
+# src/my_tasks/__init__.py
+from poethepoet_tasks import TaskCollection
+from . import backend_tasks, frontend_tasks  # each module exposes a TaskCollection
 
-# Remove a task and replace it:
+tasks = (
+    TaskCollection()
+    .include(backend_tasks.tasks)
+    .include(frontend_tasks.tasks)
+)
+```
+
+```toml
+[tool.poe]
+include_script = "my_tasks:tasks"  # one subprocess, not several
+```
+
+**Precedence is first-registered-wins, per task name.** A task already in the collection outranks one added later by `.include()` (or a later `add`) — `include()` appends the other's tasks below what's already there. So to override a task from an included collection, register your version *first*, or `.remove()` then `.add()` on the imported collection:
+
+```python
+from poethepoet_tasks import tasks as base_tasks
+
+# Override `check` from the base collection before exposing it:
 base_tasks.remove("check")
 base_tasks.add(
     task_name="check",
     task_config={"help": "Lint and types only", "sequence": ["lint", "types"]},
     tags=["lint", "types"],
 )
-
-# Or compose into your own collection (your tasks take precedence):
-my_tasks = TaskCollection()
-my_tasks.add(task_name="build", ...)
-my_tasks.include(base_tasks)  # appended with lower precedence
 ```
+
+`.include()` also merges `env` (existing keys win on conflict), `envfile` (appended, de-duplicated), and any task generators.
 
 ---
 
@@ -193,10 +217,6 @@ tasks.envfile.append(".secrets")
 ```
 
 ---
-
-## Performance note
-
-Each `include_script` entry spawns a Python subprocess to evaluate (even for tab completion). If you're using multiple task packages, merge them into one `TaskCollection` via `.include()` and expose a single entry point rather than listing multiple `include_script` values.
 
 ## Stylistic preferences
 
