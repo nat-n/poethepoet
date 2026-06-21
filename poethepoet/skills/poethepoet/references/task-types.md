@@ -197,7 +197,7 @@ parallel = ["test-py310", "test-py311"]
 output_mode = "buffer"
 ```
 
-**Redirect a subtask to a file**: set `capture_stdout` on an individual subtask to send its output to a file instead of the prefixed console stream:
+**Redirect a subtask to a file**: when one subtask is much noisier than the others then it might be desirable to set `capture_stdout` on it to send its output to a file instead of the prefixed console stream, keeping the interleaved output of other subtasks readable:
 
 ```toml
 [tool.poe.tasks.checks]
