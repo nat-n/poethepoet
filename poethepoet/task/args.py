@@ -435,9 +435,6 @@ class PoeTaskArgs:
             result["nargs"] = "+" if required else "*"
             result["action"] = "extend"
         elif multiple and isinstance(multiple, int):
-            # For an exact-count multi (multiple = N), accept any combination of
-            # styles as long as the total count equals N. argparse can't express
-            # "exactly N total" natively, so use nargs="*" + extend here and
             result["nargs"] = "*"
             result["action"] = "extend"
 
