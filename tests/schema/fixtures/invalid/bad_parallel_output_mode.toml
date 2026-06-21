@@ -1,0 +1,7 @@
+# expected_error: must be one of
+[tool.poe.tasks.x]
+parallel = ["foo"]
+output_mode = "garbage"
+
+[tool.poe.tasks.foo]
+cmd = "echo hi"

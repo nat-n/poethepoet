@@ -10,7 +10,7 @@ A **Parallel task** is defined by an array of other tasks to be run concurrently
 
 By default the contents of the array are interpreted as references to other tasks (actually an inline :doc:`ref<ref>` task). However, this behaviour can be altered by setting the :toml:`default_item_type` option locally on the parallel task.
 
-Subtask outputs are streamed to the console by default as they arrive with a prefix identifying the task.
+Subtask outputs are forwarded to the console with a prefix identifying the task, in either streaming or buffered mode.
 
 
 Available task options
@@ -27,7 +27,7 @@ The following options are also accepted:
   Change the task type that is applied to string array items in this parallel group.
 
 **output_mode** : ``Literal["stream", "buffer"]`` :ref:`📖<Buffer subtask output>`
-  Controls how subtask stdout is rendered. The default ``stream`` mode prints each line as it arrives, while ``buffer`` keeps each leaf task's stdout grouped together and prints it later with the usual prefixes.
+  Controls how subtask stdout is handled. The default ``stream`` mode outputs each line as it arrives, while ``buffer`` keeps each task's stdout grouped together and prints it when the task subprocess completes.
 
 **prefix** : ``str`` :ref:`📖<Customize output prefixing>`
   Set the prefix applied to each line of output from subtasks. By default this is the task name.
@@ -101,9 +101,9 @@ See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args 
 Buffer subtask output
 ---------------------
 
-By default a parallel task prints each subtask output line as soon as it is available. This maximizes immediacy, but lines from different leaf tasks can become interleaved.
+By default a parallel task forwards each line of task output directly to the console with the configured prefix, so output lines from different tasks are interleaved.
 
-If you prefer each leaf task to print as one contiguous block after it finishes, set :toml:`output_mode` to :toml:`"buffer"`:
+If you prefer the output from each task subprocess to print as one contiguous block after it finishes, set :toml:`output_mode` to :toml:`"buffer"`:
 
 .. code-block:: toml
 
@@ -113,7 +113,23 @@ If you prefer each leaf task to print as one contiguous block after it finishes,
 
 In buffered mode each flushed line still receives the configured prefix, but stdout is held back until the leaf task exits, fails, or is cancelled.
 
-To avoid unbounded memory use, Poe keeps approximately up to 4 MiB of stdout per leaf task in memory. If adding another complete line would exceed that limit then the current buffered lines are flushed early and buffering continues with later output. The limit is approximate because buffering is line-based, so an individual line may exceed 4 MiB and will still be flushed whole.
+To avoid unbounded memory use, Poe keeps up to approximately 4MiB of stdout per leaf task in memory. If adding another complete line would exceed that limit then the current buffered lines are flushed early and buffering continues with later output. Normally the buffer preserves whole lines from the source. However in case a single output line exceeds the 4MiB limit, the line will be broken.
+
+
+Redirect a subtask's output to a file
+-------------------------------------
+
+Set :ref:`capture_stdout<Redirect task output to a file>` on an individual subtask to send its output to a file instead of the console:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.checks]
+  parallel = [
+    "lint",
+    { cmd = "pytest", capture_stdout = "pytest.log" },
+  ]
+
+The captured subtask writes its stdout to the file and is excluded from the prefixed console output, while the other subtasks stream to the console as usual.
 
 
 Customize output prefixing

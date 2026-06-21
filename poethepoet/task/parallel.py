@@ -10,7 +10,8 @@ from ..helpers.eventloop import DynamicTaskSet
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    import asyncio
+    from collections.abc import AsyncIterator, Callable, Sequence
 
     from ..config import ConfigPartition, PoeConfig
     from ..config.partition import GroupConfig
@@ -23,12 +24,9 @@ T = TypeVar("T")
 
 SUBTASK_OPTIONS_BLOCKLIST = ("args",)
 
-
-def _get_buffered_stdout_limit() -> int:
-    return int(os.environ.get("POE_TEST_BUFFERED_STDOUT_LIMIT", 4 * 1024 * 1024))
-
-
-BUFFERED_STDOUT_LIMIT = _get_buffered_stdout_limit()
+BUFFERED_STDOUT_LIMIT = int(
+    os.environ.get("POE_BUFFERED_STDOUT_LIMIT", 4 * 1024 * 1024)
+)
 
 
 class ColorCycle:
@@ -85,7 +83,7 @@ class ParallelTask(PoeTask):
         output_mode: Literal["stream", "buffer"] = "stream"
         """
         Controls how leaf-task stdout is emitted: either streamed line-by-line
-        or buffered and flushed in chunks.
+        or buffered output on task completion.
         """
 
         prefix: str | Literal[False] = "{name}"
@@ -334,7 +332,7 @@ class ParallelTask(PoeTask):
 
     async def _format_output_lines(
         self, task_name: str, subtask_index: int, subproc: PoeProcess
-    ):
+    ) -> None:
         if not subproc.stdout:
             return
 
@@ -368,22 +366,10 @@ class ParallelTask(PoeTask):
             buffered_lines: list[bytes] = []
             buffered_size = 0
             try:
-                async for line in self._iter_output_lines(subproc.stdout):
-                    if (
-                        buffered_size
-                        and buffered_size + len(line) > BUFFERED_STDOUT_LIMIT
-                    ):
-                        self._flush_output_buffer(write, flush, prefix, buffered_lines)
-                        buffered_lines = []
-                        buffered_size = 0
-
+                async for line in self._iter_output_lines(subproc.stdout, task_name):
                     buffered_lines.append(line)
                     buffered_size += len(line)
-
-                    if (
-                        buffered_size >= BUFFERED_STDOUT_LIMIT
-                        and len(buffered_lines) == 1
-                    ):
+                    if buffered_size >= BUFFERED_STDOUT_LIMIT:
                         self._flush_output_buffer(write, flush, prefix, buffered_lines)
                         buffered_lines = []
                         buffered_size = 0
@@ -392,27 +378,59 @@ class ParallelTask(PoeTask):
             return
 
         if prefix:
-            async for line in self._iter_output_lines(subproc.stdout):
+            async for line in self._iter_output_lines(subproc.stdout, task_name):
                 write(prefix)
                 write(line)
                 flush()
-            return
+        else:
+            async for line in self._iter_output_lines(subproc.stdout, task_name):
+                write(line)
+                flush()
 
-        async for line in self._iter_output_lines(subproc.stdout):
-            write(line)
-            flush()
-
-    async def _iter_output_lines(self, stdout):
+    async def _iter_output_lines(
+        self, stdout: asyncio.StreamReader, subtask_name: str
+    ) -> AsyncIterator[bytes]:
+        """
+        Yield subtask stdout one line at a time. A complete line is emitted whole; a
+        line that reaches BUFFERED_STDOUT_LIMIT before its newline arrives is emitted in
+        chunks, and thus wrapped with a line break inserted at each cut, so memory stays
+        bounded and every yielded chunk ends in a newline except the final (EOF) tail.
+        A warning is emitted for each output line that gets wrapped.
+        """
         buffered_output = bytearray()
-        while chunk := await stdout.read(64 * 1024):
+        cursor = 0
+        wrapping_line = False
+        while chunk := await stdout.read(128 * 1024):
+            if cursor:
+                del buffered_output[:cursor]
+                cursor = 0
             buffered_output.extend(chunk)
-            while (newline_index := buffered_output.find(b"\n")) != -1:
-                newline_end = newline_index + 1
-                yield bytes(buffered_output[:newline_end])
-                del buffered_output[:newline_end]
+            while True:
+                if (newline_end := buffered_output.find(b"\n", cursor) + 1) != 0:
+                    # Emit the next complete line
+                    yield bytes(buffered_output[cursor:newline_end])
+                    cursor = newline_end
+                    wrapping_line = False
+                elif len(buffered_output) - cursor >= BUFFERED_STDOUT_LIMIT:
+                    if not wrapping_line:
+                        # Warn once when a line first starts being wrapped
+                        wrapping_line = True
+                        self.ctx.io.print_warning(
+                            "Parallel subtask '%s' emitted a line exceeding the %dB "
+                            "output buffer limit; it was wrapped",
+                            subtask_name,
+                            BUFFERED_STDOUT_LIMIT,
+                            message_verbosity=1,
+                        )
+                    # No newline detected, but line buffer has reached the limit so
+                    # we wrap it (insert a new line and yield)
+                    yield bytes(buffered_output[cursor:]) + b"\n"
+                    cursor = len(buffered_output)
+                else:
+                    break
 
-        if buffered_output:
-            yield bytes(buffered_output)
+        if cursor < len(buffered_output):
+            yield bytes(buffered_output[cursor:])
 
     def _flush_output_buffer(
         self,
@@ -420,14 +438,14 @@ class ParallelTask(PoeTask):
         flush: Callable[[], None],
         prefix: bytes,
         buffered_lines: Sequence[bytes],
-    ):
+    ) -> None:
+        """
+        Write the buffered lines as a single atomic chunk, prefixing each line.
+        """
         if not buffered_lines:
             return
 
-        if prefix:
-            write(b"".join(prefix + line for line in buffered_lines))
-        else:
-            write(b"".join(buffered_lines))
+        write(prefix + prefix.join(buffered_lines))
         flush()
 
     @classmethod
