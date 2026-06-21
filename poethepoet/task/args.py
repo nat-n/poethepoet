@@ -432,10 +432,6 @@ class PoeTaskArgs:
         arg_type = str(arg.get("type"))
 
         if multiple is True:
-            # action="extend" so each repeated occurrence of the flag extends the
-            # accumulator (rather than overwriting it as the default action would).
-            # This lets the three CLI styles — space-separated values, repeated
-            # flag, and a mix — all work, e.g. `--foo a b`, `--foo a --foo b`, or
             result["nargs"] = "+" if required else "*"
             result["action"] = "extend"
         elif multiple and isinstance(multiple, int):
