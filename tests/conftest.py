@@ -146,6 +146,13 @@ def build_poe_test_env(env: Mapping[str, str] | None = None) -> dict[str, str]:
     for var_name in ("VIRTUAL_ENV", "POE_CWD", "POE_PWD", "POE_PROJECT_DIR"):
         base_env.pop(var_name, None)
 
+    xdg_cache = PROJECT_ROOT / "tests" / "temp" / "xdg_cache"
+    uv_cache = PROJECT_ROOT / "tests" / "temp" / "uv_cache"
+    xdg_cache.mkdir(parents=True, exist_ok=True)
+    uv_cache.mkdir(parents=True, exist_ok=True)
+    base_env.setdefault("XDG_CACHE_HOME", str(xdg_cache))
+    base_env.setdefault("UV_CACHE_DIR", str(uv_cache))
+
     if env:
         base_env.update(env)
 
@@ -409,6 +416,15 @@ def run_poetry(use_venv, poe_project_path, version):
         ],
         require_empty=True,
     ):
+        if (smoke_test_result := run_poetry(["--version"], cwd=poe_project_path)).code:
+            pytest.skip(
+                "Poetry test virtualenv could not be prepared in this environment: "
+                + (
+                    smoke_test_result.stderr.strip()
+                    or smoke_test_result.stdout.strip()
+                    or "unknown error"
+                )
+            )
         yield run_poetry
 
 
@@ -436,12 +452,18 @@ def esc_prefix(is_windows):
 def install_into_virtualenv():
     def install_into_virtualenv(location: Path, contents: list[str]):
         venv = Virtualenv(location)
-        Popen(
+        install_proc = Popen(
             (venv.resolve_executable("pip"), "install", *contents),
             env=venv.get_env_vars(os.environ),
             stdout=PIPE,
             stderr=PIPE,
-        ).communicate(timeout=120)
+        )
+        install_out, install_err = install_proc.communicate(timeout=120)
+        assert install_proc.returncode == 0, (
+            f"Failed to install {contents!r} into virtualenv {location}.\n"
+            f"stdout:\n{install_out.decode(errors='ignore')}\n"
+            f"stderr:\n{install_err.decode(errors='ignore')}"
+        )
 
     return install_into_virtualenv
 

@@ -168,7 +168,7 @@ sequence = ["lint $POE_EXTRA_ARGS", "test $POE_EXTRA_ARGS"]
 
 ## parallel — Run Tasks Concurrently
 
-Runs all tasks at the same time; output is streamed with task-name prefixes in distinct colors.
+Runs all tasks at the same time; output is streamed by default with task-name prefixes in distinct colors.
 
 Use when: tasks are independent and can benefit from concurrency (linting, type checking, tests).
 
@@ -188,6 +188,24 @@ prefix_max = 12
 ```
 
 Available tags: `{name}`, `{index}`, `{color_start}`, `{color_end}`
+
+**output_mode**: by default each subtask's output is streamed line-by-line as it arrives, so lines from different tasks interleave. Set `output_mode = "buffer"` to hold each subtask's stdout and print it as one contiguous block when that subtask finishes:
+
+```toml
+[tool.poe.tasks.check]
+parallel = ["test-py310", "test-py311"]
+output_mode = "buffer"
+```
+
+**Redirect a subtask to a file**: when one subtask is much noisier than the others then it might be desirable to set `capture_stdout` on it to send its output to a file instead of the prefixed console stream, keeping the interleaved output of other subtasks readable:
+
+```toml
+[tool.poe.tasks.checks]
+parallel = [
+  "lint",
+  { cmd = "pytest", capture_stdout = "pytest.log" },
+]
+```
 
 **ignore_fail**: same options as sequence.
 

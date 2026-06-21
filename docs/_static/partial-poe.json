@@ -857,6 +857,12 @@
           "description": "If set, the parallel task will continue running even if one of the subtasks\nfails.",
           "enum": [true, false, "return_zero", "return_non_zero"]
         },
+        "output_mode": {
+          "default": "stream",
+          "description": "Controls how leaf-task stdout is emitted: either streamed line-by-line\nor buffered output on task completion.",
+          "enum": ["stream", "buffer"],
+          "type": "string"
+        },
         "parallel": {
           "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are interleaved and prefixed with the subtask\nname by default.",
           "items": {
@@ -952,6 +958,12 @@
           "default": false,
           "description": "If set, the parallel task will continue running even if one of the subtasks\nfails.",
           "enum": [true, false, "return_zero", "return_non_zero"]
+        },
+        "output_mode": {
+          "default": "stream",
+          "description": "Controls how leaf-task stdout is emitted: either streamed line-by-line\nor buffered output on task completion.",
+          "enum": ["stream", "buffer"],
+          "type": "string"
         },
         "parallel": {
           "description": "Runs an array of subtasks concurrently. Each subtask runs in its own\nsubprocess; output lines are interleaved and prefixed with the subtask\nname by default.",
