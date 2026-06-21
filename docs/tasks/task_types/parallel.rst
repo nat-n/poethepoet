@@ -12,6 +12,23 @@ By default the contents of the array are interpreted as references to other task
 
 Subtask outputs are forwarded to the console with a prefix identifying the task, in either streaming or buffered mode.
 
+.. note::
+
+  Because subtask output is captured via a pipe rather than written directly to the terminal, tools that detect terminal support by calling ``isatty()`` (such as Ruff, Behave, and others) will disable colored output when run as parallel subtasks.
+
+  The standard workaround is to set the ``FORCE_COLOR`` environment variable on the affected subtask, which tells tools to force colored output regardless of TTY detection. Poe also respects this variable for its own output:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks.check]
+    parallel = [
+      { cmd = "ruff check" },
+      { cmd = "mypy" },
+    ]
+    env = { FORCE_COLOR = "1" }
+
+  Alternatively, set ``FORCE_COLOR`` at the global or project level if all tasks should use it.
+
 
 Available task options
 ----------------------
