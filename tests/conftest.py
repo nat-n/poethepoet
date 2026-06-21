@@ -159,45 +159,6 @@ def build_poe_test_env(env: Mapping[str, str] | None = None) -> dict[str, str]:
     return base_env
 
 
-def _get_poetry_tool_site_packages() -> Path | None:
-    """
-    Best-effort locate the site-packages of poetry's own install by reading the
-    shebang of the `poetry` launcher. Used to expose poetry-core (the build
-    backend) for offline installs; returns None on layouts we can't resolve
-    (e.g. a Windows `poetry.exe` with no shebang), degrading gracefully.
-    """
-    if not (poetry_path := shutil.which("poetry")):
-        return None
-
-    with open(poetry_path, encoding="utf-8") as poetry_file:
-        interpreter_line = poetry_file.readline().strip()
-
-    if not interpreter_line.startswith("#!"):
-        return None
-
-    interpreter_path = Path(interpreter_line[2:])
-    version = f"python{sys.version_info.major}.{sys.version_info.minor}"
-    site_packages = interpreter_path.parent.parent / "lib" / version / "site-packages"
-    return site_packages if site_packages.is_dir() else None
-
-
-def _with_poetry_build_backend(env: Mapping[str, str]) -> dict[str, str]:
-    """
-    Add poetry's site-packages to PYTHONPATH so `pip install
-    --no-build-isolation` can find the poetry-core build backend without
-    fetching it from the network (see install_into_virtualenv).
-    """
-    result = dict(env)
-    if not (site_packages := _get_poetry_tool_site_packages()):
-        return result
-
-    python_path_parts = [str(site_packages)]
-    if existing_python_path := result.get("PYTHONPATH"):
-        python_path_parts.append(existing_python_path)
-    result["PYTHONPATH"] = os.pathsep.join(python_path_parts)
-    return result
-
-
 @contextmanager
 def patched_environ(env: Mapping[str, str]):
     """
@@ -491,19 +452,9 @@ def esc_prefix(is_windows):
 def install_into_virtualenv():
     def install_into_virtualenv(location: Path, contents: list[str]):
         venv = Virtualenv(location)
-        # Install offline: --no-deps (callers only install local test packages and
-        # assert on their presence, not their dependencies) and
-        # --no-build-isolation (build with the backend provisioned via
-        # _with_poetry_build_backend rather than fetching it from the network).
         install_proc = Popen(
-            (
-                venv.resolve_executable("pip"),
-                "install",
-                "--no-build-isolation",
-                "--no-deps",
-                *contents,
-            ),
-            env=_with_poetry_build_backend(venv.get_env_vars(os.environ)),
+            (venv.resolve_executable("pip"), "install", *contents),
+            env=venv.get_env_vars(os.environ),
             stdout=PIPE,
             stderr=PIPE,
         )
