@@ -172,13 +172,21 @@ Named arguments support the following configuration options:
 - **multiple** : ``bool`` | ``int``
    If the ``multiple`` option is set to true on a positional or option argument then that argument will accept multiple values.
 
-   If set to a number, then the argument will accept *exactly* that number of values.
+   If set to a number, then the argument will accept *exactly* that number of values in total.
 
    For positional arguments, only the last positional argument may have the ``multiple`` option set.
 
    This option is not compatible with arguments with ``type = "boolean"`` since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type "integer" for similar effect.
 
-   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your Python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
+   For option arguments (flags), multiple values may be supplied in any of the following styles, which can also be freely mixed in a single invocation:
+
+   - **Space-separated** after a single flag: ``--engines v2 v8``
+   - **Repeated flag**, each with its own value(s): ``--engines v2 --engines v8``
+   - **Mixed**: ``--engines v2 v8 --engines v10``
+
+   When ``multiple = N`` (an exact count), the *total* number of values across all occurrences must equal N — e.g. with ``multiple = 2`` both ``--widgets a b`` and ``--widgets a --widgets b`` are valid.
+
+   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your Python function as a list of values. A ``multiple`` argument always resolves to a list: when it is omitted it resolves to an empty list, or — if a ``default`` is configured — to a single-item list containing that default. Supplying values on the command line replaces the default rather than adding to it. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
 
    .. code-block:: toml
 
