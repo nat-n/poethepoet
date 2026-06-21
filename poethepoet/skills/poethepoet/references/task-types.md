@@ -197,6 +197,16 @@ parallel = ["test-py310", "test-py311"]
 output_mode = "buffer"
 ```
 
+**Redirect a subtask to a file**: set `capture_stdout` on an individual subtask to send its output to a file instead of the prefixed console stream:
+
+```toml
+[tool.poe.tasks.checks]
+parallel = [
+  "lint",
+  { cmd = "pytest", capture_stdout = "pytest.log" },
+]
+```
+
 **ignore_fail**: same options as sequence.
 
 **Nested composition**: sequences can contain parallel tasks and vice versa:
