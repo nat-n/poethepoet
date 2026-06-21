@@ -186,7 +186,7 @@ Named arguments support the following configuration options:
 
    When ``multiple = N`` (an exact count), the *total* number of values across all occurrences must equal N — e.g. with ``multiple = 2`` both ``--widgets a b`` and ``--widgets a --widgets b`` are valid.
 
-   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your Python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
+   The values provided to an argument with the ``multiple`` option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your Python function as a list of values. A ``multiple`` argument always resolves to a list: when it is omitted it resolves to an empty list, or — if a ``default`` is configured — to a single-item list containing that default. Supplying values on the command line replaces the default rather than adding to it. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.
 
    .. code-block:: toml
 

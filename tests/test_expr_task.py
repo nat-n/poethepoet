@@ -147,9 +147,12 @@ def test_expr_multi_value_typed_list(run_poe):
 
 
 def test_expr_multi_value_not_provided(run_poe):
-    """Multiple args not provided: expr sees None (argparse default)"""
+    """
+    Multiple args not provided (and with no default): expr sees an empty list,
+    not None — a multiple arg always surfaces as a list.
+    """
     result = run_poe("multi_value_expr", project="expr")
-    assert result.stdout == "{'nums': None, 'words': None}\n"
+    assert result.stdout == "{'nums': [], 'words': []}\n"
 
 
 def test_expr_multi_value_empty_flag(run_poe):

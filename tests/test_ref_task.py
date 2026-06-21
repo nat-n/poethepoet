@@ -189,7 +189,7 @@ def test_ref_child_multiple_arg_shadows_inherited_list(run_poe):
         "--label=parent-label",
         project="refs",
     )
-    assert result.stdout == "{'items': None, 'label': 'parent-label'}\n"
+    assert result.stdout == "{'items': [], 'label': 'parent-label'}\n"
 
 
 def test_ref_definition_multiple_arg_overrides_inherited_list(run_poe):

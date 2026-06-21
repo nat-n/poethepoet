@@ -133,6 +133,22 @@ name = "engines"
 multiple = true
 required = true
 
+[tool.poe.tasks.multiple-with-defaults]
+script = "pkg:echo_script(plain=plain, defaulted=defaulted, pair=pair)"
+
+[[tool.poe.tasks.multiple-with-defaults.args]]
+name = "plain"
+multiple = true
+
+[[tool.poe.tasks.multiple-with-defaults.args]]
+name = "defaulted"
+multiple = true
+default = "base"
+
+[[tool.poe.tasks.multiple-with-defaults.args]]
+name = "pair"
+multiple = 2
+
 [tool.poe.tasks.multiple-lines-help]
 script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
 help = """

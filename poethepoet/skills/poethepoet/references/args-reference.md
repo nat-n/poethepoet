@@ -120,6 +120,8 @@ For option args (flags), values can be supplied in any of three styles, freely m
 
 When `multiple = N` (an exact count), the **total** number of values across all occurrences must equal N — e.g. with `multiple = 2`, both `--widgets a b` and `--widgets a --widgets b` are valid.
 
+A `multiple` arg always resolves to a list. When omitted it resolves to `[]`, or to `[default]` if a `default` is set. Supplying values replaces the default rather than extending it.
+
 ---
 
 ## Private args (config-only variables)

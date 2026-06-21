@@ -329,7 +329,7 @@ def test_script_with_multi_value_args(run_poe):
     )
     assert result.capture == "Poe => multiple-value-args 1 --engines v2\n"
     assert result.stdout == (
-        "args ('1', [])\nkwargs {'widgets': None, 'engines': ['v2']}\n"
+        "args ('1', [])\nkwargs {'widgets': [], 'engines': ['v2']}\n"
     )
     assert result.stderr == ""
 
@@ -339,7 +339,7 @@ def test_script_with_multi_value_args(run_poe):
     )
     assert result.capture == "Poe => multiple-value-args --engines v2\n"
     assert result.stdout == (
-        "args (None, [])\nkwargs {'widgets': None, 'engines': ['v2']}\n"
+        "args (None, [])\nkwargs {'widgets': [], 'engines': ['v2']}\n"
     )
     assert result.stderr == ""
 
@@ -416,7 +416,7 @@ def test_script_with_repeated_flag_accumulates(run_poe):
         env=no_venv,
     )
     assert result.stdout == (
-        "args ('hey', [1])\nkwargs {'widgets': None, 'engines': ['v2', 'v8']}\n"
+        "args ('hey', [1])\nkwargs {'widgets': [], 'engines': ['v2', 'v8']}\n"
     )
     assert result.stderr == ""
 
@@ -437,8 +437,7 @@ def test_script_with_mixed_multi_styles(run_poe):
         env=no_venv,
     )
     assert result.stdout == (
-        "args ('hey', [1])\n"
-        "kwargs {'widgets': None, 'engines': ['v2', 'v8', 'v10']}\n"
+        "args ('hey', [1])\n" "kwargs {'widgets': [], 'engines': ['v2', 'v8', 'v10']}\n"
     )
     assert result.stderr == ""
 
@@ -489,6 +488,44 @@ def test_script_exact_count_wrong_total_errors(run_poe):
         "argument --widgets: expected 2 values, got 3" in result.capture
     ), result.capture
     assert result.stdout == ""
+
+
+def test_multiple_args_default_to_empty_or_scalar(run_poe):
+    # An absent `multiple` arg should always reach a script as a list, never
+    # None: no default -> [], scalar default -> [<scalar>]. This holds for both
+    # multiple=true (plain, defaulted) and multiple=N (pair).
+    result = run_poe(
+        "multiple-with-defaults",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.stdout == (
+        "args ()\nkwargs {'plain': [], 'defaulted': ['base'], 'pair': []}\n"
+    )
+    assert result.stderr == ""
+
+
+def test_multiple_arg_scalar_default_is_overridden_not_extended(run_poe):
+    # Supplying values must replace the scalar default, not extend it: with
+    # default="base", `--defaulted x --defaulted y` yields ['x', 'y'], NOT
+    # ['base', 'x', 'y']. Guards against argparse action="extend" prepending
+    # the default into the accumulator.
+    result = run_poe(
+        "multiple-with-defaults",
+        "--defaulted",
+        "x",
+        "--defaulted",
+        "y",
+        "--pair",
+        "a",
+        "b",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.stdout == (
+        "args ()\nkwargs {'plain': [], 'defaulted': ['x', 'y'], 'pair': ['a', 'b']}\n"
+    )
+    assert result.stderr == ""
 
 
 def test_async_script_task(run_poe, projects):
