@@ -43,6 +43,8 @@
 
 - ✅ Also works fine as a [general purpose task runner](https://poethepoet.natn.io/guides/without_poetry.html)
 
+- ✅ Ships with an official [Agent Skill](https://poethepoet.natn.io/guides/ai_agents_guide.html) to help AI coding agents use poe effectively
+
 
 ## Quick start
 

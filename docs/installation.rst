@@ -194,6 +194,37 @@ Powershell completion includes:
 
   You'll need to start a new shell for the new completion script to be loaded. Alternatively, you can invoke ``. $PROFILE`` to reload your profile.
 
+
+Install the poethepoet AI Agent skill
+-------------------------------------
+
+The official poethepoet skill can help your AI Agent use poethepoet more effectively. It covers discovering and executing tasks, as well as more in-depth guidance on creating them.
+
+Install via the built in ``_install_skill`` task
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Poe ships with a task to install the skill (similar to how shell completions are installed):
+
+.. code-block:: sh
+
+    poe _install_skill                         # auto-detects .claude/.codex/.pi/.agents and prompts
+    poe _install_skill ~/.claude/skills        # explicit path (substitute your agent's dir)
+    poe _install_skill <skills-dir> --upgrade  # non-interactive upgrade (skips if same/newer)
+
+Install from GitHub
+~~~~~~~~~~~~~~~~~~~
+
+You can also install the skill directly from github, such as by using |vercel_skills_link|:
+
+.. code-block:: sh
+
+   npx skills add https://github.com/nat-n/poethepoet/tree/v0.46.0/poethepoet/skills/poethepoet
+
+.. note::
+
+  The skill is versioned in step with poe. After upgrading poe, re-run the install task with ``--upgrade`` (shown above) to refresh the installed copy — it skips the copy if the installed version is already current.
+
+
 Supported python versions
 -------------------------
 
@@ -221,3 +252,6 @@ macOS, linux and windows.
 
    <a href="https://python-poetry.org/docs/main/plugins/#using-plugins" target="_blank">poetry docs</a>
 
+.. |vercel_skills_link| raw:: html
+
+    <a href="https://vercel.com/docs/agent-resources/skills" target="_blank">Vercel Agent Skills</a>
