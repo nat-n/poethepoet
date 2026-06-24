@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from run_evals import _check, _is_labeled_counter_example  # noqa: E402
+from run_evals import _check, _is_labeled_counter_example
 
 # The forbidden pattern used by eval-6's negate assertions (on its own line).
 FORBIDDEN = "\nexpr = \"'${STAGE}'\""
