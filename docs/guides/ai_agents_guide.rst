@@ -28,25 +28,29 @@ Include the following in your ``.claude/settings.json`` to grant your agent perm
 
 .. code-block:: json
 
-   "permissions": {
-     "allow": [
-       "Bash(poe *)"
-     ]
+   {
+     "permissions": {
+       "allow": [
+         "Bash(poe *)"
+       ]
+     }
    }
 
 If you have a lightweight poe task for code formatting, then you might want to configure your agent to run that task whenever it finishes making changes:
 
 .. code-block:: json
 
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "poe format"
-          }
-        ]
-      }
-    ]
-  },
+  {
+    "hooks": {
+      "Stop": [
+        {
+          "hooks": [
+            {
+              "type": "command",
+              "command": "poe format"
+            }
+          ]
+        }
+      ]
+    }
+  }
