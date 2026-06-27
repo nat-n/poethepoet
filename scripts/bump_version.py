@@ -33,6 +33,9 @@ def main(version: str | None = None) -> None:
             "expected 'minor', 'tiny', or X.Y.Z[{'{a|b|rc}N'}]"
         )
 
+    new_parts = new_version.split(".")
+    new_floor = f"{new_parts[0]}.{new_parts[1]}"
+
     print(f"Bumping version: {current} → {new_version}")
 
     _update_file(
@@ -66,6 +69,16 @@ def main(version: str | None = None) -> None:
         root / "poethepoet" / "skills" / "poethepoet" / "SKILL.md",
         root,
         lambda c: c.replace(current, new_version),
+    )
+    _update_file(
+        root / "README.md",
+        root,
+        lambda c: re.sub(
+            r'(poethepoet\s*=\s*">=)[^"]+(")',
+            rf"\g<1>{new_floor}\2",
+            c,
+            count=1,
+        ),
     )
 
 
