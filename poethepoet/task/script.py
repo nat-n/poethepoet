@@ -104,7 +104,7 @@ class ScriptTask(PoeTask):
             },
             {
                 "if": {
-                    "properties": {"script": {"pattern": "^[^:]*$"}},
+                    "properties": {"script": {"pattern": "^[^:]*$", "type": "string"}},
                     "required": ["script"],
                 },
                 "then": {"properties": {"print_result": False}},
