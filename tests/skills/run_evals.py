@@ -158,18 +158,29 @@ _COUNTER_EXAMPLE_MARKERS = (
     "not recommended",
 )
 
+# How many preceding lines to scan (in addition to the matched line) when
+# looking for a counter-example marker. A label like ``# Wrong`` or ``❌ broken``
+# is usually a comment or prose line *above* the offending value rather than on
+# the same line — e.g. a ``# Wrong`` comment sitting above a
+# ``[tool.poe.tasks.x]`` header which in turn sits above the value.
+_COUNTER_EXAMPLE_LOOKBACK = 3
+
 
 def _is_labeled_counter_example(text: str, search: str) -> bool:
     """
-    Return True if every occurrence of *search* in *text* sits on a line that
-    also contains a counter-example marker (e.g. "wrong", "broken", "❌"). Used
-    by negate-mode heuristics to avoid penalising responses that show the
-    forbidden pattern as an explicit ❌-labelled contrast rather than as a
-    recommendation.
+    Return True if every occurrence of *search* in *text* falls within a window
+    (the matched line plus the few preceding lines) that contains a
+    counter-example marker (e.g. "wrong", "broken", "❌"). Used by negate-mode
+    heuristics to avoid penalising responses that present the forbidden pattern
+    as an explicit ❌-labelled contrast rather than as a recommendation.
+
+    The window reaches back over preceding lines because the label is commonly
+    above the code, not on the same line (see ``_COUNTER_EXAMPLE_LOOKBACK``).
 
     Conservative: a single un-labelled occurrence means False (recommendation).
     """
     needle = search.lstrip("\n")
+    lines = text.splitlines()
     idx = 0
     found_any = False
     while True:
@@ -177,10 +188,11 @@ def _is_labeled_counter_example(text: str, search: str) -> bool:
         if pos == -1:
             break
         found_any = True
-        line_start = text.rfind("\n", 0, pos) + 1
-        line_end = text.find("\n", pos)
-        line = text[line_start : line_end if line_end != -1 else len(text)].lower()
-        if not any(marker in line for marker in _COUNTER_EXAMPLE_MARKERS):
+        line_no = text.count("\n", 0, pos)
+        window = "\n".join(
+            lines[max(0, line_no - _COUNTER_EXAMPLE_LOOKBACK) : line_no + 1]
+        ).lower()
+        if not any(marker in window for marker in _COUNTER_EXAMPLE_MARKERS):
             return False
         idx = pos + len(needle)
     return found_any

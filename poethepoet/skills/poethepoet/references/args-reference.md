@@ -187,12 +187,14 @@ If no args are declared then all cli arguments are captured as "free args", so a
 ## Defaults from environment variables
 
 ```toml
-args = [{ name = "AWS_REGION", options = ["--region", "-r"] default = "${AWS_DEFAULT_REGION:-us-east-1}" }]
+args = [{ name = "AWS_REGION", options = ["--region", "-r"], default = "${AWS_DEFAULT_REGION:-us-east-1}" }]
 ```
 
 The fact that args are normally exposed as environment variables can be useful when the task explicitly needed, for example calling an arg `"AWS_REGION"` will set that environment variable for all subprocesses of the task.
 
-## If provided the default value will be appended in the help messages automatically.
+If provided, the default value is appended to the help message automatically.
+
+---
 
 ## Constrained choices
 

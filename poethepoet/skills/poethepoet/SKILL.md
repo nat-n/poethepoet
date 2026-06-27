@@ -1,109 +1,91 @@
 ---
 name: poethepoet
-description: Use when working in a Python project with poethepoet (poe) as a task runner, or when asked to run, create, or configure poe tasks. Also use when: setting up development workflows (testing, linting, formatting) in any Python project; encountering pyproject.toml with [tool.poe] sections or poe_tasks.toml/yaml files; needing to invoke poe commands; adding task arguments or environment variables; composing tasks with sequences or parallel execution; bootstrapping common tasks in a new project. If there's any chance the project uses poe, load this skill and check before exploring manually.
+description: Use when about to run or manage a common Python dev task — tests, linting, formatting, type-checking, building, or any repeated project command — to first check whether poethepoet (poe) already defines it; poe is the idiomatic way to run these. Also use when asked to run, create, or configure poe tasks, or when you see [tool.poe] in pyproject.toml or a poe_tasks.toml/yaml/json file.
 ---
 
 # Poethepoet (poe)
 
-Poethepoet is a Python project task runner. It lets teams define, document, and run development tasks (test, lint, build, deploy, etc.) from `pyproject.toml` or standalone config files — with no Makefiles or shell scripts required. Tasks self-document with help text and are invoked via `poe <task>`.
+Poethepoet (poe) is a Python task runner: teams define, document, and run dev tasks (test, lint, build, deploy…) from `pyproject.toml` or a standalone config file — no Makefiles or shell scripts. Tasks self-document via `help` text and run as `poe <task>`. Poe detects uv/poetry projects (or a local venv) and runs each task in the right environment automatically — no need to remember `poetry run` vs `uv run`.
 
-Poe recognizes uv and poetry projects, or the presence of venv in the project, and automatically invokes tasks in the right environment so that project dependencies and tools are available without having to remember whether to run `poetry run poe` or `uv run poe`.
-
-**This skill targets poe 0.46.0.** Full documentation: https://poethepoet.natn.io
+**Targets poe 0.46.0.** Full docs: https://poethepoet.natn.io
 
 ## When poe behaviour is unclear
 
-Don't speculate or hedge — poe's behaviour is cheaply verifiable:
+Don't speculate — poe's behaviour is cheaply verifiable:
 
-- Official docs: https://poethepoet.natn.io
-- Installed source: `python -c "import poethepoet, os; print(os.path.dirname(poethepoet.__file__))"` — then read `task/*.py` for the relevant task type.
-- A 30-second behavioural probe in a throwaway `poe_tasks.toml` settles most questions.
+- Docs: https://poethepoet.natn.io
+- Source: `python -c "import poethepoet, os; print(os.path.dirname(poethepoet.__file__))"`, then read `task/*.py` for the relevant type.
+- A 30-second probe in a throwaway `poe_tasks.toml` settles most questions.
 
-Verify, then state the answer plainly. Don't attach "I'll need to check this" caveats to behaviour you can simply check.
+Verify, then state the answer plainly — no "I'll need to check" caveats on behaviour you can simply check.
+
+**If the skill (or poe itself) let you down, offer to report it so it can be fixed.** The most valuable case is when this skill *failed to give you guidance you needed* — a gap, a missing case, advice that didn't fit your situation; also worth reporting is something the skill stated that was not right, or a clear bug in poethepoet. Use judgement — skip it if the cause was your own misread, an unrelated environment issue, or something you can't actually pin down. **Ask the user first and post only if they agree; nothing is sent automatically.** A good issue (repo `nat-n/poethepoet`, e.g. via `gh issue create`) says what you were trying to do, what was missing or wrong (or the bug), how you found the real answer, and a concrete suggestion for improving the skill.
 
 ## Step 0: Orient yourself (do this first)
 
-Run these to understand the environment before doing anything else:
+Run these before doing anything else:
 
 ```bash
-# 1. Find poe and check its version
-which poe 2>/dev/null && poe --version 2>/dev/null
-
-# 2. List all available tasks in this project
-poe 2>&1
-
-# 3. Identify config files
-ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null
+which poe 2>/dev/null && poe --version 2>/dev/null        # find poe + version
+poe 2>&1                                                  # list all tasks
+ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null  # find config
 ```
 
-The poe cli finds tasks defined in the current working directory and parent directories in one of the supported file formats, e.g. pyproject.toml.
+Poe finds tasks in a supported config file in the working directory or any parent.
 
-**If `poe` is not in PATH**, try these based on the project type:
+**If `poe` is not in PATH:**
 
-| Situation                                                 | Command                                                               |
-| --------------------------------------------------------- | --------------------------------------------------------------------- |
-| uv project (`uv.lock` or `[tool.uv]` present)             | `uv run poe`                                                          |
-| poetry project (`poetry.lock` or `[tool.poetry]` present) | `poetry run poe`                                                      |
-| poetry plugin installed                                   | `poetry poe`                                                          |
-| poe not installed                                         | Guide user: `pipx install poethepoet` or `uv tool install poethepoet` |
+| Situation | Command |
+| --- | --- |
+| uv project (`uv.lock` / `[tool.uv]`) | `uv run poe` |
+| poetry project (`poetry.lock` / `[tool.poetry]`) | `poetry run poe` |
+| poetry plugin installed | `poetry poe` |
+| not installed | `pipx install poethepoet` or `uv tool install poethepoet` |
 
-**Version check**: Compare `poe --version` output with `0.46.0` (this skill's target version). If significantly different, some features described here may not be available. The latest released version can be checked at:
-
-```
-https://raw.githubusercontent.com/nat-n/poethepoet/refs/heads/main/poethepoet/skills/poethepoet/version.txt
-```
-
-If troubleshooting version-related issues, this URL is useful for confirming whether an upgrade is available.
+**Version**: if `poe --version` differs much from 0.46.0, some features here may not exist. Latest: https://raw.githubusercontent.com/nat-n/poethepoet/refs/heads/main/poethepoet/skills/poethepoet/version.txt
 
 ## Using existing tasks
 
 ```bash
-poe                         # List all tasks with descriptions
-poe <task>                  # Run a task
-poe <task> -x --extra-flag  # Extra args auto-forwarded to cmd tasks
-poe <task> -- -x            # Explicit free-arg separator (any task type)
-poe <task> --named-arg val  # Named args (if task defines them)
-poe -d <task>               # Dry run: show command without executing
-poe -C /path/to/project <task>  # Run in a different directory
-poe -v <task>               # Verbose output
+poe                         # list all tasks with descriptions
+poe <task>                  # run a task
+poe <task> -x --extra-flag  # extra args auto-forwarded to cmd tasks
+poe <task> -- -x            # explicit free-arg separator (any task type)
+poe <task> --named-arg val  # named args (if the task defines them)
+poe -d <task>               # dry run: show the command without running it
+poe -C /path <task>         # run as if from another directory (handier than cd)
+poe -v <task>               # verbose
 ```
 
-**Tip**: using the -C option to run poe in a different directory is more convenient than cd-ing into it
+**Always prefer poe tasks over running tools directly.** Before running `pytest`, `ruff`, `mypy`, etc., check `poe` first — if a task exists, use it, so you inherit the project's flags, env, and conventions.
 
-If `poe` output doesn't give enough detail (e.g. you need to understand a task's implementation or args), read the config files directly: `pyproject.toml` (`[tool.poe.tasks]`), or `poe_tasks.toml`/`poe_tasks.yaml`/`poe_tasks.json` if present — and follow any `include` or `include_script` references to find tasks defined elsewhere.
-
-**Always prefer poe tasks over running tools directly.** Before running `pytest`, `ruff`, `mypy`, etc., check `poe` output first — if a task exists for the action, use it. This respects project-specific flags, env, and conventions.
+If `poe`'s output isn't enough (e.g. you need a task's implementation or args), read the config directly — `pyproject.toml` (`[tool.poe.tasks]`) or `poe_tasks.toml`/`.yaml`/`.json` — and follow any `include`/`include_script` references.
 
 ## Task types quick reference
 
-| Type       | When to use                       | Shorthand                     |
-| ---------- | --------------------------------- | ----------------------------- |
-| `cmd`      | Running any CLI command (default) | `task = "command"`            |
-| `script`   | Calling a Python function         | `task.script = "module:fn"`   |
-| `shell`    | Shell scripts (pipes, loops)      | `task.shell = "cmd1 \| cmd2"` |
-| `sequence` | Run tasks in order                | `task = ["a", "b"]`           |
-| `parallel` | Run tasks concurrently            | `task.parallel = ["a", "b"]`  |
-| `ref`      | Reference another task            | `task.ref = "other"`          |
-| `expr`     | Python expression output          | `task.expr = "sys.platform"`  |
-| `switch`   | Conditional branching             | `task.switch = [...]`         |
+| Type | When to use | Shorthand |
+| --- | --- | --- |
+| `cmd` | running any CLI command (default) | `task = "command"` |
+| `script` | calling a Python function | `task.script = "module:fn"` |
+| `shell` | shell scripts (pipes, loops) | `task.shell = "cmd1 \| cmd2"` |
+| `sequence` | run tasks in order | `task = ["a", "b"]` |
+| `parallel` | run tasks concurrently | `task.parallel = ["a", "b"]` |
+| `ref` | reference another task | `task.ref = "other"` |
+| `expr` | Python expression output | `task.expr = "sys.platform"` |
+| `switch` | conditional branching | `task.switch = [...]` |
 
-See `references/task-types.md` for full details, syntax, and examples for each type.
+Full syntax and examples per type: `references/task-types.md`.
 
-**Referencing args inside `expr`, a parens-form `script` call (`"module:fn(arg1)"`), or `switch.control.expr`**: use the **bare variable name**, not `${name}`. `expr = "AWS_REGION"` is correct; `expr = "${AWS_REGION}"` routes through the environment and silently fails for private `_`-prefixed args. The `${VAR}` form is for env vars (in any task type), not for args inside Python-evaluating tasks. (For the no-parens form `script = "module:fn"`, args are auto-passed as kwargs — you never write the arg name into the call expression.) See `references/task-types.md` for the mechanism.
+**Two silent-failure rules for `expr`, `switch.control.expr`, and parens-form `script` calls (`"mod:fn(arg)"`)** — get these wrong and the task fails quietly, not loudly:
 
-**Referencing env vars inside `expr`**: write `${VAR}` and **never quote it**. `expr = "${STAGE}"` is correct — it resolves to the string value (internally `${VAR}` is rewritten to `__env.VAR`, an attribute reference on an injected class, not a textual paste). `expr = "'${STAGE}'"` is **broken**: the inner quotes turn it into the literal string `"__env.STAGE"`, not the value of `STAGE`. To call a method, do it directly: `expr = "${STAGE}.upper()"` (not `"'${STAGE}'.upper()"`).
+- **Declared args → bare name**, never `${name}`. `expr = "AWS_REGION"` ✅; `expr = "${AWS_REGION}"` ❌ routes through the environment and is silently empty for private `_`-args. (No-parens `script = "mod:fn"` auto-passes args as kwargs — never name them in the call.)
+- **Env vars → unquoted `${VAR}`**. `${VAR}` compiles to the attribute reference `__env.VAR` (not textual paste), so `expr = "${STAGE}"` ✅ yields the value, but `expr = "'${STAGE}'"` ❌ yields the literal string `"__env.STAGE"`. Call methods directly: `"${STAGE}.upper()"`.
+
+Mechanism and more cases: `references/task-types.md`.
 
 ## Common task patterns
 
-**Simplest task with help**:
-
-```toml
-[tool.poe.tasks.test]
-cmd = "pytest"
-help = "Run the test suite"
-```
-
-**With named arguments**:
+**Named arguments**:
 
 ```toml
 [tool.poe.tasks.test]
@@ -112,23 +94,7 @@ help = "Run the test suite"
 args = [{ name = "markers", options = ["-m"], default = "", help = "pytest marker expression" }]
 ```
 
-**Sequence** (run A then B):
-
-```toml
-[tool.poe.tasks.check]
-sequence = ["lint", "types", "test"]
-help = "Run all quality checks"
-```
-
-**Parallel** (run A and B simultaneously):
-
-```toml
-[tool.poe.tasks.check]
-parallel = ["lint", "types"]
-help = "Run quality checks in parallel"
-```
-
-**Extra args forwarded through a sequence**:
+**Extra args forwarded through a sequence** (only subtasks that name `$POE_EXTRA_ARGS` receive them):
 
 ```toml
 [tool.poe.tasks.check]
@@ -144,42 +110,45 @@ script = "scripts.codegen:main()"
 help = "Run code generation"
 ```
 
-This tasks expects the `scripts.codegen` package to be available in the project's environment, and calls the `main()` function.
+Calls `main()` from the `scripts.codegen` module in the project environment.
+
+For more types (sequence, parallel, switch, …) and options, see the references below.
+
+## The `_` prefix means "internal"
+
+A leading underscore marks something as not part of the public surface:
+
+- **`_task`** — composition-only: hidden from the `poe` listing **and not runnable directly** (`poe _task` errors). Use it via `deps`, `uses`, `ref`, or a sequence/parallel.
+- **`_arg`** — not exported to the environment; its CLI flag drops the underscore (`--arg`).
+- **`_env` / `uses` var** — usable in config expansion but not exported to subprocesses.
 
 ## Creating and modifying tasks
 
-Before creating tasks, read `references/creating-tasks.md` — it covers:
+Read `references/creating-tasks.md` before creating tasks — it covers project-type detection, choosing a task type, bootstrapping the standard set (test/lint/types/format/check), groups, private tasks, and includes. When a tool choice isn't clear from the project (e.g. mypy vs ty, which test runner), ask the user rather than guessing. A few principles matter most:
 
-- Detecting project type (uv vs poetry) and where to add tasks
-- Choosing the right task type
-- Bootstrapping common tasks (test, lint, types, format, check)
-- How to add dependencies correctly (never edit pyproject.toml dependencies directly)
-- How to prompt the user when tool choice is unclear
-- Organizing tasks with groups and private tasks
-- Always run `poe --help task` after creating/modifying a task to confirm it's set up correctly and the help text looks good.
+- **Never hand-edit dependency arrays** in `pyproject.toml` (`[project]`, `[tool.uv]`, `[dependency-groups]`, `[tool.poetry.group.*]`). Use `uv add --dev <pkg>` / `poetry add --group dev <pkg>` so the lockfile stays in sync — this applies to poe itself too.
+- **Don't add `#` comments to task config** unless asked. Task docs belong in `help`, which surfaces in `poe` and `poe --help <task>`; config comments surface nowhere. If a task needs a comment to explain it, rename it, refine its `help`, or split it.
+- **Compose, don't recurse.** To run one task from another, use `deps`, `uses`, `ref`, or a `sequence`/`parallel` — never `cmd = "poe other-task"`. Shelling out spawns a second poe process and hides the dependency from poe (no ordering, dedup, or dry-run visibility), and it can't invoke private `_`-tasks at all.
+- **Leave a clean set.** Delete throwaway tasks you created while developing or debugging before finishing. Aim for a small, intentional set where every task pulls its weight and a newcomer can see why each exists and how they're organized — not a pile of overlapping one-offs.
 
-**Never hand-edit dependency arrays** in `pyproject.toml` (including `[tool.uv].dev-dependencies`, `[dependency-groups]`, and `[tool.poetry.group.*.dependencies]`). Always use `uv add --dev <pkg>` or `poetry add --group dev <pkg>` so the lockfile stays in sync. This applies to poethepoet itself too.
-
-**Don't add comments to task config (TOML/YAML/JSON) unless the user asks.** Task documentation belongs in the `help` field — that's what surfaces in `poe` listing and `poe --help <task>`; config-file `#` comments don't appear anywhere a user looks and just add noise to the config. If a task can't be described in a one-line `help`, simplify or split it rather than reaching for a comment.
+After creating or changing a task, run `poe --help <task>` to confirm it parses and the help text reads well.
 
 ## Key task options
 
-| Option     | Purpose                                                       |
-| ---------- | ------------------------------------------------------------- |
-| `help`     | One-line description shown in `poe` listing — always add this |
-| `args`     | CLI arguments the task accepts                                |
-| `env`      | Environment variables for the task                            |
-| `deps`     | Tasks to run before this one                                  |
-| `uses`     | Capture another task's stdout as a variable                   |
-| `cwd`      | Working directory (relative to project root)                  |
-| `executor` | Override executor: `uv`, `poetry`, `virtualenv`, `simple`     |
+| Option | Purpose |
+| --- | --- |
+| `help` | one-line description shown in `poe` listing — always add this |
+| `args` | CLI arguments the task accepts |
+| `env` | environment variables for the task |
+| `deps` | tasks to run before this one |
+| `uses` | capture another task's stdout as a variable |
+| `cwd` | working directory (relative to project root) |
+| `executor` | override executor: `uv`, `poetry`, `virtualenv`, `simple` |
 
-See `references/task-options.md` for complete options reference.
-See `references/args-reference.md` for the complete args configuration reference.
-See `references/task-packages.md` for using `poethepoet-tasks` and defining reusable task packages with `TaskCollection` and `@tasks.script`.
+- Complete options: `references/task-options.md`
+- Complete args config: `references/args-reference.md`
+- Reusable task packages (`poethepoet-tasks`, `TaskCollection`, `@tasks.script`, composing collections with `.include()`): `references/task-packages.md`
 
 ## IMPORTANT BEST PRACTICE
 
-**This point is very important and you should remember it.** Always check for an existing poe task before running a tool directly, and prefer using poe tasks when available. This ensures you benefit from any project-specific configuration, environment variables, or conventions that the tasks encapsulate — reducing friction and avoiding mistakes.
-
-If a task you need often does not yet exist, consider offering to create it (see `references/creating-tasks.md`) or asking the team to create it rather than running the tool directly.
+**Important — remember this.** Always check for an existing poe task before running a tool directly, and prefer poe tasks when available: you inherit the project's configuration, env, and conventions, avoiding friction and mistakes. If a task you need often doesn't exist yet, offer to create it (see `references/creating-tasks.md`) rather than reaching for the tool directly.

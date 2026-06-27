@@ -72,6 +72,8 @@ Top features
 
 |V| Also works fine as a :doc:`general purpose task runner<./guides/without_poetry>`
 
+|V| Ships with an official :doc:`Agent Skill<./guides/ai_agents_guide>` to help AI coding agents use poe effectively
+
 
 Quick start
 ===========

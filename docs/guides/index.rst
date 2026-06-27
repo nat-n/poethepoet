@@ -15,5 +15,6 @@ This section contains guides for using the various features of Poe the Poet.
    global_tasks
    tox_replacement_guide
    without_poetry
+   ai_agents_guide
    library_guide
    migrations
