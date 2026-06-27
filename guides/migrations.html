@@ -192,6 +192,7 @@
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Migration Guides</a></li>
 </ul>
@@ -244,7 +245,44 @@
 <h1>Migration Guides<a class="headerlink" href="#migration-guides" title="Link to this heading">¶</a></h1>
 <p>As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.</p>
 <section id="id1">
-<h2>0.44.0<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<h2>0.46.0<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. Two edge-case behaviours changed.</p>
+<section id="whitespace-in-unquoted-values-is-now-preserved">
+<h3>Whitespace in unquoted values is now preserved<a class="headerlink" href="#whitespace-in-unquoted-values-is-now-preserved" title="Link to this heading">¶</a></h3>
+<p>Previously, whitespace terminated an unquoted value, making it possible to write multiple assignments on a single line:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># OLD: two assignments on one line (no longer supported)</span>
+<span class="nv">FOO</span><span class="o">=</span>bar<span class="w"> </span><span class="nv">BAZ</span><span class="o">=</span>qux
+</pre></div>
+</div>
+<p>This is now parsed as a single assignment <code class="docutils literal notranslate"><span class="pre">FOO</span></code> with the value <code class="docutils literal notranslate"><span class="pre">bar</span> <span class="pre">BAZ=qux</span></code>. Move such assignments to separate lines, or quote the value:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># NEW: one assignment per line</span>
+<span class="nv">FOO</span><span class="o">=</span>bar
+<span class="nv">BAZ</span><span class="o">=</span>qux
+</pre></div>
+</div>
+</section>
+<section id="semicolons-are-no-longer-assignment-separators">
+<h3>Semicolons are no longer assignment separators<a class="headerlink" href="#semicolons-are-no-longer-assignment-separators" title="Link to this heading">¶</a></h3>
+<p>Previously, <code class="docutils literal notranslate"><span class="pre">;</span></code> acted as an assignment separator (similar to shell statement separators), allowing constructs like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># OLD: two assignments separated by ; (no longer supported)</span>
+<span class="nv">FOO</span><span class="o">=</span>bar<span class="p">;</span><span class="nv">BAZ</span><span class="o">=</span>qux
+</pre></div>
+</div>
+<p>Semicolons are now treated as regular characters in unquoted values, so the above assigns <code class="docutils literal notranslate"><span class="pre">bar;BAZ=qux</span></code> to <code class="docutils literal notranslate"><span class="pre">FOO</span></code>. Move assignments to separate lines:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># NEW: one assignment per line</span>
+<span class="nv">FOO</span><span class="o">=</span>bar
+<span class="nv">BAZ</span><span class="o">=</span>qux
+</pre></div>
+</div>
+<p>If you have a value that contains a literal semicolon, it now works without escaping:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># NEW: semicolons in values need no special treatment</span>
+<span class="nv">JDBC_URL</span><span class="o">=</span>jdbc:postgresql://localhost:5432/mydb?options<span class="o">=</span>first<span class="p">;</span>second
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id2">
+<h2>0.44.0<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
 <p>This release adds support for recursive includes, which allows included files to themselves include other files. If a project includes config from another file which in turn includes config from other files then these transitive includes will now also be included in the main project by default. This new behavior can be disabled by setting <code class="docutils literal notranslate"><span class="pre">recursive</span> <span class="pre">=</span> <span class="pre">false</span></code> for a specific include, which will prevent any includes from that file from being followed. For more details see the <a class="reference internal" href="include_guide.html"><span class="doc">include guide</span></a>.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="w"> </span><span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;external/tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">recursive</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}]</span>
@@ -252,8 +290,8 @@
 </div>
 <p>When <code class="docutils literal notranslate"><span class="pre">recursive</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>, the included file’s own tasks and environment variables are still loaded, but any <code class="docutils literal notranslate"><span class="pre">include</span></code> entries within that file are not followed.</p>
 </section>
-<section id="id2">
-<h2>0.43.0<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<section id="id3">
+<h2>0.43.0<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
 <p>This release included a major refactor of how variables are managed which could unexpectedly change behavior in some situations.</p>
 <section id="change-in-handling-of-boolean-args">
 <h3>Change in handling of boolean args<a class="headerlink" href="#change-in-handling-of-boolean-args" title="Link to this heading">¶</a></h3>
@@ -346,8 +384,13 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Migration Guides</a><ul>
-<li><a class="reference internal" href="#id1">0.44.0</a></li>
-<li><a class="reference internal" href="#id2">0.43.0</a><ul>
+<li><a class="reference internal" href="#id1">0.46.0</a><ul>
+<li><a class="reference internal" href="#whitespace-in-unquoted-values-is-now-preserved">Whitespace in unquoted values is now preserved</a></li>
+<li><a class="reference internal" href="#semicolons-are-no-longer-assignment-separators">Semicolons are no longer assignment separators</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">0.44.0</a></li>
+<li><a class="reference internal" href="#id3">0.43.0</a><ul>
 <li><a class="reference internal" href="#change-in-handling-of-boolean-args">Change in handling of boolean args</a></li>
 <li><a class="reference internal" href="#introduction-of-private-variables">Introduction of private variables</a></li>
 </ul>
@@ -363,7 +406,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=b6498c4d"></script>
+</div><script src="../_static/documentation_options.js?v=55e318ff"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

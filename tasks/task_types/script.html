@@ -192,6 +192,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/migrations.html">Migration Guides</a></li>
 </ul>
@@ -274,12 +275,18 @@
 </section>
 <section id="run-a-main-module-as-a-script-task">
 <h2>Run a <code class="docutils literal notranslate"><span class="pre">__main__</span></code> module as a script task<a class="headerlink" href="#run-a-main-module-as-a-script-task" title="Link to this heading">¶</a></h2>
-<p>A script task may reference a package instead of a specific callable, in which case the package’s <code class="docutils literal notranslate"><span class="pre">__main__.py</span></code> module will be executed as a script task. This is useful for running a package that has been designed to be run as a script.</p>
+<p>A script task may reference a package instead of a specific callable, in which case the package’s <code class="docutils literal notranslate"><span class="pre">__main__.py</span></code> module will be executed as a script task, or the module itself if it’s not a package (the usual behavior from <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span></code>). This is useful for running a package or module that has been designed to be run as a script.</p>
 <p>For example, the following task will run the <code class="docutils literal notranslate"><span class="pre">http.server</span></code> module as a script task, which will start a simple HTTP server. Any command line arguments passed to the task will be forwarded to the script.</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
-<span class="n">fetch-assets</span><span class="p">.</span><span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;http.server&quot;</span>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;http.server&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;port&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;-p&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;8000&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;bind&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;-b&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--bind&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;127.0.0.1&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">]</span>
 </pre></div>
 </div>
+<p>When <a class="reference internal" href="../options.html"><span class="doc">args</span></a> are declared on the task, the parsed values (with defaults applied) are re-emitted onto the module’s <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code>. CLI tokens that aren’t matched by a declared arg, and any tokens that follow <code class="code highlight sh docutils literal highlight-sh">--</code>, are forwarded to the module verbatim.</p>
+<p>Like the callable form, the module form also implicitly adds <code class="code highlight sh docutils literal highlight-sh">&lt;project_root&gt;/src</code> to the subprocess <code class="code highlight sh docutils literal highlight-sh">PYTHONPATH</code> so that modules placed in a <code class="docutils literal notranslate"><span class="pre">src/</span></code> directory at the project root are importable without extra configuration.</p>
 </section>
 <section id="output-the-return-value">
 <h2>Output the return value<a class="headerlink" href="#output-the-return-value" title="Link to this heading">¶</a></h2>
@@ -458,7 +465,7 @@ function.</p></li>
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=b6498c4d"></script>
+</div><script src="../../_static/documentation_options.js?v=55e318ff"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

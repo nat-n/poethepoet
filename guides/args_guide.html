@@ -192,6 +192,7 @@
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="migrations.html">Migration Guides</a></li>
 </ul>
@@ -402,10 +403,17 @@ a sub-table.</p>
 </li>
 <li><dl>
 <dt><strong>multiple</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code> | <code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>If the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option is set to true on a positional or option argument then that argument will accept multiple values.</p>
-<p>If set to a number, then the argument will accept <em>exactly</em> that number of values.</p>
+<p>If set to a number, then the argument will accept <em>exactly</em> that number of values in total.</p>
 <p>For positional arguments, only the last positional argument may have the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option set.</p>
 <p>This option is not compatible with arguments with <code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">&quot;boolean&quot;</span></code> since these are interpreted as flags. However multiple ones or zeros can be passed to an argument of type “integer” for similar effect.</p>
-<p>The values provided to an argument with the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your Python function as a list of values. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.</p>
+<p>For option arguments (flags), multiple values may be supplied in any of the following styles, which can also be freely mixed in a single invocation:</p>
+<ul class="simple">
+<li><p><strong>Space-separated</strong> after a single flag: <code class="docutils literal notranslate"><span class="pre">--engines</span> <span class="pre">v2</span> <span class="pre">v8</span></code></p></li>
+<li><p><strong>Repeated flag</strong>, each with its own value(s): <code class="docutils literal notranslate"><span class="pre">--engines</span> <span class="pre">v2</span> <span class="pre">--engines</span> <span class="pre">v8</span></code></p></li>
+<li><p><strong>Mixed</strong>: <code class="docutils literal notranslate"><span class="pre">--engines</span> <span class="pre">v2</span> <span class="pre">v8</span> <span class="pre">--engines</span> <span class="pre">v10</span></code></p></li>
+</ul>
+<p>When <code class="docutils literal notranslate"><span class="pre">multiple</span> <span class="pre">=</span> <span class="pre">N</span></code> (an exact count), the <em>total</em> number of values across all occurrences must equal N — e.g. with <code class="docutils literal notranslate"><span class="pre">multiple</span> <span class="pre">=</span> <span class="pre">2</span></code> both <code class="docutils literal notranslate"><span class="pre">--widgets</span> <span class="pre">a</span> <span class="pre">b</span></code> and <code class="docutils literal notranslate"><span class="pre">--widgets</span> <span class="pre">a</span> <span class="pre">--widgets</span> <span class="pre">b</span></code> are valid.</p>
+<p>The values provided to an argument with the <code class="docutils literal notranslate"><span class="pre">multiple</span></code> option set are available on the environment as a string of whitespace separated values. For script tasks, the values will be provided to your Python function as a list of values. A <code class="docutils literal notranslate"><span class="pre">multiple</span></code> argument always resolves to a list: when it is omitted it resolves to an empty list, or — if a <code class="docutils literal notranslate"><span class="pre">default</span></code> is configured — to a single-item list containing that default. Supplying values on the command line replaces the default rather than adding to it. In a cmd task the values can be passed as separate arguments to the task via templating as in the following example.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span>
 </pre></div>
 </div>
@@ -426,7 +434,8 @@ args = [{ name = “FILE_PATHS”, positional = true, multiple = true }]</p>
 </dl>
 </li>
 <li><dl>
-<dt><strong>type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Literal[&quot;string&quot;,</span> <span class="pre">&quot;float&quot;,</span> <span class="pre">&quot;integer&quot;,</span> <span class="pre">&quot;boolean&quot;]</span></code></span></dt><dd><p>The type that the provided value will be cast to. If not provided then the default behaviour is to keep values as strings. Setting the type to <code class="docutils literal notranslate"><span class="pre">&quot;boolean&quot;</span></code> makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. <code class="code highlight toml docutils literal highlight-toml"><span class="s2">&quot;true&quot;</span></code> if no default value is given, or <code class="code highlight toml docutils literal highlight-toml"><span class="n">false</span></code> if <code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span></code>.</p>
+<dt><strong>type</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">Literal[&quot;string&quot;,</span> <span class="pre">&quot;float&quot;,</span> <span class="pre">&quot;integer&quot;,</span> <span class="pre">&quot;boolean&quot;]</span></code></span></dt><dd><p>The type that the provided value will be cast to. If not provided then the default behaviour is to keep values as strings. Setting the type to <code class="docutils literal notranslate"><span class="pre">&quot;boolean&quot;</span></code> makes the resulting argument a flag that if provided will set the value to the boolean opposite of the default value – i.e. <code class="code highlight toml docutils literal highlight-toml"><span class="n">true</span></code> if no default value is given, or <code class="code highlight toml docutils literal highlight-toml"><span class="n">false</span></code> if <code class="code highlight toml docutils literal highlight-toml"><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span></code>.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">&quot;boolean&quot;</span></code>, the <code class="docutils literal notranslate"><span class="pre">default</span></code> option (if set) must be a TOML boolean, or one of the following case-insensitive string literals (also accepting surrounding whitespace): <code class="docutils literal notranslate"><span class="pre">&quot;t&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;true&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code> for true, and <code class="docutils literal notranslate"><span class="pre">&quot;f&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;false&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;0&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for false. A templated string (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;${SOME_VAR}&quot;</span></code>) is also accepted and re-checked against this same set once the template has been resolved.</p>
 </dd>
 </dl>
 </li>
@@ -707,7 +716,7 @@ example.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=b6498c4d"></script>
+</div><script src="../_static/documentation_options.js?v=55e318ff"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

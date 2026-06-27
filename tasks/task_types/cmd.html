@@ -192,6 +192,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../guides/ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../guides/migrations.html">Migration Guides</a></li>
 </ul>
@@ -284,7 +285,7 @@ Hello<span class="w"> </span>nat
 </div>
 </section>
 <section id="parameter-expansion-operators">
-<h3>Parameter expansion operators<a class="headerlink" href="#parameter-expansion-operators" title="Link to this heading">¶</a></h3>
+<span id="id1"></span><h3>Parameter expansion operators<a class="headerlink" href="#parameter-expansion-operators" title="Link to this heading">¶</a></h3>
 <p>When referencing an environment variable in a cmd task you can use the <code class="docutils literal notranslate"><span class="pre">:-</span></code> operator from bash to specify a <em>default value</em>, to be used in case the variable is unset. Similarly the <code class="docutils literal notranslate"><span class="pre">:+</span></code> operator can be used to specify an <em>alternate value</em> to use in place of the environment variable if it <em>is</em> set.</p>
 <p>In the following example, if <code class="docutils literal notranslate"><span class="pre">AWS_REGION</span></code> has a value then it will be used, otherwise <code class="docutils literal notranslate"><span class="pre">us-east-1</span></code> will be used as a fallback.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks]</span>
@@ -452,7 +453,7 @@ Hello<span class="w"> </span>nat
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=b6498c4d"></script>
+</div><script src="../../_static/documentation_options.js?v=55e318ff"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

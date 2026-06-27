@@ -192,6 +192,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/migrations.html">Migration Guides</a></li>
 </ul>
@@ -416,6 +417,30 @@ poe _fish_completion <span class="o">&gt;</span> <span class="o">(</span>brew --
 </div>
 </section>
 </section>
+<section id="install-the-poethepoet-ai-agent-skill">
+<h2>Install the poethepoet AI Agent skill<a class="headerlink" href="#install-the-poethepoet-ai-agent-skill" title="Link to this heading">¶</a></h2>
+<p>The official poethepoet skill can help your AI Agent use poethepoet more effectively. It covers discovering and executing tasks, as well as more in-depth guidance on creating them.</p>
+<section id="install-via-the-built-in-install-skill-task">
+<h3>Install via the built in <code class="docutils literal notranslate"><span class="pre">_install_skill</span></code> task<a class="headerlink" href="#install-via-the-built-in-install-skill-task" title="Link to this heading">¶</a></h3>
+<p>Poe ships with a task to install the skill (similar to how shell completions are installed):</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>_install_skill<span class="w">                         </span><span class="c1"># auto-detects .claude/.codex/.pi/.agents and prompts</span>
+poe<span class="w"> </span>_install_skill<span class="w"> </span>~/.claude/skills<span class="w">        </span><span class="c1"># explicit path (substitute your agent&#39;s dir)</span>
+poe<span class="w"> </span>_install_skill<span class="w"> </span>&lt;skills-dir&gt;<span class="w"> </span>--upgrade<span class="w">  </span><span class="c1"># non-interactive upgrade (skips if same/newer)</span>
+</pre></div>
+</div>
+</section>
+<section id="install-from-github">
+<h3>Install from GitHub<a class="headerlink" href="#install-from-github" title="Link to this heading">¶</a></h3>
+<p>You can also install the skill directly from github, such as by using <a href="https://vercel.com/docs/agent-resources/skills" target="_blank">Vercel Agent Skills</a>:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>npx<span class="w"> </span>skills<span class="w"> </span>add<span class="w"> </span>https://github.com/nat-n/poethepoet/tree/v0.46.0/poethepoet/skills/poethepoet
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The skill is versioned in step with poe. After upgrading poe, re-run the install task with <code class="docutils literal notranslate"><span class="pre">--upgrade</span></code> (shown above) to refresh the installed copy — it skips the copy if the installed version is already current.</p>
+</div>
+</section>
+</section>
 <section id="supported-python-versions">
 <h2>Supported python versions<a class="headerlink" href="#supported-python-versions" title="Link to this heading">¶</a></h2>
 <p>Poe the Poet officially supports python &gt;=3.10, and is tested with python 3.10 to 3.14 on
@@ -514,6 +539,11 @@ macOS, linux and windows.</p>
 <li><a class="reference internal" href="#powershell">Powershell</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#install-the-poethepoet-ai-agent-skill">Install the poethepoet AI Agent skill</a><ul>
+<li><a class="reference internal" href="#install-via-the-built-in-install-skill-task">Install via the built in <code class="docutils literal notranslate"><span class="pre">_install_skill</span></code> task</a></li>
+<li><a class="reference internal" href="#install-from-github">Install from GitHub</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#supported-python-versions">Supported python versions</a></li>
 </ul>
 </li>
@@ -526,7 +556,7 @@ macOS, linux and windows.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=b6498c4d"></script>
+</div><script src="_static/documentation_options.js?v=55e318ff"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

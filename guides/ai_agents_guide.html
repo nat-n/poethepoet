@@ -3,17 +3,17 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta property="og:title" content="Usage without poetry" />
+<meta property="og:title" content="Using poethepoet with AI Agents" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="guides/without_poetry.html" />
+<meta property="og:url" content="guides/ai_agents_guide.html" />
 <meta property="og:site_name" content="Poe the Poet" />
-<meta property="og:description" content="Poe the Poet was originally intended as the missing task runner for. But it also works great with, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurab..." />
-<meta name="description" content="Poe the Poet was originally intended as the missing task runner for. But it also works great with, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurab..." />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet with AI Agents" href="ai_agents_guide.html" /><link rel="prev" title="Replacing tox with uv and Poe the Poet" href="tox_replacement_guide.html" />
-        <link rel="canonical" href="http://poethepoet.natn.io/guides/without_poetry.html" />
+<meta property="og:description" content="Poe the Poet is a good fit with agentic coding workflows, as a way to standardize allowed agent actions within a project. This page collects some tips to help get the most from poethepoet when work..." />
+<meta name="description" content="Poe the Poet is a good fit with agentic coding workflows, as a way to standardize allowed agent actions within a project. This page collects some tips to help get the most from poethepoet when work..." />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Using poethepoet as a library" href="library_guide.html" /><link rel="prev" title="Usage without poetry" href="without_poetry.html" />
+        <link rel="canonical" href="http://poethepoet.natn.io/guides/ai_agents_guide.html" />
 
     <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 7.4.7 and Furo 2023.09.10 -->
-        <title>Usage without poetry - Poe the Poet</title>
+        <title>Using poethepoet with AI Agents - Poe the Poet</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -191,8 +191,8 @@
 <li class="toctree-l2"><a class="reference internal" href="packaged_tasks.html">Loading tasks from a python package</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Usage without poetry</a></li>
-<li class="toctree-l2"><a class="reference internal" href="ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="migrations.html">Migration Guides</a></li>
 </ul>
@@ -219,7 +219,7 @@
         </a>
         <div class="content-icon-container">
           <div class="edit-this-page">
-  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/without_poetry.rst" title="Edit this page">
+  <a class="muted-link" href="https://github.com/nat-n/poethepoet/edit/main/docs/guides/ai_agents_guide.rst" title="Edit this page">
     <svg aria-hidden="true" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />
@@ -241,72 +241,51 @@
           </label>
         </div>
         <article role="main">
-          <section id="usage-without-poetry">
-<h1>Usage without poetry<a class="headerlink" href="#usage-without-poetry" title="Link to this heading">¶</a></h1>
-<p>Poe the Poet was originally intended as the missing task runner for <a href="https://python-poetry.org/" target="_blank">poetry</a>. But it also works great with <a href="https://docs.astral.sh/uv/" target="_blank">uv</a>, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurable via the <a class="reference internal" href="../tasks/options.html#configure-the-executor-for-a-task"><span class="std std-ref">tool.poe.executor global option</span></a>.</p>
-<p>By default poe will run tasks in your project’s virtual environment. Poe will deduce what kind of project is present by detecting tool specific tables in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> such as <code class="code highlight toml docutils literal highlight-toml"><span class="n">tool</span><span class="p">.</span><span class="n">poetry</span></code>, lock files such as <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, or a virtualenv at <code class="docutils literal notranslate"><span class="pre">./.venv</span></code> or <code class="docutils literal notranslate"><span class="pre">./venv</span></code> relative to the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>. If no virtualenv is found then poe will run tasks without any special environment management.</p>
-<p>Poe the Poet can also be used as a <a class="reference internal" href="global_tasks.html"><span class="doc">global task runner</span></a>, scoped to your system rather than any particular project, like shell aliases by sweeter.</p>
-<section id="usage-with-uv">
-<h2>Usage with uv<a class="headerlink" href="#usage-with-uv" title="Link to this heading">¶</a></h2>
-<p><a href="https://docs.astral.sh/uv/" target="_blank">uv</a> is another popular tool for managing project dependencies with a <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file. If the <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> contains a <code class="docutils literal notranslate"><span class="pre">[tool.uv]</span></code> table, or the project directory contains a <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> files then Poe the Poet will recognise this and activate the UvExecutor to execute tasks using <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">run</span></code>.</p>
-<p>In case your uv project doesn’t have a lockfile or any uv specific config, you can still force poe to use the uv executor like so:</p>
-<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
-<span class="n">executor</span><span class="p">.</span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span>
+          <section id="using-poethepoet-with-ai-agents">
+<h1>Using poethepoet with AI Agents<a class="headerlink" href="#using-poethepoet-with-ai-agents" title="Link to this heading">¶</a></h1>
+<p>Poe the Poet is a good fit with agentic coding workflows, as a way to standardize allowed agent actions within a project. This page collects some tips to help get the most from poethepoet when working with coding agents.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Add a section to your CLAUDE.md or AGENTS.md to instruct the agent to always check for and use available poe tasks when performing common actions like testing, linting, formatting, or whatever is relevant for your project.</p>
+<p>This helps the agent avoid running with incorrect configuration or dependencies, and makes it easier to manage permissions for these actions.</p>
+</div>
+<section id="agent-skill">
+<h2>Agent Skill<a class="headerlink" href="#agent-skill" title="Link to this heading">¶</a></h2>
+<p>The official poethepoet skill can help your AI Agent use poethepoet more effectively. It covers discovering and executing tasks, as well as more in-depth guidance on creating them.</p>
+<p>See the <a class="reference internal" href="../installation.html#install-the-poethepoet-ai-agent-skill"><span class="std std-ref">full installation instructions</span></a>, or simply run the interactive installer with:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>_install_skill
 </pre></div>
-</div>
-<p>So Poe the Poet also works well with uv.</p>
-</section>
-<section id="usage-without-pyproject-toml">
-<h2>Usage without pyproject.toml<a class="headerlink" href="#usage-without-pyproject-toml" title="Link to this heading">¶</a></h2>
-<p>When using Poe the Poet outside of a poetry (or other <a href="https://peps.python.org/pep-0518/" target="_blank">PEP 518</a>) project, you can avoid the potential confusion of creating a <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> file and instead name the file <code class="docutils literal notranslate"><span class="pre">poe_tasks.toml</span></code>.</p>
-<section id="usage-with-with-json-or-yaml-instead-of-toml">
-<h3>Usage with with json or yaml instead of toml<a class="headerlink" href="#usage-with-with-json-or-yaml-instead-of-toml" title="Link to this heading">¶</a></h3>
-<p>As an alternative to toml, poethepoet configuration can also be provided via yaml or json files. When searching for a tasks file to load within a certain directory poe will try the following file names in order:</p>
-<ul class="simple">
-<li><p>pyproject.toml</p></li>
-<li><p>poe_tasks.toml</p></li>
-<li><p>poe_tasks.yaml</p></li>
-<li><p>poe_tasks.json</p></li>
-</ul>
-<p>If <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> exists but does not contain the key prefix <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> then the search continues with <cite>poe_tasks.toml</cite>. If one of the listed <code class="docutils literal notranslate"><span class="pre">poe_tasks.*</span></code> files exist then the search is terminated, even if the file is empty.</p>
-<p>When config is loaded from a file other than <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> the <code class="docutils literal notranslate"><span class="pre">tool.poe</span></code> namespace for poe config is optional. So for example the following two <code class="docutils literal notranslate"><span class="pre">poe_tasks.yaml</span></code> files are equivalent and both valid:</p>
-<div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id1" title="Link to this code">¶</a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">env</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">VAR0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FOO</span>
-
-<span class="nt">tasks</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">show-vars</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">cmd</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;echo</span><span class="nv"> </span><span class="s">$VAR0</span><span class="nv"> </span><span class="s">$VAR1</span><span class="nv"> </span><span class="s">$VAR2&quot;</span>
-<span class="w">    </span><span class="nt">env</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">VAR1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAR</span>
-<span class="w">    </span><span class="nt">args</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">VAR2</span>
-<span class="w">        </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;--var&quot;</span><span class="p p-Indicator">]</span>
-<span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAZ</span>
-</pre></div>
-</div>
-</div>
-<div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">poe_tasks.yaml</span><a class="headerlink" href="#id2" title="Link to this code">¶</a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">tool</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">poe</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">env</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">VAR0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FOO</span>
-
-<span class="w">    </span><span class="nt">tasks</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">show-vars</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">cmd</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;echo</span><span class="nv"> </span><span class="s">$VAR0</span><span class="nv"> </span><span class="s">$VAR1</span><span class="nv"> </span><span class="s">$VAR2&quot;</span>
-<span class="w">        </span><span class="nt">env</span><span class="p">:</span>
-<span class="w">          </span><span class="nt">VAR1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAR</span>
-<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
-<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">VAR2</span>
-<span class="w">            </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;--var&quot;</span><span class="p p-Indicator">]</span>
-<span class="w">            </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BAZ</span>
-</pre></div>
-</div>
 </div>
 </section>
+<section id="claude-code">
+<h2>Claude Code<a class="headerlink" href="#claude-code" title="Link to this heading">¶</a></h2>
+<p>Include the following in your <code class="docutils literal notranslate"><span class="pre">.claude/settings.json</span></code> to grant your agent permission to run any poe task, assuming you only define poe tasks for benign actions.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;permissions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;allow&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;Bash(poe *)&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>If you have a lightweight poe task for code formatting, then you might want to configure your agent to run that task whenever it finishes making changes:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;hooks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;Stop&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;hooks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">          </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;poe format&quot;</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -315,23 +294,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="ai_agents_guide.html">
+          <a class="next-page" href="library_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Using poethepoet with AI Agents</div>
+                <div class="title">Using poethepoet as a library</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="tox_replacement_guide.html">
+          <a class="prev-page" href="without_poetry.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Replacing tox with uv and Poe the Poet</div>
+                <div class="title">Usage without poetry</div>
                 
               </div>
             </a>
@@ -377,12 +356,9 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Usage without poetry</a><ul>
-<li><a class="reference internal" href="#usage-with-uv">Usage with uv</a></li>
-<li><a class="reference internal" href="#usage-without-pyproject-toml">Usage without pyproject.toml</a><ul>
-<li><a class="reference internal" href="#usage-with-with-json-or-yaml-instead-of-toml">Usage with with json or yaml instead of toml</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Using poethepoet with AI Agents</a><ul>
+<li><a class="reference internal" href="#agent-skill">Agent Skill</a></li>
+<li><a class="reference internal" href="#claude-code">Claude Code</a></li>
 </ul>
 </li>
 </ul>

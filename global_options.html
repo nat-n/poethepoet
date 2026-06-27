@@ -192,6 +192,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/migrations.html">Migration Guides</a></li>
 </ul>
@@ -310,6 +311,22 @@
 <p class="admonition-title">Important</p>
 <p>The envfile option is also available with the same capabilities at <a class="reference internal" href="tasks/options.html#loading-environment-variables-from-an-env-file"><span class="std std-ref">the task level</span></a>.</p>
 </div>
+<section id="parameter-expansion-in-env-files">
+<h4>Parameter expansion in env files<a class="headerlink" href="#parameter-expansion-in-env-files" title="Link to this heading">¶</a></h4>
+<p>Env file values support bash-style parameter expansion. Each variable can reference variables defined earlier in the same file using <code class="docutils literal notranslate"><span class="pre">$VAR</span></code> or <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code>, as well as variables already set in the environment (host env vars, global env, or parent task env vars). The standard default/alternate operators are supported:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">BASE</span><span class="o">=</span>/opt/myapp
+<span class="nv">DATA_DIR</span><span class="o">=</span><span class="si">${</span><span class="nv">BASE</span><span class="si">}</span>/data<span class="w">         </span><span class="c1"># expands to /opt/myapp/data</span>
+<span class="nv">LOG_DIR</span><span class="o">=</span><span class="si">${</span><span class="nv">BASE</span><span class="si">}</span>/logs<span class="w">          </span><span class="c1"># expands to /opt/myapp/logs</span>
+
+<span class="c1"># Use a default when a variable is unset</span>
+<span class="nv">HOST</span><span class="o">=</span><span class="si">${</span><span class="nv">APP_HOST</span><span class="k">:-</span><span class="nv">localhost</span><span class="si">}</span>
+
+<span class="c1"># Use an alternate value when a variable is set</span>
+<span class="nv">DEBUG_FLAG</span><span class="o">=</span><span class="si">${</span><span class="nv">DEBUG</span><span class="p">:+--debug</span><span class="si">}</span>
+</pre></div>
+</div>
+<p>Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — <code class="docutils literal notranslate"><span class="pre">'${VAR}'</span></code> is always the literal string <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code>.</p>
+</section>
 <section id="optional-env-files">
 <h4>Optional env files<a class="headerlink" href="#optional-env-files" title="Link to this heading">¶</a></h4>
 <p>Normally poe will emit a warning if a specified envfile is not found. If you consider an envfile to be optional, you can suppress these warnings by configuring the file path (or paths) under the <code class="docutils literal notranslate"><span class="pre">optional</span></code> prefix like so:</p>
@@ -336,6 +353,7 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Environment variables loaded from env files have higher precedence than any inherited from the host environment, but lower precedence than env defined directly in the pyproject.toml file. Similarly <code class="docutils literal notranslate"><span class="pre">optional</span></code> env files are loaded after <code class="docutils literal notranslate"><span class="pre">expected</span></code> ones, so variables defined in <code class="docutils literal notranslate"><span class="pre">optional</span></code> files can override those defined in <code class="docutils literal notranslate"><span class="pre">expected</span></code> files.</p>
+<p>During parameter expansion within an env file, variables from lower-precedence sources (host env, previously loaded env files, and task-level env vars set before this file is loaded) are visible and can be referenced. In-file definitions always take precedence over these during expansion.</p>
 </div>
 </section>
 </section>
@@ -572,6 +590,7 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
 <li><a class="reference internal" href="#">Global options</a><ul>
 <li><a class="reference internal" href="#global-environment-variables">Global environment variables</a><ul>
 <li><a class="reference internal" href="#loading-external-environment-variables">Loading external environment variables</a><ul>
+<li><a class="reference internal" href="#parameter-expansion-in-env-files">Parameter expansion in env files</a></li>
 <li><a class="reference internal" href="#optional-env-files">Optional env files</a></li>
 <li><a class="reference internal" href="#resolving-env-file-paths">Resolving env file paths</a></li>
 </ul>
@@ -598,7 +617,7 @@ available as <code class="code highlight bash docutils literal highlight-bash"><
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=b6498c4d"></script>
+</div><script src="_static/documentation_options.js?v=55e318ff"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

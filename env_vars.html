@@ -192,6 +192,7 @@
 <li class="toctree-l2"><a class="reference internal" href="guides/global_tasks.html">Global tasks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/tox_replacement_guide.html">Replacing tox with uv and Poe the Poet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/without_poetry.html">Usage without poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/ai_agents_guide.html">Using poethepoet with AI Agents</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/library_guide.html">Using poethepoet as a library</a></li>
 <li class="toctree-l2"><a class="reference internal" href="guides/migrations.html">Migration Guides</a></li>
 </ul>
@@ -295,7 +296,8 @@
 <p>The following environment variables can be set to modify Poe the Poet’s behavior.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_PROJECT_DIR</span></code>: used as the default value for the <code class="docutils literal notranslate"><span class="pre">--directory</span></code> global argument.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">NO_COLOR</span></code>: disables ansi colors in output (unless the –ansi argument is provided).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NO_COLOR</span></code>: disables ansi colors in output (unless the <code class="docutils literal notranslate"><span class="pre">--ansi</span></code> argument is provided).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FORCE_COLOR</span></code>: forces ansi colors in output when set to a non-zero value (overridden by <code class="docutils literal notranslate"><span class="pre">NO_COLOR</span></code> or the <code class="docutils literal notranslate"><span class="pre">--no-ansi</span></code> argument).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">POE_DEBUG</span></code>: can be set to <code class="docutils literal notranslate"><span class="pre">1</span></code> to enable printing debug messages to stdout.</p></li>
 </ul>
 </section>
@@ -391,7 +393,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=b6498c4d"></script>
+</div><script src="_static/documentation_options.js?v=55e318ff"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

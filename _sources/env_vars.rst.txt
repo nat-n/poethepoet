@@ -65,5 +65,6 @@ External Environment variables
 The following environment variables can be set to modify Poe the Poet's behavior.
 
 - ``POE_PROJECT_DIR``: used as the default value for the ``--directory`` global argument.
-- ``NO_COLOR``: disables ansi colors in output (unless the --ansi argument is provided).
+- ``NO_COLOR``: disables ansi colors in output (unless the ``--ansi`` argument is provided).
+- ``FORCE_COLOR``: forces ansi colors in output when set to a non-zero value (overridden by ``NO_COLOR`` or the ``--no-ansi`` argument).
 - ``POE_DEBUG``: can be set to ``1`` to enable printing debug messages to stdout.
