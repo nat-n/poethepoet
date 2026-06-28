@@ -1734,7 +1734,7 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "poe-test-helpers"
-version = "0.2.0"
+version = "0.3.0"
 description = "Provides cross platform executables to help with testing"
 optional = false
 python-versions = ">=3.7"
