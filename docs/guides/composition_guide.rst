@@ -122,3 +122,26 @@ Normally the key in the uses table will be set as an environment variable for th
 .. important::
 
   Note that captured output that is exposed as an environment variable via the ``uses`` is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash.
+
+Importing multiple variables with uses_env
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whereas ``uses`` captures a single task's output into one named variable, the ``uses_env`` option captures one or more tasks' output and parses each as an *env file* (dotenv syntax). This lets a single upstream task contribute zero or more variables, which it names itself, rather than the host task naming one variable per task.
+
+This is useful for importing several related variables produced together by one command, such as credentials from a tool like ``aws-vault``:
+
+.. code-block:: toml
+
+  [tool.poe.tasks._aws-creds]
+  shell = "aws-vault exec my-profile -- env | grep '^AWS_'"
+
+  [tool.poe.tasks.deploy]
+  help = "Deploy with credentials sourced from aws-vault"
+  cmd = "terraform apply"
+  uses_env = "_aws-creds"
+
+Here ``_aws-creds`` emits several ``AWS_*=...`` lines, all of which are imported into the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations, applied in order so that later entries override earlier ones; explicit ``uses`` entries take precedence over ``uses_env`` imports on a name collision. As with ``uses``, an imported variable whose name is lowercase and prefixed with ``_`` is treated as private (available in config and parameter expansion, but not exposed on the subprocess environment).
+
+.. important::
+
+  Unlike ``uses``, the output of a ``uses_env`` task is **not** whitespace-compacted: it is parsed as an env file, so newlines (which separate the variable assignments) are significant. A leading ``export`` on each line is permitted and ignored, and comment lines are skipped.

@@ -11,7 +11,7 @@ from .io import PoeIO
 from .shutdown import ShutdownManager
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
     from .config import PoeConfig
@@ -30,7 +30,9 @@ class ContextProtocol(Protocol):
 
     def has_task_output(self, invocation: tuple[str, ...]) -> bool: ...
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str: ...
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str: ...
 
     def get_executor(
         self,
@@ -178,14 +180,28 @@ class RunContext:
             for var_name, invocation in used_task_invocations.items()
         }
 
+    def _get_dep_env_outputs(
+        self, used_env_task_invocations: Sequence[tuple[str, ...]]
+    ) -> list[str]:
+        """
+        Get the raw stdout of upstream tasks declared via the uses_env option, to be
+        parsed as env files. Output is returned uncollapsed, in declaration order.
+        """
+        return [
+            self.get_task_output(invocation, collapse_whitespace=False)
+            for invocation in used_env_task_invocations
+        ]
+
     def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes):
         self._task_outputs.save_task_output(invocation, captured_stdout)
 
     def has_task_output(self, invocation: tuple[str, ...]) -> bool:
         return self._task_outputs.has_task_output(invocation)
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str:
-        return self._task_outputs.get_task_output(invocation)
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str:
+        return self._task_outputs.get_task_output(invocation, collapse_whitespace)
 
     def get_executor(
         self,
@@ -309,8 +325,10 @@ class InitializationContext:
     def has_task_output(self, invocation: tuple[str, ...]) -> bool:
         return self._task_outputs.has_task_output(invocation)
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str:
-        return self._task_outputs.get_task_output(invocation)
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str:
+        return self._task_outputs.get_task_output(invocation, collapse_whitespace)
 
     def get_executor(
         self,
@@ -376,11 +394,16 @@ class TaskOutputCache:
         """
         return invocation in self._captured_stdout
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str:
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str:
         """
         Get the stored stdout data from a task so that it can be reused by other tasks
 
-        New lines are replaced with whitespace similar to how unquoted command
-        interpolation works in bash.
+        By default new lines are replaced with whitespace similar to how unquoted
+        command interpolation works in bash. Pass collapse_whitespace=False to
+        retrieve the raw output unmodified, e.g. for parsing as an env file.
         """
+        if not collapse_whitespace:
+            return self._captured_stdout[invocation]
         return re.sub(r"\s+", " ", self._captured_stdout[invocation].strip("\r\n"))

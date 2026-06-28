@@ -68,3 +68,33 @@ _do_setup  = "poe_test_echo here\nwe go...\n"
   sequence = [
     { cmd = "poe_test_env", env = { public = "${_secret}" } },
   ]
+
+  [tool.poe.tasks._creds_out]
+  cmd = 'poe_test_echo_lines "export AWS_KEY=abc123" AWS_SECRET=s3cr3t/xyz _token=hidden'
+
+  [tool.poe.tasks._more_creds_out]
+  cmd = "poe_test_echo_lines AWS_KEY=overridden EXTRA=more"
+
+  [tool.poe.tasks._empty_out]
+  cmd = "poe_test_echo_lines '# just a comment'"
+
+  [tool.poe.tasks.uses_env_basic]
+  cmd = "poe_test_env"
+  uses_env = "_creds_out"
+
+  [tool.poe.tasks.uses_env_template]
+  cmd = "poe_test_echo ${AWS_KEY}:${AWS_SECRET}:${_token}"
+  uses_env = "_creds_out"
+
+  [tool.poe.tasks.uses_env_multiple]
+  cmd = "poe_test_echo ${AWS_KEY}:${AWS_SECRET}:${EXTRA}"
+  uses_env = ["_creds_out", "_more_creds_out"]
+
+  [tool.poe.tasks.uses_env_uses_precedence]
+  cmd = "poe_test_echo ${AWS_KEY}"
+  uses_env = "_creds_out"
+  uses = { AWS_KEY = "_normal_out" }
+
+  [tool.poe.tasks.uses_env_empty]
+  cmd = "poe_test_echo done"
+  uses_env = "_empty_out"

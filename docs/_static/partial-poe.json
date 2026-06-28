@@ -240,6 +240,13 @@
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
+        },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
           "enum": [-2, -1, 0, 1, 2],
@@ -333,6 +340,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -687,6 +701,13 @@
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
+        },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
           "enum": [-2, -1, 0, 1, 2],
@@ -778,6 +799,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -899,6 +927,13 @@
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
+        },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
           "enum": [-2, -1, 0, 1, 2],
@@ -1001,6 +1036,13 @@
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
+        },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
           "enum": [-2, -1, 0, 1, 2],
@@ -1047,6 +1089,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1115,6 +1164,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1199,6 +1255,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1305,6 +1368,13 @@
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
+        },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
           "enum": [-2, -1, 0, 1, 2],
@@ -1361,6 +1431,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1439,6 +1516,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1530,6 +1614,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1643,6 +1734,13 @@
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
+        },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
           "enum": [-2, -1, 0, 1, 2],
@@ -1717,6 +1815,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1813,6 +1918,13 @@
           "additionalProperties": { "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to import variables from the output of other tasks which\nare executed first. Each referenced task's stdout is parsed as an env file\n(dotenv syntax), and the resulting variables - zero or more per task - are\nmerged into this task's environment."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
