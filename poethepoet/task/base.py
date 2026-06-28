@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, NamedTuple
 
 from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
-from ..exceptions import ConfigValidationError, ExecutionError, PoeException
+from ..exceptions import ConfigValidationError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
 from ..options import PoeOptions
@@ -316,8 +316,7 @@ class PoeTask(metaclass=MetaPoeTask):
             self,
             parent_env: TaskEnv,
             io: PoeIO,
-            uses_values: Mapping[str, str] | None = None,
-            uses_env_outputs: Sequence[tuple[tuple[str, ...], str]] | None = None,
+            dependency_values: Mapping[str, str] | None = None,
         ) -> TaskEnv:
             """
             Resolve the TaskEnv for this task, relative to the given parent_env
@@ -325,24 +324,9 @@ class PoeTask(metaclass=MetaPoeTask):
 
             result = parent_env.clone(io=io)
 
-            # Include env vars parsed from the output of uses_env dependencies, in
-            # declaration order, before single-value uses outputs so that explicit
-            # uses entries take precedence on a name collision.
-            if uses_env_outputs:
-                from ..env.parse import parse_env_file
-
-                for invocation, output in uses_env_outputs:
-                    try:
-                        result.update(parse_env_file(output, base_env=result))
-                    except ValueError as error:  # noqa: PERF203
-                        raise ExecutionError(
-                            f"Could not parse the output of uses_env task "
-                            f"{invocation[0]!r} as an env file: {error.args[0]}"
-                        ) from error
-
-            # Include env vars from outputs of upstream dependencies
-            if uses_values:
-                result.update(uses_values)
+            # Include env vars contributed by this task's uses and uses_env options
+            if dependency_values:
+                result.update(dependency_values)
 
             result.set("POE_CONF_DIR", str(self.source.config_dir))
             result.apply_env_config(
@@ -663,12 +647,14 @@ class PoeTask(metaclass=MetaPoeTask):
                 )
             return await PoeTaskRun(self.name).finalize()
 
+        base_env = parent_env or context.env
         task_env = self.spec.get_task_env(
-            parent_env or context.env,
+            base_env,
             io=self.ctx.io,
-            uses_values=context._get_dep_values(upstream_invocations["uses"]),
-            uses_env_outputs=context._get_dep_env_outputs(
-                upstream_invocations["uses_env"]
+            dependency_values=context._get_dependency_values(
+                upstream_invocations["uses"],
+                upstream_invocations["uses_env"],
+                base_env=base_env,
             ),
         )
 
