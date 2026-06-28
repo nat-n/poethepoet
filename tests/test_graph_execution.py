@@ -163,6 +163,21 @@ def test_uses_env_empty_output_is_noop(run_poe):
     assert result.stderr == ""
 
 
+def test_uses_env_output_supports_parameter_expansion(run_poe):
+    """
+    ${VAR} in a uses_env task's output is expanded as an env file against the
+    accumulating task env - here referencing a var from an earlier uses_env entry.
+    """
+    result = run_poe("uses_env_expansion", project="graphs")
+    assert result.capture == (
+        "Poe <= poe_test_echo_lines BASE=hello\n"
+        "Poe <= poe_test_echo_lines 'GREETING=${BASE}_world'\n"
+        "Poe => poe_test_echo hello_world\n"
+    )
+    assert result.stdout == "hello_world\n"
+    assert result.stderr == ""
+
+
 def test_uses_env_dry_run(run_poe):
     """In a dry run uses_env dependencies are reported as unresolved"""
     result = run_poe("-d", "uses_env_basic", project="graphs")

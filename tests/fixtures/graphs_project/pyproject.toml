@@ -98,3 +98,13 @@ _do_setup  = "poe_test_echo here\nwe go...\n"
   [tool.poe.tasks.uses_env_empty]
   cmd = "poe_test_echo done"
   uses_env = "_empty_out"
+
+  [tool.poe.tasks._base_out]
+  cmd = "poe_test_echo_lines BASE=hello"
+
+  [tool.poe.tasks._derived_out]
+  cmd = 'poe_test_echo_lines "GREETING=\${BASE}_world"'
+
+  [tool.poe.tasks.uses_env_expansion]
+  cmd = "poe_test_echo ${GREETING}"
+  uses_env = ["_base_out", "_derived_out"]
