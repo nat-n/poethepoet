@@ -173,24 +173,6 @@ class TaskContext(NamedTuple):
         )
 
 
-def _parse_uses_env_output(
-    invocation: tuple[str, ...], output: str, base_env: TaskEnv
-) -> dict[str, str]:
-    """
-    Parse the stdout of a uses_env dependency as an env file, raising a clear
-    error (naming the task) if the output isn't valid env file syntax.
-    """
-    from ..env.parse import parse_env_file
-
-    try:
-        return parse_env_file(output, base_env=base_env)
-    except ValueError as error:
-        raise ExecutionError(
-            f"Could not parse the output of uses_env task {invocation[0]!r} as an "
-            f"env file: {error.args[0]}"
-        ) from error
-
-
 class PoeTask(metaclass=MetaPoeTask):
     __key__: ClassVar[str]
     __content_type__: ClassVar[type] = str
@@ -254,10 +236,10 @@ class PoeTask(metaclass=MetaPoeTask):
 
         uses_env: str | Sequence[str] = ()
         """
-        Allows this task to capture the output of other tasks which are executed
-        first, and load environment variables from it. Each referenced task's
-        stdout is parsed as an env file (dotenv syntax), so a single task can
-        provide zero or more variables, which it names itself.
+        Makes this task depend on other tasks, and run with environment variables
+        parsed from their captured output. Each referenced task's stdout is parsed
+        as an env file (dotenv syntax), so a single task can provide zero or more
+        variables, which it names itself.
         """
 
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None
@@ -347,8 +329,16 @@ class PoeTask(metaclass=MetaPoeTask):
             # declaration order, before single-value uses outputs so that explicit
             # uses entries take precedence on a name collision.
             if uses_env_outputs:
+                from ..env.parse import parse_env_file
+
                 for invocation, output in uses_env_outputs:
-                    result.update(_parse_uses_env_output(invocation, output, result))
+                    try:
+                        result.update(parse_env_file(output, base_env=result))
+                    except ValueError as error:  # noqa: PERF203
+                        raise ExecutionError(
+                            f"Could not parse the output of uses_env task "
+                            f"{invocation[0]!r} as an env file: {error.args[0]}"
+                        ) from error
 
             # Include env vars from outputs of upstream dependencies
             if uses_values:
