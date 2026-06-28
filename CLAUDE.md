@@ -16,10 +16,11 @@ itself. Two distinct installs are in play — keep them straight:
    formatting and schema-generation output differ across tool versions, so
    anything installed another way produces drift and false failures.
 
-2. **Install a released `poe` globally**, as a stable task runner — *separate*
-   from the in-development Poe in the project venv:
+2. **Ensure a released `poe` is installed globally**, as a stable task runner —
+   *separate* from the in-development Poe in the project venv. Install it only
+   if it isn't already available:
    ```bash
-   pipx install poethepoet
+   command -v poe >/dev/null || pipx install poethepoet
    ```
    You are editing poethepoet, so don't drive your own checks with the code
    under test. Run from the repo root, this global `poe` reads the project's
