@@ -134,7 +134,7 @@ Capture the stdout of other task(s) and load environment variables from it, pars
 
 ```toml
 [tool.poe.tasks._aws-creds]
-shell = "aws-vault exec my-profile -- env | grep '^AWS_'"
+cmd = "aws-vault export my-profile"   # defaults to env-file format
 
 [tool.poe.tasks.deploy]
 cmd = "terraform apply"

@@ -133,14 +133,14 @@ This is useful for loading several related variables produced together by one co
 .. code-block:: toml
 
   [tool.poe.tasks._aws-creds]
-  shell = "aws-vault exec my-profile -- env | grep '^AWS_'"
+  cmd = "aws-vault export my-profile"
 
   [tool.poe.tasks.deploy]
   help = "Deploy with credentials sourced from aws-vault"
   cmd = "terraform apply"
   uses_env = "_aws-creds"
 
-Here ``_aws-creds`` emits several ``AWS_*=...`` lines, all of which are loaded into the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations, applied in order so that later entries override earlier ones; explicit ``uses`` entries take precedence over variables loaded via ``uses_env`` on a name collision. As with ``uses``, a loaded variable whose name is lowercase and prefixed with ``_`` is treated as private (available in config and parameter expansion, but not exposed on the subprocess environment).
+Here ``_aws-creds`` emits several ``AWS_*=...`` lines (``aws-vault export`` defaults to env-file format), all of which are loaded into the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations, applied in order so that later entries override earlier ones; explicit ``uses`` entries take precedence over variables loaded via ``uses_env`` on a name collision. As with ``uses``, a loaded variable whose name is lowercase and prefixed with ``_`` is treated as private (available in config and parameter expansion, but not exposed on the subprocess environment).
 
 .. important::
 
