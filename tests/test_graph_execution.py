@@ -177,11 +177,13 @@ def test_uses_env_dry_run(run_poe):
 
 
 def test_uses_env_error_on_unknown_task(temp_pyproject, run_poe):
-    project_path = temp_pyproject("""
+    project_path = temp_pyproject(
+        """
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "nope"
-        """)
+        """
+    )
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
@@ -191,7 +193,8 @@ def test_uses_env_error_on_unknown_task(temp_pyproject, run_poe):
 
 
 def test_uses_env_error_on_capture_stdout_task(temp_pyproject, run_poe):
-    project_path = temp_pyproject("""
+    project_path = temp_pyproject(
+        """
         [tool.poe.tasks._producer]
         cmd = "poe_test_echo hi"
         capture_stdout = "out.txt"
@@ -199,7 +202,8 @@ def test_uses_env_error_on_capture_stdout_task(temp_pyproject, run_poe):
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_producer"
-        """)
+        """
+    )
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
@@ -210,7 +214,8 @@ def test_uses_env_error_on_capture_stdout_task(temp_pyproject, run_poe):
 
 
 def test_uses_env_error_on_use_exec_task(temp_pyproject, run_poe):
-    project_path = temp_pyproject("""
+    project_path = temp_pyproject(
+        """
         [tool.poe.tasks._producer]
         cmd = "poe_test_echo hi"
         use_exec = true
@@ -218,7 +223,8 @@ def test_uses_env_error_on_use_exec_task(temp_pyproject, run_poe):
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_producer"
-        """)
+        """
+    )
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
