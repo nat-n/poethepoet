@@ -29,6 +29,9 @@ The following options can be configured on your tasks and are not specific to an
   Allows this task to use the output of other tasks which are executed first.
   The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.
 
+**uses_env** :  ``str`` | ``list[str]`` :doc:`📖<../guides/composition_guide>`
+  Allows this task to import variables from the output of other tasks which are executed first. Each referenced task's stdout is parsed as an env file (dotenv syntax), so a single task can yield zero or more variables which it names itself.
+
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.
 

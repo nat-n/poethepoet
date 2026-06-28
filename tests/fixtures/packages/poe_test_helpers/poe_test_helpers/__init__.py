@@ -11,6 +11,15 @@ def echo():
     print(" ".join(content), flush=True)
 
 
+def echo_lines():
+    """
+    Print each argument on its own line, for producing multi-line output (e.g.
+    env file content) cross platform.
+    """
+    for line in sys.argv[1:]:
+        print(line, flush=True)
+
+
 def delayed_echo():
     """
     A process that takes some time to start and then echoes the arguments.
