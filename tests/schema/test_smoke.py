@@ -203,7 +203,7 @@ def test_build_schema_script_module_forbids_print_result() -> None:
     variant = schema["definitions"]["script_task"]
     expected_clause = {
         "if": {
-            "properties": {"script": {"pattern": "^[^:]*$"}},
+            "properties": {"script": {"pattern": "^[^:]*$", "type": "string"}},
             "required": ["script"],
         },
         "then": {"properties": {"print_result": False}},
