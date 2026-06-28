@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 DEFAULT_CASE = "__default__"
-SUBTASK_OPTIONS_BLOCKLIST = ("args", "uses", "deps")
+SUBTASK_OPTIONS_BLOCKLIST = ("args", "uses", "uses_env", "deps")
 CONTROL_TASK_TYPES = ("expr", "cmd", "script")
 
 

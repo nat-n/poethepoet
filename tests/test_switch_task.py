@@ -207,3 +207,25 @@ def test_switch_task_forwards_extra_args_with_trailing_args(run_poe):
     )
     assert result.stdout == "before: foo bar :after\n"
     assert result.stderr == ""
+
+
+def test_switch_case_may_not_declare_uses_env(temp_pyproject, run_poe):
+    """A switch case may not redeclare uses_env, like uses and deps"""
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks._producer]
+        cmd = "poe_test_echo_lines X=1"
+
+        [tool.poe.tasks.sw]
+        control.cmd = "poe_test_echo a"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        cmd = "poe_test_echo hi"
+        uses_env = "_producer"
+        """
+    )
+    result = run_poe("sw", cwd=project_path)
+    assert "Error: Invalid task 'sw'" in result.capture
+    assert "Case 'a' includes incompatible option 'uses_env'" in result.capture
+    assert result.stdout == ""
