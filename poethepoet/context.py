@@ -6,6 +6,7 @@ import re
 from contextlib import asynccontextmanager, contextmanager
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
+from .exceptions import ExecutionError
 from .executor import PoeExecutor
 from .io import PoeIO
 from .shutdown import ShutdownManager
@@ -169,29 +170,35 @@ class RunContext:
         finally:
             self.enable_output_streaming = outer_value
 
-    def _get_dep_values(
-        self, used_task_invocations: Mapping[str, tuple[str, ...]]
+    def _get_dependency_values(
+        self,
+        uses_invocations: Mapping[str, tuple[str, ...]],
+        uses_env_invocations: Sequence[tuple[str, ...]],
+        base_env: Mapping[str, str],
     ) -> dict[str, str]:
         """
-        Get env vars from upstream tasks declared via the uses option.
-        """
-        return {
-            var_name: self.get_task_output(invocation)
-            for var_name, invocation in used_task_invocations.items()
-        }
+        Resolve the environment variables contributed by a task's uses and uses_env
+        options.
 
-    def _get_dep_env_outputs(
-        self, used_env_task_invocations: Sequence[tuple[str, ...]]
-    ) -> list[tuple[tuple[str, ...], str]]:
+        uses_env tasks have their stdout parsed as env files (in declaration order,
+        expanded against base_env plus the variables from earlier entries); uses
+        values are applied on top so an explicit uses entry wins on a collision.
         """
-        Get the raw stdout of upstream tasks declared via the uses_env option, to be
-        parsed as env files. Each invocation is paired with its uncollapsed output,
-        in declaration order, so a parse error can name the offending task.
-        """
-        return [
-            (invocation, self.get_task_output(invocation, collapse_whitespace=False))
-            for invocation in used_env_task_invocations
-        ]
+        from .env.parse import parse_env_file
+
+        result: dict[str, str] = {}
+        for invocation in uses_env_invocations:
+            output = self.get_task_output(invocation, collapse_whitespace=False)
+            try:
+                result.update(parse_env_file(output, base_env={**base_env, **result}))
+            except ValueError as error:
+                raise ExecutionError(
+                    f"Could not parse the output of uses_env task "
+                    f"{invocation[0]!r} as an env file: {error.args[0]}"
+                ) from error
+        for var_name, invocation in uses_invocations.items():
+            result[var_name] = self.get_task_output(invocation)
+        return result
 
     def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes):
         self._task_outputs.save_task_output(invocation, captured_stdout)
