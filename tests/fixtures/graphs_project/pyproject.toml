@@ -108,3 +108,10 @@ _do_setup  = "poe_test_echo here\nwe go...\n"
   [tool.poe.tasks.uses_env_expansion]
   cmd = "poe_test_echo ${GREETING}"
   uses_env = ["_base_out", "_derived_out"]
+
+  [tool.poe.tasks._unparseable_out]
+  cmd = "poe_test_echo_lines 'this is not an env file'"
+
+  [tool.poe.tasks.uses_env_unparseable]
+  cmd = "poe_test_echo done"
+  uses_env = "_unparseable_out"
