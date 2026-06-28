@@ -142,7 +142,7 @@ After creating or changing a task, run `poe --help <task>` to confirm it parses 
 | `env` | environment variables for the task |
 | `deps` | tasks to run before this one |
 | `uses` | capture another task's stdout as a variable |
-| `uses_env` | import vars from another task's stdout, parsed as an env file |
+| `uses_env` | load env vars from another task's stdout, parsed as an env file |
 | `cwd` | working directory (relative to project root) |
 | `executor` | override executor: `uv`, `poetry`, `virtualenv`, `simple` |
 
