@@ -178,6 +178,17 @@ def test_uses_env_output_supports_parameter_expansion(run_poe):
     assert result.stderr == ""
 
 
+def test_uses_env_unparseable_output_reports_clean_error(run_poe):
+    """Output that isn't valid env file syntax yields a clear error, not a traceback"""
+    result = run_poe("uses_env_unparseable", project="graphs")
+    assert result.code == 1
+    assert (
+        "Could not parse the output of uses_env task '_unparseable_out' as an "
+        "env file: Expected '=' after variable name 'this'"
+    ) in result.capture
+    assert result.stdout == ""
+
+
 def test_uses_env_dry_run(run_poe):
     """In a dry run uses_env dependencies are reported as unresolved"""
     result = run_poe("-d", "uses_env_basic", project="graphs")

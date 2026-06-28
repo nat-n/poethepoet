@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, NamedTuple
 
 from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
-from ..exceptions import ConfigValidationError, PoeException
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
 from ..options import PoeOptions
@@ -173,6 +173,24 @@ class TaskContext(NamedTuple):
         )
 
 
+def _parse_uses_env_output(
+    invocation: tuple[str, ...], output: str, base_env: TaskEnv
+) -> dict[str, str]:
+    """
+    Parse the stdout of a uses_env dependency as an env file, raising a clear
+    error (naming the task) if the output isn't valid env file syntax.
+    """
+    from ..env.parse import parse_env_file
+
+    try:
+        return parse_env_file(output, base_env=base_env)
+    except ValueError as error:
+        raise ExecutionError(
+            f"Could not parse the output of uses_env task {invocation[0]!r} as an "
+            f"env file: {error.args[0]}"
+        ) from error
+
+
 class PoeTask(metaclass=MetaPoeTask):
     __key__: ClassVar[str]
     __content_type__: ClassVar[type] = str
@@ -317,7 +335,7 @@ class PoeTask(metaclass=MetaPoeTask):
             parent_env: TaskEnv,
             io: PoeIO,
             uses_values: Mapping[str, str] | None = None,
-            uses_env_outputs: Sequence[str] | None = None,
+            uses_env_outputs: Sequence[tuple[tuple[str, ...], str]] | None = None,
         ) -> TaskEnv:
             """
             Resolve the TaskEnv for this task, relative to the given parent_env
@@ -329,10 +347,8 @@ class PoeTask(metaclass=MetaPoeTask):
             # declaration order, before single-value uses outputs so that explicit
             # uses entries take precedence on a name collision.
             if uses_env_outputs:
-                from ..env.parse import parse_env_file
-
-                for output in uses_env_outputs:
-                    result.update(parse_env_file(output, base_env=result))
+                for invocation, output in uses_env_outputs:
+                    result.update(_parse_uses_env_output(invocation, output, result))
 
             # Include env vars from outputs of upstream dependencies
             if uses_values:

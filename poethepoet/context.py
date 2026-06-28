@@ -182,13 +182,14 @@ class RunContext:
 
     def _get_dep_env_outputs(
         self, used_env_task_invocations: Sequence[tuple[str, ...]]
-    ) -> list[str]:
+    ) -> list[tuple[tuple[str, ...], str]]:
         """
         Get the raw stdout of upstream tasks declared via the uses_env option, to be
-        parsed as env files. Output is returned uncollapsed, in declaration order.
+        parsed as env files. Each invocation is paired with its uncollapsed output,
+        in declaration order, so a parse error can name the offending task.
         """
         return [
-            self.get_task_output(invocation, collapse_whitespace=False)
+            (invocation, self.get_task_output(invocation, collapse_whitespace=False))
             for invocation in used_env_task_invocations
         ]
 
