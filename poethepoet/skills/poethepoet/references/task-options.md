@@ -130,7 +130,7 @@ uses = { _version = "_get-version" }
 
 ## uses_env
 
-Run other task(s) and parse each one's stdout as an env file (dotenv syntax), merging the resulting variables into this task's environment. Unlike `uses`, a single subtask can yield zero or more variables, which it names itself.
+Capture the stdout of other task(s) and load environment variables from it, parsing each one's output as an env file (dotenv syntax). Unlike `uses`, a single subtask can provide zero or more variables, which it names itself.
 
 ```toml
 [tool.poe.tasks._aws-creds]
@@ -144,8 +144,8 @@ uses_env = "_aws-creds"   # or a list: uses_env = ["_aws-creds", "_other-creds"]
 - Value is a task invocation, or a list of them (applied in order; later wins)
 - Each task's stdout is parsed as an env file: `KEY=value` lines, optional leading `export`, `#` comments and blank lines ignored, `${VAR}` expanded against the current env
 - Output is **not** whitespace-collapsed (unlike `uses`) — newlines separate assignments
-- Imported `_`-prefixed lowercase names stay private to the subprocess, like `uses`
-- On a name collision, explicit `uses` entries take precedence over `uses_env` imports
+- Loaded `_`-prefixed lowercase names stay private to the subprocess, like `uses`
+- On a name collision, explicit `uses` entries take precedence over variables loaded via `uses_env`
 
 ---
 
