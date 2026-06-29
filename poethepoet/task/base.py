@@ -236,10 +236,10 @@ class PoeTask(metaclass=MetaPoeTask):
 
         uses_env: str | Sequence[str] = ()
         """
-        Makes this task depend on other tasks, and run with environment variables
-        parsed from their captured output. Each referenced task's stdout is parsed
-        as an env file (dotenv syntax), so a single task can provide zero or more
-        variables, which it names itself.
+        Allows this task to use the output of other tasks which are executed first,
+        and thier output is parsed like an envfile to get zero or more environment
+        variables which will be accessible in this task.
+        The referenced task determined which variables (if any) as set.
         """
 
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None

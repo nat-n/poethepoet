@@ -245,7 +245,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -346,7 +346,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -706,7 +706,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -805,7 +805,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -932,7 +932,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1041,7 +1041,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1095,7 +1095,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1170,7 +1170,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1261,7 +1261,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1373,7 +1373,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1437,7 +1437,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1522,7 +1522,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1620,7 +1620,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1739,7 +1739,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1828,7 +1828,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
@@ -1938,7 +1938,7 @@
             { "type": "string" },
             { "items": { "type": "string" }, "type": "array" }
           ],
-          "description": "Makes this task depend on other tasks, and run with environment variables\nparsed from their captured output. Each referenced task's stdout is parsed\nas an env file (dotenv syntax), so a single task can provide zero or more\nvariables, which it names itself."
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand thier output is parsed like an envfile to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task determined which variables (if any) as set."
         },
         "verbosity": {
           "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
