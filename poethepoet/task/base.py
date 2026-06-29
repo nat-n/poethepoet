@@ -237,9 +237,9 @@ class PoeTask(metaclass=MetaPoeTask):
         uses_env: str | Sequence[str] = ()
         """
         Allows this task to use the output of other tasks which are executed first,
-        and thier output is parsed like an envfile to get zero or more environment
+        and their output is parsed like an env file to get zero or more environment
         variables which will be accessible in this task.
-        The referenced task determined which variables (if any) as set.
+        The referenced task determines which variables (if any) are set.
         """
 
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None
