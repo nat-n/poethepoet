@@ -78,6 +78,7 @@ Similarly a list inside a parallel task is interpreted as sequence task. For exa
 
 .. _graph_composition:
 
+
 Composing tasks into graphs
 ---------------------------
 
@@ -123,25 +124,27 @@ Normally the key in the uses table will be set as an environment variable for th
 
   Note that captured output that is exposed as an environment variable via the ``uses`` is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash.
 
-Loading multiple variables with uses_env
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sourcing variables from dependency task output
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Whereas ``uses`` captures a single task's output into one named variable, the ``uses_env`` option captures one or more tasks' output and parses each as an *env file* (dotenv syntax) to load environment variables from it. This lets a single upstream task provide zero or more variables, which it names itself, rather than the host task naming one variable per task.
+Whereas ``uses`` captures task output into a named variable, the ``uses_env`` option captures the task output and parses variables from it like an *env file* (dotenv syntax) and exposes the resulting variables to the task at runtime. This lets a single upstream task provide zero or more variables, which it names itself, rather than the host task naming one variable per task.
 
 This is useful for loading several related variables produced together by one command, such as credentials from a tool like ``aws-vault``:
 
 .. code-block:: toml
 
   [tool.poe.tasks._aws-creds]
-  cmd = "aws-vault export my-profile"
+  cmd  = "aws-vault export ${_profile}"
+  args = [{ name = "_profile", default = "dev", help = "AWS profile to use" }]
 
   [tool.poe.tasks.deploy]
   help = "Deploy with credentials sourced from aws-vault"
   cmd = "terraform apply"
-  uses_env = "_aws-creds"
+  uses_env = "_aws-creds --profile ${_profile}"
+  args = [{ name = "_profile", default = "dev", help = "AWS profile to use" }]
 
-Here ``_aws-creds`` emits several ``AWS_*=...`` lines (``aws-vault export`` defaults to env-file format), all of which are loaded into the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations, applied in order so that later entries override earlier ones; explicit ``uses`` entries take precedence over variables loaded via ``uses_env`` on a name collision. As with ``uses``, a loaded variable whose name is lowercase and prefixed with ``_`` is treated as private (available in config and parameter expansion, but not exposed on the subprocess environment).
+Here ``_aws-creds`` returns several ``AWS_*=...`` lines, which are then exposed in the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations (including parameter expansions), applied in order so that later entries override earlier ones. Notice that the ``_aws-creds`` task optionally accepts an argument pass to aws-vault to choose which AWS profile to use.
 
-.. important::
+.. note::
 
-  Unlike ``uses``, the output of a ``uses_env`` task is **not** whitespace-compacted: it is parsed as an env file, so newlines (which separate the variable assignments) are significant. A leading ``export`` on each line is permitted and ignored, and comment lines are skipped.
+  As is conventional for variables in poethepoet, and lowercase variables prefixed with ``_``, e.g. ``_my_private_var`` are considered private, meaning that they're accessible within task config but not exposed on the environment for tasks to access at runtime.
