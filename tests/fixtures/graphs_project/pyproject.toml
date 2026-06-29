@@ -115,3 +115,12 @@ _do_setup  = "poe_test_echo here\nwe go...\n"
   [tool.poe.tasks.uses_env_unparseable]
   cmd = "poe_test_echo done"
   uses_env = "_unparseable_out"
+
+  [tool.poe.tasks._creds_for]
+  cmd  = 'poe_test_echo_lines "TOKEN=${profile}-secret"'
+  args = [{ name = "profile", default = "dev" }]
+
+  [tool.poe.tasks.uses_env_with_args]
+  cmd      = "poe_test_echo ${TOKEN}"
+  args     = [{ name = "profile", default = "dev" }]
+  uses_env = "_creds_for --profile ${profile}"
