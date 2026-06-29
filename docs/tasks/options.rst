@@ -30,7 +30,7 @@ The following options can be configured on your tasks and are not specific to an
   The value is a map where the values are invocations of the other tasks, and the keys are environment variables by which the results of those tasks will be accessible in this task.
 
 **uses_env** :  ``str`` | ``list[str]`` :doc:`📖<../guides/composition_guide>`
-  Allows this task to use the output of other tasks which are executed first, and thier output is parsed like an envfile to get zero or more environment variables which will be accessible in this task. The referenced task determined which variables (if any) as set.
+  Allows this task to use the output of other tasks which are executed first, and their output is parsed like an env file to get zero or more environment variables which will be accessible in this task. The referenced task determines which variables (if any) are set.
 
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.

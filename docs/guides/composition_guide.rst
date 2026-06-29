@@ -78,7 +78,6 @@ Similarly a list inside a parallel task is interpreted as sequence task. For exa
 
 .. _graph_composition:
 
-
 Composing tasks into graphs
 ---------------------------
 
@@ -143,8 +142,8 @@ This is useful for loading several related variables produced together by one co
   uses_env = "_aws-creds --profile ${_profile}"
   args = [{ name = "_profile", default = "dev", help = "AWS profile to use" }]
 
-Here ``_aws-creds`` returns several ``AWS_*=...`` lines, which are then exposed in the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations (including parameter expansions), applied in order so that later entries override earlier ones. Notice that the ``_aws-creds`` task optionally accepts an argument pass to aws-vault to choose which AWS profile to use.
+Here ``_aws-creds`` returns several ``AWS_*=...`` lines, which are then exposed in the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations (including parameter expansions), applied in order so that later entries override earlier ones. Notice that the ``_aws-creds`` task optionally accepts an argument to pass to aws-vault to choose which AWS profile to use.
 
 .. note::
 
-  As is conventional for variables in poethepoet, and lowercase variables prefixed with ``_``, e.g. ``_my_private_var`` are considered private, meaning that they're accessible within task config but not exposed on the environment for tasks to access at runtime.
+  As is conventional in poethepoet, lowercase variables prefixed with ``_`` (e.g. ``_my_private_var``) are considered private — accessible within task config but not exposed on the subprocess environment at runtime.
