@@ -178,6 +178,31 @@ def test_uses_env_output_supports_parameter_expansion(run_poe):
     assert result.stderr == ""
 
 
+def test_uses_env_passes_args_with_parameter_expansion(run_poe):
+    """
+    A uses_env invocation accepts arguments and parameter expansion: the host's
+    own arg is expanded into the invocation and passed on to the producer task.
+    """
+    result = run_poe("uses_env_with_args", "--profile", "prod", project="graphs")
+    assert result.capture == (
+        "Poe <= poe_test_echo_lines TOKEN=prod-secret\n"
+        "Poe => poe_test_echo prod-secret\n"
+    )
+    assert result.stdout == "prod-secret\n"
+    assert result.stderr == ""
+
+
+def test_uses_env_args_fall_back_to_defaults(run_poe):
+    """When the host arg is unset, the producer's arg default applies"""
+    result = run_poe("uses_env_with_args", project="graphs")
+    assert result.capture == (
+        "Poe <= poe_test_echo_lines TOKEN=dev-secret\n"
+        "Poe => poe_test_echo dev-secret\n"
+    )
+    assert result.stdout == "dev-secret\n"
+    assert result.stderr == ""
+
+
 def test_uses_env_unparseable_output_reports_clean_error(run_poe):
     """Output that isn't valid env file syntax yields a clear error, not a traceback"""
     result = run_poe("uses_env_unparseable", project="graphs")
