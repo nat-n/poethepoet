@@ -63,6 +63,33 @@ def test_cmd_task_with_multiple_value_arg(run_poe):
     assert result.stderr == ""
 
 
+def test_cmd_multiple_positional_default_reaches_command_line(run_poe):
+    # End-to-end mirror of the 0.47.0 break: an absent `multiple` positional
+    # with a default must still reach the command line. The default "src tests"
+    # is exposed as an env var and word-split into two `$files` tokens.
+    result = run_poe("multiple-positional-default", project="cmds")
+    assert result.capture == "Poe => poe_test_echo src tests\n"
+    assert result.stdout == "src tests\n"
+    assert result.stderr == ""
+
+
+def test_cmd_multiple_positional_default_is_overridden(run_poe):
+    # Supplied values replace the default rather than extending it.
+    result = run_poe("multiple-positional-default", "a", "b", project="cmds")
+    assert result.capture == "Poe => poe_test_echo a b\n"
+    assert result.stdout == "a b\n"
+    assert result.stderr == ""
+
+
+def test_cmd_multiple_n_positional_absent_is_empty_not_error(run_poe):
+    # An absent (not required) `multiple = N` positional resolves to empty
+    # rather than tripping the "expected N values, got 0" exact-count check.
+    result = run_poe("multiple-pair-positional", project="cmds")
+    assert result.capture == "Poe => poe_test_echo coords\n"
+    assert result.stdout == "coords\n"
+    assert result.stderr == ""
+
+
 def test_cmd_task_with_cwd_option(run_poe, poe_project_path):
     result = run_poe("cwd", project="cwd")
     assert result.capture == "Poe => poe_test_pwd\n"
