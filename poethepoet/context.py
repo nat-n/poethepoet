@@ -6,12 +6,13 @@ import re
 from contextlib import asynccontextmanager, contextmanager
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
+from .exceptions import ExecutionError
 from .executor import PoeExecutor
 from .io import PoeIO
 from .shutdown import ShutdownManager
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
     from .config import PoeConfig
@@ -30,7 +31,9 @@ class ContextProtocol(Protocol):
 
     def has_task_output(self, invocation: tuple[str, ...]) -> bool: ...
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str: ...
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str: ...
 
     def get_executor(
         self,
@@ -167,16 +170,40 @@ class RunContext:
         finally:
             self.enable_output_streaming = outer_value
 
-    def _get_dep_values(
-        self, used_task_invocations: Mapping[str, tuple[str, ...]]
+    def _get_dependency_values(
+        self,
+        uses_invocations: Mapping[str, tuple[str, ...]],
+        uses_env_invocations: Sequence[tuple[str, ...]],
+        base_env: Mapping[str, str],
     ) -> dict[str, str]:
         """
-        Get env vars from upstream tasks declared via the uses option.
+        Resolve the environment variables contributed by a task's uses and uses_env
+        options.
+
+        uses_env tasks have their stdout parsed as env files (in declaration order,
+        expanded against base_env plus the variables from earlier entries); uses
+        values are applied on top so an explicit uses entry wins on a collision.
         """
-        return {
-            var_name: self.get_task_output(invocation)
-            for var_name, invocation in used_task_invocations.items()
-        }
+        from .env.parse import parse_env_file
+
+        result: dict[str, str] = {}
+        for invocation in uses_env_invocations:
+            # Normalize line endings: captured output is decoded directly (unlike
+            # envfiles read from disk in text mode), so CRLF would otherwise leave a
+            # trailing \r on each value on Windows.
+            output = self.get_task_output(
+                invocation, collapse_whitespace=False
+            ).replace("\r\n", "\n")
+            try:
+                result.update(parse_env_file(output, base_env={**base_env, **result}))
+            except ValueError as error:
+                raise ExecutionError(
+                    f"Could not parse the output of uses_env task "
+                    f"{invocation[0]!r} as an env file: {error.args[0]}"
+                ) from error
+        for var_name, invocation in uses_invocations.items():
+            result[var_name] = self.get_task_output(invocation)
+        return result
 
     def save_task_output(self, invocation: tuple[str, ...], captured_stdout: bytes):
         self._task_outputs.save_task_output(invocation, captured_stdout)
@@ -184,8 +211,10 @@ class RunContext:
     def has_task_output(self, invocation: tuple[str, ...]) -> bool:
         return self._task_outputs.has_task_output(invocation)
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str:
-        return self._task_outputs.get_task_output(invocation)
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str:
+        return self._task_outputs.get_task_output(invocation, collapse_whitespace)
 
     def get_executor(
         self,
@@ -309,8 +338,10 @@ class InitializationContext:
     def has_task_output(self, invocation: tuple[str, ...]) -> bool:
         return self._task_outputs.has_task_output(invocation)
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str:
-        return self._task_outputs.get_task_output(invocation)
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str:
+        return self._task_outputs.get_task_output(invocation, collapse_whitespace)
 
     def get_executor(
         self,
@@ -376,11 +407,16 @@ class TaskOutputCache:
         """
         return invocation in self._captured_stdout
 
-    def get_task_output(self, invocation: tuple[str, ...]) -> str:
+    def get_task_output(
+        self, invocation: tuple[str, ...], collapse_whitespace: bool = True
+    ) -> str:
         """
         Get the stored stdout data from a task so that it can be reused by other tasks
 
-        New lines are replaced with whitespace similar to how unquoted command
-        interpolation works in bash.
+        By default new lines are replaced with whitespace similar to how unquoted
+        command interpolation works in bash. Pass collapse_whitespace=False to
+        retrieve the raw output unmodified, e.g. for parsing as an env file.
         """
+        if not collapse_whitespace:
+            return self._captured_stdout[invocation]
         return re.sub(r"\s+", " ", self._captured_stdout[invocation].strip("\r\n"))

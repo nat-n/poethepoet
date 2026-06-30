@@ -69,7 +69,7 @@ env.REGION = "${AWS_DEFAULT_REGION:-us-east-1}"
 env = { _token = "${SECRET_TOKEN}" }  # use as ${_token} in cmd, invisible to shell tasks
 ```
 
-**Precedence** (lowest to highest): host env → global envfile → global env → task envfile → task env → `uses` outputs → task args
+**Precedence** (lowest to highest): host env → global envfile → global env → task envfile → task env → `uses_env` / `uses` outputs → task args
 
 ---
 
@@ -125,6 +125,27 @@ uses = { _version = "_get-version" }
 - Key is the variable name; value is a task invocation
 - Variables are available in parameter expansion (`${_version}`)
 - Prefix all lowercase variables with `_` to keep the value out of the subprocess environment
+
+---
+
+## uses_env
+
+Capture the stdout of other task(s) and load environment variables from it, parsing each one's output as an env file (dotenv syntax). Unlike `uses`, a single subtask can provide zero or more variables, which it names itself.
+
+```toml
+[tool.poe.tasks._aws-creds]
+cmd = "aws-vault export my-profile"   # defaults to env-file format
+
+[tool.poe.tasks.deploy]
+cmd = "terraform apply"
+uses_env = "_aws-creds"   # or a list: uses_env = ["_aws-creds", "_other-creds"]
+```
+
+- Value is a task invocation, or a list of them (applied in order; later wins)
+- Each task's stdout is parsed as an env file: `KEY=value` lines, optional leading `export`, `#` comments and blank lines ignored, `${VAR}` expanded against the current env
+- Output is **not** whitespace-collapsed (unlike `uses`) — newlines separate assignments
+- Loaded `_`-prefixed lowercase names stay private to the subprocess, like `uses`
+- On a name collision, explicit `uses` entries take precedence over variables loaded via `uses_env`
 
 ---
 

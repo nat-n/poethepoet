@@ -122,3 +122,28 @@ Normally the key in the uses table will be set as an environment variable for th
 .. important::
 
   Note that captured output that is exposed as an environment variable via the ``uses`` is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash.
+
+Sourcing variables from dependency task output
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whereas ``uses`` captures task output into a named variable, the ``uses_env`` option captures the task output and parses variables from it like an *env file* (dotenv syntax) and exposes the resulting variables to the task at runtime. This lets a single upstream task provide zero or more variables, which it names itself, rather than the host task naming one variable per task.
+
+This is useful for loading several related variables produced together by one command, such as credentials from a tool like ``aws-vault``:
+
+.. code-block:: toml
+
+  [tool.poe.tasks._aws-creds]
+  cmd  = "aws-vault export ${_profile}"
+  args = [{ name = "_profile", default = "dev", help = "AWS profile to use" }]
+
+  [tool.poe.tasks.deploy]
+  help = "Deploy with credentials sourced from aws-vault"
+  cmd = "terraform apply"
+  uses_env = "_aws-creds --profile ${_profile}"
+  args = [{ name = "_profile", default = "dev", help = "AWS profile to use" }]
+
+Here ``_aws-creds`` returns several ``AWS_*=...`` lines, which are then exposed in the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations (including parameter expansions), applied in order so that later entries override earlier ones. Notice that the ``_aws-creds`` task optionally accepts an argument to pass to aws-vault to choose which AWS profile to use.
+
+.. note::
+
+  As is conventional in poethepoet, lowercase variables prefixed with ``_`` (e.g. ``_my_private_var``) are considered private — accessible within task config but not exposed on the subprocess environment at runtime.

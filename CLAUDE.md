@@ -2,9 +2,43 @@
 
 Poe the Poet is a task runner for Python projects that integrates with poetry and uv.
 
+## Set up your environment first (do this before running anything)
+
+This repo is a **Poetry** project, and the package it builds *is* poethepoet
+itself. Two distinct installs are in play — keep them straight:
+
+1. **Sync the project venv** — this is where tests and checks actually execute:
+   ```bash
+   poetry sync
+   ```
+   It installs the project plus the **locked** dev dependencies (black, ruff,
+   mypy, pytest, …) at their pinned versions. Those pins are load-bearing:
+   formatting and schema-generation output differ across tool versions, so
+   anything installed another way produces drift and false failures.
+
+2. **Ensure a released `poe` is installed globally**, as a stable task runner —
+   *separate* from the in-development Poe in the project venv. Install it only
+   if it isn't already available:
+   ```bash
+   command -v poe >/dev/null || pipx install poethepoet
+   ```
+   You are editing poethepoet, so don't drive your own checks with the code
+   under test. Run from the repo root, this global `poe` reads the project's
+   `[tool.poe.tasks]` and executes each task **inside the Poetry venv** (its
+   auto/poetry executor), so checks still run against the locked deps.
+
+3. **List the tasks** as your first step of exploration:
+   ```bash
+   poe          # shows every task with its description
+   ```
+
+**If a tool ever seems "missing," the fix is `poetry sync` — never `pip
+install` into the system Python.** Ad-hoc installs pull unpinned versions and
+silently corrupt formatting/schema results.
+
 ## Use poe tasks
 
-This project uses poethepoet to manage development tasks. Prefer to use poe tasks when available to reduce friction.
+This project uses poethepoet to manage development tasks. After the setup above, run everything through poe tasks — `poe check`, `poe test`, `poe lint`, `poe types`, `poe format`.
 
 Run `poe` to see available tasks and their descriptions.
 

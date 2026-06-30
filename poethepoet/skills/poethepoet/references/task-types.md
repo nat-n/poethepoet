@@ -291,7 +291,7 @@ args = [{ name = "STAGE", positional = true, choices = ["staging", "production"]
 
 - Control task type must be `expr`, `cmd`, or `script`.
 - Matching is by string comparison: the control output is `str()`-ed and compared against each `case` value (also `str()`-ed).
-- `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, or `deps`.
+- `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, `uses_env`, or `deps`.
 
 **Branching on a private (`_`-prefixed) arg**: in an `expr` control, reference it by **bare variable name**, never `${...}`. Private args aren't exported as env vars, so `control.expr = "${_target}"` silently resolves to an empty string and the switch falls through to `default`. Use the bare-variable form:
 
