@@ -521,7 +521,7 @@ class PoeTaskArgs:
             # and the first entry of `options` for positionals (argparse default).
             key = arg.options[0] if arg.positional else arg.name
             value = parsed_args.get(key)
-            if value is None:
+            if value is None or (arg.positional and value == []):
                 continue
             if len(value) != multi:
                 parser.error(
@@ -535,12 +535,6 @@ class PoeTaskArgs:
         """
         Surface every ``multiple`` arg as a list, applying its configured
         default when the arg was absent.
-
-        argparse leaves an absent ``multiple`` arg as ``None`` (its default is
-        kept empty so ``action="extend"`` doesn't prepend onto supplied
-        values). Here ``None`` becomes the configured default wrapped in a list,
-        or ``[]`` when no default is set — so scripts always receive a list and
-        env-var exposure stays consistent.
         """
         for arg in self._args:
             if not arg.multiple:
@@ -548,7 +542,9 @@ class PoeTaskArgs:
             # dest is `arg.name` for option args and `arg.options[0]` for
             # positionals, matching `_validate_exact_count`.
             key = arg.options[0] if arg.positional else arg.name
-            if parsed_args.get(key) is not None:
+            value = parsed_args.get(key)
+            if value is not None and not (arg.positional and value == []):
+                # Position arg with multiple=True arrives as []
                 continue
             default = arg.get("default")
             if default is None:

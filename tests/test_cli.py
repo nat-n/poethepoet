@@ -224,6 +224,8 @@ def test_documentation_of_task_named_args(run_poe):
         r"    --plain               \s+\n"
         r"    --defaulted           \s+\[default: base\]\n"
         r"    --pair                \s+\n"
+        r"  multiple-positional-default\s+\n"
+        r"    files                 \s+\[default: src tests\]\n"
         r"  multiple-lines-help     \s+Multilines\n"
         r"                            \s+Creating multi-line documentation for greater"
         " detail and inclusion of examples\n"
