@@ -544,7 +544,8 @@ class PoeTaskArgs:
             key = arg.options[0] if arg.positional else arg.name
             value = parsed_args.get(key)
             if value is not None and not (arg.positional and value == []):
-                # Position arg with multiple=True arrives as []
+                # Omitted option arg with multiple=True arrives as None
+                # Omitted positional arg with multiple=True arrives as []
                 continue
             default = arg.get("default")
             if default is None:
