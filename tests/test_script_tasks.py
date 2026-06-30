@@ -528,6 +528,32 @@ def test_multiple_arg_scalar_default_is_overridden_not_extended(run_poe):
     assert result.stderr == ""
 
 
+def test_multiple_positional_arg_applies_scalar_default(run_poe):
+    # Regression (0.47.0): an absent `multiple` positional surfaces as [] from
+    # argparse, not None like options, so its configured default was dropped.
+    # The default must still apply -> ['src tests'].
+    result = run_poe(
+        "multiple-positional-default",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.stdout == "args ()\nkwargs {'files': ['src tests']}\n"
+    assert result.stderr == ""
+
+
+def test_multiple_positional_arg_default_is_overridden(run_poe):
+    # Supplied positional values must replace the default, not extend it.
+    result = run_poe(
+        "multiple-positional-default",
+        "a",
+        "b",
+        project="scripts",
+        env=no_venv,
+    )
+    assert result.stdout == "args ()\nkwargs {'files': ['a', 'b']}\n"
+    assert result.stderr == ""
+
+
 def test_async_script_task(run_poe, projects):
     result = run_poe(
         "async-task",

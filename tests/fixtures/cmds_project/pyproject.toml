@@ -43,6 +43,23 @@ positional = true
 multiple = true
 type = "integer"
 
+[tool.poe.tasks.multiple-positional-default]
+cmd = "poe_test_echo $files"
+
+[[tool.poe.tasks.multiple-positional-default.args]]
+name = "files"
+positional = true
+multiple = true
+default = "src tests"
+
+[tool.poe.tasks.multiple-pair-positional]
+cmd = "poe_test_echo coords $coords"
+
+[[tool.poe.tasks.multiple-pair-positional.args]]
+name = "coords"
+positional = true
+multiple = 2
+
 [tool.poe.tasks.meeseeks]
 cmd = """poe_test_echo "I'm Mr. Meeseeks! Look at me!" """
 capture_stdout = "${POE_PWD}/message.txt"

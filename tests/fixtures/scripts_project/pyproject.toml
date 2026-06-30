@@ -149,6 +149,15 @@ default = "base"
 name = "pair"
 multiple = 2
 
+[tool.poe.tasks.multiple-positional-default]
+script = "pkg:echo_script(files=files)"
+
+[[tool.poe.tasks.multiple-positional-default.args]]
+name = "files"
+positional = true
+multiple = true
+default = "src tests"
+
 [tool.poe.tasks.multiple-lines-help]
 script = "pkg:echo_script(first, second, widgets=widgets, engines=engines)"
 help = """
