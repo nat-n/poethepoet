@@ -203,6 +203,20 @@ def test_uses_env_args_fall_back_to_defaults(run_poe):
     assert result.stderr == ""
 
 
+def test_uses_env_vars_available_to_task_env(run_poe):
+    """
+    uses_env vars are applied before the task's own env, so an env entry can
+    reference (and extend) a variable provided via uses_env.
+    """
+    result = run_poe("uses_env_referenced_in_task_env", project="graphs")
+    assert result.capture == (
+        "Poe <= poe_test_echo_lines _secret=s3kr3t\n"
+        "Poe => poe_test_echo prefix-s3kr3t\n"
+    )
+    assert result.stdout == "prefix-s3kr3t\n"
+    assert result.stderr == ""
+
+
 def test_uses_env_unparseable_output_reports_clean_error(run_poe):
     """Output that isn't valid env file syntax yields a clear error, not a traceback"""
     result = run_poe("uses_env_unparseable", project="graphs")
