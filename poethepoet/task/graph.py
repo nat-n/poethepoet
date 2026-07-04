@@ -105,16 +105,13 @@ class TaskExecutionGraph:
         Build a DAG of tasks by depth-first traversal of the dependency tree starting
         from the sink node.
         """
-        for key, task in node.task.iter_upstream_tasks(self._context):
+        for capture_stdout, task in node.task.iter_upstream_tasks(self._context):
             node.direct_dependencies.add(task.invocation)
 
             if task.invocation in node.path_dependants:
                 raise CyclicDependencyError(
                     f"Encountered cyclic task dependency with task: {task.name!r}"
                 )
-
-            # a non empty key indicates output is captured
-            capture_stdout = bool(key)
 
             # Check if a node already exists for this task
             if capture_stdout:

@@ -1,5 +1,5 @@
 version = 1
-revision = 1
+revision = 3
 requires-python = ">=3.10"
 
 [[package]]
@@ -15,5 +15,5 @@ requires-dist = [{ name = "poe-test-helpers", directory = "../packages/poe_test_
 
 [[package]]
 name = "poe-test-helpers"
-version = "0.2.0"
+version = "0.3.0"
 source = { directory = "../packages/poe_test_helpers" }

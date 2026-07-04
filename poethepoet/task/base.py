@@ -239,7 +239,7 @@ class PoeTask(metaclass=MetaPoeTask):
         Allows this task to use the output of other tasks which are executed first,
         and their output is parsed like an env file to get zero or more environment
         variables which will be accessible in this task.
-        The referenced task determines which variables (if any) are set.
+        The referenced task(s) determine(s) which variables (if any) are set.
         """
 
         verbosity: Literal[-2, -1, 0, 1, 2] | None = None
@@ -432,8 +432,7 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"option set: {dep_task_name!r}"
                         )
 
-            if self.options.uses_env:
-                uses_env = self.options.uses_env
+            if uses_env := self.options.uses_env:
                 if isinstance(uses_env, str):
                     uses_env = (uses_env,)
                 for dep in uses_env:
@@ -716,14 +715,20 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return working_dir
 
-    def iter_upstream_tasks(self, context: RunContext) -> Iterator[tuple[str, PoeTask]]:
+    def iter_upstream_tasks(
+        self, context: RunContext
+    ) -> Iterator[tuple[bool, PoeTask]]:
+        """
+        Yield each upstream task along with whether its output should be captured
+        (True for uses/uses_env sources, False for plain deps).
+        """
         invocations = self._get_upstream_invocations(context)
         for invocation in invocations["deps"]:
-            yield ("", self._instantiate_dep(invocation, capture_stdout=False))
-        for key, invocation in invocations["uses"].items():
-            yield (key, self._instantiate_dep(invocation, capture_stdout=True))
+            yield (False, self._instantiate_dep(invocation, capture_stdout=False))
+        for invocation in invocations["uses"].values():
+            yield (True, self._instantiate_dep(invocation, capture_stdout=True))
         for invocation in invocations["uses_env"]:
-            yield ("", self._instantiate_dep(invocation, capture_stdout=True))
+            yield (True, self._instantiate_dep(invocation, capture_stdout=True))
 
     def _get_upstream_invocations(self, context: RunContext):
         """

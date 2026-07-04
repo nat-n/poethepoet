@@ -137,6 +137,7 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
       Working directory the task runs in. Relative to the project root unless absolute.
       """
   ```
+- We aggressively validate inputs and handle edge cases to avoid ever raising unhandled errors that are not instances of PoeException with a helpful message.
 
 ### Schema/runtime validation parity
 

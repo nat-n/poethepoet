@@ -132,3 +132,25 @@ _do_setup  = "poe_test_echo here\nwe go...\n"
   cmd      = "poe_test_echo ${COMBINED}"
   uses_env = "_secret_out"
   env      = { COMBINED = "prefix-${_secret}" }
+
+  [tool.poe.tasks._creds_switch]
+  control = "poe_test_echo prod"
+
+    [[tool.poe.tasks._creds_switch.switch]]
+    case = "prod"
+    cmd  = "poe_test_echo_lines PROD_KEY=abc PROD_SECRET=xyz"
+
+    [[tool.poe.tasks._creds_switch.switch]]
+    cmd  = "poe_test_echo_lines PROD_KEY=default"
+
+  [tool.poe.tasks.uses_env_from_switch]
+  cmd      = "poe_test_echo ${PROD_KEY}:${PROD_SECRET}"
+  uses_env = "_creds_switch"
+
+  [tool.poe.tasks._shared_creds]
+  cmd = "poe_test_echo_lines 'SECRET=s3cr3t'"
+
+  [tool.poe.tasks.uses_env_also_a_dep]
+  cmd = "poe_test_echo Got: ${SECRET}"
+  deps = ["_shared_creds"]
+  uses_env = "_shared_creds"

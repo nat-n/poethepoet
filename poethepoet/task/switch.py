@@ -282,5 +282,8 @@ class SwitchTask(PoeTask):
             # registered for this switch task as well
             await case_task_run.wait(suppress_errors=False)
             context.save_task_output(
-                self.invocation, context.get_task_output(case_task.invocation).encode()
+                self.invocation,
+                context.get_task_output(
+                    case_task.invocation, collapse_whitespace=False
+                ).encode(),
             )

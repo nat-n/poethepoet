@@ -127,6 +127,17 @@ def test_uses_env_vars_available_in_template(run_poe):
     assert result.stderr == ""
 
 
+def test_uses_env_from_switch_task(run_poe):
+    """
+    A switch task's selected-case output is preserved as raw multiline text, so
+    uses_env can parse every variable it emits rather than collapsing them onto
+    a single line (which would fold all but the first var into one value).
+    """
+    result = run_poe("uses_env_from_switch", project="graphs")
+    assert result.stdout == "abc:xyz\n"
+    assert result.stderr == ""
+
+
 def test_uses_env_multiple_tasks_later_wins(run_poe):
     """Multiple uses_env tasks merge in order; later entries override earlier ones"""
     result = run_poe("uses_env_multiple", project="graphs")
@@ -296,3 +307,14 @@ def test_uses_env_error_on_use_exec_task(temp_pyproject, run_poe):
         "'uses_env' option references task with 'use_exec' set to true: '_producer'"
     ) in result.capture
     assert result.stdout == ""
+
+
+def test_uses_env_also_a_dep(run_poe):
+    """
+    A task referenced by both deps and uses_env is captured for the uses_env
+    consumer even though the deps reference alone would leave it uncaptured.
+    """
+    result = run_poe("uses_env_also_a_dep", project="graphs")
+    assert result.stderr == ""
+    # The uses_env import resolves (SECRET is set), rather than raising
+    assert "Got: s3cr3t" in result.stdout
