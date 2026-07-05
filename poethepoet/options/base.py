@@ -123,7 +123,8 @@ class PoeOptions:
 
                 for key in item:
                     if key not in config_map and key not in extra_keys:
-                        if key in cls.get_disinherited_fields():
+                        # get_fields (called above) has populated the cache
+                        if key in cls._disinherited_fields:
                             raise ConfigValidationError(
                                 f"Option {key!r} is not supported by this task type",
                                 index=index,
@@ -249,16 +250,6 @@ class PoeOptions:
             }
 
         return cls._fields
-
-    @classmethod
-    def get_disinherited_fields(cls) -> frozenset[str]:
-        """
-        Return the names of inherited fields this type declines to accept via
-        the Disinherited marker. These are absent from get_fields but tracked so
-        the parser can report them as unsupported rather than merely unknown.
-        """
-        cls.get_fields()
-        return cls._disinherited_fields
 
     @classmethod
     def get_field_attribute(cls, field_name: str) -> str | None:

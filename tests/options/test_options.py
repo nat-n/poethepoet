@@ -42,7 +42,7 @@ def test_disinherited_field_excluded_from_config_surface():
 
     assert "drop" not in DisinheritSub.get_fields()
     assert "keep" in DisinheritSub.get_fields()
-    assert DisinheritSub.get_disinherited_fields() == frozenset({"drop"})
+    assert DisinheritSub._disinherited_fields == frozenset({"drop"})
 
 
 def test_disinherited_field_rejected_by_parse():

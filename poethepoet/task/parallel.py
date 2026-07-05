@@ -219,9 +219,6 @@ class ParallelTask(PoeTask):
         ctx: TaskContext,
         capture_stdout: bool = False,
     ):
-        # Internal invariant: config validation rejects capturing a parallel
-        # task (disinherited capture_stdout + the uses/uses_env/ref checks)
-        # before instantiation, so this should never be reached with capture.
         assert capture_stdout in (False, None)
         super().__init__(spec, invocation, ctx)
         self._subtasks = [
