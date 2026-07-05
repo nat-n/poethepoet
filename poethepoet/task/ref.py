@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shlex
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
@@ -57,8 +58,6 @@ class RefTask(PoeTask):
             Perform validations on this TaskSpec that apply to a specific task type
             """
 
-            import shlex
-
             task_name_ref = shlex.split(self.content)[0]
 
             if task_name_ref not in task_specs:
@@ -93,7 +92,6 @@ class RefTask(PoeTask):
             captured only if its target can. Other options use the default.
             """
             if option_name == "capture_stdout":
-                import shlex
 
                 _seen = _seen or set()
                 if id(self) in _seen:
@@ -125,7 +123,6 @@ class RefTask(PoeTask):
         """
         Lookup and delegate to the referenced task
         """
-        import shlex
 
         ignore_fail = self.spec.options.ignore_fail
         if ignore_fail:

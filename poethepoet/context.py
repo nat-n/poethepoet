@@ -188,9 +188,6 @@ class RunContext:
 
         result: dict[str, str] = {}
         for invocation in uses_env_invocations:
-            # Normalize line endings: captured output is decoded directly (unlike
-            # envfiles read from disk in text mode), so CRLF would otherwise leave a
-            # trailing \r on each value on Windows.
             output = self.get_task_output(
                 invocation, collapse_whitespace=False
             ).replace("\r\n", "\n")
