@@ -322,14 +322,13 @@ def test_build_schema_shell_interpreter_array_min_items() -> None:
 
 def test_build_schema_sequence_and_parallel_forbid_capture_stdout() -> None:
     """
-    Sequence and parallel tasks can't declare ``capture_stdout`` — the
-    runtime rejects it in ``SequenceTask.TaskOptions.validate``
-    (``sequence.py:58-61``) and ``ParallelTask.TaskOptions.validate``
-    (``parallel.py:107-110``). The schema must drop ``capture_stdout``
-    from both task properties (and from the ``_with_case`` shadows used
-    inside switches) so the existing ``additionalProperties: false``
-    surfaces the error at edit time. Mirrors the ref-task / executor
-    treatment in ``ref.py:40-49``.
+    Sequence and parallel tasks can't declare ``capture_stdout`` — their
+    ``TaskOptions`` disinherit the inherited option via the ``Disinherited``
+    marker, which removes it from ``get_fields`` and therefore from the
+    generated schema (as well as from config parsing at runtime). The schema
+    must omit ``capture_stdout`` from both task properties (and from the
+    ``_with_case`` shadows used inside switches) so the existing
+    ``additionalProperties: false`` surfaces the error at edit time.
     """
     schema = build_schema()
     for key in ("sequence_task", "parallel_task"):

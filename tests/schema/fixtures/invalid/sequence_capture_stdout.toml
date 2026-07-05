@@ -1,0 +1,4 @@
+# expected_error: Option 'capture_stdout' is not supported by this task type
+[tool.poe.tasks.bad]
+sequence = [{ cmd = "echo hi" }]
+capture_stdout = "out.log"

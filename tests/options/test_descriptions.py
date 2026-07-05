@@ -90,7 +90,7 @@ def test_description_cache_is_populated_per_class():
     # Trigger a lookup
     DescribedOptions.description_for_field("foo")
     # Cache attribute is set on the class's own __dict__ (not inherited).
-    assert "_poe_field_descriptions" in DescribedOptions.__dict__
+    assert "_field_descriptions" in DescribedOptions.__dict__
 
 
 def test_every_taskoptions_field_has_a_description():

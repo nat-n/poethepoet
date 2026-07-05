@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ..context import RunContext
     from ..env.task_env import TaskEnv
     from ..executor.base import PoeProcess
+    from ..options.annotations import Disinherited
     from .base import TaskSpecFactory
 
 T = TypeVar("T")
@@ -68,6 +69,10 @@ class ParallelTask(PoeTask):
     colors = ColorCycle()
 
     class TaskOptions(PoeTask.TaskOptions):
+        # A parallel task's output cannot be captured; disinherit the option so
+        # it is rejected during config parsing and omitted from the schema.
+        capture_stdout: Disinherited[str | None] = None
+
         ignore_fail: Literal[True, False, "return_zero", "return_non_zero"] = False
         """
         If set, the parallel task will continue running even if one of the subtasks
@@ -114,10 +119,6 @@ class ParallelTask(PoeTask):
                 raise ConfigValidationError(
                     "Unsupported value for option `default_item_type`,\n"
                     f"Expected one of {PoeTask.get_task_types(content_type=str)}"
-                )
-            if self.capture_stdout is not None:
-                raise ConfigValidationError(
-                    "Unsupported option for parallel task `capture_stdout`"
                 )
 
     class TaskSpec(PoeTask.TaskSpec):
@@ -191,11 +192,10 @@ class ParallelTask(PoeTask):
         """
         Override: parallel items reference the recursive task_def union,
         with subtask-level options forbidden per
-        ``SUBTASK_OPTIONS_BLOCKLIST``. Also drops ``capture_stdout``
-        which the runtime rejects on parallel tasks.
+        ``SUBTASK_OPTIONS_BLOCKLIST``. ``capture_stdout`` is excluded by the
+        Disinherited marker on ``TaskOptions``, so no manual drop is needed.
         """
         fragment = super().__schema_fragment__(ctx)
-        fragment["properties"].pop("capture_stdout", None)
         fragment["properties"]["parallel"]["items"] = {
             "allOf": [
                 {"$ref": "#/definitions/task_def"},
@@ -219,6 +219,9 @@ class ParallelTask(PoeTask):
         ctx: TaskContext,
         capture_stdout: bool = False,
     ):
+        # Internal invariant: config validation rejects capturing a parallel
+        # task (disinherited capture_stdout + the uses/uses_env/ref checks)
+        # before instantiation, so this should never be reached with capture.
         assert capture_stdout in (False, None)
         super().__init__(spec, invocation, ctx)
         self._subtasks = [

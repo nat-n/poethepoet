@@ -426,6 +426,11 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"'uses' option references task with 'use_exec' set to "
                             f"true: {dep_task_name!r}"
                         )
+                    if not referenced_task.accepts_option("capture_stdout", task_specs):
+                        raise ConfigValidationError(
+                            "'uses' option references task that does not support "
+                            f"output capture: {dep_task_name!r}"
+                        )
                     if referenced_task.options.get("capture_stdout"):
                         raise ConfigValidationError(
                             f"'uses' option references task with 'capture_stdout' "
@@ -449,6 +454,11 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"'uses_env' option references task with 'use_exec' set "
                             f"to true: {dep_task_name!r}"
                         )
+                    if not referenced_task.accepts_option("capture_stdout", task_specs):
+                        raise ConfigValidationError(
+                            "'uses_env' option references task that does not support "
+                            f"output capture: {dep_task_name!r}"
+                        )
                     if referenced_task.options.get("capture_stdout"):
                         raise ConfigValidationError(
                             f"'uses_env' option references task with 'capture_stdout' "
@@ -465,6 +475,20 @@ class PoeTask(metaclass=MetaPoeTask):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
+
+        def accepts_option(
+            self,
+            option_name: str,
+            task_specs: TaskSpecFactory,
+            _seen: set[int] | None = None,
+        ) -> bool:
+            """
+            Report whether this task can be configured with the named option.
+
+            _seen tracks visited spec identities (id()) to break cycles when
+            forwarding task types recurse into their targets.
+            """
+            return option_name in self.task_type.TaskOptions.get_fields()
 
     spec: TaskSpec
     ctx: TaskContext

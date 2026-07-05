@@ -59,6 +59,7 @@ def register_type_alias(name: str, type_alias: Any) -> Any:
 class Metadata:
     __slots__ = (
         "config_name",
+        "disinherited",
         "examples",
         "max_items",
         "max_length",
@@ -73,6 +74,7 @@ class Metadata:
         self,
         *,
         config_name: str | None = None,
+        disinherited: bool | None = None,
         pattern: str | None = None,
         examples: list[Any] | None = None,
         minimum: float | None = None,
@@ -83,6 +85,7 @@ class Metadata:
         max_items: int | None = None,
     ) -> None:
         self.config_name = config_name
+        self.disinherited = disinherited
         self.pattern = pattern
         self.examples = examples
         self.minimum = minimum
@@ -101,8 +104,8 @@ class Metadata:
         Constructed on demand: only schema generation reads this, and that
         runs offline. Keeping it out of the class body avoids paying the
         construction cost on every CLI invocation. Field-level fields
-        (config_name, examples) are not listed — they apply to any field
-        regardless of value type.
+        (config_name, disinherited, examples) are not listed — they apply to
+        any field regardless of value type.
         """
         return {
             "pattern": frozenset({"string"}),
@@ -113,6 +116,13 @@ class Metadata:
             "min_items": frozenset({"array"}),
             "max_items": frozenset({"array"}),
         }
+
+
+# Annotation marker for an inherited PoeOptions field that a subclass declines
+# to accept. Applied as ``Disinherited[T]`` on a redeclaration of the field, it
+# removes the field from that subclass's config surface.
+_DisinheritedT = TypeVar("_DisinheritedT")
+Disinherited = Annotated[_DisinheritedT, Metadata(disinherited=True)]
 
 
 class TypeAnnotation:
@@ -139,6 +149,7 @@ class TypeAnnotation:
             "Union": Union,
             "TypeAnnotation": cls,
             "Metadata": Metadata,
+            "Disinherited": Disinherited,
             **_registered_type_hint_globals,
         }
 

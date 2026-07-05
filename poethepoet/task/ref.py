@@ -73,15 +73,42 @@ class RefTask(PoeTask):
                     f"'use_exec' set to true: {task_name_ref!r}"
                 )
 
-            if self.options.capture_stdout and ref_spec.task_type.__key__ in (
-                "sequence",
-                "parallel",
+            if self.options.capture_stdout and not self.accepts_option(
+                "capture_stdout", task_specs
             ):
                 raise ConfigValidationError(
                     "Option 'capture_stdout' cannot be set "
                     f"on a ref task referencing {ref_spec.task_type.__key__!r} task: "
                     f"{task_name_ref!r}"
                 )
+
+        def accepts_option(
+            self,
+            option_name: str,
+            task_specs: TaskSpecFactory,
+            _seen: set[int] | None = None,
+        ) -> bool:
+            """
+            A ref forwards capture_stdout to its target at runtime, so it can be
+            captured only if its target can. Other options use the default.
+            """
+            if option_name == "capture_stdout":
+                import shlex
+
+                _seen = _seen or set()
+                if id(self) in _seen:
+                    # Part of a ref cycle; let graph-build cycle detection report it
+                    return True
+                _seen.add(id(self))
+
+                target_name = shlex.split(self.content)[0]
+                if target_name not in task_specs:
+                    # Unknown target; let _task_validations report this error
+                    return True
+                return task_specs.get(target_name).accepts_option(
+                    option_name, task_specs, _seen
+                )
+            return super().accepts_option(option_name, task_specs, _seen)
 
     spec: TaskSpec
 

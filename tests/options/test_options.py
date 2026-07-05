@@ -4,7 +4,7 @@ import pytest
 
 from poethepoet.exceptions import ConfigValidationError
 from poethepoet.options import PoeOptions
-from poethepoet.options.annotations import Metadata
+from poethepoet.options.annotations import Disinherited, Metadata
 
 
 class EnvDefault(TypedDict):
@@ -21,6 +21,57 @@ class SamplePoeOptions(PoeOptions):
     with_: Annotated[Any, Metadata(config_name="with")] = {}
     # provide a sensible default for the TypedDict field
     env: EnvDefault = {"default": ""}
+
+
+class DisinheritBase(PoeOptions):
+    keep: int = 0
+    drop: str | None = None
+
+
+class DisinheritSub(DisinheritBase):
+    drop: Disinherited[str | None] = None
+
+
+def test_disinherited_field_excluded_from_config_surface():
+    """
+    A field redeclared with the Disinherited marker is dropped from the
+    subclass's fields (while the base still exposes it), which also exercises the
+    per-class field memoization: a leaked cache would resurface the base field.
+    """
+    assert "drop" in DisinheritBase.get_fields()
+
+    assert "drop" not in DisinheritSub.get_fields()
+    assert "keep" in DisinheritSub.get_fields()
+    assert DisinheritSub.get_disinherited_fields() == frozenset({"drop"})
+
+
+def test_disinherited_field_rejected_by_parse():
+    """
+    Supplying a disinherited option is rejected with a targeted config error,
+    while the retained field still parses normally.
+    """
+    with pytest.raises(ConfigValidationError, match="not supported by this task type"):
+        next(DisinheritSub.parse({"keep": 1, "drop": "x"}))
+
+    parsed = next(DisinheritSub.parse({"keep": 1}))
+    assert parsed.keep == 1
+
+
+def test_get_fields_memoized_per_class():
+    """
+    get_fields caches per class: repeated calls return the same object (so
+    memoization is live), and a subclass's cache neither leaks from nor into its
+    base.
+    """
+    base_fields = DisinheritBase.get_fields()
+    assert DisinheritBase.get_fields() is base_fields
+
+    sub_fields = DisinheritSub.get_fields()
+    assert DisinheritSub.get_fields() is sub_fields
+
+    assert sub_fields is not base_fields
+    assert "drop" in base_fields
+    assert "drop" not in sub_fields
 
 
 def test_poe_options_basic_parse_and_defaults():

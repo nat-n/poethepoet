@@ -32,9 +32,10 @@ class PoeOptions:
     supports default values and tolerant lookup.
     """
 
-    __fields: dict[str, TypeAnnotation]
-    __field_attributes: dict[str, str]
-    _poe_field_descriptions: dict[str, str]
+    _fields: dict[str, TypeAnnotation]
+    _field_attributes: dict[str, str]
+    _disinherited_fields: frozenset[str]
+    _field_descriptions: dict[str, str]
 
     def __init__(self, **options: Any):
         for key in self.get_fields():
@@ -122,6 +123,11 @@ class PoeOptions:
 
                 for key in item:
                     if key not in config_map and key not in extra_keys:
+                        if key in cls.get_disinherited_fields():
+                            raise ConfigValidationError(
+                                f"Option {key!r} is not supported by this task type",
+                                index=index,
+                            )
                         raise ConfigValidationError(
                             f"Unrecognized option {key!r}", index=index
                         )
@@ -209,7 +215,7 @@ class PoeOptions:
         so we have to implement it explicitly. We also use our own TypeAnnotation
         class to wrap type annotations with metadata and help with validation.
         """
-        if not hasattr(cls, "__fields"):
+        if "_fields" not in cls.__dict__:
             cls_type_hints = {}
             for base_cls in cls.__bases__:
                 cls_type_hints.update(get_type_hints(base_cls, include_extras=True))
@@ -221,39 +227,60 @@ class PoeOptions:
                 )
             )
 
-            cls.__fields = {
+            parsed_fields = {
                 key: TypeAnnotation.parse(type_)
                 for key, type_ in cls_type_hints.items()
                 if not key.startswith("_")
             }
-            field_keys = {key: key for key in cls.__fields.keys()}
-            for field_key, field_annotation in cls.__fields.items():
-                if config_name := field_annotation.metadata_get("config_name"):
-                    field_keys[config_name] = field_key
+            # A field redeclared with the Disinherited marker is removed from
+            # this type's config surface: excluded from get_fields, and thereby
+            # from config parsing and the generated JSON schema. Their names are
+            # retained so parse can report them as unsupported rather than
+            # unknown.
+            cls._disinherited_fields = frozenset(
+                key
+                for key, annotation in parsed_fields.items()
+                if annotation.metadata_get("disinherited")
+            )
+            cls._fields = {
+                key: annotation
+                for key, annotation in parsed_fields.items()
+                if key not in cls._disinherited_fields
+            }
 
-        return cls.__fields
+        return cls._fields
+
+    @classmethod
+    def get_disinherited_fields(cls) -> frozenset[str]:
+        """
+        Return the names of inherited fields this type declines to accept via
+        the Disinherited marker. These are absent from get_fields but tracked so
+        the parser can report them as unsupported rather than merely unknown.
+        """
+        cls.get_fields()
+        return cls._disinherited_fields
 
     @classmethod
     def get_field_attribute(cls, field_name: str) -> str | None:
         """
         Lookup an attribute name from either the config_name or the attribute name.
         """
-        if not hasattr(cls, "__field_attributes"):
-            cls.__field_attributes = {}
+        if "_field_attributes" not in cls.__dict__:
+            cls._field_attributes = {}
             for attribute, field_annotation in cls.get_fields().items():
-                if attribute in cls.__field_attributes:
+                if attribute in cls._field_attributes:
                     raise RuntimeError(
                         f"Duplicate field name {attribute!r} in {cls.__name__}"
                     )
                 if config_name := field_annotation.metadata_get("config_name"):
-                    if config_name in cls.__field_attributes:
+                    if config_name in cls._field_attributes:
                         raise RuntimeError(
                             f"Duplicate field name {config_name!r} in {cls.__name__}"
                         )
-                    cls.__field_attributes[config_name] = attribute
-                cls.__field_attributes[attribute] = attribute
+                    cls._field_attributes[config_name] = attribute
+                cls._field_attributes[attribute] = attribute
 
-        return cls.__field_attributes.get(field_name)
+        return cls._field_attributes.get(field_name)
 
     @classmethod
     def description_for_field(cls, field_name: str) -> str | None:
@@ -263,9 +290,6 @@ class PoeOptions:
         Walks the MRO so that an inherited field resolves to its description
         on the nearest ancestor that defines it. Returns None if no description
         is found.
-
-        The first call per class populates a per-class cache stored as
-        `cls._poe_field_descriptions`.
         """
 
         from ._docstrings import extract_field_descriptions
@@ -273,16 +297,16 @@ class PoeOptions:
         # Use cls.__dict__ rather than hasattr() so the cache is per-class
         # (not inherited from an ancestor that happened to compute it first).
         # Single leading underscore avoids Python's name-mangling rules.
-        if "_poe_field_descriptions" not in cls.__dict__:
+        if "_field_descriptions" not in cls.__dict__:
             merged: dict[str, str] = {}
             # Reverse MRO so subclass entries override ancestor entries.
             for ancestor in reversed(cls.__mro__):
                 if ancestor is object:
                     continue
                 merged.update(extract_field_descriptions(ancestor))
-            cls._poe_field_descriptions = merged
+            cls._field_descriptions = merged
 
-        return cls._poe_field_descriptions.get(field_name)
+        return cls._field_descriptions.get(field_name)
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict[str, Any]:
