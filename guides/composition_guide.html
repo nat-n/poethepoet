@@ -342,6 +342,27 @@
 <p class="admonition-title">Important</p>
 <p>Note that captured output that is exposed as an environment variable via the <code class="docutils literal notranslate"><span class="pre">uses</span></code> is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash.</p>
 </div>
+<section id="sourcing-variables-from-dependency-task-output">
+<h3>Sourcing variables from dependency task output<a class="headerlink" href="#sourcing-variables-from-dependency-task-output" title="Link to this heading">¶</a></h3>
+<p>Whereas <code class="docutils literal notranslate"><span class="pre">uses</span></code> captures task output into a named variable, the <code class="docutils literal notranslate"><span class="pre">uses_env</span></code> option captures the task output and parses variables from it like an <em>env file</em> (dotenv syntax) and exposes the resulting variables to the task at runtime. This lets a single upstream task provide zero or more variables, which it names itself, rather than the host task naming one variable per task.</p>
+<p>This is useful for loading several related variables produced together by one command, such as credentials from a tool like <code class="docutils literal notranslate"><span class="pre">aws-vault</span></code>:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks._aws-creds]</span>
+<span class="n">cmd</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;aws-vault export ${_profile}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_profile&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;dev&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;AWS profile to use&quot;</span><span class="w"> </span><span class="p">}]</span>
+
+<span class="k">[tool.poe.tasks.deploy]</span>
+<span class="n">help</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Deploy with credentials sourced from aws-vault&quot;</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;terraform apply&quot;</span>
+<span class="n">uses_env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;_aws-creds --profile ${_profile}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;_profile&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;dev&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">help</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;AWS profile to use&quot;</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
+<p>Here <code class="docutils literal notranslate"><span class="pre">_aws-creds</span></code> returns several <code class="docutils literal notranslate"><span class="pre">AWS_*=...</span></code> lines, which are then exposed in the environment of the <code class="docutils literal notranslate"><span class="pre">deploy</span></code> task. <code class="docutils literal notranslate"><span class="pre">uses_env</span></code> also accepts a list of task invocations (including parameter expansions), applied in order so that later entries override earlier ones. Notice that the <code class="docutils literal notranslate"><span class="pre">_aws-creds</span></code> task optionally accepts an argument to pass to aws-vault to choose which AWS profile to use.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As is conventional in poethepoet, lowercase variables prefixed with <code class="docutils literal notranslate"><span class="pre">_</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">_my_private_var</span></code>) are considered private — accessible within task config but not exposed on the subprocess environment at runtime.</p>
+</div>
+</section>
 </section>
 </section>
 
@@ -415,7 +436,10 @@
 <li><a class="reference internal" href="#">Composing tasks</a><ul>
 <li><a class="reference internal" href="#composing-tasks-into-sequences">Composing tasks into sequences</a></li>
 <li><a class="reference internal" href="#composing-tasks-to-run-in-parallel">Composing tasks to run in parallel</a></li>
-<li><a class="reference internal" href="#composing-tasks-into-graphs">Composing tasks into graphs</a></li>
+<li><a class="reference internal" href="#composing-tasks-into-graphs">Composing tasks into graphs</a><ul>
+<li><a class="reference internal" href="#sourcing-variables-from-dependency-task-output">Sourcing variables from dependency task output</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -427,7 +451,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=f19b9ce6"></script>
+</div><script src="../_static/documentation_options.js?v=e3f0b77b"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
