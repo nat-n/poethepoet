@@ -68,16 +68,14 @@ def test_parallel_task_buffered_output_mode(
 ):
     slow_delay = 80 * delay_factor
     fast_delay = 20 * delay_factor
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered]
             parallel = [
               {{ shell = "poe_test_echo slow-1 && poe_test_delayed_echo {slow_delay} slow-2" }},
               {{ shell = "poe_test_delayed_echo {fast_delay} fast-1 && poe_test_delayed_echo {fast_delay} fast-2" }},
             ]
             output_mode = "buffer"
-        """
-    )
+        """)
 
     result = run_poe_subproc("buffered", cwd=project_path)
 
@@ -96,15 +94,13 @@ def test_parallel_task_buffered_output_flushes_on_failure(
     # via the failing subtask's own stdout EOF (the async-for ends, then the
     # finally flushes) — distinct from the cancellation test, where a sibling's
     # buffer is flushed mid-stream as the group is torn down.
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
             [tool.poe.tasks.buffered_failure]
             parallel = [
               { shell = "import sys; print('before-fail'); sys.exit(3)", interpreter = "python" },
             ]
             output_mode = "buffer"
-        """
-    )
+        """)
 
     result = run_poe_subproc("buffered_failure", cwd=project_path)
 
@@ -127,16 +123,14 @@ def test_parallel_task_buffered_output_flushes_on_cancellation(
     # and cancelling the blocked subtask. Its already-buffered output must still
     # be flushed (the "or is cancelled" promise), rather than being swallowed.
     abort_delay = 0.2 * delay_factor
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_cancelled]
             parallel = [
               {{ shell = "import time; print('cancelled-output', flush=True); time.sleep(10)", interpreter = "python" }},
               {{ shell = "import time, sys; time.sleep({abort_delay}); sys.exit(7)", interpreter = "python" }},
             ]
             output_mode = "buffer"
-        """
-    )
+        """)
 
     result = run_poe_subproc("buffered_cancelled", cwd=project_path, timeout=15)
 
@@ -162,20 +156,18 @@ def test_parallel_task_buffered_output_flushes_large_buffers_by_line(
     run_poe_subproc_handle, temp_pyproject
 ):
     line_size = 40
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_large]
             parallel = [
               {{ shell = "import time; print('A' * {line_size}, flush=True); time.sleep(0.2); print('B' * {line_size}, flush=True); time.sleep(1.0); print('C' * {line_size}, flush=True)", interpreter = "python" }},
             ]
             output_mode = "buffer"
-        """
-    )
+        """)
 
     expected_prefix = format_parallel_prefix("buffered_large[0]")
     first_output_line = f"{expected_prefix}{'A' * line_size}\n"
     expected_output = first_output_line + (
-        f"{expected_prefix}{'B' * line_size}\n" f"{expected_prefix}{'C' * line_size}\n"
+        f"{expected_prefix}{'B' * line_size}\n{expected_prefix}{'C' * line_size}\n"
     )
 
     handle = run_poe_subproc_handle(
@@ -209,15 +201,13 @@ def test_parallel_task_buffered_long_complete_line_emitted_whole(
     # line_size is kept well under the read size so the line arrives in a single
     # read and its newline is seen before the limit is reached.
     line_size = 128
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_huge_line]
             parallel = [
               {{ shell = "print('X' * {line_size}, flush=True)", interpreter = "python" }},
             ]
             output_mode = "buffer"
-        """
-    )
+        """)
 
     result = run_poe_subproc(
         "buffered_huge_line",
@@ -237,14 +227,12 @@ def test_parallel_task_streaming_long_complete_line_emitted_whole(
     # the read size so the line arrives in a single read and its newline is seen
     # before the limit is reached.
     line_size = 200
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.streamed_huge_line]
             parallel = [
               {{ shell = "print('X' * {line_size}, flush=True)", interpreter = "python" }},
             ]
-        """
-    )
+        """)
     prefix = format_parallel_prefix("streamed_huge_line[0]")
     expected = f"{prefix}{'X' * line_size}\n"
 
@@ -273,15 +261,13 @@ def test_parallel_task_oversized_line_does_not_corrupt_sibling(
     # bug at least one is near-certain to land mid-flush and corrupt. No flaky
     # rerun here: a correctness guard must fail deterministically under the bug.
     marker_count = 12
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.interleave]
             parallel = [
               {{ shell = "import sys,time; [ (sys.stdout.write('A'*20), sys.stdout.flush(), time.sleep(0.08)) for _ in range(15) ]; sys.stdout.write(chr(10))", interpreter = "python" }},
               {{ shell = "import time; [ (print(f'B{{i}}', flush=True), time.sleep(0.1)) for i in range({marker_count}) ]", interpreter = "python" }},
             ]
-        """
-    )
+        """)
 
     result = run_poe_subproc(
         "interleave", cwd=project_path, env=BUFFER_LIMIT_OVERRIDE_ENV, timeout=15
@@ -305,14 +291,12 @@ def test_parallel_task_oversized_line_warns_only_when_verbose(
     # split into, and only in verbose mode. The line has no trailing newline so
     # it is forced to wrap (a complete line would be emitted whole).
     line_size = 200
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.warned]
             parallel = [
               {{ shell = "import sys; sys.stdout.write('X' * {line_size}); sys.stdout.flush()", interpreter = "python" }},
             ]
-        """
-    )
+        """)
     warning = (
         "Warning: Parallel subtask 'warned[0]' emitted a line exceeding the "
         f"{BUFFER_LIMIT_OVERRIDE}B output buffer limit; it was wrapped"
@@ -336,15 +320,13 @@ def test_parallel_task_buffered_output_without_trailing_newline(
     # A final line shorter than the limit is forwarded as-is via the EOF tail,
     # with no trailing newline added (only an over-limit line is force-wrapped).
     line_size = 50
-    project_path = temp_pyproject(
-        f"""
+    project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_no_newline]
             parallel = [
               {{ shell = "import sys; sys.stdout.write('Y' * {line_size}); sys.stdout.flush()", interpreter = "python" }},
             ]
             output_mode = "buffer"
-        """
-    )
+        """)
 
     result = run_poe_subproc(
         "buffered_no_newline",
@@ -361,16 +343,14 @@ def test_parallel_task_buffered_output_with_prefix_disabled(
 ):
     # With prefix = false the buffered lines are emitted verbatim, with no
     # prefix prepended to any line of the flushed block.
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
             [tool.poe.tasks.buffered_no_prefix]
             parallel = [
               { shell = "print('line-1'); print('line-2')", interpreter = "python" },
             ]
             output_mode = "buffer"
             prefix = false
-        """
-    )
+        """)
 
     result = run_poe_subproc("buffered_no_prefix", cwd=project_path)
 
@@ -392,9 +372,7 @@ def test_sequence_in_parallel_task(run_poe_subproc, delay_factor):
         "Poe => poe_test_echo seq2",
     ]
     assert result.stdout == (
-        "parallel_of_seq… | seq1\n"
-        "parallel_of_seq… | seq2\n"
-        "parallel_of_seq… | para1\n"
+        "parallel_of_seq… | seq1\nparallel_of_seq… | seq2\nparallel_of_seq… | para1\n"
     )
 
 
@@ -445,10 +423,9 @@ def generate_pyproject(temp_pyproject):
         def fmt_ignore_fail(value):
             if value is True:
                 return "ignore_fail = true"
-            elif isinstance(value, str):
+            if isinstance(value, str):
                 return f'ignore_fail = "{value}"'
-            else:
-                return ""
+            return ""
 
         slow_delay = 5 * 100 * delay_factor
         fail_delay = 2 * 100 * delay_factor

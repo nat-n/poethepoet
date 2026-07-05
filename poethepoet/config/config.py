@@ -59,7 +59,7 @@ class PoeConfig:
             else:
                 self._config_filenames = tuple(config_name)
 
-        self._project_dir = Path().resolve() if cwd is None else Path(cwd)
+        self._project_dir = Path.cwd() if cwd is None else Path(cwd)
         self._project_config = ProjectConfig(
             {"tool.poe": table or {}}, path=self._project_dir, strict=False
         )
@@ -205,7 +205,7 @@ class PoeConfig:
             if config_file.error:
                 raise config_file.error
 
-            elif config_file.is_valid:
+            if config_file.is_valid:
                 self._project_dir = config_file.path.parent
 
                 config_content = config_file.load()
@@ -240,10 +240,9 @@ class PoeConfig:
                 raise PoeException(
                     f"No poe configuration found from location {target_path}"
                 )
-            else:
-                raise PoeException(
-                    f"No poe configuration found from location {self._project_dir}"
-                )
+            raise PoeException(
+                f"No poe configuration found from location {self._project_dir}"
+            )
 
         self._load_includes(strict=strict)
         await self._load_packages(strict=strict)
@@ -377,9 +376,8 @@ class PoeConfig:
         if strict:
             if error:
                 raise PoeException(msg) from error
-            else:
-                raise PoeException(msg)
-        elif self._io:
+            raise PoeException(msg)
+        if self._io:
             self._io.print_debug(f" ! {msg}")
 
     def _load_includes(self, strict: bool = True):

@@ -53,13 +53,7 @@ def test_unlabelled_recommendation_is_not_exempt():
 
 def test_marker_too_far_above_is_not_exempt():
     """A marker beyond the lookback window must not exempt the occurrence."""
-    text = (
-        "# Wrong\n"
-        "filler one\n"
-        "filler two\n"
-        "filler three\n"
-        "expr = \"'${STAGE}'\"\n"
-    )
+    text = "# Wrong\nfiller one\nfiller two\nfiller three\nexpr = \"'${STAGE}'\"\n"
     assert _is_labeled_counter_example(text, FORBIDDEN) is False
 
 

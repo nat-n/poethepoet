@@ -1395,13 +1395,13 @@ class TestPowerShellGlobalOptionFiltering:
         proc = _run_ps_test(run_poe_main, tmp_path, test_commands)
         assert proc.returncode == 0, f"PowerShell error: {proc.stderr}"
         for opt in assert_excluded:
-            assert (
-                f"EXCL:{opt}:True" in proc.stdout
-            ), f"Expected {opt} to be excluded, output: {proc.stdout}"
+            assert f"EXCL:{opt}:True" in proc.stdout, (
+                f"Expected {opt} to be excluded, output: {proc.stdout}"
+            )
         for opt in assert_available:
-            assert (
-                f"AVAIL:{opt}:True" in proc.stdout
-            ), f"Expected {opt} to be available, output: {proc.stdout}"
+            assert f"AVAIL:{opt}:True" in proc.stdout, (
+                f"Expected {opt} to be available, output: {proc.stdout}"
+            )
 
     def test_nonrepeatable_excludes_identity_group(self, run_poe_main, tmp_path):
         self._build_exclusion_test(

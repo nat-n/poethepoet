@@ -292,9 +292,9 @@ class TestZshCompletionScript:
         # Specifically check --directory spec has =
         for line in args_block.split("\n"):
             if "--directory" in line and ":directory:" in line:
-                assert (
-                    "=[" in line
-                ), f"--directory spec should have '=' for --directory=path: {line}"
+                assert "=[" in line, (
+                    f"--directory spec should have '=' for --directory=path: {line}"
+                )
 
     def test_stops_parsing_global_opts_after_task(self, run_poe_main):
         """Verify parsing loop stops treating words as global options after task."""
@@ -412,9 +412,9 @@ class TestZshEdgeCases:
         greeting_line = next(line for line in lines if "--greeting" in line)
         parts = greeting_line.split("\t")
         # Has 4 fields: opts, type, help, choices
-        assert (
-            len(parts) == 4
-        ), f"Expected 4 tab-separated parts, got: {greeting_line!r}"
+        assert len(parts) == 4, (
+            f"Expected 4 tab-separated parts, got: {greeting_line!r}"
+        )
         # Help field should be space placeholder
         # (empty descriptions can confuse _describe)
         assert parts[2] == " "
@@ -585,9 +585,9 @@ class TestZshTaskArgsFormat:
         assert len(lines) > 0
         for line in lines:
             parts = line.split("\t")
-            assert (
-                len(parts) == 4
-            ), f"Expected 4 fields (opts, type, help, choices), got: {line!r}"
+            assert len(parts) == 4, (
+                f"Expected 4 fields (opts, type, help, choices), got: {line!r}"
+            )
 
     def test_option_with_choices(self, run_poe_main, projects):
         """Options with choices should have them in 4th field."""

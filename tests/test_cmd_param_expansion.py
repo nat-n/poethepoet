@@ -58,9 +58,9 @@ def test_param_expansion_operations(
     assert result.code == 0
 
     with stdout_path.open() as stdout_file:
-        assert (
-            stdout_file.read() == f"{output}\n"
-        ), "Task output should match test parameter"
+        assert stdout_file.read() == f"{output}\n", (
+            "Task output should match test parameter"
+        )
 
 
 @pytest.mark.parametrize(

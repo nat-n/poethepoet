@@ -11,8 +11,8 @@ itself. Two distinct installs are in play — keep them straight:
    ```bash
    poetry sync
    ```
-   It installs the project plus the **locked** dev dependencies (black, ruff,
-   mypy, pytest, …) at their pinned versions. Those pins are load-bearing:
+   It installs the project plus the **locked** dev dependencies (ruff, mypy,
+   pytest, …) at their pinned versions. Those pins are load-bearing:
    formatting and schema-generation output differ across tool versions, so
    anything installed another way produces drift and false failures.
 
@@ -47,7 +47,7 @@ Run `poe` to see available tasks and their descriptions.
 poe check             # run all quality checks (style, types, lint, tests) - this takes a while.
 poe test              # run full test suite
 poe test-quick        # skip slow/flaky tests
-poe format            # auto-format code (ruff + black)
+poe format            # auto-format code (ruff format + ruff fixes)
 poe lint              # ruff linting only
 poe types             # mypy type checking
 ```

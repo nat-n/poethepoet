@@ -49,7 +49,6 @@ poe = "poethepoet:main"
 
 
 [tool.poetry.group.ci.dependencies]
-black                = "^25.11.0"
 mypy                 = "^1.18.2"
 rstcheck             = { version = "^6.2.4", python = "<4" }
 ruff                 = "^0.14.5"
@@ -75,16 +74,11 @@ sphinxext-opengraph = "^0.9.0"
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
 
 [tool.poe.tasks.format]
-help     = "Run all formatting tools on the code base"
-sequence = ["format-ruff", "format-black"]
-
-[tool.poe.tasks.format-ruff]
-help = "Run ruff fixer on code base"
-cmd  = "ruff check . --fix-only"
-
-[tool.poe.tasks.format-black]
-help = "Run black on the code base"
-cmd  = "black ."
+help     = "Format code and fix lint errors"
+sequence = [
+    {cmd = "ruff check . --fix-only"},
+    {cmd = "ruff format ."},
+]
 
 [tool.poe.tasks.docs]
 help = "Build the docs using Sphinx"
@@ -147,8 +141,8 @@ help = "Run linting tools on the code base"
 cmd  = "ruff check ."
 
 [tool.poe.tasks.style]
-help = "Validate black code style"
-cmd  = "black . --check --diff"
+help = "Validate code style"
+cmd  = "ruff format . --check --diff"
 
 [tool.poe.tasks.schema-build]
 help     = "Regenerate partial-poe.json from PoeOptions definitions"
@@ -269,6 +263,7 @@ markers = [
 select  = [
   "E",     # error
   "F",     # pyflakes
+  "FURB",  # refurb
   "I",     # isort
   "W",     # warning
   "N",     # pep8-naming
@@ -283,7 +278,9 @@ select  = [
   "PIE",   # flake8-pie
   "PYI",   # flake8-pyi
   "PT",    # flake8-pytest-style
-  "Q",     # flake8-quotes
+  "RSE",   # flake8-raise
+  "RET",
+  # "SLF", # flake8-self
   "SIM",   # flake8-simplify
   "TCH",   # flake8-type-checking
   "PTH",   # flake8-use-pathlib
@@ -297,10 +294,11 @@ ignore  = [
   "SIM118", # in-dict-keys
   "PTH109", # os-getcwd
   "PTH123", # builtin-open
+  "RET503", # implicit-return
   "RUF012", # mutable-class-default
   "B904",   # raise-without-from-inside-except
 ]
-fixable = ["E", "F", "I"]
+fixable = ["E", "F", "I", "UP", "SIM", "C4"]
 
 [tool.uv.workspace]
 members = ["tests/fixtures/task_package"]

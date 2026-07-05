@@ -210,15 +210,13 @@ def test_expr_default_operator_in_env(temp_pyproject, run_poe):
     ${VAR:-default} in an expr task's env: uses the default when the var is
     unset, and the var's value when set.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.show]
         expr = "'hello ' + ${GREETING}"
 
         [tool.poe.tasks.show.env]
         GREETING = "${NAME:-world}"
-        """
-    )
+        """)
     # When NAME is unset, the default "world" is used
     result = run_poe("show", cwd=project_path)
     assert result.code == 0
@@ -237,12 +235,10 @@ def test_expr_default_operator_in_content(temp_pyproject, run_poe):
     ${VAR:-default} directly in expr content (require_braces context).
     The default must be valid Python when substituted into the expression.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.show]
         expr = "'count: ' + str(${COUNT:-42})"
-        """
-    )
+        """)
     result = run_poe("show", cwd=project_path)
     assert result.code == 0
     assert result.stdout == "count: 42\n"
@@ -254,15 +250,13 @@ def test_expr_alternate_operator_in_env(temp_pyproject, run_poe):
     ${VAR:+alternate} in an expr task's env: uses the alternate when the var
     is set, and empty string when unset.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.show]
         expr = "'mode: ' + ${MODE}"
 
         [tool.poe.tasks.show.env]
         MODE = "${DEBUG:+debug}"
-        """
-    )
+        """)
     # When DEBUG is set, the alternate "debug" is used
     result = run_poe("show", cwd=project_path, env={"DEBUG": "1"})
     assert result.code == 0

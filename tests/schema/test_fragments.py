@@ -106,9 +106,9 @@ def test_task_def_with_case_schema_has_case_key_in_each_variant(
 
     for key in PoeTask.get_task_types():
         variant = ctx.definitions[f"{key}_task_with_case"]
-        assert (
-            "case" in variant["properties"]
-        ), f"{key}_task_with_case should have a `case` property"
+        assert "case" in variant["properties"], (
+            f"{key}_task_with_case should have a `case` property"
+        )
 
 
 def test_task_def_schema_registers_itself(ctx: SchemaContext) -> None:

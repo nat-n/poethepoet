@@ -2,11 +2,9 @@ from poethepoet.helpers.parse import parse_poe_cmd
 
 
 def test_resolve_command_tokens():
-    script = parse_poe_cmd(
-        """
+    script = parse_poe_cmd("""
         abc${thing1}def *$thing2?
-        """
-    )
+        """)
     line = script.command_lines[0]
 
     assert list(line.resolve_tokens({"thing2": ""})) == [
@@ -47,11 +45,9 @@ def test_resolve_command_tokens():
         ("?", True),
     ]
 
-    line = parse_poe_cmd(
-        """
+    line = parse_poe_cmd("""
         "ab$thing1* and ${thing2}? '${thing1}'" '${thing1}' ""
-        """
-    ).command_lines[0]
+        """).command_lines[0]
 
     assert list(line.resolve_tokens({"thing1": r" *\o/", "thing2": ""})) == [
         (r"ab *\o/* and ? ' *\o/'", False),
@@ -59,15 +55,13 @@ def test_resolve_command_tokens():
         ("", False),
     ]
 
-    script = parse_poe_cmd(
-        """
+    script = parse_poe_cmd("""
         # comment
         one # comment
         two # comment
         three # comment
         # comment
-        """
-    )
+        """)
 
     assert [
         token for line in script.command_lines for token in line.resolve_tokens({})

@@ -83,7 +83,7 @@ class UnquotedText(ContentNode):
                 content.append(escaped_char)
                 continue
 
-            elif char.isspace() or char in self._break_chars:
+            if char.isspace() or char in self._break_chars:
                 chars.pushback(char)
                 break
 
@@ -123,14 +123,13 @@ class Glob(ContentNode):
                     group_chars.append(char)
                     break
 
-                elif char == "]":
+                if char == "]":
                     if group_chars and group_chars != ["!"]:
                         # Group complete
                         self._content = f"[{''.join(group_chars)}]"
                         return
-                    else:
-                        # ] at start of group is interpreted as content
-                        group_chars.append(char)
+                    # ] at start of group is interpreted as content
+                    group_chars.append(char)
 
                 elif char == "\\":
                     # Backslash is always an escape when inside a group pattern
@@ -150,11 +149,10 @@ class Glob(ContentNode):
             self._cancelled = True
             return
 
-        else:
-            # This should not happen
-            # ruff: noqa: B011
-            assert False
-            self._cancelled = True
+        # This should not happen
+        # ruff: noqa: B011
+        assert False
+        self._cancelled = True
 
 
 class PythonGlob(Glob):
@@ -187,9 +185,8 @@ class PythonGlob(Glob):
                         # Group complete
                         self._content = f"[{''.join(group_chars)}]"
                         return
-                    else:
-                        # ] at start of group is interpreted as content
-                        group_chars.append(char)
+                    # ] at start of group is interpreted as content
+                    group_chars.append(char)
 
                 else:
                     group_chars.append(char)
@@ -199,11 +196,10 @@ class PythonGlob(Glob):
             self._cancelled = True
             return
 
-        else:
-            # This should not happen
-            # ruff: noqa: B011
-            assert False
-            self._cancelled = True
+        # This should not happen
+        # ruff: noqa: B011
+        assert False
+        self._cancelled = True
 
 
 class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
@@ -292,7 +288,7 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
                 "Unexpected end of input, expected closing '}' after '${'", chars
             )
 
-        elif chars.peek() is None:
+        if chars.peek() is None:
             # End of input means no param expansion
             chars.pushback("$")
             self._cancelled = True
@@ -351,10 +347,9 @@ class Segment(SyntaxNode[ContentNode]):
 
         if self._quote_char == "'":
             return self._consume_single_quoted(chars)
-        elif self._quote_char == '"':
+        if self._quote_char == '"':
             return self._consume_double_quoted(chars)
-        else:
-            return self._consume_unquoted(chars)
+        return self._consume_unquoted(chars)
 
     def _consume_single_quoted(self, chars):
         SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
@@ -372,7 +367,7 @@ class Segment(SyntaxNode[ContentNode]):
                 chars.take()
                 return
 
-            elif next_char == "$":
+            if next_char == "$":
                 if param_node := ParamExpansionCls(chars, self.config):
                     self._children.append(param_node)
                 else:
@@ -394,7 +389,7 @@ class Segment(SyntaxNode[ContentNode]):
             if next_char.isspace() or next_char in "'\";#":
                 return
 
-            elif next_char == "$":
+            if next_char == "$":
                 if param_node := ParamExpansionCls(chars, self.config):
                     self._children.append(param_node)
                 else:
@@ -453,7 +448,7 @@ class ParamArgumentSegment(Segment):
             if next_char in "'\"}":
                 return
 
-            elif next_char.isspace():
+            if next_char.isspace():
                 self._children.append(WhitespaceTextCls(chars, self.config))
 
             elif next_char == "$":
@@ -687,18 +682,17 @@ class Line(SyntaxNode[Word | Comment]):
                 self._terminator = char
                 break
 
-            elif char.isspace():
+            if char.isspace():
                 continue
 
-            elif char == "#":
+            if char == "#":
                 self._children.append(CommentCls(chars, self.config))
                 self._terminator = char
                 return
 
-            else:
-                chars.pushback(char)
-                if word := WordCls(chars, self.config):
-                    self._children.append(word)
+            chars.pushback(char)
+            if word := WordCls(chars, self.config):
+                self._children.append(word)
 
         if not self._children:
             self._cancelled = True

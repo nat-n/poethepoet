@@ -64,12 +64,12 @@ def test_schema_build_task_uses_schemastore_key_order(run_poe) -> None:
 
     lines = (project_root / "docs/_static/partial-poe.json").read_text().splitlines()
     assert lines[0] == "{"
-    assert (
-        lines[1].lstrip().startswith('"$schema":')
-    ), f"Expected first property to be $schema, got: {lines[1]!r}"
-    assert (
-        lines[2].lstrip().startswith('"$id":')
-    ), f"Expected second property to be $id, got: {lines[2]!r}"
-    assert (
-        lines[3].lstrip().startswith('"$comment":')
-    ), f"Expected third property to be $comment, got: {lines[3]!r}"
+    assert lines[1].lstrip().startswith('"$schema":'), (
+        f"Expected first property to be $schema, got: {lines[1]!r}"
+    )
+    assert lines[2].lstrip().startswith('"$id":'), (
+        f"Expected second property to be $id, got: {lines[2]!r}"
+    )
+    assert lines[3].lstrip().startswith('"$comment":'), (
+        f"Expected third property to be $comment, got: {lines[3]!r}"
+    )

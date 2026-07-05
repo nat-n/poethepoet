@@ -452,11 +452,9 @@ def test_parse_globs():
 def test_parse_non_globs():
     tree = Script(
         ParseCursor.from_file(
-            StringIO(
-                """
+            StringIO("""
                 ab[cd ]ef
-                """
-            )
+                """)
         ),
         config=ParseConfig(),
     )
@@ -514,11 +512,9 @@ def test_parse_python_style_globs():
 def test_parse_python_style_non_globs():
     tree = Script(
         ParseCursor.from_file(
-            StringIO(
-                """
+            StringIO("""
                 ab[c d
-                """
-            )
+                """)
         ),
         config=ParseConfig(substitute_nodes={Glob: PythonGlob}),
     )
@@ -532,8 +528,7 @@ def test_parse_python_style_non_globs():
 
 def test_parse_line_breaks():
     tree = Script(
-        ParseCursor.from_string(
-            """
+        ParseCursor.from_string("""
             one
             two;three
 
@@ -541,8 +536,7 @@ def test_parse_line_breaks():
             "four";;;five;
 
             " ;"six'; '
-            """
-        )
+            """)
     )
     print(tree.pretty())
     lines = tree.command_lines
@@ -570,11 +564,9 @@ def test_parse_cursor_basics():
 
 
 def test_ast_node_formatting():
-    tree = parse_poe_cmd(
-        """
+    tree = parse_poe_cmd("""
         hello $world!
-        """
-    )
+        """)
     assert (
         tree.pretty()
         == """Script:
@@ -594,11 +586,9 @@ def test_ast_node_formatting():
 
 
 def test_ast_node_inspection():
-    tree = parse_poe_cmd(
-        """
+    tree = parse_poe_cmd("""
         hello $world!
-        """
-    )
+        """)
     assert tree[0][0][0][0] == "hello"
     assert tree[0][1][0][0] == "world"
     assert tree[0][1][0][1] == "!"

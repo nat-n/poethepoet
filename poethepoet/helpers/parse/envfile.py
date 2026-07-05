@@ -33,16 +33,14 @@ class EnvFileUnquotedText(ContentNode):
                 if next_char == "\n":
                     chars.take()  # consume the newline (continuation)
                     continue
-                elif next_char is None:
+                if next_char is None:
                     raise ParseError("Unexpected end of input after backslash", chars)
-                else:
-                    content.append(chars.take())  # \X → X
-                    continue
-            elif char in self._STOP_CHARS:
+                content.append(chars.take())  # \X → X
+                continue
+            if char in self._STOP_CHARS:
                 chars.pushback(char)
                 break
-            else:
-                content.append(char)
+            content.append(char)
 
         if content:
             self._content = "".join(content)
@@ -75,7 +73,7 @@ class EnvFileDQText(ContentNode):
             if char in ('"', "$"):
                 chars.pushback(char)
                 break
-            elif char == "\\":
+            if char == "\\":
                 next_char = chars.peek()
                 if next_char in self._DQ_SPECIAL:
                     consumed = chars.take()
@@ -111,10 +109,10 @@ class EnvFileDQString(SyntaxNode):
                 raise ParseError(
                     "Unexpected end of input with unmatched double quote", chars
                 )
-            elif next_char == '"':
+            if next_char == '"':
                 chars.take()
                 return
-            elif next_char == "$":
+            if next_char == "$":
                 if param_node := ParamExpansionCls(chars, self.config):
                     self._children.append(param_node)
                 else:
@@ -175,32 +173,31 @@ class EnvFileValue(SyntaxNode):
                     while chars.peek() not in ("\n", None):
                         chars.take()
                     break
+                # Mid-word hash: consume it and read any following unquoted text
+                chars.take()
+                following = EnvFileUnquotedTextCls(chars, self.config)
+                if following:
+                    following._content = "#" + following._content
+                    self._children.append(following)
+                    last_char = following._content[-1:]
+                    last_was_whitespace = last_char in (" ", "\t")
+                elif self._children and isinstance(
+                    self._children[-1], EnvFileUnquotedText
+                ):
+                    # # immediately before a stop char — append to last child
+                    self._children[-1]._content += "#"
+                    last_was_whitespace = False
                 else:
-                    # Mid-word hash: consume it and read any following unquoted text
-                    chars.take()
-                    following = EnvFileUnquotedTextCls(chars, self.config)
-                    if following:
-                        following._content = "#" + following._content
-                        self._children.append(following)
-                        last_char = following._content[-1:]
-                        last_was_whitespace = last_char in (" ", "\t")
-                    elif self._children and isinstance(
-                        self._children[-1], EnvFileUnquotedText
-                    ):
-                        # # immediately before a stop char — append to last child
-                        self._children[-1]._content += "#"
-                        last_was_whitespace = False
-                    else:
-                        # No adjacent unquoted text — push back an escaped '#'
-                        # so EnvFileUnquotedText reads it as a literal '#'.
-                        chars.pushback("#")
-                        chars.pushback("\\")
-                        new_node = EnvFileUnquotedTextCls(chars, self.config)
-                        self._children.append(new_node)
-                        last_was_whitespace = False
-                    continue
+                    # No adjacent unquoted text — push back an escaped '#'
+                    # so EnvFileUnquotedText reads it as a literal '#'.
+                    chars.pushback("#")
+                    chars.pushback("\\")
+                    new_node = EnvFileUnquotedTextCls(chars, self.config)
+                    self._children.append(new_node)
+                    last_was_whitespace = False
+                continue
 
-            elif next_char == "$":
+            if next_char == "$":
                 if param_node := ParamExpansionCls(chars, self.config):
                     self._children.append(param_node)
                     last_was_whitespace = False

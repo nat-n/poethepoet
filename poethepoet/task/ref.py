@@ -92,7 +92,6 @@ class RefTask(PoeTask):
             captured only if its target can. Other options use the default.
             """
             if option_name == "capture_stdout":
-
                 _seen = _seen or set()
                 if id(self) in _seen:
                     # Part of a ref cycle; let graph-build cycle detection report it

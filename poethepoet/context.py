@@ -362,9 +362,9 @@ class InitializationContext:
 
         from .executor import PoeExecutor
 
-        assert (
-            not delegate_dry_run
-        ), "delegate_dry_run option not valid on InitializationContext"
+        assert not delegate_dry_run, (
+            "delegate_dry_run option not valid on InitializationContext"
+        )
 
         return PoeExecutor.get(
             invocation=invocation,
