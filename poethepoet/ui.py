@@ -208,12 +208,18 @@ class PoeUi:
         if not error and not self.io.verbosity_offset_was_set:
             verbosity = min(0, self.io.verbosity)
 
+        style = self.io.style
         result: list[str | Sequence[str]] = []
         if verbosity >= 0 and not help_single_task:
-            result.append((f"<h2>Poe the Poet</h2> (version <em>{__version__}</em>)",))
+            result.append(
+                (
+                    f"{style.title('Poe the Poet')}"
+                    f" (version {style.version(__version__)})",
+                )
+            )
 
         if info and verbosity >= -2:
-            result.append(f"{f'<em2>Result: {info}</em2>'}")
+            result.append(style.result(f"Result: {info}"))
 
         if error and verbosity >= -2:
             result.append(self._format_poe_error(error))
@@ -228,8 +234,8 @@ class PoeUi:
             if verbosity >= 0:
                 result.append(
                     (
-                        "<h2>Usage:</h2>",
-                        f"  <u>{self.program_name}</u>"
+                        style.heading("Usage:"),
+                        f"  {style.program(self.program_name)}"
                         " [global options]"
                         " task [task arguments]",
                     )
@@ -243,7 +249,7 @@ class PoeUi:
                 formatter.end_section()
                 result.append(
                     (
-                        "<h2>Global options:</h2>",
+                        style.heading("Global options:"),
                         *formatter.format_help().split("\n")[1:],
                     )
                 )
@@ -276,12 +282,12 @@ class PoeUi:
                     )
                     col_width = max(20, min(30, max_task_len))
 
-                    tasks_section = ["<h2>Configured tasks:</h2>"]
+                    tasks_section = [style.heading("Configured tasks:")]
 
                     if None in grouped_tasks:
                         for task, help_text, args_help in grouped_tasks[None]:
                             tasks_section.append(
-                                f"  <em>{self._padr(task, col_width)}</em>  "
+                                f"  {style.task_name(self._padr(task, col_width))}  "
                                 f"{self._align(help_text, col_width)}"
                             )
                             tasks_section.extend(
@@ -298,13 +304,11 @@ class PoeUi:
                         group_heading = (
                             groups.get(group_name, group_name) if groups else group_name
                         )
-                        tasks_section.append(
-                            f" <group-heading>{group_heading}</group-heading>"
-                        )
+                        tasks_section.append(f" {style.task_group(group_heading)}")
 
                         for task, help_text, args_help in grouped_tasks[group_name]:
                             tasks_section.append(
-                                f"  <em>{self._padr(task, col_width)}</em>  "
+                                f"  {style.task_name(self._padr(task, col_width))}  "
                                 f"{self._align(help_text, col_width)}"
                             )
                             tasks_section.extend(
@@ -314,7 +318,7 @@ class PoeUi:
                     result.append(tasks_section)
 
                 else:
-                    result.append("<h2-dim>NO TASKS CONFIGURED</h2-dim>")
+                    result.append(style.empty_state("NO TASKS CONFIGURED"))
 
         if error and self.io.is_debug_enabled():
             import traceback
@@ -363,23 +367,25 @@ class PoeUi:
         help_text: str,
         args_help: Sequence[tuple[tuple[str, ...], str, str]],
     ):
+        style = self.io.style
         result = [""]
         if help_text:
-            result.append(f"<h2>Description:</h2>\n  {help_text.strip()}\n")
+            result.append(f"{style.heading('Description:')}\n  {help_text.strip()}\n")
 
         result.extend(
             (
-                "<h2>Usage:</h2>",
-                f"  <u>{self.program_name}</u>"
+                style.heading("Usage:"),
+                f"  {style.program(self.program_name)}"
                 " [global options]"
-                f" <em>{task_name}</em> [named arguments] -- [free arguments]",
+                f" {style.task_name(task_name)}"
+                " [named arguments] -- [free arguments]",
                 "",
             )
         )
 
         if args_help:
             col_width = max(20, min(30, len(task_name)))
-            result.append("<h2>Named arguments:</h2>")
+            result.append(style.heading("Named arguments:"))
             result.extend(self._format_args_help(args_help, col_width))
 
         return "\n".join(result).rstrip()
@@ -394,7 +400,7 @@ class PoeUi:
             formatted_options = ", ".join(str(opt) for opt in options)
             task_arg_help = [
                 " " * indent,
-                f"<em3>{self._padr(formatted_options, col_width - 1)}</em3>",
+                self.io.style.arg_name(self._padr(formatted_options, col_width - 1)),
             ]
             if arg_help_text:
                 task_arg_help.append(self._align(arg_help_text, col_width))
@@ -438,14 +444,15 @@ class PoeUi:
             )
 
     def _format_error_lines(self, lines: Sequence[str]) -> tuple[str, ...]:
+        error_style = self.io.style.error
         return (
-            f"<error>Error: {lines[0]}</error>",
-            *(f"<error>     | {line}</error>" for line in lines[1:]),
+            error_style(f"Error: {lines[0]}"),
+            *(error_style(f"     | {line}") for line in lines[1:]),
         )
 
     def print_version(self):
         if self.io.verbosity >= 0:
-            result = f"Poe the Poet - version: <em>{__version__}</em>\n"
+            result = f"Poe the Poet - version: {self.io.style.version(__version__)}\n"
         else:
             result = f"{__version__}\n"
         self.io.print(result, message_verbosity=-2)

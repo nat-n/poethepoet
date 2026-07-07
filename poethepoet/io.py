@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import IO, TYPE_CHECKING, Any
+from typing import IO, Any
 
-if TYPE_CHECKING:
-    from pastel import Pastel
+from .styles import Style
 
 POE_DEBUG = os.environ.get("POE_DEBUG", "0") == "1"
 
@@ -40,11 +39,10 @@ class PoeIO:
     output: IO
     error_output: IO
     input: IO
-    ansi_enabled: bool
+    style: Style
     _baseline_verbosity: int
     _verbosity_offset: int | None
 
-    _color: Pastel
     _default_io: PoeIO | None = None
 
     def __init__(
@@ -62,7 +60,7 @@ class PoeIO:
         self.output = output or (parent.output if parent else sys.stdout)
         self.error_output = error or (parent.error_output if parent else sys.stderr)
         self.input = input or (parent.input if parent else sys.stdin)
-        self.ansi_enabled = (
+        self.style = Style(
             ansi
             if ansi is not None
             else (parent.ansi_enabled if parent else guess_ansi_support(output))
@@ -83,36 +81,23 @@ class PoeIO:
                 else parent._verbosity_offset if parent else None
             )
 
-        if parent:
-            self._color = parent._color
-        else:
-            self._init_colors()
-
         # First instance of PoeIO becomes the default IO
         if make_default:
             self.__class__._default_io = self
-
-    def _init_colors(self):
-        from pastel import Pastel
-
-        self._color = Pastel(self.ansi_enabled)
-        self._color.add_style("u", "default", options="underline")
-        self._color.add_style("hl", "light_gray")
-        self._color.add_style("em", "cyan")
-        self._color.add_style("em2", "cyan", options="italic")
-        self._color.add_style("em3", "blue")
-        self._color.add_style("h2", "default", options="bold")
-        self._color.add_style("h2-dim", "default", options="dark")
-        self._color.add_style("action", "light_blue")
-        self._color.add_style("error", "light_red", options="bold")
-        self._color.add_style("warning", "light_red", options="bold")
-        self._color.add_style("group-heading", "green")
 
     @classmethod
     def get_default_io(cls) -> PoeIO:
         if cls._default_io is None:
             cls._default_io = cls()
         return cls._default_io
+
+    @property
+    def ansi_enabled(self) -> bool:
+        """
+        Returns whether ANSI based styling is currently enabled for this IO's
+        output. The style palette is the authority for this setting.
+        """
+        return self.style.ansi_enabled
 
     @property
     def verbosity(self) -> int:
@@ -139,9 +124,8 @@ class PoeIO:
         dont_override: bool = False,
     ):
         may_override = not dont_override
-        if ansi_enabled is not None and (self.ansi_enabled is None or may_override):
-            self.ansi_enabled = ansi_enabled
-            self._init_colors()
+        if ansi_enabled is not None and may_override:
+            self.style.ansi_enabled = ansi_enabled
         if baseline is not None and (self._baseline_verbosity is None or may_override):
             self._baseline_verbosity = baseline
         if offset is not None and (self._verbosity_offset is None or may_override):
@@ -164,10 +148,12 @@ class PoeIO:
         message: str,
         *values: Any,
         message_verbosity: int = -1,
-        prefix: str = "<warning>Warning:</warning> ",
+        prefix: str | None = None,
         end: str = "\n",
     ):
         if self._check_verbosity(message_verbosity):
+            if prefix is None:
+                prefix = f"{self.style.warning('Warning:')} "
             if values:
                 message = message % values
             self.write_err(prefix + message)
@@ -191,7 +177,9 @@ class PoeIO:
         message_verbosity: int = 0,
     ):
         if self._check_verbosity(message_verbosity):
-            self.write_err(f"<hl>Poe {arrow}</hl> <action>{action}</action>")
+            self.write_err(
+                f"{self.style.poe_prefix(f'Poe {arrow}')} {self.style.action(action)}"
+            )
 
     def print_debug(
         self,
@@ -220,9 +208,7 @@ class PoeIO:
         )
 
     def write_out(self, message: str, *, end: str = "\n"):
-        print(self._color.colorize(message), end=end, file=self.output, flush=True)
+        print(message, end=end, file=self.output, flush=True)
 
     def write_err(self, message: str, *, end: str = "\n"):
-        print(
-            self._color.colorize(message), end=end, file=self.error_output, flush=True
-        )
+        print(message, end=end, file=self.error_output, flush=True)
