@@ -1,13 +1,11 @@
 def test_run_poe_merges_env_and_scrubs_inherited_poe_vars(
     run_poe, temp_pyproject, monkeypatch
 ):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.show-env]
         cmd = "poe_test_echo ${PARENT_ONLY} ${CHILD_ONLY} ${POE_CWD}"
         capture_stdout = "show-env.txt"
-        """
-    )
+        """)
     monkeypatch.setenv("PARENT_ONLY", "parent")
     monkeypatch.setenv("POE_CWD", "/not-the-project")
 
@@ -21,13 +19,11 @@ def test_run_poe_merges_env_and_scrubs_inherited_poe_vars(
 
 
 def test_run_poe_env_can_set_project_dir(run_poe, temp_pyproject, monkeypatch):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.hello]
         cmd = "poe_test_echo hello from env project dir"
         capture_stdout = "hello.txt"
-        """
-    )
+        """)
     monkeypatch.setenv("POE_PROJECT_DIR", str(project_path.parent / "wrong-project"))
 
     result = run_poe("hello", cwd=".", env={"POE_PROJECT_DIR": str(project_path)})

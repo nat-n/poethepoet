@@ -261,9 +261,9 @@ class TestTaskArgsOutputFormat:
         for line in lines:
             parts = line.split("\t")
             # All args in greet-full-args have no choices
-            assert (
-                parts[3] == "_"
-            ), f"Expected '_' placeholder for empty choices: {line!r}"
+            assert parts[3] == "_", (
+                f"Expected '_' placeholder for empty choices: {line!r}"
+            )
 
     def test_describe_task_args_positional_type(self, run_poe_main, projects):
         """Positional args should have type 'positional'."""

@@ -87,7 +87,7 @@ class PoeThePoet:
         from .io import PoeIO
         from .ui import PoeUi
 
-        self.cwd = Path(cwd) if cwd else Path().resolve()
+        self.cwd = Path(cwd) if cwd else Path().resolve()  # noqa: FURB177
 
         if self.cwd and self.cwd.is_file():
             config_name = self.cwd.name

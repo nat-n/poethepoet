@@ -437,7 +437,7 @@ def test_script_with_mixed_multi_styles(run_poe):
         env=no_venv,
     )
     assert result.stdout == (
-        "args ('hey', [1])\n" "kwargs {'widgets': [], 'engines': ['v2', 'v8', 'v10']}\n"
+        "args ('hey', [1])\nkwargs {'widgets': [], 'engines': ['v2', 'v8', 'v10']}\n"
     )
     assert result.stderr == ""
 
@@ -460,7 +460,7 @@ def test_script_with_exact_count_across_occurrences(run_poe):
         env=no_venv,
     )
     assert result.stdout == (
-        "args ('hey', [1])\n" "kwargs {'widgets': ['cow', 'dog'], 'engines': ['v2']}\n"
+        "args ('hey', [1])\nkwargs {'widgets': ['cow', 'dog'], 'engines': ['v2']}\n"
     )
     assert result.stderr == ""
 
@@ -484,9 +484,9 @@ def test_script_exact_count_wrong_total_errors(run_poe):
         project="scripts",
         env=no_venv,
     )
-    assert (
-        "argument --widgets: expected 2 values, got 3" in result.capture
-    ), result.capture
+    assert "argument --widgets: expected 2 values, got 3" in result.capture, (
+        result.capture
+    )
     assert result.stdout == ""
 
 
@@ -582,7 +582,7 @@ def test_script_boolean_flag(run_poe):
     )
     assert result.capture == "Poe => booleans --non --tru --fal --txt\n"
     assert result.stdout == (
-        "args ()\n" "kwargs {'non': True, 'tru': False, 'fal': True, 'txt': False}\n"
+        "args ()\nkwargs {'non': True, 'tru': False, 'fal': True, 'txt': False}\n"
     )
 
 
@@ -590,7 +590,7 @@ def test_script_boolean_flag_default_value(run_poe):
     result = run_poe("booleans", project="scripts", env=no_venv)
     assert result.capture == "Poe => booleans\n"
     assert result.stdout == (
-        "args ()\n" "kwargs {'non': False, 'tru': True, 'fal': False, 'txt': True}\n"
+        "args ()\nkwargs {'non': False, 'tru': True, 'fal': False, 'txt': True}\n"
     )
 
 
@@ -599,7 +599,7 @@ def test_script_boolean_flag_partial(run_poe):
     result = run_poe("bool_partial", "--non", "--tru", project="scripts", env=no_venv)
     assert result.capture == "Poe => bool_partial --non --tru\n"
     assert result.stdout == (
-        "args ()\n" "kwargs {'non': True, 'tru': False, 'fal': False}\n"
+        "args ()\nkwargs {'non': True, 'tru': False, 'fal': False}\n"
     )
 
 
@@ -607,7 +607,7 @@ def test_script_env_access_uses_typed_and_environ_channels(run_poe):
     result = run_poe("bool_env_access", project="scripts", env=no_venv)
     assert result.capture == "Poe => bool_env_access\n"
     assert result.stdout == (
-        "args ()\n" "kwargs {'typed': True, 'present': True, 'value': 'True'}\n"
+        "args ()\nkwargs {'typed': True, 'present': True, 'value': 'True'}\n"
     )
 
 
@@ -615,7 +615,7 @@ def test_script_env_access_unset_bool_arg_preserves_typed_false(run_poe):
     result = run_poe("bool_env_access", "--MY_FLAG", project="scripts", env=no_venv)
     assert result.capture == "Poe => bool_env_access --MY_FLAG\n"
     assert result.stdout == (
-        "args ()\n" "kwargs {'typed': False, 'present': False, 'value': None}\n"
+        "args ()\nkwargs {'typed': False, 'present': False, 'value': None}\n"
     )
 
 
@@ -639,12 +639,10 @@ def _build_src_layout(project_path, *, with_subdir: bool = False) -> None:
 
 
 def test_callable_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.run]
         script = "mypkg:main"
-        """
-    )
+        """)
     _build_src_layout(project_path)
     result = run_poe("run", cwd=project_path, env=no_venv)
     assert result.code == 0, result.capture + result.stderr
@@ -654,13 +652,11 @@ def test_callable_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
 def test_callable_script_task_finds_src_layout_modules_with_cwd(
     temp_pyproject, run_poe
 ):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.run]
         script = "mypkg:main"
         cwd = "subdir"
-        """
-    )
+        """)
     _build_src_layout(project_path, with_subdir=True)
     result = run_poe("run", cwd=project_path, env=no_venv)
     assert result.code == 0, result.capture + result.stderr
@@ -668,13 +664,11 @@ def test_callable_script_task_finds_src_layout_modules_with_cwd(
 
 
 def test_module_script_task_finds_src_layout_modules_with_cwd(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.run]
         script = "mypkg"
         cwd = "subdir"
-        """
-    )
+        """)
     _build_src_layout(project_path, with_subdir=True)
     result = run_poe("run", cwd=project_path, env=no_venv)
     assert result.code == 0, result.capture + result.stderr
@@ -692,8 +686,7 @@ def module_script_project(tmp_path_factory):
     isolation.
     """
     project_path = tmp_path_factory.mktemp("module_script_project")
-    (project_path / "pyproject.toml").write_text(
-        """
+    (project_path / "pyproject.toml").write_text("""
         [tool.poe.tasks.positional]
         script = "mymod"
         args = [{ name = "target", positional = true, default = "world" }]
@@ -725,8 +718,7 @@ def module_script_project(tmp_path_factory):
         args = [
           { name = "flag", options = ["--flag"], type = "boolean", default = true },
         ]
-        """
-    )
+        """)
     module_dir = project_path / "mymod"
     module_dir.mkdir()
     (module_dir / "__init__.py").touch()
@@ -799,13 +791,11 @@ def test_module_script_task_no_args_forwards_extras_verbatim(temp_pyproject, run
     (`cmd.py:113`). The `${MAYBE}` token below would have been expanded
     by the previous behavior because `MAYBE` is set on the task env.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.run]
         script = "mymod"
         env = { MAYBE = "expanded" }
-        """
-    )
+        """)
     module_dir = project_path / "mymod"
     module_dir.mkdir()
     (module_dir / "__init__.py").touch()
@@ -823,12 +813,10 @@ def test_module_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
     Module-style script tasks should be able to import modules from a src/
     layout, matching the callable-script path which adds 'src' to sys.path.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.run]
         script = "srcmod"
-        """
-    )
+        """)
     src_module = project_path / "src" / "srcmod"
     src_module.mkdir(parents=True)
     (src_module / "__init__.py").touch()

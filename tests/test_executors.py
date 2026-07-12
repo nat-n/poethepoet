@@ -12,9 +12,9 @@ def venv_creator(request):
 
 def test_virtualenv_executor_fails_without_venv_dir(run_poe, projects):
     venv_path = projects["venv"].joinpath("myvenv")
-    assert (
-        not venv_path.is_dir()
-    ), f"This test requires the virtualenv not to already exist at {venv_path}!"
+    assert not venv_path.is_dir(), (
+        f"This test requires the virtualenv not to already exist at {venv_path}!"
+    )
     result = run_poe("show-env", project="venv")
     assert (
         f"Error: Could not find valid virtualenv at configured location: {venv_path}"
@@ -179,9 +179,9 @@ def test_override_executor_skips_missing_virtualenv_when_forced_simple(
     configuration.
     """
     venv_path = projects["venv"].joinpath("myvenv")
-    assert (
-        not venv_path.is_dir()
-    ), f"This test requires the virtualenv not to already exist at {venv_path}!"
+    assert not venv_path.is_dir(), (
+        f"This test requires the virtualenv not to already exist at {venv_path}!"
+    )
     result = run_poe("--executor", "simple", "show-env", project="venv")
     assert (
         f"Error: Could not find valid virtualenv at configured location: {venv_path}"
@@ -230,16 +230,14 @@ def test_global_executor_config_rejects_unknown_keys(temp_pyproject, run_poe):
     consumed the generator. The cleaner unwrapped error message confirms
     validate_config itself raised.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
             [tool.poe.executor]
             type = "simple"
             extra_bogus = "should be rejected"
 
             [tool.poe.tasks]
             greet = "poe_test_echo hi"
-        """
-    )
+        """)
     result = run_poe("-d", "greet", cwd=project_path)
     assert result.code == 1
     assert "Error: Unrecognized option 'extra_bogus'" in result.capture
@@ -261,16 +259,14 @@ def test_global_executor_config_rejects_wrong_value_type(temp_pyproject, run_poe
     invalid against the inner virtualenv ExecutorOptions schema (str | None).
     Without the fix, the inner check is skipped and the error never surfaces.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
             [tool.poe.executor]
             type = "virtualenv"
             location = true
 
             [tool.poe.tasks]
             greet = "poe_test_echo hi"
-        """
-    )
+        """)
     result = run_poe("-d", "greet", cwd=project_path)
     assert result.code == 1
     assert "Option 'location' must have a value of type" in result.capture

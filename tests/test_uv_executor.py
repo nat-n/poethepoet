@@ -142,7 +142,7 @@ def _normalize_uv_lines(lines):
             and i + 1 < len(lines)
             and not lines[i + 1].startswith("--")
         ):
-            normalized.append(f"{cur}={lines[i+1]}")
+            normalized.append(f"{cur}={lines[i + 1]}")
             i += 2
         else:
             normalized.append(cur)

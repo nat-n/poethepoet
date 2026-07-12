@@ -441,7 +441,7 @@ def get_zsh_completion_script(name: str = "") -> str:
     name = name or "poe"
 
     # Build and interrogate the argument parser as the normal CLI would
-    app = PoeThePoet(cwd=Path().resolve())
+    app = PoeThePoet(cwd=Path.cwd())
     parser = app.ui.build_parser()
     global_options = parser._action_groups[1]._group_actions
     excl_groups = [

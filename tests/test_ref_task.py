@@ -259,16 +259,14 @@ def test_ref_error_on_sequence_with_capture_stdout(run_poe):
 
 
 def test_ref_default_value_operator(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.greet]
         cmd = "poe_test_echo hi ${subject}"
         args = ["subject"]
 
         [tool.poe.tasks.greet-default]
         ref = "greet --subject ${NAME:-world}"
-        """
-    )
+        """)
     result = run_poe("greet-default", cwd=project_path)
     assert result.code == 0
     assert result.stdout == "hi world\n"
@@ -276,16 +274,14 @@ def test_ref_default_value_operator(temp_pyproject, run_poe):
 
 
 def test_ref_default_value_overridden(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.greet]
         cmd = "poe_test_echo hi ${subject}"
         args = ["subject"]
 
         [tool.poe.tasks.greet-default]
         ref = "greet --subject ${NAME:-world}"
-        """
-    )
+        """)
     result = run_poe("greet-default", cwd=project_path, env={"NAME": "alice"})
     assert result.code == 0
     assert result.stdout == "hi alice\n"
@@ -303,16 +299,14 @@ def test_ref_with_similarly_named_var_still_appends_extra_args(run_poe):
 
 
 def test_ref_alternate_value_operator(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.greet]
         cmd = "poe_test_echo hi ${subject}"
         args = ["subject"]
 
         [tool.poe.tasks.greet-maybe]
         ref = "greet --subject ${NAME:+friend}"
-        """
-    )
+        """)
     result = run_poe("greet-maybe", cwd=project_path, env={"NAME": "alice"})
     assert result.code == 0
     assert result.stdout == "hi friend\n"

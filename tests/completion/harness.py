@@ -217,7 +217,7 @@ class ZshHarnessBuilder:
         """Generate stub functions for zsh completion builtins."""
         debug_prefix = 'echo "[harness]' if self.config.debug else "# "
 
-        lines = [
+        return [
             "# Output directory for capturing results",
             f'_HARNESS_DIR="{self.output_dir}"',
             "",
@@ -362,7 +362,6 @@ class ZshHarnessBuilder:
             "    fi",
             "}",
         ]
-        return lines
 
     def build_mock_poe(self) -> list[str]:
         """Generate mock poe command function."""
@@ -472,13 +471,11 @@ class ZshHarnessBuilder:
     # Harness: capture state variable
     echo "$state" > "$_HARNESS_DIR/state"
 """
-        modified = modified.replace(
+        return modified.replace(
             "# Handle states (may be space-separated when ambiguous)",
             state_capture
             + "\n    # Handle states (may be space-separated when ambiguous)",
         )
-
-        return modified
 
     def build_full_harness(self, script: str) -> str:
         """Build the complete harness script."""

@@ -379,9 +379,8 @@ class PoeTaskArgs:
         except ConfigValidationError as error:
             if suppress_errors:
                 return []
-            else:
-                cls._enrich_config_error(error, args_def, task_name)
-                raise
+            cls._enrich_config_error(error, args_def, task_name)
+            raise
 
     @staticmethod
     def _enrich_config_error(

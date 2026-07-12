@@ -19,8 +19,7 @@ def run_async(func: Coroutine[Any, Any, T]) -> T:
     if loop and loop.is_running():
         # Already in an event loop, run as a task and wait for result
         return asyncio.run_coroutine_threadsafe(func, loop).result()
-    else:
-        return asyncio.run(func)
+    return asyncio.run(func)
 
 
 async def async_noop(result=None, *args, **kwargs) -> Any:

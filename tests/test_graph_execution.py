@@ -89,7 +89,7 @@ def test_uses_private_var_inherited_and_filtered(run_poe, is_windows):
 def test_uses_private_var_inherited_can_be_remapped_public(run_poe, is_windows):
     """A child task can alias inherited private uses vars to public env vars via env"""
     result = run_poe("uses_private_remapped", project="graphs")
-    assert result.capture == ("Poe <= poe_test_echo hidden\n" "Poe => poe_test_env\n")
+    assert result.capture == ("Poe <= poe_test_echo hidden\nPoe => poe_test_env\n")
     stdout_lower = result.stdout.lower()
     if not is_windows:
         assert "_secret=hidden" not in result.stdout
@@ -168,7 +168,7 @@ def test_uses_env_empty_output_is_noop(run_poe):
     """A uses_env task that yields no assignments (comment only) runs cleanly"""
     result = run_poe("uses_env_empty", project="graphs")
     assert result.capture == (
-        "Poe <= poe_test_echo_lines '# just a comment'\n" "Poe => poe_test_echo done\n"
+        "Poe <= poe_test_echo_lines '# just a comment'\nPoe => poe_test_echo done\n"
     )
     assert result.stdout == "done\n"
     assert result.stderr == ""
@@ -207,8 +207,7 @@ def test_uses_env_args_fall_back_to_defaults(run_poe):
     """When the host arg is unset, the producer's arg default applies"""
     result = run_poe("uses_env_with_args", project="graphs")
     assert result.capture == (
-        "Poe <= poe_test_echo_lines TOKEN=dev-secret\n"
-        "Poe => poe_test_echo dev-secret\n"
+        "Poe <= poe_test_echo_lines TOKEN=dev-secret\nPoe => poe_test_echo dev-secret\n"
     )
     assert result.stdout == "dev-secret\n"
     assert result.stderr == ""
@@ -253,13 +252,11 @@ def test_uses_env_dry_run(run_poe):
 
 
 def test_uses_env_error_on_unknown_task(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "nope"
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
@@ -269,8 +266,7 @@ def test_uses_env_error_on_unknown_task(temp_pyproject, run_poe):
 
 
 def test_uses_env_error_on_capture_stdout_task(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks._producer]
         cmd = "poe_test_echo hi"
         capture_stdout = "out.txt"
@@ -278,8 +274,7 @@ def test_uses_env_error_on_capture_stdout_task(temp_pyproject, run_poe):
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_producer"
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
@@ -290,8 +285,7 @@ def test_uses_env_error_on_capture_stdout_task(temp_pyproject, run_poe):
 
 
 def test_uses_env_error_on_use_exec_task(temp_pyproject, run_poe):
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks._producer]
         cmd = "poe_test_echo hi"
         use_exec = true
@@ -299,8 +293,7 @@ def test_uses_env_error_on_use_exec_task(temp_pyproject, run_poe):
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_producer"
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
@@ -325,16 +318,14 @@ def test_uses_error_on_sequence_task(temp_pyproject, run_poe):
     Referencing a sequence task via uses is rejected with a curated config
     error at validation time, not an unhandled AssertionError at runtime.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks._seq]
         sequence = [{ cmd = "poe_test_echo A" }, { cmd = "poe_test_echo B" }]
 
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses = { X = "_seq" }
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
@@ -348,21 +339,18 @@ def test_uses_env_error_on_sequence_task(temp_pyproject, run_poe):
     Referencing a sequence task via uses_env is rejected with a curated config
     error at validation time, not an unhandled AssertionError at runtime.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks._seq]
         sequence = [{ cmd = "poe_test_echo A" }, { cmd = "poe_test_echo B" }]
 
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_seq"
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
-        "'uses_env' option references task that does not support output capture:"
-        " '_seq'"
+        "'uses_env' option references task that does not support output capture: '_seq'"
     ) in result.capture
     assert result.stdout == ""
 
@@ -372,21 +360,18 @@ def test_uses_env_error_on_parallel_task(temp_pyproject, run_poe):
     Referencing a parallel task via uses_env is likewise rejected with a curated
     config error rather than an unhandled AssertionError.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks._par]
         parallel = [{ cmd = "poe_test_echo A" }, { cmd = "poe_test_echo B" }]
 
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_par"
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
-        "'uses_env' option references task that does not support output capture:"
-        " '_par'"
+        "'uses_env' option references task that does not support output capture: '_par'"
     ) in result.capture
     assert result.stdout == ""
 
@@ -397,8 +382,7 @@ def test_uses_env_via_ref_to_sequence_rejected(temp_pyproject, run_poe):
     points at a sequence is rejected at config time via the recursive
     accepts_option check (rather than tracebacking at runtime).
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks._seq]
         sequence = [{ cmd = "poe_test_echo A" }, { cmd = "poe_test_echo B" }]
 
@@ -408,8 +392,7 @@ def test_uses_env_via_ref_to_sequence_rejected(temp_pyproject, run_poe):
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_myref"
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
@@ -424,8 +407,7 @@ def test_uses_env_via_switch_with_sequence_case_rejected(temp_pyproject, run_poe
     A switch forwards capture to the selected case, so uses_env referencing a
     switch with a non-capturable (sequence) case is rejected at config time.
     """
-    project_path = temp_pyproject(
-        """
+    project_path = temp_pyproject("""
         [tool.poe.tasks.consumer]
         cmd = "poe_test_echo hi"
         uses_env = "_sw"
@@ -436,12 +418,10 @@ def test_uses_env_via_switch_with_sequence_case_rejected(temp_pyproject, run_poe
           [[tool.poe.tasks._sw.switch]]
           case = "1"
           sequence = [{ cmd = "poe_test_echo A" }]
-        """
-    )
+        """)
     result = run_poe("consumer", cwd=project_path)
     assert "Error: Invalid task 'consumer'" in result.capture
     assert (
-        "'uses_env' option references task that does not support output capture:"
-        " '_sw'"
+        "'uses_env' option references task that does not support output capture: '_sw'"
     ) in result.capture
     assert result.stdout == ""

@@ -579,8 +579,7 @@ class TestBashOptionValues:
         mock_output = {
             "_list_tasks": "greet",
             "_describe_task_args": (
-                "--greeting,-g\tstring\tGreeting\t_\n"
-                "--upper,-u\tboolean\tUppercase\t_"
+                "--greeting,-g\tstring\tGreeting\t_\n--upper,-u\tboolean\tUppercase\t_"
             ),
         }
 
@@ -599,7 +598,7 @@ class TestBashOptionValues:
         mock_output = {
             "_list_tasks": "greet",
             "_describe_task_args": (
-                "--greeting,-g\tstring\tGreeting\t_\n" "--upper\tboolean\tUppercase\t_"
+                "--greeting,-g\tstring\tGreeting\t_\n--upper\tboolean\tUppercase\t_"
             ),
         }
 
@@ -690,7 +689,7 @@ class TestBashUsedOptionFiltering:
         mock_output = {
             "_list_tasks": "task",
             "_describe_task_args": (
-                "--mode,-m\tstring\tMode\t_\n" "--other,-o\tstring\tOther\t_"
+                "--mode,-m\tstring\tMode\t_\n--other,-o\tstring\tOther\t_"
             ),
         }
 
@@ -1528,7 +1527,7 @@ class TestBashTaskOptionIsolation:
         mock_output = {
             "_list_tasks": "mytask",
             "_describe_task_args": (
-                "-e,--env\tstring\tEnvironment\t_\n" "--verbose\tboolean\tVerbose\t_"
+                "-e,--env\tstring\tEnvironment\t_\n--verbose\tboolean\tVerbose\t_"
             ),
         }
 
@@ -1553,7 +1552,7 @@ class TestBashTaskOptionIsolation:
         mock_output = {
             "_list_tasks": "mytask",
             "_describe_task_args": (
-                "-v,--verbose\tboolean\tVerbose\t_\n" "--output,-o\tstring\tOutput\t_"
+                "-v,--verbose\tboolean\tVerbose\t_\n--output,-o\tstring\tOutput\t_"
             ),
         }
 
@@ -1624,7 +1623,7 @@ class TestBashEqualsStyleOptions:
         mock_output = {
             "_list_tasks": "pick",
             "_describe_task_args": (
-                "--flavor,-f\tstring\tFlavor\t" "vanilla chocolate strawberry"
+                "--flavor,-f\tstring\tFlavor\tvanilla chocolate strawberry"
             ),
         }
 
@@ -1644,7 +1643,7 @@ class TestBashEqualsStyleOptions:
         mock_output = {
             "_list_tasks": "pick",
             "_describe_task_args": (
-                "--flavor,-f\tstring\tFlavor\t" "vanilla chocolate strawberry"
+                "--flavor,-f\tstring\tFlavor\tvanilla chocolate strawberry"
             ),
         }
 
@@ -1663,7 +1662,7 @@ class TestBashEqualsStyleOptions:
         mock_output = {
             "_list_tasks": "task",
             "_describe_task_args": (
-                "--mode,-m\tstring\tMode\t_\n" "--other,-o\tstring\tOther\t_"
+                "--mode,-m\tstring\tMode\t_\n--other,-o\tstring\tOther\t_"
             ),
         }
 

@@ -172,7 +172,7 @@ class TypeAnnotation:
         if annotation in (str, int, float, bool):
             return PrimitiveType(annotation, metadata)
 
-        elif annotation is dict or origin in (
+        if annotation is dict or origin in (
             dict,
             Mapping,
             MutableMapping,
@@ -181,7 +181,7 @@ class TypeAnnotation:
         ):
             return DictType(annotation, metadata)
 
-        elif annotation is list or origin in (
+        if annotation is list or origin in (
             list,
             tuple,
             Sequence,
@@ -189,19 +189,19 @@ class TypeAnnotation:
         ):
             return ListType(annotation, metadata)
 
-        elif origin is Literal:
+        if origin is Literal:
             return LiteralType(annotation, metadata)
 
-        elif origin in (types.UnionType, Union):
+        if origin in (types.UnionType, Union):
             return UnionType(annotation, metadata)
 
-        elif annotation is Any:
+        if annotation is Any:
             return AnyType(annotation, metadata)
 
-        elif annotation in (None, type(None)):
+        if annotation in (None, type(None)):
             return NoneType(annotation, metadata)
 
-        elif typing.is_typeddict(annotation):
+        if typing.is_typeddict(annotation):
             return TypedDictType(annotation, metadata)
 
         raise ValueError(f"Cannot parse TypeAnnotation for annotation: {annotation}")
@@ -330,9 +330,9 @@ class ListType(TypeAnnotation):
         if args := get_args(annotation):
             self._value_type = TypeAnnotation.parse(args[0])
             if self._type is tuple:
-                assert (
-                    args[1] is ...
-                ), "ListType only accepts tuples with any length type"
+                assert args[1] is ..., (
+                    "ListType only accepts tuples with any length type"
+                )
         else:
             self._value_type = AnyType()
 

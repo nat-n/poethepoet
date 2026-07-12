@@ -537,10 +537,9 @@ class PoeTask(metaclass=MetaPoeTask):
                     if isinstance(array_item, str)
                     else config.default_array_item_task_type
                 )
-            else:
-                return config.default_task_type
+            return config.default_task_type
 
-        elif isinstance(task_def, dict):
+        if isinstance(task_def, dict):
             task_type_keys = set(task_def.keys()).intersection(cls.__task_types)
             if len(task_type_keys) == 1:
                 return next(iter(task_type_keys))

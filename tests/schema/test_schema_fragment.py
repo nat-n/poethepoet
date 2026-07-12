@@ -120,9 +120,9 @@ def test_cmd_task_schema_fragment_includes_standard_options(ctx: SchemaContext) 
     schema = CmdTask.__schema_fragment__(ctx)
     # Sampled inherited fields:
     for inherited in ("args", "cwd", "env", "deps", "help"):
-        assert (
-            inherited in schema["properties"]
-        ), f"{inherited} should appear inlined on cmd_task"
+        assert inherited in schema["properties"], (
+            f"{inherited} should appear inlined on cmd_task"
+        )
 
 
 def test_cmd_task_schema_includes_own_options(ctx: SchemaContext) -> None:

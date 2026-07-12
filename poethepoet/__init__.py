@@ -21,7 +21,7 @@ def main():
     from .io import PoeIO
 
     io = PoeIO(output=sys.stdout, error=sys.stderr, make_default=True)
-    app = PoeThePoet(cwd=Path().resolve(), output=io)
+    app = PoeThePoet(cwd=Path.cwd(), output=io)
     result = app(cli_args=sys.argv[1:])
     if result:
         raise SystemExit(result)

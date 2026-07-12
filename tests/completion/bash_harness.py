@@ -195,7 +195,7 @@ class BashHarnessBuilder:
             f"'{escape_for_shell(f)}'" for f in self.config.mock_files
         )
 
-        lines = [
+        return [
             "#!/usr/bin/env bash",
             "",
             "# Output directory for capturing results",
@@ -287,7 +287,6 @@ class BashHarnessBuilder:
             "}",
             "",
         ]
-        return lines
 
     def build_mock_poe(self) -> list[str]:
         """Generate mock poe command function."""
@@ -435,14 +434,12 @@ class BashHarnessBuilder:
     printf '%s\\n' "${COMPREPLY[@]}" > "$_HARNESS_DIR/compreply"
 """
         # Add at the very end of the function
-        modified = modified.replace(
+        return modified.replace(
             '_filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$cur"))\n}',
             '_filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$cur"))\n'
             + compreply_capture
             + "}",
         )
-
-        return modified
 
     def build_full_harness(self, script: str) -> str:
         """Build the complete harness script."""

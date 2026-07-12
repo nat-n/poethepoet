@@ -16,7 +16,7 @@ def get_powershell_completion_script(name: str = "") -> str:
     name = name or "poe"
 
     # Get global options from argparse
-    app = PoeThePoet(cwd=Path().resolve())
+    app = PoeThePoet(cwd=Path.cwd())
     parser = app.ui.build_parser()
 
     global_opts: list[str] = []

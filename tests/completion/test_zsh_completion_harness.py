@@ -153,12 +153,12 @@ class TestZshCompletionE2E:
                 continue
 
             # Other options should NOT exclude --help/-h
-            assert (
-                "--help" not in exclusion_list
-            ), f"Non-help option should not exclude --help. Got spec: {spec}"
-            assert (
-                "-h" not in exclusion_list.split()
-            ), f"Non-help option should not exclude -h. Got spec: {spec}"
+            assert "--help" not in exclusion_list, (
+                f"Non-help option should not exclude --help. Got spec: {spec}"
+            )
+            assert "-h" not in exclusion_list.split(), (
+                f"Non-help option should not exclude -h. Got spec: {spec}"
+            )
 
     def test_option_completion_does_not_show_tasks(
         self, zsh_harness, completion_script
@@ -251,9 +251,9 @@ class TestZshCompletionE2E:
             mock_poe_output=mock_output,
         )
 
-        assert (
-            result.state == "task"
-        ), f"Cursor ON partial task token should stay in task state, got: {result.state!r}"
+        assert result.state == "task", (
+            f"Cursor ON partial task token should stay in task state, got: {result.state!r}"
+        )
         assert result.describe_called, "Should offer task name completions"
 
     # ========== Task args completion tests ==========
@@ -349,12 +349,12 @@ class TestZshCompletionE2E:
         # Multi-option --flavor,-f produces two specs, both with =
         flavor_specs = [s for s in result.arguments_specs if "Ice cream flavor" in s]
         assert len(flavor_specs) == 2, f"Expected 2 flavor specs, got: {flavor_specs}"
-        assert any(
-            "-f=[" in s for s in flavor_specs
-        ), f"Short option spec should have '=': {flavor_specs}"
-        assert any(
-            "--flavor=[" in s for s in flavor_specs
-        ), f"Long option spec should have '=': {flavor_specs}"
+        assert any("-f=[" in s for s in flavor_specs), (
+            f"Short option spec should have '=': {flavor_specs}"
+        )
+        assert any("--flavor=[" in s for s in flavor_specs), (
+            f"Long option spec should have '=': {flavor_specs}"
+        )
         # Boolean options should NOT have =
         upper_specs = [s for s in result.arguments_specs if "--upper" in s]
         for spec in upper_specs:
@@ -382,9 +382,9 @@ class TestZshCompletionE2E:
         output_specs = [s for s in result.arguments_specs if "--output" in s]
         assert output_specs, "Should have --output in specs"
         for spec in output_specs:
-            assert (
-                "--output=[" in spec
-            ), f"Single value option should have '=' for --option=value style: {spec}"
+            assert "--output=[" in spec, (
+                f"Single value option should have '=' for --option=value style: {spec}"
+            )
 
     # ========== Task-specific options isolation tests ==========
 
@@ -413,12 +413,12 @@ class TestZshCompletionE2E:
         assert "--env" in specs_text, f"Expected task's --env in specs: {specs_text}"
         assert "--verbose" in specs_text
         # Global options should NOT be present (--executor, --directory, etc.)
-        assert (
-            "--executor" not in specs_text
-        ), f"Global --executor should not appear in task arg specs: {specs_text}"
-        assert (
-            "--directory" not in specs_text
-        ), f"Global --directory should not appear in task arg specs: {specs_text}"
+        assert "--executor" not in specs_text, (
+            f"Global --executor should not appear in task arg specs: {specs_text}"
+        )
+        assert "--directory" not in specs_text, (
+            f"Global --directory should not appear in task arg specs: {specs_text}"
+        )
 
     def test_task_e_option_not_consumed_by_global_executor(
         self, zsh_harness, completion_script
@@ -444,9 +444,9 @@ class TestZshCompletionE2E:
         # Should offer remaining task options (--verbose)
         # --env/-e should be filtered out (already used)
         specs_text = "\n".join(result.arguments_specs)
-        assert (
-            "--verbose" in specs_text
-        ), f"Expected --verbose in remaining task options: {specs_text}"
+        assert "--verbose" in specs_text, (
+            f"Expected --verbose in remaining task options: {specs_text}"
+        )
 
     def test_global_options_still_work_before_task(
         self, zsh_harness, completion_script
@@ -577,15 +577,15 @@ class TestZshCompletionE2E:
         )
 
         # Should NOT detect 'greet' as current_task
-        assert (
-            result.current_task == ""
-        ), f"Expected no current_task (greet is -h value), got: {result.current_task!r}"
+        assert result.current_task == "", (
+            f"Expected no current_task (greet is -h value), got: {result.current_task!r}"
+        )
         # When current_task is empty, args state falls back to _files
         # So task-specific args like --flavor should NOT appear in completions
         specs_text = "\n".join(result.arguments_specs)
-        assert (
-            "--flavor" not in specs_text
-        ), "Task-specific args should not be offered when -h value is mistaken for task"
+        assert "--flavor" not in specs_text, (
+            "Task-specific args should not be offered when -h value is mistaken for task"
+        )
 
     # ========== Directory option tests ==========
 
@@ -711,9 +711,9 @@ class TestZshCompletionCaching:
 
         # Should have created a cache file
         assert result.cache_files, "Expected cache file to be created"
-        assert any(
-            "poe_tasks" in f for f in result.cache_files
-        ), f"Expected poe_tasks cache file, got: {result.cache_files}"
+        assert any("poe_tasks" in f for f in result.cache_files), (
+            f"Expected poe_tasks cache file, got: {result.cache_files}"
+        )
 
         # Cache should contain the tasks
         cache_id = next(f for f in result.cache_files if "poe_tasks" in f)
@@ -722,9 +722,9 @@ class TestZshCompletionCaching:
         assert "test:Run tests" in contents
 
         # Should have made a _store_cache call
-        assert any(
-            "_store_cache" in c for c in result.cache_calls
-        ), f"Expected _store_cache call, got: {result.cache_calls}"
+        assert any("_store_cache" in c for c in result.cache_calls), (
+            f"Expected _store_cache call, got: {result.cache_calls}"
+        )
 
     def test_second_completion_uses_cache(self, zsh_harness, completion_script):
         """With pre-populated cache, should use cache instead of calling poe."""
@@ -753,15 +753,15 @@ class TestZshCompletionCaching:
 
         # Should have used cache (retrieve call should succeed)
         retrieve_calls = [c for c in result.cache_calls if "_retrieve_cache" in c]
-        assert (
-            retrieve_calls
-        ), f"Expected _retrieve_cache call, got: {result.cache_calls}"
+        assert retrieve_calls, (
+            f"Expected _retrieve_cache call, got: {result.cache_calls}"
+        )
 
         # Completions should show cached data, not fresh data
         assert result.describe_called
-        assert (
-            "cached:From cache" in result.describe_items
-        ), f"Expected cached data, got: {result.describe_items}"
+        assert "cached:From cache" in result.describe_items, (
+            f"Expected cached data, got: {result.describe_items}"
+        )
         # Fresh data should NOT appear (since cache was hit)
         assert "fresh:Fresh data" not in result.describe_items
 
@@ -806,9 +806,9 @@ class TestZshCompletionCaching:
         assert len(cache_files) > 0, "Expected cache file to be created"
 
         # The path /my/project/path becomes _my_project_path
-        assert any(
-            "poe_tasks__my_project_path" in f for f in cache_files
-        ), f"Cache ID should include path, got: {cache_files}"
+        assert any("poe_tasks__my_project_path" in f for f in cache_files), (
+            f"Cache ID should include path, got: {cache_files}"
+        )
 
     def test_different_paths_use_different_cache_keys(
         self, zsh_harness, completion_script
@@ -857,9 +857,9 @@ class TestZshCompletionCaching:
         )
 
         # Verify target_path was detected from -C option
-        assert (
-            result.target_path == "/custom/dir"
-        ), f"Expected target_path='/custom/dir', got: {result.target_path!r}"
+        assert result.target_path == "/custom/dir", (
+            f"Expected target_path='/custom/dir', got: {result.target_path!r}"
+        )
 
     # ========== Cache disabled tests ==========
 
@@ -873,15 +873,15 @@ class TestZshCompletionCaching:
         )
 
         # Should not have stored to cache
-        assert (
-            not result.cache_files
-        ), f"Cache should be empty when disabled, got: {result.cache_files}"
+        assert not result.cache_files, (
+            f"Cache should be empty when disabled, got: {result.cache_files}"
+        )
 
         # Should not have made cache calls
         store_calls = [c for c in result.cache_calls if "_store_cache" in c]
-        assert (
-            not store_calls
-        ), f"Should not call _store_cache when disabled, got: {result.cache_calls}"
+        assert not store_calls, (
+            f"Should not call _store_cache when disabled, got: {result.cache_calls}"
+        )
 
     def test_cache_disabled_skips_cache_retrieval(
         self, zsh_harness, cache_disabled_script
@@ -905,9 +905,9 @@ class TestZshCompletionCaching:
 
         # Should not have made cache retrieve calls
         retrieve_calls = [c for c in result.cache_calls if "_retrieve_cache" in c]
-        assert (
-            not retrieve_calls
-        ), f"Should not call _retrieve_cache when disabled, got: {result.cache_calls}"
+        assert not retrieve_calls, (
+            f"Should not call _retrieve_cache when disabled, got: {result.cache_calls}"
+        )
 
     # ========== Task args caching tests ==========
 
@@ -932,9 +932,9 @@ class TestZshCompletionCaching:
         assert args_cache, f"Expected task args cache, got: {result.cache_files}"
 
         # Cache ID should include task name and path
-        assert any(
-            "build" in f and "_project" in f for f in args_cache
-        ), f"Args cache should include task name and path: {args_cache}"
+        assert any("build" in f and "_project" in f for f in args_cache), (
+            f"Args cache should include task name and path: {args_cache}"
+        )
 
     def test_different_tasks_use_different_cache_keys(
         self, zsh_harness, completion_script
@@ -1039,7 +1039,7 @@ class TestZshCompletionCaching:
         assert invalid_idx >= 0, "Should call _cache_invalid"
         assert store_idx >= 0, "Should call _store_cache"
         assert invalid_idx < store_idx, (
-            f"_cache_invalid should come before _store_cache. " f"Calls: {cache_calls}"
+            f"_cache_invalid should come before _store_cache. Calls: {cache_calls}"
         )
 
     def test_cache_call_sequence_on_hit(self, zsh_harness, completion_script):
@@ -1071,9 +1071,9 @@ class TestZshCompletionCaching:
 
         assert invalid_calls, "Should check _cache_invalid"
         assert retrieve_calls, "Should call _retrieve_cache on hit"
-        assert (
-            not store_calls
-        ), f"Should NOT call _store_cache on cache hit. Calls: {cache_calls}"
+        assert not store_calls, (
+            f"Should NOT call _store_cache on cache hit. Calls: {cache_calls}"
+        )
 
     def test_help_task_state_also_caches(self, zsh_harness, completion_script):
         """The help_task state should also use/store cache."""
@@ -1148,9 +1148,9 @@ _poe
 """
         proc = subprocess.run(["zsh", "-c", test_zsh], capture_output=True, text=True)
 
-        assert (
-            "BEFORE_OK" in proc.stdout
-        ), f"Policy not found with initial curcontext. Output: {proc.stdout}"
+        assert "BEFORE_OK" in proc.stdout, (
+            f"Policy not found with initial curcontext. Output: {proc.stdout}"
+        )
         assert "ARGS_OK" in proc.stdout, (
             f"Policy not found after _arguments -C enters args state "
             f"(curcontext changed). Output: {proc.stdout}"
@@ -1201,9 +1201,9 @@ _poe
             f"Expected fresh data (stale in-memory cache should be expired), "
             f"got: {result.describe_items}"
         )
-        assert (
-            "stale:Stale data" not in result.describe_items
-        ), "Stale in-memory cache data should NOT be used after TTL expires"
+        assert "stale:Stale data" not in result.describe_items, (
+            "Stale in-memory cache data should NOT be used after TTL expires"
+        )
 
     def test_valid_in_memory_cache_is_used(self, zsh_harness, completion_script):
         """In-memory cache within its TTL should be used instead of fetching fresh."""
@@ -1232,12 +1232,12 @@ _poe
         result = zsh_harness(script_with_valid, ["poe", ""], 2, mock_poe_output=mock)
 
         assert result.describe_called
-        assert (
-            "cached:Cached data" in result.describe_items
-        ), f"Expected cached data (within TTL), got: {result.describe_items}"
-        assert (
-            "fresh:Fresh data" not in result.describe_items
-        ), "Fresh data should NOT be fetched when in-memory cache is still valid"
+        assert "cached:Cached data" in result.describe_items, (
+            f"Expected cached data (within TTL), got: {result.describe_items}"
+        )
+        assert "fresh:Fresh data" not in result.describe_items, (
+            "Fresh data should NOT be fetched when in-memory cache is still valid"
+        )
 
     def test_expired_in_memory_args_cache_triggers_fresh_fetch(
         self, zsh_harness, completion_script
@@ -1280,9 +1280,9 @@ _poe
             f"Expected fresh args (stale cache should be expired), "
             f"got specs: {result.arguments_specs}"
         )
-        assert (
-            "--stale" not in specs_text
-        ), "Stale in-memory args cache should NOT be used after TTL expires"
+        assert "--stale" not in specs_text, (
+            "Stale in-memory args cache should NOT be used after TTL expires"
+        )
 
     # ========== Max cache hits tests ==========
     #
@@ -1323,12 +1323,12 @@ _poe
         )
 
         assert result.describe_called
-        assert (
-            "cached:Cached task" in result.describe_items
-        ), f"Expected cached data (hit count below max), got: {result.describe_items}"
-        assert (
-            "fresh:Fresh task" not in result.describe_items
-        ), "Fresh data should NOT be fetched when hit count is below max"
+        assert "cached:Cached task" in result.describe_items, (
+            f"Expected cached data (hit count below max), got: {result.describe_items}"
+        )
+        assert "fresh:Fresh task" not in result.describe_items, (
+            "Fresh data should NOT be fetched when hit count is below max"
+        )
 
     def test_task_cache_hit_at_max_triggers_fresh_fetch(
         self, zsh_harness, completion_script
@@ -1361,12 +1361,12 @@ _poe
         )
 
         assert result.describe_called
-        assert (
-            "fresh:Fresh task" in result.describe_items
-        ), f"Expected fresh data (hit count reached max), got: {result.describe_items}"
-        assert (
-            "stale:Stale task" not in result.describe_items
-        ), "Stale cached data should NOT be served after max hits reached"
+        assert "fresh:Fresh task" in result.describe_items, (
+            f"Expected fresh data (hit count reached max), got: {result.describe_items}"
+        )
+        assert "stale:Stale task" not in result.describe_items, (
+            "Stale cached data should NOT be served after max hits reached"
+        )
 
     def test_task_in_memory_cache_hit_at_max_triggers_fresh_fetch(
         self, zsh_harness, completion_script
@@ -1396,12 +1396,12 @@ _poe
         result = zsh_harness(script_with_hits, ["poe", ""], 2, mock_poe_output=mock)
 
         assert result.describe_called
-        assert (
-            "fresh:Fresh data" in result.describe_items
-        ), f"Expected fresh data (in-memory hit count at max), got: {result.describe_items}"
-        assert (
-            "stale:In-memory stale" not in result.describe_items
-        ), "Stale in-memory data should NOT be served after max hits"
+        assert "fresh:Fresh data" in result.describe_items, (
+            f"Expected fresh data (in-memory hit count at max), got: {result.describe_items}"
+        )
+        assert "stale:In-memory stale" not in result.describe_items, (
+            "Stale in-memory data should NOT be served after max hits"
+        )
 
     def test_args_cache_hit_below_max_serves_cached_data(
         self, zsh_harness, completion_script
@@ -1444,12 +1444,12 @@ _poe
 
         assert result.arguments_called
         specs_text = "\n".join(result.arguments_specs)
-        assert (
-            "--cached" in specs_text
-        ), f"Expected cached args (hit count below max), got: {result.arguments_specs}"
-        assert (
-            "--fresh" not in specs_text
-        ), "Fresh args should NOT be fetched when hit count is below max"
+        assert "--cached" in specs_text, (
+            f"Expected cached args (hit count below max), got: {result.arguments_specs}"
+        )
+        assert "--fresh" not in specs_text, (
+            "Fresh args should NOT be fetched when hit count is below max"
+        )
 
     def test_args_cache_hit_at_max_triggers_fresh_fetch(
         self, zsh_harness, completion_script
@@ -1492,12 +1492,12 @@ _poe
 
         assert result.arguments_called
         specs_text = "\n".join(result.arguments_specs)
-        assert (
-            "--fresh" in specs_text
-        ), f"Expected fresh args (hit count reached max), got: {result.arguments_specs}"
-        assert (
-            "--stale" not in specs_text
-        ), "Stale cached args should NOT be served after max hits reached"
+        assert "--fresh" in specs_text, (
+            f"Expected fresh args (hit count reached max), got: {result.arguments_specs}"
+        )
+        assert "--stale" not in specs_text, (
+            "Stale cached args should NOT be served after max hits reached"
+        )
 
     def test_help_task_cache_hit_at_max_triggers_fresh_fetch(
         self, zsh_harness, completion_script
@@ -1530,12 +1530,12 @@ _poe
         )
 
         assert result.describe_called
-        assert (
-            "fresh:Fresh help" in result.describe_items
-        ), f"Expected fresh data (help_task hit count at max), got: {result.describe_items}"
-        assert (
-            "stale:Stale help" not in result.describe_items
-        ), "Stale help task data should NOT be served after max hits"
+        assert "fresh:Fresh help" in result.describe_items, (
+            f"Expected fresh data (help_task hit count at max), got: {result.describe_items}"
+        )
+        assert "stale:Stale help" not in result.describe_items, (
+            "Stale help task data should NOT be served after max hits"
+        )
 
     def test_cache_hit_counter_resets_after_fresh_fetch(
         self, zsh_harness, completion_script
@@ -1591,12 +1591,12 @@ _poe
         )
 
         # Should use cache (counter is at 0, well below max)
-        assert (
-            "fresh:Fresh" in result_2.describe_items
-        ), f"Expected cached data after counter reset, got: {result_2.describe_items}"
-        assert (
-            "newer:Even newer" not in result_2.describe_items
-        ), "Should use cache after counter was reset by previous refresh"
+        assert "fresh:Fresh" in result_2.describe_items, (
+            f"Expected cached data after counter reset, got: {result_2.describe_items}"
+        )
+        assert "newer:Even newer" not in result_2.describe_items, (
+            "Should use cache after counter was reset by previous refresh"
+        )
 
 
 @pytest.mark.skipif(shutil.which("zsh") is None, reason="zsh not available")
@@ -1642,7 +1642,7 @@ class TestZshHarnessBasic:
             [
                 "zsh",
                 "-c",
-                f"source /dev/stdin << 'EOF'\n{script}\nEOF\n" "type _poe | head -1",
+                f"source /dev/stdin << 'EOF'\n{script}\nEOF\ntype _poe | head -1",
             ],
             capture_output=True,
             text=True,

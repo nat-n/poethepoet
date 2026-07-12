@@ -10,24 +10,24 @@ poetry_vars = {"POETRY_VIRTUALENVS_CREATE": "false"}
 def test_call_no_args(run_poe):
     result = run_poe()
 
-    assert result.capture.startswith(
-        f"Poe the Poet (version {__version__})"
-    ), "Output should start with poe header line"
-    assert (
-        "\nResult: No task specified.\n" in result.capture
-    ), "Output should include status message"
+    assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
+        "Output should start with poe header line"
+    )
+    assert "\nResult: No task specified.\n" in result.capture, (
+        "Output should include status message"
+    )
     assert "Configured tasks:\n  echo" in result.capture, "echo task should be in help"
 
 
 def test_call_with_directory(run_poe, projects):
     result = run_poe("--directory", str(projects["example"]), cwd=".")
     assert result.code == 1, "Expected non-zero result"
-    assert result.capture.startswith(
-        f"Poe the Poet (version {__version__})"
-    ), "Output should start with poe header line"
-    assert (
-        "\nResult: No task specified.\n" in result.capture
-    ), "Output should include status message"
+    assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
+        "Output should start with poe header line"
+    )
+    assert "\nResult: No task specified.\n" in result.capture, (
+        "Output should include status message"
+    )
     assert (
         "Configured tasks:\n"
         "  echo                  It says what you say" in result.capture
@@ -37,12 +37,12 @@ def test_call_with_directory(run_poe, projects):
 def test_call_with_directory_set_via_env(run_poe_subproc, projects):
     result = run_poe_subproc(env={"POE_PROJECT_DIR": str(projects["example"])}, cwd=".")
     assert result.code == 1, "Expected non-zero result"
-    assert result.capture.startswith(
-        f"Poe the Poet (version {__version__})"
-    ), "Output should start with poe header line"
-    assert (
-        "\nResult: No task specified.\n" in result.capture
-    ), "Output should include status message"
+    assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
+        "Output should start with poe header line"
+    )
+    assert "\nResult: No task specified.\n" in result.capture, (
+        "Output should include status message"
+    )
     assert (
         "Configured tasks:\n"
         "  echo                  It says what you say" in result.capture
@@ -53,12 +53,12 @@ def test_call_with_directory_set_via_env(run_poe_subproc, projects):
 def test_call_with_root(run_poe, projects):
     result = run_poe("--root", str(projects["example"]), cwd=".")
     assert result.code == 1, "Expected non-zero result"
-    assert result.capture.startswith(
-        f"Poe the Poet (version {__version__})"
-    ), "Output should start with poe header line"
-    assert (
-        "\nResult: No task specified.\n" in result.capture
-    ), "Output should include status message"
+    assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
+        "Output should start with poe header line"
+    )
+    assert "\nResult: No task specified.\n" in result.capture, (
+        "Output should include status message"
+    )
     assert (
         "Configured tasks:\n"
         "  echo                  It says what you say" in result.capture
@@ -68,9 +68,9 @@ def test_call_with_root(run_poe, projects):
 def test_call_unknown_task(run_poe):
     result = run_poe("not_a_task")
     assert result.code == 1, "Expected non-zero result"
-    assert (
-        "Error: Unrecognized task 'not_a_task'" in result.capture
-    ), "Output should include error message"
+    assert "Error: Unrecognized task 'not_a_task'" in result.capture, (
+        "Output should include error message"
+    )
 
 
 def test_call_hidden_task(run_poe):
@@ -79,9 +79,9 @@ def test_call_hidden_task(run_poe):
     assert (
         "Error: Tasks prefixed with `_` cannot be executed directly" in result.capture
     ), "Output should include error message"
-    assert (
-        "Poe => " not in result.capture
-    ), "Output should not look like a successful execution"
+    assert "Poe => " not in result.capture, (
+        "Output should not look like a successful execution"
+    )
 
 
 def test_version_option(run_poe):
@@ -174,12 +174,12 @@ def test_documentation_of_single_task_with_help_and_args(run_poe):
 
 def test_documentation_of_task_named_args(run_poe):
     result = run_poe(project="scripts")
-    assert result.capture.startswith(
-        f"Poe the Poet (version {__version__})"
-    ), "Output should start with poe header line"
-    assert (
-        "\nResult: No task specified.\n" in result.capture
-    ), "Output should include status message"
+    assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
+        "Output should start with poe header line"
+    )
+    assert "\nResult: No task specified.\n" in result.capture, (
+        "Output should include status message"
+    )
 
     assert re.search(
         r"Configured tasks:\n"

@@ -184,12 +184,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             # Fallback to not using any particular environment
             return cls.__executor_types["simple"]
 
-        else:
-            if executor_type not in cls.__executor_types:
-                raise PoeException(
-                    f"Cannot instantiate unknown executor {executor_type!r}"
-                )
-            return cls.__executor_types[executor_type]
+        if executor_type not in cls.__executor_types:
+            raise PoeException(f"Cannot instantiate unknown executor {executor_type!r}")
+        return cls.__executor_types[executor_type]
 
     async def execute(
         self, cmd: Sequence[str], input: bytes | None = None, use_exec: bool = False

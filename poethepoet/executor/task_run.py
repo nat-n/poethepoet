@@ -276,9 +276,7 @@ class PoeTaskRun:
             child.return_code or 0
             for child in self._children
             if child.return_code not in ignore_failure_codes
-        ) or int(
-            self._force_failure
-        )
+        ) or int(self._force_failure)
 
     async def add_process(
         self, process: PoeProcess, finalize: bool = False

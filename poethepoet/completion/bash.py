@@ -17,7 +17,7 @@ def get_bash_completion_script(name: str = "") -> str:
     func_name = f"_{name}_complete"
 
     # Get global options from argparse
-    app = PoeThePoet(cwd=Path().resolve())
+    app = PoeThePoet(cwd=Path.cwd())
     parser = app.ui.build_parser()
 
     global_opts: list[str] = []

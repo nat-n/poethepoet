@@ -92,8 +92,7 @@ def test_build_schema_discriminator_fields_carry_class_docstring() -> None:
         assert expected, f"{task_cls.__name__} has no class docstring"
         field_schema = schema["definitions"][f"{key}_task"]["properties"][key]
         assert field_schema.get("description") == expected, (
-            f"{key} discriminator missing description from "
-            f"{task_cls.__name__}.__doc__"
+            f"{key} discriminator missing description from {task_cls.__name__}.__doc__"
         )
 
 
@@ -187,9 +186,9 @@ def test_build_schema_use_exec_and_capture_stdout_are_mutex() -> None:
             if "allOf" in variant
             else [{"if": variant.get("if"), "then": variant.get("then")}]
         )
-        assert (
-            expected_clause in clauses
-        ), f"{key} missing use_exec/capture_stdout mutex clause"
+        assert expected_clause in clauses, (
+            f"{key} missing use_exec/capture_stdout mutex clause"
+        )
 
 
 def test_build_schema_script_module_forbids_print_result() -> None:
@@ -208,9 +207,9 @@ def test_build_schema_script_module_forbids_print_result() -> None:
         },
         "then": {"properties": {"print_result": False}},
     }
-    assert expected_clause in variant.get(
-        "allOf", []
-    ), "script_task missing module/print_result clause"
+    assert expected_clause in variant.get("allOf", []), (
+        "script_task missing module/print_result clause"
+    )
 
 
 def test_build_schema_ref_task_forbids_executor() -> None:
@@ -314,9 +313,9 @@ def test_build_schema_shell_interpreter_array_min_items() -> None:
     array_branches = [
         branch for branch in interpreter["anyOf"] if branch.get("type") == "array"
     ]
-    assert (
-        len(array_branches) == 1
-    ), f"expected one array branch for interpreter, got {array_branches!r}"
+    assert len(array_branches) == 1, (
+        f"expected one array branch for interpreter, got {array_branches!r}"
+    )
     assert array_branches[0].get("minItems") == 1, array_branches[0]
 
 
@@ -333,16 +332,16 @@ def test_build_schema_sequence_and_parallel_forbid_capture_stdout() -> None:
     schema = build_schema()
     for key in ("sequence_task", "parallel_task"):
         variant = schema["definitions"][key]
-        assert (
-            "capture_stdout" not in variant["properties"]
-        ), f"{key} should not list capture_stdout in properties"
-        assert (
-            variant["additionalProperties"] is False
-        ), f"{key} must keep additionalProperties: false"
+        assert "capture_stdout" not in variant["properties"], (
+            f"{key} should not list capture_stdout in properties"
+        )
+        assert variant["additionalProperties"] is False, (
+            f"{key} must keep additionalProperties: false"
+        )
         shadow = schema["definitions"][f"{key}_with_case"]
-        assert (
-            "capture_stdout" not in shadow["properties"]
-        ), f"{key}_with_case should not list capture_stdout in properties"
+        assert "capture_stdout" not in shadow["properties"], (
+            f"{key}_with_case should not list capture_stdout in properties"
+        )
 
 
 def test_build_schema_switch_control_constrained_to_allowed_task_types() -> None:
