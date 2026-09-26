@@ -1,0 +1,4 @@
+# expected_error: false_string
+[tool.poe.tasks.bad]
+cmd = "echo"
+args = [{ name = "flag", type = "boolean", false_string = 0 }]

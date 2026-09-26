@@ -63,6 +63,18 @@ class ArgSpec(PoeOptions):
     The type of the argument.
     """
 
+    true_string: str | None = None
+    """
+    Literal string to expose for a true boolean argument in parameter expansion
+    and the environment. Defaults to "True" when omitted.
+    """
+
+    false_string: str | None = None
+    """
+    Literal string to expose for a false boolean argument in parameter expansion
+    and the environment. The variable is unset when omitted.
+    """
+
     multiple: bool | int = False
     """
     Indicates if multiple values are allowed for the argument. If an integer is
@@ -240,6 +252,7 @@ class ArgSpec(PoeOptions):
                         }
                     }
                 },
+                "else": {"properties": {"true_string": False, "false_string": False}},
             }
         ]
         return fragment
@@ -252,6 +265,12 @@ class ArgSpec(PoeOptions):
             raise
 
     def _validate(self):
+        for option in ("true_string", "false_string"):
+            if self.get(option) is not None and self.type != "boolean":
+                raise ConfigValidationError(
+                    f"Option {option!r} requires argument type 'boolean'"
+                )
+
         if not self.name.replace("-", "_").isidentifier():
             raise ConfigValidationError(
                 f"Argument name {self.name!r} is not a valid 'identifier',\n"
@@ -554,6 +573,22 @@ class PoeTaskArgs:
             else:
                 parsed_args[key] = [default]
 
+    def get_env_overrides(self, values: Mapping[str, Any]) -> dict[str, str]:
+        """
+        Get explicitly configured boolean strings without changing typed values.
+        Empty strings are retained, and templates are not expanded.
+        """
+        result = {}
+        for arg in self._args:
+            if arg.type != "boolean":
+                continue
+            name = arg.name.replace("-", "_")
+            value = values[name]
+            string_value = arg.true_string if value else arg.false_string
+            if string_value is not None:
+                result[name] = string_value
+        return result
+
     def format_argv(self, values: Mapping[str, Any], env: TaskEnv) -> list[str]:
         """
         Re-emit parsed argument values as CLI tokens — the inverse of
@@ -571,9 +606,10 @@ class PoeTaskArgs:
 
         result: list[str] = []
         for arg in self._args:
-            if arg.name not in values:
+            name = arg.name.replace("-", "_")
+            if name not in values:
                 continue
-            value = values[arg.name]
+            value = values[name]
 
             if arg.type == "boolean":
                 raw_default = arg.get("default")

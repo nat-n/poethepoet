@@ -122,12 +122,11 @@ class ScriptTask(PoeTask):
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values, extra_args)
-        named_arg_values = env.get_args()
-
         if ":" not in self.spec.content:
             return await self._run_module(context, env, task_state)
+
+        self.register_task_args(env)
+        named_arg_values = env.get_args()
 
         target_module, function_call = parse_script_reference(
             self.spec.content,
@@ -187,7 +186,18 @@ class ScriptTask(PoeTask):
         """
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values, extra_args)
+
+        # Resolve defaults against the same environment used for parsing, before
+        # registering arguments overwrites variables with their string values.
+        argv = [
+            *(
+                task_args.format_argv(named_arg_values, env)
+                if (task_args := self.task_args)
+                else ()
+            ),
+            *extra_args,
+        ]
+        self.register_task_args(env)
 
         # Approximate the callable path's sys.path.append('src') by appending
         # '<project_root>/src' to PYTHONPATH. The absolute form means a task
@@ -209,14 +219,6 @@ class ScriptTask(PoeTask):
                 ),
             )
 
-        argv = [
-            *(
-                task_args.format_argv(named_arg_values, env)
-                if (task_args := self.task_args)
-                else ()
-            ),
-            *extra_args,
-        ]
         cmd = ("python", "-m", self.spec.content, *argv)
 
         action_summary = self.name + (f" {shlex.join(argv)}" if argv else "")

@@ -127,8 +127,7 @@ class RefTask(PoeTask):
         if ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values, extra_args)
+        extra_args = self.register_task_args(env)
 
         expanded_content = env.fill_template(self._parse_content())
         invocation_tokens = tuple(

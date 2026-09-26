@@ -205,11 +205,18 @@ Named arguments support the following configuration options:
 
    When ``type = "boolean"``, the ``default`` option (if set) must be a TOML boolean, or one of the following case-insensitive string literals (also accepting surrounding whitespace): ``"t"``, ``"true"``, ``"1"`` for true, and ``"f"``, ``"false"``, ``"0"``, ``""`` for false. A templated string (e.g. ``"${SOME_VAR}"``) is also accepted and re-checked against this same set once the template has been resolved.
 
+- **true_string**, **false_string** : ``str``
+   Customize the string exposed by a boolean argument in parameter expansion and the subprocess environment when its value is true or false, respectively. These options require ``type = "boolean"`` and accept literal strings: ``${...}`` references are not expanded. An explicitly configured empty string sets the variable to empty rather than unsetting it.
+
+   These options apply to the resolved boolean value, independently of ``default``. Python variables in expr and callable script tasks remain booleans, and module script tasks continue to forward the flag when it was provided on the CLI.
+
 .. note::
 
-   When a :toml:`type = "boolean"` flag arg evaluates to :toml:`false`, this results in the corresponding environment variable (if any) being *unset* for the task, even if it was previously set by some other means. This ensures consistent *non-truthy* semantics for :ref:`parameter expansion operators<Parameter expansion operators>`, in config, shells or other subprocesses.
+   When a :toml:`type = "boolean"` flag arg evaluates to :toml:`false` and ``false_string`` is omitted, this results in the corresponding environment variable (if any) being *unset* for the task, even if it was previously set by some other means. This ensures consistent *non-truthy* semantics for :ref:`parameter expansion operators<Parameter expansion operators>`, in config, shells or other subprocesses.
 
-   If the flag value is :toml:`true` then it is exposed as a python variable with the value ``True`` in expr or script tasks, and an environment variable with the string value ``True``.
+   If the flag value is :toml:`true` and ``true_string`` is omitted, its environment string is ``True``.
+
+   Parameter expansion operators test the resulting string, not the typed boolean. A nonempty ``false_string`` activates ``:+`` even when the flag is false; an empty ``true_string`` activates ``:-`` even when the flag is true. Use ``${name}`` directly when both output strings are configured.
 
 
 Constraining argument values

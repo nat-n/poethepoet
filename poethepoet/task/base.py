@@ -629,6 +629,17 @@ class PoeTask(metaclass=MetaPoeTask):
 
         return self._parsed_args
 
+    def register_task_args(self, env: TaskEnv) -> tuple[str, ...]:
+        """
+        Parse and register task arguments with their configured environment strings.
+        Return the extra CLI arguments.
+        """
+        parsed_args, extra_args = self.get_parsed_arguments(env)
+        env.register_task_args(parsed_args, extra_args)
+        if task_args := self.task_args:
+            env.update(task_args.get_env_overrides(parsed_args))
+        return extra_args
+
     async def run(
         self,
         context: RunContext,
@@ -766,8 +777,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
         if self.__upstream_invocations is None:
             env = self.spec.get_task_env(context.env, io=self.ctx.io)
-            parsed_args, extra_args = self.get_parsed_arguments(env)
-            env.register_task_args(parsed_args, extra_args)
+            self.register_task_args(env)
 
             uses_env_refs = options.get("uses_env", ())
             if isinstance(uses_env_refs, str):
