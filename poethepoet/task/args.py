@@ -358,6 +358,7 @@ class PoeTaskArgs:
     _args: tuple[ArgSpec, ...]
 
     def __init__(self, args_def: ArgsDef, task_name: str, io: PoeIO):
+        self._resolved_bool_defaults: dict[str, bool] | None = None
         self._task_name = task_name
         self._args = self._parse_args_def(args_def)
         self._io = io
@@ -499,6 +500,13 @@ class PoeTaskArgs:
             else cast("IO[str]", os.devnull)
         )
         parser = self.build_parser(env, program_name)
+        # Remember the boolean defaults exactly as resolved for this parse, so
+        # format_argv never re-resolves templates against a different env.
+        self._resolved_bool_defaults = {
+            arg.name.replace("-", "_"): bool(parser.get_default(arg.name))
+            for arg in self._args
+            if arg.type == "boolean"
+        }
         with redirect_stderr(error_stream):
             try:
                 parsed_args = vars(parser.parse_args(args))
@@ -612,6 +620,10 @@ class PoeTaskArgs:
             value = values[name]
 
             if arg.type == "boolean":
+                if (resolved := self._resolved_bool_defaults) is not None:
+                    if value != resolved[name]:
+                        result.append(arg.options[0])
+                    continue
                 raw_default = arg.get("default")
                 if isinstance(raw_default, str):
                     raw_default = env.fill_template(raw_default)

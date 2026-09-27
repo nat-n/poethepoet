@@ -6,6 +6,7 @@ from ..exceptions import CyclicDependencyError
 
 if TYPE_CHECKING:
     from ..context import RunContext
+    from ..env.task_env import TaskEnv
     from .base import PoeTask
 
 
@@ -57,8 +58,10 @@ class TaskExecutionGraph:
         self,
         sink_task: PoeTask,
         context: RunContext,
+        parent_env: TaskEnv | None = None,
     ):
         self._context = context
+        self._sink_parent_env = parent_env
         self.sink = TaskExecutionNode(sink_task, [], ())
         self.sources = []
         self.captured_tasks = {}
@@ -105,7 +108,11 @@ class TaskExecutionGraph:
         Build a DAG of tasks by depth-first traversal of the dependency tree starting
         from the sink node.
         """
-        for capture_stdout, task in node.task.iter_upstream_tasks(self._context):
+        # Only the sink inherits the invoking task's env; deps run standalone
+        parent_env = self._sink_parent_env if node is self.sink else None
+        for capture_stdout, task in node.task.iter_upstream_tasks(
+            self._context, parent_env
+        ):
             node.direct_dependencies.add(task.invocation)
 
             if task.invocation in node.path_dependants:

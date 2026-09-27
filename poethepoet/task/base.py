@@ -654,7 +654,7 @@ class PoeTask(metaclass=MetaPoeTask):
             self.ctx.io.print_debug(f" * Running     {task_type_key}:{self.name}")
             self.ctx.io.print_debug(f" . Invocation  {self.invocation!r}")
 
-        upstream_invocations = self._get_upstream_invocations(context)
+        upstream_invocations = self._get_upstream_invocations(context, parent_env)
 
         if context.dry and (
             upstream_invocations.get("uses", {})
@@ -750,13 +750,13 @@ class PoeTask(metaclass=MetaPoeTask):
         return working_dir
 
     def iter_upstream_tasks(
-        self, context: RunContext
+        self, context: RunContext, parent_env: TaskEnv | None = None
     ) -> Iterator[tuple[bool, PoeTask]]:
         """
         Yield each upstream task along with whether its output should be captured
         (True for uses/uses_env sources, False for plain deps).
         """
-        invocations = self._get_upstream_invocations(context)
+        invocations = self._get_upstream_invocations(context, parent_env)
         for invocation in invocations["deps"]:
             yield (False, self._instantiate_dep(invocation, capture_stdout=False))
         for invocation in invocations["uses"].values():
@@ -764,7 +764,9 @@ class PoeTask(metaclass=MetaPoeTask):
         for invocation in invocations["uses_env"]:
             yield (True, self._instantiate_dep(invocation, capture_stdout=True))
 
-    def _get_upstream_invocations(self, context: RunContext):
+    def _get_upstream_invocations(
+        self, context: RunContext, parent_env: TaskEnv | None = None
+    ):
         """
         NB. this memoization assumes the context (and contained env vars) will be the
         same in all instances for the lifetime of this object. Whilst this should be OK
@@ -776,7 +778,7 @@ class PoeTask(metaclass=MetaPoeTask):
         options = self.spec.options
 
         if self.__upstream_invocations is None:
-            env = self.spec.get_task_env(context.env, io=self.ctx.io)
+            env = self.spec.get_task_env(parent_env or context.env, io=self.ctx.io)
             self.register_task_args(env)
 
             uses_env_refs = options.get("uses_env", ())
