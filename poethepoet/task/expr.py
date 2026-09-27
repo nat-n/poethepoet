@@ -102,7 +102,7 @@ class ExprTask(PoeTask):
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
-        self.register_task_args(env)
+        self._parse_and_register_args(env)
         named_arg_values = env.get_args()
 
         imports = self.spec.options.imports

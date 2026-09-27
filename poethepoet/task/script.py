@@ -125,7 +125,7 @@ class ScriptTask(PoeTask):
         if ":" not in self.spec.content:
             return await self._run_module(context, env, task_state)
 
-        self.register_task_args(env)
+        self._parse_and_register_args(env)
         named_arg_values = env.get_args()
 
         target_module, function_call = parse_script_reference(
@@ -197,7 +197,7 @@ class ScriptTask(PoeTask):
             ),
             *extra_args,
         ]
-        self.register_task_args(env)
+        self._parse_and_register_args(env)
 
         # Approximate the callable path's sys.path.append('src') by appending
         # '<project_root>/src' to PYTHONPATH. The absolute form means a task

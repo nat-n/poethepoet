@@ -583,9 +583,9 @@ class PoeTaskArgs:
             if arg.type != "boolean":
                 continue
             name = arg.name.replace("-", "_")
-            value = values[name]
-            string_value = arg.true_string if value else arg.false_string
-            if string_value is not None:
+            if (
+                string_value := arg.true_string if values[name] else arg.false_string
+            ) is not None:
                 result[name] = string_value
         return result
 

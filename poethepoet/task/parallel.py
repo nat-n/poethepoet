@@ -232,7 +232,7 @@ class ParallelTask(PoeTask):
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
-        self.register_task_args(env)
+        self._parse_and_register_args(env)
 
         if len(self._subtasks) > 1:
             # Indicate on the global context that there are multiple stages

@@ -72,7 +72,7 @@ class ShellTask(PoeTask):
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
-        self.register_task_args(env)
+        self._parse_and_register_args(env)
 
         interpreter_cmd = self.resolve_interpreter_cmd()
         if not interpreter_cmd:
