@@ -1,0 +1,4 @@
+# expected_error: Option 'false_string' requires argument type 'boolean'
+[tool.poe.tasks.bad]
+cmd = "echo"
+args = [{ name = "flag", false_string = "no" }]

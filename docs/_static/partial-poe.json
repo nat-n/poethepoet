@@ -8,6 +8,9 @@
       "additionalProperties": false,
       "allOf": [
         {
+          "else": {
+            "properties": { "false_string": false, "true_string": false }
+          },
           "if": {
             "properties": { "type": { "const": "boolean" } },
             "required": ["type"]
@@ -44,6 +47,10 @@
             { "type": "boolean" }
           ],
           "description": "The default value for the argument when not provided."
+        },
+        "false_string": {
+          "description": "Literal string to expose for a false boolean argument in parameter expansion\nand the environment. The variable is unset when omitted.",
+          "type": "string"
         },
         "help": {
           "default": "",
@@ -74,6 +81,10 @@
           "description": "Indicates if the argument is required.",
           "type": "boolean"
         },
+        "true_string": {
+          "description": "Literal string to expose for a true boolean argument in parameter expansion\nand the environment. Defaults to \"True\" when omitted.",
+          "type": "string"
+        },
         "type": {
           "default": "string",
           "description": "The type of the argument.",
@@ -88,6 +99,9 @@
       "additionalProperties": false,
       "allOf": [
         {
+          "else": {
+            "properties": { "false_string": false, "true_string": false }
+          },
           "if": {
             "properties": { "type": { "const": "boolean" } },
             "required": ["type"]
@@ -125,6 +139,10 @@
           ],
           "description": "The default value for the argument when not provided."
         },
+        "false_string": {
+          "description": "Literal string to expose for a false boolean argument in parameter expansion\nand the environment. The variable is unset when omitted.",
+          "type": "string"
+        },
         "help": {
           "default": "",
           "description": "A short description of the argument to include in the documentation of the\ntask.",
@@ -149,6 +167,10 @@
           "default": false,
           "description": "Indicates if the argument is required.",
           "type": "boolean"
+        },
+        "true_string": {
+          "description": "Literal string to expose for a true boolean argument in parameter expansion\nand the environment. Defaults to \"True\" when omitted.",
+          "type": "string"
         },
         "type": {
           "default": "string",

@@ -57,6 +57,7 @@ help = "Host to bind"
 | `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators |
 | `help`       | string             | Help text in `poe --help <task>`                                               |
 | `type`       | string             | `"string"` (default), `"integer"`, `"float"`, `"boolean"`                      |
+| `true_string` / `false_string` | string | Boolean args only: literal string for the true / false value in expansion and the environment |
 | `positional` | bool               | Positional arg — no flag needed                                                |
 | `required`   | bool               | Fail if not provided                                                           |
 | `choices`    | list               | Restrict to these values (enforced)                                            |
@@ -97,7 +98,17 @@ Usage: `poe test --verbose` (true) or `poe test` (false / default)
 
 The `default` for a boolean arg must be a TOML bool, or a case-insensitive string literal (with optional surrounding whitespace) from `"t"`/`"true"`/`"1"` (true) or `"f"`/`"false"`/`"0"`/`""` (false). Templated strings (e.g. `"${VAR}"`) are also accepted and re-checked once resolved.
 
-In script/expr tasks the resulting pythonic variable will have type the declared type (e.g. boolean). However when accessed via parameter expansion or as an environment variable at runtime, the variable will be `"True"` if truthy, or unset of falsey, so that `:-` and `:+` parameter expansion operators work seamlessly, and for consistent semantics across interpreters in shell tasks.
+In script/expr tasks the resulting Python variable keeps its declared type. By default a boolean is exposed to parameter expansion and the subprocess environment as `"True"` when true, or unset when false.
+
+Set `true_string` and/or `false_string` to customize those environment strings. Values are literal: `${...}` is not interpolated. An explicit `""` sets an empty variable; omitting `false_string` keeps false unset. The options select by boolean value, independently of `default`, and do not change typed Python arguments or module script flag forwarding.
+
+```toml
+[tool.poe.tasks.greet]
+cmd = 'echo "${hello}"'
+args = [{ name = "hello", type = "boolean", true_string = "hello!", false_string = "hi!" }]
+```
+
+Use `${hello}` directly to select the configured string. `:+` and `:-` test the resulting string: a nonempty `false_string` activates `:+` even when the boolean is false, and an empty `true_string` activates `:-` even when it is true.
 
 ---
 

@@ -81,15 +81,17 @@ In this example we declare a boolean argument with no default, so if the ``--arn
   cmd = "aws sts get-caller-identity ${_arn_only:+ --no-cli-pager --output text --query 'Arn'}"
   args = [{ name = "_arn_only", options = ["--arn-only"], type = "boolean" }]
 
-When you want to switch the value based on whether a flag is present, it’s best to use the ``:-`` operator.
+To choose between two strings using a boolean flag, configure ``true_string`` and ``false_string`` on the argument and reference its value directly.
 
 In the example below, it prints ``"hello!"`` if the ``--hello`` flag is present; otherwise, it prints ``"hi!"``.
 
 .. code-block:: toml
 
   [tool.poe.tasks.greet]
-  cmd = "echo ${hello:-hello!}"
-  args = [{ name = "hello", type = "boolean", default = "hi!" }]
+  cmd = 'echo "${hello}"'
+  args = [{ name = "hello", type = "boolean", true_string = "hello!", false_string = "hi!" }]
+
+These strings are literal values, without template interpolation. The argument remains a boolean when passed to Python code. Expansion operators still test whether the resulting string is nonempty: with ``false_string = "hi!"``, ``${hello:+hello!}`` expands to ``hello!`` even when the flag is false. See the :doc:`argument options <../../guides/args_guide>` for details.
 
 .. note::
 

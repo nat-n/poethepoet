@@ -196,9 +196,18 @@ class TaskEnv(Mapping[str, str]):
                 self._private_vars.add(key)
             self._env_vars[key] = val
 
-    def register_task_args(self, args: Mapping[str, Any], extra_args: Sequence[str]):
+    def register_task_args(
+        self,
+        args: Mapping[str, Any],
+        extra_args: Sequence[str],
+        *,
+        env_overrides: Mapping[str, str] | None = None,
+    ):
         """
         Track typed argument variables, and map to env vars.
+
+        env_overrides supplies explicit string representations without changing
+        the typed argument values. Empty strings remain set in the environment.
 
         extra_args are stored as a private _extra_args list (accessible in script &
         expr tasks) and as POE_EXTRA_ARGS env var (accessible in all tasks as a
@@ -207,7 +216,12 @@ class TaskEnv(Mapping[str, str]):
         for key, value in args.items():
             self._arg_vars[key] = value
 
-            if value is None or value is False or value == []:
+            if (
+                env_overrides is not None
+                and (string_value := env_overrides.get(key)) is not None
+            ):
+                self.set(key, string_value)
+            elif value is None or value is False or value == []:
                 # False or unset arg value maps to unset env var
                 self._env_vars.pop(key, None)
             elif isinstance(value, list):
