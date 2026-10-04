@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_call_attr_func(run_poe):
     result = run_poe("deep-graph-with-args", project="graphs")
     assert result.capture == (
@@ -425,3 +428,78 @@ def test_uses_env_via_switch_with_sequence_case_rejected(temp_pyproject, run_poe
         "'uses_env' option references task that does not support output capture: '_sw'"
     ) in result.capture
     assert result.stdout == ""
+
+
+@pytest.mark.parametrize(
+    ("tasks_config", "expected_task"),
+    [
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            deps = ["b"]
+
+            [tool.poe.tasks.b]
+            cmd = "poe_test_echo b"
+            deps = ["a"]
+            """,
+            "a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            deps = ["a"]
+            """,
+            "a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            uses = { B = "b" }
+
+            [tool.poe.tasks.b]
+            cmd = "poe_test_echo b"
+            deps = ["c --flag"]
+
+            [tool.poe.tasks.c]
+            cmd = "poe_test_echo c"
+            deps = ["a"]
+            args = [{ name = "flag", type = "boolean" }]
+            """,
+            "a",
+        ),
+    ],
+    ids=["two_tasks", "self_dependency", "via_uses_and_args"],
+)
+def test_cyclic_deps_are_rejected(temp_pyproject, run_poe, tasks_config, expected_task):
+    project_path = temp_pyproject(tasks_config)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Error: Encountered cyclic task dependency with task: {expected_task!r}"
+    ) in result.capture
+    assert result.stdout == ""
+
+
+def test_shared_dep_is_not_a_cycle(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.a]
+        cmd = "poe_test_echo a"
+        deps = ["b", "c"]
+
+        [tool.poe.tasks.b]
+        cmd = "poe_test_echo b"
+        deps = ["d"]
+
+        [tool.poe.tasks.c]
+        cmd = "poe_test_echo c"
+        deps = ["d"]
+
+        [tool.poe.tasks.d]
+        cmd = "poe_test_echo d"
+        """)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "d\nb\nc\na\n"

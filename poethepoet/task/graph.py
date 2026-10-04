@@ -115,7 +115,7 @@ class TaskExecutionGraph:
         ):
             node.direct_dependencies.add(task.invocation)
 
-            if task.invocation in node.path_dependants:
+            if task.name in node.path_dependants:
                 raise CyclicDependencyError(
                     f"Encountered cyclic task dependency with task: {task.name!r}"
                 )
