@@ -3,6 +3,37 @@ Migration Guides
 
 As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
 
+0.47.0
+------
+
+Boolean arg defaults must be boolean values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``default`` of an arg with :toml:`type = "boolean"` is now validated when the config is loaded. It must be a TOML boolean, one of the case-insensitive string literals ``"t"``, ``"true"``, ``"1"``, ``"f"``, ``"false"``, ``"0"``, or ``""``, or a templated string such as ``"${SOME_VAR}"`` that resolves to one of those literals. Any other string is rejected as a config error.
+
+From 0.43.0 through 0.46.0 an arbitrary string default was accepted and exposed as the value of the variable when the flag was not provided, which made it possible to switch between two strings using the ``:-`` operator:
+
+.. code-block:: toml
+
+   # OLD: no longer supported
+   [tool.poe.tasks.greet]
+   cmd = "echo ${hello:-hello!}"
+   args = [{ name = "hello", type = "boolean", default = "hi!" }]
+
+As of 0.49.0 the same result is achieved with the ``true_string`` and ``false_string`` options, which set the string that a boolean arg is exposed as when its value is true or false respectively. The arg can then be referenced directly, without an expansion operator:
+
+.. code-block:: toml
+
+   # NEW: requires 0.49.0 or later
+   [tool.poe.tasks.greet]
+   cmd = 'echo "${hello}"'
+   args = [{ name = "hello", type = "boolean", true_string = "hello!", false_string = "hi!" }]
+
+Note that the ``:-`` and ``:+`` operators test the resulting string rather than the boolean value, so a nonempty ``false_string`` makes ``${hello:+...}`` expand even when the flag is false. See the :doc:`args guide<../guides/args_guide>` for details.
+
+These options were not available in 0.47.x and 0.48.0, where the workaround is to make the arg a string type or move the logic into a shell or expr task.
+
+
 0.46.0
 ------
 
@@ -78,6 +109,8 @@ To better support usage of boolean args in task logic, instead of mapping the ar
 However some tasks or scripts may need to be updated if they previously checked for ``"False"`` specifically, or if they use ``set -u``.
 
 Additionally if the variable was accessed from a python script via :python:`os.environ["flag"]` then this will break now. It is recommended to instead use :python:`"flag" in os.environ` or :python:`os.environ.get("flag")` to check if the flag is set to true.
+
+As of 0.49.0 the string value for each case can be configured per arg with the ``true_string`` and ``false_string`` options. For example setting :toml:`false_string = ""` results in the variable being set to an empty string instead of unset when the flag is false, which avoids both of the problems described above. See the :doc:`args guide<../guides/args_guide>` for details.
 
 Note that as of this release you can reference the flag directly like a local python variable with a bool value in expr or script tasks, even if the arg was provided to a parent task, like a switch or sequence.
 
