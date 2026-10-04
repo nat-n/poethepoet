@@ -1,0 +1,6 @@
+# expected_error: Unsupported option 'uses_env' for task declared inside parallel
+[tool.poe.tasks.dep]
+cmd = "echo dep"
+
+[tool.poe.tasks.bad]
+parallel = [{ cmd = "echo hi", uses_env = "dep" }]

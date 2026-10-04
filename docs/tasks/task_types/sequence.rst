@@ -103,6 +103,8 @@ When declaring more complex sequences the following syntax is often preferred.
 
   Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example ``help`` and ``args`` are forbidden because they don't make sense in this context.
 
+  The ``deps``, ``uses``, and ``uses_env`` options are also forbidden on inline tasks. To use them, declare a named task with those options and reference it from the sequence.
+
 
 Forwarding free arguments to subtasks
 --------------------------------------
