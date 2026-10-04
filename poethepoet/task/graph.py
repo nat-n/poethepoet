@@ -116,8 +116,12 @@ class TaskExecutionGraph:
             node.direct_dependencies.add(task.invocation)
 
             if task.name in node.path_dependants:
+                # path_dependants is ordered nearest first, so the cycle is the
+                # prefix up to the repeated task
+                cycle_length = node.path_dependants.index(task.name) + 1
+                cycle_path = (*reversed(node.path_dependants[:cycle_length]), task.name)
                 raise CyclicDependencyError(
-                    f"Encountered cyclic task dependency with task: {task.name!r}"
+                    f"Cyclic task dependency detected: {' -> '.join(cycle_path)}"
                 )
 
             # Check if a node already exists for this task
