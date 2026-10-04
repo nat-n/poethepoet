@@ -187,8 +187,8 @@ class ScriptTask(PoeTask):
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
 
-        # Resolve defaults against the same environment used for parsing, before
-        # registering arguments overwrites variables with their string values.
+        # Forward using the defaults retained during parsing, even if this env
+        # has since inherited parent args or received dependency outputs.
         argv = [
             *(
                 task_args.format_argv(named_arg_values, env)

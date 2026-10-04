@@ -361,6 +361,7 @@ class PoeTaskArgs:
         self._task_name = task_name
         self._args = self._parse_args_def(args_def)
         self._io = io
+        self._parsed_boolean_defaults: dict[str, bool] | None = None
 
     def _parse_args_def(self, args_def: ArgsDef) -> tuple[ArgSpec, ...]:
         try:
@@ -516,6 +517,15 @@ class PoeTaskArgs:
             if arg.positional and (dest := arg.options[0]) != arg.name:
                 parsed_args[arg.name] = parsed_args[dest]
                 del parsed_args[dest]
+
+        # Keep the defaults that selected the parser's boolean actions. The
+        # environment used for forwarding may have since inherited or replaced
+        # variables. Only a successful parse replaces this snapshot.
+        self._parsed_boolean_defaults = {
+            arg.name: parser.get_default(arg.name)
+            for arg in self._args
+            if arg.type == "boolean"
+        }
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}
 
@@ -600,7 +610,9 @@ class PoeTaskArgs:
         Conventions: positionals are emitted in declared order; option args
         use the first entry of their ``options`` list as the flag name;
         boolean flags are emitted iff the resolved value differs from the
-        declared default (i.e. the user provided the flag on the CLI);
+        default from the latest successful parse (i.e. the user provided the
+        flag on the CLI). If parse has not been called, defaults are resolved
+        against the supplied env;
         multi-value args are emitted space-separated, matching argparse's
         ``nargs="+"`` style.
         """
@@ -613,17 +625,11 @@ class PoeTaskArgs:
             value = values[name]
 
             if arg.type == "boolean":
-                raw_default = arg.get("default")
-                if isinstance(raw_default, str):
-                    raw_default = env.fill_template(raw_default)
-                try:
-                    default_bool = (
-                        _coerce_bool(raw_default) if raw_default is not None else False
-                    )
-                except ConfigValidationError as error:
-                    error.context = f"Invalid default for argument {arg.name!r}"
-                    error.task_name = self._task_name
-                    raise
+                default_bool = (
+                    self._parsed_boolean_defaults[arg.name]
+                    if self._parsed_boolean_defaults is not None
+                    else self._get_argument_params(arg, env)["default"]
+                )
                 if value != default_bool:
                     result.append(arg.options[0])
                 continue
