@@ -258,8 +258,7 @@ class SwitchTask(PoeTask):
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values, extra_args)
+        self._parse_and_register_args(env)
 
         # Indicate on the global context that there are multiple stages to this task
         context.multistage = True

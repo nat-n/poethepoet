@@ -1,0 +1,15 @@
+[tool.poe.tasks.inspect]
+sequence = [
+    { expr = "(flag, __import__('os').environ['flag'])" },
+    { script = "probe:inspect_flag(flag)" },
+    { ref = "child" },
+]
+args = [{ name = "flag", type = "boolean", true_string = "yes", false_string = "no" }]
+
+[tool.poe.tasks.child]
+cmd = "poe_test_echo ${flag}"
+args = [{ name = "flag", type = "boolean", false_string = "child-no" }]
+
+[tool.poe.tasks.empty]
+cmd = "poe_test_echo ${flag:-fallback}"
+args = [{ name = "flag", type = "boolean", true_string = "", false_string = "" }]

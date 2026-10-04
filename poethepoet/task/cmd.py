@@ -105,8 +105,7 @@ class CmdTask(PoeTask):
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
 
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
-        env.register_task_args(named_arg_values, extra_args)
+        extra_args = self._parse_and_register_args(env)
 
         executor = self._get_executor(context, env)
 
