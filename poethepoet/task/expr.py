@@ -8,7 +8,7 @@ from ..options.annotations import Metadata
 from .base import PoeTask
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
 
     from ..config import PoeConfig
     from ..context import RunContext
@@ -167,7 +167,7 @@ class ExprTask(PoeTask):
         expression = resolve_expression(
             source=expression,
             arguments=set(args or ()),
-            allowed_vars={"sys", "__env", *imports},
+            allowed_vars={"sys", "__env", *imports, *_get_import_names(imports)},
         )
         # Strip out any new lines because they can be problematic on windows
         expression = re.sub(r"((\r\n|\r|\n) | (\r\n|\r|\n))", " ", expression)
@@ -200,3 +200,13 @@ class ExprTask(PoeTask):
         )
 
         return expression, accessed_vars
+
+
+def _get_import_names(imports: Iterable[str]) -> Iterator[str]:
+    """
+    Yield the names bound by each of the given imports, i.e. the alias if the import
+    is like `module as alias`, or else the top level package name.
+    """
+    for import_ref in imports:
+        module_name, _, alias = import_ref.partition(" as ")
+        yield alias.strip() or module_name.strip().split(".")[0]

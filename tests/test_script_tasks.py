@@ -629,6 +629,15 @@ def test_script_task_extra_args_available_as_list_via_extra_args_var(run_poe):
     assert result.stderr == ""
 
 
+def test_script_task_method_call_on_arg(run_poe):
+    result = run_poe(
+        "method-on-arg-script", "--name", "ab", project="scripts", env=no_venv
+    )
+    assert result.capture == "Poe => method-on-arg-script --name ab\n"
+    assert result.stdout == "args ('AB', 'X')\nkwargs {}\n"
+    assert result.stderr == ""
+
+
 def test_script_task_extra_args_empty_list_without_free_args(run_poe):
     """_extra_args is an empty list when no free args are passed"""
     result = run_poe("echo-extra-args-list-script", project="scripts", env=no_venv)

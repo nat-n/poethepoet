@@ -280,3 +280,26 @@ def test_expr_alternate_operator_in_env(temp_pyproject, run_poe):
     assert result.code == 0
     assert result.stdout == "mode: \n"
     assert result.stderr == ""
+
+
+def test_expr_method_call_on_arg(run_poe):
+    result = run_poe("method-on-arg", "--name", "Ab", project="expr")
+    assert result.capture == (
+        "Poe => name.upper() + ''.join(part.lower() for part in [name])\n"
+    )
+    assert result.stdout == "ABab\n"
+    assert result.stderr == ""
+
+
+def test_expr_method_call_on_dotted_and_aliased_import(run_poe):
+    result = run_poe("dotted-import-call", project="expr")
+    assert result.stdout == "&lt;a&gt;&amp;\n"
+    assert result.stderr == ""
+
+
+def test_expr_method_call_on_undefined_name(run_poe):
+    result = run_poe("undefined-call-target", project="expr")
+    assert result.code == 1
+    assert (
+        "Error: Invalid variable reference in expr: undefined_module" in result.capture
+    )

@@ -90,3 +90,14 @@ expr = "len(_extra_args)"
 [tool.poe.tasks.label-extra-args]
 expr = "f'{label}: {_extra_args}'"
 args = [{ name = "label", default = "Files" }]
+
+[tool.poe.tasks.method-on-arg]
+expr = "name.upper() + ''.join(part.lower() for part in [name])"
+args = ["name"]
+
+[tool.poe.tasks.dotted-import-call]
+expr = "xml.sax.saxutils.escape('<a>') + alias.escape('&')"
+imports = ["xml.sax.saxutils", "xml.sax.saxutils as alias"]
+
+[tool.poe.tasks.undefined-call-target]
+expr = "undefined_module.thing()"
