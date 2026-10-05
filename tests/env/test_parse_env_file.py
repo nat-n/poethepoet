@@ -292,6 +292,33 @@ def test_parse_env_file_param_expansion(example):
     assert parse_env_file(example[0]) == example[1]
 
 
+literal_dollar_examples = [
+    # trailing $
+    ('UQ=100$\nDQ="100$"\n', {"UQ": "100$", "DQ": "100$"}),
+    # $ followed by punctuation
+    ('UQ=x$%y\nDQ="x$%y"\n', {"UQ": "x$%y", "DQ": "x$%y"}),
+    ('UQ=$/tmp\nDQ="$/tmp"\n', {"UQ": "$/tmp", "DQ": "$/tmp"}),
+    # $ followed by a digit
+    ('UQ=abc$1def\nDQ="abc$1def"\n', {"UQ": "abc$1def", "DQ": "abc$1def"}),
+    # $ surrounded by whitespace
+    ('UQ=a $ b\nDQ="a $ b"\n', {"UQ": "a $ b", "DQ": "a $ b"}),
+    # $ followed by a quote or a comment
+    ("UQ=a$'b'\n", {"UQ": "a$b"}),
+    ("UQ=a$#b\nUQ2=a$ #comment\n", {"UQ": "a$#b", "UQ2": "a$"}),
+    # $ that isn't an expansion mixed with ones that are
+    ("X=1\nUQ=$-$X-$\n", {"X": "1", "UQ": "$-1-$"}),
+]
+
+
+@pytest.mark.parametrize(("content", "expected"), literal_dollar_examples)
+def test_parse_env_file_literal_dollar(content, expected):
+    """
+    A $ that doesn't start a parameter expansion is kept literally in unquoted
+    values, consistent with double-quoted values.
+    """
+    assert parse_env_file(content) == expected
+
+
 def test_parse_env_file_no_expansion_in_single_quotes():
     """
     Single-quoted values should NOT have parameter expansion applied.

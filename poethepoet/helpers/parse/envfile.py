@@ -202,16 +202,13 @@ class EnvFileValue(SyntaxNode):
                     self._children.append(param_node)
                     last_was_whitespace = False
                 else:
-                    # ParamExpansion cancelled, $ pushed back; read as unquoted
-                    if text_node := EnvFileUnquotedTextCls(chars, self.config):
-                        self._children.append(text_node)
-                        last_char = text_node.content[-1:] if text_node.content else ""
-                        last_was_whitespace = last_char in (" ", "\t")
-                    else:
-                        # bare $ at a stop position — should not happen, but
-                        # consume to avoid an infinite loop
-                        chars.take()
-                        last_was_whitespace = False
+                    # ParamExpansion cancelled and pushed $ back. Force
+                    # EnvFileUnquotedText to accept it as a literal by prepending
+                    # a backslash escape so it reads \$ → $ (as bash does).
+                    chars.pushback("\\")
+                    text_node = EnvFileUnquotedTextCls(chars, self.config)
+                    self._children.append(text_node)
+                    last_was_whitespace = text_node.content[-1:] in (" ", "\t")
 
             elif next_char == "'":
                 chars.take()  # consume opening '
