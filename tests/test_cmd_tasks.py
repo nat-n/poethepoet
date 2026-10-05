@@ -491,3 +491,26 @@ def test_cmd_task_with_extra_args_only_in_comment_still_appends_extra_args(run_p
     assert result.capture == "Poe => poe_test_echo actual foo bar\n"
     assert result.stdout == "actual foo bar\n"
     assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("task_name", "env"),
+    [
+        ("empty-after-expansion", {}),
+        ("empty-after-expansion", {"UNSET_CMD_VAR": "   "}),
+        ("empty-after-null-glob", {}),
+    ],
+)
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_cmd_resolving_to_empty_command_line(run_poe, task_name, env, dry_run):
+    """
+    A cmd that resolves to zero tokens gives a clear error rather than crashing
+    """
+    run_args = ("-d", task_name) if dry_run else (task_name,)
+    result = run_poe(*run_args, project="cmds", env=env)
+    assert result.code == 1
+    assert result.capture == (
+        f"Error: Task {task_name!r} resolved to an empty command line\n"
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""

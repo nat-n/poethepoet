@@ -155,3 +155,10 @@ env = { POE_EXTRA_ARGS_CUSTOM = "my-custom" }
 
 [tool.poe.tasks.echo-comment-mentions-extra-args]
 cmd = "poe_test_echo actual # $POE_EXTRA_ARGS not used here"
+
+[tool.poe.tasks.empty-after-expansion]
+cmd = "${UNSET_CMD_VAR}"
+
+[tool.poe.tasks.empty-after-null-glob]
+cmd = "nothing_matches_this*"
+empty_glob = "null"

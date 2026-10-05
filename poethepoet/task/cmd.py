@@ -114,6 +114,11 @@ class CmdTask(PoeTask):
         else:
             cmd = (*self._resolve_commandline(context, env), *extra_args)
 
+        if not cmd:
+            raise ExecutionError(
+                f"Task {self.name!r} resolved to an empty command line"
+            )
+
         self._print_action(shlex.join(cmd), context.dry)
 
         process = await executor.execute(
