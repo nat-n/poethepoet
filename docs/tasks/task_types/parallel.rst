@@ -106,6 +106,10 @@ Alternatively you can declare other task types inline like so:
 
   An array within a parallel task is interpreted as a :doc:`sequence<sequence>` task, so you can run certain parallel subtasks :ref:`with strict ordering<Composing tasks to run in parallel>`.
 
+.. warning::
+
+  Tasks defined inline within a parallel task may not include the ``args``, ``deps``, ``uses``, or ``uses_env`` options. To use ``deps``, ``uses``, or ``uses_env``, declare a named task with those options and reference it from the parallel task.
+
 
 Forwarding free arguments to subtasks
 --------------------------------------
