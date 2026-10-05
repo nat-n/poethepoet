@@ -631,3 +631,26 @@ def test_cmd_parse_error_reports_one_based_position(run_poe, temp_pyproject):
         "Unexpected end of input with unmatched double quote, near line 1, "
         "position 18." in result.capture
     )
+
+
+@pytest.mark.parametrize(
+    ("task_name", "env"),
+    [
+        ("empty-after-expansion", {}),
+        ("empty-after-expansion", {"UNSET_CMD_VAR": "   "}),
+        ("empty-after-null-glob", {}),
+    ],
+)
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_cmd_resolving_to_empty_command_line(run_poe, task_name, env, dry_run):
+    """
+    A cmd that resolves to zero tokens gives a clear error rather than crashing
+    """
+    run_args = ("-d", task_name) if dry_run else (task_name,)
+    result = run_poe(*run_args, project="cmds", env=env)
+    assert result.code == 1
+    assert result.capture == (
+        f"Error: Task {task_name!r} resolved to an empty command line\n"
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
