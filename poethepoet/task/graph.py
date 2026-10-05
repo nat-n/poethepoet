@@ -9,11 +9,14 @@ if TYPE_CHECKING:
     from ..env.task_env import TaskEnv
     from .base import PoeTask
 
+    # A task invocation, and whether its output is captured
+    NodeKey = tuple[tuple[str, ...], bool]
+
 
 class TaskExecutionNode:
     task: PoeTask
     direct_dependants: list[TaskExecutionNode]
-    direct_dependencies: set[tuple[str, ...]]
+    direct_dependencies: set[NodeKey]
     path_dependants: tuple[str, ...]
     capture_stdout: bool
 
@@ -34,8 +37,12 @@ class TaskExecutionNode:
         return not self.task.has_deps()
 
     @property
-    def identifier(self) -> tuple[str, ...]:
-        return self.task.invocation
+    def identifier(self) -> NodeKey:
+        """
+        The same task invocation may appear as two nodes, if one instance has captured
+        output and one does not, so they are distinguished by capture_stdout too.
+        """
+        return (self.task.invocation, self.capture_stdout)
 
 
 class TaskExecutionGraph:
@@ -113,7 +120,7 @@ class TaskExecutionGraph:
         for capture_stdout, task in node.task.iter_upstream_tasks(
             self._context, parent_env
         ):
-            node.direct_dependencies.add(task.invocation)
+            node.direct_dependencies.add((task.invocation, capture_stdout))
 
             if task.name in node.path_dependants:
                 # path_dependants is ordered nearest first, so the cycle is the

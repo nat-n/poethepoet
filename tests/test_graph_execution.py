@@ -570,3 +570,52 @@ def test_task_reused_with_different_args_is_not_a_cycle(temp_pyproject, run_poe)
         ["one", "two", "three", "left", "right", "top"]
     )
     assert result.stdout.endswith("top\n")
+
+
+GRAPH_WITH_CAPTURED_AND_UNCAPTURED_NON_SOURCE = """
+    [tool.poe.tasks.pre]
+    cmd = "poe_test_echo PRE"
+
+    [tool.poe.tasks.val]
+    cmd = "poe_test_echo VAL"
+    deps = ["pre"]
+
+    [tool.poe.tasks.sink]
+    cmd = "poe_test_echo X=${X}"
+    deps = ["val"]
+    uses = { X = "val" }
+
+    [tool.poe.tasks.mid]
+    cmd = "poe_test_echo MID Y=${Y}"
+    uses = { Y = "val" }
+
+    [tool.poe.tasks.sink3]
+    cmd = "poe_test_echo SINK3"
+    deps = ["val", "mid"]
+
+    [tool.poe.tasks.ref_sink3]
+    ref = "sink3"
+    """
+
+
+@pytest.mark.parametrize(
+    ("task", "expected_stdout"),
+    [
+        ("sink", "PRE\nVAL\nX=VAL\n"),
+        ("sink3", "PRE\nVAL\nMID Y=VAL\nSINK3\n"),
+        ("ref_sink3", "PRE\nVAL\nMID Y=VAL\nSINK3\n"),
+    ],
+)
+def test_task_with_deps_both_captured_and_uncaptured(
+    temp_pyproject, run_poe, task, expected_stdout
+):
+    """
+    A task that has deps of its own, and is both a plain dep and a uses source, runs
+    once uncaptured and once captured, and all of its dependants run after it
+    """
+    project_path = temp_pyproject(GRAPH_WITH_CAPTURED_AND_UNCAPTURED_NON_SOURCE)
+    result = run_poe(task, cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == expected_stdout
+    assert "Poe <= poe_test_echo VAL\n" in result.capture
+    assert "Poe => poe_test_echo VAL\n" in result.capture

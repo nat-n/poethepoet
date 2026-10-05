@@ -290,7 +290,12 @@ class PoeThePoet:
                     except ExecutionError as error:
                         self.ui.print_error(error=error)
                         return 1
-        return 0
+
+        # This should not be possible to reach
+        self.ui.print_error(
+            error=ExecutionError("Task graph did not contain the expected sink task")
+        )
+        return 1
 
     @asynccontextmanager
     async def run_context(
