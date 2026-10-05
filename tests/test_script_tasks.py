@@ -825,3 +825,59 @@ def test_module_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
     result = run_poe("run", cwd=project_path)
     assert result.code == 0, result.capture + result.stderr
     assert "hello from src layout" in result.stdout
+
+
+def _write_module(project_path, name: str, source: str) -> None:
+    (project_path / f"{name}.py").write_text(source)
+
+
+def test_bare_script_subtask_receives_only_own_args_as_kwargs(temp_pyproject, run_poe):
+    """
+    A no-parens script subtask of a sequence only gets its own declared args as
+    kwargs, not args inherited from the parent sequence (args_guide example).
+    The parenthesised form can still reference the inherited arg by name.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.build]
+        script = "util:build_app"
+        args = [{ name = "target", positional = true }]
+
+        [tool.poe.tasks.check]
+        sequence = ["build ${_target}", { script = "util:run_tests(_target)" }]
+        args = ["_target"]
+        """)
+    _write_module(
+        project_path,
+        "util",
+        "def build_app(target):\n"
+        "    print('build', target)\n"
+        "def run_tests(target):\n"
+        "    print('test', target)\n",
+    )
+    result = run_poe("check", "--target", "foo", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "build foo\ntest foo\n"
+
+
+def test_bare_script_ref_target_without_args_gets_no_kwargs(temp_pyproject, run_poe):
+    """
+    A no-parens script task without declared args, referenced from a task that
+    declares args, is called without kwargs (options.rst private var example).
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.run]
+        ref = "_serve"
+        args = ["_favorite_number"]
+
+        [tool.poe.tasks._serve]
+        script = "myapp:run"
+        env = { PORT = "${_favorite_number}" }
+        """)
+    _write_module(
+        project_path,
+        "myapp",
+        "import os\ndef run():\n    print('PORT', os.environ['PORT'])\n",
+    )
+    result = run_poe("run", "--favorite_number", "42", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "PORT 42\n"
