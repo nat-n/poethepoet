@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -17,7 +18,7 @@ from .partition import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Iterator, Sequence
 
     from ..io import PoeIO
 
@@ -73,28 +74,38 @@ class PoeConfig:
 
             self._io = PoeIO.get_default_io()
 
-    def get_tasks(self) -> Mapping[str, TaskConfig]:
+    def get_tasks(self, strict: bool = True) -> Mapping[str, TaskConfig]:
         """
         Collect tasks from across configs and groups.
         Project config tasks appear first and take precedence over includes.
         Group config (heading, executor) comes from the highest-precedence
         partition that defines that group; tasks are merged across partitions.
-        """
-        if not self._tasks:
-            result: dict[str, TaskConfig] = {}
-            group_configs: dict[str, GroupConfig] = {}
-            for partition in self.partitions(included_first=False):
-                for group_name, group_def in partition.get("groups", {}).items():
-                    if group_name not in group_configs:
-                        group_configs[group_name] = GroupConfig(group_name, group_def)
-                for task_name, task_config in partition.collect_tasks().items():
-                    if task_name not in result:
-                        if task_config.group:
-                            task_config.group = group_configs[task_config.group.name]
-                        result[task_name] = task_config
-            self._tasks = result
 
-        return self._tasks
+        If strict is false then structural errors such as duplicate task names are
+        tolerated (e.g. for displaying help after a validation error), and the result
+        is not cached.
+        """
+        if self._tasks:
+            return self._tasks
+
+        result: dict[str, TaskConfig] = {}
+        group_configs: dict[str, GroupConfig] = {}
+        for partition in self.partitions(included_first=False):
+            if isinstance(groups := partition.get("groups", {}), Mapping):
+                for group_name, group_def in groups.items():
+                    if group_name not in group_configs and isinstance(
+                        group_def, Mapping
+                    ):
+                        group_configs[group_name] = GroupConfig(group_name, group_def)
+            for task_name, task_config in partition.collect_tasks(strict).items():
+                if task_name not in result:
+                    if task_config.group:
+                        task_config.group = group_configs[task_config.group.name]
+                    result[task_name] = task_config
+
+        if strict:
+            self._tasks = result
+        return result
 
     def lookup_task(self, name: str) -> TaskConfig | None:
         return self.get_tasks().get(name)

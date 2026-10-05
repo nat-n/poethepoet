@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence  # noqa: TC003
+from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict, get_args
 
@@ -113,15 +113,16 @@ class GroupConfig:
     def __init__(
         self,
         name: str,
-        group_def: dict[str, Any],
+        group_def: Mapping[str, Any],
     ):
+        # Values are type checked by config validation, but this may also be
+        # instantiated from unvalidated config in order to display help after a
+        # validation error, so tolerate invalid values here.
         self.name = name
         heading = group_def.get("heading", name)
-        assert isinstance(heading, str)
-        self.heading = heading
+        self.heading = heading if isinstance(heading, str) else name
         executor = group_def.get("executor")
-        assert executor is None or isinstance(executor, dict)
-        self.executor = executor
+        self.executor = executor if isinstance(executor, dict) else None
 
 
 class TaskConfig:
@@ -149,6 +150,15 @@ class TaskConfig:
         if isinstance(self.task_def, dict):
             return self.task_def.get(key, default)
         return default
+
+    @property
+    def help_text(self) -> str:
+        """
+        The task's help text, or an empty string if it is unset or invalid.
+        """
+        if isinstance(help_text := self.get("help", ""), str):
+            return help_text
+        return ""
 
 
 class ConfigPartition:
@@ -204,13 +214,25 @@ class ConfigPartition:
         """
         Collect tasks configured in this partition (including from groups).
         """
+        # Non-mapping values are skipped here, they are rejected by config validation
+        # but may still be present if the config was loaded without strict validation
+        tasks = self.get("tasks", {})
         result = {
             task_name: TaskConfig(task_name, task_def, self)
-            for task_name, task_def in self.get("tasks", {}).items()
+            for task_name, task_def in (
+                tasks.items() if isinstance(tasks, Mapping) else ()
+            )
         }
 
-        for group_name, group_def in self.get("groups", {}).items():
-            for task_name, task_def in group_def.get("tasks", {}).items():
+        groups = self.get("groups", {})
+        for group_name, group_def in (
+            groups.items() if isinstance(groups, Mapping) else ()
+        ):
+            if not isinstance(group_def, Mapping) or not isinstance(
+                group_tasks := group_def.get("tasks", {}), Mapping
+            ):
+                continue
+            for task_name, task_def in group_tasks.items():
                 if strict and task_name in result:
                     raise ConfigValidationError(
                         f"Config from {self.path} contains task "
