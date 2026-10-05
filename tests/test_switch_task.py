@@ -308,3 +308,34 @@ def test_switch_case_module_script_receives_args(temp_pyproject, run_poe):
     result = run_poe("sw", "--size", "3", "--loud", cwd=project_path)
     assert result.code == 0, result.capture
     assert result.stdout.endswith("['--size', '3', '--loud']\n")
+
+
+@pytest.mark.parametrize(
+    ("case_task", "expected_error"),
+    [
+        (
+            'cmd = "poe_test_echo *.nomatch"\nempty_glob = "fail"',
+            "Error: Glob pattern '*.nomatch' did not match any files",
+        ),
+        ("expr = \"f'{1} is even')\"", "Error: Invalid expr content: f'{1} is even')"),
+    ],
+    ids=["execution_error", "invalid_expr"],
+)
+def test_switch_case_error_propagates(
+    temp_pyproject, run_poe, case_task, expected_error
+):
+    """
+    An error raised while running the selected case task fails the switch with the
+    case's error message
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        {case_task}
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert expected_error in result.capture

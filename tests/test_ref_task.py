@@ -311,3 +311,36 @@ def test_ref_alternate_value_operator(temp_pyproject, run_poe):
     assert result.code == 0
     assert result.stdout == "hi friend\n"
     assert result.stderr == ""
+
+
+def test_ref_to_task_with_deps_propagates_error(temp_pyproject, run_poe):
+    """
+    An error raised by the referenced task is reported when it runs as the sink of a
+    task graph, as it is when it has no deps
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.failing]
+        cmd = "poe_test_echo *.nomatch"
+        empty_glob = "fail"
+        deps = ["ok"]
+
+        [tool.poe.tasks.r]
+        ref = "failing"
+
+        [tool.poe.tasks.r_ignore]
+        ref = "failing"
+        ignore_fail = true
+        """)
+    result = run_poe("r", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert result.stdout == "OK\n"
+    assert "Error: Glob pattern '*.nomatch' did not match any files" in (result.capture)
+
+    result = run_poe("r_ignore", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "Warning: Glob pattern '*.nomatch' did not match any files" in (
+        result.capture
+    )
