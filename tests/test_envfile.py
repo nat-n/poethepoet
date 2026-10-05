@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def test_global_envfile_and_default(run_poe):
     result = run_poe("deploy-dev", project="envfile")
     assert (
@@ -235,3 +238,60 @@ def test_envfile_with_utf8_bom(temp_pyproject, run_poe, tmp_path):
     result = run_poe("show", cwd=project_path)
     assert result.code == 0
     assert result.stdout == "one-two\n"
+
+
+ENVFILE_ERROR_PROJECT = """
+    [tool.poe.tasks.show]
+    cmd = "poe_test_echo ${{A}}"
+    envfile = "{envfile}"
+    """
+
+
+def test_envfile_syntax_error_reports_line(temp_pyproject, run_poe, tmp_path):
+    envfile = tmp_path / "bad.env"
+    envfile.write_text("A=1\nB=2\nC 3\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert "Syntax error in referenced envfile" in result.capture
+    assert "Expected '=' after variable name 'C' (near line 3" in result.capture
+    assert "Traceback" not in result.capture
+
+
+def test_envfile_not_utf8(temp_pyproject, run_poe, tmp_path):
+    envfile = tmp_path / "latin1.env"
+    envfile.write_bytes(b"A=caf\xe9\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Envfile at {str(envfile)!r} could not be decoded as UTF-8" in result.capture
+    )
+    assert "Traceback" not in result.capture
+
+
+def test_envfile_unreadable(temp_pyproject, run_poe, tmp_path, monkeypatch):
+    envfile = tmp_path / "unreadable.env"
+    envfile.write_text("A=1\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    original_open = Path.open
+
+    def guarded_open(self, *args, **kwargs):
+        if self.name == "unreadable.env":
+            raise PermissionError(13, "Permission denied")
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", guarded_open)
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Failed to read envfile at {str(envfile)!r}: Permission denied"
+        in result.capture
+    )
+    assert "Traceback" not in result.capture
