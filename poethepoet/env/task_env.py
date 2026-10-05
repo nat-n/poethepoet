@@ -236,7 +236,7 @@ class TaskEnv(Mapping[str, str]):
 
     def apply_env_config(
         self,
-        envfile_option: str | Sequence[str] | EnvfileOption,
+        envfile_option: str | EnvfileOption | Sequence[str | EnvfileOption],
         config_env: Mapping[str, str | EnvDefault],
         config_dir: Path,
         config_working_dir: Path,
@@ -283,7 +283,8 @@ class TaskEnv(Mapping[str, str]):
 
 
 def _iter_envfile_paths(
-    envfile_option: str | Sequence[str] | EnvfileOption, is_optional: bool = False
+    envfile_option: str | EnvfileOption | Sequence[str | EnvfileOption],
+    is_optional: bool = False,
 ) -> Iterable[tuple[str, bool]]:
     """
     Yield (envfile_path, is_optional) tuples from whatever form of envfile_option is
@@ -294,7 +295,8 @@ def _iter_envfile_paths(
         yield envfile_option, is_optional
     elif isinstance(envfile_option, list | tuple):
         for item in envfile_option:
-            yield item, is_optional
+            # Items may be paths or tables of expected/optional paths
+            yield from _iter_envfile_paths(item, is_optional)
     elif isinstance(envfile_option, dict):
         if (expected := envfile_option.get("expected")) is not None:
             yield from _iter_envfile_paths(expected, False)

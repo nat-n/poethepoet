@@ -55,6 +55,17 @@ def test_multiple_envfiles(run_poe, projects):
     assert result.stderr == ""
 
 
+def test_mixed_list_of_envfiles(run_poe, projects):
+    """
+    A list of envfiles may mix plain paths with tables of expected/optional paths.
+    """
+    result = run_poe(f"-C={projects['envfile/mixed_envfiles']}", "show_me_the_vals")
+
+    assert result.stdout == "VAL_A-VAL_B-NOT_C-VAL_D-VAL_E\n"
+    assert "Warning" not in result.capture
+    assert result.stderr == ""
+
+
 def test_trying_to_load_nonexistent_envfiles(run_poe, projects):
     result = run_poe(
         f"-C={projects['envfile/multiple_envfiles']}", "handle_disappointment"
