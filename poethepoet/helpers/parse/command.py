@@ -67,7 +67,8 @@ class DoubleQuotedText(ContentNode):
 
 
 class UnquotedText(ContentNode):
-    _break_chars = "'\";#$?*["
+    # Note: "#" only starts a comment at the start of a word, see Line._parse
+    _break_chars = "'\";$?*["
 
     def _parse(self, chars: ParseCursor):
         content: list[str] = []
@@ -386,7 +387,7 @@ class Segment(SyntaxNode[ContentNode]):
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
 
         while next_char := chars.peek():
-            if next_char.isspace() or next_char in "'\";#":
+            if next_char.isspace() or next_char in "'\";":
                 return
 
             if next_char == "$":
@@ -539,7 +540,7 @@ class Word(SyntaxNode[Segment]):
         self._children = []
 
         while next_char := chars.peek():
-            if next_char.isspace() or next_char in ";#":
+            if next_char.isspace() or next_char == ";":
                 if not self._children:
                     # This should never happen
                     self._cancelled = True

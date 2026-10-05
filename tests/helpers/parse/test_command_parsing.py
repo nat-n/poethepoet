@@ -72,6 +72,15 @@ def test_resolve_command_tokens():
     ]
 
 
+def test_resolve_hash_inside_word():
+    """
+    A # inside a word is literal, only a # at the start of a word starts a comment
+    bash: printf '[%s]\n' a#b c # comment → [a#b] [c]
+    """
+    line = parse_poe_cmd("a#b c # comment").command_lines[0]
+    assert list(line.resolve_tokens({})) == [("a#b", False), ("c", False)]
+
+
 def test_resolve_alternate_value_preserves_quotes():
     """
     Quoted content inside :+ and :- operators should not be word-split.

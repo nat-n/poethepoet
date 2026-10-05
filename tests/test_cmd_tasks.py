@@ -511,6 +511,16 @@ def test_cmd_task_with_extra_args_only_in_comment_still_appends_extra_args(run_p
     assert result.stderr == ""
 
 
+def test_cmd_hash_inside_word_is_not_a_comment(run_poe):
+    """
+    Like bash, a # only starts a comment at the beginning of a word
+    """
+    result = run_poe("hash-in-word", project="cmds")
+    assert result.capture == ("Poe => poe_test_echo 'http://x/#anchor' 'ab#c' after\n")
+    assert result.stdout == "http://x/#anchor ab#c after\n"
+    assert result.stderr == ""
+
+
 @pytest.mark.parametrize(
     ("task_name", "env"),
     [

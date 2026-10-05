@@ -156,6 +156,9 @@ env = { POE_EXTRA_ARGS_CUSTOM = "my-custom" }
 [tool.poe.tasks.echo-comment-mentions-extra-args]
 cmd = "poe_test_echo actual # $POE_EXTRA_ARGS not used here"
 
+[tool.poe.tasks.hash-in-word]
+cmd = "poe_test_echo http://x/#anchor a'b'#c after # comment"
+
 [tool.poe.tasks.empty-after-expansion]
 cmd = "${UNSET_CMD_VAR}"
 
