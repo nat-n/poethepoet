@@ -16,10 +16,14 @@ class EnvFileCache:
     _ast_cache: ClassVar[dict[str, EnvFile]] = {}
     _io: PoeIO
     _project_dir: Path
+    _missing_warned: set[str]
 
     def __init__(self, project_dir: Path, io: PoeIO):
         self._project_dir = project_dir
         self._io = io
+        # Paths of missing envfiles already warned about, so that each is only
+        # reported once per run even though task envs may be resolved repeatedly
+        self._missing_warned = set()
 
     def get(
         self,
@@ -70,9 +74,11 @@ class EnvFileCache:
                 return {}
 
             else:
-                self._io.print_warning(
-                    f"Poe failed to locate envfile at {envfile_path_str!r}"
-                )
+                if envfile_path_str not in self._missing_warned:
+                    self._missing_warned.add(envfile_path_str)
+                    self._io.print_warning(
+                        f"Poe failed to locate envfile at {envfile_path_str!r}"
+                    )
                 return {}
 
         return _resolve_ast(self._ast_cache[envfile_path_str], base_env or {})
