@@ -138,7 +138,7 @@ class PoetryPlugin(ApplicationPlugin):
                 if task_name.startswith("_"):
                     continue
                 self._register_command(
-                    application, poe_config, task_name, task.get("help", "")
+                    application, poe_config, task_name, task.help_text
                 )
         else:
             self._register_command(
@@ -155,7 +155,7 @@ class PoetryPlugin(ApplicationPlugin):
                     application,
                     poe_config,
                     task_name,
-                    task.get("help", ""),
+                    task.help_text,
                     f"{command_prefix} ",
                 )
 
