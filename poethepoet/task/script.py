@@ -127,6 +127,8 @@ class ScriptTask(PoeTask):
 
         self._parse_and_register_args(env)
         named_arg_values = env.get_args()
+        # _extra_args is always available, even if no free args were passed
+        named_arg_values.setdefault("_extra_args", [])
 
         target_module, function_call = parse_script_reference(
             self.spec.content,

@@ -191,6 +191,18 @@ def test_expr_task_extra_args_available_as_list(run_poe):
     assert result.stderr == ""
 
 
+def test_expr_task_extra_args_empty_list_without_free_args(run_poe):
+    """_extra_args is an empty list when no free args are passed"""
+    result = run_poe("count-extra-args", project="expr")
+    assert result.capture == "Poe => len(_extra_args)\n"
+    assert result.stdout == "0\n"
+    assert result.stderr == ""
+
+    result = run_poe("label-extra-args", project="expr")
+    assert result.capture == "Poe => f'{label}: {_extra_args}'\n"
+    assert result.stdout == "Files: []\n"
+
+
 def test_expr_task_extra_args_combined_with_named_arg(run_poe):
     """_extra_args can be used alongside named args in expr tasks"""
     result = run_poe(
