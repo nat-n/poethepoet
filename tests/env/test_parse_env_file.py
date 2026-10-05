@@ -105,6 +105,18 @@ c """,
         """,
         {"answer": "42", "question": "undefined", "dinner": "chicken"},
     ),
+    # names that share a prefix with the export keyword are not scrambled
+    (
+        "e=1\nex=2\nexp=3\nexpor=4\nexit_code=5\nexpected=6\n",
+        {
+            "e": "1",
+            "ex": "2",
+            "exp": "3",
+            "expor": "4",
+            "exit_code": "5",
+            "expected": "6",
+        },
+    ),
     # handling escapes
     (
         """
