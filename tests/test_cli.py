@@ -1,4 +1,7 @@
 import re
+from io import StringIO
+
+import pytest
 
 from poethepoet import __version__
 
@@ -245,3 +248,34 @@ def test_documentation_of_task_named_args(run_poe):
         r" \[choices: 'small', 'medium', 'large'\]\n",
         result.capture,
     )
+
+
+@pytest.mark.parametrize(
+    ("env", "expected"),
+    [
+        ({"NO_COLOR": ""}, False),
+        ({"NO_COLOR": "0"}, False),
+        ({"NO_COLOR": "1"}, False),
+        ({"FORCE_COLOR": ""}, False),
+        ({"FORCE_COLOR": "0"}, False),
+        ({"FORCE_COLOR": "1"}, True),
+        ({"NO_COLOR": "", "FORCE_COLOR": "1"}, True),
+        ({"NO_COLOR": "0", "FORCE_COLOR": "1"}, False),
+        ({"NO_COLOR": "1", "FORCE_COLOR": "1"}, False),
+    ],
+)
+def test_guess_ansi_support_from_env(monkeypatch, env, expected):
+    from poethepoet.io import guess_ansi_support
+
+    for var_name in ("NO_COLOR", "FORCE_COLOR", "GITHUB_ACTIONS"):
+        monkeypatch.delenv(var_name, raising=False)
+    for var_name, value in env.items():
+        monkeypatch.setenv(var_name, value)
+
+    assert guess_ansi_support(StringIO()) is expected
+
+
+def test_empty_color_env_vars_do_not_crash(run_poe_subproc):
+    result = run_poe_subproc("--version", env={"NO_COLOR": "", "FORCE_COLOR": ""})
+    assert result.code == 0, "Expected zero result"
+    assert result.capture.strip() == f"Poe the Poet - version: {__version__}"
