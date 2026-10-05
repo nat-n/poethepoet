@@ -200,7 +200,13 @@ class PoeUi:
     ):
         # Ignore verbosity mode if help flag is set
         help_flag_set = self["help"] is None
-        help_single_task = self["help"] if isinstance(self["help"], str) else None
+        help_single_task = (
+            help_task
+            if isinstance(help_task := self["help"], str)
+            and tasks
+            and help_task in tasks
+            else None
+        )
         verbosity = 0 if help_flag_set else self.io.verbosity
 
         # If there's no error and verbosity wasn't explicitly decreased for this call,
