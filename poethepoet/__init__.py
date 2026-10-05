@@ -181,7 +181,7 @@ def _zsh_describe_tasks(target_path: str | None = None):
     Output task names with descriptions in zsh _describe format.
 
     Format: one task per line as "name:description"
-    - Colons in descriptions are escaped as \\:
+    - Colons in task names and descriptions are escaped as \\:
     - Descriptions truncated to 60 chars with ...
     - Tasks without help get empty description (name:)
     """
@@ -205,7 +205,10 @@ def _zsh_describe_tasks(target_path: str | None = None):
                 help_text = ""
 
             help_text = _format_help(help_text)
-            print(f"{task_name}:{help_text}")
+            # _describe splits on the first unescaped colon, so namespaced task
+            # names (e.g. "db:migrate") must have their colons escaped too
+            escaped_name = task_name.replace(":", "\\:")
+            print(f"{escaped_name}:{help_text}")
 
     except Exception:
         # this happens if there's no pyproject.toml present

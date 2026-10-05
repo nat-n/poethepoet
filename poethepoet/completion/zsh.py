@@ -302,7 +302,8 @@ _poe_fetch_tasks() {{
             tasks="$({name} _list_tasks $target_path 2>/dev/null)"
             result=""
             for task in ${{=tasks}}; do
-                result+="$task:"$'\\n'
+                # Escape colons in namespaced task names for _describe
+                result+="${{task//:/\\\\:}}:"$'\\n'
             done
         fi
         if (( _POE_CACHE_ENABLED )) && [[ -n "$result" ]]; then

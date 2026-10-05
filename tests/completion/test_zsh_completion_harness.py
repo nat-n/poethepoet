@@ -1914,6 +1914,28 @@ class TestZshBackwardCompatibility:
         # Tasks should be offered
         assert any("simple-task" in item for item in result.describe_items)
 
+    def test_list_tasks_fallback_escapes_colons(self, zsh_harness, completion_script):
+        """The _list_tasks fallback should escape colons in namespaced task names."""
+        mock_output = {
+            "_zsh_describe_tasks": "",  # Fails
+            "_list_tasks": "db:migrate ns:sub:task greet",
+        }
+
+        result = zsh_harness(
+            completion_script,
+            words=["poe", ""],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.describe_called
+        # _describe splits on the first unescaped colon
+        assert result.describe_items == [
+            "db\\:migrate:",
+            "ns\\:sub\\:task:",
+            "greet:",
+        ]
+
     def test_partial_task_name_with_old_poe(self, zsh_harness, completion_script):
         """Partial task completion should work with old poe versions."""
         mock_output = {
