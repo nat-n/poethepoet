@@ -188,15 +188,6 @@ class ScriptTask(PoeTask):
         named_arg_values, extra_args = self.get_parsed_arguments(env)
         self._parse_and_register_args(env)
 
-        argv = [
-            *(
-                task_args.format_argv(named_arg_values, env)
-                if (task_args := self.task_args)
-                else ()
-            ),
-            *extra_args,
-        ]
-
         # Approximate the callable path's sys.path.append('src') by appending
         # '<project_root>/src' to PYTHONPATH. The absolute form means a task
         # with its own cwd (or invoking poe from a subdirectory) still resolves
@@ -217,6 +208,14 @@ class ScriptTask(PoeTask):
                 ),
             )
 
+        argv = [
+            *(
+                task_args.format_argv(named_arg_values, env)
+                if (task_args := self.task_args)
+                else ()
+            ),
+            *extra_args,
+        ]
         cmd = ("python", "-m", self.spec.content, *argv)
 
         action_summary = self.name + (f" {shlex.join(argv)}" if argv else "")
