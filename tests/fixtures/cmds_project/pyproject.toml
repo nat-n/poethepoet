@@ -162,3 +162,7 @@ cmd = "${UNSET_CMD_VAR}"
 [tool.poe.tasks.empty-after-null-glob]
 cmd = "nothing_matches_this*"
 empty_glob = "null"
+
+[tool.poe.tasks.exec-missing-executable]
+cmd = "no_such_binary_for_poe_tests a"
+use_exec = true

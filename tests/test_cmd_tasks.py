@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,23 @@ def test_call_echo_task(run_poe_subproc, projects, esc_prefix, is_windows):
 
     assert result.stdout == f"POE_ROOT:{projects['cmds']} Password1, task_args: foo !\n"
     assert result.stderr == ""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="use_exec is ignored on windows")
+def test_use_exec_with_missing_executable(run_poe_subproc):
+    """
+    A use_exec task with a missing executable gives the same friendly error as a
+    task run as a subprocess, rather than a FileNotFoundError traceback
+    """
+    result = run_poe_subproc("exec-missing-executable", project="cmds")
+    assert result.code == 1
+    assert result.capture.startswith("Poe => no_such_binary_for_poe_tests a\n")
+    assert (
+        "Error: executable 'no_such_binary_for_poe_tests' could not be found\n"
+        "     | From: FileNotFoundError(2, 'No such file or directory')\n"
+    ) in result.capture
+    assert result.stdout == ""
+    assert "Traceback" not in result.stderr
 
 
 def test_setting_envvar_in_task(run_poe, projects):
