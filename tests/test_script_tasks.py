@@ -629,6 +629,14 @@ def test_script_task_extra_args_available_as_list_via_extra_args_var(run_poe):
     assert result.stderr == ""
 
 
+def test_script_task_extra_args_empty_list_without_free_args(run_poe):
+    """_extra_args is an empty list when no free args are passed"""
+    result = run_poe("echo-extra-args-list-script", project="scripts", env=no_venv)
+    assert result.capture == "Poe => echo-extra-args-list-script\n"
+    assert result.stdout == "list: []\n"
+    assert result.stderr == ""
+
+
 def _build_src_layout(project_path, *, with_subdir: bool = False) -> None:
     src_pkg = project_path / "src" / "mypkg"
     src_pkg.mkdir(parents=True)

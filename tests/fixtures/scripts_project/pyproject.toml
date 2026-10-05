@@ -310,6 +310,9 @@ args = [{ name = "MY_FLAG", type = "boolean", default = true }]
 [tool.poe.tasks.echo-extra-args-script]
 script = "pkg:describe_args(*_extra_args)"
 
+[tool.poe.tasks.echo-extra-args-list-script]
+script = "pkg:describe_args(_extra_args)"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
