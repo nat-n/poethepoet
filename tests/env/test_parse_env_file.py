@@ -370,3 +370,7 @@ base_env_examples = [
 @pytest.mark.parametrize(("content", "base_env", "expected"), base_env_examples)
 def test_parse_env_file_with_base_env(content, base_env, expected):
     assert parse_env_file(content, base_env) == expected
+
+
+def test_parse_env_file_ignores_leading_utf8_bom():
+    assert parse_env_file("﻿A=1\nB=2\n") == {"A": "1", "B": "2"}
