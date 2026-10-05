@@ -7,6 +7,8 @@ from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
@@ -172,7 +174,7 @@ class CmdTask(PoeTask):
             for cmd_token, has_glob in line.resolve_tokens(env):
                 if has_glob:
                     # Resolve glob pattern from the working directory
-                    if matches := [str(match) for match in working_dir.glob(cmd_token)]:
+                    if matches := self._glob(cmd_token, working_dir):
                         result.extend(matches)
                     elif self.spec.options.empty_glob == "fail":
                         raise ExecutionError(
@@ -188,3 +190,23 @@ class CmdTask(PoeTask):
                     result.append(cmd_token)
 
         return result
+
+    @staticmethod
+    def _glob(pattern: str, working_dir: Path) -> list[str]:
+        """
+        Resolve a glob pattern relative to the working directory, or relative to its
+        own anchor if the pattern is an absolute path.
+        """
+        from pathlib import Path
+
+        base_dir, relative_pattern = working_dir, pattern
+        if anchor := Path(pattern).anchor:
+            # pathlib doesn't support globbing with non-relative patterns
+            base_dir, relative_pattern = Path(anchor), pattern[len(anchor) :]
+
+        try:
+            return [str(match) for match in base_dir.glob(relative_pattern)]
+        except (ValueError, NotImplementedError) as error:
+            raise ExecutionError(
+                f"Invalid glob pattern {pattern!r}: {error}"
+            ) from error

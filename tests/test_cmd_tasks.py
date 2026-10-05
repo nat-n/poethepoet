@@ -532,3 +532,46 @@ def test_cmd_resolving_to_empty_command_line(run_poe, task_name, env, dry_run):
     )
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_cmd_with_absolute_glob_pattern(run_poe, temp_pyproject, tmp_path):
+    """
+    A glob pattern with an absolute path is matched relative to its own anchor
+    instead of crashing with NotImplementedError
+    """
+    glob_dir = tmp_path / "glob_dir"
+    glob_dir.mkdir()
+    for file_name in ("a.txt", "b.txt", "c.log"):
+        glob_dir.joinpath(file_name).touch()
+    project_path = temp_pyproject(
+        "[tool.poe.tasks.abs-glob]\n"
+        f"cmd = \"poe_test_echo '{glob_dir.as_posix()}'/*.txt\"\n"
+    )
+
+    result = run_poe("abs-glob", cwd=project_path)
+    assert result.code == 0
+    assert result.capture.startswith("Poe => poe_test_echo ")
+    assert sorted(result.stdout.split()) == [
+        str(glob_dir / "a.txt"),
+        str(glob_dir / "b.txt"),
+    ]
+    assert result.stderr == ""
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13),
+    reason="pathlib accepts ** within a path component from python 3.13",
+)
+def test_cmd_with_invalid_glob_pattern(run_poe, temp_pyproject):
+    """
+    A glob pattern that pathlib rejects gives a clear error instead of a traceback
+    """
+    project_path = temp_pyproject(
+        '[tool.poe.tasks.bad-glob]\ncmd = "poe_test_echo **.txt"\n'
+    )
+
+    result = run_poe("bad-glob", cwd=project_path)
+    assert result.code == 1
+    assert result.capture.startswith("Error: Invalid glob pattern '**.txt'")
+    assert result.stdout == ""
+    assert result.stderr == ""
