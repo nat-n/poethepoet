@@ -12,7 +12,7 @@ import pytest
 
 from poethepoet.env.cache import EnvFileCache
 from poethepoet.env.task_env import TaskEnv
-from poethepoet.exceptions import ConfigValidationError
+from poethepoet.exceptions import ConfigValidationError, ExecutionError
 from poethepoet.io import PoeIO
 from poethepoet.task.args import PoeTaskArgs
 
@@ -192,6 +192,52 @@ def test_boolean_templated_default_resolving_to_garbage_raises() -> None:
     )
     with pytest.raises(ConfigValidationError, match="Cannot interpret"):
         args.format_argv({"flag": False}, _env({"BOOL_DEFAULT": "maybe"}))
+
+
+@pytest.mark.parametrize("default", [False, True])
+@pytest.mark.parametrize("toggle", [False, True])
+@pytest.mark.parametrize("later_value", ["true", "false", "yes"])
+def test_boolean_forwarding_reuses_parsed_default(
+    default: bool, toggle: bool, later_value: str
+) -> None:
+    args = _args([{"name": "my-flag", "type": "boolean", "default": "${BOOL_DEFAULT}"}])
+    env = _env({"BOOL_DEFAULT": str(default)})
+    values = args.parse(["--my-flag"] if toggle else [], env, "poe")
+    assert values == {"my_flag": default != toggle}
+
+    env.set("BOOL_DEFAULT", later_value)
+    assert args.format_argv(values, env) == (["--my-flag"] if toggle else [])
+
+
+def test_boolean_forwarding_uses_latest_successful_parse() -> None:
+    args = _args([{"name": "flag", "type": "boolean", "default": "${BOOL_DEFAULT}"}])
+    false_env = _env({"BOOL_DEFAULT": "false"})
+    true_env = _env({"BOOL_DEFAULT": "true"})
+
+    values = args.parse([], false_env, "poe")
+    assert args.format_argv(values, true_env) == []
+
+    values = args.parse([], true_env, "poe")
+    assert args.format_argv(values, false_env) == []
+
+
+def test_building_parser_does_not_replace_parsed_boolean_defaults() -> None:
+    args = _args([{"name": "flag", "type": "boolean", "default": "${BOOL_DEFAULT}"}])
+    values = args.parse([], _env({"BOOL_DEFAULT": "false"}), "poe")
+    later_env = _env({"BOOL_DEFAULT": "true"})
+
+    args.build_parser(later_env, "poe")
+    assert args.format_argv(values, later_env) == []
+
+
+def test_failed_parse_does_not_replace_parsed_boolean_defaults() -> None:
+    args = _args([{"name": "flag", "type": "boolean", "default": "${BOOL_DEFAULT}"}])
+    values = args.parse([], _env({"BOOL_DEFAULT": "false"}), "poe")
+    later_env = _env({"BOOL_DEFAULT": "true"})
+
+    with pytest.raises(ExecutionError, match="Invalid arguments"):
+        args.parse(["--unknown"], later_env, "poe")
+    assert args.format_argv(values, later_env) == []
 
 
 @pytest.mark.parametrize(

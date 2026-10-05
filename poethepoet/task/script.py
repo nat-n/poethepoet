@@ -186,17 +186,6 @@ class ScriptTask(PoeTask):
         """
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
-
-        # Resolve defaults against the same environment used for parsing, before
-        # registering arguments overwrites variables with their string values.
-        argv = [
-            *(
-                task_args.format_argv(named_arg_values, env)
-                if (task_args := self.task_args)
-                else ()
-            ),
-            *extra_args,
-        ]
         self._parse_and_register_args(env)
 
         # Approximate the callable path's sys.path.append('src') by appending
@@ -219,6 +208,14 @@ class ScriptTask(PoeTask):
                 ),
             )
 
+        argv = [
+            *(
+                task_args.format_argv(named_arg_values, env)
+                if (task_args := self.task_args)
+                else ()
+            ),
+            *extra_args,
+        ]
         cmd = ("python", "-m", self.spec.content, *argv)
 
         action_summary = self.name + (f" {shlex.join(argv)}" if argv else "")
