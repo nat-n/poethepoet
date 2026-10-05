@@ -825,3 +825,27 @@ def test_module_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
     result = run_poe("run", cwd=project_path)
     assert result.code == 0, result.capture + result.stderr
     assert "hello from src layout" in result.stdout
+
+
+@pytest.mark.parametrize("toggle", [False, True])
+def test_module_script_forwards_flag_with_default_from_uses(
+    temp_pyproject, run_poe, toggle
+):
+    """
+    Args are parsed before uses values exist, so a boolean default referencing one
+    resolves without it. Forwarding the flag must use that same default, even
+    though the module's env includes the uses value.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.detect]
+        cmd = "poe_test_echo true"
+
+        [tool.poe.tasks.run-mod]
+        script = "probe"
+        uses = { POE_TEST_AUTO = "detect" }
+        args = [{ name = "fast", type = "boolean", default = "${POE_TEST_AUTO}" }]
+        """)
+    (project_path / "probe.py").write_text("import sys\nprint(sys.argv[1:])\n")
+    result = run_poe("run-mod", *(("--fast",) if toggle else ()), cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout.endswith("['--fast']\n" if toggle else "[]\n")

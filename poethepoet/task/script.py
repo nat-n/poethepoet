@@ -186,9 +186,8 @@ class ScriptTask(PoeTask):
         """
 
         named_arg_values, extra_args = self.get_parsed_arguments(env)
+        self._parse_and_register_args(env)
 
-        # Forward using the defaults retained during parsing, even if this env
-        # has since inherited parent args or received dependency outputs.
         argv = [
             *(
                 task_args.format_argv(named_arg_values, env)
@@ -197,7 +196,6 @@ class ScriptTask(PoeTask):
             ),
             *extra_args,
         ]
-        self._parse_and_register_args(env)
 
         # Approximate the callable path's sys.path.append('src') by appending
         # '<project_root>/src' to PYTHONPATH. The absolute form means a task
