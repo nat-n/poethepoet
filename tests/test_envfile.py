@@ -55,6 +55,28 @@ def test_multiple_envfiles(run_poe, projects):
     assert result.stderr == ""
 
 
+def test_missing_envfile_warned_once_per_run(temp_pyproject, run_poe):
+    """
+    A missing envfile referenced by several tasks in a run is only warned about once.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.child]
+        cmd = "poe_test_echo child"
+        envfile = "missing.env"
+
+        [tool.poe.tasks.parent]
+        sequence = ["child", "child"]
+        envfile = ["missing.env", "absent.env"]
+        """
+    )
+    result = run_poe("parent", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "child\nchild\n"
+    assert result.capture.count("missing.env'") == 1
+    assert result.capture.count("absent.env'") == 1
+
+
 def test_mixed_list_of_envfiles(run_poe, projects):
     """
     A list of envfiles may mix plain paths with tables of expected/optional paths.
@@ -73,8 +95,9 @@ def test_trying_to_load_nonexistent_envfiles(run_poe, projects):
 
     assert "Poe => poe_test_echo OK\n" in result.capture
     assert "Warning: Poe failed to locate envfile at" in result.capture
-    assert "not-real.env" in result.capture
-    assert "imaginary.env" in result.capture
+    # Each missing envfile is only warned about once
+    assert result.capture.count("not-real.env") == 1
+    assert result.capture.count("imaginary.env") == 1
     assert "nothingness.env" not in result.capture
     assert "lies.env" not in result.capture
     assert result.stdout == "OK\n"
