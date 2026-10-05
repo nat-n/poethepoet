@@ -159,6 +159,12 @@ class PoeThePoet:
             return 1
 
         if should_display_help:
+            if (
+                isinstance(help_task := self.ui["help"], str)
+                and help_task not in self.config.get_tasks()
+            ):
+                self.print_help(error=PoeException(f"Unrecognized task {help_task!r}"))
+                return 1
             self.print_help()
             return 0
 

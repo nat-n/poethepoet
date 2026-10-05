@@ -175,6 +175,18 @@ def test_documentation_of_single_task_with_help_and_args(run_poe):
     )
 
 
+def test_documentation_of_unknown_single_task(run_poe):
+    result = run_poe("--help", "not_a_task")
+    assert result.code == 1, "Expected non-zero result"
+    assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
+        "Output should start with poe header line"
+    )
+    assert "Error: Unrecognized task 'not_a_task'" in result.capture, (
+        "Output should include error message"
+    )
+    assert "Configured tasks:\n  echo" in result.capture, "Should list tasks"
+
+
 def test_documentation_of_task_named_args(run_poe):
     result = run_poe(project="scripts")
     assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
