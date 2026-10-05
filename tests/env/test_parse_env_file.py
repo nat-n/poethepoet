@@ -117,6 +117,17 @@ c """,
             "expected": "6",
         },
     ),
+    # names that start with the export keyword are still names
+    (
+        "exports=1\nexport=2\nexporter=3\nexport_4=4\nexport export5=5\n",
+        {
+            "exports": "1",
+            "export": "2",
+            "exporter": "3",
+            "export_4": "4",
+            "export5": "5",
+        },
+    ),
     # handling escapes
     (
         """
