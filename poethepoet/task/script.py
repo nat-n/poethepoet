@@ -130,10 +130,13 @@ class ScriptTask(PoeTask):
         # _extra_args is always available, even if no free args were passed
         named_arg_values.setdefault("_extra_args", [])
 
+        # Only the task's own args are passed implicitly as kwargs, whereas args
+        # inherited from a parent task may still be referenced explicitly by name
         target_module, function_call = parse_script_reference(
             self.spec.content,
             named_arg_values,
             allowed_vars={"sys", "os", "environ", "_dry_run"},
+            own_args=self.get_parsed_arguments(env)[0],
         )
         function_ref = function_call.function_ref
 
