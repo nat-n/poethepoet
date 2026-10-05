@@ -46,6 +46,16 @@ class EnvFileCache:
                             envfile_file.read()
                         )
                     self._io.print_debug(f" + Loaded Envfile from {envfile_path}")
+                except UnicodeDecodeError as error:
+                    raise ExecutionError(
+                        f"Envfile at {envfile_path_str!r} could not be decoded as "
+                        f"UTF-8 text ({error.reason} at byte {error.start})"
+                    ) from error
+                except OSError as error:
+                    raise ExecutionError(
+                        f"Failed to read envfile at {envfile_path_str!r}: "
+                        f"{error.strerror or error}"
+                    ) from error
                 except ValueError as error:
                     message = error.args[0]
                     raise ExecutionError(

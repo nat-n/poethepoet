@@ -36,7 +36,13 @@ def _parse_to_ast(content: str) -> EnvFile:
     try:
         return EnvFile(ParseCursor.from_string(content + "\n"), ParseConfig())
     except AstParseError as error:
-        raise ValueError(str(error)) from error
+        message = error.message
+        line = getattr(error, "line", None)
+        position = getattr(error, "position", None)
+        if line is not None and position is not None:
+            # Report the (approximate) location as 1-based line and column numbers
+            message += f" (near line {line + 1}, position {position + 1})"
+        raise ValueError(message) from error
 
 
 def _resolve_ast(tree: EnvFile, base_env: Mapping[str, str]) -> dict[str, str]:
