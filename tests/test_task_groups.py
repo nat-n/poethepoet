@@ -1,5 +1,7 @@
 """Tests for task grouping feature."""
 
+import pytest
+
 # -- Help output and heading precedence --
 
 
@@ -106,3 +108,58 @@ def test_group_executor_overridden_by_cli(run_poe, projects):
     result = run_poe("--executor", "simple", "venv_group_task", cwd=projects["groups"])
     assert result.code == 0
     assert "should_not_run" in result.capture
+
+
+# -- Invalid group config is reported cleanly --
+
+
+@pytest.mark.parametrize("cli_args", [(), ("--help",), ("other",)])
+def test_task_duplicated_in_group_is_reported(run_poe, temp_pyproject, cli_args):
+    """A task name used both at top level and in a group gives a clean error."""
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        executor = "simple"
+        [tool.poe.tasks]
+        test = "poe_test_echo top"
+        other = "poe_test_echo other"
+        [tool.poe.groups.testing.tasks]
+        test = "poe_test_echo grouped"
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    assert "Configured tasks:" in result.capture
+    if cli_args == ("--help",):
+        # --help hides config errors, but must not crash
+        assert result.code == 0
+        return
+    assert result.code == 1
+    assert "Error: Config from" in result.capture
+    assert (
+        "contains task 'test' multiple times, including in group testing"
+        in result.capture
+    )
+
+
+@pytest.mark.parametrize("cli_args", [(), ("other",)])
+def test_non_string_group_heading_is_reported(run_poe, temp_pyproject, cli_args):
+    """A non-string group heading gives a clean validation error."""
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        executor = "simple"
+        [tool.poe.tasks]
+        other = "poe_test_echo other"
+        [tool.poe.groups.grp]
+        heading = 5
+        [tool.poe.groups.grp.tasks]
+        grouped = "poe_test_echo grouped"
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    assert result.code == 1
+    assert (
+        "Error: Option 'groups.grp.heading' must have a value of type: str"
+        in result.capture
+    )
+    assert "Configured tasks:\n  other" in result.capture
