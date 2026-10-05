@@ -31,6 +31,8 @@ def _parse_to_ast(content: str) -> EnvFile:
     from ..helpers.parse.core import ParseError as AstParseError
     from ..helpers.parse.envfile import EnvFile
 
+    # Ignore a leading UTF-8 byte order mark, as written by some Windows editors
+    content = content.removeprefix("﻿")
     try:
         return EnvFile(ParseCursor.from_string(content + "\n"), ParseConfig())
     except AstParseError as error:

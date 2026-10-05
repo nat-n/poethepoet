@@ -214,3 +214,24 @@ def test_envfile_nested_default_value(temp_pyproject, run_poe, tmp_path):
     result = run_poe("show", cwd=project_path)
     assert result.code == 0
     assert result.stdout == "fallback\n"
+
+
+def test_envfile_with_utf8_bom(temp_pyproject, run_poe, tmp_path):
+    """
+    A UTF-8 byte order mark at the start of an envfile (as written by some Windows
+    editors) is ignored.
+    """
+    envfile = tmp_path / "bom.env"
+    envfile.write_bytes(b"\xef\xbb\xbfFIRST=one\nSECOND=two\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{FIRST}}-${{SECOND}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "one-two\n"
