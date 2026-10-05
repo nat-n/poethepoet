@@ -245,7 +245,9 @@ class PoeThePoet:
             try:
                 task_run = await task.run(context=context)
                 await task_run.wait(suppress_errors=False)
-                return task_run.return_code or 0
+                # A task run can fail without a non-zero return code, e.g. if an
+                # error raised by a child task run was not propagated
+                return task_run.return_code or int(task_run.has_failure)
             except ExecutionError as error:
                 self.ui.print_error(error=error)
                 return 1

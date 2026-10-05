@@ -183,9 +183,12 @@ class RefTask(PoeTask):
             for stage_task in stage:
                 if stage_task == task:
                     # The final sink task gets special treatment
-                    return await task_state.add_child(
-                        await task.run(context=context, parent_env=env)
-                    )
+                    sink_task_run = await task.run(context=context, parent_env=env)
+                    await task_state.add_child(sink_task_run)
+                    # Errors from child task runs are otherwise suppressed, so they
+                    # must be raised here to fail this task
+                    await sink_task_run.wait(suppress_errors=False)
+                    return
 
                 dep_task = await stage_task.run(context=context)
                 await task_state.add_child(dep_task)
