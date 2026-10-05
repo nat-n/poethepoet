@@ -310,6 +310,10 @@ args = [{ name = "MY_FLAG", type = "boolean", default = true }]
 [tool.poe.tasks.echo-extra-args-script]
 script = "pkg:describe_args(*_extra_args)"
 
+[tool.poe.tasks.method-on-arg-script]
+script = "pkg:echo_script(name.upper(), environ.get('NOPE', 'x').upper())"
+args = ["name"]
+
 [tool.poe.tasks.echo-extra-args-list-script]
 script = "pkg:describe_args(_extra_args)"
 
