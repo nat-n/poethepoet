@@ -224,7 +224,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     raise ExecutionError("Cannot exec task that requires shell!")
                 if not self._is_windows:
                     # execvpe doesn't work properly on windows so we just don't go there
-                    self._exec(cmd, env=env)
+                    try:
+                        self._exec(cmd, env=env)
+                    except FileNotFoundError as error:
+                        # execvpe reports the last path it tried rather than cmd[0]
+                        await self._handle_file_not_found(cmd, error)
 
             return await self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
         except FileNotFoundError as error:

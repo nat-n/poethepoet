@@ -159,6 +159,10 @@ cmd = "poe_test_echo actual # $POE_EXTRA_ARGS not used here"
 [tool.poe.tasks.empty-after-expansion]
 cmd = "${UNSET_CMD_VAR}"
 
+[tool.poe.tasks.exec-missing-executable]
+cmd = "no_such_binary_for_poe_tests a"
+use_exec = true
+
 [tool.poe.tasks.empty-after-null-glob]
 cmd = "nothing_matches_this*"
 empty_glob = "null"
