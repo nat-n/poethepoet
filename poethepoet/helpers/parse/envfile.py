@@ -266,7 +266,7 @@ class EnvAssignment(SyntaxNode):
             for expected in "export":
                 ch = chars.peek()
                 if ch != expected:
-                    chars.pushback(*reversed(saved))
+                    chars.pushback(*saved)
                     break
                 saved.append(chars.take())
             else:
