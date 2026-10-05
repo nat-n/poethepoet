@@ -522,6 +522,28 @@ def test_cmd_hash_inside_word_is_not_a_comment(run_poe):
 
 
 @pytest.mark.parametrize(
+    "task_name",
+    [
+        "multiple-command-lines",
+        "semicolon-after-comment",
+        "semicolon-after-comment-line",
+    ],
+)
+def test_cmd_with_multiple_command_lines_is_rejected(run_poe, task_name):
+    """
+    A ; separating commands is rejected, even if it follows a comment
+    """
+    result = run_poe(task_name, project="cmds")
+    assert result.code == 1
+    assert (
+        f"Error: Invalid cmd task {task_name!r} includes multiple command lines\n"
+        in result.capture
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
     ("task_name", "env"),
     [
         ("empty-after-expansion", {}),

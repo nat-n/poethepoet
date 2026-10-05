@@ -155,13 +155,17 @@ class CmdTask(PoeTask):
     def _resolve_commandline(self, context: RunContext, env: TaskEnv):
         self.__passed_unmatched_glob = False
 
-        command_lines = self._parse_content().command_lines
+        lines = self._parse_content().lines
+        command_line_indices = [index for index, line in enumerate(lines) if line.words]
 
-        if not command_lines:
+        if not command_line_indices:
             raise PoeException(
                 f"Invalid cmd task {self.name!r} does not include any command lines"
             )
-        if any(line.terminator == ";" for line in command_lines[:-1]):
+        if any(
+            line.terminator == ";"
+            for line in lines[command_line_indices[0] : command_line_indices[-1]]
+        ):
             # lines terminated by a line break or comment are implicitly joined
             raise PoeException(
                 f"Invalid cmd task {self.name!r} includes multiple command lines"
@@ -170,8 +174,8 @@ class CmdTask(PoeTask):
         working_dir = self.get_working_dir(env)
 
         result = []
-        for line in command_lines:
-            for cmd_token, has_glob in line.resolve_tokens(env):
+        for line_index in command_line_indices:
+            for cmd_token, has_glob in lines[line_index].resolve_tokens(env):
                 if has_glob:
                     # Resolve glob pattern from the working directory
                     if matches := self._glob(cmd_token, working_dir):

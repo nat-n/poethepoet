@@ -159,6 +159,22 @@ cmd = "poe_test_echo actual # $POE_EXTRA_ARGS not used here"
 [tool.poe.tasks.hash-in-word]
 cmd = "poe_test_echo http://x/#anchor a'b'#c after # comment"
 
+[tool.poe.tasks.multiple-command-lines]
+cmd = "poe_test_echo a; poe_test_echo b"
+
+[tool.poe.tasks.semicolon-after-comment]
+cmd = """
+poe_test_echo a # comment
+; poe_test_echo b
+"""
+
+[tool.poe.tasks.semicolon-after-comment-line]
+cmd = """
+poe_test_echo a # comment
+# another comment
+; poe_test_echo b
+"""
+
 [tool.poe.tasks.empty-after-expansion]
 cmd = "${UNSET_CMD_VAR}"
 
