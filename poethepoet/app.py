@@ -329,10 +329,13 @@ class PoeThePoet:
         if isinstance(error, str):
             error = PoeException(error)
 
+        # If the config is invalid then tolerate errors in rendering help for tasks
+        lenient = error is not None or not config_is_valid
+
         try:
             all_tasks = self.config.get_tasks()
         except PoeException:
-            if error is None and config_is_valid:
+            if not lenient:
                 raise
             # The config is already known to be invalid, so collect tasks leniently
             # in order to still display them
@@ -344,7 +347,7 @@ class PoeThePoet:
             task_name: (
                 task.help_text,
                 PoeTaskArgs.get_help_content(
-                    task.get("args"), task_name, suppress_errors=bool(error)
+                    task.get("args"), task_name, suppress_errors=lenient
                 ),
                 task.group.name if task.group else None,
             )

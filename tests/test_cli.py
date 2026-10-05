@@ -212,6 +212,27 @@ def test_non_string_task_help_is_reported(
         assert "  other                 Other task" in result.capture
 
 
+@pytest.mark.parametrize("cli_args", [("--help",), ("--help", "bad"), ("other",)])
+def test_help_with_malformed_task_args(run_poe, temp_pyproject, cli_args):
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        executor = "simple"
+        [tool.poe.tasks]
+        bad = { cmd = "poe_test_echo bad", args = { x = 5 } }
+        other = { cmd = "poe_test_echo other", help = "Other task" }
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    if cli_args[0] == "--help":
+        # --help hides config errors, but must not crash
+        assert result.code == 0
+    else:
+        assert result.code == 1
+        assert "Error: Invalid task 'bad'" in result.capture
+        assert "  other                 Other task" in result.capture
+
+
 def test_documentation_of_task_named_args(run_poe):
     result = run_poe(project="scripts")
     assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
