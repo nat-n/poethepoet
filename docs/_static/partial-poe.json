@@ -69,6 +69,7 @@
         "options": {
           "description": "A list of options to be provided along with the argument.",
           "items": { "type": "string" },
+          "minItems": 1,
           "type": "array"
         },
         "positional": {
@@ -156,6 +157,7 @@
         "options": {
           "description": "A list of options to be provided along with the argument.",
           "items": { "type": "string" },
+          "minItems": 1,
           "type": "array"
         },
         "positional": {

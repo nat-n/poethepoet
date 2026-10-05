@@ -7,9 +7,11 @@ from typing import IO, TYPE_CHECKING, Any, Literal, cast
 if TYPE_CHECKING:
     from argparse import ArgumentParser
     from collections.abc import Iterator, Mapping, Sequence
+    from typing import Annotated
 
     from ..env.task_env import TaskEnv
     from ..io import PoeIO
+    from ..options.annotations import Metadata
 
 from ..exceptions import ConfigValidationError, ExecutionError
 from ..options import PoeOptions
@@ -42,7 +44,7 @@ class ArgSpec(PoeOptions):
     The name of the argument.
     """
 
-    options: Sequence[str]
+    options: Annotated[Sequence[str], Metadata(min_items=1)]
     """
     A list of options to be provided along with the argument.
     """
