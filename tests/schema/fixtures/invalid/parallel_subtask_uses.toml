@@ -1,0 +1,6 @@
+# expected_error: Unsupported option 'uses' for task declared inside parallel
+[tool.poe.tasks.dep]
+cmd = "echo dep"
+
+[tool.poe.tasks.bad]
+parallel = [{ cmd = "echo hi", uses = { VALUE = "dep" } }]

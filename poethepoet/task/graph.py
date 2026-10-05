@@ -6,6 +6,7 @@ from ..exceptions import CyclicDependencyError
 
 if TYPE_CHECKING:
     from ..context import RunContext
+    from ..env.task_env import TaskEnv
     from .base import PoeTask
 
 
@@ -57,6 +58,7 @@ class TaskExecutionGraph:
         self,
         sink_task: PoeTask,
         context: RunContext,
+        parent_env: TaskEnv | None = None,
     ):
         self._context = context
         self.sink = TaskExecutionNode(sink_task, [], ())
@@ -64,8 +66,9 @@ class TaskExecutionGraph:
         self.captured_tasks = {}
         self.uncaptured_tasks = {}
 
-        # Build graph
-        self._resolve_node_deps(self.sink)
+        # Build graph. Only the sink inherits the parent_env, upstream tasks run
+        # standalone.
+        self._resolve_node_deps(self.sink, parent_env)
 
     def get_execution_plan(self) -> list[list[PoeTask]]:
         """
@@ -100,17 +103,25 @@ class TaskExecutionGraph:
 
         return [[node.task for node in stage] for stage in stages]
 
-    def _resolve_node_deps(self, node: TaskExecutionNode):
+    def _resolve_node_deps(
+        self, node: TaskExecutionNode, parent_env: TaskEnv | None = None
+    ):
         """
         Build a DAG of tasks by depth-first traversal of the dependency tree starting
         from the sink node.
         """
-        for capture_stdout, task in node.task.iter_upstream_tasks(self._context):
+        for capture_stdout, task in node.task.iter_upstream_tasks(
+            self._context, parent_env
+        ):
             node.direct_dependencies.add(task.invocation)
 
-            if task.invocation in node.path_dependants:
+            if task.name in node.path_dependants:
+                # path_dependants is ordered nearest first, so the cycle is the
+                # prefix up to the repeated task
+                cycle_length = node.path_dependants.index(task.name) + 1
+                cycle_path = (*reversed(node.path_dependants[:cycle_length]), task.name)
                 raise CyclicDependencyError(
-                    f"Encountered cyclic task dependency with task: {task.name!r}"
+                    f"Cyclic task dependency detected: {' -> '.join(cycle_path)}"
                 )
 
             # Check if a node already exists for this task

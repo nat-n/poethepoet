@@ -921,6 +921,21 @@
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "deps": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "uses": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": {
+                  "properties": { "uses_env": false },
+                  "type": "object"
+                }
               }
             ]
           },
@@ -1030,6 +1045,21 @@
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "deps": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "uses": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": {
+                  "properties": { "uses_env": false },
+                  "type": "object"
+                }
               }
             ]
           },
@@ -1444,6 +1474,21 @@
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "deps": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "uses": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": {
+                  "properties": { "uses_env": false },
+                  "type": "object"
+                }
               }
             ]
           },
@@ -1529,6 +1574,21 @@
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "deps": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "uses": false }, "type": "object" }
+              },
+              {
+                "if": { "type": "object" },
+                "then": {
+                  "properties": { "uses_env": false },
+                  "type": "object"
+                }
               }
             ]
           },

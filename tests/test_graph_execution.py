@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_call_attr_func(run_poe):
     result = run_poe("deep-graph-with-args", project="graphs")
     assert result.capture == (
@@ -425,3 +428,145 @@ def test_uses_env_via_switch_with_sequence_case_rejected(temp_pyproject, run_poe
         "'uses_env' option references task that does not support output capture: '_sw'"
     ) in result.capture
     assert result.stdout == ""
+
+
+@pytest.mark.parametrize(
+    ("tasks_config", "expected_cycle"),
+    [
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            deps = ["b"]
+
+            [tool.poe.tasks.b]
+            cmd = "poe_test_echo b"
+            deps = ["a"]
+            """,
+            "a -> b -> a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            deps = ["a"]
+            """,
+            "a -> a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            uses = { B = "b" }
+
+            [tool.poe.tasks.b]
+            cmd = "poe_test_echo b"
+            deps = ["c --flag"]
+
+            [tool.poe.tasks.c]
+            cmd = "poe_test_echo c"
+            deps = ["a"]
+            args = [{ name = "flag", type = "boolean" }]
+            """,
+            "a -> b -> c -> a",
+        ),
+        (
+            # Each repetition has a different invocation, so this recursed without
+            # limit when cycles were detected by invocation rather than task name
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            deps = ["a --level ${level}x"]
+            args = [{ name = "level", default = "x" }]
+            """,
+            "a -> a",
+        ),
+    ],
+    ids=["two_tasks", "self_dependency", "via_uses_and_args", "changing_args"],
+)
+def test_cyclic_deps_are_rejected(
+    temp_pyproject, run_poe, tasks_config, expected_cycle
+):
+    project_path = temp_pyproject(tasks_config)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Error: Cyclic task dependency detected: {expected_cycle}\n"
+    ) in result.capture
+    assert result.stdout == ""
+
+
+def test_cyclic_deps_error_excludes_tasks_leading_into_the_cycle(
+    temp_pyproject, run_poe
+):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.start]
+        cmd = "poe_test_echo start"
+        deps = ["a"]
+
+        [tool.poe.tasks.a]
+        cmd = "poe_test_echo a"
+        deps = ["b"]
+
+        [tool.poe.tasks.b]
+        cmd = "poe_test_echo b"
+        deps = ["c"]
+
+        [tool.poe.tasks.c]
+        cmd = "poe_test_echo c"
+        deps = ["a"]
+        """)
+    result = run_poe("start", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Cyclic task dependency detected: a -> b -> c -> a\n" in (
+        result.capture
+    )
+    assert result.stdout == ""
+
+
+def test_shared_dep_is_not_a_cycle(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.a]
+        cmd = "poe_test_echo a"
+        deps = ["b", "c"]
+
+        [tool.poe.tasks.b]
+        cmd = "poe_test_echo b"
+        deps = ["d"]
+
+        [tool.poe.tasks.c]
+        cmd = "poe_test_echo c"
+        deps = ["d"]
+
+        [tool.poe.tasks.d]
+        cmd = "poe_test_echo d"
+        """)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "d\nb\nc\na\n"
+
+
+def test_task_reused_with_different_args_is_not_a_cycle(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.say]
+        cmd = "poe_test_echo ${word}"
+        args = [{ name = "word", positional = true }]
+
+        [tool.poe.tasks.left]
+        cmd = "poe_test_echo left"
+        deps = ["say one", "say two"]
+
+        [tool.poe.tasks.right]
+        cmd = "poe_test_echo right"
+        deps = ["say one", "say three"]
+
+        [tool.poe.tasks.top]
+        cmd = "poe_test_echo top"
+        deps = ["left", "right"]
+        """)
+    result = run_poe("top", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert sorted(result.stdout.splitlines()) == sorted(
+        ["one", "two", "three", "left", "right", "top"]
+    )
+    assert result.stdout.endswith("top\n")

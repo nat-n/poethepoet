@@ -258,7 +258,10 @@ class SwitchTask(PoeTask):
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
-        self._parse_and_register_args(env)
+        if not self.spec.options.get("args"):
+            # Otherwise the control and case tasks receive and register these args
+            # themselves, so they must resolve them against the env as this task did
+            self._parse_and_register_args(env)
 
         # Indicate on the global context that there are multiple stages to this task
         context.multistage = True

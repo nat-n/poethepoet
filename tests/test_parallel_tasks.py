@@ -950,3 +950,61 @@ def sequences_are_similar(seq1: Sequence, seq2: Sequence, distance: int = 1):
         else:
             return False
     return True
+
+
+@pytest.mark.parametrize(
+    ("option", "option_toml"),
+    [
+        ("args", 'args = ["target"]'),
+        ("deps", 'deps = ["_load"]'),
+        ("uses", 'uses = { CFG = "_load" }'),
+        ("uses_env", 'uses_env = "_load"'),
+        ("deps", "deps = []"),
+    ],
+)
+def test_parallel_rejects_unsupported_inline_subtask_option(
+    temp_pyproject, run_poe, option, option_toml
+):
+    """
+    Options that only work for a task run via the task graph are rejected when
+    declared on a task defined inline within a parallel
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks._load]
+        cmd = "poe_test_echo loaded"
+
+        [tool.poe.tasks.composite]
+        parallel = [{{ cmd = "poe_test_echo hi", {option_toml} }}]
+        """)
+    result = run_poe("composite", cwd=project_path)
+    assert "Error: Invalid task 'composite'" in result.capture
+    assert (
+        f"Unsupported option {option!r} for task declared inside parallel"
+    ) in result.capture
+    assert result.stdout == ""
+
+
+def test_parallel_subtask_ref_to_task_with_deps_and_uses(temp_pyproject, run_poe):
+    """
+    A named task with deps and uses still has them honoured when it is referenced
+    from a parallel
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks._dep]
+        cmd = "poe_test_echo dep-ran"
+
+        [tool.poe.tasks._load]
+        cmd = "poe_test_echo loaded"
+
+        [tool.poe.tasks.consumer]
+        cmd = "poe_test_echo cfg=${CFG}"
+        deps = ["_dep"]
+        uses = { CFG = "_load" }
+
+        [tool.poe.tasks.composite]
+        parallel = ["consumer"]
+        """)
+    result = run_poe("composite", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "dep-ran" in result.stdout
+    assert "cfg=loaded" in result.stdout

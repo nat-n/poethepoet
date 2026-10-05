@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-SUBTASK_OPTIONS_BLOCKLIST = ("args",)
+SUBTASK_OPTIONS_BLOCKLIST = ("args", "deps", "uses", "uses_env")
 
 BUFFERED_STDOUT_LIMIT = int(
     os.environ.get("POE_BUFFERED_STDOUT_LIMIT", 4 * 1024 * 1024)
@@ -180,10 +180,12 @@ class ParallelTask(PoeTask):
             Perform validations on this TaskSpec that apply to a specific task type
             """
             for subtask in self.subtasks:
-                if subtask.has_args:
-                    raise ConfigValidationError(
-                        "Unsupported option 'args' for task declared inside parallel"
-                    )
+                for banned_option in SUBTASK_OPTIONS_BLOCKLIST:
+                    if subtask.options.get(banned_option, None) is not None:
+                        raise ConfigValidationError(
+                            f"Unsupported option {banned_option!r} for task "
+                            "declared inside parallel"
+                        )
 
                 subtask.validate(config, task_specs)
 

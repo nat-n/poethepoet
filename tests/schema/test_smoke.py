@@ -132,8 +132,8 @@ def test_build_schema_cwd_fields_require_non_whitespace() -> None:
 
 def test_build_schema_subtask_options_blocklist() -> None:
     """
-    Subtasks declared inside sequence/parallel can't have ``args``, and
-    switch case items can't have ``args``/``uses``/``deps``. The schema
+    Subtasks declared inside sequence/parallel and switch case items can't
+    have ``args``/``deps``/``uses``/``uses_env``. The schema
     encodes this on each container's ``items`` allOf so bare-string
     refs and inline arrays still pass.
     """
