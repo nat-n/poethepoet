@@ -481,6 +481,7 @@ class PoeTaskArgs:
                 )
             except ConfigValidationError as error:
                 error.context = f"Invalid default for argument {arg.name!r}"
+                error.task_name = self._task_name
                 raise
             if coerced_default:
                 result["action"] = "store_false"

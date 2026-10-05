@@ -1,0 +1,6 @@
+# expected_error: Unsupported option 'deps' for task declared inside sequence
+[tool.poe.tasks.dep]
+cmd = "echo dep"
+
+[tool.poe.tasks.bad]
+sequence = [{ cmd = "echo hi", deps = ["dep"] }]

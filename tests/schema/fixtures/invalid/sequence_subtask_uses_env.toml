@@ -1,0 +1,6 @@
+# expected_error: Unsupported option 'uses_env' for task declared inside sequence
+[tool.poe.tasks.dep]
+cmd = "echo dep"
+
+[tool.poe.tasks.bad]
+sequence = [{ cmd = "echo hi", uses_env = "dep" }]

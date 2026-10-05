@@ -177,7 +177,7 @@ class RefTask(PoeTask):
         from ..exceptions import ExecutionError
         from .graph import TaskExecutionGraph
 
-        graph = TaskExecutionGraph(task, context)
+        graph = TaskExecutionGraph(task, context, parent_env=env)
         plan = graph.get_execution_plan()
         for stage in plan:
             for stage_task in stage:

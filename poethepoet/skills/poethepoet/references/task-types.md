@@ -151,6 +151,8 @@ script = "validate:schema"
 ref = "test"
 ```
 
+Tasks defined inline within a `sequence` or `parallel` may **not** declare `args`, `deps`, `uses`, or `uses_env` (config error). To use `deps`/`uses`/`uses_env`, put them on a named task and reference it.
+
 **ignore_fail options**:
 
 - `true` — continue on failure; return 0 if all other tasks succeed

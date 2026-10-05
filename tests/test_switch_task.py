@@ -227,3 +227,84 @@ def test_switch_case_may_not_declare_uses_env(temp_pyproject, run_poe):
     assert "Error: Invalid task 'sw'" in result.capture
     assert "Case 'a' includes incompatible option 'uses_env'" in result.capture
     assert result.stdout == ""
+
+
+@pytest.mark.parametrize(
+    ("cli_args", "expected"),
+    [((), "loud=\n"), (("--loud",), "loud=True\n")],
+)
+def test_switch_case_boolean_arg_with_self_referencing_default(
+    temp_pyproject, run_poe, cli_args, expected
+):
+    """
+    Case tasks resolve the switch's args against the env as the switch found it, so
+    a default referencing the arg's own variable can't see the switch's value for it
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "'x'"
+        switch = [{ case = "x", cmd = "poe_test_echo loud=${loud}" }]
+        args = [{ name = "loud", type = "boolean", default = "${loud}" }]
+        """)
+    result = run_poe("sw", *cli_args, cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == expected
+
+
+@pytest.mark.parametrize(
+    ("cli_args", "expected"),
+    [((), "loud=no\n"), (("--loud",), "loud=yes\n")],
+)
+def test_switch_case_boolean_arg_with_custom_strings(
+    temp_pyproject, run_poe, cli_args, expected
+):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "'x'"
+        switch = [{ case = "x", cmd = "poe_test_echo loud=${loud}" }]
+
+        [[tool.poe.tasks.sw.args]]
+        name = "loud"
+        type = "boolean"
+        default = "${loud}"
+        true_string = "yes"
+        false_string = "no"
+        """)
+    result = run_poe("sw", *cli_args, cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == expected
+
+
+def test_switch_case_arg_defaults_match_the_switch(temp_pyproject, run_poe):
+    """
+    A default referencing another arg of the same task can't see that arg's value,
+    and a switch case resolves it the same way as the switch itself
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "f'{region}/{bucket}'"
+        switch = [{ case = "us/none-bucket", cmd = "poe_test_echo bucket=${bucket}" }]
+        args = [
+            { name = "region", default = "eu" },
+            { name = "bucket", default = "${region:-none}-bucket" },
+        ]
+        """)
+    result = run_poe("sw", "--region", "us", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout.endswith("bucket=none-bucket\n")
+
+
+def test_switch_case_module_script_receives_args(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "'x'"
+        switch = [{ case = "x", script = "probe" }]
+        args = [
+            { name = "size", type = "integer", default = 1 },
+            { name = "loud", type = "boolean" },
+        ]
+        """)
+    (project_path / "probe.py").write_text("import sys\nprint(sys.argv[1:])\n")
+    result = run_poe("sw", "--size", "3", "--loud", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout.endswith("['--size', '3', '--loud']\n")
