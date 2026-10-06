@@ -1,3 +1,7 @@
+import shutil
+import sys
+from pathlib import Path
+
 import pytest
 
 EXAMPLE_CONFIG = """
@@ -304,3 +308,26 @@ def test_bad_template_syntax_is_reported(
     assert expected_detail in result.capture
     assert "Traceback" not in result.capture
     assert result.stdout == ""
+
+
+VENV_BIN_DIR = str(Path(sys.executable).parent)
+
+
+@pytest.mark.skipif(
+    shutil.which("git", path=VENV_BIN_DIR) is not None,
+    reason="git is installed alongside the python executable",
+)
+def test_git_vars_without_git_executable(temp_pyproject, run_poe):
+    """
+    If the git executable isn't available then POE_GIT_DIR and POE_GIT_ROOT resolve
+    to empty values, just as when the project isn't inside a git repo.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo dir=${GIT_DIR_VAL}. root=${GIT_ROOT_VAL}."
+        env = { GIT_DIR_VAL = "${POE_GIT_DIR}", GIT_ROOT_VAL = "${POE_GIT_ROOT}" }
+        """)
+    result = run_poe("show", cwd=project_path, env={"PATH": VENV_BIN_DIR})
+    assert result.code == 0
+    assert result.stdout == "dir=. root=.\n"
+    assert result.stderr == ""
