@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence  # noqa: TC003
+from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict, get_args
 
@@ -170,11 +170,20 @@ class ConfigPartition:
         cwd: Path | None = None,
         strict: bool = True,
     ):
-        self.poe_options: Mapping[str, Any] = (
+        poe_options = (
             full_config["tool"].get("poe", {})
-            if "tool" in full_config
+            if isinstance(full_config.get("tool"), Mapping)
             else full_config.get("tool.poe", {})
         )
+        if not isinstance(poe_options, Mapping):
+            if strict:
+                raise ConfigValidationError(
+                    "Option 'tool.poe' must be a table, not "
+                    f"{type(poe_options).__name__!r}",
+                    filename=str(path),
+                )
+            poe_options = {}
+        self.poe_options: Mapping[str, Any] = poe_options
         self.options = next(
             self.ConfigOptions.parse(
                 self.poe_options,
@@ -334,9 +343,11 @@ class ProjectConfig(ConfigPartition):
                 config["executor"] = {"type": executor}
 
             # Normalize group executor options:
-            if groups := config.get("groups"):
+            if (groups := config.get("groups")) and isinstance(groups, Mapping):
                 for group_def in groups.values():
-                    if isinstance(group_def.get("executor"), str):
+                    if isinstance(group_def, dict) and isinstance(
+                        group_def.get("executor"), str
+                    ):
                         group_def["executor"] = {"type": group_def["executor"]}
 
             # > include_script: Union[str, Sequence[str], Sequence[IncludeScriptItem]]
