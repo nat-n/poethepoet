@@ -32,6 +32,10 @@ Shell like features
 
 It is important to understand that ``cmd`` tasks are executed without a shell (to maximize portability). However some shell like features are still available including basic parameter expansion and pattern matching. Quotes and escapes are also generally interpreted as one would expect in a shell.
 
+.. warning::
+
+  Shell operators such as ``&&``, ``||``, ``|``, ``>``, or ``<`` are **not** supported in cmd tasks, and are passed to the command as literal arguments. Similarly ``;`` cannot be used to run multiple commands. Use a :doc:`shell<shell>` task or a :doc:`sequence<sequence>` task instead if you need these features.
+
 .. _ref_env_vars:
 
 Referencing environment variables
@@ -100,7 +104,7 @@ These strings are literal values, without template interpolation. The argument r
 Glob expansion
 ~~~~~~~~~~~~~~
 
-Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. Glob patterns are evaluated relative to the working directory of the task.
+Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. Relative glob patterns are evaluated relative to the working directory of the task, and absolute glob patterns are also supported. Note that matches are passed to the command as absolute paths.
 
 The supported glob syntax is that of the |glob_link|, which differs from bash in that square bracket patterns don't support character classes, don't break on whitespace, and don't allow escaping of contained characters.
 
@@ -120,11 +124,11 @@ The following task uses glob patterns to specify all ``.pyc`` files and ``__pyca
 .. code-block:: sh
 
   $ poe clean
-  Poe => rm -rf ./tests/__pycache__ ./docs/__pycache__ ...
+  Poe => rm -rf /path/to/project/tests/__pycache__ /path/to/project/docs/__pycache__ ...
 
 .. seealso::
 
-  Notice that this example also demonstrates that comments and excess whitespace (including new lines) are ignored, without needing to escape new lines.
+  Notice that this example also demonstrates that comments and excess whitespace (including new lines) are ignored, without needing to escape new lines. As in bash, a ``#`` only starts a comment at the start of a word, so a ``#`` within a word (e.g. ``a#b``) is passed through as is.
 
 .. tip::
 
@@ -147,7 +151,7 @@ Ignore task failure
 
   This option works the same for all *Execution task types* including :doc:`cmd<cmd>`, :doc:`script<script>`, :doc:`expr<expr>`, and :doc:`shell<shell>`, but has a slightly different interpretation for :doc:`sequence<sequence>`, :doc:`parallel<parallel>`, and :doc:`ref<ref>` tasks.
 
-Normally if a task subprocess returns a non-zero exit code, then the task is considered to have failed. This failure propagates to the parent task (if any), and ultimately poe will return the same exit code to the host shell. However it is possible to configure a task to ignore failure, and return zero regardless, by setting the ``ignore_fail`` option like so:
+Normally if a task subprocess returns a non-zero exit code, then the task is considered to have failed. This failure propagates to the parent task (if any), and ultimately poe will return a non-zero exit code to the host shell. When the failing task is run directly (or via a :doc:`ref<ref>` task) poe returns the same exit code as the task, whereas a failure within a :doc:`sequence<sequence>`, :doc:`parallel<parallel>` task, or task ``deps`` causes poe to exit with status 1. However it is possible to configure a task to ignore failure, and return zero regardless, by setting the ``ignore_fail`` option like so:
 
 .. code-block:: toml
 
