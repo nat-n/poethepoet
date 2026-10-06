@@ -734,3 +734,31 @@ def test_recursion_via_switch_case_is_not_a_cycle(temp_pyproject, run_poe):
     assert result.code == 0, result.capture
     assert result.stdout == "done\n"
     assert "Poe <= int(${n}) - 1\n" in result.capture
+
+
+def test_uses_switch_default_pass_without_match_is_empty(temp_pyproject, run_poe):
+    """
+    A switch with default = "pass" that matches no case has empty output when used
+    via uses or uses_env
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "'zzz'"
+        default = "pass"
+        switch = [{ case = "a", cmd = "poe_test_echo A=1" }]
+
+        [tool.poe.tasks.consumer]
+        cmd = "poe_test_echo X=${X}."
+        uses = { X = "sw" }
+
+        [tool.poe.tasks.env_consumer]
+        cmd = "poe_test_echo A=${A}."
+        uses_env = "sw"
+        """)
+    result = run_poe("consumer", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "X=.\n"
+
+    result = run_poe("env_consumer", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "A=.\n"

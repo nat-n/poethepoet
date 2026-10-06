@@ -287,6 +287,9 @@ class SwitchTask(PoeTask):
 
         if case_task is None:
             if self.spec.options.default == "pass":
+                if self.capture_stdout is True:
+                    # No case task ran, so the output of this task is empty
+                    context.save_task_output(self.invocation, b"")
                 return
             raise ExecutionError(
                 f"Control value {control_task_output!r} did not match any cases in "
