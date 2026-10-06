@@ -76,13 +76,9 @@ def _run_builtin_task(
     if task_name == "_install_skill":
         import sys
 
-        from .skills.install import install_skill
+        from .skills.install import main as install_skill_main
 
-        skill_args = sys.argv[2:]
-        upgrade = "--upgrade" in skill_args
-        positional = [a for a in skill_args if not a.startswith("--")]
-        skills_dir = Path(positional[0]) if positional else None
-        install_skill(skills_dir=skills_dir, upgrade=upgrade)
+        install_skill_main(sys.argv[2:])
         return True
 
     if task_name not in (
