@@ -490,9 +490,7 @@ def test_cyclic_deps_are_rejected(
     project_path = temp_pyproject(tasks_config)
     result = run_poe("a", cwd=project_path)
     assert result.code == 1
-    assert (
-        f"Error: Cyclic task dependency detected: {expected_cycle}\n"
-    ) in result.capture
+    assert (f"Cyclic task reference detected: {expected_cycle}\n") in result.capture
     assert result.stdout == ""
 
 
@@ -518,9 +516,7 @@ def test_cyclic_deps_error_excludes_tasks_leading_into_the_cycle(
         """)
     result = run_poe("start", cwd=project_path)
     assert result.code == 1
-    assert "Error: Cyclic task dependency detected: a -> b -> c -> a\n" in (
-        result.capture
-    )
+    assert "Cyclic task reference detected: a -> b -> c -> a\n" in (result.capture)
     assert result.stdout == ""
 
 
@@ -619,3 +615,122 @@ def test_task_with_deps_both_captured_and_uncaptured(
     assert result.stdout == expected_stdout
     assert "Poe <= poe_test_echo VAL\n" in result.capture
     assert "Poe => poe_test_echo VAL\n" in result.capture
+
+
+@pytest.mark.parametrize(
+    ("tasks_config", "expected_error"),
+    [
+        (
+            """
+            [tool.poe.tasks.a]
+            ref = "a"
+            """,
+            "a -> a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            ref = "b --flag"
+
+            [tool.poe.tasks.b]
+            ref = "a"
+            """,
+            "a -> b -> a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            sequence = ["echo_x", "a"]
+
+            [tool.poe.tasks.echo_x]
+            cmd = "poe_test_echo x"
+            """,
+            "a -> a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            sequence = [{ cmd = "poe_test_echo x" }, [{ ref = "b" }]]
+
+            [tool.poe.tasks.b]
+            parallel = ["a"]
+            """,
+            "a -> b -> a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo a"
+            deps = ["b"]
+
+            [tool.poe.tasks.b]
+            ref = "a"
+            """,
+            "a -> b -> a",
+        ),
+        (
+            """
+            [tool.poe.tasks.a]
+            cmd = "poe_test_echo ${X}"
+            uses = { X = "b" }
+
+            [tool.poe.tasks.b]
+            ref = "a"
+            """,
+            "a -> b -> a",
+        ),
+    ],
+    ids=[
+        "ref_self",
+        "ref_pair",
+        "sequence_self",
+        "inline_ref_via_parallel",
+        "deps_via_ref",
+        "uses_via_ref",
+    ],
+)
+def test_cyclic_task_references_are_rejected(
+    temp_pyproject, run_poe, tasks_config, expected_error
+):
+    """
+    Cycles through ref, sequence, and parallel tasks, alone or mixed with deps and
+    uses, are rejected at config validation. Poe is run without a task so that a
+    regression can't recurse without limit.
+    """
+    project_path = temp_pyproject(tasks_config)
+    result = run_poe(cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'a'\n" in result.capture
+    assert f"Cyclic task reference detected: {expected_error}\n" in result.capture
+
+
+def test_recursion_via_switch_case_is_not_a_cycle(temp_pyproject, run_poe):
+    """
+    A switch case is run conditionally, so it may be used to recurse until the
+    control task selects another case
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.countdown]
+        control.expr = "int(${n}) > 0"
+        args = [{ name = "n", default = "2" }]
+
+        [[tool.poe.tasks.countdown.switch]]
+        case = "True"
+        ref = "_countdown_step --n ${n}"
+
+        [[tool.poe.tasks.countdown.switch]]
+        cmd = "poe_test_echo done"
+
+        [tool.poe.tasks._countdown_step]
+        ref = "countdown --n ${next}"
+        args = ["n"]
+        uses = { next = "_decrement --n ${n}" }
+
+        [tool.poe.tasks._decrement]
+        expr = "int(${n}) - 1"
+        args = ["n"]
+        """)
+    result = run_poe("countdown", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "done\n"
+    assert "Poe <= int(${n}) - 1\n" in result.capture

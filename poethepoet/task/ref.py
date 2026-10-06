@@ -4,9 +4,11 @@ import shlex
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
-from .base import PoeTask, TaskContext
+from .base import PoeTask, TaskContext, parse_task_reference_name
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
@@ -80,6 +82,14 @@ class RefTask(PoeTask):
                     f"on a ref task referencing {ref_spec.task_type.__key__!r} task: "
                     f"{task_name_ref!r}"
                 )
+
+        def iter_task_references(self) -> Iterator[str]:
+            """
+            A ref task always runs the referenced task
+            """
+            yield from super().iter_task_references()
+            if task_name := parse_task_reference_name(self.content):
+                yield task_name
 
         def accepts_option(
             self,

@@ -6,7 +6,7 @@ from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from ..config import ConfigPartition, PoeConfig
     from ..config.partition import GroupConfig
@@ -132,6 +132,14 @@ class SequenceTask(PoeTask):
                         )
 
                 subtask.validate(config, task_specs)
+
+        def iter_task_references(self) -> Iterator[str]:
+            """
+            A sequence task runs each of its subtasks
+            """
+            yield from super().iter_task_references()
+            for subtask in self.subtasks:
+                yield from subtask.iter_task_references()
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:

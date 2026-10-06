@@ -27,6 +27,21 @@ if TYPE_CHECKING:
 _TASK_NAME_PATTERN = re.compile(r"^[^\W\d][\w:+-]*$")
 
 
+def parse_task_reference_name(invocation: str) -> str | None:
+    """
+    Get the name of the task referenced by a task invocation template, as used by the
+    ref task type and the deps, uses and uses_env options, or None if the template
+    can't be tokenized or is empty.
+    """
+    import shlex
+
+    try:
+        tokens = shlex.split(invocation)
+    except ValueError:
+        return None
+    return tokens[0] if tokens else None
+
+
 class MetaPoeTask(type):
     """
     This metaclass makes all descendants of PoeTask (task types) register themselves on
@@ -53,10 +68,12 @@ TaskDef = str | Mapping[str, Any] | Sequence[str | Mapping[str, Any]]
 
 class TaskSpecFactory:
     __cache: dict[str, PoeTask.TaskSpec]
+    __reference_cycles: dict[str, tuple[str, ...]] | None
     config: PoeConfig
 
     def __init__(self, config: PoeConfig):
         self.__cache = {}
+        self.__reference_cycles = None
         self.config = config
 
     def __contains__(self, other) -> bool:
@@ -140,6 +157,57 @@ class TaskSpecFactory:
 
     def __iter__(self):
         return iter(self.__cache.values())
+
+    def get_reference_cycle(self, task_name: str) -> tuple[str, ...] | None:
+        """
+        Return a cycle of task references that includes the named task, as a tuple of
+        task names starting with the given task, or None if no such cycle was found.
+
+        Every cycle in the config includes at least one task for which a cycle is
+        returned, so validating every task is sufficient to reject all cycles.
+        """
+        if self.__reference_cycles is None:
+            self.__reference_cycles = self._find_reference_cycles()
+        if (cycle := self.__reference_cycles.get(task_name)) is None:
+            return None
+        start_index = cycle.index(task_name)
+        return (*cycle[start_index:], *cycle[:start_index])
+
+    def _find_reference_cycles(self) -> dict[str, tuple[str, ...]]:
+        """
+        Depth first search of the graph of references between named tasks, to find
+        cycles of references which would otherwise recurse without limit at runtime.
+        Returns each task found to be part of a cycle, mapped to that cycle.
+        """
+        task_names = self.config.get_tasks()
+
+        def iter_references(task_name: str) -> Iterator[str]:
+            for reference in self.get(task_name).iter_task_references():
+                if reference in task_names:
+                    yield reference
+
+        cycles: dict[str, tuple[str, ...]] = {}
+        done: set[str] = set()
+        for root_name in task_names:
+            if root_name in done:
+                continue
+            path = [root_name]
+            stack = [iter_references(root_name)]
+            while stack:
+                for reference in stack[-1]:
+                    if reference in path:
+                        cycle = tuple(path[path.index(reference) :])
+                        for cycle_task_name in cycle:
+                            cycles.setdefault(cycle_task_name, cycle)
+                    elif reference not in done:
+                        path.append(reference)
+                        stack.append(iter_references(reference))
+                        break
+                else:
+                    stack.pop()
+                    done.add(path.pop())
+
+        return cycles
 
 
 class TaskContext(NamedTuple):
@@ -369,6 +437,13 @@ class PoeTask(metaclass=MetaPoeTask):
             try:
                 self._base_validations(config, task_specs)
                 self._task_validations(config, task_specs)
+                if not self.parent and (
+                    cycle := task_specs.get_reference_cycle(self.name)
+                ):
+                    raise ConfigValidationError(
+                        "Cyclic task reference detected: "
+                        f"{' -> '.join((*cycle, self.name))}"
+                    )
             except ConfigValidationError as error:
                 error.task_name = self.name
                 raise
@@ -475,6 +550,22 @@ class PoeTask(metaclass=MetaPoeTask):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
+
+        def iter_task_references(self) -> Iterator[str]:
+            """
+            Yield the names of the tasks that running this task always runs, via its
+            deps, uses, or uses_env options, or via its content. Subclasses that
+            reference other tasks or have subtasks extend this.
+            """
+            options = self.options
+            uses_env = options.get("uses_env", ())
+            for invocation in (
+                *(options.get("deps", None) or ()),
+                *(options.get("uses", None) or {}).values(),
+                *((uses_env,) if isinstance(uses_env, str) else uses_env),
+            ):
+                if task_name := parse_task_reference_name(invocation):
+                    yield task_name
 
         def accepts_option(
             self,
