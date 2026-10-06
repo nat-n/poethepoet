@@ -6,6 +6,7 @@ the completion logic works correctly. The harness captures what our
 script passes to compgen, _filedir, and COMPREPLY.
 """
 
+import io
 import shutil
 import subprocess
 
@@ -1913,3 +1914,38 @@ class TestBashWordbreakHandling:
         )
 
         assert result.compreply == ["simple"]
+
+
+@requires_bash
+@pytest.mark.parametrize(
+    ("shell", "harness_input", "expected_output"),
+    [
+        (
+            "bash",
+            "# WORDS: poe greet --g\n# CURRENT: 2\n# MOCK _list_tasks: greet\n"
+            "# MOCK _describe_task_args: --greeting,-g\\tstring\\tThe greeting\\t_\n",
+            "=== COMPREPLY (completions) ===\n  --greeting\n",
+        ),
+        pytest.param(
+            "zsh",
+            "# WORDS: poe greet --greeting hello\n# CURRENT: 5\n"
+            "# MOCK _zsh_describe_tasks: greet:Greet someone\n"
+            "# MOCK _describe_task_args: --name\\tstring\\tName to greet\\t_\n",
+            "  --name=[Name to greet]:value:()\n",
+            marks=pytest.mark.skipif(
+                shutil.which("zsh") is None, reason="zsh not available"
+            ),
+        ),
+    ],
+)
+def test_harness_task_reads_stdin_without_prompting(
+    harness_tasks, monkeypatch, capsys, shell, harness_input, expected_output
+):
+    """
+    `poe zsh-harness -` and `poe bash-harness -` read the input from stdin, so
+    they must not then prompt for Enter (which raised EOFError).
+    """
+    monkeypatch.setattr("sys.stdin", io.StringIO(harness_input))
+
+    assert harness_tasks[shell]("-") == 0
+    assert expected_output in capsys.readouterr().out

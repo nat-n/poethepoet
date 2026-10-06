@@ -209,9 +209,7 @@ def test_running_task_with_project_option(run_poetry_1, projects, project_option
 @pytest.mark.slow
 def test_post_hook_not_run_after_failed_command(run_poetry_1, projects):
     # There's no lock file so `poetry check --lock` fails
-    result = run_poetry_1(
-        ["check", "--lock"], cwd=projects["poetry_plugin"] / "hooks"
-    )
+    result = run_poetry_1(["check", "--lock"], cwd=projects["poetry_plugin"] / "hooks")
     assert "pre_check_hook" in result.stdout
     assert "post_check_hook" not in result.stdout
     assert result.code != 0

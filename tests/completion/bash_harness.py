@@ -738,9 +738,10 @@ def task_bash_harness(path: str):
             print(f"  Harness script: {output_dir / 'harness.bash'}")
             print(f"  Output dir: {output_dir}")
         print()
-        print("(Files will be deleted when this command exits)")
-
-        # Keep temp dir alive for interactive inspection
-        input("Press Enter to exit and clean up temp files...")
+        # Keep temp dir alive for interactive inspection, unless the script was
+        # read from stdin or there's no terminal to wait for input from
+        if path != "-" and sys.stdin.isatty():
+            print("(Files will be deleted when this command exits)")
+            input("Press Enter to exit and clean up temp files...")
 
     return 0

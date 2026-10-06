@@ -96,9 +96,11 @@ poe zsh-harness - << 'EOF'
 # WORDS: poe greet --greeting hello
 # CURRENT: 5
 # MOCK _zsh_describe_tasks: greet:Greet someone
-# MOCK _zsh_task_args: --greeting,-g\tstring\tThe greeting\t_\t_\n--name\tstring\tName to greet\t_\t_
+# MOCK _describe_task_args: --greeting,-g\tstring\tThe greeting\t_\n--name\tstring\tName to greet\t_
 EOF
 ```
+
+`# MOCK` lines take the name of a poe builtin and the output it should produce. `_describe_task_args` output has one tab-separated line per argument: `<options>\t<type>\t<help>\t<choices>`, with `_` for no choices.
 
 This test harness:
 1. Reads configuration from the input: `# WORDS`, `# CURRENT`, and `# MOCK` directives
@@ -109,6 +111,23 @@ This test harness:
   - The words array and CURRENT set to simulate a specific completion scenario
 
 The harness shows what state was entered, which builtins were called, and what arguments were passed.
+
+When run from a terminal with a file path, it waits for Enter before cleaning up its temp files so you can inspect them.
+
+## Debugging bash completion
+
+The `poe bash-harness` task does the same for the bash completion script, stubbing `_init_completion`, `compgen` and `_filedir`. `# CURRENT` is the 0-based index of the word being completed, and `# FILES` sets mock files for file completion:
+
+```sh
+poe bash-harness - << 'EOF'
+# WORDS: poe greet --g
+# CURRENT: 2
+# MOCK _list_tasks: greet
+# MOCK _describe_task_args: --greeting,-g\tstring\tThe greeting\t_\n--name\tstring\tName to greet\t_
+EOF
+```
+
+It shows the final `COMPREPLY` along with the detected task, target path and which builtins were called. As in an interactive shell, `COMP_WORDS` is split on `=` and `:`, so namespaced tasks and `--opt=value` are exercised as bash really sees them.
 
 ## Pytest marks
 

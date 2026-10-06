@@ -37,6 +37,18 @@ BashHarnessConfig = _path_import(
 BashHarnessRunner = _path_import(
     Path(__file__).parent, "bash_harness:BashHarnessRunner"
 )
+task_zsh_harness = _path_import(Path(__file__).parent, "harness:task_zsh_harness")
+task_bash_harness = _path_import(
+    Path(__file__).parent, "bash_harness:task_bash_harness"
+)
+
+
+@pytest.fixture
+def harness_tasks():
+    """
+    The functions behind the zsh-harness and bash-harness debugging poe tasks.
+    """
+    return {"zsh": task_zsh_harness, "bash": task_bash_harness}
 
 
 @pytest.fixture
