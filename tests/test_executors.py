@@ -209,6 +209,28 @@ def test_override_executor_skips_existing_virtualenv_when_forced_simple(
         assert result.stderr == ""
 
 
+def test_poetry_executor_without_poetry_installed(run_poe, tmp_path):
+    """
+    Forcing the poetry executor when poetry is not available gives a clear error
+    """
+    result = run_poe(
+        "-e",
+        "poetry",
+        "show-env",
+        project="simple_executor",
+        env={"PATH": str(tmp_path)},
+    )
+    assert result.code == 1
+    assert result.capture == (
+        "Poe => poe_test_env\n"
+        "Error: executable 'poetry' could not be found, but is required by the "
+        "poetry executor\n"
+        "     | From: FileNotFoundError(2, 'No such file or directory')\n"
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
 def test_global_executor_config(run_poe):
     """
     Rely on global config to correctly
