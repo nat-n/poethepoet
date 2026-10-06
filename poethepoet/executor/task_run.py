@@ -318,8 +318,7 @@ class PoeTaskRun:
         if asyncio.current_task() is not self.asyncio_task:
             self.asyncio_task.cancel()
         for process in self._processes:
-            if process.returncode is None:
-                process.kill()
+            process.terminate_tree()
         for child in self._children:
             await child.kill()
         await self._notify_update()

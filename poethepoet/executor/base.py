@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import shutil
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -20,14 +22,28 @@ if TYPE_CHECKING:
     from ..io import PoeIO
 
 
+# How long the process tree of a cancelled task has to exit after SIGTERM before
+# being killed with SIGKILL
+TERMINATION_GRACE_PERIOD_S = 2.0
+
+
 class PoeProcess:
     """
     Wraps asyncio.subprocess.Process with poe-specific metadata for shutdown handling.
     """
 
-    def __init__(self, process: Process, *, no_console_ctrl: bool = False):
+    def __init__(
+        self,
+        process: Process,
+        *,
+        no_console_ctrl: bool = False,
+        own_process_group: bool = False,
+    ):
         self._process = process
         self.no_console_ctrl = no_console_ctrl
+        # Whether the process was started as the leader of its own process group
+        # (POSIX only), so that its whole process tree can be signalled
+        self.own_process_group = own_process_group
 
     @property
     def pid(self) -> int:
@@ -53,6 +69,43 @@ class PoeProcess:
 
     def kill(self) -> None:
         self._process.kill()
+
+    def terminate_tree(self) -> None:
+        """
+        Stop the subprocess along with any processes it started. If the subprocess
+        leads its own process group then the group is sent SIGTERM, followed by
+        SIGKILL if it is still running after a grace period. Otherwise only the
+        subprocess itself is killed.
+        """
+        if not self.own_process_group:
+            if self.returncode is None:
+                self._process.kill()
+            return
+
+        if self._tree_may_be_running():
+            self._signal_group(signal.SIGTERM)
+            asyncio.get_running_loop().call_later(
+                TERMINATION_GRACE_PERIOD_S, self._kill_tree_if_running
+            )
+
+    def _tree_may_be_running(self) -> bool:
+        """
+        The process tree may be running if the subprocess hasn't exited, or if its
+        output pipe is still held open by a process it started.
+        """
+        return self.returncode is None or (
+            self.stdout is not None and not self.stdout.at_eof()
+        )
+
+    def _kill_tree_if_running(self) -> None:
+        if self._tree_may_be_running():
+            self._signal_group(signal.SIGKILL)  # type: ignore[attr-defined]
+
+    def _signal_group(self, sig: int) -> None:
+        # The subprocess was started in a new session so its pid is the process
+        # group id, which remains valid for as long as any process in the group does
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.killpg(self.pid, sig)  # type: ignore[attr-defined]
 
 
 class MetaPoeExecutor(type):
@@ -350,7 +403,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         no_console_ctrl = (
             self._is_windows and not shell and cmd[0].lower().endswith((".bat", ".cmd"))
         )
-        return PoeProcess(proc, no_console_ctrl=no_console_ctrl)
+        return PoeProcess(
+            proc,
+            no_console_ctrl=no_console_ctrl,
+            own_process_group=not self._is_windows,
+        )
 
     async def _pass_input_to_proc(self, proc: Process, input: bytes):
         if not proc.stdin:

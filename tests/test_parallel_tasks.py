@@ -1,5 +1,8 @@
 # ruff: noqa: E501
 import asyncio
+import os
+import sys
+import time
 from collections.abc import Sequence
 
 import pytest
@@ -921,6 +924,46 @@ def test_parallel_failure_reported_when_process_exit_is_reported_late(
         in result.capture_lines
     )
     assert result.code == 1
+
+
+def _wait_for_pid_exit(pid: int, timeout: float = 5.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        time.sleep(0.1)
+    return False
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+def test_parallel_abort_terminates_sibling_process_trees(
+    run_poe_subproc, temp_pyproject, tmp_path
+):
+    # The sibling's shell spawns a long running child. When the parallel task is
+    # aborted the whole process tree must be stopped, otherwise the orphaned child
+    # keeps the output pipe open and poe hangs until it exits.
+    pid_file = tmp_path / "grandchild.pid"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks]
+        fails.shell = "while [ ! -s '{pid_file}' ]; do sleep 0.05; done; exit 1"
+        spawns.shell = "poe_test_delayed_echo_with_pidfile 60000 x '{pid_file}' & wait"
+
+        [tool.poe.tasks.par]
+        parallel = ["fails", "spawns"]
+        """)
+
+    started = time.monotonic()
+    result = run_poe_subproc("par", cwd=project_path, timeout=20)
+
+    assert result.code == 1
+    assert time.monotonic() - started < 15
+    assert (
+        "Error: Parallel task 'par' aborted after failed subtask 'fails'"
+        in result.capture_lines
+    )
+    assert _wait_for_pid_exit(int(pid_file.read_text()))
 
 
 def test_parallel_bool_flag(run_poe):
