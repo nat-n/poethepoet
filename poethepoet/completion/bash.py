@@ -15,6 +15,7 @@ def get_bash_completion_script(name: str = "") -> str:
 
     name = name or "poe"
     func_name = f"_{name}_complete"
+    impl_func_name = f"{func_name}_words"
 
     # Get global options from argparse
     app = PoeThePoet(cwd=Path.cwd())
@@ -41,24 +42,28 @@ def get_bash_completion_script(name: str = "") -> str:
 
 {func_name}() {{
     local cur prev words cword
-    _init_completion -n = 2>/dev/null || {{
+    _init_completion -n =: 2>/dev/null || {{
         COMPREPLY=()
-        # Merge = signs split by COMP_WORDBREAKS (replicates -n = behavior)
-        local _i _w _last_idx
+        # Rejoin words split on = and : by COMP_WORDBREAKS, e.g. "db : migrate"
+        # (replicates -n =: behavior)
+        local _i _w _last_idx _join=0
         local -a _mw=()
         local _mc=0
         for (( _i=0; _i < ${{#COMP_WORDS[@]}}; _i++ )); do
             _w="${{COMP_WORDS[_i]}}"
             _last_idx=$(( ${{#_mw[@]}} - 1 ))
-            if [[ "$_w" == "=" && ${{#_mw[@]}} -gt 0 ]]; then
-                _mw[$_last_idx]+="="
-                (( _i == COMP_CWORD )) && _mc=$_last_idx
-            elif [[ ${{#_mw[@]}} -gt 0 && "${{_mw[$_last_idx]}}" == *= ]]; then
+            if [[ -n "$_w" && ${{#_mw[@]}} -gt 0 && "$_w" =~ ^[=:]+$ ]]; then
                 _mw[$_last_idx]+="$_w"
+                _join=1
+                (( _i == COMP_CWORD )) && _mc=$_last_idx
+            elif [[ -n "$_w" && "$_join" == 1 ]]; then
+                _mw[$_last_idx]+="$_w"
+                _join=0
                 (( _i == COMP_CWORD )) && _mc=$_last_idx
             else
                 (( _i == COMP_CWORD )) && _mc=${{#_mw[@]}}
                 _mw+=("$_w")
+                _join=0
             fi
         done
         words=("${{_mw[@]}}")
@@ -67,6 +72,21 @@ def get_bash_completion_script(name: str = "") -> str:
         if (( cword > 0 )); then prev="${{words[cword-1]}}"; else prev=""; fi
     }}
 
+    {impl_func_name}
+
+    # Readline only replaces the text after the last COMP_WORDBREAKS char in the
+    # current word, so strip everything up to it from each candidate
+    local _wb=""
+    [[ "$COMP_WORDBREAKS" == *=* ]] && _wb+="="
+    [[ "$COMP_WORDBREAKS" == *:* ]] && _wb+=":"
+    if [[ -n "$_wb" && "$cur" == *[$_wb]* ]]; then
+        local _wb_prefix="${{cur%"${{cur##*[$_wb]}}"}}"
+        COMPREPLY=("${{COMPREPLY[@]#"$_wb_prefix"}}")
+    fi
+}}
+
+# Compute completions from the merged cur, prev, words and cword of the caller
+{impl_func_name}() {{
     local target_path=""
     local task_position=""
     local potential_task=""
@@ -118,6 +138,8 @@ def get_bash_completion_script(name: str = "") -> str:
         case "$cur" in
             -C=*|--directory=*|--root=*)
                 local val="${{cur#*=}}" prefix="${{cur%%=*}}="
+                # Shadow cur so _filedir completes just the value
+                local cur="$val"
                 _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$val"))
                 COMPREPLY=("${{COMPREPLY[@]/#/$prefix}}")
                 return
@@ -230,6 +252,8 @@ def get_bash_completion_script(name: str = "") -> str:
             vals=($(compgen -W "$opt_choices" -- "$val_part"))
             COMPREPLY=("${{vals[@]/#/$prefix}}")
         else
+            # Shadow cur so _filedir completes just the value
+            local cur="$val_part"
             _filedir 2>/dev/null || COMPREPLY=($(compgen -f -- "$val_part"))
             COMPREPLY=("${{COMPREPLY[@]/#/$prefix}}")
         fi

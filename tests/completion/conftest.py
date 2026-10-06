@@ -105,6 +105,7 @@ def bash_harness(tmp_path):
         current: int,
         mock_poe_output: dict[str, str] | None = None,
         mock_files: list[str] | None = None,
+        use_init_completion: bool = True,
     ) -> BashHarnessResult:
         """
         Run bash completion script with stubbed builtins.
@@ -117,6 +118,8 @@ def bash_harness(tmp_path):
                 e.g., {"_list_tasks": "task1 task2"}
             mock_files: List of mock files for _filedir completion
                 e.g., ["file1.txt", "file2.py"]
+            use_init_completion: If False, simulate bash-completion not being
+                installed so the script's fallback word handling is used
 
         Returns:
             BashHarnessResult with captured completion behavior
@@ -126,6 +129,7 @@ def bash_harness(tmp_path):
             current=current,
             mock_poe_output=mock_poe_output or {},
             mock_files=mock_files or [],
+            use_init_completion=use_init_completion,
         )
 
         return runner.run(script, config)

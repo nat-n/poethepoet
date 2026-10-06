@@ -19,6 +19,7 @@ Key differences from Zsh:
     - No caching support (too complex for bash)
 """
 
+import re
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
@@ -172,11 +173,37 @@ class BashHarnessConfig:
     mock_poe_output: dict[str, str] = field(default_factory=dict)
     mock_files: list[str] = field(default_factory=list)
     debug: bool = False
+    # If False, _init_completion is unavailable (bash-completion not installed)
+    # so the script's own fallback word handling is exercised
+    use_init_completion: bool = True
 
 
 def escape_for_shell(value: str) -> str:
     """Escape a string for use in single-quoted shell context."""
     return value.replace("'", "'\"'\"'")
+
+
+# Characters from bash's default COMP_WORDBREAKS that are relevant to poe args
+_WORDBREAK_PATTERN = re.compile(r"([=:]+)")
+
+
+def split_comp_words(words: list[str], current: int) -> tuple[list[str], int]:
+    """
+    Split command line words the way readline does when building COMP_WORDS.
+
+    Runs of COMP_WORDBREAKS characters (= and :) become separate words, e.g.
+    ["poe", "db:migrate", "--flavor=van"] becomes
+    ["poe", "db", ":", "migrate", "--flavor", "=", "van"].
+    Returns the split words and the index of the current word within them.
+    """
+    comp_words: list[str] = []
+    comp_cword = 0
+    for index, word in enumerate(words):
+        pieces = [piece for piece in _WORDBREAK_PATTERN.split(word) if piece]
+        comp_words.extend(pieces or [""])
+        if index == current:
+            comp_cword = len(comp_words) - 1
+    return comp_words, comp_cword
 
 
 class BashHarnessBuilder:
@@ -208,11 +235,40 @@ class BashHarnessBuilder:
             "_init_completion() {",
             f'    {debug_prefix} _init_completion called" >&2',
             '    echo "1" > "$_HARNESS_DIR/init_completion_called"',
-            "    # Set up completion variables like real _init_completion does",
-            '    cur="${COMP_WORDS[COMP_CWORD]}"',
-            '    prev="${COMP_WORDS[COMP_CWORD-1]}"',
-            '    words=("${COMP_WORDS[@]}")',
-            "    cword=$COMP_CWORD",
+            *(
+                []
+                if self.config.use_init_completion
+                else ["    return 1  # simulate bash-completion not being installed"]
+            ),
+            "    # Set up completion variables like real _init_completion does,",
+            "    # rejoining words that readline split on the -n wordbreak chars",
+            '    local _excl=""',
+            "    while [[ $# -gt 0 ]]; do",
+            '        case "$1" in',
+            '            -n) _excl="$2"; shift 2 ;;',
+            "            *) shift ;;",
+            "        esac",
+            "    done",
+            "    words=()",
+            "    cword=0",
+            "    local _i _w _join=0",
+            "    for (( _i=0; _i < ${#COMP_WORDS[@]}; _i++ )); do",
+            '        _w="${COMP_WORDS[_i]}"',
+            '        if [[ -n "$_excl" && -n "$_w" && ${#words[@]} -gt 0 ]] \\',
+            '            && [[ "$_w" =~ ^[$_excl]+$ ]]; then',
+            '            words[${#words[@]}-1]+="$_w"',
+            "            _join=1",
+            '        elif [[ "$_join" == 1 && -n "$_w" ]]; then',
+            '            words[${#words[@]}-1]+="$_w"',
+            "            _join=0",
+            "        else",
+            '            words+=("$_w")',
+            "            _join=0",
+            "        fi",
+            "        (( _i == COMP_CWORD )) && cword=$(( ${#words[@]} - 1 ))",
+            "    done",
+            '    cur="${words[cword]}"',
+            '    prev="${words[cword-1]}"',
             "    COMPREPLY=()",
             "    return 0",
             "}",
@@ -351,15 +407,19 @@ class BashHarnessBuilder:
             "COMP_WORDS=()",
         ]
 
-        # Add words array (bash arrays are 0-indexed)
-        for i, word in enumerate(self.config.words):
+        # Add words array (bash arrays are 0-indexed), split on COMP_WORDBREAKS
+        # chars the same way readline does
+        comp_words, comp_cword = split_comp_words(
+            self.config.words, self.config.current
+        )
+        for index, word in enumerate(comp_words):
             escaped_word = escape_for_shell(word)
-            lines.append(f"COMP_WORDS[{i}]='{escaped_word}'")
+            lines.append(f"COMP_WORDS[{index}]='{escaped_word}'")
 
         lines.extend(
             [
                 "",
-                f"COMP_CWORD={self.config.current}",
+                f"COMP_CWORD={comp_cword}",
                 "",
             ]
         )
@@ -454,10 +514,8 @@ class BashHarnessBuilder:
             "# Call the completion function",
             "_poe_complete",
             "",
-            "# Capture final COMPREPLY if not already captured",
-            'if [[ ! -f "$_HARNESS_DIR/compreply" ]]; then',
-            '    printf \'%s\\n\' "${COMPREPLY[@]}" > "$_HARNESS_DIR/compreply"',
-            "fi",
+            "# Capture final COMPREPLY (after any post-processing by the script)",
+            'printf \'%s\\n\' "${COMPREPLY[@]}" > "$_HARNESS_DIR/compreply"',
         ]
         return "\n".join(parts)
 
