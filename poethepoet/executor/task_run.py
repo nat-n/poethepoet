@@ -147,19 +147,6 @@ class PoeTaskRun:
             and all(child.done() for child in self._children)
         )
 
-    async def events(self) -> AsyncIterable[PoeTaskRunEvent]:
-        """
-        An async generator that yields events when the task or any of its direct child
-        tasks completes or fails.
-        """
-        queue: asyncio.Queue[PoeTaskRunEvent] = asyncio.Queue()
-        unsubscribe = self.subscribe(queue.put_nowait)
-        try:
-            while not self.done() or not queue.empty():
-                yield await queue.get()
-        finally:
-            unsubscribe()
-
     def add_new_process_callback(
         self, callback: Callable[[PoeProcess], None]
     ) -> Callable[[], None]:
@@ -353,25 +340,6 @@ class PoeTaskRun:
             # Always suppress errors from child tasks, because it is the parent's
             # responsibility to handle them according to its own ignore_failure setting.
             await child.wait(suppress_errors=True)
-
-    def subscribe(
-        self, callback: Callable[[PoeTaskRunEvent], None]
-    ) -> Callable[[], None]:
-        """
-        Subscribe to events on this task run. The callback will be called with a
-        PoeTaskRunEvent when the task or any of its direct child tasks completes or
-        fails.
-        """
-        cancel_callbacks = [
-            self.add_done_callback(callback),
-            *(child.add_done_callback(callback) for child in self._children),
-        ]
-
-        def unsubscribe():
-            for cancel_callback in cancel_callbacks:
-                cancel_callback()
-
-        return unsubscribe
 
     async def processes(self) -> AsyncIterable[tuple[PoeTaskRun, PoeProcess]]:
         """

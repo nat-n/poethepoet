@@ -1,7 +1,10 @@
 # ruff: noqa: E501
+import asyncio
 from collections.abc import Sequence
 
 import pytest
+
+from poethepoet.executor.base import PoeProcess
 
 BUFFER_LIMIT_OVERRIDE = 64
 BUFFER_LIMIT_OVERRIDE_ENV = {"POE_BUFFERED_STDOUT_LIMIT": str(BUFFER_LIMIT_OVERRIDE)}
@@ -881,6 +884,43 @@ def test_parallel_ignore_but_propagate_failures(
         ),
     )
     assert result.code == 0
+
+
+def test_parallel_failure_reported_when_process_exit_is_reported_late(
+    run_poe, temp_pyproject, monkeypatch
+):
+    # A process's returncode is set before asyncio reports it as finished (e.g. while
+    # its stdout pipe is still being closed). A failing subtask must still be
+    # reported even if its sibling completes during that window.
+    original_wait = PoeProcess.wait
+
+    async def wait_reporting_failures_late(self):
+        returncode = await original_wait(self)
+        if returncode:
+            await asyncio.sleep(1)
+        return returncode
+
+    monkeypatch.setattr(PoeProcess, "wait", wait_reporting_failures_late)
+    project_path = temp_pyproject("""
+        [tool.poe.tasks]
+        fails = "poe_test_fail 0 128"
+        succeeds = "poe_test_delayed_echo 100 ok"
+
+        [tool.poe.tasks.par]
+        parallel = ["fails", "succeeds"]
+        """)
+
+    result = run_poe("par", cwd=project_path)
+
+    assert (
+        "Warning: Parallel subtask 'fails' failed with non-zero exit status"
+        in result.capture_lines
+    )
+    assert (
+        "Error: Parallel task 'par' aborted after failed subtask 'fails'"
+        in result.capture_lines
+    )
+    assert result.code == 1
 
 
 def test_parallel_bool_flag(run_poe):

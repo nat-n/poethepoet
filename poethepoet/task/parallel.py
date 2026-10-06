@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
-from ..executor.task_run import PoeTaskRun, PoeTaskRunError
 from ..helpers.eventloop import DynamicTaskSet
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    import asyncio
     from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 
     from ..config import ConfigPartition, PoeConfig
@@ -18,6 +17,7 @@ if TYPE_CHECKING:
     from ..context import RunContext
     from ..env.task_env import TaskEnv
     from ..executor.base import PoeProcess
+    from ..executor.task_run import PoeTaskRun
     from ..options.annotations import Disinherited
     from .base import TaskSpecFactory
 
@@ -270,18 +270,15 @@ class ParallelTask(PoeTask):
             task_state.ignore_failure()
 
         task_group = DynamicTaskSet()
-        task_group.create_task(
-            self._handle_task_failures(task_state),
-            name="handle_task_failures:" + self.name,
-        )
+        subtask_runs: list[PoeTaskRun] = []
 
         with context.output_streaming(enabled=True) as streaming_enabled:
             for subtask in self._subtasks:
-                subtask_run: PoeTaskRun | None = None
                 try:
                     subtask_run = await subtask.run(context=context, parent_env=env)
                     await task_state.add_child(subtask_run)
-                except ExecutionError as error:
+                    subtask_runs.append(subtask_run)
+                except ExecutionError as error:  # noqa: PERF203
                     if ignore_fail:
                         self.ctx.io.print_warning(error.msg, message_verbosity=0)
                     else:
@@ -291,6 +288,11 @@ class ParallelTask(PoeTask):
                         ) from error
 
             await task_state.finalize()
+
+            task_group.create_task(
+                self._handle_task_failures(task_state, subtask_runs),
+                name="handle_task_failures:" + self.name,
+            )
 
             if streaming_enabled:
                 # Only collect outputs if output streaming wasn't already enabled
@@ -310,33 +312,61 @@ class ParallelTask(PoeTask):
                 )
                 raise
 
-    async def _handle_task_failures(self, task_state: PoeTaskRun):
+    async def _handle_task_failures(
+        self, task_state: PoeTaskRun, subtask_runs: Sequence[PoeTaskRun]
+    ):
+        """
+        Wait for every subtask to complete, reporting each one that fails. Unless
+        ignore_fail is set, the first failure aborts the parallel task.
+        """
         ignore_fail = self.spec.options.ignore_fail
         non_zero_subtasks = []
-        # listen for completion and error events from subtasks
-        async for event in task_state.events():
-            if isinstance(event, PoeTaskRunError):
-                if event.exception is None:
-                    self.ctx.io.print_warning(
-                        "Parallel subtask %r failed with non-zero exit status",
-                        event.name,
-                        message_verbosity=0,
-                    )
-                else:
-                    self.ctx.io.print_warning(
-                        "Parallel subtask %r failed with exception: %s",
-                        event.name,
-                        event.exception,
-                        message_verbosity=0,
-                    )
+        # Wait on each subtask directly, rather than inferring completion from the
+        # state of its processes, so that no failure can go unnoticed.
+        pending = {
+            asyncio.create_task(
+                self._wait_for_subtask(subtask_run),
+                name=f"wait_for_subtask:{subtask_run.name}",
+            )
+            for subtask_run in subtask_runs
+        }
+        try:
+            while pending:
+                finished, pending = await asyncio.wait(
+                    pending, return_when=asyncio.FIRST_COMPLETED
+                )
+                for subtask_run in sorted(
+                    (task.result() for task in finished), key=subtask_runs.index
+                ):
+                    if not subtask_run.has_failure:
+                        continue
 
-                if not ignore_fail:
-                    task_state.force_failure()
-                    raise ExecutionError(
-                        f"Parallel task {self.name!r} aborted after failed subtask "
-                        f"{event.name!r}"
-                    )
-                non_zero_subtasks.append(event.name)
+                    if subtask_run.asyncio_task.cancelled() or not (
+                        exception := subtask_run.asyncio_task.exception()
+                    ):
+                        self.ctx.io.print_warning(
+                            "Parallel subtask %r failed with non-zero exit status",
+                            subtask_run.name,
+                            message_verbosity=0,
+                        )
+                    else:
+                        self.ctx.io.print_warning(
+                            "Parallel subtask %r failed with exception: %s",
+                            subtask_run.name,
+                            exception,
+                            message_verbosity=0,
+                        )
+
+                    if not ignore_fail:
+                        task_state.force_failure()
+                        raise ExecutionError(
+                            f"Parallel task {self.name!r} aborted after failed "
+                            f"subtask {subtask_run.name!r}"
+                        )
+                    non_zero_subtasks.append(subtask_run.name)
+        finally:
+            for task in pending:
+                task.cancel()
 
         if non_zero_subtasks and ignore_fail == "return_non_zero":
             task_state.force_failure()
@@ -345,6 +375,11 @@ class ParallelTask(PoeTask):
                 f"Subtask{plural} {', '.join(repr(st) for st in non_zero_subtasks)} "
                 "returned non-zero exit status"
             )
+
+    @staticmethod
+    async def _wait_for_subtask(subtask_run: PoeTaskRun) -> PoeTaskRun:
+        await subtask_run.wait()
+        return subtask_run
 
     async def _collect_output_streams(
         self, task_state: PoeTaskRun, task_group: DynamicTaskSet
