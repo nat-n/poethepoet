@@ -82,12 +82,28 @@ class Virtualenv:
 
     def get_env_vars(self, base_env: Mapping[str, str]) -> dict[str, str]:
         bin_dir = str(self.bin_dir())
-        # Revert path update from existing virtualenv if applicable
-        path_var = os.environ.get("_OLD_VIRTUAL_PATH", "") or os.environ.get("PATH", "")
+        path_delim = ";" if self._is_windows else ":"
+        path_var = base_env.get("PATH", "")
+
+        if (active_venv_path := base_env.get("VIRTUAL_ENV")) and (
+            active_venv := Virtualenv(Path(active_venv_path))
+        ).path != self.path:
+            # Revert path update from another active virtualenv
+            active_bin_dir = active_venv.bin_dir()
+            active_bin_dirs = {
+                str(active_bin_dir),
+                str(Path(active_venv_path, active_bin_dir.name)),
+            }
+            path_var = path_delim.join(
+                entry
+                for entry in path_var.split(path_delim)
+                if entry not in active_bin_dirs
+            )
         old_path_var = path_var
 
-        if not path_var.startswith(bin_dir):
-            path_delim = ";" if self._is_windows else ":"
+        if not path_var:
+            path_var = bin_dir
+        elif path_var.split(path_delim)[0] != bin_dir:
             path_var = bin_dir + path_delim + path_var
 
         result = dict(

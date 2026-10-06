@@ -1,6 +1,10 @@
+import os
 import sys
+from pathlib import Path
 
 import pytest
+
+from poethepoet.virtualenv import Virtualenv
 
 PY_V = f"{sys.version_info.major}.{sys.version_info.minor}"
 
@@ -294,3 +298,105 @@ def test_global_executor_config_rejects_wrong_value_type(temp_pyproject, run_poe
     assert "Option 'location' must have a value of type" in result.capture
     assert "Couldn't parse executor options" not in result.capture
     assert result.stdout == ""
+
+
+def _make_fake_virtualenv(location: Path) -> Path:
+    """
+    Create the minimal file structure that poe recognises as a posix virtualenv
+    """
+    bin_dir = location / "bin"
+    bin_dir.mkdir(parents=True)
+    bin_dir.joinpath("activate").touch()
+    bin_dir.joinpath("python").touch()
+    location.joinpath("lib", f"python{PY_V}", "site-packages").mkdir(parents=True)
+    return bin_dir
+
+
+def _make_shell_script(bin_dir: Path, name: str, content: str) -> Path:
+    """
+    Create an executable posix shell script with the given content
+    """
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    executable = bin_dir / name
+    executable.write_text(f"#!/bin/sh\n{content}\n")
+    executable.chmod(0o755)
+    return executable
+
+
+def test_virtualenv_get_env_vars_extends_given_path(tmp_path):
+    """
+    The venv bin dir is prepended to the PATH from the given env, not os.environ
+    """
+    venv = Virtualenv(tmp_path / "venv")
+    base_path = os.pathsep.join(["/custom/bin", "/usr/bin"])
+
+    result = venv.get_env_vars({"PATH": base_path, "PYTHONHOME": "/py/home"})
+
+    assert result["PATH"] == os.pathsep.join([str(venv.bin_dir()), base_path])
+    assert result["VIRTUAL_ENV"] == str(venv.path)
+    assert result["_OLD_VIRTUAL_PATH"] == base_path
+    assert "PYTHONHOME" not in result
+    assert result["_OLD_VIRTUAL_PYTHONHOME"] == "/py/home"
+
+
+def test_virtualenv_get_env_vars_replaces_active_venv(tmp_path):
+    """
+    The bin dir of another active virtualenv is removed from the PATH
+    """
+    venv = Virtualenv(tmp_path / "venv")
+    active_venv = Virtualenv(tmp_path / "active_venv")
+    base_path = os.pathsep.join(["/custom/bin", str(active_venv.bin_dir()), "/usr/bin"])
+
+    result = venv.get_env_vars(
+        {"PATH": base_path, "VIRTUAL_ENV": str(active_venv.path)}
+    )
+
+    expected_old_path = os.pathsep.join(["/custom/bin", "/usr/bin"])
+    assert result["PATH"] == os.pathsep.join([str(venv.bin_dir()), expected_old_path])
+    assert result["VIRTUAL_ENV"] == str(venv.path)
+    assert result["_OLD_VIRTUAL_PATH"] == expected_old_path
+
+
+def test_virtualenv_get_env_vars_doesnt_duplicate_bin_dir(tmp_path):
+    """
+    The venv bin dir is not prepended again if it is already first on the PATH
+    """
+    venv = Virtualenv(tmp_path / "venv")
+    base_path = os.pathsep.join([str(venv.bin_dir()), "/usr/bin"])
+
+    result = venv.get_env_vars({"PATH": base_path})
+
+    assert result["PATH"] == base_path
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Uses a posix shell script")
+def test_virtualenv_executor_keeps_task_path(run_poe, temp_pyproject, tmp_path):
+    """
+    A PATH set in the task env reaches the subprocess, behind the venv bin dir
+    """
+    venv_bin = _make_fake_virtualenv(tmp_path / "fake_venv")
+    custom_bin = tmp_path / "custom_bin"
+    _make_shell_script(custom_bin, "only_on_task_path", "echo found it")
+    project_path = temp_pyproject(f"""
+            [tool.poe.executor]
+            type = "virtualenv"
+            location = "{venv_bin.parent.as_posix()}"
+
+            [tool.poe.tasks.custom-bin]
+            cmd = "only_on_task_path"
+            env = {{ PATH = "{custom_bin.as_posix()}:${{PATH}}" }}
+
+            [tool.poe.tasks.show-path]
+            cmd = "poe_test_env"
+            env = {{ PATH = "{custom_bin.as_posix()}:${{PATH}}" }}
+        """)
+
+    result = run_poe("custom-bin", cwd=project_path)
+    assert result.capture == "Poe => only_on_task_path\n"
+    assert result.stdout == "found it\n"
+    assert result.stderr == ""
+
+    result = run_poe("show-path", cwd=project_path)
+    assert result.capture == "Poe => poe_test_env\n"
+    assert f"PATH={venv_bin}:{custom_bin}:" in result.stdout
+    assert result.stderr == ""
