@@ -287,6 +287,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 await asyncio.create_subprocess_exec(sys.executable, "-c", "")
             )
         popen_kwargs: MutableMapping[str, Any] = {}
+        capture_file = None
         popen_kwargs["env"] = dict(
             (self.env.get_subprocess_env_vars() if env is None else env),
             POE_ACTIVE=self.__key__,
@@ -298,8 +299,15 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 if str(self.capture_stdout) in ("/dev/null", "NUL", "D:\\dev\\null"):
                     popen_kwargs["stdout"] = subprocess.DEVNULL
                 else:
-                    # ruff: noqa: SIM115, ASYNC230
-                    popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
+                    try:
+                        # ruff: noqa: SIM115, ASYNC230
+                        capture_file = open(self.capture_stdout, "wb")
+                    except OSError as error:
+                        raise ExecutionError(
+                            f"Cannot open file {str(self.capture_stdout)!r} for "
+                            f"capture_stdout: {error.strerror}"
+                        ) from error
+                    popen_kwargs["stdout"] = capture_file
             else:
                 popen_kwargs["stdout"] = PIPE
                 if self.context.enable_output_streaming:
@@ -318,10 +326,17 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         else:
             popen_kwargs["start_new_session"] = True
 
-        if shell:
-            proc = await asyncio.create_subprocess_shell("".join(cmd), **popen_kwargs)
-        else:
-            proc = await asyncio.create_subprocess_exec(*cmd, **popen_kwargs)
+        try:
+            if shell:
+                proc = await asyncio.create_subprocess_shell(
+                    "".join(cmd), **popen_kwargs
+                )
+            else:
+                proc = await asyncio.create_subprocess_exec(*cmd, **popen_kwargs)
+        finally:
+            if capture_file is not None:
+                # The subprocess has its own handle on the file
+                capture_file.close()
 
         if input is not None:
             # TODO: Track the write task so we can cancel it if needed, and prevent GC

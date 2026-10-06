@@ -607,3 +607,35 @@ def test_cmd_with_invalid_glob_pattern(run_poe, temp_pyproject):
     assert result.capture.startswith("Error: Invalid glob pattern '**.txt'")
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("capture_stdout", "expected_path"),
+    [
+        ("missing_dir/out.txt", "missing_dir/out.txt"),
+        ("existing_dir", "existing_dir"),
+        ("${UNSET_CAPTURE_PATH}", ""),
+    ],
+)
+def test_cmd_with_capture_stdout_to_unwritable_path(
+    run_poe, temp_pyproject, capture_stdout, expected_path
+):
+    """
+    A capture_stdout path that cannot be opened for writing gives a clear error
+    """
+    project_path = temp_pyproject(
+        "[tool.poe.tasks.capture]\n"
+        'cmd = "poe_test_echo hi"\n'
+        f'capture_stdout = "{capture_stdout}"\n'
+    )
+    project_path.joinpath("existing_dir").mkdir()
+
+    result = run_poe("capture", cwd=project_path)
+    assert result.code == 1
+    assert result.capture.startswith(
+        "Poe <= poe_test_echo hi\n"
+        "Error: Cannot open file "
+        f"{str(project_path.joinpath(expected_path))!r} for capture_stdout"
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
