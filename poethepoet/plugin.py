@@ -7,7 +7,7 @@ from cleo.events.console_events import COMMAND, TERMINATE
 from poetry.console.application import COMMANDS, Application
 from poetry.plugins.application_plugin import ApplicationPlugin
 
-from .exceptions import PoePluginException
+from .exceptions import PoeException, PoePluginException
 
 if TYPE_CHECKING:
     from cleo.events.console_command_event import ConsoleCommandEvent
@@ -98,11 +98,15 @@ class PoetryPlugin(ApplicationPlugin):
             import sys
 
             debug = bool(int(os.environ.get("DEBUG_POE_PLUGIN", "0")))
-            print(
-                "error: poethepoet plugin encountered an error."
-                + ("" if debug else " Set DEBUG_POE_PLUGIN=1 for details."),
-                file=sys.stderr,
-            )
+            if isinstance(error := sys.exc_info()[1], PoeException):
+                # Problems with the plugin config have a helpful message to show
+                print(f"error: poethepoet plugin: {error.msg}", file=sys.stderr)
+            else:
+                print(
+                    "error: poethepoet plugin encountered an error."
+                    + ("" if debug else " Set DEBUG_POE_PLUGIN=1 for details."),
+                    file=sys.stderr,
+                )
             if debug:
                 import traceback
 
@@ -133,7 +137,7 @@ class PoetryPlugin(ApplicationPlugin):
                 if task_name in COMMANDS:
                     raise PoePluginException(
                         f"Poe task {task_name!r} conflicts with a poetry command. "
-                        "Please rename the task or the configure a command prefix."
+                        "Please rename the task or configure a command prefix."
                     )
                 if task_name.startswith("_"):
                     continue

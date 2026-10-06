@@ -216,3 +216,27 @@ def test_post_hook_not_run_after_failed_command(run_poetry_2, projects):
     assert "pre_check_hook" in result.stdout
     assert "post_check_hook" not in result.stdout
     assert result.code != 0
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    ("project_dir", "expected_error"),
+    [
+        (
+            "conflicting_prefix",
+            "error: poethepoet plugin: The configured command prefix 'build' "
+            "conflicts with a poetry command.",
+        ),
+        (
+            "conflicting_task",
+            "error: poethepoet plugin: Poe task 'build' conflicts with a poetry "
+            "command. Please rename the task or configure a command prefix.",
+        ),
+    ],
+)
+def test_plugin_config_errors_are_shown(
+    run_poetry_2, projects, project_dir, expected_error
+):
+    result = run_poetry_2(["list"], cwd=projects["poetry_plugin"] / project_dir)
+    assert expected_error in result.stderr
+    assert "Set DEBUG_POE_PLUGIN=1 for details" not in result.stderr
