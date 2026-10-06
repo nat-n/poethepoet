@@ -240,3 +240,20 @@ def test_plugin_config_errors_are_shown(
     result = run_poetry_2(["list"], cwd=projects["poetry_plugin"] / project_dir)
     assert expected_error in result.stderr
     assert "Set DEBUG_POE_PLUGIN=1 for details" not in result.stderr
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    ("verbosity_flag", "expect_task_header"),
+    [("-v", False), ("-vv", True), ("-vvv", True)],
+)
+def test_poetry_verbosity_is_passed_to_poe(
+    run_poetry_2, projects, verbosity_flag, expect_task_header
+):
+    # The hooks project sets a default poe verbosity of -2
+    result = run_poetry_2(
+        [verbosity_flag, "poe", "say", "hello"],
+        cwd=projects["poetry_plugin"] / "hooks",
+    )
+    assert "hello\n" in result.stdout
+    assert ("Poe => echo hello" in result.stdout) is expect_task_header

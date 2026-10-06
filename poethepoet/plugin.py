@@ -78,12 +78,13 @@ class PoeCommand(Command):
             ),
         )
 
+        # Check most verbose first, since is_verbose() is also true for -vv and -vvv
         if io.output.is_quiet():
             poe.modify_verbosity(-1)
-        elif io.is_verbose():
-            poe.modify_verbosity(1)
         elif io.is_very_verbose():
             poe.modify_verbosity(2)
+        elif io.is_verbose():
+            poe.modify_verbosity(1)
 
         return poe
 
