@@ -1840,7 +1840,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes the content as a shell scripts inside a new shell interpreter.\nNormally the bash interpreter to used unless specified otherwise.",
+          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a posix shell (sh, bash or zsh) is used unless specified otherwise.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",
@@ -1960,7 +1960,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes the content as a shell scripts inside a new shell interpreter.\nNormally the bash interpreter to used unless specified otherwise.",
+          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a posix shell (sh, bash or zsh) is used unless specified otherwise.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",

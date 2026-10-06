@@ -506,15 +506,17 @@ class IncludedConfig(ConfigPartition):
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
         """
-        A map of environment variables to be set for all tasks in the included
-        config.
+        A map of environment variables to be set for all tasks, including tasks
+        defined outside of the included config. Values from later includes take
+        precedence over earlier ones, and the main config's env takes precedence
+        over all of them.
         """
 
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
-        Provide one or more env files to be loaded before running tasks from this
-        included config. If an array is provided, files will be loaded in the
-        given order.
+        Provide one or more env files to be loaded before running any task,
+        including tasks defined outside of the included config. If an array is
+        provided, files will be loaded in the given order.
         """
 
         tasks: Mapping[str, Any] = EmptyDict
