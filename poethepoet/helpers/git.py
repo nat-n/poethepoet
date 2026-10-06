@@ -31,10 +31,10 @@ class GitRepo:
         """
         Resolve the path of this git repo
         """
-        proc, captured_stdout = self._exec(
+        returncode, captured_stdout = self._exec(
             "rev-parse", "--show-superproject-working-tree", "--show-toplevel"
         )
-        if proc.returncode == 0:
+        if returncode == 0:
             captured_lines = (
                 line.strip() for line in captured_stdout.decode().strip().split("\n")
             )
@@ -47,19 +47,23 @@ class GitRepo:
         Resolve the path of this git repo, unless this repo is a git submodule,
         then resolve the path of the main git repo.
         """
-        proc, captured_stdout = self._exec(
+        returncode, captured_stdout = self._exec(
             "rev-parse", "--show-superproject-working-tree", "--show-toplevel"
         )
-        if proc.returncode == 0:
+        if returncode == 0:
             return Path(captured_stdout.decode().strip().split("\n")[0])
         return None
 
-    def _exec(self, *args: str) -> tuple[Popen, bytes]:
-        proc = Popen(
-            ["git", *args],
-            cwd=self._seed_path,
-            stdout=PIPE,
-            stderr=PIPE,
-        )
+    def _exec(self, *args: str) -> tuple[int, bytes]:
+        try:
+            proc = Popen(
+                ["git", *args],
+                cwd=self._seed_path,
+                stdout=PIPE,
+                stderr=PIPE,
+            )
+        except OSError:
+            # The git executable isn't available, so no git repo can be found
+            return 1, b""
         captured_stdout, _ = proc.communicate()
-        return proc, captured_stdout
+        return proc.returncode, captured_stdout
