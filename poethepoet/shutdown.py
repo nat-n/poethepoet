@@ -33,7 +33,7 @@ class ShutdownManager:
 
     def shutdown(self, signum=None, frame=None):
         self._io.print_debug(" ! Termination requested with signal: '%s'", signum or "")
-        if signum is signal.SIGTERM:
+        if signum == signal.SIGTERM:
             self._urgency += max(1, 3 - self._urgency)
         else:
             self._urgency += 1
@@ -115,10 +115,14 @@ class ShutdownManager:
                     else:
                         self.processes.discard(proc)
             else:
-                while self.processes:
-                    proc = self.processes.pop()
+                for proc in tuple(self.processes):
                     if proc.returncode is None:
-                        self._send_signal_to_group(proc, 9)
+                        self._io.print_debug(
+                            " ! Sending SIGTERM to subprocess group %s", proc.pid
+                        )
+                        self._send_signal_to_group(proc, signal.SIGTERM)
+                    else:
+                        self.processes.discard(proc)
 
         if self._urgency >= 4:
             self._io.print_debug(" ! Forceful shutdown triggered: killing subprocesses")
