@@ -34,3 +34,33 @@ def test_invalid_args_config_is_rejected(
     assert "Traceback" not in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+@pytest.mark.parametrize("positional", ["true", "false"])
+def test_required_arg_with_exact_multiple_must_be_given(
+    temp_pyproject, run_poe, positional
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.pair]
+        cmd = "poe_test_echo ${{items}}"
+        [[tool.poe.tasks.pair.args]]
+        name = "items"
+        positional = {positional}
+        multiple = 2
+        required = true
+        """)
+    result = run_poe("pair", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid arguments for task 'pair'" in result.capture
+    assert result.stdout == ""
+
+    result = run_poe(
+        "pair",
+        *(() if positional == "true" else ("--items",)),
+        "a",
+        "b",
+        cwd=project_path,
+    )
+    assert result.code == 0
+    assert result.capture == "Poe => poe_test_echo a b\n"
+    assert result.stdout == "a b\n"

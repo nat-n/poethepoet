@@ -471,11 +471,9 @@ class PoeTaskArgs:
         multiple = arg.get("multiple", False)
         arg_type = str(arg.get("type"))
 
-        if multiple is True:
+        if multiple:
+            # An exact count (multiple = N) is enforced by _validate_exact_count
             result["nargs"] = "+" if required else "*"
-            result["action"] = "extend"
-        elif multiple and isinstance(multiple, int):
-            result["nargs"] = "*"
             result["action"] = "extend"
 
         if multiple:
