@@ -320,8 +320,8 @@ class TestZshCompletionE2E:
 
         assert result.arguments_called
         specs_text = "\n".join(result.arguments_specs)
-        # Quoted choices should appear
-        assert "quick run" in specs_text or "'quick run'" in specs_text
+        # Quoted choices are re-quoted with backslashes for the (...) action
+        assert ":value:(quick\\ run full\\ test smoke)" in specs_text
 
     # ========== Option=value style completion tests ==========
 
@@ -363,6 +363,35 @@ class TestZshCompletionE2E:
         for spec in result.arguments_specs:
             if spec.startswith(":"):
                 assert "=[" not in spec, f"Positional arg should NOT have '=': {spec}"
+
+    def test_arg_specs_escape_special_chars(self, zsh_harness, completion_script):
+        """
+        ] in help, and : ( ) in choices must be escaped in _arguments specs,
+        otherwise zsh fails to parse the specs and offers no completions.
+        """
+        mock_output = {
+            "_zsh_describe_tasks": "pick:Pick something",
+            "_describe_task_args": (
+                "--flavor,-f\tstring\tFlavor [x] here\ta:b x(y) 'choc chip'\n"
+                "--upper\tboolean\ta]b\t_\n"
+                "size\tpositional\tServing size\th:1 t(2)"
+            ),
+        }
+
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "pick", ""],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.arguments_called
+        assert (
+            "(--flavor -f)--flavor=[Flavor [x\\] here]:value:(a\\:b x\\(y\\) choc\\ chip)"
+            in result.arguments_specs
+        )
+        assert "--upper[a\\]b]" in result.arguments_specs
+        assert ":size -- Serving size:(h\\:1 t\\(2\\))" in result.arguments_specs
 
     def test_single_option_spec_includes_equals(self, zsh_harness, completion_script):
         """Single-form value options should also include '='."""
