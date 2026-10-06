@@ -1,3 +1,8 @@
+import sys
+
+import pytest
+
+
 def test_run_poe_merges_env_and_scrubs_inherited_poe_vars(
     run_poe, temp_pyproject, monkeypatch
 ):
@@ -31,3 +36,15 @@ def test_run_poe_env_can_set_project_dir(run_poe, temp_pyproject, monkeypatch):
     assert result.code == 0
     assert (project_path / "hello.txt").read_text() == "hello from env project dir\n"
     assert result.stderr == ""
+
+
+def test_run_poe_rejects_unknown_project_key(run_poe):
+    with pytest.raises(KeyError, match="Unknown test project 'no_such'"):
+        run_poe("echo", project="no_such")
+
+
+def test_run_poe_main_restores_sys_argv(run_poe_main):
+    prev_argv = list(sys.argv)
+    result = run_poe_main("--version")
+    assert result.code == 0
+    assert sys.argv == prev_argv

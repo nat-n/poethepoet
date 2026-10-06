@@ -72,7 +72,7 @@ def projects():
         {
             f"{project_key}/"
             + re.match(
-                rf".*?/{project_key}_project/([_\w\/]+?)(:?\/pyproject)?.toml$",
+                rf".*?/{project_key}_project/([-.\w/]+?)(?:\/pyproject)?\.toml$",
                 path.as_posix(),
             ).groups()[0]: path
             for project_key, project_path in projects.items()
@@ -81,6 +81,20 @@ def projects():
         }
     )
     return projects
+
+
+def resolve_project_path(
+    projects: Mapping[str, Path], project: str | None, default: Path | str
+) -> Path | str:
+    """
+    Look up a test project by key, failing loudly on an unknown key rather than
+    silently falling back to the default project.
+    """
+    if project is None:
+        return default
+    if project not in projects:
+        raise KeyError(f"Unknown test project {project!r}")
+    return projects[project]
 
 
 @pytest.fixture(scope="session")
@@ -186,11 +200,14 @@ class PoeTestRunHandle(NamedTuple):
         returncode = 0
         try:
             task_out, task_err = self.process.communicate(timeout=timeout)
-        except TimeoutExpired as error:
+        except TimeoutExpired:
             returncode = 124
             self.process.send_signal(signal.SIGINT)
-            task_out = error.stdout or b""
-            task_err = error.stderr or b""
+            try:
+                task_out, task_err = self.process.communicate(timeout=5)
+            except TimeoutExpired:
+                self.process.kill()
+                task_out, task_err = self.process.communicate()
 
         with self.capture_path.open("rb") as output_file:
             captured_output = (
@@ -284,7 +301,7 @@ def run_poe_subproc(run_poe_subproc_handle, projects, tmp_path, is_windows):
         timeout: int = 30,
     ) -> PoeTestRunResult:
         if cwd is None:
-            cwd = str(projects.get(project, projects["example"]))
+            cwd = str(resolve_project_path(projects, project, projects["example"]))
 
         if config is not None:
             config_path = tmp_path.joinpath("tmp_test_config_file")
@@ -322,7 +339,7 @@ def run_poe(capfd, projects):
         program_name="poe",
         env: Mapping[str, str] | None = None,
     ) -> PoeTestRunResult:
-        cwd = projects.get(project, cwd)
+        cwd = resolve_project_path(projects, project, cwd)
         output_capture = StringIO()
         run_env = build_poe_test_env(env)
         with patched_environ(run_env):
@@ -356,12 +373,13 @@ def run_poe_main(capsys, projects):
         cwd: Path | str = projects["example"],
         project: str | None = None,
     ) -> PoeTestRunResult:
-        cwd = projects.get(project, cwd)
+        cwd = resolve_project_path(projects, project, cwd)
         from poethepoet import main
 
         prev_cwd = os.getcwd()
+        prev_argv = sys.argv
         os.chdir(cwd)
-        sys.argv = ("poe", *cli_args)
+        sys.argv = ["poe", *cli_args]
         try:
             main()
             result = PoeTestRunResult(cli_args, 0, Path(cwd), "", *capsys.readouterr())
@@ -371,6 +389,7 @@ def run_poe_main(capsys, projects):
             )
         finally:
             os.chdir(prev_cwd)
+            sys.argv = prev_argv
         print(result)
         return result
 
