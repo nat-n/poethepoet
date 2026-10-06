@@ -41,7 +41,13 @@ This is fine if functions for poe tasks are defined alongside other source in a 
 
   [tool.poe.tasks.my-task]
   script = "my_script:my_function"
-  env.PYTHONPATH = "scripts"
+  env.PYTHONPATH = "${POE_ROOT}/scripts"
+
+Referencing ``POE_ROOT`` ensures the path is absolute, since a relative ``PYTHONPATH`` would be resolved relative to the working directory of the task, which may differ from the project root if the :ref:`cwd<Running a task with a specific working directory>` option is set.
+
+.. note::
+
+  Modules located directly in the project root are normally importable because the task's working directory is on the python path, so setting the ``cwd`` option on a script task may break imports of such modules. In this case you can also set :toml:`env.PYTHONPATH = "${POE_ROOT}"`.
 
 
 Run a ``__main__`` module as a script task
@@ -56,11 +62,11 @@ For example, the following task will run the ``http.server`` module as a script 
   [tool.poe.tasks.serve]
   script = "http.server"
   args = [
-    { name = "port", options = ["-p"], default = "8000" },
+    { name = "port", positional = true, default = "8000" },
     { name = "bind", options = ["-b", "--bind"], default = "127.0.0.1" },
   ]
 
-When :doc:`args <../options>` are declared on the task, the parsed values (with defaults applied) are re-emitted onto the module's :python:`sys.argv`. CLI tokens that aren't matched by a declared arg, and any tokens that follow :sh:`--`, are forwarded to the module verbatim.
+When :doc:`args <../options>` are declared on the task, the parsed values (with defaults applied) are re-emitted onto the module's :python:`sys.argv`. CLI tokens that aren't matched by a declared arg result in an error, but any tokens that follow :sh:`--` are forwarded to the module verbatim. If no args are declared then all CLI tokens are forwarded to the module verbatim.
 
 Like the callable form, the module form also implicitly adds :sh:`<project_root>/src` to the subprocess :sh:`PYTHONPATH` so that modules placed in a ``src/`` directory at the project root are importable without extra configuration.
 
@@ -140,6 +146,6 @@ See :ref:`Arguments for script tasks` for more details and examples.
 Accessing free arguments via ``_extra_args``
 --------------------------------------------
 
-Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside script tasks as the ``_extra_args`` variable — a ``list[str]`` — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
+Free arguments (all arguments if the task declares no named args, or otherwise arguments passed after :sh:`--`) are available inside script tasks as the ``_extra_args`` variable — a ``list[str]`` — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
