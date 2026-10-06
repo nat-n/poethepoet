@@ -92,7 +92,7 @@ class ShellTask(PoeTask):
         self._print_action(content, context.dry)
 
         executor = self._get_executor(
-            context, env, resolve_python=interpreter_cmd == "python"
+            context, env, resolve_python=interpreter_cmd == ["python"]
         )
         process = await executor.execute(interpreter_cmd, input=content.encode())
         await task_state.add_process(process, finalize=True)
