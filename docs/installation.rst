@@ -219,7 +219,10 @@ Poe ships with a task to install the skill (similar to how shell completions are
 
     poe _install_skill                         # auto-detects .claude/.codex/.pi/.agents and prompts
     poe _install_skill ~/.claude/skills        # explicit path (substitute your agent's dir)
-    poe _install_skill <skills-dir> --upgrade  # non-interactive upgrade (skips if same/newer)
+    poe _install_skill <skills-dir> --upgrade  # non-interactive upgrade (skips if same/newer), or -u
+    poe _install_skill -h                      # show usage
+
+If no input is available to answer the confirmation prompt (e.g. when run by an agent or in CI) then the task exits with an error, so pass an explicit skills directory and ``--upgrade`` in that case.
 
 Install from GitHub
 ~~~~~~~~~~~~~~~~~~~
@@ -228,7 +231,7 @@ You can also install the skill directly from github, such as by using |vercel_sk
 
 .. code-block:: sh
 
-   npx skills add https://github.com/nat-n/poethepoet/tree/v0.46.0/poethepoet/skills/poethepoet
+   npx skills add https://github.com/nat-n/poethepoet/tree/v0.48.0/poethepoet/skills/poethepoet
 
 .. note::
 
