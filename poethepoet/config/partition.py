@@ -325,7 +325,10 @@ class ProjectConfig(ConfigPartition):
         commands.
         """
 
-        shell_interpreter: ShellInterpreter | Sequence[ShellInterpreter] = "posix"
+        shell_interpreter: (
+            ShellInterpreter
+            | Annotated[Sequence[ShellInterpreter], Metadata(min_items=1)]
+        ) = "posix"
         """
         Change the default shell interpreter for executing shell tasks. Normally,
         tasks are executed using a posix shell, but this can be overridden here.
