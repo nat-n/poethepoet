@@ -247,7 +247,7 @@ class RunContext:
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
             dry=False if delegate_dry_run else self.dry,
-            io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
+            io=io or (self.ui.io if self.ui else PoeIO.get_default_io()),
         )
 
     def _resolve_executor_config(
@@ -375,7 +375,7 @@ class InitializationContext:
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
             dry=False,
-            io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
+            io=io or (self.ui.io if self.ui else PoeIO.get_default_io()),
         )
 
 

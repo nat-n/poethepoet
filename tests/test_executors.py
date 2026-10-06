@@ -466,3 +466,29 @@ def test_virtualenv_executor_streams_python_output_unbuffered(
     result = run_poe("unbuffered", cwd=project_path)
     assert result.stdout == "False\n"
     assert result.stderr == ""
+
+
+def test_initialization_context_executor_uses_given_io(tmp_path):
+    """
+    The io passed to InitializationContext.get_executor (e.g. for include_script)
+    is used by the executor, so that it respects the CLI verbosity
+    """
+    from types import SimpleNamespace
+
+    from poethepoet.context import InitializationContext
+    from poethepoet.io import PoeIO
+
+    config = SimpleNamespace(project_dir=tmp_path, executor={"type": "simple"})
+    context = InitializationContext(config=config)  # type: ignore[arg-type]
+    given_io = PoeIO(
+        parent=PoeIO.get_default_io(), verbosity_offset=-1, make_default=False
+    )
+
+    executor = context.get_executor(
+        invocation=("include_script",),
+        env=SimpleNamespace(),  # type: ignore[arg-type]
+        working_dir=tmp_path,
+        io=given_io,
+    )
+
+    assert executor._io is given_io
