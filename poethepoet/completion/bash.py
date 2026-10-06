@@ -14,7 +14,9 @@ def get_bash_completion_script(name: str = "") -> str:
     from ..app import PoeThePoet
 
     name = name or "poe"
-    func_name = f"_{name}_complete"
+    # Alias names may contain - or . which aren't valid in POSIX function names
+    safe_name = "".join(char if char.isalnum() else "_" for char in name)
+    func_name = f"_{safe_name}_complete"
     impl_func_name = f"{func_name}_words"
 
     # Get global options from argparse

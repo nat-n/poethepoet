@@ -85,16 +85,20 @@ def _run_builtin_task(
         install_skill(skills_dir=skills_dir, upgrade=upgrade)
         return True
 
-    target_path = ""
-    if second_arg:
-        if not second_arg.isalnum():
-            raise ValueError(f"Invalid alias: {second_arg!r}")
+    if task_name not in (
+        "_zsh_completion",
+        "_bash_completion",
+        "_fish_completion",
+        "_powershell_completion",
+    ):
+        # Not a builtin, so let the app handle it like any other task name
+        return False
 
-        if third_arg:
-            if not Path(third_arg).expanduser().resolve().exists():
-                raise ValueError(f"Invalid path: {third_arg!r}")
-
-            target_path = str(Path(third_arg).resolve())
+    if second_arg and not _is_valid_alias(second_arg):
+        _exit_with_error(
+            f"Invalid alias name {second_arg!r} for shell completion. "
+            "Alias names may only contain letters, digits, '_', '-' and '.'"
+        )
 
     if task_name == "_zsh_completion":
         from .completion.zsh import get_zsh_completion_script
@@ -104,6 +108,9 @@ def _run_builtin_task(
 
     if task_name == "_bash_completion":
         from .completion.bash import get_bash_completion_script
+
+        if third_arg and not Path(third_arg).expanduser().resolve().exists():
+            _exit_with_error(f"Invalid path {third_arg!r} for shell completion")
 
         print(get_bash_completion_script(name=second_arg))
         return True
@@ -121,6 +128,25 @@ def _run_builtin_task(
         return True
 
     return False
+
+
+def _is_valid_alias(name: str) -> bool:
+    """
+    Check that a command alias is safe to embed in a shell completion script.
+    """
+    return name[0] != "-" and all(
+        char.isascii() and (char.isalnum() or char in "_-.") for char in name
+    )
+
+
+def _exit_with_error(message: str):
+    """
+    Print an error for a misused builtin task and exit with a non-zero code.
+    """
+    import sys
+
+    print(f"Error: {message}", file=sys.stderr)
+    raise SystemExit(1)
 
 
 def _format_help(text: str | None, max_len: int = 60) -> str:
