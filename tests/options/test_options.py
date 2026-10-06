@@ -1,4 +1,4 @@
-from typing import Annotated, Any, TypedDict
+from typing import Annotated, Any, Literal, TypedDict
 
 import pytest
 
@@ -548,3 +548,49 @@ def test_poe_executor_get_executor_types_includes_known_keys() -> None:
     for expected in ("poetry", "uv", "virtualenv", "simple"):
         assert expected in keys
     assert "auto" not in keys
+
+
+class NumericPoeOptions(PoeOptions):
+    count: int = 0
+    ratio: float = 0.0
+    level: Literal[-1, 0, 1] = 0
+    mode: Literal[True, False, "other"] = False
+    codes: list[int] = []
+    flag_or_codes: bool | list[int] = False
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"count": True},
+        {"ratio": False},
+        {"level": True},
+        {"level": 1.0},
+        {"mode": 1},
+        {"mode": 0},
+        {"codes": [True]},
+        {"flag_or_codes": [False]},
+    ],
+)
+def test_bool_and_float_rejected_where_int_expected(config) -> None:
+    with pytest.raises(ConfigValidationError):
+        next(NumericPoeOptions.parse(config))
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"count": 3},
+        {"ratio": 0.5},
+        {"level": -1},
+        {"mode": True},
+        {"mode": "other"},
+        {"codes": [1, 2]},
+        {"flag_or_codes": True},
+        {"flag_or_codes": [1]},
+    ],
+)
+def test_numeric_options_accept_values_of_matching_type(config) -> None:
+    parsed = next(NumericPoeOptions.parse(config))
+    for key, value in config.items():
+        assert getattr(parsed, key) == value
