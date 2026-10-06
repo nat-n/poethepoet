@@ -325,8 +325,8 @@ def test_parallel_task_oversized_line_warns_only_when_verbose(
 def test_parallel_task_buffered_output_without_trailing_newline(
     run_poe_subproc, temp_pyproject
 ):
-    # A final line shorter than the limit is forwarded as-is via the EOF tail,
-    # with no trailing newline added (only an over-limit line is force-wrapped).
+    # A final line shorter than the limit is forwarded via the EOF tail, with a
+    # newline added so that the next prefixed line can't be welded onto it.
     line_size = 50
     project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_no_newline]
@@ -343,7 +343,7 @@ def test_parallel_task_buffered_output_without_trailing_newline(
     )
 
     prefix = format_parallel_prefix("buffered_no_newline[0]")
-    assert result.stdout == f"{prefix}{'Y' * line_size}"
+    assert result.stdout == f"{prefix}{'Y' * line_size}\n"
 
 
 def test_parallel_task_buffered_output_with_prefix_disabled(
@@ -994,6 +994,43 @@ def test_parallel_output_to_stdout_without_buffer(run_poe, temp_pyproject):
 
     assert result.code == 0
     assert text_stdout.getvalue() == f"{format_parallel_prefix('par[0]')}hello\n"
+
+
+@pytest.mark.parametrize("output_mode", ["stream", "buffer"])
+def test_parallel_unterminated_last_line_is_not_welded_to_sibling_output(
+    run_poe_subproc, temp_pyproject, output_mode
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.welded]
+        parallel = [
+          {{ shell = "import sys; sys.stdout.write('no-newline')", interpreter = "python" }},
+          {{ shell = "import time; time.sleep(0.5); print('later-line')", interpreter = "python" }},
+        ]
+        output_mode = "{output_mode}"
+        """)
+
+    result = run_poe_subproc("welded", cwd=project_path)
+
+    assert result.stdout == (
+        f"{format_parallel_prefix('welded[0]')}no-newline\n"
+        f"{format_parallel_prefix('welded[1]')}later-line\n"
+    )
+
+
+def test_parallel_unterminated_last_line_is_unchanged_without_prefix(
+    run_poe_subproc, temp_pyproject
+):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.raw]
+        parallel = [
+          { shell = "import sys; sys.stdout.write('no-newline')", interpreter = "python" },
+        ]
+        prefix = false
+        """)
+
+    result = run_poe_subproc("raw", cwd=project_path)
+
+    assert result.stdout == "no-newline"
 
 
 def test_parallel_bool_flag(run_poe):

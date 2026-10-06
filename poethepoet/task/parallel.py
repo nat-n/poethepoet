@@ -427,7 +427,9 @@ class ParallelTask(PoeTask):
             buffered_lines: list[bytes] = []
             buffered_size = 0
             try:
-                async for line in self._iter_output_lines(subproc.stdout, task_name):
+                async for line in self._iter_output_lines(
+                    subproc.stdout, task_name, terminate_tail=bool(prefix)
+                ):
                     buffered_lines.append(line)
                     buffered_size += len(line)
                     if buffered_size >= BUFFERED_STDOUT_LIMIT:
@@ -439,12 +441,16 @@ class ParallelTask(PoeTask):
             return
 
         if prefix:
-            async for line in self._iter_output_lines(subproc.stdout, task_name):
+            async for line in self._iter_output_lines(
+                subproc.stdout, task_name, terminate_tail=bool(prefix)
+            ):
                 write(prefix)
                 write(line)
                 flush()
         else:
-            async for line in self._iter_output_lines(subproc.stdout, task_name):
+            async for line in self._iter_output_lines(
+                subproc.stdout, task_name, terminate_tail=bool(prefix)
+            ):
                 write(line)
                 flush()
 
@@ -464,13 +470,18 @@ class ParallelTask(PoeTask):
         return write_text
 
     async def _iter_output_lines(
-        self, stdout: asyncio.StreamReader, subtask_name: str
+        self,
+        stdout: asyncio.StreamReader,
+        subtask_name: str,
+        terminate_tail: bool = False,
     ) -> AsyncIterator[bytes]:
         """
         Yield subtask stdout one line at a time. A complete line is emitted whole; a
         line that reaches BUFFERED_STDOUT_LIMIT before its newline arrives is emitted in
         chunks, and thus wrapped with a line break inserted at each cut, so memory stays
         bounded and every yielded chunk ends in a newline except the final (EOF) tail.
+        If terminate_tail is set then a newline is added to the final (EOF) tail too, so
+        that a prefixed line from another subtask can't be welded onto it.
         A warning is emitted for each output line that gets wrapped.
         """
         buffered_output = bytearray()
@@ -506,7 +517,7 @@ class ParallelTask(PoeTask):
                     break
 
         if cursor < len(buffered_output):
-            yield bytes(buffered_output[cursor:])
+            yield bytes(buffered_output[cursor:]) + (b"\n" if terminate_tail else b"")
 
     def _flush_output_buffer(
         self,
