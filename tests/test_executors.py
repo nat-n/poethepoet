@@ -434,3 +434,35 @@ def test_executables_resolve_from_task_path(run_poe, temp_pyproject, tmp_path):
     result = run_poe("which-python", cwd=project_path)
     assert result.stdout == "yes\n"
     assert result.stderr == ""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Uses a posix virtualenv layout")
+def test_virtualenv_executor_streams_python_output_unbuffered(
+    run_poe, temp_pyproject, tmp_path, monkeypatch
+):
+    """
+    Python tasks in a parallel task run unbuffered, so that their output is streamed
+    as it is produced, regardless of the executor type
+    """
+    monkeypatch.delenv("PYTHONUNBUFFERED", raising=False)
+    venv_bin = _make_fake_virtualenv(tmp_path / "fake_venv")
+    venv_bin.joinpath("python").unlink()
+    venv_bin.joinpath("python").symlink_to(sys.executable)
+    project_path = temp_pyproject(f"""
+            [tool.poe.executor]
+            type = "virtualenv"
+            location = "{venv_bin.parent.as_posix()}"
+
+            [tool.poe.tasks]
+            unbuffered = {{ expr = "sys.stdout.write_through" }}
+            par = {{ parallel = ["unbuffered"] }}
+        """)
+
+    result = run_poe("par", cwd=project_path)
+    assert result.stdout == "unbuffered | True\n"
+    assert result.stderr == ""
+
+    # Output that is not streamed is unaffected
+    result = run_poe("unbuffered", cwd=project_path)
+    assert result.stdout == "False\n"
+    assert result.stderr == ""

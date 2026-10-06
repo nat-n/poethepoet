@@ -302,6 +302,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
             else:
                 popen_kwargs["stdout"] = PIPE
+                if self.context.enable_output_streaming:
+                    # Make python subprocesses flush output as it is produced, also
+                    # when the executor doesn't resolve python itself (e.g. uv run)
+                    popen_kwargs["env"].setdefault("PYTHONUNBUFFERED", "1")
 
             if "PYTHONIOENCODING" not in popen_kwargs["env"]:
                 popen_kwargs["env"]["PYTHONIOENCODING"] = "utf-8"
