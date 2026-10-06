@@ -341,7 +341,6 @@ class PoeConfig:
                 parsed_result = json.loads(script_result)
                 if isinstance(parsed_result, str):
                     parsed_result = json.loads(parsed_result)
-                self._packaged_config_cache[invocation] = parsed_result
             except json.decoder.JSONDecodeError as error:
                 self._handle_error(
                     "Return value from include_script script must be valid json",
@@ -350,12 +349,23 @@ class PoeConfig:
                 )
                 return
 
+            if not isinstance(parsed_result, dict):
+                self._handle_error(
+                    f"Invalid content in loaded config from {target_module}: "
+                    "include_script must return a dict (or a json object string), "
+                    f"got {type(parsed_result).__name__!r}",
+                    strict=strict,
+                )
+                return
+
+            self._packaged_config_cache[invocation] = parsed_result
+
         try:
             config_json = dict(self._packaged_config_cache[invocation])
             config_path = Path(
                 config_json.pop("config_path", self._project_config.path)
             )
-            if config_json.get("tool", {}).get("poe"):
+            if isinstance(tool := config_json.get("tool"), dict) and tool.get("poe"):
                 pass
             elif tool_poe := config_json.get("tool.poe"):
                 config_json = {"tool": {"poe": tool_poe}}
