@@ -65,3 +65,39 @@ def test_running_tasks_does_not_stop_active_coverage(run_poe, temp_pyproject):
     assert result.code == 0
     assert result.stdout == "hi\n"
     assert coverage_still_active, "Running a task stopped the caller's coverage"
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"executor": "simple", "tasks": {"hi": "poe_test_echo hi from dict"}},
+        {
+            "tool": {
+                "poe": {
+                    "executor": "simple",
+                    "tasks": {"hi": "poe_test_echo hi from dict"},
+                }
+            }
+        },
+    ],
+)
+def test_config_from_mapping(run_poe, tmp_path, projects, config):
+    # works without any config file present
+    result = run_poe("hi", config=config, cwd=tmp_path)
+    assert result.code == 0
+    assert result.capture == "Poe => poe_test_echo hi from dict\n"
+    assert result.stdout == "hi from dict\n"
+
+    # takes precedence over a config file in the cwd
+    result = run_poe("hi", config=config, project="example")
+    assert result.code == 0
+    assert result.stdout == "hi from dict\n"
+    result = run_poe("echo", config=config, project="example")
+    assert result.code == 1
+    assert "Error: Unrecognized task 'echo'" in result.capture
+
+
+def test_invalid_config_from_mapping(run_poe, tmp_path):
+    result = run_poe("hi", config={"tasks": {"hi": 5}, "bogus": 1}, cwd=tmp_path)
+    assert result.code == 1
+    assert "Error: Unrecognized option 'bogus'" in result.capture

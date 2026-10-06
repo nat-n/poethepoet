@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 class PoeConfig:
     _project_config: ProjectConfig
+    _table: Mapping[str, Any] | None
     _included_config: list[IncludedConfig]
     _packaged_config: list[PackagedConfig]
 
@@ -61,8 +62,9 @@ class PoeConfig:
                 self._config_filenames = tuple(config_name)
 
         self._project_dir = Path.cwd() if cwd is None else Path(cwd)
+        self._table = table
         self._project_config = ProjectConfig(
-            {"tool.poe": table or {}}, path=self._project_dir, strict=False
+            self._get_table_content(), path=self._project_dir, strict=False
         )
         self._included_config = []
         self._packaged_config = []
@@ -73,6 +75,18 @@ class PoeConfig:
             from ..io import PoeIO
 
             self._io = PoeIO.get_default_io()
+
+    def _get_table_content(self) -> Mapping[str, Any]:
+        """
+        Get the config table provided on initialization, normalized to the structure
+        of a pyproject.toml file. The table may either be structured like a
+        pyproject.toml file or contain the content of the tool.poe table directly.
+        """
+        if self._table is None:
+            return {"tool.poe": {}}
+        if "tool" in self._table:
+            return self._table
+        return {"tool.poe": self._table}
 
     def get_tasks(self, strict: bool = True) -> Mapping[str, TaskConfig]:
         """
@@ -204,7 +218,20 @@ class PoeConfig:
         """
         target_path is the path to a file or directory for loading config
         If strict is false then some errors in the config structure are tolerated
+
+        If a config table was provided on initialization and no target_path is given
+        then the table is used instead of searching for a config file.
         """
+
+        if self._table is not None and target_path is None:
+            self._load_project_config(
+                self._get_table_content(),
+                path=self._project_dir.joinpath(self._config_filenames[0]),
+                strict=strict,
+            )
+            self._load_includes(strict=strict)
+            await self._load_packages(strict=strict)
+            return
 
         for config_file in PoeConfigFile.find_config_files(
             target_path=Path(target_path or self._project_dir),
@@ -226,24 +253,9 @@ class PoeConfig:
                         filename=str(config_file.path),
                     ) from config_file.error
 
-                try:
-                    self._project_config = ProjectConfig(
-                        config_content,
-                        path=config_file.path,
-                        project_dir=self._project_dir,
-                        strict=strict,
-                    )
-                except ConfigValidationError:
-                    # Try again to load Config with minimal validation so we can still
-                    # display the task list alongside the error
-                    self._project_config = ProjectConfig(
-                        config_content,
-                        path=config_file.path,
-                        project_dir=self._project_dir,
-                        strict=False,
-                    )
-                    raise
-
+                self._load_project_config(
+                    config_content, path=config_file.path, strict=strict
+                )
                 break
 
         else:
@@ -257,6 +269,27 @@ class PoeConfig:
 
         self._load_includes(strict=strict)
         await self._load_packages(strict=strict)
+
+    def _load_project_config(
+        self, config_content: Mapping[str, Any], path: Path, strict: bool = True
+    ):
+        try:
+            self._project_config = ProjectConfig(
+                config_content,
+                path=path,
+                project_dir=self._project_dir,
+                strict=strict,
+            )
+        except ConfigValidationError:
+            # Try again to load Config with minimal validation so we can still
+            # display the task list alongside the error
+            self._project_config = ProjectConfig(
+                config_content,
+                path=path,
+                project_dir=self._project_dir,
+                strict=False,
+            )
+            raise
 
     async def _load_packages(self, strict: bool = True):
         if not self._project_config.options.include_script:
