@@ -1,0 +1,4 @@
+# expected_error: Option 'prefix_max' value 0 is below minimum 1
+[tool.poe.tasks.bad]
+parallel = ["a", "b"]
+prefix_max = 0

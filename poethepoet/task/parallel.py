@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..helpers.eventloop import DynamicTaskSet
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from ..env.task_env import TaskEnv
     from ..executor.base import PoeProcess
     from ..executor.task_run import PoeTaskRun
-    from ..options.annotations import Disinherited
+    from ..options.annotations import Disinherited, Metadata
     from .base import TaskSpecFactory
 
 T = TypeVar("T")
@@ -97,7 +97,7 @@ class ParallelTask(PoeTask):
         this is the task name. Set to false to disable prefixing.
         """
 
-        prefix_max: int = 16
+        prefix_max: Annotated[int, Metadata(minimum=1)] = 16
         """
         Set the maximum width of the prefix. Longer prefixes will be truncated.
         """

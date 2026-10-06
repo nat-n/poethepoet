@@ -1033,6 +1033,22 @@ def test_parallel_unterminated_last_line_is_unchanged_without_prefix(
     assert result.stdout == "no-newline"
 
 
+@pytest.mark.parametrize("prefix_max", [0, -3])
+def test_parallel_prefix_max_must_be_positive(run_poe, temp_pyproject, prefix_max):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.par]
+        parallel = [{{ cmd = "poe_test_echo hello" }}]
+        prefix_max = {prefix_max}
+        """)
+
+    result = run_poe("par", cwd=project_path)
+
+    assert (
+        f"Option 'prefix_max' value {prefix_max} is below minimum 1" in result.capture
+    )
+    assert result.code == 1
+
+
 def test_parallel_bool_flag(run_poe):
     """Parallel task: both cmd and expr subtasks see boolean args from parent"""
     result = run_poe("bool_parallel", "--flag", project="parallel")

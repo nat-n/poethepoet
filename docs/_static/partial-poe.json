@@ -1085,6 +1085,7 @@
         "prefix_max": {
           "default": 16,
           "description": "Set the maximum width of the prefix. Longer prefixes will be truncated.",
+          "minimum": 1,
           "type": "integer"
         },
         "prefix_template": {
@@ -1215,6 +1216,7 @@
         "prefix_max": {
           "default": 16,
           "description": "Set the maximum width of the prefix. Longer prefixes will be truncated.",
+          "minimum": 1,
           "type": "integer"
         },
         "prefix_template": {
