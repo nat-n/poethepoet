@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import re
 import sys
 from collections.abc import Iterator, Mapping, Sequence
@@ -788,6 +789,14 @@ class PoeTask(metaclass=MetaPoeTask):
         """
         Run this task
         """
+
+        if context.interrupted_exit_code is not None:
+            # Once shutdown has been requested no more tasks may be started, so cancel
+            # whatever is trying to start this one (e.g. a sequence with ignore_fail)
+            self.ctx.io.print_debug(
+                f" ! Not starting task {self.name!r}: shutting down"
+            )
+            raise asyncio.CancelledError
 
         if self.ctx.io.is_debug_enabled():
             task_type_key = self.__key__  # type: ignore[attr-defined]

@@ -374,3 +374,64 @@ def test_task_killed_by_signal_exits_with_128_plus_signum(run_poe, temp_pyprojec
         """)
     result = run_poe("selfkill", cwd=project_path)
     assert result.code == 128 + signal.SIGTERM
+
+
+def _start_task_and_wait_for_pidfile(run_poe_subproc_handle, project_path, pid_file):
+    poe_handle = run_poe_subproc_handle("task", cwd=str(project_path))
+    deadline = time.monotonic() + 10.0
+    while time.monotonic() < deadline:
+        if poe_handle.process.poll() is not None:
+            pytest.fail(f"Poe exited early: {poe_handle.result()}")
+        if pid_file.exists() and pid_file.stat().st_size > 0:
+            return poe_handle
+        time.sleep(0.1)
+    poe_handle.process.kill()
+    pytest.fail("Child process did not write PID file in time")
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize(
+    ("task_def", "sig"),
+    [
+        (
+            'sequence = ["hang", { cmd = "poe_test_echo after" }]\nignore_fail = true',
+            signal.SIGINT,
+        ),
+        (
+            'sequence = ["hang", { cmd = "poe_test_echo after" }]\nignore_fail = true',
+            signal.SIGTERM,
+        ),
+        (
+            'sequence = [{ parallel = ["hang"] }, { cmd = "poe_test_echo after" }]\n'
+            "ignore_fail = true",
+            signal.SIGINT,
+        ),
+        ('parallel = ["hang"]\nignore_fail = true', signal.SIGINT),
+        ('ref = "hang"\nignore_fail = true', signal.SIGINT),
+        ('cmd = "poe_test_echo after"\ndeps = ["hang"]', signal.SIGINT),
+    ],
+)
+def test_interrupt_stops_task_and_exits_non_zero(
+    run_poe_subproc_handle, temp_pyproject, tmp_path, task_def, sig
+):
+    # Once interrupted, no further subtasks are started, even with ignore_fail, and
+    # poe exits with the shell convention status for the signal it received
+    pid_file = tmp_path / "child.pid"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.hang]
+        cmd = "poe_test_delayed_echo_with_pidfile 60000 'done' '{pid_file}'"
+
+        [tool.poe.tasks.task]
+        {task_def}
+        """)
+    poe_handle = _start_task_and_wait_for_pidfile(
+        run_poe_subproc_handle, project_path, pid_file
+    )
+
+    poe_handle.process.send_signal(sig)
+    result = poe_handle.result(timeout=10)
+
+    assert "after" not in result.stdout
+    assert "poe_test_echo after" not in result.capture
+    assert result.code == 128 + sig
+    assert _wait_for_pid_exit(int(pid_file.read_text()))

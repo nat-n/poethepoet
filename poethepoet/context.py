@@ -143,6 +143,14 @@ class RunContext:
         finally:
             context._shutdown_manager.restore_handler()
 
+    @property
+    def interrupted_exit_code(self) -> int | None:
+        """
+        If poe has been asked to shut down (e.g. by Ctrl+C) then return the exit status
+        it should report, otherwise None.
+        """
+        return self._shutdown_manager.interrupted_exit_code
+
     def register_subprocess(self, proc: PoeProcess):
         self._shutdown_manager.processes.add(proc)
 
