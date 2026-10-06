@@ -57,6 +57,8 @@ poe -C /path <task>         # run as if from another directory (handier than cd)
 poe -v <task>               # verbose
 ```
 
+Don't add `--` for a task without declared args: it is forwarded literally (`poe lint -- --fix` runs `ruff check . -- --fix`).
+
 **Always prefer poe tasks over running tools directly.** Before running `pytest`, `ruff`, `mypy`, etc., check `poe` first — if a task exists, use it, so you inherit the project's flags, env, and conventions.
 
 If `poe`'s output isn't enough (e.g. you need a task's implementation or args), read the config directly — `pyproject.toml` (`[tool.poe.tasks]`) or `poe_tasks.toml`/`.yaml`/`.json` — and follow any `include`/`include_script` references.
@@ -90,12 +92,12 @@ Mechanism and more cases: `references/task-types.md`.
 
 ```toml
 [tool.poe.tasks.test]
-cmd = "pytest ${markers}"
+cmd = 'pytest ${markers:+-m "${markers}"}'
 help = "Run the test suite"
-args = [{ name = "markers", options = ["-m"], default = "", help = "pytest marker expression" }]
+args = [{ name = "markers", options = ["-m"], help = "pytest marker expression" }]
 ```
 
-Don't add `--` for a task without declared args: it is forwarded literally (`poe lint -- --fix` runs `ruff check . -- --fix`).
+`poe test -m "not slow"` runs `pytest -m 'not slow'`; plain `poe test` runs `pytest`. Quote `"${markers}"` so a value with spaces stays one argument, and use `:+` to emit the flag only when the arg is set. Once a task declares `args`, other flags must follow `--`: `poe test -m slow -- -x`.
 
 **Extra args forwarded through a sequence** (items that pass `$POE_EXTRA_ARGS` receive them):
 
