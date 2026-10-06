@@ -382,3 +382,31 @@ def test_switch_control_may_not_declare_graph_options_or_args(
     assert "Error: Invalid task 'sw'" in result.capture
     assert f"Control task includes incompatible option {option!r}" in result.capture
     assert result.stdout == ""
+
+
+@pytest.mark.parametrize(
+    "case_toml", ["[]", "{ a = 1 }", "[[1, 2]]"], ids=["empty", "table", "nested"]
+)
+def test_switch_rejects_invalid_case_value(temp_pyproject, run_poe, case_toml):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+        switch = [{{ case = {case_toml}, cmd = "poe_test_echo A" }}]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'sw'" in result.capture
+    assert "expected a string, number, boolean, or a non-empty array" in (
+        result.capture
+    )
+
+
+def test_switch_float_case(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "1.5"
+        switch = [{ case = 1.5, cmd = "poe_test_echo HIT" }]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "HIT\n"

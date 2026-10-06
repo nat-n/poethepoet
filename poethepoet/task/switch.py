@@ -119,6 +119,15 @@ class SwitchTask(PoeTask):
             for switch_item in task_def["switch"]:
                 case_task_def = dict(switch_item, args=switch_args)
                 case = case_task_def.pop("case", DEFAULT_CASE)
+                case_values = case if isinstance(case, list) else (case,)
+                if not case_values or not all(
+                    isinstance(value, str | int | float) for value in case_values
+                ):
+                    raise ConfigValidationError(
+                        f"Invalid case {case!r}, expected a string, number, boolean, "
+                        "or a non-empty array of these",
+                        task_name=self.name,
+                    )
                 case_tuple = (
                     tuple(str(value) for value in case)
                     if isinstance(case, list)

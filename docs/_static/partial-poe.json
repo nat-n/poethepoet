@@ -362,7 +362,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -370,10 +370,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
@@ -828,7 +829,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -836,10 +837,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
@@ -1061,7 +1063,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -1069,10 +1071,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
@@ -1249,7 +1252,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -1257,10 +1260,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
@@ -1434,7 +1438,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -1442,10 +1446,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
@@ -1608,7 +1613,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -1616,10 +1621,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
@@ -1815,7 +1821,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -1823,10 +1829,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
@@ -2041,7 +2048,7 @@
             {
               "anyOf": [
                 { "type": "string" },
-                { "type": "integer" },
+                { "type": "number" },
                 { "type": "boolean" }
               ]
             },
@@ -2049,10 +2056,11 @@
               "items": {
                 "anyOf": [
                   { "type": "string" },
-                  { "type": "integer" },
+                  { "type": "number" },
                   { "type": "boolean" }
                 ]
               },
+              "minItems": 1,
               "type": "array"
             }
           ]
