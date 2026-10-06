@@ -425,6 +425,8 @@ class PoeConfig:
         try:
             config_file = PoeConfigFile(include_path)
             config_content = config_file.load()
+            if isinstance(config_file.error, ConfigValidationError):
+                raise config_file.error
             if not config_content:
                 raise ConfigValidationError(
                     f"Included file at {include_path} is empty or invalid",

@@ -1,3 +1,5 @@
+import pytest
+
 # Setting POETRY_VIRTUALENVS_CREATE stops poetry from creating the virtualenv and
 # spamming about it in stderr
 poetry_vars = {"POETRY_VIRTUALENVS_CREATE": "false"}
@@ -78,3 +80,79 @@ def test_decrease_verbosity(run_poe):
     assert result.capture == ""
     assert result.stdout == "Hello\n"
     result.assert_no_err()
+
+
+@pytest.mark.parametrize("filename", ["poe_tasks.yaml", "poe_tasks.toml"])
+def test_empty_config_file_has_no_tasks(run_poe, tmp_path, filename):
+    tmp_path.joinpath(filename).write_text("")
+    result = run_poe(cwd=tmp_path)
+    assert result.code == 1
+    assert "Error:" not in result.capture
+    assert "NO TASKS CONFIGURED" in result.capture
+
+
+@pytest.mark.parametrize(
+    ("filename", "content"),
+    [
+        ("poe_tasks.json", "[1, 2]"),
+        ("poe_tasks.json", '"hello"'),
+        ("poe_tasks.yaml", "hello"),
+        ("poe_tasks.yaml", "- a\n- b\n"),
+    ],
+)
+def test_config_file_without_top_level_table(run_poe, tmp_path, filename, content):
+    config_path = tmp_path.joinpath(filename)
+    config_path.write_text(content)
+    result = run_poe("a", cwd=tmp_path)
+    assert result.code == 1
+    assert (
+        f"Error: Config file at {config_path} must contain a table at the top level"
+        in result.capture
+    )
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        '[tool]\npoe = "foo"\n',
+        '[tool.poe]\ntasks = "foo"\n',
+        '[tool.poe.groups]\ng = "foo"\n',
+        '[tool.poe.groups.g]\ntasks = "foo"\n',
+    ],
+)
+def test_pyproject_with_non_table_poe_config(run_poe, temp_pyproject, content):
+    project_path = temp_pyproject(content)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert "Error: " in result.capture
+    assert "must be a" in result.capture
+
+
+@pytest.mark.parametrize(
+    ("filename", "content"),
+    [("empty.yaml", ""), ("list.json", "[1, 2]"), ("scalar.yaml", "hello")],
+)
+def test_include_file_without_top_level_table(
+    run_poe, temp_pyproject, filename, content
+):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        executor = "simple"
+        include = "{filename}"
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        """
+    )
+    project_path.joinpath(filename).write_text(content)
+    result = run_poe("a", cwd=project_path)
+    if not content:
+        assert result.code == 0
+        assert result.stdout == "a\n"
+        return
+    assert result.code == 1
+    assert (
+        f"Error: Config file at {project_path / filename} must contain a table"
+        in result.capture
+    )
+    assert "at the top level" in result.capture
