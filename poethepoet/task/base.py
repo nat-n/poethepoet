@@ -242,9 +242,16 @@ class TaskContext(NamedTuple):
 
     @classmethod
     def from_task(cls, parent_task: PoeTask, task_spec: PoeTask.TaskSpec):
+        cwd = str(parent_task.spec.options.get("cwd", parent_task.ctx.cwd))
+        if task_spec.source is not parent_task.spec.source and cwd == str(
+            parent_task.spec.source.cwd
+        ):
+            # The task is from another config partition (e.g. an include with a cwd),
+            # and no cwd was set explicitly, so it runs in its own partition's cwd
+            cwd = str(task_spec.source.cwd)
         return cls(
             config=parent_task.ctx.config,
-            cwd=str(parent_task.spec.options.get("cwd", parent_task.ctx.cwd)),
+            cwd=cwd,
             specs=parent_task.ctx.specs,
             io=PoeIO(
                 parent=parent_task.ctx.io,
@@ -942,7 +949,8 @@ class PoeTask(metaclass=MetaPoeTask):
             invocation=invocation,
             ctx=TaskContext(
                 config=self.ctx.config,
-                cwd=str(self.ctx.config.project_dir),
+                # Upstream tasks run standalone, as if invoked directly
+                cwd=str(task_spec.source.cwd),
                 specs=self.ctx.specs,
                 io=PoeIO(
                     parent=self.ctx.io,
