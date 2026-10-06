@@ -1,6 +1,7 @@
 import re
 import shutil
 import sys
+from pathlib import PurePath
 
 import pytest
 
@@ -64,7 +65,10 @@ def test_shell_task_with_dash_case_arg(run_poe):
 def test_interpreter_sh(run_poe):
     result = run_poe("echo_sh", project="shells")
     assert result.capture == ("Poe => poe_test_echo $0 $test_var\n")
-    assert "roflcopter" in result.stdout
+    # $0 identifies the interpreter that was used, so this fails if bash is used
+    shell_path, test_var = result.stdout.split()
+    assert PurePath(shell_path).stem == "sh"
+    assert test_var == "roflcopter"
     assert result.stderr == ""
 
 

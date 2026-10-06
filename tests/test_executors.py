@@ -73,7 +73,8 @@ def test_override_executor_config_on_cli(run_poe_subproc, use_venv, projects):
 
 def test_override_executor_config(run_poe):
     """
-    Rely on task level config to correctly set the virtualenv location
+    Rely on task level executor config to override the project level virtualenv
+    executor with the simple executor
     """
     result = run_poe("override-executor", project="venv")
     assert result.capture == "Poe => poe_test_env\n"
@@ -167,11 +168,10 @@ def test_simple_executor(run_poe):
     """
     The task should execute but not find poe_test_package from a local venv
     """
-    result = run_poe("detect_poe_test_package", project="simple")
+    result = run_poe("-e", "simple", "detect_poe_test_package", project="simple")
+    assert result.code == 0
     assert result.capture == "Poe => detect_poe_test_package\n"
-    assert result.stdout == "No poe_test_package found\n" or not result.stdout.endswith(
-        f"/tests/fixtures/simple_project/venv/lib/python{PY_V}/site-packages/poe_test_package/__init__.py\n"
-    )
+    assert result.stdout == "No poe_test_package found\n"
     assert result.stderr == ""
 
 
@@ -187,10 +187,10 @@ def test_override_executor_skips_missing_virtualenv_when_forced_simple(
         f"This test requires the virtualenv not to already exist at {venv_path}!"
     )
     result = run_poe("--executor", "simple", "show-env", project="venv")
-    assert (
-        f"Error: Could not find valid virtualenv at configured location: {venv_path}"
-        not in result.capture
-    )
+    assert result.code == 0
+    assert result.capture == "Poe => poe_test_env\n"
+    assert "POE_ACTIVE=simple" in result.stdout
+    assert f"VIRTUAL_ENV={venv_path}" not in result.stdout
     assert result.stderr == ""
 
 
