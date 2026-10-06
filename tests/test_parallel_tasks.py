@@ -966,6 +966,19 @@ def test_parallel_abort_terminates_sibling_process_trees(
     assert _wait_for_pid_exit(int(pid_file.read_text()))
 
 
+def test_parallel_empty_string_item_is_a_config_error(run_poe, temp_pyproject):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.empty_item]
+        parallel = [""]
+        """)
+
+    for run_args in (("empty_item",), ()):
+        result = run_poe(*run_args, cwd=project_path)
+        assert "Error: Invalid task 'empty_item'" in result.capture
+        assert "Item #0 in parallel task must not be empty" in result.capture
+        assert result.code == 1
+
+
 def test_parallel_bool_flag(run_poe):
     """Parallel task: both cmd and expr subtasks see boolean args from parent"""
     result = run_poe("bool_parallel", "--flag", project="parallel")

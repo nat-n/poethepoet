@@ -158,7 +158,7 @@ class ParallelTask(PoeTask):
                     sub_task_def
                     if (
                         isinstance(sub_task_def, str)
-                        and (sub_task_def[0].isalpha() or sub_task_def[0] == "_")
+                        and (sub_task_def[:1].isalpha() or sub_task_def[:1] == "_")
                     )
                     else ParallelTask._subtask_name(name, index)
                 )
