@@ -309,12 +309,12 @@ class PoetryPlugin(ApplicationPlugin):
 def _index_of_first_non_option(tokens: list[str]):
     """
     Find the index of the first token that doesn't start with `-`, and isn't directly
-    preceded by either `--project` or `--directory`.
+    preceded by poetry's `--project`/`-P` or `--directory`/`-C` options.
 
     Returns len(tokens) if none is found.
     """
 
-    options_with_args = ("--project", "--directory")
+    options_with_args = ("--project", "-P", "--directory", "-C")
     previous_token = ""
     for index, token in enumerate(tokens):
         if token[0] != "-" and previous_token not in options_with_args:

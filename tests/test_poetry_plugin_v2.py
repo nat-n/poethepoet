@@ -193,3 +193,15 @@ def test_task_with_cli_dependency_with_directory(run_poetry_2, projects, is_wind
         assert (
             "< Cowacter, eyes:default, tongue:False, thoughts:False >" in result.stdout
         )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("project_option", ["--directory", "-C", "-P"])
+def test_running_task_with_project_option(run_poetry_2, projects, project_option):
+    result = run_poetry_2(
+        [project_option, "hooks", "poe", "say", "hello"],
+        cwd=projects["poetry_plugin"],
+    )
+    assert "Unrecognized task" not in result.stdout
+    assert "hello\n" in result.stdout
+    assert result.code == 0

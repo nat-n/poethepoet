@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "poethepoet_plugin_hooks"
+version = "0.1.0"
+description = "A project that uses poetry hooks via the plugin."
+authors = ["Nat Noordanus <n@natn.me>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+
+[tool.poe]
+executor = "simple"
+verbosity = -2
+
+[tool.poe.poetry_hooks]
+pre_check = "say pre_check_hook"
+post_check = "say post_check_hook"
+
+[tool.poe.tasks]
+say = "echo"
