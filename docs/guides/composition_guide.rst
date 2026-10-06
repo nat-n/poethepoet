@@ -158,3 +158,10 @@ How deps are run
 Tasks referenced via ``deps`` or ``uses`` are planned together with the task that requires them as an execution graph, in which each upstream task is run at most once. Deduplication only applies within a single graph however, so for example if a sequence task references two tasks that each depend on the same ``setup`` task, then ``setup`` will be run once for each of them. Also a task that is referenced both via ``deps`` and via ``uses`` is run twice, once with its output captured and once without.
 
 Upstream tasks run standalone, so they do not inherit environment variables from the task that depends on them or from its parent tasks (e.g. a sequence that contains it), although the invocations listed in ``deps`` and ``uses`` can reference such variables via parameter expansion.
+
+Cyclic task references
+----------------------
+
+Since a task that (directly or indirectly) references itself would recurse without limit, poe rejects any cycle of task references via ``ref``, ``sequence``, or ``parallel`` tasks or the ``deps``, ``uses``, or ``uses_env`` options as invalid configuration, with an error message naming the tasks in the cycle, e.g. ``Cyclic task reference detected: a -> b -> c -> a``.
+
+References from the cases of a :doc:`switch<../tasks/task_types/switch>` task are not considered, since a recursion through a switch case may terminate depending on the output of the control task.
