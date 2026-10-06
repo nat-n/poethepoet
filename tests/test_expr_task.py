@@ -53,7 +53,7 @@ def test_expr_with_env_vars(run_poe):
         env={"VAR_FOO": "foo", "VAR_BAR": "2", "VAR_BAZ": "boo"},
     )
     assert result.capture == (
-        "Poe => [${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + '${NOTHING}'\n"
+        "Poe => [${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + ${NOTHING}\n"
     )
     assert result.stdout == "foofooboo\n"
     assert result.stderr == ""
@@ -303,3 +303,34 @@ def test_expr_method_call_on_undefined_name(run_poe):
     assert (
         "Error: Invalid variable reference in expr: undefined_module" in result.capture
     )
+
+
+def test_expr_unset_env_var_is_empty_string(temp_pyproject, run_poe):
+    """
+    An unset ${VAR} in expr content evaluates to an empty string value rather than
+    vanishing from the expression source.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        expr = "(${POE_TEST_UNSET_VAR}, len(${POE_TEST_UNSET_VAR}))"
+
+        [tool.poe.tasks.venv-active]
+        expr   = "${POE_TEST_UNSET_VENV}.endswith(target_venv)"
+        assert = true
+        args   = [{ name = "target-venv", default = ".venv", positional = true }]
+        """)
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "('', 0)\n"
+    assert result.stderr == ""
+
+    result = run_poe("venv-active", cwd=project_path)
+    assert result.code == 1, result.capture + result.stderr
+    assert result.stdout == "False\n"
+    assert result.stderr == ""
+
+    result = run_poe(
+        "venv-active", cwd=project_path, env={"POE_TEST_UNSET_VENV": "/x/.venv"}
+    )
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "True\n"

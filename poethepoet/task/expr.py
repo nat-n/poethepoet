@@ -185,6 +185,7 @@ class ExprTask(PoeTask):
 
         from ..env.utils import SpyDict
         from ..helpers.parse import parse_template
+        from ..helpers.parse.command import ParamExpansion
 
         # Spy on access to the env, so that instead of replacing template ${keys} with
         # the corresponding value, replace them with a python name and keep track of
@@ -195,11 +196,19 @@ class ExprTask(PoeTask):
             accessed_vars[key] = value
             return f"__env.{key}"
 
-        expression = parse_template(content, require_braces=True).resolve(
-            SpyDict(env, getitem_spy=getitem_spy)
-        )
+        spy_env = SpyDict(env, getitem_spy=getitem_spy)
+        expression_parts = []
+        for node in parse_template(content, require_braces=True):
+            if not isinstance(node, ParamExpansion):
+                expression_parts.append(node.content)
+            elif node.operation is None and node.param_name not in spy_env:
+                # An unset variable is still a string value, rather than nothing
+                accessed_vars[node.param_name] = ""
+                expression_parts.append(f"__env.{node.param_name}")
+            else:
+                expression_parts.append(node.expand(spy_env))
 
-        return expression, accessed_vars
+        return "".join(expression_parts), accessed_vars
 
 
 def _get_import_names(imports: Iterable[str]) -> Iterator[str]:
