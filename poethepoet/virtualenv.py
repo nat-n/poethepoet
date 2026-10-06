@@ -24,10 +24,13 @@ class Virtualenv:
             return self.path.joinpath("Scripts")
         return self.path.joinpath("bin")
 
-    def resolve_executable(self, executable: str) -> str:
+    def resolve_executable(
+        self, executable: str, search_path: str | None = None
+    ) -> str:
         """
         If the given executable can be found in the bin_dir then return its absolute
-        path. Otherwise return the input.
+        path. Otherwise return the input, or on windows the executable as resolved
+        from the search_path (defaults to the PATH of the current process).
         """
         bin_dir = self.bin_dir()
         if bin_dir.joinpath(executable).is_file():
@@ -39,7 +42,7 @@ class Virtualenv:
                 return str(bin_dir.joinpath(f"{executable}.exe"))
             if bin_dir.joinpath(f"{executable}.bat").is_file():
                 return str(bin_dir.joinpath(f"{executable}.bat"))
-            return shutil.which(executable) or executable
+            return shutil.which(executable, path=search_path) or executable
         return executable
 
     @staticmethod

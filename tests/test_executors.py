@@ -400,3 +400,37 @@ def test_virtualenv_executor_keeps_task_path(run_poe, temp_pyproject, tmp_path):
     assert result.capture == "Poe => poe_test_env\n"
     assert f"PATH={venv_bin}:{custom_bin}:" in result.stdout
     assert result.stderr == ""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Uses a posix shell script")
+def test_executables_resolve_from_task_path(run_poe, temp_pyproject, tmp_path):
+    """
+    Executables are resolved against the PATH of the task env, so a task can
+    shadow executables that are also available on poe's own PATH
+    """
+    shadow_bin = tmp_path / "shadow_bin"
+    _make_shell_script(shadow_bin, "poe_test_echo", 'echo shadowed "$@"')
+    _make_shell_script(
+        shadow_bin, "python", f'SHADOW_PYTHON=yes exec "{sys.executable}" "$@"'
+    )
+    project_path = temp_pyproject(f"""
+            [tool.poe]
+            executor = "simple"
+            env = {{ PATH = "{shadow_bin.as_posix()}:${{PATH}}" }}
+
+            [tool.poe.tasks.echo]
+            cmd = "poe_test_echo hi"
+
+            [tool.poe.tasks.which-python]
+            expr = "os.environ.get('SHADOW_PYTHON')"
+            imports = ["os"]
+        """)
+
+    result = run_poe("echo", cwd=project_path)
+    assert result.capture == "Poe => poe_test_echo hi\n"
+    assert result.stdout == "shadowed hi\n"
+    assert result.stderr == ""
+
+    result = run_poe("which-python", cwd=project_path)
+    assert result.stdout == "yes\n"
+    assert result.stderr == ""

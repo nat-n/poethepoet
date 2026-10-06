@@ -351,10 +351,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
 
     def _resolve_executable(self, executable: str):
+        # Resolve executables against the PATH that the subprocess will see
+        search_path = self.env.get("PATH")
         if self._should_resolve_python and executable == "python":
-            if python := shutil.which("python"):
+            if python := shutil.which("python", path=search_path):
                 yield python
-            elif python3 := shutil.which("python3"):
+            elif python3 := shutil.which("python3", path=search_path):
                 yield python3
             else:
                 self._io.print_debug(
@@ -371,7 +373,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         else:
             # Attempt to explicitly resolve the target executable, because we can't
             # count on the OS to do this consistently.
-            yield shutil.which(executable) or executable
+            yield shutil.which(executable, path=search_path) or executable
 
     @classmethod
     def get_executor_class(cls, key: str) -> type[PoeExecutor]:
