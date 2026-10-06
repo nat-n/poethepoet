@@ -201,3 +201,237 @@ def test_sighup_terminates_task_and_children(long_running_task):
     assert _wait_for_proc_exit(poe_handle.process), "poe should exit after SIGHUP"
     poe_handle.process.wait()  # Reap zombie
     assert _wait_for_pid_exit(child_pid), "child should exit after SIGHUP"
+
+
+class _RecordingProcess:
+    """
+    A stand-in for an asyncio subprocess that never exits by itself.
+    """
+
+    def __init__(self, pid: int = 12345):
+        self.pid = pid
+        self.returncode = None
+
+
+def _make_posix_manager(monkeypatch):
+    """
+    Build a POSIX ShutdownManager tracking one fake process, recording the signals
+    it would send to the process group instead of sending them.
+    """
+    loop = asyncio.new_event_loop()
+    manager = ShutdownManager(loop, PoeIO(make_default=False))
+    manager._is_windows = False
+    sent_signals: list[int] = []
+    monkeypatch.setattr(
+        manager,
+        "_send_signal_to_group",
+        lambda _proc, sig: sent_signals.append(sig),
+    )
+    fake_proc = _RecordingProcess()
+    process = PoeProcess(cast("Any", fake_proc))
+    manager.processes.add(process)
+    return loop, manager, process, sent_signals
+
+
+def test_sigterm_escalates_straight_to_terminate_level():
+    # Signal handlers receive the signal number as a plain int, not the enum member
+    loop = asyncio.new_event_loop()
+    manager = ShutdownManager(loop, PoeIO(make_default=False))
+
+    manager.shutdown(int(signal.SIGTERM))
+    assert manager._urgency == 3
+
+    manager.shutdown(int(signal.SIGTERM))
+    assert manager._urgency == 4
+    loop.close()
+
+
+def test_sigint_escalates_one_level_at_a_time():
+    loop = asyncio.new_event_loop()
+    manager = ShutdownManager(loop, PoeIO(make_default=False))
+
+    manager.shutdown(int(signal.SIGINT))
+    assert manager._urgency == 1
+
+    manager.shutdown(int(signal.SIGINT))
+    assert manager._urgency == 2
+    loop.close()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signal escalation")
+def test_posix_shutdown_escalation_levels(monkeypatch):
+    loop, manager, process, sent_signals = _make_posix_manager(monkeypatch)
+
+    manager._urgency = 1
+    manager._shutdown()
+    assert sent_signals == [signal.SIGINT]
+
+    # Level 3 asks the process group to terminate, and keeps tracking the process
+    # so that it can be killed if it doesn't comply
+    sent_signals.clear()
+    manager._urgency = 3
+    manager._shutdown()
+    assert sent_signals == [signal.SIGINT, signal.SIGTERM]
+    assert process in manager.processes
+
+    # Level 4 kills whatever is left
+    sent_signals.clear()
+    manager._urgency = 4
+    manager._shutdown()
+    assert sent_signals == [
+        signal.SIGINT,
+        signal.SIGTERM,
+        cast("Any", signal).SIGKILL,
+    ]
+    loop.close()
+
+
+@pytest.fixture
+def immortal_task(run_poe_subproc_handle, temp_pyproject):
+    """
+    Start a poe task that swallows SIGINT and wait for it to be running.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.immortal]
+        cmd = "poe_test_immortal 9 still-alive"
+        """
+    )
+    poe_handle = run_poe_subproc_handle("immortal", cwd=str(project_path))
+    stdout = poe_handle.process.stdout
+    assert stdout is not None
+    assert stdout.readline().strip() == b"still-alive"
+
+    yield poe_handle
+
+    if poe_handle.process.poll() is None:
+        poe_handle.process.kill()
+        poe_handle.process.wait()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signal escalation")
+def test_sigterm_terminates_task_that_ignores_sigint(immortal_task):
+    # A single SIGINT would only be escalated to termination after two escalation
+    # intervals (~1.6s), whereas SIGTERM should terminate the task straight away.
+    started = time.monotonic()
+    immortal_task.process.send_signal(signal.SIGTERM)
+    assert _wait_for_proc_exit(immortal_task.process, timeout=10)
+    assert time.monotonic() - started < 1.2
+
+
+def test_windows_shutdown_terminate_level_with_exited_process(monkeypatch):
+    class FakeProcess:
+        def __init__(self, pid: int):
+            self.pid = pid
+            self.returncode = None
+
+        def send_signal(self, sig: int):
+            pass
+
+    taskkill_calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "subprocess.run", lambda cmd, **_kwargs: taskkill_calls.append(cmd)
+    )
+    monkeypatch.setattr(
+        signal,
+        "CTRL_BREAK_EVENT",
+        getattr(signal, "CTRL_BREAK_EVENT", 1),
+        raising=False,
+    )
+
+    loop = asyncio.new_event_loop()
+    manager = ShutdownManager(loop, PoeIO(make_default=False))
+    manager._is_windows = True
+    running_proc = FakeProcess(1001)
+    exiting_proc = FakeProcess(1002)
+    processes = [
+        PoeProcess(cast("Any", running_proc)),
+        PoeProcess(cast("Any", exiting_proc)),
+    ]
+    manager.processes.update(processes)
+
+    # The process exits after the first loop over processes but before the
+    # terminate level loop runs
+    def exit_after_ctrl_break(sig: int):
+        exiting_proc.returncode = 0
+
+    exiting_proc.send_signal = exit_after_ctrl_break  # type: ignore[method-assign]
+
+    manager._urgency = 3
+    manager._shutdown()
+
+    assert ["taskkill", "/T", "/PID", "1001"] in taskkill_calls
+    assert processes[1] not in manager.processes
+    loop.close()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_task_killed_by_signal_exits_with_128_plus_signum(run_poe, temp_pyproject):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.selfkill]
+        shell = "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"
+        interpreter = "python"
+        """)
+    result = run_poe("selfkill", cwd=project_path)
+    assert result.code == 128 + signal.SIGTERM
+
+
+def _start_task_and_wait_for_pidfile(run_poe_subproc_handle, project_path, pid_file):
+    poe_handle = run_poe_subproc_handle("task", cwd=str(project_path))
+    deadline = time.monotonic() + 10.0
+    while time.monotonic() < deadline:
+        if poe_handle.process.poll() is not None:
+            pytest.fail(f"Poe exited early: {poe_handle.result()}")
+        if pid_file.exists() and pid_file.stat().st_size > 0:
+            return poe_handle
+        time.sleep(0.1)
+    poe_handle.process.kill()
+    pytest.fail("Child process did not write PID file in time")
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize(
+    ("task_def", "sig"),
+    [
+        (
+            'sequence = ["hang", { cmd = "poe_test_echo after" }]\nignore_fail = true',
+            signal.SIGINT,
+        ),
+        (
+            'sequence = ["hang", { cmd = "poe_test_echo after" }]\nignore_fail = true',
+            signal.SIGTERM,
+        ),
+        (
+            'sequence = [{ parallel = ["hang"] }, { cmd = "poe_test_echo after" }]\n'
+            "ignore_fail = true",
+            signal.SIGINT,
+        ),
+        ('parallel = ["hang"]\nignore_fail = true', signal.SIGINT),
+        ('ref = "hang"\nignore_fail = true', signal.SIGINT),
+        ('cmd = "poe_test_echo after"\ndeps = ["hang"]', signal.SIGINT),
+    ],
+)
+def test_interrupt_stops_task_and_exits_non_zero(
+    run_poe_subproc_handle, temp_pyproject, tmp_path, task_def, sig
+):
+    # Once interrupted, no further subtasks are started, even with ignore_fail, and
+    # poe exits with the shell convention status for the signal it received
+    pid_file = tmp_path / "child.pid"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.hang]
+        cmd = "poe_test_delayed_echo_with_pidfile 60000 'done' '{pid_file}'"
+
+        [tool.poe.tasks.task]
+        {task_def}
+        """)
+    poe_handle = _start_task_and_wait_for_pidfile(
+        run_poe_subproc_handle, project_path, pid_file
+    )
+
+    poe_handle.process.send_signal(sig)
+    result = poe_handle.result(timeout=10)
+
+    assert "after" not in result.stdout
+    assert "poe_test_echo after" not in result.capture
+    assert result.code == 128 + sig
+    assert _wait_for_pid_exit(int(pid_file.read_text()))

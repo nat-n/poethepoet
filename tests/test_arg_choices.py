@@ -155,6 +155,77 @@ def test_choices_templated_default_skips_membership_check(
     assert result.stdout == ""
     assert result.stderr == ""
 
+    result = run_poe("check", cwd=project_path, env={"CHOICE": "all"})
+    assert result.code == 0
+    assert result.capture == "Poe => poe_test_echo all\n"
+
+
+@pytest.mark.parametrize(
+    ("arg_options", "env", "expected_error"),
+    [
+        (
+            'default = "${CHOICE}", choices = ["x", "y"]',
+            {"CHOICE": "q"},
+            "Default value 'q' is not included in the configured choices ['x', 'y']",
+        ),
+        (
+            'default = "${CHOICE}", choices = ["x", "y"]',
+            {},
+            "Default value '' is not included in the configured choices ['x', 'y']",
+        ),
+        (
+            'default = "${CHOICE}", choices = ["x", "y"], positional = true',
+            {"CHOICE": "q"},
+            "Default value 'q' is not included in the configured choices ['x', 'y']",
+        ),
+        (
+            'type = "integer", default = "${CHOICE:-7}", choices = [1, 2]',
+            {},
+            "Default value 7 is not included in the configured choices [1, 2]",
+        ),
+        (
+            'default = "${CHOICE}", choices = ["x", "y"], multiple = true',
+            {"CHOICE": "q"},
+            "Default value 'q' is not included in the configured choices ['x', 'y']",
+        ),
+    ],
+    ids=("option", "unset_env", "positional", "integer", "multiple"),
+)
+def test_choices_are_enforced_for_resolved_templated_default(
+    generate_choice_task_pyproject, run_poe, arg_options, env, expected_error
+):
+    project_path = generate_choice_task_pyproject(f"""
+            [tool.poe.tasks.check]
+            expr = "repr(value)"
+            args = [{{ name = "value", {arg_options} }}]
+        """)
+    result = run_poe("check", cwd=project_path, env=env)
+    assert result.code == 1
+    assert (
+        "Error: Invalid default for argument 'value' in task 'check'\n"
+        f"     | {expected_error}"
+    ) in result.capture
+    assert "Invalid arguments for task" not in result.capture
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_choices_accept_default_that_converts_to_a_choice(
+    generate_choice_task_pyproject, run_poe
+):
+    project_path = generate_choice_task_pyproject("""
+            [tool.poe.tasks.check]
+            expr = "repr(count)"
+            [[tool.poe.tasks.check.args]]
+            name = "count"
+            type = "integer"
+            default = "2"
+            choices = [1, 2]
+        """)
+    result = run_poe("check", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "2\n"
+
 
 @pytest.mark.parametrize(
     ("arg_block", "expected_error"),
@@ -165,7 +236,7 @@ def test_choices_templated_default_skips_membership_check(
         ),
         (
             'name = "flag", type = "boolean", choices = [true, false]',
-            "invalid choice value True",
+            "Option 'choices' must have a value of type",
         ),
         (
             'name = "mode", choices = "all"',
@@ -214,7 +285,6 @@ def test_integer_choices_accept_bool_values(generate_choice_task_pyproject, run_
     result = run_poe("check", "1", cwd=project_path)
     assert result.code == 1
     assert "Invalid argument 'count' declared" in result.capture
-    assert "invalid choice value True" in result.capture
-    assert "type the configured 'integer'" in result.capture
+    assert "Option 'choices' must have a value of type" in result.capture
     assert result.stdout == ""
     assert result.stderr == ""

@@ -19,6 +19,7 @@ help = "Build distribution packages"
 **Parameter expansion** (bash-like operators):
 
 ```toml
+[tool.poe.tasks]
 # Default value if VAR is unset:
 tables = "aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}"
 
@@ -26,13 +27,15 @@ tables = "aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}"
 debug_flag = "server ${DEBUG:+--debug}"
 ```
 
-**Glob expansion**: Patterns like `*.py`, `**/*.txt` are expanded via Python's glob module.
+**Glob expansion**: Patterns like `*.py`, `**/*.txt` are expanded relative to the task's working directory.
 
-- `empty_glob = "null"` — treat no-match as empty string (like shell nullglob)
+- `empty_glob = "null"` — drop a pattern that matches nothing (like shell nullglob)
 - `empty_glob = "fail"` — fail the task if pattern matches nothing
 - `empty_glob = "pass"` — pass pattern through unchanged (default)
 
-**Extra args**: Free args (after `--`) are auto-appended. Use `$POE_EXTRA_ARGS` for explicit placement:
+`#` starts a comment only at the start of a word: `cmd = "echo a#b # note"` runs `echo a#b`.
+
+**Extra args**: Free args are auto-appended (for a task without declared `args` that is every argument after the task name; with `args`, those after `--`). Use `$POE_EXTRA_ARGS` for explicit placement:
 
 ```toml
 cmd = "pytest $POE_EXTRA_ARGS --cov=src"  # extra args before --cov, not after
@@ -52,7 +55,7 @@ script = "myapp:run"                             # calls myapp.run()
 help = "Start the development server"
 
 [tool.poe.tasks.deploy]
-script = "my_pkg.deploy:run(env, dry_run=True)"  # with inline args
+script = "my_pkg.deploy:run('staging', dry_run=True)"  # with literal args
 
 [tool.poe.tasks.http-server]
 script = "http.server"                           # runs module's __main__
@@ -75,10 +78,10 @@ args = [
 **Private args in call expression**:
 
 ```toml
-script = "deploy:main(_env, dry_run=_dry_run)"
+script = "deploy:main(_env, dry_run=_dry, region=environ['AWS_REGION'])"
 args = [
   { name = "_env", positional = true },
-  { name = "_dry_run", type = "boolean", options = ["--dry-run"] }
+  { name = "_dry", type = "boolean", options = ["--dry-run"] }
 ]
 ```
 
@@ -119,7 +122,7 @@ interpreter = "pwsh"
 shell_interpreter = "bash"
 ```
 
-Valid values: `posix` (default — tries sh, bash, zsh), `sh`, `bash`, `zsh`, `fish`, `pwsh`, `powershell`, `python`
+Valid values: `posix` (default — tries sh, bash, zsh), `sh`, `bash`, `zsh`, `fish`, `pwsh`, `powershell`, `python`, or a list of these to use the first one available.
 
 ---
 
@@ -151,13 +154,12 @@ script = "validate:schema"
 ref = "test"
 ```
 
-Tasks defined inline within a `sequence` or `parallel` may **not** declare `args`, `deps`, `uses`, or `uses_env` (config error). To use `deps`/`uses`/`uses_env`, put them on a named task and reference it.
+Tasks defined inline within a `sequence` or `parallel` may **not** declare `args`, `deps`, `uses`, `uses_env`, or `use_exec` (config error). To use `deps`/`uses`/`uses_env`, put them on a named task and reference it.
 
 **ignore_fail options**:
 
-- `true` — continue on failure; return 0 if all other tasks succeed
-- `"return_zero"` — always return 0 regardless of failures
-- `"return_non_zero"` — continue but return non-zero if any task failed
+- `true` or `"return_zero"` — run every subtask and always exit 0
+- `"return_non_zero"` — run every subtask, then exit 1 if any failed
 
 **Forwarding extra args to subtasks**:
 
@@ -185,11 +187,14 @@ help = "Run all checks in parallel"
 ```toml
 [tool.poe.tasks.check]
 parallel = ["lint", "test"]
+prefix = "{name}#{index}"
 prefix_template = "{color_start}[{prefix}]{color_end} "
 prefix_max = 12
 ```
 
-Available tags: `{name}`, `{index}`, `{color_start}`, `{color_end}`
+- `prefix` — the label for each subtask's lines; tags `{name}` and `{index}`; default `"{name}"`; `false` disables prefixing
+- `prefix_max` — truncate the label to this width (default 16)
+- `prefix_template` — how the label is rendered; tags `{prefix}`, `{color_start}`, `{color_end}`; default `"{color_start}{prefix}{color_end} | "`
 
 **output_mode**: by default each subtask's output is streamed line-by-line as it arrives, so lines from different tasks interleave. Set `output_mode = "buffer"` to hold each subtask's stdout and print it as one contiguous block when that subtask finishes:
 
@@ -273,8 +278,6 @@ control.expr = "sys.platform"
 
 ```toml
 [tool.poe.tasks.deploy]
-# ✅ Reference the arg by bare variable name. Do NOT write `${STAGE}` here —
-#    that routes through the environment and silently breaks for private args.
 control.expr = "STAGE"
 args = [{ name = "STAGE", positional = true, choices = ["staging", "production"] }]
 
@@ -293,24 +296,9 @@ args = [{ name = "STAGE", positional = true, choices = ["staging", "production"]
 
 - Control task type must be `expr`, `cmd`, or `script`.
 - Matching is by string comparison: the control output is `str()`-ed and compared against each `case` value (also `str()`-ed).
-- `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, `uses_env`, or `deps`.
+- `args` declared on the switch task propagate automatically to the control task **and** every case task. Neither the control nor the cases may declare `args`, `uses`, `uses_env`, or `deps`.
 
-**Branching on a private (`_`-prefixed) arg**: in an `expr` control, reference it by **bare variable name**, never `${...}`. Private args aren't exported as env vars, so `control.expr = "${_target}"` silently resolves to an empty string and the switch falls through to `default`. Use the bare-variable form:
-
-```toml
-[tool.poe.tasks.deploy]
-control.expr = "_target"          # ✅ bare variable — works for both public and private args
-# control.expr = "${_target}"     # ❌ broken: ${_target} routes through env, silent empty for private args
-args = [{ name = "_target", positional = true, choices = ["dev", "prod"] }]
-
-  [[tool.poe.tasks.deploy.switch]]
-  case = "dev"
-  cmd = "deploy --env dev"
-
-  [[tool.poe.tasks.deploy.switch]]
-  case = "prod"
-  cmd = "deploy --env prod"
-```
+In an `expr` control, reference a declared arg by its **bare name** (`control.expr = "STAGE"`, or `"_target"` for a private arg): that is the arg's typed value. `${STAGE}` gives the env-string form instead, which is `''` when the arg is a false boolean or wasn't passed.
 
 ---
 
@@ -327,9 +315,9 @@ Use when: outputting computed values, platform checks, file counts, or lightweig
 >
 > To call a method on the value, do **not** wrap it: `expr = "${STAGE}.upper()"` → `__env.STAGE.upper()` → yields `"STAGING"`. (Writing `"'${STAGE}'.upper()"` would call `.upper()` on the literal string `"__env.STAGE"` and return `"__ENV.STAGE"` — broken.)
 
-**Referencing declared args.** A declared arg is in scope as a **bare Python variable** under its declared name. The canonical form is `expr = "AWS_REGION"`, not `expr = "${AWS_REGION}"`.
+**Referencing declared args.** A declared arg (public or private `_`) is in scope as a **bare Python variable** under its declared name, with its declared type: `expr = "_count * 2"` with an integer arg gives a number. Prefer this over `${_count}`, which is the env-string form (`'2'`), and `''` when the arg is a false boolean or wasn't passed (the bare name gives `False` / `None`).
 
-> The `${AWS_REGION}` form routes through the *environment* (not the args namespace). For a **public** arg this coincides because public args are also exported to env — but for a **private `_`-prefixed arg it silently breaks**: private args are deliberately not exported, so `${_target}` resolves to an empty/missing env var rather than the arg's value. Always use the bare-variable form when an `expr` references an arg.
+**Unset env vars.** An unset `${VAR}` evaluates to `""`. For another fallback, set a default with `env.VAR.default = "..."`.
 
 See `args-reference.md` for the full per-task-type table.
 
@@ -348,9 +336,9 @@ help = "Count hidden files in the project root"
 
 ```toml
 [tool.poe.tasks.check-venv]
-expr = "${VIRTUAL_ENV}.endswith('.venv')"
+expr = "sys.prefix.endswith('.venv')"
 assert = true
-help = "Verify the correct virtualenv is active"
+help = "Verify the task runs in the project's .venv"
 ```
 
 **Options**:

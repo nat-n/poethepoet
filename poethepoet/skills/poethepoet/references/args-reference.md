@@ -53,11 +53,11 @@ help = "Host to bind"
 | Option       | Type               | Description                                                                    |
 | ------------ | ------------------ | ------------------------------------------------------------------------------ |
 | `name`       | string             | Arg name — required in array form                                              |
-| `options`    | list[str]          | CLI flags, e.g. `["-h", "--host"]`. Default: `["--name"]`                      |
-| `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators |
+| `options`    | list[str]          | CLI flags (non-empty), e.g. `["-h", "--host"]`. Default: `["--name"]`          |
+| `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators. Converted to the arg's `type`, and must be valid for `type` and `choices` (config error otherwise) |
 | `help`       | string             | Help text in `poe --help <task>`                                               |
 | `type`       | string             | `"string"` (default), `"integer"`, `"float"`, `"boolean"`                      |
-| `true_string` / `false_string` | string | Boolean args only: literal string for the true / false value in expansion and the environment |
+| `true_string` / `false_string` | string | Boolean args only (poe 0.49.0+): literal string for the true / false value in expansion and the environment |
 | `positional` | bool               | Positional arg — no flag needed                                                |
 | `required`   | bool               | Fail if not provided                                                           |
 | `choices`    | list               | Restrict to these values (enforced)                                            |
@@ -82,7 +82,7 @@ help = "Target environment"
 
 Usage: `poe deploy production`
 
-Only one positional arg can have `multiple = true`, and it must be last.
+Only one positional arg can have `multiple = true`, and it must be last. Positional args can't be `type = "boolean"`.
 
 ---
 
@@ -100,7 +100,7 @@ The `default` for a boolean arg must be a TOML bool, or a case-insensitive strin
 
 In script/expr tasks the resulting Python variable keeps its declared type. By default a boolean is exposed to parameter expansion and the subprocess environment as `"True"` when true, or unset when false.
 
-Set `true_string` and/or `false_string` to customize those environment strings. Values are literal: `${...}` is not interpolated. An explicit `""` sets an empty variable; omitting `false_string` keeps false unset. The options select by boolean value, independently of `default`, and do not change typed Python arguments or module script flag forwarding.
+Set `true_string` and/or `false_string` (poe 0.49.0+) to customize those environment strings. Values are literal: `${...}` is not interpolated. An explicit `""` sets an empty variable; omitting `false_string` keeps false unset. The options select by boolean value, independently of `default`, and do not change typed Python arguments or module script flag forwarding.
 
 ```toml
 [tool.poe.tasks.greet]
@@ -164,21 +164,21 @@ args = [{ name = "_target", positional = true }]
 
 ---
 
-## Free arguments (after --)
+## Free arguments
 
-Args passed after `--` on the command line are "free args" — not matched to any defined arg:
+"Free args" are CLI arguments not matched to any declared arg:
 
-```bash
-poe test -- -x -k "my_test"    # -x and -k "my_test" are free args
-```
+- **Task without `args`**: every argument after the task name is a free arg, so `poe test -x -k "my_test"` just works. Don't add `--`: it is forwarded literally (`pytest -- -x`).
+- **Task with `args`**: unknown arguments are an error; put free args after `--`: `poe test -m slow -- -x`.
 
 How they're available:
 
 - **`cmd` tasks**: Auto-appended to the command. Use `$POE_EXTRA_ARGS` for explicit placement
-- **`shell` tasks**: Available as `$POE_EXTRA_ARGS`
-- **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`)
+- **`shell` tasks**: Only via `$POE_EXTRA_ARGS`; if the script doesn't reference it, free args are silently dropped. It is a shell-quoted string, so plain `$POE_EXTRA_ARGS` is only safe for simple args; use `eval "pytest $POE_EXTRA_ARGS"` to keep args with spaces or quotes intact
+- **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`, empty if there are none)
+- **`ref` tasks**: Auto-appended to the referenced task's invocation
 
-**Forwarding to subtasks** — only subtasks that explicitly reference `$POE_EXTRA_ARGS` receive free args:
+**Forwarding to subtasks** — a sequence/parallel item receives free args when it passes `$POE_EXTRA_ARGS` (subtasks inherit the variable, so a subtask whose own definition references `$POE_EXTRA_ARGS` also sees them):
 
 ```toml
 [tool.poe.tasks.check]
@@ -189,9 +189,6 @@ sequence = [
 ]
 ```
 
-The follow task types have subtacks: sequence, parallel, switch, ref
-
-If no args are declared then all cli arguments are captured as "free args", so a task declared as simply `test.cmd = "pytest"` for example will forward any arguments passed on the CLI to pytest.
 
 ---
 
@@ -201,7 +198,9 @@ If no args are declared then all cli arguments are captured as "free args", so a
 args = [{ name = "AWS_REGION", options = ["--region", "-r"], default = "${AWS_DEFAULT_REGION:-us-east-1}" }]
 ```
 
-The fact that args are normally exposed as environment variables can be useful when the task explicitly needed, for example calling an arg `"AWS_REGION"` will set that environment variable for all subprocesses of the task.
+Because public args are exposed as environment variables, an arg named `"AWS_REGION"` sets that variable for all subprocesses of the task.
+
+**Pitfall**: an arg that isn't passed and has no default **removes** the variable of the same name from the task's environment, even if the host or the task's `env` set it. To fall back to the inherited value, use it as the default: `default = "${AWS_REGION}"`.
 
 If provided, the default value is appended to the help message automatically.
 

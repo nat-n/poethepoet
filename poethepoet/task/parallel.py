@@ -1,38 +1,56 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, TypeVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
-from ..executor.task_run import PoeTaskRun, PoeTaskRunError
 from ..helpers.eventloop import DynamicTaskSet
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    import asyncio
-    from collections.abc import AsyncIterator, Callable, Sequence
+    from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 
     from ..config import ConfigPartition, PoeConfig
     from ..config.partition import GroupConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
     from ..executor.base import PoeProcess
-    from ..options.annotations import Disinherited
+    from ..executor.task_run import PoeTaskRun
+    from ..options.annotations import Disinherited, Metadata
     from .base import TaskSpecFactory
 
 T = TypeVar("T")
 
 SUBTASK_OPTIONS_BLOCKLIST = ("args", "deps", "uses", "uses_env")
 
-BUFFERED_STDOUT_LIMIT = int(
-    os.environ.get("POE_BUFFERED_STDOUT_LIMIT", 4 * 1024 * 1024)
-)
+DEFAULT_BUFFERED_STDOUT_LIMIT = 4 * 1024 * 1024
+
+
+def _get_buffered_stdout_limit() -> int:
+    """
+    Get the size limit for buffered subtask output, which may be overridden via the
+    POE_BUFFERED_STDOUT_LIMIT environment variable. Invalid values are ignored.
+    """
+    try:
+        if (limit := int(os.environ["POE_BUFFERED_STDOUT_LIMIT"])) > 0:
+            return limit
+    except (KeyError, ValueError):
+        pass
+    return DEFAULT_BUFFERED_STDOUT_LIMIT
+
+
+BUFFERED_STDOUT_LIMIT = _get_buffered_stdout_limit()
 
 
 class ColorCycle:
+    """
+    Assigns each subtask of a parallel task a colour by its position, so that all
+    output from one subtask shares a colour.
+    """
+
     def __init__(self):
-        self.index = 0
         self.colors = [
             "31",  # Red
             "32",  # Green
@@ -42,13 +60,9 @@ class ColorCycle:
             "36",  # Cyan
         ]
 
-    def next(self) -> str:
-        color = self.colors[self.index]
-        self.index = (self.index + 1) % len(self.colors)
-        return color
-
-    def start(self, ansi_enabled: bool = True) -> str:
-        return f"\x1b[{self.next()}m" if ansi_enabled else ""
+    def start(self, index: int, ansi_enabled: bool = True) -> str:
+        color = self.colors[index % len(self.colors)]
+        return f"\x1b[{color}m" if ansi_enabled else ""
 
     def end(self, ansi_enabled: bool = True) -> str:
         return "\x1b[0m" if ansi_enabled else ""
@@ -97,7 +111,7 @@ class ParallelTask(PoeTask):
         this is the task name. Set to false to disable prefixing.
         """
 
-        prefix_max: int = 16
+        prefix_max: Annotated[int, Metadata(minimum=1)] = 16
         """
         Set the maximum width of the prefix. Longer prefixes will be truncated.
         """
@@ -148,12 +162,17 @@ class ParallelTask(PoeTask):
                         "type: str | dict | list",
                         task_name=self.name,
                     )
+                if isinstance(sub_task_def, str) and not sub_task_def.strip():
+                    raise ConfigValidationError(
+                        f"Item #{index} in parallel task must not be empty",
+                        task_name=self.name,
+                    )
 
                 subtask_name = (
                     sub_task_def
                     if (
                         isinstance(sub_task_def, str)
-                        and (sub_task_def[0].isalpha() or sub_task_def[0] == "_")
+                        and (sub_task_def[:1].isalpha() or sub_task_def[:1] == "_")
                     )
                     else ParallelTask._subtask_name(name, index)
                 )
@@ -186,8 +205,22 @@ class ParallelTask(PoeTask):
                             f"Unsupported option {banned_option!r} for task "
                             "declared inside parallel"
                         )
+                if subtask.options.get("use_exec", False):
+                    # The process would be replaced, silently skipping other subtasks
+                    raise ConfigValidationError(
+                        "Unsupported option 'use_exec' for task declared inside "
+                        "parallel"
+                    )
 
                 subtask.validate(config, task_specs)
+
+        def iter_task_references(self) -> Iterator[str]:
+            """
+            A parallel task runs each of its subtasks
+            """
+            yield from super().iter_task_references()
+            for subtask in self.subtasks:
+                yield from subtask.iter_task_references()
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
@@ -201,6 +234,8 @@ class ParallelTask(PoeTask):
         fragment["properties"]["parallel"]["items"] = {
             "allOf": [
                 {"$ref": "#/definitions/task_def"},
+                # String items must not be empty
+                {"if": {"type": "string"}, "then": {"pattern": r"\S"}},
                 *(
                     {
                         "if": {"type": "object"},
@@ -208,6 +243,10 @@ class ParallelTask(PoeTask):
                     }
                     for opt in SUBTASK_OPTIONS_BLOCKLIST
                 ),
+                {
+                    "if": {"type": "object"},
+                    "then": {"properties": {"use_exec": {"const": False}}},
+                },
             ],
         }
         return fragment
@@ -245,18 +284,15 @@ class ParallelTask(PoeTask):
             task_state.ignore_failure()
 
         task_group = DynamicTaskSet()
-        task_group.create_task(
-            self._handle_task_failures(task_state),
-            name="handle_task_failures:" + self.name,
-        )
+        subtask_runs: list[PoeTaskRun] = []
 
         with context.output_streaming(enabled=True) as streaming_enabled:
             for subtask in self._subtasks:
-                subtask_run: PoeTaskRun | None = None
                 try:
                     subtask_run = await subtask.run(context=context, parent_env=env)
                     await task_state.add_child(subtask_run)
-                except ExecutionError as error:
+                    subtask_runs.append(subtask_run)
+                except ExecutionError as error:  # noqa: PERF203
                     if ignore_fail:
                         self.ctx.io.print_warning(error.msg, message_verbosity=0)
                     else:
@@ -266,6 +302,11 @@ class ParallelTask(PoeTask):
                         ) from error
 
             await task_state.finalize()
+
+            task_group.create_task(
+                self._handle_task_failures(task_state, subtask_runs),
+                name="handle_task_failures:" + self.name,
+            )
 
             if streaming_enabled:
                 # Only collect outputs if output streaming wasn't already enabled
@@ -285,33 +326,61 @@ class ParallelTask(PoeTask):
                 )
                 raise
 
-    async def _handle_task_failures(self, task_state: PoeTaskRun):
+    async def _handle_task_failures(
+        self, task_state: PoeTaskRun, subtask_runs: Sequence[PoeTaskRun]
+    ):
+        """
+        Wait for every subtask to complete, reporting each one that fails. Unless
+        ignore_fail is set, the first failure aborts the parallel task.
+        """
         ignore_fail = self.spec.options.ignore_fail
         non_zero_subtasks = []
-        # listen for completion and error events from subtasks
-        async for event in task_state.events():
-            if isinstance(event, PoeTaskRunError):
-                if event.exception is None:
-                    self.ctx.io.print_warning(
-                        "Parallel subtask %r failed with non-zero exit status",
-                        event.name,
-                        message_verbosity=0,
-                    )
-                else:
-                    self.ctx.io.print_warning(
-                        "Parallel subtask %r failed with exception: %s",
-                        event.name,
-                        event.exception,
-                        message_verbosity=0,
-                    )
+        # Wait on each subtask directly, rather than inferring completion from the
+        # state of its processes, so that no failure can go unnoticed.
+        pending = {
+            asyncio.create_task(
+                self._wait_for_subtask(subtask_run),
+                name=f"wait_for_subtask:{subtask_run.name}",
+            )
+            for subtask_run in subtask_runs
+        }
+        try:
+            while pending:
+                finished, pending = await asyncio.wait(
+                    pending, return_when=asyncio.FIRST_COMPLETED
+                )
+                for subtask_run in sorted(
+                    (task.result() for task in finished), key=subtask_runs.index
+                ):
+                    if not subtask_run.has_failure:
+                        continue
 
-                if not ignore_fail:
-                    task_state.force_failure()
-                    raise ExecutionError(
-                        f"Parallel task {self.name!r} aborted after failed subtask "
-                        f"{event.name!r}"
-                    )
-                non_zero_subtasks.append(event.name)
+                    if subtask_run.asyncio_task.cancelled() or not (
+                        exception := subtask_run.asyncio_task.exception()
+                    ):
+                        self.ctx.io.print_warning(
+                            "Parallel subtask %r failed with non-zero exit status",
+                            subtask_run.name,
+                            message_verbosity=0,
+                        )
+                    else:
+                        self.ctx.io.print_warning(
+                            "Parallel subtask %r failed with exception: %s",
+                            subtask_run.name,
+                            exception,
+                            message_verbosity=0,
+                        )
+
+                    if not ignore_fail:
+                        task_state.force_failure()
+                        raise ExecutionError(
+                            f"Parallel task {self.name!r} aborted after failed "
+                            f"subtask {subtask_run.name!r}"
+                        )
+                    non_zero_subtasks.append(subtask_run.name)
+        finally:
+            for task in pending:
+                task.cancel()
 
         if non_zero_subtasks and ignore_fail == "return_non_zero":
             task_state.force_failure()
@@ -320,6 +389,11 @@ class ParallelTask(PoeTask):
                 f"Subtask{plural} {', '.join(repr(st) for st in non_zero_subtasks)} "
                 "returned non-zero exit status"
             )
+
+    @staticmethod
+    async def _wait_for_subtask(subtask_run: PoeTaskRun) -> PoeTaskRun:
+        await subtask_run.wait()
+        return subtask_run
 
     async def _collect_output_streams(
         self, task_state: PoeTaskRun, task_group: DynamicTaskSet
@@ -348,7 +422,7 @@ class ParallelTask(PoeTask):
                 ansi_enabled = self.ctx.io.ansi_enabled
                 prefix = options.prefix_template.format(
                     prefix=prefix_content,
-                    color_start=self.colors.start(ansi_enabled),
+                    color_start=self.colors.start(subtask_index, ansi_enabled),
                     color_end=self.colors.end(ansi_enabled),
                 ).encode("utf-8", errors="replace")
             else:
@@ -361,13 +435,15 @@ class ParallelTask(PoeTask):
             )
             prefix = b""
 
-        write = sys.stdout.buffer.write
+        write = self._get_stdout_writer()
         flush = sys.stdout.flush
         if self.spec.options.output_mode == "buffer":
             buffered_lines: list[bytes] = []
             buffered_size = 0
             try:
-                async for line in self._iter_output_lines(subproc.stdout, task_name):
+                async for line in self._iter_output_lines(
+                    subproc.stdout, task_name, terminate_tail=bool(prefix)
+                ):
                     buffered_lines.append(line)
                     buffered_size += len(line)
                     if buffered_size >= BUFFERED_STDOUT_LIMIT:
@@ -379,23 +455,47 @@ class ParallelTask(PoeTask):
             return
 
         if prefix:
-            async for line in self._iter_output_lines(subproc.stdout, task_name):
+            async for line in self._iter_output_lines(
+                subproc.stdout, task_name, terminate_tail=bool(prefix)
+            ):
                 write(prefix)
                 write(line)
                 flush()
         else:
-            async for line in self._iter_output_lines(subproc.stdout, task_name):
+            async for line in self._iter_output_lines(
+                subproc.stdout, task_name, terminate_tail=bool(prefix)
+            ):
                 write(line)
                 flush()
 
+    @staticmethod
+    def _get_stdout_writer() -> Callable[[bytes], int]:
+        """
+        Get a function for writing raw subtask output to stdout. If stdout doesn't
+        expose a binary buffer (e.g. it was replaced with a StringIO) then the output
+        is decoded and written as text instead.
+        """
+        if (stdout_buffer := getattr(sys.stdout, "buffer", None)) is not None:
+            return stdout_buffer.write
+
+        def write_text(content: bytes) -> int:
+            return sys.stdout.write(content.decode("utf-8", errors="replace"))
+
+        return write_text
+
     async def _iter_output_lines(
-        self, stdout: asyncio.StreamReader, subtask_name: str
+        self,
+        stdout: asyncio.StreamReader,
+        subtask_name: str,
+        terminate_tail: bool = False,
     ) -> AsyncIterator[bytes]:
         """
         Yield subtask stdout one line at a time. A complete line is emitted whole; a
         line that reaches BUFFERED_STDOUT_LIMIT before its newline arrives is emitted in
         chunks, and thus wrapped with a line break inserted at each cut, so memory stays
         bounded and every yielded chunk ends in a newline except the final (EOF) tail.
+        If terminate_tail is set then a newline is added to the final (EOF) tail too, so
+        that a prefixed line from another subtask can't be welded onto it.
         A warning is emitted for each output line that gets wrapped.
         """
         buffered_output = bytearray()
@@ -431,7 +531,7 @@ class ParallelTask(PoeTask):
                     break
 
         if cursor < len(buffered_output):
-            yield bytes(buffered_output[cursor:])
+            yield bytes(buffered_output[cursor:]) + (b"\n" if terminate_tail else b"")
 
     def _flush_output_buffer(
         self,

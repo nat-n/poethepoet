@@ -37,7 +37,7 @@ The following options are also accepted:
 Continue sequence on task failure
 ---------------------------------
 
-A failure (non-zero result) will result in the rest of the tasks in the sequence being skipped, unless the :toml:`ignore_fail` option is set on the task to :toml:`true`, :toml:`"return_zero"`, or :toml:`"return_non_zero"` like so:
+A failure (non-zero result) will result in the rest of the tasks in the sequence being skipped, and poe exiting with status 1 (regardless of the exit code of the failed subtask), unless the :toml:`ignore_fail` option is set on the task to :toml:`true`, :toml:`"return_zero"`, or :toml:`"return_non_zero"` like so:
 
 .. code-block:: toml
 
@@ -45,7 +45,9 @@ A failure (non-zero result) will result in the rest of the tasks in the sequence
   sequence = ["task1", "task2", "task3"]
   ignore_fail = true
 
-If you want to run all the subtasks in the sequence but return non-zero result in the end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` value like so:
+Setting :toml:`ignore_fail = true` is equivalent to :toml:`ignore_fail = "return_zero"`, meaning that all subtasks are run, and the sequence task always returns zero, even if some subtasks failed.
+
+If you want to run all the subtasks in the sequence but return a non-zero result (exit status 1) at the end of the sequence if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` value like so:
 
 .. code-block:: toml
 
@@ -61,10 +63,11 @@ If you want to run all the subtasks in the sequence but return non-zero result i
 Changing the default item type
 ------------------------------
 
-If you want strings in the array to be interpreted as a task type other than :doc:`ref<ref>` you may specify then :toml:`default_item_type` option like so:
+If you want strings in the array to be interpreted as a task type other than :doc:`ref<ref>` you may specify the :toml:`default_item_type` option like so:
 
 .. code-block:: toml
 
+  [tool.poe.tasks]
   release.sequence = [
     "devtasks:run_tests(all=True)",
     "devtasks:build",
@@ -101,15 +104,15 @@ When declaring more complex sequences the following syntax is often preferred.
 
 .. warning::
 
-  Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example ``help`` and ``args`` are forbidden because they don't make sense in this context.
+  Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example ``args`` is forbidden because it doesn't make sense in this context. The ``help`` option is accepted but has no effect.
 
-  The ``deps``, ``uses``, and ``uses_env`` options are also forbidden on inline tasks. To use them, declare a named task with those options and reference it from the sequence.
+  The ``deps``, ``uses``, and ``uses_env`` options are also forbidden on inline tasks. To use them, declare a named task with those options and reference it from the sequence. Inline tasks also may not set ``use_exec``, and string items in the sequence array must not be empty.
 
 
 Forwarding free arguments to subtasks
 --------------------------------------
 
-By default, free arguments passed to a sequence task are not forwarded to any of its subtasks. However, they can be forwarded selectively by referencing the special ``$POE_EXTRA_ARGS`` environment variable in individual subtask definitions. Only subtasks that explicitly reference ``$POE_EXTRA_ARGS`` will receive them.
+By default, free arguments passed to a sequence task are not appended to any of its subtasks. However, they can be forwarded selectively by referencing the special ``$POE_EXTRA_ARGS`` environment variable in individual subtask definitions. Only subtasks that reference ``$POE_EXTRA_ARGS`` (or ``_extra_args`` in script and expr tasks) will receive them. Note that this variable is inherited by all subtasks, so this includes referenced tasks whose own content references it.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
 

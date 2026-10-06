@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import shutil
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -20,14 +22,28 @@ if TYPE_CHECKING:
     from ..io import PoeIO
 
 
+# How long the process tree of a cancelled task has to exit after SIGTERM before
+# being killed with SIGKILL
+TERMINATION_GRACE_PERIOD_S = 2.0
+
+
 class PoeProcess:
     """
     Wraps asyncio.subprocess.Process with poe-specific metadata for shutdown handling.
     """
 
-    def __init__(self, process: Process, *, no_console_ctrl: bool = False):
+    def __init__(
+        self,
+        process: Process,
+        *,
+        no_console_ctrl: bool = False,
+        own_process_group: bool = False,
+    ):
         self._process = process
         self.no_console_ctrl = no_console_ctrl
+        # Whether the process was started as the leader of its own process group
+        # (POSIX only), so that its whole process tree can be signalled
+        self.own_process_group = own_process_group
 
     @property
     def pid(self) -> int:
@@ -53,6 +69,43 @@ class PoeProcess:
 
     def kill(self) -> None:
         self._process.kill()
+
+    def terminate_tree(self) -> None:
+        """
+        Stop the subprocess along with any processes it started. If the subprocess
+        leads its own process group then the group is sent SIGTERM, followed by
+        SIGKILL if it is still running after a grace period. Otherwise only the
+        subprocess itself is killed.
+        """
+        if not self.own_process_group:
+            if self.returncode is None:
+                self._process.kill()
+            return
+
+        if self._tree_may_be_running():
+            self._signal_group(signal.SIGTERM)
+            asyncio.get_running_loop().call_later(
+                TERMINATION_GRACE_PERIOD_S, self._kill_tree_if_running
+            )
+
+    def _tree_may_be_running(self) -> bool:
+        """
+        The process tree may be running if the subprocess hasn't exited, or if its
+        output pipe is still held open by a process it started.
+        """
+        return self.returncode is None or (
+            self.stdout is not None and not self.stdout.at_eof()
+        )
+
+    def _kill_tree_if_running(self) -> None:
+        if self._tree_may_be_running():
+            self._signal_group(signal.SIGKILL)  # type: ignore[attr-defined]
+
+    def _signal_group(self, sig: int) -> None:
+        # The subprocess was started in a new session so its pid is the process
+        # group id, which remains valid for as long as any process in the group does
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.killpg(self.pid, sig)  # type: ignore[attr-defined]
 
 
 class MetaPoeExecutor(type):
@@ -224,7 +277,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     raise ExecutionError("Cannot exec task that requires shell!")
                 if not self._is_windows:
                     # execvpe doesn't work properly on windows so we just don't go there
-                    self._exec(cmd, env=env)
+                    try:
+                        self._exec(cmd, env=env)
+                    except FileNotFoundError as error:
+                        # execvpe reports the last path it tried rather than cmd[0]
+                        await self._handle_file_not_found(cmd, error)
 
             return await self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
         except FileNotFoundError as error:
@@ -283,6 +340,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 await asyncio.create_subprocess_exec(sys.executable, "-c", "")
             )
         popen_kwargs: MutableMapping[str, Any] = {}
+        capture_file = None
         popen_kwargs["env"] = dict(
             (self.env.get_subprocess_env_vars() if env is None else env),
             POE_ACTIVE=self.__key__,
@@ -294,10 +352,21 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 if str(self.capture_stdout) in ("/dev/null", "NUL", "D:\\dev\\null"):
                     popen_kwargs["stdout"] = subprocess.DEVNULL
                 else:
-                    # ruff: noqa: SIM115, ASYNC230
-                    popen_kwargs["stdout"] = open(self.capture_stdout, "wb")
+                    try:
+                        # ruff: noqa: SIM115, ASYNC230
+                        capture_file = open(self.capture_stdout, "wb")
+                    except OSError as error:
+                        raise ExecutionError(
+                            f"Cannot open file {str(self.capture_stdout)!r} for "
+                            f"capture_stdout: {error.strerror}"
+                        ) from error
+                    popen_kwargs["stdout"] = capture_file
             else:
                 popen_kwargs["stdout"] = PIPE
+                if self.context.enable_output_streaming:
+                    # Make python subprocesses flush output as it is produced, also
+                    # when the executor doesn't resolve python itself (e.g. uv run)
+                    popen_kwargs["env"].setdefault("PYTHONUNBUFFERED", "1")
 
             if "PYTHONIOENCODING" not in popen_kwargs["env"]:
                 popen_kwargs["env"]["PYTHONIOENCODING"] = "utf-8"
@@ -310,13 +379,17 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         else:
             popen_kwargs["start_new_session"] = True
 
-        # TODO: exclude the subprocess from coverage more gracefully
-        _stop_coverage()
-
-        if shell:
-            proc = await asyncio.create_subprocess_shell("".join(cmd), **popen_kwargs)
-        else:
-            proc = await asyncio.create_subprocess_exec(*cmd, **popen_kwargs)
+        try:
+            if shell:
+                proc = await asyncio.create_subprocess_shell(
+                    "".join(cmd), **popen_kwargs
+                )
+            else:
+                proc = await asyncio.create_subprocess_exec(*cmd, **popen_kwargs)
+        finally:
+            if capture_file is not None:
+                # The subprocess has its own handle on the file
+                capture_file.close()
 
         if input is not None:
             # TODO: Track the write task so we can cancel it if needed, and prevent GC
@@ -330,7 +403,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         no_console_ctrl = (
             self._is_windows and not shell and cmd[0].lower().endswith((".bat", ".cmd"))
         )
-        return PoeProcess(proc, no_console_ctrl=no_console_ctrl)
+        return PoeProcess(
+            proc,
+            no_console_ctrl=no_console_ctrl,
+            own_process_group=not self._is_windows,
+        )
 
     async def _pass_input_to_proc(self, proc: Process, input: bytes):
         if not proc.stdin:
@@ -350,10 +427,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                 )
 
     def _resolve_executable(self, executable: str):
+        # Resolve executables against the PATH that the subprocess will see
+        search_path = self.env.get("PATH")
         if self._should_resolve_python and executable == "python":
-            if python := shutil.which("python"):
+            if python := shutil.which("python", path=search_path):
                 yield python
-            elif python3 := shutil.which("python3"):
+            elif python3 := shutil.which("python3", path=search_path):
                 yield python3
             else:
                 self._io.print_debug(
@@ -370,7 +449,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         else:
             # Attempt to explicitly resolve the target executable, because we can't
             # count on the OS to do this consistently.
-            yield shutil.which(executable) or executable
+            yield shutil.which(executable, path=search_path) or executable
 
     @classmethod
     def get_executor_class(cls, key: str) -> type[PoeExecutor]:
@@ -426,8 +505,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
 def _stop_coverage():
     """
-    Running coverage around subprocesses seems to be problematic, esp. on windows.
-    There's probably a more elegant solution that this.
+    Stop and save any active coverage measurement before the process image is
+    replaced via exec, since atexit handlers (and coverage's own save) never run then.
+    Must not be used before spawning a subprocess, as it would stop the caller's
+    coverage for the rest of its lifetime.
     """
     if "coverage" in sys.modules:
         # If Coverage is running then it ends here

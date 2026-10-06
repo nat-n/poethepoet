@@ -39,11 +39,12 @@ class VirtualenvExecutor(PoeExecutor):
         Execute the given cmd as a subprocess inside the configured virtualenv
         """
         venv = self._resolve_virtualenv()
+        venv_env = venv.get_env_vars(self.env.get_subprocess_env_vars())
 
         return await self._execute_cmd(
-            (venv.resolve_executable(cmd[0]), *cmd[1:]),
+            (venv.resolve_executable(cmd[0], venv_env.get("PATH")), *cmd[1:]),
             input=input,
-            env=venv.get_env_vars(self.env.get_subprocess_env_vars()),
+            env=venv_env,
             use_exec=use_exec,
         )
 

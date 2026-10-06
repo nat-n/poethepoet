@@ -105,6 +105,29 @@ c """,
         """,
         {"answer": "42", "question": "undefined", "dinner": "chicken"},
     ),
+    # names that share a prefix with the export keyword are not scrambled
+    (
+        "e=1\nex=2\nexp=3\nexpor=4\nexit_code=5\nexpected=6\n",
+        {
+            "e": "1",
+            "ex": "2",
+            "exp": "3",
+            "expor": "4",
+            "exit_code": "5",
+            "expected": "6",
+        },
+    ),
+    # names that start with the export keyword are still names
+    (
+        "exports=1\nexport=2\nexporter=3\nexport_4=4\nexport export5=5\n",
+        {
+            "exports": "1",
+            "export": "2",
+            "exporter": "3",
+            "export_4": "4",
+            "export5": "5",
+        },
+    ),
     # handling escapes
     (
         """
@@ -269,6 +292,33 @@ def test_parse_env_file_param_expansion(example):
     assert parse_env_file(example[0]) == example[1]
 
 
+literal_dollar_examples = [
+    # trailing $
+    ('UQ=100$\nDQ="100$"\n', {"UQ": "100$", "DQ": "100$"}),
+    # $ followed by punctuation
+    ('UQ=x$%y\nDQ="x$%y"\n', {"UQ": "x$%y", "DQ": "x$%y"}),
+    ('UQ=$/tmp\nDQ="$/tmp"\n', {"UQ": "$/tmp", "DQ": "$/tmp"}),
+    # $ followed by a digit
+    ('UQ=abc$1def\nDQ="abc$1def"\n', {"UQ": "abc$1def", "DQ": "abc$1def"}),
+    # $ surrounded by whitespace
+    ('UQ=a $ b\nDQ="a $ b"\n', {"UQ": "a $ b", "DQ": "a $ b"}),
+    # $ followed by a quote or a comment
+    ("UQ=a$'b'\n", {"UQ": "a$b"}),
+    ("UQ=a$#b\nUQ2=a$ #comment\n", {"UQ": "a$#b", "UQ2": "a$"}),
+    # $ that isn't an expansion mixed with ones that are
+    ("X=1\nUQ=$-$X-$\n", {"X": "1", "UQ": "$-1-$"}),
+]
+
+
+@pytest.mark.parametrize(("content", "expected"), literal_dollar_examples)
+def test_parse_env_file_literal_dollar(content, expected):
+    """
+    A $ that doesn't start a parameter expansion is kept literally in unquoted
+    values, consistent with double-quoted values.
+    """
+    assert parse_env_file(content) == expected
+
+
 def test_parse_env_file_no_expansion_in_single_quotes():
     """
     Single-quoted values should NOT have parameter expansion applied.
@@ -320,3 +370,7 @@ base_env_examples = [
 @pytest.mark.parametrize(("content", "base_env", "expected"), base_env_examples)
 def test_parse_env_file_with_base_env(content, base_env, expected):
     assert parse_env_file(content, base_env) == expected
+
+
+def test_parse_env_file_ignores_leading_utf8_bom():
+    assert parse_env_file("﻿A=1\nB=2\n") == {"A": "1", "B": "2"}

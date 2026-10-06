@@ -1,0 +1,4 @@
+# expected_error: Invalid CLI option provided '--', an option must include a name after the leading dashes
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${flag}"
+args = [{ name = "flag", options = ["--"] }]

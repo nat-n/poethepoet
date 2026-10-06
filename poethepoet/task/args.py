@@ -7,9 +7,11 @@ from typing import IO, TYPE_CHECKING, Any, Literal, cast
 if TYPE_CHECKING:
     from argparse import ArgumentParser
     from collections.abc import Iterator, Mapping, Sequence
+    from typing import Annotated
 
     from ..env.task_env import TaskEnv
     from ..io import PoeIO
+    from ..options.annotations import Metadata
 
 from ..exceptions import ConfigValidationError, ExecutionError
 from ..options import PoeOptions
@@ -42,7 +44,7 @@ class ArgSpec(PoeOptions):
     The name of the argument.
     """
 
-    options: Sequence[str]
+    options: Annotated[Sequence[str], Metadata(min_items=1)]
     """
     A list of options to be provided along with the argument.
     """
@@ -150,6 +152,9 @@ class ArgSpec(PoeOptions):
             arg_names = set()
             option_args: dict[str, str] = {}
             positional_dests: dict[str, str] = {}
+            # Every identifier an arg occupies while its value is parsed and
+            # exposed: the argparse dest, and the (dash normalized) name.
+            identifiers: dict[str, str] = {}
             positional_multiple = None
             for arg in result:
                 if arg.name in arg_names:
@@ -188,6 +193,23 @@ class ArgSpec(PoeOptions):
                         )
                     if arg.multiple:
                         positional_multiple = arg.name
+
+                dest = arg.options[0] if arg.positional else arg.name
+                arg_identifiers = {
+                    arg.name.replace("-", "_"),
+                    dest.replace("-", "_"),
+                }
+                for identifier in sorted(arg_identifiers):
+                    if identifier in identifiers:
+                        raise ConfigValidationError(
+                            f"Arguments {identifiers[identifier]!r} and"
+                            f" {arg.name!r} map to the same argument"
+                            f" identifier {identifier!r}",
+                            context=f"Invalid argument {arg.name!r} declared",
+                        )
+                identifiers.update(
+                    (identifier, arg.name) for identifier in arg_identifiers
+                )
         yield from result
 
     @staticmethod
@@ -196,7 +218,8 @@ class ArgSpec(PoeOptions):
     ):
         positional = arg.get("positional", False)
         name = name or arg.get("name")
-        stripped = (name or "").lstrip("_")
+        # An invalid (non-string) name is reported by option validation
+        stripped = name.lstrip("_") if isinstance(name, str) else ""
         if positional:
             if strict and arg.get("options"):
                 raise ConfigValidationError(
@@ -209,7 +232,12 @@ class ArgSpec(PoeOptions):
             if isinstance(positional, str):
                 return [positional]
             return [stripped or name]
-        return tuple(arg.get("options", [f"--{stripped}"]))
+        options = arg.get("options", (f"--{stripped}",))
+        if isinstance(options, list | tuple):
+            return tuple(options)
+        # Leave an invalid value for option validation to reject, whilst keeping
+        # non-strict uses (e.g. help output) safe.
+        return options if strict else (str(options),)
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
@@ -223,12 +251,27 @@ class ArgSpec(PoeOptions):
         ``${``) are passed through; their resolved value is re-checked at
         runtime. The pattern uses explicit case alternation rather than
         ``(?i)`` because JSON Schema mandates ECMA-262 regex, which does
-        not support inline flags.
+        not support inline flags. Defaults of integer and float args are
+        constrained in the same way.
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["required"] = sorted(
             key for key in fragment.get("required", []) if key != "options"
         )
+        properties = fragment["properties"]
+        # Mirror the bespoke checks in ``_validate``: options start with a dash
+        # and include a name after the dashes, a positional name is an
+        # identifier, and choices are non-empty.
+        properties["options"]["items"]["pattern"] = r"^-.*[^-]"
+        for variant in properties["positional"]["anyOf"]:
+            if variant.get("type") == "string":
+                variant["pattern"] = r"^[A-Za-z_][A-Za-z0-9_]*$"
+        properties["choices"]["minItems"] = 1
+        # An ASCII approximation of `name.replace("-", "_").isidentifier()`
+        properties["name"]["pattern"] = r"^[A-Za-z_-][A-Za-z0-9_-]*$"
+        for variant in properties["multiple"]["anyOf"]:
+            if variant.get("type") == "integer":
+                variant["minimum"] = 2
         fragment["allOf"] = [
             {
                 "if": {
@@ -237,6 +280,11 @@ class ArgSpec(PoeOptions):
                 },
                 "then": {
                     "properties": {
+                        # A boolean arg can't be positional, multiple or have
+                        # choices
+                        "positional": {"const": False},
+                        "multiple": {"const": False},
+                        "choices": False,
                         "default": {
                             "anyOf": [
                                 {"type": "boolean"},
@@ -249,11 +297,65 @@ class ArgSpec(PoeOptions):
                                     ),
                                 },
                             ]
-                        }
+                        },
                     }
                 },
                 "else": {"properties": {"true_string": False, "false_string": False}},
-            }
+            },
+            # Numeric args reject boolean defaults, and an integer arg's literal
+            # string default must look like an int (see ``_convert_default``).
+            {
+                "if": {
+                    "properties": {"type": {"const": "integer"}},
+                    "required": ["type"],
+                },
+                "then": {
+                    "properties": {
+                        "default": {
+                            "anyOf": [
+                                {"type": "integer"},
+                                {
+                                    "type": "string",
+                                    "pattern": (
+                                        r"^(\s*[+-]?[0-9]+(_[0-9]+)*\s*|.*\$\{.*)$"
+                                    ),
+                                },
+                            ]
+                        }
+                    }
+                },
+            },
+            {
+                "if": {
+                    "properties": {"type": {"const": "float"}},
+                    "required": ["type"],
+                },
+                "then": {
+                    "properties": {
+                        "default": {"anyOf": [{"type": "number"}, {"type": "string"}]}
+                    }
+                },
+            },
+            # Choices must match the arg type (string when type is omitted)
+            {
+                "if": {"properties": {"type": {"const": "string"}}},
+                "then": {"properties": {"choices": {"items": {"type": "string"}}}},
+            },
+            {
+                "if": {
+                    "properties": {"type": {"const": "integer"}},
+                    "required": ["type"],
+                },
+                "then": {"properties": {"choices": {"items": {"type": "integer"}}}},
+            },
+            # A positional arg may not declare options
+            {
+                "if": {
+                    "properties": {"positional": {"not": {"const": False}}},
+                    "required": ["positional"],
+                },
+                "then": {"properties": {"options": False}},
+            },
         ]
         return fragment
 
@@ -278,18 +380,20 @@ class ArgSpec(PoeOptions):
                 f"https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
             )
 
+        # Checked before the truthiness test below, so that positional = "" isn't
+        # silently treated as positional = false
+        if isinstance(self.positional, str) and not self.positional.isidentifier():
+            raise ConfigValidationError(
+                f"positional name {self.positional!r} for arg {self.name!r} is "
+                "not a valid 'identifier'\n"
+                "see the following documentation for details "
+                "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
+            )
+
         if self.positional:
             if self.type == "boolean":
                 raise ConfigValidationError(
                     f"Positional argument {self.name!r} may not have type 'boolean'"
-                )
-
-            if isinstance(self.positional, str) and not self.positional.isidentifier():
-                raise ConfigValidationError(
-                    f"positional name {self.positional!r} for arg {self.name!r} is "
-                    "not a valid 'identifier'\n"
-                    "see the following documentation for details "
-                    "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
                 )
         else:
             for option in self.options:
@@ -303,6 +407,17 @@ class ArgSpec(PoeOptions):
                         f"Invalid CLI option provided {option!r}, did you mean "
                         f"{suggestion!r}?"
                     )
+                if not option.strip("-"):
+                    # e.g. the '--' inferred from an arg named '_'
+                    raise ConfigValidationError(
+                        f"Invalid CLI option provided {option!r}, an option must "
+                        "include a name after the leading dashes"
+                    )
+
+        if self.choices is not None and not self.choices:
+            raise ConfigValidationError(
+                f"Argument {self.name!r} must declare at least one choice"
+            )
 
         if (
             not isinstance(self.multiple, bool)
@@ -319,14 +434,15 @@ class ArgSpec(PoeOptions):
             )
 
         # Templated defaults are checked at runtime once the template has
-        # been resolved (see _get_argument_params).
-        if (
-            self.type == "boolean"
-            and self.default is not None
-            and not isinstance(self.default, bool)
-            and not (isinstance(self.default, str) and "${" in self.default)
+        # been resolved (see PoeTaskArgs._get_argument_params and
+        # PoeTaskArgs._resolve_default).
+        if self.default is not None and not (
+            isinstance(self.default, str) and "${" in self.default
         ):
-            _coerce_bool(self.default)
+            if self.type == "boolean":
+                _coerce_bool(self.default)
+            else:
+                _convert_default(self.default, self.type)
 
         # Ensure choices are compatible with type
         if self.choices is not None:
@@ -335,13 +451,14 @@ class ArgSpec(PoeOptions):
                 if not isinstance(choice, arg_type) or isinstance(choice, bool):
                     raise ConfigValidationError(
                         f"Argument {self.name!r} has invalid choice value {choice!r} "
-                        f"that does not match type the configured {self.type!r}. "
+                        f"that does not match the configured type {self.type!r}. "
                         "(maybe update the type option on the argument?)"
                     )
             if (
                 self.default is not None
+                and self.type != "boolean"
                 and (not isinstance(self.default, str) or "${" not in self.default)
-                and self.default not in self.choices
+                and _convert_default(self.default, self.type) not in self.choices
             ):
                 raise ConfigValidationError(
                     f"Argument {self.name!r} has default value {self.default!r} that "
@@ -378,7 +495,12 @@ class PoeTaskArgs:
 
         def format_arg_details(arg) -> str:
             parts: list[str] = []
-            if default := arg.get("default"):
+            default = arg.get("default")
+            if isinstance(default, bool):
+                # A false default is implied for flags, so only show a true default
+                if default:
+                    parts.append("default: true")
+            elif default is not None and default != "":
                 parts.append(f"default: {default}")
             if choices := arg.get("choices"):
                 parts.append(f"choices: {', '.join(map(repr, choices))}")
@@ -436,12 +558,13 @@ class PoeTaskArgs:
         return parser
 
     def _get_argument_params(self, arg: ArgSpec, env: TaskEnv):
-        default = arg.get("default")
-        if isinstance(default, str):
-            default = env.fill_template(default)
-
+        # For non-boolean args argparse's default stays empty (absent -> None),
+        # and the configured default is resolved, converted to the arg type and
+        # applied in `_apply_defaults`, only when the arg wasn't given. This
+        # avoids argparse reporting an invalid default as a CLI usage error,
+        # and action="extend" prepending a default onto the user's values.
         result = {
-            "default": default,
+            "default": None,
             "help": arg.get("help", ""),
         }
 
@@ -449,19 +572,10 @@ class PoeTaskArgs:
         multiple = arg.get("multiple", False)
         arg_type = str(arg.get("type"))
 
-        if multiple is True:
+        if multiple:
+            # An exact count (multiple = N) is enforced by _validate_exact_count
             result["nargs"] = "+" if required else "*"
             result["action"] = "extend"
-        elif multiple and isinstance(multiple, int):
-            result["nargs"] = "*"
-            result["action"] = "extend"
-
-        if multiple:
-            # action="extend" combines supplied values with the namespace
-            # default, which would prepend any configured default onto the
-            # user's values. Keep argparse's default empty (absent -> None);
-            # the configured default is applied in `_normalize_multiple_defaults`.
-            result["default"] = None
 
         if arg.get("positional", False):
             if not multiple and not required:
@@ -474,6 +588,8 @@ class PoeTaskArgs:
             result["choices"] = arg.choices
 
         if arg_type == "boolean":
+            if isinstance(default := arg.get("default"), str):
+                default = env.fill_template(default)
             try:
                 coerced_default = (
                     _coerce_bool(default) if default is not None else False
@@ -504,7 +620,7 @@ class PoeTaskArgs:
             try:
                 parsed_args = vars(parser.parse_args(args))
                 self._validate_exact_count(parsed_args, parser)
-                self._normalize_multiple_defaults(parsed_args, env)
+                self._apply_defaults(parsed_args, env)
             except SystemExit as error:
                 raise ExecutionError(
                     f"Invalid arguments for task {self._task_name!r}"
@@ -548,31 +664,51 @@ class PoeTaskArgs:
                     f" got {len(value)}"
                 )
 
-    def _normalize_multiple_defaults(
-        self, parsed_args: dict[str, Any], env: TaskEnv
-    ) -> None:
+    def _apply_defaults(self, parsed_args: dict[str, Any], env: TaskEnv) -> None:
         """
-        Surface every ``multiple`` arg as a list, applying its configured
-        default when the arg was absent.
+        Apply the configured default of every non-boolean arg that was absent,
+        and surface every ``multiple`` arg as a list.
         """
         for arg in self._args:
-            if not arg.multiple:
+            if arg.type == "boolean":
+                # argparse applies boolean defaults (see _get_argument_params)
                 continue
             # dest is `arg.name` for option args and `arg.options[0]` for
             # positionals, matching `_validate_exact_count`.
             key = arg.options[0] if arg.positional else arg.name
             value = parsed_args.get(key)
             if value is not None and not (arg.positional and value == []):
-                # Omitted option arg with multiple=True arrives as None
-                # Omitted positional arg with multiple=True arrives as []
+                # An omitted arg arrives as None, except an omitted positional
+                # arg with multiple=True, which arrives as []
                 continue
-            default = arg.get("default")
-            if default is None:
-                parsed_args[key] = []
-            elif isinstance(default, str):
-                parsed_args[key] = [env.fill_template(default)]
+            default = self._resolve_default(arg, env)
+            if arg.multiple:
+                parsed_args[key] = [] if default is None else [default]
             else:
-                parsed_args[key] = [default]
+                parsed_args[key] = default
+
+    def _resolve_default(self, arg: ArgSpec, env: TaskEnv) -> Any:
+        """
+        Resolve the configured default of a non-boolean arg: fill templates and
+        convert the result to the arg type.
+        """
+        if (default := arg.get("default")) is None:
+            return None
+        if isinstance(default, str):
+            default = env.fill_template(default)
+        try:
+            value = _convert_default(default, arg.type)
+            # argparse only checks choices for values given on the CLI
+            if arg.choices is not None and value not in arg.choices:
+                raise ConfigValidationError(
+                    f"Default value {value!r} is not included in the configured "
+                    f"choices {arg.choices!r}"
+                )
+            return value
+        except ConfigValidationError as error:
+            error.context = f"Invalid default for argument {arg.name!r}"
+            error.task_name = self._task_name
+            raise
 
     def get_env_overrides(self, values: Mapping[str, Any]) -> dict[str, str]:
         """
@@ -672,3 +808,40 @@ def _coerce_bool(value: Any) -> bool:
         f"Cannot interpret {value!r} as a boolean — expected a boolean or one of "
         "'true'/'1'/'t' or 'false'/'0'/'f'/'' (case-insensitive)"
     )
+
+
+def _convert_default(value: Any, arg_type: str) -> Any:
+    """
+    Convert a config-supplied default to the type of a non-boolean argument, as
+    argparse would convert a value given on the command line.
+
+    Booleans are never accepted for numeric types, and an integer arg only
+    accepts a float default with no fractional part. Anything that can't be
+    converted raises ``ConfigValidationError``.
+    """
+    if arg_type == "string":
+        return str(value)
+
+    if arg_type == "integer":
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        if isinstance(value, str):
+            try:
+                return int(value)
+            except ValueError:
+                pass
+        description = "an integer"
+
+    else:
+        if isinstance(value, int | float) and not isinstance(value, bool):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                pass
+        description = "a float"
+
+    raise ConfigValidationError(f"Cannot interpret {value!r} as {description}")

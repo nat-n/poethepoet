@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from shutil import rmtree
 
@@ -169,3 +170,84 @@ def test_rm_innert_patterns_verbose(test_dir_structure, capsys, test_file_tree_n
 
     for path, _ in test_file_tree_nodes:
         assert path.exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="symlinks need privileges on windows")
+def test_rm_symlinked_dir_deletes_link_not_target(test_dir_structure, capsys):
+    (test_dir_structure / "link").symlink_to(test_dir_structure / "pkg")
+
+    rm("link", verbosity=1)
+
+    captured = capsys.readouterr()
+    assert captured.out == "Deleting file 'link'\n"
+    assert captured.err == ""
+    assert not (test_dir_structure / "link").is_symlink()
+    assert (test_dir_structure / "pkg" / "bar" / "baz.py").exists()
+
+
+def test_rm_overlapping_matches(test_dir_structure, capsys):
+    rm("pkg/**", verbosity=1)
+
+    captured = capsys.readouterr()
+    assert captured.out == (
+        f"Deleting paths matching 'pkg/**'\nDeleting directory '{Path('pkg')}'\n"
+    )
+    assert captured.err == ""
+    assert not (test_dir_structure / "pkg").exists()
+    assert (test_dir_structure / "readme.md").exists()
+
+
+def test_rm_absolute_patterns(test_dir_structure, capsys):
+    rm(str(test_dir_structure / "*.md"), str(test_dir_structure / ".mypy_cache"))
+
+    captured = capsys.readouterr()
+    assert captured.out == (
+        f"Deleting paths matching {str(test_dir_structure / '*.md')!r}\n"
+    )
+    assert captured.err == ""
+    assert not (test_dir_structure / "readme.md").exists()
+    assert not (test_dir_structure / "garbage.md").exists()
+    assert not (test_dir_structure / ".mypy_cache").exists()
+    assert (test_dir_structure / "pkg" / "foo.py").exists()
+
+
+def test_rm_empty_pattern(test_dir_structure, capsys, test_file_tree_nodes):
+    rm("", verbosity=1)
+
+    captured = capsys.readouterr()
+    assert captured.out == "No files or directories to delete matching ''\n"
+    assert captured.err == ""
+
+    for path, _ in test_file_tree_nodes:
+        assert path.exists()
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13), reason="'**foo' is a valid pattern since 3.13"
+)
+def test_rm_invalid_pattern(test_dir_structure, test_file_tree_nodes):
+    with pytest.raises(SystemExit) as error:
+        rm("**foo", ".mypy_cache")
+
+    assert str(error.value) == (
+        "Error: Invalid pattern '**foo': '**' can only be an entire path component"
+    )
+    for path, _ in test_file_tree_nodes:
+        assert path.exists()
+
+
+def test_rm_failed_deletion(test_dir_structure, capsys, monkeypatch):
+    def fail_rmtree(path):
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr("poethepoet.scripts._rm.shutil.rmtree", fail_rmtree)
+
+    with pytest.raises(SystemExit) as error:
+        rm("pkg", "readme.md")
+
+    assert error.value.code == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "Error: Failed to delete 'pkg': Permission denied\n"
+    assert (test_dir_structure / "pkg").exists()
+    assert not (test_dir_structure / "readme.md").exists()

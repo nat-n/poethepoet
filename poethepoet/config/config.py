@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -17,13 +18,14 @@ from .partition import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Iterator, Sequence
 
     from ..io import PoeIO
 
 
 class PoeConfig:
     _project_config: ProjectConfig
+    _table: Mapping[str, Any] | None
     _included_config: list[IncludedConfig]
     _packaged_config: list[PackagedConfig]
 
@@ -60,8 +62,9 @@ class PoeConfig:
                 self._config_filenames = tuple(config_name)
 
         self._project_dir = Path.cwd() if cwd is None else Path(cwd)
+        self._table = table
         self._project_config = ProjectConfig(
-            {"tool.poe": table or {}}, path=self._project_dir, strict=False
+            self._get_table_content(), path=self._project_dir, strict=False
         )
         self._included_config = []
         self._packaged_config = []
@@ -73,28 +76,50 @@ class PoeConfig:
 
             self._io = PoeIO.get_default_io()
 
-    def get_tasks(self) -> Mapping[str, TaskConfig]:
+    def _get_table_content(self) -> Mapping[str, Any]:
+        """
+        Get the config table provided on initialization, normalized to the structure
+        of a pyproject.toml file. The table may either be structured like a
+        pyproject.toml file or contain the content of the tool.poe table directly.
+        """
+        if self._table is None:
+            return {"tool.poe": {}}
+        if "tool" in self._table:
+            return self._table
+        return {"tool.poe": self._table}
+
+    def get_tasks(self, strict: bool = True) -> Mapping[str, TaskConfig]:
         """
         Collect tasks from across configs and groups.
         Project config tasks appear first and take precedence over includes.
         Group config (heading, executor) comes from the highest-precedence
         partition that defines that group; tasks are merged across partitions.
-        """
-        if not self._tasks:
-            result: dict[str, TaskConfig] = {}
-            group_configs: dict[str, GroupConfig] = {}
-            for partition in self.partitions(included_first=False):
-                for group_name, group_def in partition.get("groups", {}).items():
-                    if group_name not in group_configs:
-                        group_configs[group_name] = GroupConfig(group_name, group_def)
-                for task_name, task_config in partition.collect_tasks().items():
-                    if task_name not in result:
-                        if task_config.group:
-                            task_config.group = group_configs[task_config.group.name]
-                        result[task_name] = task_config
-            self._tasks = result
 
-        return self._tasks
+        If strict is false then structural errors such as duplicate task names are
+        tolerated (e.g. for displaying help after a validation error), and the result
+        is not cached.
+        """
+        if self._tasks:
+            return self._tasks
+
+        result: dict[str, TaskConfig] = {}
+        group_configs: dict[str, GroupConfig] = {}
+        for partition in self.partitions(included_first=False):
+            if isinstance(groups := partition.get("groups", {}), Mapping):
+                for group_name, group_def in groups.items():
+                    if group_name not in group_configs and isinstance(
+                        group_def, Mapping
+                    ):
+                        group_configs[group_name] = GroupConfig(group_name, group_def)
+            for task_name, task_config in partition.collect_tasks(strict).items():
+                if task_name not in result:
+                    if task_config.group:
+                        task_config.group = group_configs[task_config.group.name]
+                    result[task_name] = task_config
+
+        if strict:
+            self._tasks = result
+        return result
 
     def lookup_task(self, name: str) -> TaskConfig | None:
         return self.get_tasks().get(name)
@@ -193,7 +218,20 @@ class PoeConfig:
         """
         target_path is the path to a file or directory for loading config
         If strict is false then some errors in the config structure are tolerated
+
+        If a config table was provided on initialization and no target_path is given
+        then the table is used instead of searching for a config file.
         """
+
+        if self._table is not None and target_path is None:
+            self._load_project_config(
+                self._get_table_content(),
+                path=self._project_dir.joinpath(self._config_filenames[0]),
+                strict=strict,
+            )
+            self._load_includes(strict=strict)
+            await self._load_packages(strict=strict)
+            return
 
         for config_file in PoeConfigFile.find_config_files(
             target_path=Path(target_path or self._project_dir),
@@ -215,24 +253,9 @@ class PoeConfig:
                         filename=str(config_file.path),
                     ) from config_file.error
 
-                try:
-                    self._project_config = ProjectConfig(
-                        config_content,
-                        path=config_file.path,
-                        project_dir=self._project_dir,
-                        strict=strict,
-                    )
-                except ConfigValidationError:
-                    # Try again to load Config with minimal validation so we can still
-                    # display the task list alongside the error
-                    self._project_config = ProjectConfig(
-                        config_content,
-                        path=config_file.path,
-                        project_dir=self._project_dir,
-                        strict=False,
-                    )
-                    raise
-
+                self._load_project_config(
+                    config_content, path=config_file.path, strict=strict
+                )
                 break
 
         else:
@@ -246,6 +269,27 @@ class PoeConfig:
 
         self._load_includes(strict=strict)
         await self._load_packages(strict=strict)
+
+    def _load_project_config(
+        self, config_content: Mapping[str, Any], path: Path, strict: bool = True
+    ):
+        try:
+            self._project_config = ProjectConfig(
+                config_content,
+                path=path,
+                project_dir=self._project_dir,
+                strict=strict,
+            )
+        except ConfigValidationError:
+            # Try again to load Config with minimal validation so we can still
+            # display the task list alongside the error
+            self._project_config = ProjectConfig(
+                config_content,
+                path=path,
+                project_dir=self._project_dir,
+                strict=False,
+            )
+            raise
 
     async def _load_packages(self, strict: bool = True):
         if not self._project_config.options.include_script:
@@ -330,7 +374,6 @@ class PoeConfig:
                 parsed_result = json.loads(script_result)
                 if isinstance(parsed_result, str):
                     parsed_result = json.loads(parsed_result)
-                self._packaged_config_cache[invocation] = parsed_result
             except json.decoder.JSONDecodeError as error:
                 self._handle_error(
                     "Return value from include_script script must be valid json",
@@ -339,12 +382,23 @@ class PoeConfig:
                 )
                 return
 
+            if not isinstance(parsed_result, dict):
+                self._handle_error(
+                    f"Invalid content in loaded config from {target_module}: "
+                    "include_script must return a dict (or a json object string), "
+                    f"got {type(parsed_result).__name__!r}",
+                    strict=strict,
+                )
+                return
+
+            self._packaged_config_cache[invocation] = parsed_result
+
         try:
             config_json = dict(self._packaged_config_cache[invocation])
             config_path = Path(
                 config_json.pop("config_path", self._project_config.path)
             )
-            if config_json.get("tool", {}).get("poe"):
+            if isinstance(tool := config_json.get("tool"), dict) and tool.get("poe"):
                 pass
             elif tool_poe := config_json.get("tool.poe"):
                 config_json = {"tool": {"poe": tool_poe}}
@@ -352,7 +406,7 @@ class PoeConfig:
                 config_json = {"tool": {"poe": config_json}}
 
             if include_cwd := include_script.get("cwd"):
-                config_cwd = self._project_dir.joinpath(include_cwd).resolve()
+                config_cwd = self.resolve_git_path(include_cwd)
             else:
                 config_cwd = None
 
@@ -414,6 +468,8 @@ class PoeConfig:
         try:
             config_file = PoeConfigFile(include_path)
             config_content = config_file.load()
+            if isinstance(config_file.error, ConfigValidationError):
+                raise config_file.error
             if not config_content:
                 raise ConfigValidationError(
                     f"Included file at {include_path} is empty or invalid",

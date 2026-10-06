@@ -53,7 +53,7 @@ def test_expr_with_env_vars(run_poe):
         env={"VAR_FOO": "foo", "VAR_BAR": "2", "VAR_BAZ": "boo"},
     )
     assert result.capture == (
-        "Poe => [${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + '${NOTHING}'\n"
+        "Poe => [${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + ${NOTHING}\n"
     )
     assert result.stdout == "foofooboo\n"
     assert result.stderr == ""
@@ -191,6 +191,18 @@ def test_expr_task_extra_args_available_as_list(run_poe):
     assert result.stderr == ""
 
 
+def test_expr_task_extra_args_empty_list_without_free_args(run_poe):
+    """_extra_args is an empty list when no free args are passed"""
+    result = run_poe("count-extra-args", project="expr")
+    assert result.capture == "Poe => len(_extra_args)\n"
+    assert result.stdout == "0\n"
+    assert result.stderr == ""
+
+    result = run_poe("label-extra-args", project="expr")
+    assert result.capture == "Poe => f'{label}: {_extra_args}'\n"
+    assert result.stdout == "Files: []\n"
+
+
 def test_expr_task_extra_args_combined_with_named_arg(run_poe):
     """_extra_args can be used alongside named args in expr tasks"""
     result = run_poe(
@@ -268,3 +280,57 @@ def test_expr_alternate_operator_in_env(temp_pyproject, run_poe):
     assert result.code == 0
     assert result.stdout == "mode: \n"
     assert result.stderr == ""
+
+
+def test_expr_method_call_on_arg(run_poe):
+    result = run_poe("method-on-arg", "--name", "Ab", project="expr")
+    assert result.capture == (
+        "Poe => name.upper() + ''.join(part.lower() for part in [name])\n"
+    )
+    assert result.stdout == "ABab\n"
+    assert result.stderr == ""
+
+
+def test_expr_method_call_on_dotted_and_aliased_import(run_poe):
+    result = run_poe("dotted-import-call", project="expr")
+    assert result.stdout == "&lt;a&gt;&amp;\n"
+    assert result.stderr == ""
+
+
+def test_expr_method_call_on_undefined_name(run_poe):
+    result = run_poe("undefined-call-target", project="expr")
+    assert result.code == 1
+    assert (
+        "Error: Invalid variable reference in expr: undefined_module" in result.capture
+    )
+
+
+def test_expr_unset_env_var_is_empty_string(temp_pyproject, run_poe):
+    """
+    An unset ${VAR} in expr content evaluates to an empty string value rather than
+    vanishing from the expression source.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        expr = "(${POE_TEST_UNSET_VAR}, len(${POE_TEST_UNSET_VAR}))"
+
+        [tool.poe.tasks.venv-active]
+        expr   = "${POE_TEST_UNSET_VENV}.endswith(target_venv)"
+        assert = true
+        args   = [{ name = "target-venv", default = ".venv", positional = true }]
+        """)
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "('', 0)\n"
+    assert result.stderr == ""
+
+    result = run_poe("venv-active", cwd=project_path)
+    assert result.code == 1, result.capture + result.stderr
+    assert result.stdout == "False\n"
+    assert result.stderr == ""
+
+    result = run_poe(
+        "venv-active", cwd=project_path, env={"POE_TEST_UNSET_VENV": "/x/.venv"}
+    )
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "True\n"

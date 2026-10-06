@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "poethepoet_plugin_conflicting_task"
+version = "0.1.0"
+description = "A project with a task that conflicts with a poetry command."
+authors = ["Nat Noordanus <n@natn.me>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+
+[tool.poe]
+poetry_command = ""
+
+[tool.poe.tasks]
+build = "echo"

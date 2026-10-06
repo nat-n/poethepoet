@@ -9,13 +9,13 @@ The following options can be set for all tasks in a project directly under ``[to
 **envfile** : ``str`` | ``list[str]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
-**executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor>`
+**executor** : ``str`` | ``dict[str, Any]`` :ref:`📖<Configure the executor>`
   Specify the default executor type and/or configuration for all tasks in this project.
 
-**include** : ``str`` | ``dict[str, str]`` | ``list[str | dict[str, str]]`` | :doc:`📖<../guides/include_guide>`
-  Specify one or more other toml or json files to load tasks from. By default includes are followed recursively, unless the ``recursive`` option is set to ``false`` for a specific include.
+**include** : ``str`` | ``dict[str, Any]`` | ``list[str | dict[str, Any]]`` :doc:`📖<../guides/include_guide>`
+  Specify one or more other toml, yaml, or json files to load tasks from. By default includes are followed recursively, unless the ``recursive`` option is set to ``false`` for a specific include.
 
-**include_script** : ``str`` | ``dict[str, str]`` | ``list[str | dict[str, str]]`` :doc:`📖<../guides/packaged_tasks>`
+**include_script** : ``str`` | ``dict[str, Any]`` | ``list[str | dict[str, Any]]`` :doc:`📖<../guides/packaged_tasks>`
   Load dynamically generated tasks from one or more python functions. This is similar to the :doc:`include global option<../guides/include_guide>`, except instead of providing paths to config files, one can reference python functions that generate task config, using the same syntax as for :doc:`script tasks<../tasks/task_types/script>`.
 
 **shell_interpreter** : ``str`` | ``list[str]`` :ref:`📖<Change the default shell interpreter>`
@@ -27,8 +27,8 @@ The following options can be set for all tasks in a project directly under ``[to
 **poetry_hooks** : ``dict[str, str]`` :ref:`📖<Hooking into poetry commands>`
   Register tasks to run automatically before or after other poetry CLI commands.
 
-**verbosity** : ``int``
-  Set the default verbosity level for tasks in this project. The default value is ``0``, providing the ``-v`` global CLI option increases it by ``1``, whereas the ``-q`` global CLI option decreases it by ``1``.
+**verbosity** : ``int`` :ref:`📖<Default command verbosity>`
+  Set the default verbosity level for tasks in this project, from ``-2`` to ``2``. The default value is ``0``, providing the ``-v`` global CLI option increases it by ``1``, whereas the ``-q`` global CLI option decreases it by ``1``.
 
 **default_task_type** : ``"cmd" | "expr" | "ref" | "script" | "shell"``
   When a task is declared as a string (instead of a table), then it is interpreted as the default task type, which will be ``"cmd"`` unless otherwise specified.
@@ -50,7 +50,7 @@ You can configure environment variables to be set for all poe tasks in the pypro
   VAR1 = "FOO"
   VAR2 = "BAR BAR BLACK ${FARM_ANIMAL}"
 
-The example above also demonstrates how – as with env vars defined at the task level – posix variable interpolation syntax may be used to define global env vars with reference to variables already defined in the host environment or in a referenced env file.
+The example above also demonstrates how – as with env vars defined at the task level – the ``${VAR}`` parameter expansion syntax may be used to define global env vars with reference to variables already defined in the host environment or in a referenced env file. Note that unlike in env files, only the braced form ``${VAR}`` is expanded in env config values, a bare ``$VAR`` is left as is.
 
 As with the task level option, you can indicated that a variable should only be set if not already set like so:
 
@@ -106,7 +106,9 @@ Env file values support bash-style parameter expansion. Each variable can refere
    # Use an alternate value when a variable is set
    DEBUG_FLAG=${DEBUG:+--debug}
 
-Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``.
+Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``. A ``$`` can also be escaped with a backslash (``\$``) to keep it literally, and an unquoted ``$`` that doesn't start a valid expansion (e.g. followed by a space) is also kept as is.
+
+A UTF-8 byte order mark (BOM) at the start of an env file is ignored.
 
 Optional env files
 """"""""""""""""""
@@ -156,7 +158,7 @@ You can configure poe to use a specific executor by setting
 - **auto**: to automatically use the most appropriate of the following executors in order
 - **poetry**: to run tasks in the poetry managed environment
 - **uv**: to run tasks in an uv environment
-- **virtualenv**: to run tasks in the indicated virtualenv (or else "./.venv" or "./venv" if present)
+- **virtualenv**: to run tasks in the indicated virtualenv (or else "./venv" or "./.venv" if present, in that order)
 - **simple**: to run tasks without doing any specific environment setup
 
 The default behavior is **auto**.
@@ -201,7 +203,7 @@ The uv executor can be configured with the following options, which translate in
   Run with the given packages installed.
 
 **isolated** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--isolated>`__
-  Run the command in a fresh emphemeral virtual environment, instead of the usual in-project .venv
+  Run the command in a fresh ephemeral virtual environment, instead of the usual in-project .venv
 
 **exact** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--exact>`__
   Sync the environment exactly, removing extraneous packages not in the requested groups (unlike the default inexact sync which only adds missing packages).
@@ -210,7 +212,7 @@ The uv executor can be configured with the following options, which translate in
   Avoid syncing the virtual environment.
 
 **locked** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--locked>`__
-  Run without updating the uv.lock file.
+  Assert that the uv.lock file will remain unchanged, failing if it needs to be updated.
 
 **frozen** : ``bool`` `📖 <https://docs.astral.sh/uv/reference/cli/#uv-run--frozen>`__
   Run without updating the uv.lock file.
@@ -238,15 +240,15 @@ You can combine project and task level executor options and inheritance will wor
 
 This feature enables you to replace tools like tox by creating task variants for different Python versions or environments. See the :doc:`../guides/tox_replacement_guide` for a detailed guide on using poethepoet in this way.
 
-This kind of task level executor config will even work seamlessly in projects that don't otherwise use `uv` if the executor type is specified at the task level.
+This kind of task level executor config will even work seamlessly in projects that don't otherwise use `uv` if the executor type is specified at the task level. Note however that uv requires the pyproject.toml to include a ``[project]`` table (as is the case for uv and poetry 2 projects), so for other projects (e.g. using poetry 1.x) you'll need to also set ``no-project = true``.
 
 Virtualenv Executor
 ~~~~~~~~~~~~~~~~~~~
 
 The virtualenv executor can be configured with the following options:
 
-**location** : ``bool``
-  The path of the virtual environment to use. Defaults to ``./venv`` or ``./.venv``.
+**location** : ``str``
+  The path of the virtual environment to use. Defaults to ``./venv`` or else ``./.venv``.
 
 .. code-block:: toml
 
@@ -254,7 +256,7 @@ The virtualenv executor can be configured with the following options:
   type = "virtualenv"
   location = "myvenv"
 
-If the virtualenv location is a relative path then it is resolved relative to the project root (the parent directory of the pyproject.toml file. However in a monorepo project it may also be defined relative to the git repo root by templating :ref:`these  special environment variables<Special variables>` like so:
+If the virtualenv location is a relative path then it is resolved relative to the project root (the parent directory of the pyproject.toml file). However in a monorepo project it may also be defined relative to the git repo root by templating :ref:`these  special environment variables<Special variables>` like so:
 
 .. code-block:: toml
 
@@ -296,14 +298,14 @@ You can alter the verbosity level for poe commands by passing :bash:`--quiet` /
 increases verbosity) on the CLI.
 
 If you want to change the default verbosity level for all commands, you can use
-the :toml:`tool.poe.verbose` option in pyproject.toml like so:
+the :toml:`tool.poe.verbosity` option in pyproject.toml like so:
 
 .. code-block:: toml
 
   [tool.poe]
   verbosity = -1
 
-:toml:`-1` is the quietest and :toml:`1` is the most verbose. :toml:`0` is the
+:toml:`-2` is the quietest and :toml:`2` is the most verbose. :toml:`0` is the
 default.
 
 Note that the command line arguments are incremental: :bash:`-q` subtracts one

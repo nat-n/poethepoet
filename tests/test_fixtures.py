@@ -1,20 +1,36 @@
+import sys
+
+import pytest
+
+
 def test_run_poe_merges_env_and_scrubs_inherited_poe_vars(
     run_poe, temp_pyproject, monkeypatch
 ):
     project_path = temp_pyproject("""
         [tool.poe.tasks.show-env]
-        cmd = "poe_test_echo ${PARENT_ONLY} ${CHILD_ONLY} ${POE_CWD}"
+        cmd = '''
+          poe_test_echo
+            ${PARENT_ONLY} ${CHILD_ONLY} ${POE_CWD}
+            extra:${POE_EXTRA_ARGS} probe:${POE_LEAK_PROBE} explicit:${POE_EXPLICIT}
+        '''
         capture_stdout = "show-env.txt"
         """)
     monkeypatch.setenv("PARENT_ONLY", "parent")
+    # Simulate vars inherited from an outer `poe test` invocation
     monkeypatch.setenv("POE_CWD", "/not-the-project")
+    monkeypatch.setenv("POE_EXTRA_ARGS", "tests/test_x.py -k foo")
+    monkeypatch.setenv("POE_LEAK_PROBE", "leaked")
 
-    result = run_poe("show-env", cwd=project_path, env={"CHILD_ONLY": "child"})
+    result = run_poe(
+        "show-env",
+        cwd=project_path,
+        env={"CHILD_ONLY": "child", "POE_EXPLICIT": "explicit"},
+    )
 
     assert result.code == 0
     assert (
         project_path / "show-env.txt"
-    ).read_text() == f"parent child {project_path}\n"
+    ).read_text() == f"parent child {project_path} extra: probe: explicit:explicit\n"
     assert result.stderr == ""
 
 
@@ -31,3 +47,15 @@ def test_run_poe_env_can_set_project_dir(run_poe, temp_pyproject, monkeypatch):
     assert result.code == 0
     assert (project_path / "hello.txt").read_text() == "hello from env project dir\n"
     assert result.stderr == ""
+
+
+def test_run_poe_rejects_unknown_project_key(run_poe):
+    with pytest.raises(KeyError, match="Unknown test project 'no_such'"):
+        run_poe("echo", project="no_such")
+
+
+def test_run_poe_main_restores_sys_argv(run_poe_main):
+    prev_argv = list(sys.argv)
+    result = run_poe_main("--version")
+    assert result.code == 0
+    assert sys.argv == prev_argv

@@ -115,7 +115,7 @@ def test_poetry_command_from_included_file_with_empty_prefix(run_poetry_1, proje
 
 
 @pytest.mark.slow
-@pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
+@pytest.mark.usefixtures("_setup_poetry_project_with_prefix")
 def test_poetry_help_with_poe_command_prefix(run_poetry_1, projects):
     result = run_poetry_1([], cwd=projects["poetry_plugin/with_prefix"].parent)
     assert result.stdout.startswith("Poetry (version ")
@@ -192,3 +192,81 @@ def test_task_with_cli_dependency_with_directory(run_poetry_1, projects, is_wind
         assert (
             "< Cowacter, eyes:default, tongue:False, thoughts:False >" in result.stdout
         )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("project_option", ["--directory", "-C"])
+def test_running_task_with_project_option(run_poetry_1, projects, project_option):
+    result = run_poetry_1(
+        [project_option, "hooks", "poe", "say", "hello"],
+        cwd=projects["poetry_plugin"],
+    )
+    assert "Unrecognized task" not in result.stdout
+    assert "hello\n" in result.stdout
+    assert result.code == 0
+
+
+@pytest.mark.slow
+def test_post_hook_not_run_after_failed_command(run_poetry_1, projects):
+    # There's no lock file so `poetry check --lock` fails
+    result = run_poetry_1(["check", "--lock"], cwd=projects["poetry_plugin"] / "hooks")
+    assert "pre_check_hook" in result.stdout
+    assert "post_check_hook" not in result.stdout
+    assert result.code != 0
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    ("project_dir", "expected_error"),
+    [
+        (
+            "conflicting_prefix",
+            "error: poethepoet plugin: The configured command prefix 'build' "
+            "conflicts with a poetry command.",
+        ),
+        (
+            "conflicting_task",
+            "error: poethepoet plugin: Poe task 'build' conflicts with a poetry "
+            "command. Please rename the task or configure a command prefix.",
+        ),
+    ],
+)
+def test_plugin_config_errors_are_shown(
+    run_poetry_1, projects, project_dir, expected_error
+):
+    result = run_poetry_1(["list"], cwd=projects["poetry_plugin"] / project_dir)
+    assert expected_error in result.stderr
+    assert "Set DEBUG_POE_PLUGIN=1 for details" not in result.stderr
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    ("verbosity_flag", "expect_task_header"),
+    [("-v", False), ("-vv", True), ("-vvv", True)],
+)
+def test_poetry_verbosity_is_passed_to_poe(
+    run_poetry_1, projects, verbosity_flag, expect_task_header
+):
+    # The hooks project sets a default poe verbosity of -2
+    result = run_poetry_1(
+        [verbosity_flag, "poe", "say", "hello"],
+        cwd=projects["poetry_plugin"] / "hooks",
+    )
+    assert "hello\n" in result.stdout
+    assert ("Poe => echo hello" in result.stdout) is expect_task_header
+
+
+@pytest.mark.slow
+def test_empty_argument_does_not_crash_poetry(run_poetry_1, projects):
+    result = run_poetry_1([""], cwd=projects["poetry_plugin"] / "hooks")
+    assert "string index out of range" not in result.stdout + result.stderr
+    assert "IndexError" not in result.stdout + result.stderr
+
+
+@pytest.mark.slow
+def test_hook_with_unbalanced_quotes_gives_clean_error(run_poetry_1, projects):
+    result = run_poetry_1(["check"], cwd=projects["poetry_plugin"] / "bad_hook")
+    assert (
+        "error: poethepoet plugin: Invalid value for poetry hook 'pre_check': "
+        "No closing quotation"
+    ) in result.stderr

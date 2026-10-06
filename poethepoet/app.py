@@ -29,9 +29,12 @@ class PoeThePoet:
     :type cwd: Path, optional
 
     :param config:
-        Either a dictionary with the same schema as a pyproject.toml file, or a
+        Either a dictionary with the same schema as a pyproject.toml file (or with
+        just the content of its tool.poe table), or a
         `PoeConfig <https://github.com/nat-n/poethepoet/blob/main/poethepoet/config/config.py>`_
-        object to use as an alternative to loading config from a file.
+        object to use as an alternative to loading config from a file. A config
+        dictionary is used instead of searching for a config file, unless a config
+        location is given via the ``-C`` option.
     :type config: dict | PoeConfig, optional
 
     :param output:
@@ -153,12 +156,18 @@ class PoeThePoet:
                 task_spec.validate(self.config, self.task_specs)
         except PoeException as error:
             if should_display_help:
-                self.print_help()
+                self.print_help(config_is_valid=False)
                 return 0
             self.print_help(error=error)
             return 1
 
         if should_display_help:
+            if (
+                isinstance(help_task := self.ui["help"], str)
+                and help_task not in self.config.get_tasks()
+            ):
+                self.print_help(error=PoeException(f"Unrecognized task {help_task!r}"))
+                return 1
             self.print_help()
             return 0
 
@@ -166,9 +175,18 @@ class PoeThePoet:
         if not task:
             return 1
 
-        if task.has_deps():
-            return await self._run_task_graph(task)
-        return await self._run_task(task)
+        try:
+            if task.has_deps():
+                return await self._run_task_graph(task)
+            return await self._run_task(task)
+        except ExecutionError as error:
+            # e.g. failure to load the global envfile when creating the RunContext
+            self.ui.print_error(error=error)
+            return 1
+        except PoeException as error:
+            # e.g. invalid global env templates when creating the RunContext
+            self.print_help(error=error)
+            return 1
 
     def modify_verbosity(self, offset: int):
         """
@@ -230,10 +248,20 @@ class PoeThePoet:
             try:
                 task_run = await task.run(context=context)
                 await task_run.wait(suppress_errors=False)
-                return task_run.return_code or 0
+                # A task run can fail without a non-zero return code, e.g. if an
+                # error raised by a child task run was not propagated
+                return (
+                    context.interrupted_exit_code
+                    or task_run.return_code
+                    or int(task_run.has_failure)
+                )
+            except asyncio.CancelledError:
+                if (exit_code := context.interrupted_exit_code) is None:
+                    raise
+                return exit_code
             except ExecutionError as error:
                 self.ui.print_error(error=error)
-                return 1
+                return context.interrupted_exit_code or 1
             except PoeException as error:
                 self.print_help(error=error)
                 return 1
@@ -267,13 +295,22 @@ class PoeThePoet:
                                 "Task graph aborted after failed task "
                                 f"{stage_task.name!r}"
                             )
+                    except asyncio.CancelledError:
+                        if (exit_code := context.interrupted_exit_code) is None:
+                            raise
+                        return exit_code
                     except PoeException as error:
                         self.print_help(error=error)
                         return 1
                     except ExecutionError as error:
                         self.ui.print_error(error=error)
-                        return 1
-        return 0
+                        return context.interrupted_exit_code or 1
+
+        # This should not be possible to reach
+        self.ui.print_error(
+            error=ExecutionError("Task graph did not contain the expected sink task")
+        )
+        return 1
 
     @asynccontextmanager
     async def run_context(
@@ -306,21 +343,33 @@ class PoeThePoet:
         self,
         info: str | None = None,
         error: str | PoeException | None = None,
+        *,
+        config_is_valid: bool = True,
     ):
         from .task.args import PoeTaskArgs
 
         if isinstance(error, str):
             error = PoeException(error)
 
-        all_tasks = self.config.get_tasks()
+        # If the config is invalid then tolerate errors in rendering help for tasks
+        lenient = error is not None or not config_is_valid
+
+        try:
+            all_tasks = self.config.get_tasks()
+        except PoeException:
+            if not lenient:
+                raise
+            # The config is already known to be invalid, so collect tasks leniently
+            # in order to still display them
+            all_tasks = self.config.get_tasks(strict=False)
 
         tasks_help: dict[
             str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]], str | None]
         ] = {
             task_name: (
-                task.get("help", ""),
+                task.help_text,
                 PoeTaskArgs.get_help_content(
-                    task.get("args"), task_name, suppress_errors=bool(error)
+                    task.get("args"), task_name, suppress_errors=lenient
                 ),
                 task.group.name if task.group else None,
             )

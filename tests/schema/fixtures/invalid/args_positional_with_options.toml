@@ -1,0 +1,4 @@
+# expected_error: Positional argument 'target' may not declare options
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${target}"
+args = [{ name = "target", positional = true, options = ["--target"] }]

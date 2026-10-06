@@ -91,7 +91,13 @@ class FunctionCall(NamedTuple):
         allowed_vars: Container[str] | None = None,
     ) -> FunctionCall:
         root_node = cast("ast.Call", parse_and_validate(source, True, "script"))
-        name_nodes = _validate_nodes_and_get_names(root_node, source)
+        # The root function reference is resolved against the target module, so only
+        # the call arguments need to be validated
+        name_nodes = (
+            name_node
+            for arg_node in (*root_node.args, *root_node.keywords)
+            for name_node in _validate_nodes_and_get_names(arg_node, source)
+        )
 
         substitutions: list[Substitution] = []
         referenced_args: list[str] = []
@@ -225,8 +231,8 @@ def _validate_nodes_and_get_names(
 ) -> Iterator[ast.Name]:
     """
     Walk the ast from the given node and yield all of the encountered Name nodes
-    except function names from Call nodes, or variables scoped to a comprehension or
-    lambda.
+    except names of directly called functions (e.g. `len` in `len(x)`), or variables
+    scoped to a comprehension or lambda.
 
     Also raise if any of the banned_node_types are encountered.
     """
@@ -241,15 +247,11 @@ def _validate_nodes_and_get_names(
         yield node
 
     elif isinstance(node, ast.Call):
-        # skip function names
-
-        func_ref = node.func
-        while isinstance(func_ref, ast.Attribute):
-            func_ref = func_ref.value
-        if not isinstance(func_ref, ast.Name):
-            # a function can be an attribute of the result of an expression
+        if not isinstance(node.func, ast.Name):
+            # Skip plain function names, but not the base of an attribute chain
+            # such as `name` in `name.upper()`, since it may be a variable
             yield from _validate_nodes_and_get_names(
-                func_ref, source, ignore_names=ignore_names
+                node.func, source, ignore_names=ignore_names
             )
 
         for arg in node.args:

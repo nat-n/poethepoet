@@ -1,0 +1,4 @@
+# expected_error: Argument 'mode' must declare at least one choice
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${mode}"
+args = [{ name = "mode", choices = [] }]

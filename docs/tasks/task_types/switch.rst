@@ -19,6 +19,14 @@ This can be used to define a task that runs a different subtask depending on whi
 
 In the above example the control task is an :doc:`expression <expr>` that checks the value of ``sys.platform``, and if running on windows it'll execute :toml:`windows_build`, otherwise it'll fall back to the default case (i.e. the switch item with no case option defined) and execute :toml:`posix_build`.
 
+Each item in the switch array is an inline task definition with an optional ``case`` option, which may be a string, number, or boolean, or a non-empty array of such values. Case values are compared with the output of the control task as strings.
+
+If the selected case task fails then the switch task fails too, with the same error or exit code.
+
+.. note::
+
+  Before matching against case values, the output of the control task has any leading and trailing new lines removed, and every remaining run of whitespace (including new lines and tabs) collapsed to a single space. Other leading or trailing spaces are kept, so for example a control task that outputs ``"a \n"`` will not match :toml:`case = "a"`.
+
 
 Available task options
 ----------------------
@@ -28,7 +36,7 @@ Available task options
 The following options are also accepted:
 
 **control** : ``str`` | ``dict``
-  A **required** inline definition for a task to be executed to get the value that will determine which case task to run.
+  A **required** inline definition for a task to be executed to get the value that will determine which case task to run. The control task may not declare the ``args``, ``deps``, ``uses``, or ``uses_env`` options, though it can reference args declared on the switch task.
 
 **default** : ``Literal["pass", "fail"]`` :ref:`📖<Don't fail if there's no match>`
   Setting ``default =  "pass"`` will make the task succeed even if no case was matched to the value and there was no default case.
@@ -75,7 +83,7 @@ Using an :doc:`expr <expr>` task makes it convenient to run a different task dep
 
     [[tool.poe.tasks.check_number.switch]]
     case = "0"
-    expr = "f'{${BEST_NUMBER}} is even')"
+    expr = "f'{${BEST_NUMBER}} is even'"
 
     [[tool.poe.tasks.check_number.switch]]
     case = "1"
@@ -87,7 +95,7 @@ Using this task will look like the following:
 
   $ BEST_NUMBER=12 poe check_number
   Poe <= int(${BEST_NUMBER}) % 2
-  Poe => f'{${BEST_NUMBER}} is even')
+  Poe => f'{${BEST_NUMBER}} is even'
   12 is even
 
   $ BEST_NUMBER=17 poe check_number

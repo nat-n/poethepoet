@@ -6,7 +6,7 @@
       "id": 1,
       "fixture": "poe_project",
       "prompt": "I need to run just the tests with 'config' in the name — not the full suite. How do I do that?",
-      "expected_output": "Agent discovers available poe tasks by running poe first, then explains how to forward extra args to the test task (poe test -k config or poe test -- -k config). Should recommend the poe task rather than running pytest directly.",
+      "expected_output": "Agent discovers available poe tasks by running poe first, then explains that extra args are forwarded to the test task: poe test -k config (no `--` needed, since the task declares no args and `--` would be passed to pytest literally). Should recommend the poe task rather than running pytest directly.",
       "expectations": [
         "Response mentions running `poe` or `poe --help` to discover available tasks",
         "Response recommends using `poe test` rather than calling pytest directly",
@@ -17,11 +17,12 @@
       "id": 2,
       "fixture": "uv_with_test",
       "prompt": "I want to add a 'lint' task that runs `ruff check .` by default, but also lets me pass --fix when I want to auto-fix issues.",
-      "expected_output": "Agent adds a lint task using cmd type with $POE_EXTRA_ARGS so the user can run `poe lint` normally or `poe lint -- --fix`. Includes help text. Uses correct TOML syntax.",
+      "expected_output": "Agent adds a lint task (e.g. cmd = \"ruff check .\", optionally with $POE_EXTRA_ARGS for placement) and explains that `poe lint --fix` forwards --fix, because a task without declared args appends extra CLI args. Must not tell the user to run `poe lint -- --fix`: for a task without declared args the `--` is forwarded to ruff literally. Includes help text. Uses correct TOML syntax.",
       "expectations": [
         "Response includes a lint task definition in TOML",
         "Response defines the lint task so --fix can be passed at the CLI (not hard-coded in the command)",
-        "Response includes a help = line for the task"
+        "Response includes a help = line for the task",
+        "Response does not tell the user to run `poe lint -- --fix`"
       ]
     },
     {
@@ -77,11 +78,10 @@
       "id": 7,
       "fixture": "poe_project",
       "prompt": "I'm building a `switch` task whose control branches on a private arg called `_target` (positional, choices: 'dev' or 'prod'). What should `control` look like, and where do the args go?",
-      "expected_output": "Agent uses the bare-variable form on the control expr (e.g. control.expr = \"_target\"), NOT ${_target} — because private `_`-prefixed args are deliberately not exported as environment variables and the ${...} env-route silently fails for them. Declares args on the switch task (not on individual cases), since args on a switch propagate automatically to the control task and every case task, and cases may not redeclare args.",
+      "expected_output": "Agent uses the bare-variable form on the control expr (e.g. control.expr = \"_target\"), which gives the arg's typed Python value; `${_target}` would give the env-string form, which is not a usable value when an arg is unset or a false boolean. Declares args on the switch task (not on individual cases), since args on a switch propagate automatically to the control task and every case task, and cases may not redeclare args.",
       "expectations": [
         "Response uses the bare-variable form for the control (e.g. expr = \"_target\"), not ${_target}",
-        "Response declares args on the switch task, not on individual case tasks",
-        "Response does not place args on case tasks"
+        "Response declares args on the switch task, not on individual case tasks"
       ]
     }
   ]

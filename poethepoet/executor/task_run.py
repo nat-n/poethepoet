@@ -19,6 +19,14 @@ if TYPE_CHECKING:
     from .base import PoeProcess
 
 
+def _as_exit_status(return_code: int) -> int:
+    """
+    Map a subprocess return code to a shell style exit status. asyncio reports a
+    process killed by signal N as -N, which the shell convention reports as 128 + N.
+    """
+    return 128 - return_code if return_code < 0 else return_code
+
+
 class PoeTaskRunEvent:
     """
     An event that is emitted when a PoeTaskRun completes or fails.
@@ -139,19 +147,6 @@ class PoeTaskRun:
             and all(child.done() for child in self._children)
         )
 
-    async def events(self) -> AsyncIterable[PoeTaskRunEvent]:
-        """
-        An async generator that yields events when the task or any of its direct child
-        tasks completes or fails.
-        """
-        queue: asyncio.Queue[PoeTaskRunEvent] = asyncio.Queue()
-        unsubscribe = self.subscribe(queue.put_nowait)
-        try:
-            while not self.done() or not queue.empty():
-                yield await queue.get()
-        finally:
-            unsubscribe()
-
     def add_new_process_callback(
         self, callback: Callable[[PoeProcess], None]
     ) -> Callable[[], None]:
@@ -257,26 +252,32 @@ class PoeTaskRun:
         """
         Return the combined return code of all processes and child tasks, or None if any
         are still running.
+        The combined return code is that of the first process or child task (in the
+        order they were added) with a non-ignored failure. A process killed by signal N
+        is reported as 128 + N, following the shell convention.
         If force_failure is set, return at least 1 if everything else is zero.
         If ignore_failure is set, always return 0 regardless of actual return codes.
         """
         if any(process.returncode is None for process in self._processes):
             return None
-        if any(child.return_code is None for child in self._children):
+        child_return_codes = [child.return_code for child in self._children]
+        if any(return_code is None for return_code in child_return_codes):
             return None
         if self._ignore_failure and not self._ignore_failure_codes:
             return 0
 
-        ignore_failure_codes = (0, None, *self._ignore_failure_codes)
-        return sum(
-            process.returncode or 0
-            for process in self._processes
-            if process.returncode not in ignore_failure_codes
-        ) + sum(
-            child.return_code or 0
-            for child in self._children
-            if child.return_code not in ignore_failure_codes
-        ) or int(self._force_failure)
+        ignore_failure_codes = (0, *self._ignore_failure_codes)
+        return next(
+            (
+                _as_exit_status(return_code)
+                for return_code in (
+                    *(process.returncode for process in self._processes),
+                    *child_return_codes,
+                )
+                if return_code is not None and return_code not in ignore_failure_codes
+            ),
+            int(self._force_failure),
+        )
 
     async def add_process(
         self, process: PoeProcess, finalize: bool = False
@@ -317,8 +318,7 @@ class PoeTaskRun:
         if asyncio.current_task() is not self.asyncio_task:
             self.asyncio_task.cancel()
         for process in self._processes:
-            if process.returncode is None:
-                process.kill()
+            process.terminate_tree()
         for child in self._children:
             await child.kill()
         await self._notify_update()
@@ -339,25 +339,6 @@ class PoeTaskRun:
             # Always suppress errors from child tasks, because it is the parent's
             # responsibility to handle them according to its own ignore_failure setting.
             await child.wait(suppress_errors=True)
-
-    def subscribe(
-        self, callback: Callable[[PoeTaskRunEvent], None]
-    ) -> Callable[[], None]:
-        """
-        Subscribe to events on this task run. The callback will be called with a
-        PoeTaskRunEvent when the task or any of its direct child tasks completes or
-        fails.
-        """
-        cancel_callbacks = [
-            self.add_done_callback(callback),
-            *(child.add_done_callback(callback) for child in self._children),
-        ]
-
-        def unsubscribe():
-            for cancel_callback in cancel_callbacks:
-                cancel_callback()
-
-        return unsubscribe
 
     async def processes(self) -> AsyncIterable[tuple[PoeTaskRun, PoeProcess]]:
         """

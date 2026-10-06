@@ -27,6 +27,43 @@ def test_parse_comments():
     assert tree.lines[3].comment == ""
 
 
+def test_parse_hash_inside_word_is_not_a_comment():
+    """
+    Like bash, a # only starts a comment at the beginning of a word
+    """
+    tree = parse_poe_cmd(
+        """a#b http://x/#anchor 'q'#r $x#y "z"# # comment
+           c;#d""",
+        config=ParseConfig(),
+    )
+    print(tree.pretty())
+    assert len(tree.lines) == 3
+    assert tree.lines[0].words == (
+        (("a#b",),),
+        (("http://x/#anchor",),),
+        (("q",), ("#r",)),
+        (("x", "#y"),),
+        (("z",), ("#",)),
+    )
+    assert tree.lines[0].comment == " comment"
+    assert tree.lines[1].words == ((("c",),),)
+    assert tree.lines[2].words == ()
+    assert tree.lines[2].comment == "d"
+
+
+def test_parse_separator_after_comment_terminates_line():
+    """
+    A ; on the line after a comment terminates the commented line
+    """
+    tree = parse_poe_cmd("a # c\n; b # d\n e")
+    assert len(tree.lines) == 3
+    assert tree.lines[0].words == ((("a",),),)
+    assert tree.lines[0].terminator == ";"
+    assert tree.lines[1].words == ((("b",),),)
+    assert tree.lines[1].terminator == "#"
+    assert tree.lines[2].words == ((("e",),),)
+
+
 def test_parse_params():
     tree = parse_poe_cmd(
         """

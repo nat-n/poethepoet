@@ -17,7 +17,7 @@
 
 - ✅ Straight forward [declaration of project tasks in your pyproject.toml](https://poethepoet.natn.io/tasks/index.html) (or [poe_tasks.toml](https://poethepoet.natn.io/guides/without_poetry.html#usage-without-pyproject-toml))
 
-- ✅ Tasks are run in poetry or uv's virtualenv ([or another env](https://poethepoet.natn.io/index.html#usage-without-poetry) you specify)
+- ✅ Tasks are run in poetry or uv's virtualenv ([or another env](https://poethepoet.natn.io/guides/without_poetry.html) you specify)
 
 - ✅ [Shell completion](https://poethepoet.natn.io/installation.html#shell-completion) of task names and arguments
 
@@ -89,7 +89,7 @@
 
   ```sh
   $ poe test -v tests/unit # extra CLI arguments are appended to the underlying command
-  Poe => pytest --cov=my_app
+  Poe => pytest --cov=my_app -v tests/unit
   ...
   ```
 

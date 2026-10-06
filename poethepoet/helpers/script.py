@@ -5,15 +5,17 @@ from typing import TYPE_CHECKING, Any
 from ..exceptions import ExpressionParseError
 
 if TYPE_CHECKING:
-    from collections.abc import Container
+    from collections.abc import Container, Mapping
 
     from ..helpers.python import FunctionCall
 
 
 def parse_script_reference(
     script_ref: str,
-    parsed_args: dict[str, Any] | None = None,
+    parsed_args: Mapping[str, Any] | None = None,
     allowed_vars: Container[str] = (),
+    *,
+    own_args: Mapping[str, Any] | None = None,
 ) -> tuple[str, FunctionCall]:
     """
     Parses a script reference string and returns the module name and function call.
@@ -25,6 +27,9 @@ def parse_script_reference(
             parsed and are available for substitution.
         allowed_vars (Container[str]): An optional collection of variable names that may
             be referenced within the function call.
+        own_args (Mapping[str, Any] | None): The arguments declared by the task itself
+            (excluding any inherited from a parent task), which are passed as kwargs
+            when the script reference has no explicit call. Defaults to parsed_args.
 
     Returns:
         tuple[str, FunctionCall]: A tuple containing:
@@ -46,8 +51,11 @@ def parse_script_reference(
     if target_ref.isidentifier():
         # _extra_args is framework-managed; exclude it from auto-kwargs so it
         # doesn't pollute functions that use no explicit arg list
+        kwarg_source = parsed_args if own_args is None else own_args
         auto_kwargs = {
-            k: v for k, v in (parsed_args or {}).items() if k != "_extra_args"
+            key: value
+            for key, value in (kwarg_source or {}).items()
+            if key != "_extra_args"
         }
         if auto_kwargs:
             function_call = FunctionCall(f"{target_ref}(**({auto_kwargs}))", target_ref)
@@ -98,8 +106,11 @@ def validate_script_or_module_reference(content: str) -> None:
         from ..helpers.python import FunctionCall
 
         FunctionCall.parse(source=target_ref, arguments=set())
-    except (ValueError, ExpressionParseError):
+    except (ValueError, ExpressionParseError) as error:
+        reason = str(error)
+        if isinstance(syntax_error := error.__cause__, SyntaxError):
+            reason += f" ({syntax_error.msg})"
         raise ConfigValidationError(
-            f"Invalid callable reference {content!r}\n"
+            f"Invalid callable reference {content!r}\n{reason}\n"
             "(expected something like `module:callable` or `module:callable()`)"
         )

@@ -354,6 +354,7 @@ def include_script_schema(ctx: SchemaContext) -> dict:
     result = {
         "anyOf": [
             {"type": "string"},
+            {"$ref": "#/definitions/include_script_item"},
             {
                 "type": "array",
                 "items": {
@@ -375,7 +376,7 @@ def task_def_with_case_schema(ctx: SchemaContext) -> dict:
     accepts an optional `case` key. Used inside switch tasks.
 
     The case key accepts a single scalar value or a list of scalars.
-    The runtime converts any scalar to a string (str(case)), so integers,
+    The runtime converts any scalar to a string (str(case)), so numbers,
     booleans, and other non-string scalars are all valid case values per
     the runtime implementation (see task/switch.py lines 110-114).
 
@@ -388,14 +389,14 @@ def task_def_with_case_schema(ctx: SchemaContext) -> dict:
     _case_scalar = {
         "anyOf": [
             {"type": "string"},
-            {"type": "integer"},
+            {"type": "number"},
             {"type": "boolean"},
         ]
     }
     case_value_schema = {
         "anyOf": [
             _case_scalar,
-            {"type": "array", "items": _case_scalar},
+            {"type": "array", "items": _case_scalar, "minItems": 1},
         ]
     }
 

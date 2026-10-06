@@ -127,13 +127,17 @@ class ScriptTask(PoeTask):
 
         self._parse_and_register_args(env)
         named_arg_values = env.get_args()
+        # _extra_args is always available, even if no free args were passed
+        named_arg_values.setdefault("_extra_args", [])
 
+        # Only the task's own args are passed implicitly as kwargs, whereas args
+        # inherited from a parent task may still be referenced explicitly by name
         target_module, function_call = parse_script_reference(
             self.spec.content,
             named_arg_values,
             allowed_vars={"sys", "os", "environ", "_dry_run"},
+            own_args=self.get_parsed_arguments(env)[0],
         )
-        function_ref = function_call.function_ref
 
         argv = [
             self.name,
@@ -150,15 +154,18 @@ class ScriptTask(PoeTask):
 
         script = [
             "import asyncio,os,sys;",
-            "from inspect import iscoroutinefunction as _c;",
+            "from inspect import isawaitable as _a, iscoroutine as _c;",
             "from importlib import import_module as _i;",
             "environ = os.environ;",
             f"_dry_run = {'True' if dry_run else 'False'};" if has_dry_run_ref else "",
             f"sys.argv = {argv!r};{src_path_append}",
             f"{format_class(named_arg_values)}",
             f"_m = _i('{target_module}');",
-            f"_r = asyncio.run(_m.{function_call.expression}) if _c(_m.{function_ref})",
-            f" else _m.{function_call.expression};",
+            f"_r = _m.{function_call.expression};",
+            # Await the result of any async callable, even if it isn't detectable as
+            # a coroutine function, e.g. due to a decorator
+            "_r = asyncio.run(_r if _c(_r) else asyncio.wait_for(_r, None))",
+            " if _a(_r) else _r;",
         ]
 
         if self.spec.options.get("print_result"):

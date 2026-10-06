@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from ..exceptions import PoeException
+from ..exceptions import ConfigValidationError, PoeException
 
 
 class PoeConfigFile:
@@ -39,9 +39,25 @@ class PoeConfigFile:
                 self._valid = False
                 return None
 
-            if self.is_pyproject or content.get("tool", {}).get("poe", {}):
+            if content is None:
+                # e.g. an empty yaml file
+                content = {}
+            elif not isinstance(content, Mapping):
+                self._error = ConfigValidationError(
+                    f"Config file at {self.path} must contain a table at the top "
+                    f"level, not {type(content).__name__!r}",
+                    filename=str(self.path),
+                )
+                self._valid = False
+                return None
+
+            tool_config = content.get("tool", {})
+            if not isinstance(tool_config, Mapping):
+                tool_config = {}
+
+            if self.is_pyproject or tool_config.get("poe", {}):
                 self._content = content
-                self._valid = bool(content.get("tool", {}).get("poe", {}))
+                self._valid = bool(tool_config.get("poe", {}))
             else:
                 if tool_poe := content.get("tool.poe"):
                     self._content = {"tool": {"poe": tool_poe}}
@@ -91,7 +107,7 @@ class PoeConfigFile:
             yield cls(target_path)
 
     @staticmethod
-    def _read_config_file(path: Path) -> Mapping[str, Any]:
+    def _read_config_file(path: Path) -> Any:
         try:
             if path.suffix.endswith(".json"):
                 import json

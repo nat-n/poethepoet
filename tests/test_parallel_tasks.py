@@ -1,7 +1,15 @@
 # ruff: noqa: E501
+import asyncio
+import contextlib
+import io
+import os
+import sys
+import time
 from collections.abc import Sequence
 
 import pytest
+
+from poethepoet.executor.base import PoeProcess
 
 BUFFER_LIMIT_OVERRIDE = 64
 BUFFER_LIMIT_OVERRIDE_ENV = {"POE_BUFFERED_STDOUT_LIMIT": str(BUFFER_LIMIT_OVERRIDE)}
@@ -204,7 +212,7 @@ def test_parallel_task_buffered_long_complete_line_emitted_whole(
     project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_huge_line]
             parallel = [
-              {{ shell = "print('X' * {line_size}, flush=True)", interpreter = "python" }},
+              {{ shell = "import os; os.write(1, b'X' * {line_size} + bytes([10]))", interpreter = "python" }},
             ]
             output_mode = "buffer"
         """)
@@ -230,7 +238,7 @@ def test_parallel_task_streaming_long_complete_line_emitted_whole(
     project_path = temp_pyproject(f"""
             [tool.poe.tasks.streamed_huge_line]
             parallel = [
-              {{ shell = "print('X' * {line_size}, flush=True)", interpreter = "python" }},
+              {{ shell = "import os; os.write(1, b'X' * {line_size} + bytes([10]))", interpreter = "python" }},
             ]
         """)
     prefix = format_parallel_prefix("streamed_huge_line[0]")
@@ -317,8 +325,8 @@ def test_parallel_task_oversized_line_warns_only_when_verbose(
 def test_parallel_task_buffered_output_without_trailing_newline(
     run_poe_subproc, temp_pyproject
 ):
-    # A final line shorter than the limit is forwarded as-is via the EOF tail,
-    # with no trailing newline added (only an over-limit line is force-wrapped).
+    # A final line shorter than the limit is forwarded via the EOF tail, with a
+    # newline added so that the next prefixed line can't be welded onto it.
     line_size = 50
     project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_no_newline]
@@ -335,7 +343,7 @@ def test_parallel_task_buffered_output_without_trailing_newline(
     )
 
     prefix = format_parallel_prefix("buffered_no_newline[0]")
-    assert result.stdout == f"{prefix}{'Y' * line_size}"
+    assert result.stdout == f"{prefix}{'Y' * line_size}\n"
 
 
 def test_parallel_task_buffered_output_with_prefix_disabled(
@@ -883,6 +891,210 @@ def test_parallel_ignore_but_propagate_failures(
     assert result.code == 0
 
 
+def test_parallel_failure_reported_when_process_exit_is_reported_late(
+    run_poe, temp_pyproject, monkeypatch
+):
+    # A process's returncode is set before asyncio reports it as finished (e.g. while
+    # its stdout pipe is still being closed). A failing subtask must still be
+    # reported even if its sibling completes during that window.
+    original_wait = PoeProcess.wait
+
+    async def wait_reporting_failures_late(self):
+        returncode = await original_wait(self)
+        if returncode:
+            await asyncio.sleep(1)
+        return returncode
+
+    monkeypatch.setattr(PoeProcess, "wait", wait_reporting_failures_late)
+    project_path = temp_pyproject("""
+        [tool.poe.tasks]
+        fails = "poe_test_fail 0 128"
+        succeeds = "poe_test_delayed_echo 100 ok"
+
+        [tool.poe.tasks.par]
+        parallel = ["fails", "succeeds"]
+        """)
+
+    result = run_poe("par", cwd=project_path)
+
+    assert (
+        "Warning: Parallel subtask 'fails' failed with non-zero exit status"
+        in result.capture_lines
+    )
+    assert (
+        "Error: Parallel task 'par' aborted after failed subtask 'fails'"
+        in result.capture_lines
+    )
+    assert result.code == 1
+
+
+def _wait_for_pid_exit(pid: int, timeout: float = 5.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        time.sleep(0.1)
+    return False
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+def test_parallel_abort_terminates_sibling_process_trees(
+    run_poe_subproc, temp_pyproject, tmp_path
+):
+    # The sibling's shell spawns a long running child. When the parallel task is
+    # aborted the whole process tree must be stopped, otherwise the orphaned child
+    # keeps the output pipe open and poe hangs until it exits.
+    pid_file = tmp_path / "grandchild.pid"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks]
+        fails.shell = "while [ ! -s '{pid_file}' ]; do sleep 0.05; done; exit 1"
+        spawns.shell = "poe_test_delayed_echo_with_pidfile 60000 x '{pid_file}' & wait"
+
+        [tool.poe.tasks.par]
+        parallel = ["fails", "spawns"]
+        """)
+
+    started = time.monotonic()
+    result = run_poe_subproc("par", cwd=project_path, timeout=20)
+
+    assert result.code == 1
+    assert time.monotonic() - started < 15
+    assert (
+        "Error: Parallel task 'par' aborted after failed subtask 'fails'"
+        in result.capture_lines
+    )
+    assert _wait_for_pid_exit(int(pid_file.read_text()))
+
+
+def test_parallel_empty_string_item_is_a_config_error(run_poe, temp_pyproject):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.empty_item]
+        parallel = [""]
+        """)
+
+    for run_args in (("empty_item",), ()):
+        result = run_poe(*run_args, cwd=project_path)
+        assert "Error: Invalid task 'empty_item'" in result.capture
+        assert "Item #0 in parallel task must not be empty" in result.capture
+        assert result.code == 1
+
+
+def test_parallel_output_to_stdout_without_buffer(run_poe, temp_pyproject):
+    # e.g. when poe is embedded and stdout is redirected to a StringIO
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.par]
+        parallel = [{ cmd = "poe_test_echo hello" }]
+        """)
+
+    text_stdout = io.StringIO()
+    with contextlib.redirect_stdout(text_stdout):
+        result = run_poe("par", cwd=project_path)
+
+    assert result.code == 0
+    assert text_stdout.getvalue() == f"{format_parallel_prefix('par[0]')}hello\n"
+
+
+@pytest.mark.parametrize("output_mode", ["stream", "buffer"])
+def test_parallel_unterminated_last_line_is_not_welded_to_sibling_output(
+    run_poe_subproc, temp_pyproject, output_mode
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.welded]
+        parallel = [
+          {{ shell = "import sys; sys.stdout.write('no-newline')", interpreter = "python" }},
+          {{ shell = "import time; time.sleep(0.5); print('later-line')", interpreter = "python" }},
+        ]
+        output_mode = "{output_mode}"
+        """)
+
+    result = run_poe_subproc("welded", cwd=project_path)
+
+    assert result.stdout == (
+        f"{format_parallel_prefix('welded[0]')}no-newline\n"
+        f"{format_parallel_prefix('welded[1]')}later-line\n"
+    )
+
+
+def test_parallel_unterminated_last_line_is_unchanged_without_prefix(
+    run_poe_subproc, temp_pyproject
+):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.raw]
+        parallel = [
+          { shell = "import sys; sys.stdout.write('no-newline')", interpreter = "python" },
+        ]
+        prefix = false
+        """)
+
+    result = run_poe_subproc("raw", cwd=project_path)
+
+    assert result.stdout == "no-newline"
+
+
+@pytest.mark.parametrize("limit", ["abc", "0", "-5"])
+def test_parallel_ignores_invalid_buffered_stdout_limit(
+    run_poe_subproc, temp_pyproject, limit
+):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.par]
+        parallel = [{ cmd = "poe_test_echo hello" }]
+        """)
+
+    result = run_poe_subproc(
+        "par", cwd=project_path, env={"POE_BUFFERED_STDOUT_LIMIT": limit}, timeout=10
+    )
+
+    assert result.stdout == f"{format_parallel_prefix('par[0]')}hello\n"
+    assert result.code == 0
+
+
+@pytest.mark.parametrize("prefix_max", [0, -3])
+def test_parallel_prefix_max_must_be_positive(run_poe, temp_pyproject, prefix_max):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.par]
+        parallel = [{{ cmd = "poe_test_echo hello" }}]
+        prefix_max = {prefix_max}
+        """)
+
+    result = run_poe("par", cwd=project_path)
+
+    assert (
+        f"Option 'prefix_max' value {prefix_max} is below minimum 1" in result.capture
+    )
+    assert result.code == 1
+
+
+def test_parallel_prefix_colour_is_per_subtask(run_poe_subproc, temp_pyproject):
+    # Each subtask keeps one colour, even if it runs several processes, and each
+    # parallel task starts its colours afresh
+    project_path = temp_pyproject("""
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        b = "poe_test_echo b"
+        c = "poe_test_delayed_echo 300 c"
+
+        [tool.poe.tasks.par]
+        parallel = ["a", ["b", "c"]]
+        prefix = "{index}"
+
+        [tool.poe.tasks.twice]
+        sequence = ["par", "par"]
+        """)
+
+    result = run_poe_subproc("--ansi", "twice", cwd=project_path)
+
+    assert sorted(result.output_lines) == sorted(
+        [
+            "\x1b[31m0\x1b[0m | a",
+            "\x1b[32m1\x1b[0m | b",
+            "\x1b[32m1\x1b[0m | c",
+        ]
+        * 2
+    )
+
+
 def test_parallel_bool_flag(run_poe):
     """Parallel task: both cmd and expr subtasks see boolean args from parent"""
     result = run_poe("bool_parallel", "--flag", project="parallel")
@@ -960,6 +1172,7 @@ def sequences_are_similar(seq1: Sequence, seq2: Sequence, distance: int = 1):
         ("uses", 'uses = { CFG = "_load" }'),
         ("uses_env", 'uses_env = "_load"'),
         ("deps", "deps = []"),
+        ("use_exec", "use_exec = true"),
     ],
 )
 def test_parallel_rejects_unsupported_inline_subtask_option(

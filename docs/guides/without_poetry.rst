@@ -1,11 +1,11 @@
 Usage without poetry
 ====================
 
-Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it also works great with |uv_link|, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurable via the :ref:`tool.poe.executor global option<Configure the executor for a task>`.
+Poe the Poet was originally intended as the missing task runner for |poetry_link|. But it also works great with |uv_link|, or any other kind of virtualenv, or as a general purpose task runner! This behaviour is configurable via the :ref:`tool.poe.executor global option<Configure the executor>`.
 
-By default poe will run tasks in your project's virtual environment. Poe will deduce what kind of project is present by detecting tool specific tables in ``pyproject.toml`` such as :toml:`tool.poetry`, lock files such as ``uv.lock``, or a virtualenv at ``./.venv`` or ``./venv`` relative to the ``pyproject.toml``. If no virtualenv is found then poe will run tasks without any special environment management.
+By default poe will run tasks in your project's virtual environment. Poe will deduce what kind of project is present by detecting tool specific tables in ``pyproject.toml`` such as :toml:`tool.poetry`, lock files such as ``uv.lock``, or a virtualenv at ``./venv`` or ``./.venv`` relative to the ``pyproject.toml``. If no virtualenv is found then poe will run tasks without any special environment management.
 
-Poe the Poet can also be used as a :doc:`global task runner<./global_tasks>`, scoped to your system rather than any particular project, like shell aliases by sweeter.
+Poe the Poet can also be used as a :doc:`global task runner<./global_tasks>`, scoped to your system rather than any particular project, like shell aliases but sweeter.
 
 
 Usage with uv

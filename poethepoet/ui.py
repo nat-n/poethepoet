@@ -200,7 +200,13 @@ class PoeUi:
     ):
         # Ignore verbosity mode if help flag is set
         help_flag_set = self["help"] is None
-        help_single_task = self["help"] if isinstance(self["help"], str) else None
+        help_single_task = (
+            help_task
+            if isinstance(help_task := self["help"], str)
+            and tasks
+            and help_task in tasks
+            else None
+        )
         verbosity = 0 if help_flag_set else self.io.verbosity
 
         # If there's no error and verbosity wasn't explicitly decreased for this call,
@@ -273,9 +279,10 @@ class PoeUi:
                                     ]
                                     or (0,)
                                 )
-                                + 2,
+                                # args are further indented within groups
+                                + (4 if group else 2),
                             )
-                            for task, (_, args, _) in tasks.items()
+                            for task, (_, args, group) in tasks.items()
                             if not task.startswith("_")
                         ),
                         default=0,
@@ -396,11 +403,13 @@ class PoeUi:
         col_width: int,
         indent: int = 1,
     ):
+        # Reduce padding for extra indentation so the help column stays aligned
+        options_width = col_width - 1 - max(0, indent - 3)
         for options, arg_help_text, default in args_help:
             formatted_options = ", ".join(str(opt) for opt in options)
             task_arg_help = [
                 " " * indent,
-                self.io.style.arg_name(self._padr(formatted_options, col_width - 1)),
+                self.io.style.arg_name(self._padr(formatted_options, options_width)),
             ]
             if arg_help_text:
                 task_arg_help.append(self._align(arg_help_text, col_width))

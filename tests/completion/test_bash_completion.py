@@ -25,7 +25,65 @@ def test_bash_completion(run_poe_main):
     # some lines to stdout and none for stderr
     assert len(result.stdout.split("\n")) > 5
     assert result.stderr == ""
-    assert "Error: Unrecognised task" not in result.stdout
+    assert "Unrecognized task" not in result.stdout
+    assert result.stdout.startswith("# Bash completion for poe\n")
+
+
+class TestCompletionBuiltinDispatch:
+    """
+    Tests for argument handling of the _-prefixed completion builtins.
+    """
+
+    @pytest.mark.parametrize("alias", ["my-poe", "poe_dev", "my.poe", "poe2"])
+    def test_alias_with_punctuation_is_accepted(self, run_poe_main, alias):
+        zsh_result = run_poe_main("_zsh_completion", alias)
+        assert zsh_result.code == 0
+        assert zsh_result.stdout.startswith(f"#compdef {alias}\n")
+
+        bash_result = run_poe_main("_bash_completion", alias)
+        assert bash_result.code == 0
+        bash_func = "_" + alias.replace("-", "_").replace(".", "_") + "_complete"
+        assert f"complete -F {bash_func} {alias}\n" in bash_result.stdout
+
+        fish_result = run_poe_main("_fish_completion", alias)
+        assert fish_result.code == 0
+        assert f"complete -c {alias} " in fish_result.stdout
+
+    @pytest.mark.parametrize(
+        "builtin",
+        [
+            "_zsh_completion",
+            "_bash_completion",
+            "_fish_completion",
+            "_powershell_completion",
+        ],
+    )
+    @pytest.mark.parametrize("alias", ["a b", "-x", "a;b", "$(x)"])
+    def test_invalid_alias_gives_clean_error(self, run_poe_main, builtin, alias):
+        result = run_poe_main(builtin, alias)
+        assert result.code == 1
+        assert result.stdout == ""
+        assert f"Error: Invalid alias name {alias!r}" in result.stderr
+
+    def test_path_argument_ignored_for_shells_that_do_not_use_it(self, run_poe_main):
+        result = run_poe_main("_zsh_completion", "poe", "/nonexistent/path")
+        assert result.code == 0
+        assert result.stdout.startswith("#compdef poe\n")
+
+    def test_bash_nonexistent_path_gives_clean_error(self, run_poe_main):
+        result = run_poe_main("_bash_completion", "edgar", "/nonexistent/path")
+        assert result.code == 1
+        assert result.stdout == ""
+        assert "Error: Invalid path '/nonexistent/path'" in result.stderr
+
+    @pytest.mark.parametrize(
+        "cli_args",
+        [("_typo", "x-y"), ("_typo", "--flag"), ("_typo", "abc", "/nonexistent")],
+    )
+    def test_unknown_builtin_falls_through_to_task_lookup(self, run_poe_main, cli_args):
+        result = run_poe_main(*cli_args)
+        assert result.code == 1
+        assert "Error: Unrecognized task '_typo'" in result.stdout + result.stderr
 
 
 class TestBashCompletionScript:

@@ -105,7 +105,7 @@ You can organize tasks into groups by defining them within group tables. This ma
   [tool.poe.groups.testing]
   heading = "Testing & Quality"
 
-  [tool.poe.groups.testing.tasks.test]
+  [tool.poe.groups.testing.tasks.unit]
   help = "Run the test suite"
   cmd  = "pytest --cov=my_app"
 
@@ -134,7 +134,7 @@ When you run ``poe`` without specifying a task, ungrouped tasks appear first, fo
     </div>
 
 
-Group names must consist of only alphanumeric characters, dashes, or underscores.
+Group names must consist of only alphanumeric characters, dashes, or underscores. Task names must be unique across all groups and ungrouped tasks.
 
 
 Group options
@@ -148,4 +148,4 @@ Group options
 Merging groups
 ~~~~~~~~~~~~~~
 
-When an :ref:`included config file<Running tasks from another file>` defines a group with the same name as one in the main project config, the tasks from both are merged under a single heading. Only group config (e.g. heading and executor) from the config file with the highest precedence is preserved when merging groups.
+When an :doc:`included config file<include_guide>` defines a group with the same name as one in the main project config, the tasks from both are merged under a single heading. Only group config (e.g. heading and executor) from the config file with the highest precedence is preserved when merging groups.

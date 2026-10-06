@@ -37,7 +37,17 @@ These options were not available in 0.47.x and 0.48.0, where the workaround is t
 0.46.0
 ------
 
-This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. Two edge-case behaviours changed.
+This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. This means that a ``$`` in env file values may now be interpreted differently, and two other edge-case behaviours changed.
+
+Parameter expansion in unquoted and double-quoted values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously a ``$`` in an env file value was always kept literally. Now ``$VAR`` and ``${VAR}`` references in unquoted or double-quoted values are expanded, so for example ``PASSWORD=abc$def`` now sets ``PASSWORD`` to ``abc`` (if ``def`` is not set). To keep a literal ``$``, wrap the value in single quotes or escape the ``$`` with a backslash:
+
+.. code-block:: bash
+
+   PASSWORD='abc$def'
+   PASSWORD=abc\$def
 
 Whitespace in unquoted values is now preserved
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

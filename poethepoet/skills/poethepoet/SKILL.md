@@ -14,7 +14,7 @@ Poethepoet (poe) is a Python task runner: teams define, document, and run dev ta
 Don't speculate — poe's behaviour is cheaply verifiable:
 
 - Docs: https://poethepoet.natn.io
-- Source: `python -c "import poethepoet, os; print(os.path.dirname(poethepoet.__file__))"`, then read `task/*.py` for the relevant type.
+- Source: https://github.com/nat-n/poethepoet (`poethepoet/task/*.py` for the relevant type). If poethepoet is importable from the project env, `python -c "import poethepoet, os; print(os.path.dirname(poethepoet.__file__))"` finds the installed copy.
 - A 30-second probe in a throwaway `poe_tasks.toml` settles most questions.
 
 Verify, then state the answer plainly — no "I'll need to check" caveats on behaviour you can simply check.
@@ -31,7 +31,7 @@ poe 2>&1                                                  # list all tasks
 ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null  # find config
 ```
 
-Poe finds tasks in a supported config file in the working directory or any parent.
+Poe finds tasks in a supported config file in the working directory or any parent. In each directory the first match wins: `pyproject.toml` (only if it has a `[tool.poe]` table), then `poe_tasks.toml`, `.yaml`, `.json`. Any `[tool.poe]` table in pyproject.toml, even one with only global options, hides `poe_tasks.toml`; use `include = "poe_tasks.toml"` to combine them.
 
 **If `poe` is not in PATH:**
 
@@ -49,13 +49,15 @@ Poe finds tasks in a supported config file in the working directory or any paren
 ```bash
 poe                         # list all tasks with descriptions
 poe <task>                  # run a task
-poe <task> -x --extra-flag  # extra args auto-forwarded to cmd tasks
-poe <task> -- -x            # explicit free-arg separator (any task type)
+poe <task> -x --extra-flag  # task without declared args: extra args are forwarded as-is (appended for cmd tasks)
 poe <task> --named-arg val  # named args (if the task defines them)
+poe <task> --named-arg val -- -x  # task WITH declared args: free args go after --
 poe -d <task>               # dry run: show the command without running it
-poe -C /path <task>         # run as if from another directory (handier than cd)
+poe -C /path <task>         # use the project at /path (dir or config file); unlike cd, no parent-dir search
 poe -v <task>               # verbose
 ```
+
+Don't add `--` for a task without declared args: it is forwarded literally (`poe lint -- --fix` runs `ruff check . -- --fix`).
 
 **Always prefer poe tasks over running tools directly.** Before running `pytest`, `ruff`, `mypy`, etc., check `poe` first — if a task exists, use it, so you inherit the project's flags, env, and conventions.
 
@@ -76,10 +78,11 @@ If `poe`'s output isn't enough (e.g. you need a task's implementation or args), 
 
 Full syntax and examples per type: `references/task-types.md`.
 
-**Two silent-failure rules for `expr`, `switch.control.expr`, and parens-form `script` calls (`"mod:fn(arg)"`)** — get these wrong and the task fails quietly, not loudly:
+**Referencing values in `expr`, `switch.control.expr`, and parens-form `script` calls (`"mod:fn(arg)"`)**:
 
-- **Declared args → bare name**, never `${name}`. `expr = "AWS_REGION"` ✅; `expr = "${AWS_REGION}"` ❌ routes through the environment and is silently empty for private `_`-args. (No-parens `script = "mod:fn"` auto-passes args as kwargs — never name them in the call.)
-- **Env vars → unquoted `${VAR}`**. `${VAR}` compiles to the attribute reference `__env.VAR` (not textual paste), so `expr = "${STAGE}"` ✅ yields the value, but `expr = "'${STAGE}'"` ❌ yields the literal string `"__env.STAGE"`. Call methods directly: `"${STAGE}.upper()"`.
+- **Declared args → bare name**: `expr = "_count * 2"`. The bare name is the arg's typed Python value (int, bool, list, or `None` if not passed), for public and private `_` args alike. `${name}` is only the env-string form: `'3'`, not `3`, and `''` for a false boolean or an arg that wasn't passed. (No-parens `script = "mod:fn"` auto-passes args as kwargs — never name them in the call.)
+- **Env vars in `expr` → unquoted `${VAR}`**. `${VAR}` compiles to the attribute reference `__env.VAR` (not textual paste), so `expr = "${STAGE}"` ✅ yields the value, but `expr = "'${STAGE}'"` ❌ yields the literal string `"__env.STAGE"`. Call methods directly: `"${STAGE}.upper()"`. An unset `${VAR}` is `""`; to fall back to something else, set a default (`env.STAGE.default = "dev"`).
+- **Env vars in `script` calls → `environ['VAR']`**. `${VAR}` isn't supported there: unquoted it is a config error, quoted it is passed through literally.
 
 Mechanism and more cases: `references/task-types.md`.
 
@@ -89,12 +92,14 @@ Mechanism and more cases: `references/task-types.md`.
 
 ```toml
 [tool.poe.tasks.test]
-cmd = "pytest ${markers}"
+cmd = 'pytest ${markers:+-m "${markers}"}'
 help = "Run the test suite"
-args = [{ name = "markers", options = ["-m"], default = "", help = "pytest marker expression" }]
+args = [{ name = "markers", options = ["-m"], help = "pytest marker expression" }]
 ```
 
-**Extra args forwarded through a sequence** (only subtasks that name `$POE_EXTRA_ARGS` receive them):
+`poe test -m "not slow"` runs `pytest -m 'not slow'`; plain `poe test` runs `pytest`. Quote `"${markers}"` so a value with spaces stays one argument, and use `:+` to emit the flag only when the arg is set. Once a task declares `args`, other flags must follow `--`: `poe test -m slow -- -x`.
+
+**Extra args forwarded through a sequence** (items that pass `$POE_EXTRA_ARGS` receive them):
 
 ```toml
 [tool.poe.tasks.check]

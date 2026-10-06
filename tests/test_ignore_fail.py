@@ -219,9 +219,7 @@ def test_full_ignore(generate_pyproject, run_poe, fail_value):
     project_path = generate_pyproject(lvl1_ignore_fail=fail_value)
     result = run_poe("lvl1_seq", cwd=project_path)
     assert result.code == 0, "Expected zero result"
-    assert "task 1 error" in result.capture, "Expected first task in log"
-    assert "task 2 error" in result.capture, "Expected second task in log"
-    assert "task 3 success" in result.capture, "Expected third task in log"
+    assert result.stdout == "task 1 error\ntask 2 error\ntask 3 success\n"
 
 
 def test_without_ignore(generate_pyproject, run_poe):
@@ -238,9 +236,7 @@ def test_return_non_zero(generate_pyproject, run_poe):
     project_path = generate_pyproject(lvl1_ignore_fail="return_non_zero")
     result = run_poe("lvl1_seq", cwd=project_path)
     assert result.code == 1, "Expected non-zero result"
-    assert "task 1 error" in result.capture, "Expected first task in log"
-    assert "task 2 error" in result.capture, "Expected second task in log"
-    assert "task 3 success" in result.capture, "Expected third task in log"
+    assert result.stdout == "task 1 error\ntask 2 error\ntask 3 success\n"
     assert "Subtasks 'task_1', 'task_2' returned non-zero exit status" in result.capture
 
 
@@ -267,12 +263,17 @@ def test_nested_without_ignore(generate_pyproject, run_poe):
 
 def test_nested_lvl1_return_non_zero(generate_pyproject, run_poe):
     project_path = generate_pyproject(lvl1_ignore_fail="return_non_zero")
-    result = run_poe("lvl1_seq", cwd=project_path)
+    result = run_poe("lvl2_seq", cwd=project_path)
     assert result.code == 1, "Expected non-zero result"
-    assert "task 1 error" in result.capture, "Expected first task in log"
-    assert "task 2 error" in result.capture, "Expected second task in log"
-    assert "task 3 success" in result.capture, "Expected third task in log"
-    assert "Subtasks 'task_1', 'task_2' returned non-zero exit status" in result.capture
+    # lvl1_seq runs all of its subtasks, then lvl2_seq aborts before its own task_3
+    assert result.stdout == (
+        "task 0 success\ntask 1 error\ntask 2 error\ntask 3 success\n"
+    )
+    assert (
+        "Error: Sequence aborted after failed subtask 'lvl1_seq'\n"
+        "     | From: ExecutionError(\"Subtasks 'task_1', 'task_2' returned non-zero "
+        'exit status")\n'
+    ) in result.capture
 
 
 def test_nested_lvl2_return_non_zero(generate_pyproject, run_poe):

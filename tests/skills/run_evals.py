@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -115,8 +116,14 @@ def run_claude(prompt: str, cwd: Path, model: str | None = None) -> dict[str, An
 # ---------------------------------------------------------------------------
 
 
-def read_project_files(project_dir: Path) -> str:
-    """Read poe config files written by Claude during the eval."""
+def read_project_files(project_dir: Path, fixture: str | None = None) -> str:
+    """
+    Read poe config files written by Claude during the eval.
+
+    If *fixture* is given, files identical to the fixture's copy are left out,
+    so that grading only sees what the agent changed (otherwise content already
+    in the fixture, like `help =` lines, satisfies expectations by itself).
+    """
     parts = []
     for name in [
         "pyproject.toml",
@@ -125,8 +132,13 @@ def read_project_files(project_dir: Path) -> str:
         "poe_tasks.json",
     ]:
         path = project_dir / name
-        if path.exists():
-            parts.append(f"# --- {name} ---\n{path.read_text()}")
+        if not path.exists():
+            continue
+        content = path.read_text()
+        original = _FIXTURES_PATH / fixture / name if fixture else None
+        if original and original.exists() and original.read_text() == content:
+            continue
+        parts.append(f"# --- {name} ---\n{content}")
     return "\n".join(parts)
 
 
@@ -166,7 +178,7 @@ _COUNTER_EXAMPLE_MARKERS = (
 _COUNTER_EXAMPLE_LOOKBACK = 3
 
 
-def _is_labeled_counter_example(text: str, search: str) -> bool:
+def _is_labeled_counter_example(text: str, search: str | re.Pattern) -> bool:
     """
     Return True if every occurrence of *search* in *text* falls within a window
     (the matched line plus the few preceding lines) that contains a
@@ -178,73 +190,112 @@ def _is_labeled_counter_example(text: str, search: str) -> bool:
     above the code, not on the same line (see ``_COUNTER_EXAMPLE_LOOKBACK``).
 
     Conservative: a single un-labelled occurrence means False (recommendation).
+
+    *search* is a literal string (a leading newline is ignored) or a compiled
+    regular expression.
     """
-    needle = search.lstrip("\n")
     lines = text.splitlines()
-    idx = 0
-    found_any = False
-    while True:
-        pos = text.find(needle, idx)
-        if pos == -1:
-            break
-        found_any = True
+    if isinstance(search, re.Pattern):
+        positions = [match.start() for match in search.finditer(text)]
+    else:
+        positions = [
+            match.start() for match in re.finditer(re.escape(search.lstrip("\n")), text)
+        ]
+    for pos in positions:
         line_no = text.count("\n", 0, pos)
         window = "\n".join(
             lines[max(0, line_no - _COUNTER_EXAMPLE_LOOKBACK) : line_no + 1]
         ).lower()
         if not any(marker in window for marker in _COUNTER_EXAMPLE_MARKERS):
             return False
-        idx = pos + len(needle)
-    return found_any
+    return bool(positions)
+
+
+def _contains(text: str, search: str | re.Pattern) -> bool:
+    if isinstance(search, re.Pattern):
+        return search.search(text) is not None
+    return search in text
+
+
+def _task_defined(name: str) -> re.Pattern:
+    """
+    Match a definition of task *name* in TOML, as a table header or as a key.
+    """
+    escaped = re.escape(name)
+    return re.compile(
+        rf"^\s*(\[tool\.poe\.tasks\.{escaped}\]|\[tasks\.{escaped}\]|{escaped}\s*=)",
+        re.MULTILINE,
+    )
 
 
 def _check(text: str, expectation: str) -> dict[str, Any]:
     exp_lower = expectation.lower()
 
-    # Each entry is (trigger, search) — passes when `search` is found in `text`,
-    # or (trigger, search, "negate") — passes when `search` is NOT found
-    # (catches "Response does not X" style expectations by detecting the
-    # forbidden pattern). First matching trigger wins.
+    # Each entry is (trigger, search) — passes when `search` (a string or a
+    # compiled regex) is found in `text`, or (trigger, search, "negate") —
+    # passes when `search` is NOT found (catches "Response does not X" style
+    # expectations by detecting the forbidden pattern). First matching trigger
+    # wins. Expectations matching no trigger need manual review.
     heuristics: list[tuple] = [
         ("$poe_extra_args", "$POE_EXTRA_ARGS"),
-        ("parallel", "parallel"),
-        ("sequence", "sequence"),
+        ("`parallel`", re.compile(r"\bparallel\s*=")),
+        ("`sequence`", re.compile(r"\bsequence\s*=")),
         ("help =", "help ="),
         ("poe test", "poe test"),
-        ("poe --help", "poe"),
-        ("`poe`", "poe"),
+        (
+            "poe --help",
+            re.compile(r"(`poe`|`poe --help`|^\s*\$?\s*poe\s*$)", re.MULTILINE),
+        ),
+        ("-k config", "-k config"),
+        ("lint task definition", _task_defined("lint")),
         ("uv run poe", "uv run poe"),
         ("uv add", "uv add"),
-        ("script task", "script"),
+        ("script task", "script ="),
         ("script =", "script ="),
         ("main function", ":main"),
         ("main(", ":main"),
         ("pythonpath", "PYTHONPATH"),
-        ("args matching", "args"),
-        ("defines a test task", "[tool.poe.tasks.test]"),
-        ("defines a lint task", "[tool.poe.tasks.lint]"),
-        ("defines a types task", "[tool.poe.tasks.types]"),
-        ("defines a format task", "[tool.poe.tasks.format]"),
-        ("defines a check task", "[tool.poe.tasks.check]"),
+        (
+            "args matching",
+            re.compile(
+                r"^\s*(\[\[tool\.poe\.tasks\.[\w-]+\.args\]\]|args\s*=)", re.MULTILINE
+            ),
+        ),
+        ("defines a test task", _task_defined("test")),
+        ("defines a lint task", _task_defined("lint")),
+        ("defines a types task", _task_defined("types")),
+        ("defines a format task", _task_defined("format")),
+        ("defines a check task", _task_defined("check")),
         # Negative heuristics — pass when the forbidden pattern is NOT present.
         # The leading "\n" requires the pattern to be on its own line (typical
         # of an agent's recommended TOML block) so inline prose discussions of
         # the wrong form (e.g. "don't write `control.expr = \"${_target}\"`")
         # don't false-fail correct responses.
         #
+        # Eval 2: `--` is forwarded literally to a task without declared args.
+        ("poe lint -- --fix", "poe lint -- --fix", "negate"),
         # Eval 6: agent must not recommend wrapping ${VAR} in quotes inside an expr.
         ("without extra quoting", "\nexpr = \"'${STAGE}'\"", "negate"),
         ("does not recommend wrapping", "\nexpr = \"'${STAGE}'\"", "negate"),
-        # Eval 7: control.expr on a private arg must use the bare variable form,
-        # not the ${...} env-route (which silently fails for private args).
-        ("bare-variable form", '\ncontrol.expr = "${_target}"', "negate"),
+        # Eval 7: control expr should use the bare arg name (typed value), not
+        # the ${...} env-string form; matches dotted and inline-table forms.
+        (
+            "bare-variable form",
+            re.compile(r'\bexpr\s*=\s*"\$\{_target\}"'),
+            "negate",
+        ),
+        (
+            "not on individual case tasks",
+            re.compile(r"\[\[[\w.-]+\.switch\]\][^\[]*?\n\s*args\s*="),
+            "negate",
+        ),
     ]
 
     for entry in heuristics:
         trigger, search = entry[0], entry[1]
         negate = len(entry) > 2 and entry[2] == "negate"
         if trigger in exp_lower:
-            found = search in text
+            found = _contains(text, search)
             if negate and found and _is_labeled_counter_example(text, search):
                 # The forbidden pattern appears as an explicit ❌/broken/wrong
                 # counter-example (often shown next to the ✅ form to teach the
@@ -279,7 +330,7 @@ def _check(text: str, expectation: str) -> dict[str, Any]:
 
     return {
         "text": expectation,
-        "passed": True,
+        "passed": None,
         "evidence": "No programmatic check available — requires manual review",
     }
 
@@ -313,29 +364,33 @@ def run_one(
 
         (out_dir / "response.json").write_text(json.dumps(response, indent=2))
 
-        project_text = read_project_files(project_dir)
+        project_text = read_project_files(project_dir, fixture)
         if project_text:
             (out_dir / "project_files.txt").write_text(project_text)
 
         grade_text = response_text + "\n" + project_text
         expectations = eval_def.get("expectations", [])
         grades = grade(grade_text, expectations)
-        n_passed = sum(1 for g in grades if g["passed"])
+        # Expectations without a programmatic check (passed is None) need manual
+        # review and are left out of the pass rate.
+        checked = [g for g in grades if g["passed"] is not None]
+        n_passed = sum(1 for g in checked if g["passed"])
 
         grading: dict[str, Any] = {
             "expectations": grades,
             "summary": {
                 "passed": n_passed,
-                "failed": len(grades) - n_passed,
-                "total": len(grades),
-                "pass_rate": n_passed / len(grades) if grades else 1.0,
+                "failed": len(checked) - n_passed,
+                "manual": len(grades) - len(checked),
+                "total": len(checked),
+                "pass_rate": n_passed / len(checked) if checked else 1.0,
             },
         }
         (out_dir / "grading.json").write_text(json.dumps(grading, indent=2))
 
         if verbose:
             for g in grades:
-                mark = "✓" if g["passed"] else "✗"
+                mark = {True: "✓", False: "✗", None: "?"}[g["passed"]]
                 print(f"      {mark} {g['text']}")
                 print(f"        → {g['evidence']}")
 
@@ -344,7 +399,7 @@ def run_one(
             "with_skill": with_skill,
             "replica": replica,
             "passed": n_passed,
-            "total": len(grades),
+            "total": len(checked),
             "error": response.get("error"),
         }
     finally:

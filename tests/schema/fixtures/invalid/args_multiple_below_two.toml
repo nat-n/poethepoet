@@ -1,0 +1,4 @@
+# expected_error: The 'multiple' option accepts a boolean or integer >= 2
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${items}"
+args = [{ name = "items", multiple = 1 }]

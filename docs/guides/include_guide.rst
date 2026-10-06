@@ -22,11 +22,11 @@ For example:
   cmd = "docker build"
 
 Imported files may also specify environment variables via
-``tool.poe.envfile`` or entries for ``tool.poe.env``.
+``tool.poe.envfile`` or entries for ``tool.poe.env``. Note that these are merged into the global environment, and so apply to *all* tasks, including tasks defined in the main config file or in other included files. In case of conflicts, values from later includes override those from earlier includes (unlike tasks, where the first definition wins), and values set via ``env`` or ``envfile`` in the main config file override values from all included files.
 
 .. warning::
 
-  If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.
+  If a referenced file is missing then poe ignores it and just prints a warning, though failure to read the contents will result in failure.
 
 Disabling recursion
 -------------------
@@ -64,7 +64,7 @@ It's also possible to include tasks from multiple files by providing a list like
 
 Files are loaded in the order specified. If an item already exists then the included value is ignored.
 
-Included files can themselves include other files, and these will be loaded before the parent file is loaded. Therefore if there are multiple includes then they are loaded depth first in the order specified.
+Included files can themselves include other files. These are loaded depth first in the order specified, each one after the file that includes it, so if the same task name is defined in multiple files then the including file's task wins (and tasks from the main config file always win). The include paths within an included file are resolved relative to the directory containing that file.
 
 
 Setting a working directory for included tasks
@@ -77,6 +77,8 @@ When including files from another location, you can also specify that tasks from
   [[tool.poe.include]]
   path = "my_subproject/pyproject.toml"
   cwd  = "my_subproject"
+
+This also applies when an included task is invoked by another task (e.g. via ``deps``, ``uses``, a ``ref`` task, or a ``sequence``), unless the referencing task sets its own ``cwd`` option, in which case that is used instead.
 
 The directory indicated by the ``cwd`` option will also be used as the base directory for global or task level ``envfile`` imports for tasks defined within an included file.
 
@@ -93,7 +95,7 @@ You can still specify that an envfile referenced within an included file should 
 Including files relative to the git repo
 ----------------------------------------
 
-Normally include paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the file to include relative to the root of the git repository, which can be done by referenceing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
+Normally include paths in the main config file are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the file to include relative to the root of the git repository, which can be done by referencing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
 
 .. code-block:: toml
 

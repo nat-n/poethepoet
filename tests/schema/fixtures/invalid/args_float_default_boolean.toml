@@ -1,0 +1,4 @@
+# expected_error: Cannot interpret True as a float
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${ratio}"
+args = [{ name = "ratio", type = "float", default = true }]

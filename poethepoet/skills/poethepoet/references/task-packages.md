@@ -4,9 +4,9 @@ Task packages let you define and share poe tasks as Python code, loaded via `inc
 
 This is a very powerful feature, because it means tasks can be generated dynamically with logic in python, and distributed for reuse as python packages.
 
-[`poethepoet-tasks`](https://github.com/nat-n/poethepoet-tasks) is python library library that provides the TaskCollection abstraction for declaring and organizing poe tasks in python, as well as an ready-made collection of tasks (test, lint, format, types, check) maintained by the poe author.
+[`poethepoet-tasks`](https://github.com/nat-n/poethepoet-tasks) is a python library that provides the TaskCollection abstraction for declaring and organizing poe tasks in python, as well as a ready-made collection of tasks (test, lint, format, types, check) maintained by the poe author.
 
-See [https://poethepoet.natn.io/guides/include_guide.html](this official guide) if you need a more in depth explanation.
+See [the packaged tasks guide](https://poethepoet.natn.io/guides/packaged_tasks.html) if you need a more in depth explanation.
 
 ---
 
@@ -33,9 +33,11 @@ include_script = "poethepoet_tasks:tasks"
 # Only ruff formatting, no black:
 include_script = "poethepoet_tasks.tasks:tasks(exclude_tags=['black'])"
 
-# Only the test task:
+# Only the test task (plus a generated `check` that runs just it):
 include_script = "poethepoet_tasks.tasks:tasks(include_tags=['task-test'])"
 ```
+
+`include_script` also takes a list, or tables with `script`, `cwd` and `executor` keys (`[[tool.poe.include_script]]`). It only works in the main config file; it is ignored in files loaded via `include`.
 
 **Override tool config via env:**
 
@@ -116,7 +118,7 @@ def greet(
 
 What poe infers automatically:
 
-- **Positional vs option**: parameters before `*` become positional args; after `*` become `--option` flags
+- **Positional vs option**: if the signature has a `*`, parameters before it become positional args and those after it `--option` flags; without a `*`, every parameter becomes a `--option` flag
 - **Type**: `str`, `int`, `float`, `bool` → correct arg type (bool → flag)
 - **Required vs optional**: no default → required; default provided → optional
 - **Help text**: parsed from the docstring (rst or google format)
@@ -185,18 +187,19 @@ tasks = (
 include_script = "my_tasks:tasks"  # one subprocess, not several
 ```
 
-**Precedence is first-registered-wins, per task name.** A task already in the collection outranks one added later by `.include()` (or a later `add`) — `include()` appends the other's tasks below what's already there. So to override a task from an included collection, register your version *first*, or `.remove()` then `.add()` on the imported collection:
+**Precedence is first-registered-wins, per task name**, and statically added tasks beat generated ones (`@tasks.generate`). A task already in the collection outranks one added later by `.include()` (or a later `add`) — `include()` appends the other's tasks below what's already there. So to override a task from an included collection, register your version *first*:
 
 ```python
-from poethepoet_tasks import tasks as base_tasks
+from poethepoet_tasks import TaskCollection
+from poethepoet_tasks.tasks import tasks as base_tasks  # the TaskCollection, not the function
 
-# Override `check` from the base collection before exposing it:
-base_tasks.remove("check")
-base_tasks.add(
+tasks = TaskCollection()
+tasks.add(
     task_name="check",
     task_config={"help": "Lint and types only", "sequence": ["lint", "types"]},
     tags=["lint", "types"],
 )
+tasks.include(base_tasks)  # base `check` is shadowed by ours
 ```
 
 `.include()` also merges `env` (existing keys win on conflict), `envfile` (appended, de-duplicated), and any task generators.
@@ -220,4 +223,4 @@ tasks.envfile.append(".secrets")
 
 ## Stylistic preferences
 
-- If a project has a `src` directory where python packages are defined, then you can add a `tasks/__init__.py` package there and expect poe to find it if referenced like `include_script = "tasks:tasks`.
+- If the project root has a `src` directory where python packages are defined, then you can add a `tasks/__init__.py` package there and expect poe to find it if referenced like `include_script = "tasks:tasks"`.
