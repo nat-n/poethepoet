@@ -13,7 +13,7 @@ As in the second example, it is possible to hard code literal arguments to the t
 
 If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called Python function via :python:`sys.argv`. If :doc:`args <../options>` are configured for the task then they will be available as Python variables.
 
-If the target Python function is an async function then it will be executed with :python:`asyncio.run`.
+If the target Python function is an async function, or otherwise returns an awaitable (such as a coroutine), then the result will be awaited via :python:`asyncio.run`.
 
 
 Available task options
@@ -138,7 +138,7 @@ As with other task types, script tasks support configuring named arguments via t
 
 - As **Python variables** that can be referenced directly in the function call expression. Values retain their configured type — booleans are ``True``/``False``, integers are ``int``, multiple args are ``list``, etc.
 - Via **sys.argv** which is populated with the full invocation including any extra arguments.
-- As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case all declared args are passed as kwargs.
+- As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case all args declared on the task itself are passed as kwargs. Args inherited from a parent task (e.g. a sequence or ref task) are not passed as kwargs, though they can still be referenced by name when the parentheses are included.
 
 See :ref:`Arguments for script tasks` for more details and examples.
 
@@ -146,6 +146,6 @@ See :ref:`Arguments for script tasks` for more details and examples.
 Accessing free arguments via ``_extra_args``
 --------------------------------------------
 
-Free arguments (all arguments if the task declares no named args, or otherwise arguments passed after :sh:`--`) are available inside script tasks as the ``_extra_args`` variable — a ``list[str]`` — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
+Free arguments (all arguments if the task declares no named args, or otherwise arguments passed after :sh:`--`) are available inside script tasks as the ``_extra_args`` variable — a ``list[str]``, which is empty if no free arguments were passed — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
