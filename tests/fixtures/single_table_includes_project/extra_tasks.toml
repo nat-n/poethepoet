@@ -1,0 +1,2 @@
+[tool.poe.tasks]
+included = "poe_test_echo included"

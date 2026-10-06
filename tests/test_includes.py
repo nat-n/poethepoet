@@ -360,3 +360,11 @@ def test_poe_git_vars_for_task_level_envfile_and_env(
     assert f"POE_GIT_DIR_2={poe_project_path}" in result.stdout
     assert "BASE_ENV_LOADED=" in result.stdout
     assert result.stderr == ""
+
+
+def test_single_table_include_and_include_script(run_poe):
+    for task_name in ("local", "included", "generated"):
+        result = run_poe(task_name, project="single_table_includes")
+        assert result.code == 0
+        assert result.capture == f"Poe => poe_test_echo {task_name}\n"
+        assert result.stdout == f"{task_name}\n"

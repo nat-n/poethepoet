@@ -303,12 +303,12 @@ class ProjectConfig(ConfigPartition):
         executor types accept additional configuration options.
         """
 
-        include: str | Sequence[str | IncludeItem] = ()
+        include: str | IncludeItem | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """
 
-        include_script: str | Sequence[str | IncludeScriptItem] = ()
+        include_script: str | IncludeScriptItem | Sequence[str | IncludeScriptItem] = ()
         """
         Load dynamically generated tasks from one or more python functions.
         """
@@ -525,7 +525,7 @@ class IncludedConfig(ConfigPartition):
         Define groups of tasks contributed by this included config.
         """
 
-        include: str | Sequence[str | IncludeItem] = ()
+        include: str | IncludeItem | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """

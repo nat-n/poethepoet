@@ -354,6 +354,7 @@ def include_script_schema(ctx: SchemaContext) -> dict:
     result = {
         "anyOf": [
             {"type": "string"},
+            {"$ref": "#/definitions/include_script_item"},
             {
                 "type": "array",
                 "items": {

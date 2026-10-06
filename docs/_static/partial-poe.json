@@ -915,6 +915,7 @@
     "include_script": {
       "anyOf": [
         { "type": "string" },
+        { "$ref": "#/definitions/include_script_item" },
         {
           "items": {
             "anyOf": [
@@ -2211,6 +2212,26 @@
     "include": {
       "anyOf": [
         { "type": "string" },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cwd": {
+              "description": "Specify the working directory for resolving relative paths referenced by the\nincluded config.",
+              "pattern": "\\S",
+              "type": "string"
+            },
+            "path": {
+              "description": "The path to the toml or json config file to include, relative to the parent\nconfig file.",
+              "type": "string"
+            },
+            "recursive": {
+              "description": "If true, includes declared in the included file will also be loaded.",
+              "type": "boolean"
+            }
+          },
+          "required": ["path"],
+          "type": "object"
+        },
         {
           "items": {
             "anyOf": [
