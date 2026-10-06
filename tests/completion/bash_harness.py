@@ -187,6 +187,15 @@ def escape_for_shell(value: str) -> str:
 _WORDBREAK_PATTERN = re.compile(r"([=:]+)")
 
 
+def _completion_func_name(script: str) -> str:
+    """
+    Get the name of the completion function registered by the script.
+    """
+    if match := re.search(r"^complete -F (\S+) ", script, re.MULTILINE):
+        return match.group(1)
+    return "_poe_complete"
+
+
 def split_comp_words(words: list[str], current: int) -> tuple[list[str], int]:
     """
     Split command line words the way readline does when building COMP_WORDS.
@@ -512,7 +521,7 @@ class BashHarnessBuilder:
             self.instrument_script(script),
             "",
             "# Call the completion function",
-            "_poe_complete",
+            _completion_func_name(script),
             "",
             "# Capture final COMPREPLY (after any post-processing by the script)",
             'printf \'%s\\n\' "${COMPREPLY[@]}" > "$_HARNESS_DIR/compreply"',

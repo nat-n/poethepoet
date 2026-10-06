@@ -1,4 +1,4 @@
-def get_bash_completion_script(name: str = "") -> str:
+def get_bash_completion_script(name: str = "", target_path: str = "") -> str:
     """
     Generate a bash completion script for poe.
 
@@ -8,12 +8,23 @@ def get_bash_completion_script(name: str = "") -> str:
     - Task-specific arguments (options and positionals)
     - Argument choices when defined
     - -C/--directory passthrough for alternate project paths
+
+    If target_path is given it's used as the project path when none is given
+    via -C/--directory on the command line.
     """
+    import shlex
     from pathlib import Path
 
     from ..app import PoeThePoet
 
     name = name or "poe"
+    # When generated for an alias with a baked in project path (e.g. global tasks
+    # via `alias edgar="poe -C ~/.poethepoet"`), the helper builtins must be
+    # called on the real poe executable, since `edgar _list_tasks` isn't a
+    # builtin invocation (or isn't even a command, as aliases aren't expanded)
+    poe_cmd = "poe" if target_path else name
+    default_target_path = shlex.quote(target_path) if target_path else '""'
+
     # Alias names may contain - or . which aren't valid in POSIX function names
     safe_name = "".join(char if char.isalnum() else "_" for char in name)
     func_name = f"_{safe_name}_complete"
@@ -89,7 +100,7 @@ def get_bash_completion_script(name: str = "") -> str:
 
 # Compute completions from the merged cur, prev, words and cword of the caller
 {impl_func_name}() {{
-    local target_path=""
+    local target_path={default_target_path}
     local task_position=""
     local potential_task=""
     local after_separator=""
@@ -173,7 +184,7 @@ def get_bash_completion_script(name: str = "") -> str:
         else
             # Only call _list_tasks when actually completing task names
             local tasks
-            tasks=$({name} _list_tasks "$target_path" 2>/dev/null)
+            tasks=$({poe_cmd} _list_tasks "$target_path" 2>/dev/null)
             COMPREPLY=($(compgen -W "$tasks" -- "$cur"))
         fi
         return
@@ -191,7 +202,7 @@ def get_bash_completion_script(name: str = "") -> str:
 
     # Get full task args info (tab-separated: opts, type, help, choices)
     local task_args_data
-    task_args_data=$({name} _describe_task_args \
+    task_args_data=$({poe_cmd} _describe_task_args \
         "$current_task" "$target_path" 2>/dev/null)
 
     # Build list of option strings and track positional args

@@ -832,6 +832,72 @@ class TestBashDirectoryOption:
         poe_calls_str = " ".join(result.poe_calls)
         assert "/custom/path" in poe_calls_str
 
+    @pytest.fixture
+    def alias_script_and_path(self, run_poe_main, projects):
+        """
+        A script generated for a global tasks alias, as per the global tasks docs.
+        """
+        global_tasks_path = str(projects["example"])
+        result = run_poe_main("_bash_completion", "edgar", global_tasks_path)
+        assert result.code == 0
+        return result.stdout, global_tasks_path
+
+    def test_alias_with_path_lists_tasks_from_path(
+        self, bash_harness, alias_script_and_path
+    ):
+        """
+        poe _bash_completion edgar <path>: completion calls the real poe with path.
+        """
+        script, global_tasks_path = alias_script_and_path
+        assert "complete -F _edgar_complete edgar\n" in script
+
+        result = bash_harness(
+            script,
+            words=["edgar", ""],
+            current=1,
+            mock_poe_output={"_list_tasks": "echo greet"},
+        )
+
+        assert result.poe_calls == [f"poe _list_tasks {global_tasks_path}"]
+        assert result.compreply == ["echo", "greet"]
+
+    def test_alias_with_path_describes_task_args_from_path(
+        self, bash_harness, alias_script_and_path
+    ):
+        """
+        Task args for an alias with a path are fetched from that path.
+        """
+        script, global_tasks_path = alias_script_and_path
+
+        result = bash_harness(
+            script,
+            words=["edgar", "greet", "-"],
+            current=2,
+            mock_poe_output={"_describe_task_args": "--name\tstring\tName\t_"},
+        )
+
+        assert result.poe_calls == [
+            f"poe _describe_task_args greet {global_tasks_path}"
+        ]
+        assert result.compreply == ["--name"]
+
+    def test_alias_with_path_directory_option_overrides(
+        self, bash_harness, alias_script_and_path
+    ):
+        """
+        An explicit -C on the command line takes precedence over the baked path.
+        """
+        script, _ = alias_script_and_path
+
+        result = bash_harness(
+            script,
+            words=["edgar", "-C", "/other", ""],
+            current=3,
+            mock_poe_output={"_list_tasks": "other"},
+        )
+
+        assert result.poe_calls == ["poe _list_tasks /other"]
+
     def test_multiple_directory_options_last_wins(
         self, bash_harness, completion_script
     ):

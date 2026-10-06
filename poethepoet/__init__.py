@@ -109,10 +109,13 @@ def _run_builtin_task(
     if task_name == "_bash_completion":
         from .completion.bash import get_bash_completion_script
 
-        if third_arg and not Path(third_arg).expanduser().resolve().exists():
-            _exit_with_error(f"Invalid path {third_arg!r} for shell completion")
+        target_path = ""
+        if third_arg:
+            if not (resolved_path := Path(third_arg).expanduser().resolve()).exists():
+                _exit_with_error(f"Invalid path {third_arg!r} for shell completion")
+            target_path = str(resolved_path)
 
-        print(get_bash_completion_script(name=second_arg))
+        print(get_bash_completion_script(name=second_arg, target_path=target_path))
         return True
 
     if task_name == "_fish_completion":
