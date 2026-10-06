@@ -286,6 +286,6 @@ def test_integer_choices_accept_bool_values(generate_choice_task_pyproject, run_
     assert result.code == 1
     assert "Invalid argument 'count' declared" in result.capture
     assert "invalid choice value True" in result.capture
-    assert "type the configured 'integer'" in result.capture
+    assert "does not match the configured type 'integer'" in result.capture
     assert result.stdout == ""
     assert result.stderr == ""

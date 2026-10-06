@@ -69,7 +69,8 @@
             { "items": { "type": "number" }, "type": "array" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
-          "description": "Constrain the accepted values for an argument to a fixed set."
+          "description": "Constrain the accepted values for an argument to a fixed set.",
+          "minItems": 1
         },
         "default": {
           "anyOf": [
@@ -100,12 +101,15 @@
         },
         "options": {
           "description": "A list of options to be provided along with the argument.",
-          "items": { "type": "string" },
+          "items": { "pattern": "^-.*[^-]", "type": "string" },
           "minItems": 1,
           "type": "array"
         },
         "positional": {
-          "anyOf": [{ "type": "boolean" }, { "type": "string" }],
+          "anyOf": [
+            { "type": "boolean" },
+            { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "type": "string" }
+          ],
           "default": false,
           "description": "Indicates if the argument is positional. If a string is provided, it is used\nas the dest name for the argument in argparse."
         },
@@ -193,7 +197,8 @@
             { "items": { "type": "number" }, "type": "array" },
             { "items": { "type": "integer" }, "type": "array" }
           ],
-          "description": "Constrain the accepted values for an argument to a fixed set."
+          "description": "Constrain the accepted values for an argument to a fixed set.",
+          "minItems": 1
         },
         "default": {
           "anyOf": [
@@ -220,12 +225,15 @@
         },
         "options": {
           "description": "A list of options to be provided along with the argument.",
-          "items": { "type": "string" },
+          "items": { "pattern": "^-.*[^-]", "type": "string" },
           "minItems": 1,
           "type": "array"
         },
         "positional": {
-          "anyOf": [{ "type": "boolean" }, { "type": "string" }],
+          "anyOf": [
+            { "type": "boolean" },
+            { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$", "type": "string" }
+          ],
           "default": false,
           "description": "Indicates if the argument is positional. If a string is provided, it is used\nas the dest name for the argument in argparse."
         },

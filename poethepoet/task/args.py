@@ -218,7 +218,8 @@ class ArgSpec(PoeOptions):
     ):
         positional = arg.get("positional", False)
         name = name or arg.get("name")
-        stripped = (name or "").lstrip("_")
+        # An invalid (non-string) name is reported by option validation
+        stripped = name.lstrip("_") if isinstance(name, str) else ""
         if positional:
             if strict and arg.get("options"):
                 raise ConfigValidationError(
@@ -231,7 +232,12 @@ class ArgSpec(PoeOptions):
             if isinstance(positional, str):
                 return [positional]
             return [stripped or name]
-        return tuple(arg.get("options", [f"--{stripped}"]))
+        options = arg.get("options", (f"--{stripped}",))
+        if isinstance(options, list | tuple):
+            return tuple(options)
+        # Leave an invalid value for option validation to reject, whilst keeping
+        # non-strict uses (e.g. help output) safe.
+        return options if strict else (str(options),)
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
@@ -252,6 +258,15 @@ class ArgSpec(PoeOptions):
         fragment["required"] = sorted(
             key for key in fragment.get("required", []) if key != "options"
         )
+        properties = fragment["properties"]
+        # Mirror the bespoke checks in ``_validate``: options start with a dash
+        # and include a name after the dashes, a positional name is an
+        # identifier, and choices are non-empty.
+        properties["options"]["items"]["pattern"] = r"^-.*[^-]"
+        for variant in properties["positional"]["anyOf"]:
+            if variant.get("type") == "string":
+                variant["pattern"] = r"^[A-Za-z_][A-Za-z0-9_]*$"
+        properties["choices"]["minItems"] = 1
         fragment["allOf"] = [
             {
                 "if": {
@@ -335,18 +350,20 @@ class ArgSpec(PoeOptions):
                 f"https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
             )
 
+        # Checked before the truthiness test below, so that positional = "" isn't
+        # silently treated as positional = false
+        if isinstance(self.positional, str) and not self.positional.isidentifier():
+            raise ConfigValidationError(
+                f"positional name {self.positional!r} for arg {self.name!r} is "
+                "not a valid 'identifier'\n"
+                "see the following documentation for details "
+                "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
+            )
+
         if self.positional:
             if self.type == "boolean":
                 raise ConfigValidationError(
                     f"Positional argument {self.name!r} may not have type 'boolean'"
-                )
-
-            if isinstance(self.positional, str) and not self.positional.isidentifier():
-                raise ConfigValidationError(
-                    f"positional name {self.positional!r} for arg {self.name!r} is "
-                    "not a valid 'identifier'\n"
-                    "see the following documentation for details "
-                    "https://docs.python.org/3/reference/lexical_analysis.html#identifiers"
                 )
         else:
             for option in self.options:
@@ -360,6 +377,17 @@ class ArgSpec(PoeOptions):
                         f"Invalid CLI option provided {option!r}, did you mean "
                         f"{suggestion!r}?"
                     )
+                if not option.strip("-"):
+                    # e.g. the '--' inferred from an arg named '_'
+                    raise ConfigValidationError(
+                        f"Invalid CLI option provided {option!r}, an option must "
+                        "include a name after the leading dashes"
+                    )
+
+        if self.choices is not None and not self.choices:
+            raise ConfigValidationError(
+                f"Argument {self.name!r} must declare at least one choice"
+            )
 
         if (
             not isinstance(self.multiple, bool)
@@ -393,7 +421,7 @@ class ArgSpec(PoeOptions):
                 if not isinstance(choice, arg_type) or isinstance(choice, bool):
                     raise ConfigValidationError(
                         f"Argument {self.name!r} has invalid choice value {choice!r} "
-                        f"that does not match type the configured {self.type!r}. "
+                        f"that does not match the configured type {self.type!r}. "
                         "(maybe update the type option on the argument?)"
                     )
             if (
