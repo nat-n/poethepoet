@@ -138,3 +138,27 @@ def test_include_script_item_of_invalid_type(run_poe, temp_pyproject, include_sc
     assert result.code == 1
     assert "Error: Option 'include_script" in result.capture
     assert "must have a value of type" in result.capture
+
+
+@pytest.mark.parametrize(
+    "include_cwd", ["sub", "${POE_ROOT}/sub", "${POE_CONF_DIR}/sub"]
+)
+def test_include_script_cwd_supports_poe_root_template(
+    run_poe, temp_pyproject, include_cwd
+):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        executor = "simple"
+        [[tool.poe.include_script]]
+        script = "cwdscripts:tasks"
+        cwd = "{include_cwd}"
+        """
+    )
+    project_path.joinpath("sub").mkdir()
+    project_path.joinpath("cwdscripts.py").write_text(
+        "def tasks():\n    return {'tasks': {'pwd': 'poe_test_pwd'}}\n"
+    )
+    result = run_poe("pwd", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == f"{project_path.joinpath('sub')}\n"

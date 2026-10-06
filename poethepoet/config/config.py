@@ -373,7 +373,7 @@ class PoeConfig:
                 config_json = {"tool": {"poe": config_json}}
 
             if include_cwd := include_script.get("cwd"):
-                config_cwd = self._project_dir.joinpath(include_cwd).resolve()
+                config_cwd = self.resolve_git_path(include_cwd)
             else:
                 config_cwd = None
 
