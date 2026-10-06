@@ -32,7 +32,7 @@ debug_flag = "server ${DEBUG:+--debug}"
 - `empty_glob = "fail"` — fail the task if pattern matches nothing
 - `empty_glob = "pass"` — pass pattern through unchanged (default)
 
-**Extra args**: Free args (after `--`) are auto-appended. Use `$POE_EXTRA_ARGS` for explicit placement:
+**Extra args**: Free args are auto-appended (for a task without declared `args` that is every argument after the task name; with `args`, those after `--`). Use `$POE_EXTRA_ARGS` for explicit placement:
 
 ```toml
 cmd = "pytest $POE_EXTRA_ARGS --cov=src"  # extra args before --cov, not after

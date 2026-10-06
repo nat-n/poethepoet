@@ -164,21 +164,21 @@ args = [{ name = "_target", positional = true }]
 
 ---
 
-## Free arguments (after --)
+## Free arguments
 
-Args passed after `--` on the command line are "free args" — not matched to any defined arg:
+"Free args" are CLI arguments not matched to any declared arg:
 
-```bash
-poe test -- -x -k "my_test"    # -x and -k "my_test" are free args
-```
+- **Task without `args`**: every argument after the task name is a free arg, so `poe test -x -k "my_test"` just works. Don't add `--`: it is forwarded literally (`pytest -- -x`).
+- **Task with `args`**: unknown arguments are an error; put free args after `--`: `poe test -m slow -- -x`.
 
 How they're available:
 
 - **`cmd` tasks**: Auto-appended to the command. Use `$POE_EXTRA_ARGS` for explicit placement
-- **`shell` tasks**: Available as `$POE_EXTRA_ARGS`
+- **`shell` tasks**: Only via `$POE_EXTRA_ARGS`; if the script doesn't reference it, free args are silently dropped. It is a shell-quoted string, so plain `$POE_EXTRA_ARGS` is only safe for simple args; use `eval "pytest $POE_EXTRA_ARGS"` to keep args with spaces or quotes intact
 - **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`)
+- **`ref` tasks**: Auto-appended to the referenced task's invocation
 
-**Forwarding to subtasks** — only subtasks that explicitly reference `$POE_EXTRA_ARGS` receive free args:
+**Forwarding to subtasks** — a sequence/parallel item receives free args when it passes `$POE_EXTRA_ARGS` (subtasks inherit the variable, so a subtask whose own definition references `$POE_EXTRA_ARGS` also sees them):
 
 ```toml
 [tool.poe.tasks.check]
@@ -189,9 +189,6 @@ sequence = [
 ]
 ```
 
-The follow task types have subtacks: sequence, parallel, switch, ref
-
-If no args are declared then all cli arguments are captured as "free args", so a task declared as simply `test.cmd = "pytest"` for example will forward any arguments passed on the CLI to pytest.
 
 ---
 

@@ -116,13 +116,7 @@ cmd = "ruff check ."
 help = "Run linter"
 ```
 
-With auto-fix support:
-
-```toml
-[tool.poe.tasks.lint]
-cmd = "ruff check . $POE_EXTRA_ARGS"
-help = "Run linter (pass --fix to auto-fix)"
-```
+Extra args are appended, so `poe lint --fix` auto-fixes with no extra config (don't write `poe lint -- --fix`: for a task without declared args the `--` is passed to ruff too).
 
 ### Type checking
 

@@ -49,9 +49,9 @@ Poe finds tasks in a supported config file in the working directory or any paren
 ```bash
 poe                         # list all tasks with descriptions
 poe <task>                  # run a task
-poe <task> -x --extra-flag  # extra args auto-forwarded to cmd tasks
-poe <task> -- -x            # explicit free-arg separator (any task type)
+poe <task> -x --extra-flag  # task without declared args: extra args are forwarded as-is (appended for cmd tasks)
 poe <task> --named-arg val  # named args (if the task defines them)
+poe <task> --named-arg val -- -x  # task WITH declared args: free args go after --
 poe -d <task>               # dry run: show the command without running it
 poe -C /path <task>         # run as if from another directory (handier than cd)
 poe -v <task>               # verbose
@@ -95,7 +95,9 @@ help = "Run the test suite"
 args = [{ name = "markers", options = ["-m"], default = "", help = "pytest marker expression" }]
 ```
 
-**Extra args forwarded through a sequence** (only subtasks that name `$POE_EXTRA_ARGS` receive them):
+Don't add `--` for a task without declared args: it is forwarded literally (`poe lint -- --fix` runs `ruff check . -- --fix`).
+
+**Extra args forwarded through a sequence** (items that pass `$POE_EXTRA_ARGS` receive them):
 
 ```toml
 [tool.poe.tasks.check]
