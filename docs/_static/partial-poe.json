@@ -17,6 +17,7 @@
           },
           "then": {
             "properties": {
+              "choices": false,
               "default": {
                 "anyOf": [
                   { "type": "boolean" },
@@ -25,7 +26,9 @@
                     "type": "string"
                   }
                 ]
-              }
+              },
+              "multiple": { "const": false },
+              "positional": { "const": false }
             }
           }
         },
@@ -60,6 +63,28 @@
               }
             }
           }
+        },
+        {
+          "if": { "properties": { "type": { "const": "string" } } },
+          "then": {
+            "properties": { "choices": { "items": { "type": "string" } } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "integer" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": { "choices": { "items": { "type": "integer" } } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "positional": { "not": { "const": false } } },
+            "required": ["positional"]
+          },
+          "then": { "properties": { "options": false } }
         }
       ],
       "properties": {
@@ -91,12 +116,13 @@
           "type": "string"
         },
         "multiple": {
-          "anyOf": [{ "type": "boolean" }, { "type": "integer" }],
+          "anyOf": [{ "type": "boolean" }, { "minimum": 2, "type": "integer" }],
           "default": false,
           "description": "Indicates if multiple values are allowed for the argument. If an integer is\ngiven, exactly that many values are expected."
         },
         "name": {
           "description": "The name of the argument.",
+          "pattern": "^[A-Za-z_-][A-Za-z0-9_-]*$",
           "type": "string"
         },
         "options": {
@@ -145,6 +171,7 @@
           },
           "then": {
             "properties": {
+              "choices": false,
               "default": {
                 "anyOf": [
                   { "type": "boolean" },
@@ -153,7 +180,9 @@
                     "type": "string"
                   }
                 ]
-              }
+              },
+              "multiple": { "const": false },
+              "positional": { "const": false }
             }
           }
         },
@@ -188,6 +217,28 @@
               }
             }
           }
+        },
+        {
+          "if": { "properties": { "type": { "const": "string" } } },
+          "then": {
+            "properties": { "choices": { "items": { "type": "string" } } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "integer" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": { "choices": { "items": { "type": "integer" } } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "positional": { "not": { "const": false } } },
+            "required": ["positional"]
+          },
+          "then": { "properties": { "options": false } }
         }
       ],
       "properties": {
@@ -219,7 +270,7 @@
           "type": "string"
         },
         "multiple": {
-          "anyOf": [{ "type": "boolean" }, { "type": "integer" }],
+          "anyOf": [{ "type": "boolean" }, { "minimum": 2, "type": "integer" }],
           "default": false,
           "description": "Indicates if multiple values are allowed for the argument. If an integer is\ngiven, exactly that many values are expected."
         },

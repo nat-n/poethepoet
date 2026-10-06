@@ -267,6 +267,11 @@ class ArgSpec(PoeOptions):
             if variant.get("type") == "string":
                 variant["pattern"] = r"^[A-Za-z_][A-Za-z0-9_]*$"
         properties["choices"]["minItems"] = 1
+        # An ASCII approximation of `name.replace("-", "_").isidentifier()`
+        properties["name"]["pattern"] = r"^[A-Za-z_-][A-Za-z0-9_-]*$"
+        for variant in properties["multiple"]["anyOf"]:
+            if variant.get("type") == "integer":
+                variant["minimum"] = 2
         fragment["allOf"] = [
             {
                 "if": {
@@ -275,6 +280,11 @@ class ArgSpec(PoeOptions):
                 },
                 "then": {
                     "properties": {
+                        # A boolean arg can't be positional, multiple or have
+                        # choices
+                        "positional": {"const": False},
+                        "multiple": {"const": False},
+                        "choices": False,
                         "default": {
                             "anyOf": [
                                 {"type": "boolean"},
@@ -287,7 +297,7 @@ class ArgSpec(PoeOptions):
                                     ),
                                 },
                             ]
-                        }
+                        },
                     }
                 },
                 "else": {"properties": {"true_string": False, "false_string": False}},
@@ -325,6 +335,26 @@ class ArgSpec(PoeOptions):
                         "default": {"anyOf": [{"type": "number"}, {"type": "string"}]}
                     }
                 },
+            },
+            # Choices must match the arg type (string when type is omitted)
+            {
+                "if": {"properties": {"type": {"const": "string"}}},
+                "then": {"properties": {"choices": {"items": {"type": "string"}}}},
+            },
+            {
+                "if": {
+                    "properties": {"type": {"const": "integer"}},
+                    "required": ["type"],
+                },
+                "then": {"properties": {"choices": {"items": {"type": "integer"}}}},
+            },
+            # A positional arg may not declare options
+            {
+                "if": {
+                    "properties": {"positional": {"not": {"const": False}}},
+                    "required": ["positional"],
+                },
+                "then": {"properties": {"options": False}},
             },
         ]
         return fragment

@@ -1,0 +1,4 @@
+# expected_error: Argument with type 'boolean' may not declare option 'multiple'
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${flag}"
+args = [{ name = "flag", type = "boolean", multiple = true }]
