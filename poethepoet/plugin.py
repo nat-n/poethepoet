@@ -233,13 +233,15 @@ class PoetryPlugin(ApplicationPlugin):
         if pre_hooks:
             application.event_dispatcher.add_listener(
                 COMMAND,
-                self._get_command_event_handler(pre_hooks, application, poe_config),
+                self._get_command_event_handler(
+                    pre_hooks, application, poe_config, hook_type="pre"
+                ),
             )
         if post_hooks:
             application.event_dispatcher.add_listener(
                 TERMINATE,
                 self._get_command_event_handler(
-                    post_hooks, application, poe_config, skip_on_failure=True
+                    post_hooks, application, poe_config, hook_type="post"
                 ),
             )
 
@@ -248,7 +250,7 @@ class PoetryPlugin(ApplicationPlugin):
         hooks: dict[str, str],
         application: Application,
         poe_config: PoeConfig,
-        skip_on_failure: bool = False,
+        hook_type: str,
     ):
         def command_event_handler(
             event: ConsoleCommandEvent,
@@ -260,13 +262,23 @@ class PoetryPlugin(ApplicationPlugin):
                 return
 
             # Post hooks only run after the poetry command succeeded
-            if skip_on_failure and getattr(event, "exit_code", None):
+            if hook_type == "post" and getattr(event, "exit_code", None):
                 return
 
             import shlex
 
+            try:
+                cli_args = shlex.split(task)
+            except ValueError as error:
+                hook_name = f"{hook_type}_{event.command.name.replace(' ', '_')}"
+                event.io.write_error_line(
+                    "<error>error: poethepoet plugin: Invalid value for poetry hook "
+                    f"{hook_name!r}: {error}</error>"
+                )
+                raise SystemExit(1) from None
+
             task_status = PoeCommand.get_poe(application, event.io, poe_config)(
-                cli_args=shlex.split(task), internal=True
+                cli_args=cli_args, internal=True
             )
 
             if task_status:

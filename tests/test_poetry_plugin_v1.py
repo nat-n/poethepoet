@@ -263,3 +263,12 @@ def test_empty_argument_does_not_crash_poetry(run_poetry_1, projects):
     result = run_poetry_1([""], cwd=projects["poetry_plugin"] / "hooks")
     assert "string index out of range" not in result.stdout + result.stderr
     assert "IndexError" not in result.stdout + result.stderr
+
+
+@pytest.mark.slow
+def test_hook_with_unbalanced_quotes_gives_clean_error(run_poetry_1, projects):
+    result = run_poetry_1(["check"], cwd=projects["poetry_plugin"] / "bad_hook")
+    assert (
+        "error: poethepoet plugin: Invalid value for poetry hook 'pre_check': "
+        "No closing quotation"
+    ) in result.stderr
