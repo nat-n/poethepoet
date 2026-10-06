@@ -495,7 +495,12 @@ class PoeTaskArgs:
 
         def format_arg_details(arg) -> str:
             parts: list[str] = []
-            if default := arg.get("default"):
+            default = arg.get("default")
+            if isinstance(default, bool):
+                # A false default is implied for flags, so only show a true default
+                if default:
+                    parts.append("default: true")
+            elif default is not None and default != "":
                 parts.append(f"default: {default}")
             if choices := arg.get("choices"):
                 parts.append(f"choices: {', '.join(map(repr, choices))}")

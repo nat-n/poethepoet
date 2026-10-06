@@ -233,6 +233,30 @@ def test_help_with_malformed_task_args(run_poe, temp_pyproject, cli_args):
         assert "  other                 Other task" in result.capture
 
 
+def test_documentation_of_falsy_and_boolean_arg_defaults(run_poe, temp_pyproject):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.t]
+        cmd = "poe_test_echo"
+        args = [
+          { name = "n", type = "integer", default = 0 },
+          { name = "f", type = "float", default = 0.0 },
+          { name = "b", type = "boolean", default = true },
+          { name = "s", default = "" },
+        ]
+        """
+    )
+    result = run_poe("--help", "t", cwd=project_path)
+    assert result.code == 0
+    assert (
+        "Named arguments:\n"
+        "  --n                 [default: 0]\n"
+        "  --f                 [default: 0.0]\n"
+        "  --b                 [default: true]\n"
+        "  --s\n"
+    ) in result.capture
+
+
 def test_documentation_of_task_named_args(run_poe):
     result = run_poe(project="scripts")
     assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
