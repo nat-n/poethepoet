@@ -19,6 +19,10 @@ This can be used to define a task that runs a different subtask depending on whi
 
 In the above example the control task is an :doc:`expression <expr>` that checks the value of ``sys.platform``, and if running on windows it'll execute :toml:`windows_build`, otherwise it'll fall back to the default case (i.e. the switch item with no case option defined) and execute :toml:`posix_build`.
 
+.. note::
+
+  Before matching against case values, the output of the control task has any leading and trailing new lines removed, and every remaining run of whitespace (including new lines and tabs) collapsed to a single space. Other leading or trailing spaces are kept, so for example a control task that outputs ``"a \n"`` will not match :toml:`case = "a"`.
+
 
 Available task options
 ----------------------
@@ -75,7 +79,7 @@ Using an :doc:`expr <expr>` task makes it convenient to run a different task dep
 
     [[tool.poe.tasks.check_number.switch]]
     case = "0"
-    expr = "f'{${BEST_NUMBER}} is even')"
+    expr = "f'{${BEST_NUMBER}} is even'"
 
     [[tool.poe.tasks.check_number.switch]]
     case = "1"
@@ -87,7 +91,7 @@ Using this task will look like the following:
 
   $ BEST_NUMBER=12 poe check_number
   Poe <= int(${BEST_NUMBER}) % 2
-  Poe => f'{${BEST_NUMBER}} is even')
+  Poe => f'{${BEST_NUMBER}} is even'
   12 is even
 
   $ BEST_NUMBER=17 poe check_number
