@@ -21,7 +21,7 @@ def test_private_positional_arg_strips_underscore_in_help(
 ):
     """Help for a private positional arg shows the stripped name."""
     result = run_poe("-h", "greet", cwd=private_positional_pyproject)
-    assert "target" in result.capture
+    assert "\n  target              who to greet\n" in result.capture
     assert "_target" not in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
@@ -32,7 +32,7 @@ def test_private_positional_arg_strips_underscore_in_summary(
 ):
     """The task summary view also shows the stripped name for private positionals."""
     result = run_poe(cwd=private_positional_pyproject)
-    assert "target" in result.capture
+    assert "\n    target              who to greet\n" in result.capture
     assert "_target" not in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
