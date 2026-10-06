@@ -237,10 +237,37 @@ def test_script_task_bad_content(run_poe, projects):
     assert (
         "Error: Invalid task 'bad-type'\n"
         "     | Invalid callable reference 'dummy_package:main[greeting]'\n"
+        "     | Expected a function call, instead got: main[greeting]\n"
         "     | (expected something like `module:callable` or `module:callable()`)\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("content", "reason"),
+    [
+        (
+            "pkg:fn((y := 1))",
+            "Expression should not include named expressions: fn((y := 1))",
+        ),
+        # The specific SyntaxError message varies across python versions
+        ("pkg:fn(1", "Invalid script content: fn(1 ("),
+    ],
+)
+def test_script_task_bad_content_includes_reason(
+    temp_pyproject, run_poe, content, reason
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.bad]
+        script = "{content}"
+        """)
+    result = run_poe("bad", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"     | Invalid callable reference {content!r}\n     | {reason}"
+        in result.capture
+    )
 
 
 def test_script_with_positional_args(run_poe):

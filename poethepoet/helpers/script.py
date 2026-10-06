@@ -106,8 +106,11 @@ def validate_script_or_module_reference(content: str) -> None:
         from ..helpers.python import FunctionCall
 
         FunctionCall.parse(source=target_ref, arguments=set())
-    except (ValueError, ExpressionParseError):
+    except (ValueError, ExpressionParseError) as error:
+        reason = str(error)
+        if isinstance(syntax_error := error.__cause__, SyntaxError):
+            reason += f" ({syntax_error.msg})"
         raise ConfigValidationError(
-            f"Invalid callable reference {content!r}\n"
+            f"Invalid callable reference {content!r}\n{reason}\n"
             "(expected something like `module:callable` or `module:callable()`)"
         )
