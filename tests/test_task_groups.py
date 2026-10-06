@@ -110,6 +110,32 @@ def test_group_executor_overridden_by_cli(run_poe, projects):
     assert "should_not_run" in result.capture
 
 
+def test_grouped_task_args_aligned_with_help_column(run_poe, temp_pyproject):
+    """Args of grouped tasks line up with the help column of other tasks."""
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.top]
+        cmd = "poe_test_echo top"
+        help = "top task"
+        args = [{ name = "aaa", help = "arg help" }]
+        [tool.poe.groups.grp.tasks.ingroup]
+        cmd = "poe_test_echo ingroup"
+        help = "group task"
+        args = [{ name = "bbbbbbbbbbbbbbbbbbbb", help = "long arg help" }]
+        """
+    )
+    result = run_poe(cwd=project_path)
+    assert (
+        "Configured tasks:\n"
+        "  top                         top task\n"
+        "    --aaa                     arg help\n"
+        "\n"
+        " grp\n"
+        "  ingroup                     group task\n"
+        "      --bbbbbbbbbbbbbbbbbbbb  long arg help\n"
+    ) in result.capture
+
+
 # -- Invalid group config is reported cleanly --
 
 
