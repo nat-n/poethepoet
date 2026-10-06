@@ -1930,6 +1930,24 @@
           "type": "string"
         },
         "control": {
+          "allOf": [
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "args": false }, "type": "object" }
+            },
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "deps": false }, "type": "object" }
+            },
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "uses": false }, "type": "object" }
+            },
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "uses_env": false }, "type": "object" }
+            }
+          ],
           "description": "A required definition for a task to be executed to determine which case\ntask to run.",
           "oneOf": [
             { "type": "string" },
@@ -2040,6 +2058,24 @@
           ]
         },
         "control": {
+          "allOf": [
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "args": false }, "type": "object" }
+            },
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "deps": false }, "type": "object" }
+            },
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "uses": false }, "type": "object" }
+            },
+            {
+              "if": { "type": "object" },
+              "then": { "properties": { "uses_env": false }, "type": "object" }
+            }
+          ],
           "description": "A required definition for a task to be executed to determine which case\ntask to run.",
           "oneOf": [
             { "type": "string" },

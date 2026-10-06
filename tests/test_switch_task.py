@@ -351,3 +351,34 @@ def test_switch_control_task_verbosity(temp_pyproject, run_poe):
     assert result.code == 0, result.capture
     assert result.capture == "Poe => poe_test_echo A\n"
     assert result.stdout == "A\n"
+
+
+@pytest.mark.parametrize(
+    ("option", "option_toml"),
+    [
+        ("args", 'args = ["x"]'),
+        ("deps", 'deps = ["_dep"]'),
+        ("uses", 'uses = { X = "_dep" }'),
+        ("uses_env", 'uses_env = "_dep"'),
+    ],
+)
+def test_switch_control_may_not_declare_graph_options_or_args(
+    temp_pyproject, run_poe, option, option_toml
+):
+    """
+    The control task is run directly with the switch's args, so options that would be
+    ignored are rejected
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks._dep]
+        cmd = "poe_test_echo dep"
+
+        [tool.poe.tasks.sw]
+        control = {{ expr = "'a'", {option_toml} }}
+        switch = [{{ case = "a", cmd = "poe_test_echo A" }}]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'sw'" in result.capture
+    assert f"Control task includes incompatible option {option!r}" in result.capture
+    assert result.stdout == ""

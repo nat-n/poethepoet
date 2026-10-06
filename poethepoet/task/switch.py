@@ -70,6 +70,16 @@ class SwitchTask(PoeTask):
                                     f"incompatible option {banned_option!r}"
                                 )
 
+                    # The control task is run directly with the switch's args, so
+                    # these options would be ignored
+                    if isinstance(control_def := item.get("control"), dict):
+                        for banned_option in SUBTASK_OPTIONS_BLOCKLIST:
+                            if banned_option in control_def:
+                                raise ConfigValidationError(
+                                    "Control task includes incompatible option "
+                                    f"{banned_option!r}"
+                                )
+
                 yield item
 
     class TaskSpec(PoeTask.TaskSpec):
@@ -209,6 +219,13 @@ class SwitchTask(PoeTask):
             "oneOf": [
                 {"type": "string"},
                 *({"$ref": f"#/definitions/{key}_task"} for key in CONTROL_TASK_TYPES),
+            ],
+            "allOf": [
+                {
+                    "if": {"type": "object"},
+                    "then": {"type": "object", "properties": {opt: False}},
+                }
+                for opt in SUBTASK_OPTIONS_BLOCKLIST
             ],
         }
         if control_description:
