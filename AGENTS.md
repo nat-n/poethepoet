@@ -22,6 +22,7 @@ itself. Two distinct installs are in play — keep them straight:
    ```bash
    command -v poe >/dev/null || pipx install poethepoet
    ```
+   (`uv tool install poethepoet` works too if pipx isn't available.)
    You are editing poethepoet, so don't drive your own checks with the code
    under test. Run from the repo root, this global `poe` reads the project's
    `[tool.poe.tasks]` and executes each task **inside the Poetry venv** (its
@@ -44,9 +45,10 @@ Run `poe` to see available tasks and their descriptions.
 
 
 ```bash
-poe check             # run all quality checks (style, types, lint, tests) - this takes a while.
-poe test              # run full test suite
+poe check             # run all quality checks - this takes a while (see note below)
+poe test              # run the test suite, except the schema parity tests
 poe test-quick        # skip slow/flaky tests
+poe test-schema       # run the schema parity tests (excluded from `poe test`)
 poe format            # auto-format code (ruff format + ruff fixes)
 poe lint              # ruff linting only
 poe types             # mypy type checking
@@ -67,6 +69,15 @@ poe test [extra pytest arguments]
 ```
 
 Reference tests/README.md for instructions on how to write, run, and debug tests in this project.
+
+Things worth knowing:
+
+- `poe check` runs `docs-check` (which includes a sphinx linkcheck that needs network access) and `schema-check-drift` (which needs node/npx to fetch prettier), in addition to style, types, lint and both test suites. In a sandbox without network, failures in those two are environmental — run the other checks individually.
+- Coverage: `poe test --cov=poethepoet --cov-report=term-missing`.
+- Some suites are skipped silently when a tool isn't installed: the zsh completion tests need `zsh`, and uv/poetry-plugin tests need network or are marked `slow`.
+- The poetry plugin tests (`tests/test_poetry_plugin_v*.py`, marked `slow`) share venvs under `tests/temp/`, so don't run two of them concurrently.
+- Your environment may export `PYTHONUNBUFFERED=1`, which hides output-buffering bugs; unset it in tests about streamed output.
+- To try the in-development poe against a scratch project use `poetry run poe -C path/to/scratch_project <task>`. Note the `simple` executor runs `python` from `PATH`, so `script` tasks importing `poethepoet` need the project venv on `PATH` (or a `virtualenv` executor).
 
 ## Key Patterns
 
@@ -91,7 +102,7 @@ Reference tests/README.md for instructions on how to write, run, and debug tests
 | Add a new executor                | `executor/base.py`                 |
 | Modify CLI behavior               | `ui.py`, `app.py`                  |
 | Change config parsing             | `config/config.py`                 |
-| Add environment variable handling | `env/manager.py`                   |
+| Add environment variable handling | `env/task_env.py`, `env/parse.py`  |
 | Fix shell completion              | `completion/`                      |
 | Edit the bundled Agent Skill      | `poethepoet/skills/poethepoet/`    |
 
@@ -100,7 +111,8 @@ Reference tests/README.md for instructions on how to write, run, and debug tests
 This project ships an Agent Skill at `poethepoet/skills/poethepoet/` that teaches AI coding assistants how to use poe. End-users install it via `poe _install_skill`, which copies the tree into a detected `.claude/skills/`, `.codex/skills/`, etc. (see `poethepoet/skills/install.py`).
 
 - **Skill content**: `SKILL.md` + `references/*.md` (task-types, task-options, args-reference, creating-tasks, task-packages).
-- **Pinned version**: `poethepoet/skills/poethepoet/version.txt` — kept in step with poe's user-facing surface. Bump it when skill content changes meaningfully.
+- **Pinned version**: `poethepoet/skills/poethepoet/version.txt` must always equal poethepoet's `__version__` (enforced by `tests/test_version.py`); it is updated by `poe bump-version`, so don't edit it by hand.
+- **Snippet tests**: every TOML example in the skill is loaded and validated by `tests/skills/test_skill_snippets.py`, so examples must be complete, working configs (or explicitly marked as partial there).
 - **Evals**: `tests/skills/evals.json` (corpus) and `tests/skills/run_evals.py` (runner). The runner copies the skill into a fixture project's `.claude/skills/` and shells out to `claude -p`, so it exercises the real discovery path. Run via `poe eval-skill`.
 
 When you change poe's behaviour, syntax, or user-facing semantics, check whether the skill's reference docs still describe it correctly — drift here causes downstream agents to hedge or generate broken configs. If you spot a gap while working on the skill, the canonical answer is in the installed source (`poethepoet/task/*.py`) and the published docs (https://poethepoet.natn.io); verify before paraphrasing.
@@ -137,7 +149,8 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
       Working directory the task runs in. Relative to the project root unless absolute.
       """
   ```
-- We aggressively validate inputs and handle edge cases to avoid ever raising unhandled errors that are not instances of PoeException with a helpful message.
+- We aggressively validate inputs and handle edge cases to avoid ever raising unhandled errors that are not instances of PoeException with a helpful message. Note that `ParseError` from `poethepoet/helpers/parse` is *not* a `PoeException`: callers must catch and wrap it.
+- When you add or change a TOML example in `docs/` or the skill, actually run it — documented examples aren't otherwise tested.
 
 ### Schema/runtime validation parity
 
@@ -145,7 +158,7 @@ Runtime validation and the generated JSON Schema (`poethepoet/schema/`) are kept
 
 - prefer expressing simple constraints (pattern, min/max, length, item count, etc.) via `Annotated[T, Metadata(...)]` on the field — `PoeOptions.parse` enforces these at runtime AND the schema generator picks them up from the same annotation, so parity is automatic. Reserve bespoke `validate()` overrides for cross-field rules or constraints that don't fit `Metadata`.
 - when bespoke validation is needed, update the matching `__schema_fragment__` (or generator logic) to encode the same constraint
-- add a fixture to `tests/schema/fixtures/invalid/` with a `# expected_error:` header so the parity test pins the new case
+- add a fixture to `tests/schema/fixtures/invalid/` with a `# expected_error:` header so the parity test pins the new case, and run `poe test-schema` (it is not part of `poe test`)
 - check `tests/schema/test_mutation.py` for intentional structural gaps before assuming any mismatch is a bug
 
 ## Development tasks
