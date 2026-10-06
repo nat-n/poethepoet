@@ -22,6 +22,55 @@ def generate_args_pyproject(temp_pyproject):
             "     | Option 'options' requires at least 1 item(s), got 0",
         ),
         (
+            '[{ name = "flag", options = ["flag"] }]',
+            "Invalid argument 'flag' declared in task 'bad'\n"
+            "     | Invalid CLI option provided 'flag', did you mean '--flag'?",
+        ),
+        (
+            '[{ name = "flag", options = ["  "] }]',
+            "Invalid argument 'flag' declared in task 'bad'\n"
+            "     | Invalid empty value in CLI options list",
+        ),
+        (
+            '["flag", { name = "flag", options = ["-f"] }]',
+            "Invalid argument 'flag' declared in task 'bad'\n"
+            "     | Duplicate argument name 'flag'",
+        ),
+        (
+            '[{ name = "one", options = ["-x"] }, { name = "two", options = ["-x"] }]',
+            "Arguments 'one' and 'two' generate the same CLI option '-x'",
+        ),
+        (
+            '[{ name = "items", positional = true, multiple = true },'
+            ' { name = "last", positional = true }]',
+            "Invalid argument 'last' declared in task 'bad'\n"
+            "     | Only the last positional arg of task may accept multiple values"
+            " (not 'items').",
+        ),
+        (
+            '{ flag = { name = "other" } }',
+            "Unexpected 'name' option for argument 'flag'",
+        ),
+        (
+            '{ flag = "--flag" }',
+            "Invalid configuration for arg 'flag', expected dict",
+        ),
+        (
+            "[5]",
+            "Argument 5 has invalid type, a string or dict is expected",
+        ),
+        (
+            '[{ name = "1st" }]',
+            "Invalid argument '1st' declared in task 'bad'\n"
+            "     | Argument name '1st' is not a valid 'identifier',",
+        ),
+        (
+            '[{ name = "target", positional = "not valid" }]',
+            "Invalid argument 'target' declared in task 'bad'\n"
+            "     | positional name 'not valid' for arg 'target' is not a valid"
+            " 'identifier'",
+        ),
+        (
             '[{ name = "flag", options = "--flag" }]',
             "Invalid argument 'flag' declared in task 'bad'\n"
             "     | Option 'options' must be a list",
@@ -61,6 +110,16 @@ def generate_args_pyproject(temp_pyproject):
     ],
     ids=(
         "options_empty",
+        "option_without_dash",
+        "option_blank",
+        "duplicate_name",
+        "same_cli_option",
+        "positional_multiple_not_last",
+        "subtable_name_key",
+        "subtable_not_dict",
+        "list_item_not_string_or_dict",
+        "name_not_identifier",
+        "positional_alias_not_identifier",
         "options_string",
         "options_integer",
         "name_integer",
