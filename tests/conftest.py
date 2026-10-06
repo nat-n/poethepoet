@@ -234,12 +234,8 @@ class PoeTestRunHandle(NamedTuple):
 
 @pytest.fixture
 def run_poe_subproc_handle(temp_file, is_windows):
-    coverage_setup = (
-        "from coverage import Coverage;"
-        rf"Coverage(data_file=r\"{PROJECT_ROOT.joinpath('.coverage')}\").start();"
-    )
     wrapper_script_template = (
-        '"{coverage_setup}'
+        '"'
         + (
             "import tomli;"
             # ruff: noqa: YTT204
@@ -261,7 +257,6 @@ def run_poe_subproc_handle(temp_file, is_windows):
         env: dict[str, str] | None = None,
     ) -> PoeTestRunHandle:
         wrapper_script = wrapper_script_template.format(
-            coverage_setup=(coverage_setup if coverage else ""),
             cwd=cwd,
             config=config_arg,
             run_args=",".join(f'r\\"{arg}\\"' for arg in run_args),
@@ -270,8 +265,9 @@ def run_poe_subproc_handle(temp_file, is_windows):
 
         subproc_env = build_poe_test_env(env)
 
-        if coverage:
-            subproc_env["COVERAGE_PROCESS_START"] = str(PROJECT_TOML)
+        if not coverage:
+            # coverage's `patch = ["subprocess"]` measures subprocesses via this var
+            subproc_env.pop("COVERAGE_PROCESS_CONFIG", None)
 
         poeproc = Popen(
             (
