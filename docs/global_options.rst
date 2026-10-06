@@ -106,7 +106,9 @@ Env file values support bash-style parameter expansion. Each variable can refere
    # Use an alternate value when a variable is set
    DEBUG_FLAG=${DEBUG:+--debug}
 
-Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``.
+Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``. A ``$`` can also be escaped with a backslash (``\$``) to keep it literally, and an unquoted ``$`` that doesn't start a valid expansion (e.g. followed by a space) is also kept as is.
+
+A UTF-8 byte order mark (BOM) at the start of an env file is ignored.
 
 Optional env files
 """"""""""""""""""
