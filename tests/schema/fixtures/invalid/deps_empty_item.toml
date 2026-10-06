@@ -1,0 +1,4 @@
+# expected_error: Option 'deps[0]' value '' does not match pattern
+[tool.poe.tasks.bad]
+cmd = "echo hi"
+deps = [""]

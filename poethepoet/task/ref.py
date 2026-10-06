@@ -4,7 +4,12 @@ import shlex
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
-from .base import PoeTask, TaskContext, parse_task_reference_name
+from .base import (
+    PoeTask,
+    TaskContext,
+    parse_task_reference_name,
+    split_task_invocation,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -49,6 +54,8 @@ class RefTask(PoeTask):
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["properties"].pop("executor", None)
+        # The content must name a task to run
+        fragment["properties"]["ref"]["pattern"] = r"\S"
         return fragment
 
     class TaskSpec(PoeTask.TaskSpec):
@@ -60,7 +67,15 @@ class RefTask(PoeTask):
             Perform validations on this TaskSpec that apply to a specific task type
             """
 
-            task_name_ref = shlex.split(self.content)[0]
+            try:
+                tokens = shlex.split(self.content)
+            except ValueError as error:
+                raise ConfigValidationError(
+                    f"Invalid ref content {self.content!r}: {error}"
+                ) from None
+            if not tokens:
+                raise ConfigValidationError("Ref task content must name a task to run")
+            task_name_ref = tokens[0]
 
             if task_name_ref not in task_specs:
                 raise ConfigValidationError(
@@ -108,9 +123,9 @@ class RefTask(PoeTask):
                     return True
                 _seen.add(id(self))
 
-                target_name = shlex.split(self.content)[0]
-                if target_name not in task_specs:
-                    # Unknown target; let _task_validations report this error
+                target_name = parse_task_reference_name(self.content)
+                if target_name is None or target_name not in task_specs:
+                    # Invalid or unknown target; let _task_validations report this error
                     return True
                 return task_specs.get(target_name).accepts_option(
                     option_name, task_specs, _seen
@@ -141,7 +156,8 @@ class RefTask(PoeTask):
 
         expanded_content = env.fill_template(self._parse_content())
         invocation_tokens = tuple(
-            env.fill_template(token) for token in shlex.split(expanded_content)
+            env.fill_template(token)
+            for token in split_task_invocation(expanded_content, self.name)
         )
         if self._content_uses_extra_args():
             ref_invocation = invocation_tokens

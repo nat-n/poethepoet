@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, NamedTuple
 
 from ..config.primitives import EmptyDict, EnvDefault, EnvfileOption
-from ..exceptions import ConfigValidationError, PoeException
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..executor.task_run import PoeTaskRun
 from ..io import PoeIO
 from ..options import PoeOptions
@@ -40,6 +40,21 @@ def parse_task_reference_name(invocation: str) -> str | None:
     except ValueError:
         return None
     return tokens[0] if tokens else None
+
+
+def split_task_invocation(invocation: str, task_name: str) -> tuple[str, ...]:
+    """
+    Split an expanded task invocation, as used by the ref task type and the deps,
+    uses and uses_env options of the named task, into CLI tokens.
+    """
+    import shlex
+
+    try:
+        return tuple(shlex.split(invocation))
+    except ValueError as error:
+        raise ExecutionError(
+            f"Invalid task invocation {invocation!r} in task {task_name!r}: {error}"
+        ) from None
 
 
 class MetaPoeTask(type):
@@ -265,7 +280,7 @@ class PoeTask(metaclass=MetaPoeTask):
         environment variables can be used in the format ${VAR_NAME}.
         """
 
-        deps: Sequence[str] | None = None
+        deps: Sequence[Annotated[str, Metadata(pattern=r"\S")]] | None = None
         """
         A list of task invocations that will be executed before this one. Each item
         in the list is a reference to another task defined within the tasks object.
@@ -294,7 +309,7 @@ class PoeTask(metaclass=MetaPoeTask):
         poe is run without specifying a task.
         """
 
-        uses: Mapping[str, str] | None = None
+        uses: Mapping[str, Annotated[str, Metadata(pattern=r"\S")]] | None = None
         """
         Allows this task to use the output of other tasks which are executed first.
         The values are references to the names of the tasks, and the keys are
@@ -302,7 +317,10 @@ class PoeTask(metaclass=MetaPoeTask):
         accessible in this task.
         """
 
-        uses_env: str | Sequence[str] = ()
+        uses_env: (
+            Annotated[str, Metadata(pattern=r"\S")]
+            | Sequence[Annotated[str, Metadata(pattern=r"\S")]]
+        ) = ()
         """
         Allows this task to use the output of other tasks which are executed first,
         and their output is parsed like an env file to get zero or more environment
@@ -466,7 +484,7 @@ class PoeTask(metaclass=MetaPoeTask):
 
             if self.options.deps:
                 for dep in self.options.deps:
-                    dep_task_name = dep.split(" ", 1)[0]
+                    dep_task_name = self._get_referenced_task_name("deps", dep)
                     if dep_task_name not in task_specs:
                         raise ConfigValidationError(
                             "'deps' option includes reference to unknown task: "
@@ -488,7 +506,7 @@ class PoeTask(metaclass=MetaPoeTask):
                             f"'uses' option includes invalid key: {key!r}"
                         )
 
-                    dep_task_name = dep.split(" ", 1)[0]
+                    dep_task_name = self._get_referenced_task_name("uses", dep)
                     if dep_task_name not in task_specs:
                         raise ConfigValidationError(
                             "'uses' options includes reference to unknown task: "
@@ -516,7 +534,7 @@ class PoeTask(metaclass=MetaPoeTask):
                 if isinstance(uses_env, str):
                     uses_env = (uses_env,)
                 for dep in uses_env:
-                    dep_task_name = dep.split(" ", 1)[0]
+                    dep_task_name = self._get_referenced_task_name("uses_env", dep)
                     if dep_task_name not in task_specs:
                         raise ConfigValidationError(
                             "'uses_env' option includes reference to unknown task: "
@@ -545,6 +563,24 @@ class PoeTask(metaclass=MetaPoeTask):
 
                 for _ in ArgSpec.parse(self.options.args):
                     pass
+
+        @staticmethod
+        def _get_referenced_task_name(option_name: str, invocation: str) -> str:
+            """
+            Get the name of the task referenced by a task invocation template in the
+            given option, or raise a ConfigValidationError if it is invalid.
+            """
+            import shlex
+
+            try:
+                tokens = shlex.split(invocation)
+            except ValueError as error:
+                raise ConfigValidationError(
+                    f"{option_name!r} option includes invalid task invocation "
+                    f"{invocation!r}: {error}"
+                ) from None
+            # Options parsing ensures that the invocation isn't empty or whitespace
+            return tokens[0]
 
         def _task_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
             """
@@ -871,8 +907,6 @@ class PoeTask(metaclass=MetaPoeTask):
         something that this object should not know enough to safely assume. So we
         probably want to revisit this.
         """
-        import shlex
-
         options = self.spec.options
 
         if self.__upstream_invocations is None:
@@ -885,15 +919,15 @@ class PoeTask(metaclass=MetaPoeTask):
 
             self.__upstream_invocations = {
                 "deps": [
-                    tuple(shlex.split(env.fill_template(task_ref)))
+                    split_task_invocation(env.fill_template(task_ref), self.name)
                     for task_ref in options.get("deps", ())
                 ],
                 "uses": {
-                    key: tuple(shlex.split(env.fill_template(task_ref)))
+                    key: split_task_invocation(env.fill_template(task_ref), self.name)
                     for key, task_ref in options.get("uses", {}).items()
                 },
                 "uses_env": [
-                    tuple(shlex.split(env.fill_template(task_ref)))
+                    split_task_invocation(env.fill_template(task_ref), self.name)
                     for task_ref in uses_env_refs
                 ],
             }

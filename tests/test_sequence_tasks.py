@@ -261,3 +261,80 @@ def test_sequence_subtask_ref_to_task_with_deps_and_uses(temp_pyproject, run_poe
     assert result.code == 0, result.capture
     assert "dep-ran" in result.stdout
     assert "cfg=loaded" in result.stdout
+
+
+@pytest.mark.parametrize("item", ['""', '"  "'], ids=["empty", "whitespace"])
+def test_sequence_rejects_empty_item(temp_pyproject, run_poe, item):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.seq]
+        sequence = ["ok", {item}]
+        """)
+    result = run_poe("ok", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'seq'" in result.capture
+    assert "Item #1 in sequence task must not be empty" in result.capture
+
+
+@pytest.mark.parametrize(
+    ("option", "expected_error"),
+    [
+        ('deps = [""]', "Option 'deps[0]' value '' does not match pattern"),
+        ('deps = ["  "]', "Option 'deps[0]' value '  ' does not match pattern"),
+        (
+            'deps = ["ok \'x"]',
+            "'deps' option includes invalid task invocation \"ok 'x\": "
+            "No closing quotation",
+        ),
+        ('uses = { X = "" }', "Option 'uses.X' value '' does not match pattern"),
+        (
+            'uses = { X = "ok \'x" }',
+            "'uses' option includes invalid task invocation",
+        ),
+        ('uses_env = ""', "Option 'uses_env' must have a value of type"),
+        (
+            'uses_env = ["ok \'x"]',
+            "'uses_env' option includes invalid task invocation",
+        ),
+    ],
+    ids=[
+        "deps_empty",
+        "deps_whitespace",
+        "deps_unbalanced_quotes",
+        "uses_empty",
+        "uses_unbalanced_quotes",
+        "uses_env_empty",
+        "uses_env_unbalanced_quotes",
+    ],
+)
+def test_invalid_upstream_task_invocations_are_rejected(
+    temp_pyproject, run_poe, option, expected_error
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.main]
+        cmd = "poe_test_echo main"
+        {option}
+        """)
+    result = run_poe("ok", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'main'" in result.capture
+    assert expected_error in result.capture
+
+
+def test_quoted_task_name_in_deps_is_accepted(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.main]
+        cmd = "poe_test_echo main"
+        deps = ["'ok'", "\\tok"]
+        """)
+    result = run_poe("main", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "OK\nmain\n"

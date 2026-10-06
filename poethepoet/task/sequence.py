@@ -88,6 +88,11 @@ class SequenceTask(PoeTask):
                         "type: str | dict | list",
                         task_name=self.name,
                     )
+                if isinstance(sub_task_def, str) and not sub_task_def.strip():
+                    raise ConfigValidationError(
+                        f"Item #{index} in sequence task must not be empty",
+                        task_name=self.name,
+                    )
 
                 subtask_name = (
                     sub_task_def
@@ -153,6 +158,8 @@ class SequenceTask(PoeTask):
         fragment["properties"]["sequence"]["items"] = {
             "allOf": [
                 {"$ref": "#/definitions/task_def"},
+                # String items must not be empty
+                {"if": {"type": "string"}, "then": {"pattern": r"\S"}},
                 *(
                     {
                         "if": {"type": "object"},

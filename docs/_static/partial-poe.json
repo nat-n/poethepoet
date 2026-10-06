@@ -294,7 +294,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "empty_glob": {
@@ -324,14 +324,14 @@
           "type": "boolean"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -395,7 +395,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "empty_glob": {
@@ -425,14 +425,14 @@
           "type": "boolean"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -752,7 +752,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -785,14 +785,14 @@
           "type": "boolean"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -851,7 +851,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -884,14 +884,14 @@
           "type": "boolean"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -959,7 +959,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -985,6 +985,7 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
+              { "if": { "type": "string" }, "then": { "pattern": "\\S" } },
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
@@ -1027,14 +1028,14 @@
           "type": "string"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1083,7 +1084,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1109,6 +1110,7 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
+              { "if": { "type": "string" }, "then": { "pattern": "\\S" } },
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
@@ -1151,14 +1153,14 @@
           "type": "string"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1186,7 +1188,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1202,17 +1204,18 @@
         },
         "ref": {
           "description": "Invokes another task by name, with or without arguments.",
+          "pattern": "\\S",
           "type": "string"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1261,7 +1264,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1277,17 +1280,18 @@
         },
         "ref": {
           "description": "Invokes another task by name, with or without arguments.",
+          "pattern": "\\S",
           "type": "string"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1333,7 +1337,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1371,14 +1375,14 @@
           "type": "boolean"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1445,7 +1449,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1483,14 +1487,14 @@
           "type": "boolean"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1518,7 +1522,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1538,6 +1542,7 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
+              { "if": { "type": "string" }, "then": { "pattern": "\\S" } },
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
@@ -1562,14 +1567,14 @@
           "type": "array"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1618,7 +1623,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1638,6 +1643,7 @@
           "items": {
             "allOf": [
               { "$ref": "#/definitions/task_def" },
+              { "if": { "type": "string" }, "then": { "pattern": "\\S" } },
               {
                 "if": { "type": "object" },
                 "then": { "properties": { "args": false }, "type": "object" }
@@ -1662,14 +1668,14 @@
           "type": "array"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1697,7 +1703,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1760,14 +1766,14 @@
           "type": "string"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1816,7 +1822,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1879,14 +1885,14 @@
           "type": "string"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -1929,7 +1935,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -1968,14 +1974,14 @@
           "type": "array"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
@@ -2039,7 +2045,7 @@
         },
         "deps": {
           "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
-          "items": { "type": "string" },
+          "items": { "pattern": "\\S", "type": "string" },
           "type": "array"
         },
         "env": { "$ref": "#/definitions/env_option" },
@@ -2078,14 +2084,14 @@
           "type": "array"
         },
         "uses": {
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": { "pattern": "\\S", "type": "string" },
           "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
           "type": "object"
         },
         "uses_env": {
           "anyOf": [
-            { "type": "string" },
-            { "items": { "type": "string" }, "type": "array" }
+            { "pattern": "\\S", "type": "string" },
+            { "items": { "pattern": "\\S", "type": "string" }, "type": "array" }
           ],
           "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
         },
