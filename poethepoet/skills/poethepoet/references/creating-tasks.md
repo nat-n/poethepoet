@@ -31,7 +31,9 @@ ls poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null
 - **Existing project with `[tool.poe]` in pyproject.toml** → add to `pyproject.toml`
 - **Existing `poe_tasks.toml` or `poe_tasks.yaml`** → use that file
 - **New project with no poe config** → add `[tool.poe.tasks]` to `pyproject.toml`
-- **Complex task sets warranting separation** → create `poe_tasks.toml` (exclude from `[tool.poe]` in pyproject.toml)
+- **Complex task sets warranting separation** → create `poe_tasks.toml`
+
+Only one config file per directory is read: `pyproject.toml` wins if it has a `[tool.poe]` table (even one with only global options), and then `poe_tasks.toml` is ignored. To use both, add `include = "poe_tasks.toml"` under `[tool.poe]`.
 
 For standalone task files, you don't need the `[tool.poe]` namespace:
 
@@ -275,7 +277,7 @@ Key points:
 
 - Arg names use `_` prefix (private) — private args are **not** set as environment variables, so their values don't leak to subprocesses or shell tasks. The CLI flags drop the underscore: `--output-dir`, `--verbose`
 - The explicit call expression `main(_input_file, _output_dir, _verbose, _format)` is required because the `_`-prefixed poe arg names don't match the Python parameter names; passing positionally bridges this gap
-- `env.PYTHONPATH = "${POE_ROOT}/scripts"` adds `scripts/` to the path so `process` is importable directly. Alternatively, use `"${POE_ROOT}"` and reference as `scripts.process:main` — this requires `scripts/__init__.py`
+- `env.PYTHONPATH = "${POE_ROOT}/scripts"` adds `scripts/` to the path so `process` is importable directly. Alternatively, reference it as `scripts.process:main` with no PYTHONPATH (see below)
 
 ### Simple script task (no args)
 
@@ -298,7 +300,7 @@ Advantages over `shell`:
 - Testable
 - Cross-platform by default
 
-Make the module importable by ensuring `scripts/__init__.py` exists or configuring `PYTHONPATH`.
+Script tasks run from the project root, which is on `sys.path`, so `scripts.generate:main` imports `scripts/generate.py` without a `scripts/__init__.py` or PYTHONPATH (as long as the directory name is a valid Python identifier). A `src/` directory at the project root is also added to `sys.path`.
 
 ---
 

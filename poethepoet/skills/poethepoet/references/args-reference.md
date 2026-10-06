@@ -57,7 +57,7 @@ help = "Host to bind"
 | `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators |
 | `help`       | string             | Help text in `poe --help <task>`                                               |
 | `type`       | string             | `"string"` (default), `"integer"`, `"float"`, `"boolean"`                      |
-| `true_string` / `false_string` | string | Boolean args only: literal string for the true / false value in expansion and the environment |
+| `true_string` / `false_string` | string | Boolean args only (poe 0.49.0+): literal string for the true / false value in expansion and the environment |
 | `positional` | bool               | Positional arg — no flag needed                                                |
 | `required`   | bool               | Fail if not provided                                                           |
 | `choices`    | list               | Restrict to these values (enforced)                                            |
@@ -82,7 +82,7 @@ help = "Target environment"
 
 Usage: `poe deploy production`
 
-Only one positional arg can have `multiple = true`, and it must be last.
+Only one positional arg can have `multiple = true`, and it must be last. Positional args can't be `type = "boolean"`.
 
 ---
 
@@ -100,7 +100,7 @@ The `default` for a boolean arg must be a TOML bool, or a case-insensitive strin
 
 In script/expr tasks the resulting Python variable keeps its declared type. By default a boolean is exposed to parameter expansion and the subprocess environment as `"True"` when true, or unset when false.
 
-Set `true_string` and/or `false_string` to customize those environment strings. Values are literal: `${...}` is not interpolated. An explicit `""` sets an empty variable; omitting `false_string` keeps false unset. The options select by boolean value, independently of `default`, and do not change typed Python arguments or module script flag forwarding.
+Set `true_string` and/or `false_string` (poe 0.49.0+) to customize those environment strings. Values are literal: `${...}` is not interpolated. An explicit `""` sets an empty variable; omitting `false_string` keeps false unset. The options select by boolean value, independently of `default`, and do not change typed Python arguments or module script flag forwarding.
 
 ```toml
 [tool.poe.tasks.greet]
@@ -198,7 +198,9 @@ sequence = [
 args = [{ name = "AWS_REGION", options = ["--region", "-r"], default = "${AWS_DEFAULT_REGION:-us-east-1}" }]
 ```
 
-The fact that args are normally exposed as environment variables can be useful when the task explicitly needed, for example calling an arg `"AWS_REGION"` will set that environment variable for all subprocesses of the task.
+Because public args are exposed as environment variables, an arg named `"AWS_REGION"` sets that variable for all subprocesses of the task.
+
+**Pitfall**: an arg that isn't passed and has no default **removes** the variable of the same name from the task's environment, even if the host or the task's `env` set it. To fall back to the inherited value, use it as the default: `default = "${AWS_REGION}"`.
 
 If provided, the default value is appended to the help message automatically.
 

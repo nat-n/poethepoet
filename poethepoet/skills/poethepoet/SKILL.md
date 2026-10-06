@@ -14,7 +14,7 @@ Poethepoet (poe) is a Python task runner: teams define, document, and run dev ta
 Don't speculate — poe's behaviour is cheaply verifiable:
 
 - Docs: https://poethepoet.natn.io
-- Source: `python -c "import poethepoet, os; print(os.path.dirname(poethepoet.__file__))"`, then read `task/*.py` for the relevant type.
+- Source: https://github.com/nat-n/poethepoet (`poethepoet/task/*.py` for the relevant type). If poethepoet is importable from the project env, `python -c "import poethepoet, os; print(os.path.dirname(poethepoet.__file__))"` finds the installed copy.
 - A 30-second probe in a throwaway `poe_tasks.toml` settles most questions.
 
 Verify, then state the answer plainly — no "I'll need to check" caveats on behaviour you can simply check.
@@ -31,7 +31,7 @@ poe 2>&1                                                  # list all tasks
 ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null  # find config
 ```
 
-Poe finds tasks in a supported config file in the working directory or any parent.
+Poe finds tasks in a supported config file in the working directory or any parent. In each directory the first match wins: `pyproject.toml` (only if it has a `[tool.poe]` table), then `poe_tasks.toml`, `.yaml`, `.json`. Any `[tool.poe]` table in pyproject.toml, even one with only global options, hides `poe_tasks.toml`; use `include = "poe_tasks.toml"` to combine them.
 
 **If `poe` is not in PATH:**
 
@@ -53,7 +53,7 @@ poe <task> -x --extra-flag  # task without declared args: extra args are forward
 poe <task> --named-arg val  # named args (if the task defines them)
 poe <task> --named-arg val -- -x  # task WITH declared args: free args go after --
 poe -d <task>               # dry run: show the command without running it
-poe -C /path <task>         # run as if from another directory (handier than cd)
+poe -C /path <task>         # use the project at /path (dir or config file); unlike cd, no parent-dir search
 poe -v <task>               # verbose
 ```
 

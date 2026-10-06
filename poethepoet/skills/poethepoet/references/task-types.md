@@ -19,6 +19,7 @@ help = "Build distribution packages"
 **Parameter expansion** (bash-like operators):
 
 ```toml
+[tool.poe.tasks]
 # Default value if VAR is unset:
 tables = "aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}"
 
