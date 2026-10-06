@@ -50,7 +50,7 @@ The following options are also accepted:
   Set the prefix applied to each line of output from subtasks. By default this is the task name. Set to :toml:`false` (or an empty string) to disable prefixing.
 
 **prefix_max** : ``int`` :ref:`📖<Customize output prefixing>`
-  Set the maximum width of the prefix. Longer prefixes will be truncated. Default is 16 characters.
+  Set the maximum width of the prefix (at least 1). Longer prefixes will be truncated. Default is 16 characters.
 
 **prefix_template** : ``str`` :ref:`📖<Customize output prefixing>`
   Specifies a template for how the prefix is applied after truncating it to the prefix_max length. The default prefix_template is ``"{color_start}{prefix}{color_end} | "``
@@ -68,6 +68,8 @@ A failure (non-zero result) will result in any remaining subtasks being cancelle
   attempts.ignore_fail = true
 
 Setting :toml:`ignore_fail = true` is equivalent to :toml:`ignore_fail = "return_zero"`, meaning that all subtasks are run to completion, and the parallel task always returns zero, even if some subtasks failed.
+
+When remaining subtasks are cancelled, each subtask's whole process tree (i.e. including any processes it started) is sent SIGTERM, followed by SIGKILL if still running after 2 seconds.
 
 If you want to run all the subtasks to completion but return a non-zero result (exit status 1) in the end of the parallel group if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` like so:
 
@@ -158,7 +160,7 @@ The captured subtask writes its stdout to the file and is excluded from the pref
 Customize output prefixing
 --------------------------
 
-When running multiple tasks in parallel a prefix is applied to each line of output to identify the origin. By default the prefix includes the task name and has a distinct color applied to it (6 colors in rotation).
+When running multiple tasks in parallel a prefix is applied to each line of output to identify the origin. By default the prefix includes the task name and has a distinct color applied to it according to the position of the subtask in the parallel array (6 colors in rotation). If the last line of a subtask's output doesn't end with a new line, then one is added so that it is not joined with prefixed output from other subtasks.
 
 Example output:
 
