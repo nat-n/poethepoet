@@ -58,9 +58,9 @@ def parse_script_reference(
             if key != "_extra_args"
         }
         if auto_kwargs:
-            function_call = FunctionCall(f"{target_ref}(**({auto_kwargs}))", target_ref)
+            function_call = FunctionCall(f"{target_ref}(**({auto_kwargs}))")
         else:
-            function_call = FunctionCall(f"{target_ref}()", target_ref)
+            function_call = FunctionCall(f"{target_ref}()")
     else:
         function_call = FunctionCall.parse(
             source=target_ref,

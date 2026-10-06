@@ -77,7 +77,6 @@ class FunctionCall(NamedTuple):
     """
 
     expression: str
-    function_ref: str
     referenced_args: tuple[str, ...] = ()
     referenced_globals: tuple[str, ...] = ()
 
@@ -123,17 +122,8 @@ class FunctionCall(NamedTuple):
         # Prefix references to arguments with args_prefix
         expression = _apply_substitutions(source, substitutions)
 
-        ref_parts = []
-        func_node = root_node.func
-        while isinstance(func_node, ast.Attribute):
-            ref_parts.append(func_node.attr)
-            func_node = func_node.value
-        assert isinstance(func_node, ast.Name)
-        function_ref = ".".join((func_node.id, *reversed(ref_parts)))
-
         return cls(
             expression=_clean_linebreaks(expression),
-            function_ref=function_ref,
             referenced_args=tuple(referenced_args),
             referenced_globals=tuple(referenced_globals),
         )

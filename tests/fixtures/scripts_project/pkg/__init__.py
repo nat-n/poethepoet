@@ -65,3 +65,24 @@ class Scripts:
 
 async def async_task(*args, **kwargs):
     print("I'm an async task!", args, kwargs)
+
+
+def _sync_wrapper(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@_sync_wrapper
+async def wrapped_async_task(*args, **kwargs):
+    print("I'm a wrapped async task!", args, kwargs)
+    return "wrapped result"
+
+
+class AsyncCallable:
+    async def __call__(self, *args, **kwargs):
+        print("I'm an async callable!", args, kwargs)
+
+
+async_callable = AsyncCallable()
