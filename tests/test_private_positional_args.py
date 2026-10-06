@@ -64,3 +64,59 @@ def test_private_positional_dest_collision_is_rejected(temp_pyproject, run_poe):
     assert "same positional identifier 'target'" in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("args_block", "expected_error"),
+    [
+        (
+            '{ name = "_target", positional = true }, { name = "target" }',
+            "Arguments '_target' and 'target' map to the same argument "
+            "identifier 'target'",
+        ),
+        (
+            '{ name = "target" }, { name = "_target", positional = true }',
+            "Arguments 'target' and '_target' map to the same argument "
+            "identifier 'target'",
+        ),
+        (
+            '{ name = "target", positional = "dest" }, { name = "dest" }',
+            "Arguments 'target' and 'dest' map to the same argument identifier 'dest'",
+        ),
+        (
+            '{ name = "first", positional = "second" },'
+            ' { name = "second", positional = "third" }',
+            "Arguments 'first' and 'second' map to the same argument "
+            "identifier 'second'",
+        ),
+        (
+            '{ name = "dry-run" }, { name = "dry_run" }',
+            "Arguments 'dry-run' and 'dry_run' map to the same argument "
+            "identifier 'dry_run'",
+        ),
+    ],
+    ids=(
+        "private_positional_then_option",
+        "option_then_private_positional",
+        "positional_alias_and_option",
+        "positional_alias_and_positional_name",
+        "dash_and_underscore_names",
+    ),
+)
+def test_positional_dest_and_option_collision_is_rejected(
+    temp_pyproject, run_poe, args_block, expected_error
+):
+    """
+    Args that would share an argparse dest or exposed variable are rejected.
+    """
+    project_path = temp_pyproject(f"""
+            [tool.poe.tasks.bad]
+            cmd = "poe_test_echo ok"
+            args = [{args_block}]
+        """)
+    result = run_poe("bad", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid argument" in result.capture
+    assert expected_error in result.capture
+    assert result.stdout == ""
+    assert result.stderr == ""

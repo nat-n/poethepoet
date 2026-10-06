@@ -152,6 +152,9 @@ class ArgSpec(PoeOptions):
             arg_names = set()
             option_args: dict[str, str] = {}
             positional_dests: dict[str, str] = {}
+            # Every identifier an arg occupies while its value is parsed and
+            # exposed: the argparse dest, and the (dash normalized) name.
+            identifiers: dict[str, str] = {}
             positional_multiple = None
             for arg in result:
                 if arg.name in arg_names:
@@ -190,6 +193,23 @@ class ArgSpec(PoeOptions):
                         )
                     if arg.multiple:
                         positional_multiple = arg.name
+
+                dest = arg.options[0] if arg.positional else arg.name
+                arg_identifiers = {
+                    arg.name.replace("-", "_"),
+                    dest.replace("-", "_"),
+                }
+                for identifier in sorted(arg_identifiers):
+                    if identifier in identifiers:
+                        raise ConfigValidationError(
+                            f"Arguments {identifiers[identifier]!r} and"
+                            f" {arg.name!r} map to the same argument"
+                            f" identifier {identifier!r}",
+                            context=f"Invalid argument {arg.name!r} declared",
+                        )
+                identifiers.update(
+                    (identifier, arg.name) for identifier in arg_identifiers
+                )
         yield from result
 
     @staticmethod
