@@ -28,6 +28,38 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "integer" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [
+                  { "type": "integer" },
+                  {
+                    "pattern": "^(\\s*[+-]?[0-9]+(_[0-9]+)*\\s*|.*\\$\\{.*)$",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "float" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [{ "type": "number" }, { "type": "string" }]
+              }
+            }
+          }
         }
       ],
       "properties": {
@@ -117,6 +149,38 @@
                     "type": "string"
                   }
                 ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "integer" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [
+                  { "type": "integer" },
+                  {
+                    "pattern": "^(\\s*[+-]?[0-9]+(_[0-9]+)*\\s*|.*\\$\\{.*)$",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "float" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "anyOf": [{ "type": "number" }, { "type": "string" }]
               }
             }
           }

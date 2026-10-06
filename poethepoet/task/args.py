@@ -245,7 +245,8 @@ class ArgSpec(PoeOptions):
         ``${``) are passed through; their resolved value is re-checked at
         runtime. The pattern uses explicit case alternation rather than
         ``(?i)`` because JSON Schema mandates ECMA-262 regex, which does
-        not support inline flags.
+        not support inline flags. Defaults of integer and float args are
+        constrained in the same way.
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["required"] = sorted(
@@ -275,7 +276,41 @@ class ArgSpec(PoeOptions):
                     }
                 },
                 "else": {"properties": {"true_string": False, "false_string": False}},
-            }
+            },
+            # Numeric args reject boolean defaults, and an integer arg's literal
+            # string default must look like an int (see ``_convert_default``).
+            {
+                "if": {
+                    "properties": {"type": {"const": "integer"}},
+                    "required": ["type"],
+                },
+                "then": {
+                    "properties": {
+                        "default": {
+                            "anyOf": [
+                                {"type": "integer"},
+                                {
+                                    "type": "string",
+                                    "pattern": (
+                                        r"^(\s*[+-]?[0-9]+(_[0-9]+)*\s*|.*\$\{.*)$"
+                                    ),
+                                },
+                            ]
+                        }
+                    }
+                },
+            },
+            {
+                "if": {
+                    "properties": {"type": {"const": "float"}},
+                    "required": ["type"],
+                },
+                "then": {
+                    "properties": {
+                        "default": {"anyOf": [{"type": "number"}, {"type": "string"}]}
+                    }
+                },
+            },
         ]
         return fragment
 
@@ -341,14 +376,15 @@ class ArgSpec(PoeOptions):
             )
 
         # Templated defaults are checked at runtime once the template has
-        # been resolved (see _get_argument_params).
-        if (
-            self.type == "boolean"
-            and self.default is not None
-            and not isinstance(self.default, bool)
-            and not (isinstance(self.default, str) and "${" in self.default)
+        # been resolved (see PoeTaskArgs._get_argument_params and
+        # PoeTaskArgs._resolve_default).
+        if self.default is not None and not (
+            isinstance(self.default, str) and "${" in self.default
         ):
-            _coerce_bool(self.default)
+            if self.type == "boolean":
+                _coerce_bool(self.default)
+            else:
+                _convert_default(self.default, self.type)
 
         # Ensure choices are compatible with type
         if self.choices is not None:
@@ -458,12 +494,13 @@ class PoeTaskArgs:
         return parser
 
     def _get_argument_params(self, arg: ArgSpec, env: TaskEnv):
-        default = arg.get("default")
-        if isinstance(default, str):
-            default = env.fill_template(default)
-
+        # For non-boolean args argparse's default stays empty (absent -> None),
+        # and the configured default is resolved, converted to the arg type and
+        # applied in `_apply_defaults`, only when the arg wasn't given. This
+        # avoids argparse reporting an invalid default as a CLI usage error,
+        # and action="extend" prepending a default onto the user's values.
         result = {
-            "default": default,
+            "default": None,
             "help": arg.get("help", ""),
         }
 
@@ -476,13 +513,6 @@ class PoeTaskArgs:
             result["nargs"] = "+" if required else "*"
             result["action"] = "extend"
 
-        if multiple:
-            # action="extend" combines supplied values with the namespace
-            # default, which would prepend any configured default onto the
-            # user's values. Keep argparse's default empty (absent -> None);
-            # the configured default is applied in `_normalize_multiple_defaults`.
-            result["default"] = None
-
         if arg.get("positional", False):
             if not multiple and not required:
                 result["nargs"] = "?"
@@ -494,6 +524,8 @@ class PoeTaskArgs:
             result["choices"] = arg.choices
 
         if arg_type == "boolean":
+            if isinstance(default := arg.get("default"), str):
+                default = env.fill_template(default)
             try:
                 coerced_default = (
                     _coerce_bool(default) if default is not None else False
@@ -524,7 +556,7 @@ class PoeTaskArgs:
             try:
                 parsed_args = vars(parser.parse_args(args))
                 self._validate_exact_count(parsed_args, parser)
-                self._normalize_multiple_defaults(parsed_args, env)
+                self._apply_defaults(parsed_args, env)
             except SystemExit as error:
                 raise ExecutionError(
                     f"Invalid arguments for task {self._task_name!r}"
@@ -568,31 +600,44 @@ class PoeTaskArgs:
                     f" got {len(value)}"
                 )
 
-    def _normalize_multiple_defaults(
-        self, parsed_args: dict[str, Any], env: TaskEnv
-    ) -> None:
+    def _apply_defaults(self, parsed_args: dict[str, Any], env: TaskEnv) -> None:
         """
-        Surface every ``multiple`` arg as a list, applying its configured
-        default when the arg was absent.
+        Apply the configured default of every non-boolean arg that was absent,
+        and surface every ``multiple`` arg as a list.
         """
         for arg in self._args:
-            if not arg.multiple:
+            if arg.type == "boolean":
+                # argparse applies boolean defaults (see _get_argument_params)
                 continue
             # dest is `arg.name` for option args and `arg.options[0]` for
             # positionals, matching `_validate_exact_count`.
             key = arg.options[0] if arg.positional else arg.name
             value = parsed_args.get(key)
             if value is not None and not (arg.positional and value == []):
-                # Omitted option arg with multiple=True arrives as None
-                # Omitted positional arg with multiple=True arrives as []
+                # An omitted arg arrives as None, except an omitted positional
+                # arg with multiple=True, which arrives as []
                 continue
-            default = arg.get("default")
-            if default is None:
-                parsed_args[key] = []
-            elif isinstance(default, str):
-                parsed_args[key] = [env.fill_template(default)]
+            default = self._resolve_default(arg, env)
+            if arg.multiple:
+                parsed_args[key] = [] if default is None else [default]
             else:
-                parsed_args[key] = [default]
+                parsed_args[key] = default
+
+    def _resolve_default(self, arg: ArgSpec, env: TaskEnv) -> Any:
+        """
+        Resolve the configured default of a non-boolean arg: fill templates and
+        convert the result to the arg type.
+        """
+        if (default := arg.get("default")) is None:
+            return None
+        if isinstance(default, str):
+            default = env.fill_template(default)
+        try:
+            return _convert_default(default, arg.type)
+        except ConfigValidationError as error:
+            error.context = f"Invalid default for argument {arg.name!r}"
+            error.task_name = self._task_name
+            raise
 
     def get_env_overrides(self, values: Mapping[str, Any]) -> dict[str, str]:
         """
@@ -692,3 +737,40 @@ def _coerce_bool(value: Any) -> bool:
         f"Cannot interpret {value!r} as a boolean — expected a boolean or one of "
         "'true'/'1'/'t' or 'false'/'0'/'f'/'' (case-insensitive)"
     )
+
+
+def _convert_default(value: Any, arg_type: str) -> Any:
+    """
+    Convert a config-supplied default to the type of a non-boolean argument, as
+    argparse would convert a value given on the command line.
+
+    Booleans are never accepted for numeric types, and an integer arg only
+    accepts a float default with no fractional part. Anything that can't be
+    converted raises ``ConfigValidationError``.
+    """
+    if arg_type == "string":
+        return str(value)
+
+    if arg_type == "integer":
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        if isinstance(value, str):
+            try:
+                return int(value)
+            except ValueError:
+                pass
+        description = "an integer"
+
+    else:
+        if isinstance(value, int | float) and not isinstance(value, bool):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                pass
+        description = "a float"
+
+    raise ConfigValidationError(f"Cannot interpret {value!r} as {description}")
