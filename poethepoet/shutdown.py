@@ -106,7 +106,7 @@ class ShutdownManager:
             )
             # Tell subprocesses to terminate
             if self._is_windows:
-                for proc in self.processes:
+                for proc in tuple(self.processes):
                     if proc.returncode is None:
                         subprocess.run(
                             ["taskkill", "/T", "/PID", str(proc.pid)],

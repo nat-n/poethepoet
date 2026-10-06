@@ -317,3 +317,49 @@ def test_sigterm_terminates_task_that_ignores_sigint(immortal_task):
     immortal_task.process.send_signal(signal.SIGTERM)
     assert _wait_for_proc_exit(immortal_task.process, timeout=10)
     assert time.monotonic() - started < 1.2
+
+
+def test_windows_shutdown_terminate_level_with_exited_process(monkeypatch):
+    class FakeProcess:
+        def __init__(self, pid: int):
+            self.pid = pid
+            self.returncode = None
+
+        def send_signal(self, sig: int):
+            pass
+
+    taskkill_calls: list[list[str]] = []
+    monkeypatch.setattr(
+        "subprocess.run", lambda cmd, **_kwargs: taskkill_calls.append(cmd)
+    )
+    monkeypatch.setattr(
+        signal,
+        "CTRL_BREAK_EVENT",
+        getattr(signal, "CTRL_BREAK_EVENT", 1),
+        raising=False,
+    )
+
+    loop = asyncio.new_event_loop()
+    manager = ShutdownManager(loop, PoeIO(make_default=False))
+    manager._is_windows = True
+    running_proc = FakeProcess(1001)
+    exiting_proc = FakeProcess(1002)
+    processes = [
+        PoeProcess(cast("Any", running_proc)),
+        PoeProcess(cast("Any", exiting_proc)),
+    ]
+    manager.processes.update(processes)
+
+    # The process exits after the first loop over processes but before the
+    # terminate level loop runs
+    def exit_after_ctrl_break(sig: int):
+        exiting_proc.returncode = 0
+
+    exiting_proc.send_signal = exit_after_ctrl_break  # type: ignore[method-assign]
+
+    manager._urgency = 3
+    manager._shutdown()
+
+    assert ["taskkill", "/T", "/PID", "1001"] in taskkill_calls
+    assert processes[1] not in manager.processes
+    loop.close()
