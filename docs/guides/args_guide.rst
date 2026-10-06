@@ -138,6 +138,8 @@ Named arguments support the following configuration options:
 - **default** : ``str`` | ``int`` | ``float`` | ``bool``
    The value to use if the argument is not provided. This option has no significance if the ``required`` option is set to true.
 
+   The default value is converted to the configured ``type`` of the argument (including for each value of a ``multiple`` argument), and must be valid for that type and included in the ``choices`` (if configured), otherwise poe reports a configuration error. Templated defaults (see below) are validated in the same way once the template has been resolved.
+
    For string values, environment variables can be referenced using the usual templating syntax as in the following example.
 
    .. code-block:: toml
@@ -164,7 +166,7 @@ Named arguments support the following configuration options:
    The name of the argument. Only applicable when *args* is an array.
 
 - **options** : ``list[str]``
-   A list of options to accept for this argument, similar to `argparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then the name of the argument (with any leading underscores stripped) prefixed with ``--`` is used, e.g. ``--food`` for an arg named ``_food``. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
+   A non-empty list of options to accept for this argument (each starting with ``-`` or ``--``), similar to `argparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then the name of the argument (with any leading underscores stripped) prefixed with ``--`` is used, e.g. ``--food`` for an arg named ``_food``. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
 
 - **positional** : ``bool`` | ``str``
    If set to true then the argument becomes a positional argument instead of an option argument. If set to a string then the argument is also positional, and the given string is used as the name of the positional argument in help output, while the value is still accessible within the task via the ``name`` of the argument. Note that positional arguments may not have ``type = "boolean"``.
@@ -195,7 +197,7 @@ Named arguments support the following configuration options:
       args = [{ name = "FILE_PATHS", positional = true, multiple = true }]
 
 - **choices** : ``list[str | int | float]``
-   Constrain the accepted values for an argument to a fixed set. The choices are shown in task help output. For non-string argument types, the choices must be specified using the same type (e.g. ``integer`` choices should be numbers). This option is not compatible with ``type = "boolean"``.
+   Constrain the accepted values for an argument to a fixed set. The choices are shown in task help output. If provided, the list must not be empty. For non-string argument types, the choices must be specified using the same type (e.g. ``integer`` choices should be numbers), though a ``default`` may be given as a string that converts to one of the choices (e.g. :toml:`default = "2"` with :toml:`choices = [1, 2]`). This option is not compatible with ``type = "boolean"``.
 
 - **required** : ``bool``
    If true then not providing the argument will result in an error. Arguments are not required by default.
