@@ -76,10 +76,11 @@ If `poe`'s output isn't enough (e.g. you need a task's implementation or args), 
 
 Full syntax and examples per type: `references/task-types.md`.
 
-**Two silent-failure rules for `expr`, `switch.control.expr`, and parens-form `script` calls (`"mod:fn(arg)"`)** — get these wrong and the task fails quietly, not loudly:
+**Referencing values in `expr`, `switch.control.expr`, and parens-form `script` calls (`"mod:fn(arg)"`)**:
 
-- **Declared args → bare name**, never `${name}`. `expr = "AWS_REGION"` ✅; `expr = "${AWS_REGION}"` ❌ routes through the environment and is silently empty for private `_`-args. (No-parens `script = "mod:fn"` auto-passes args as kwargs — never name them in the call.)
-- **Env vars → unquoted `${VAR}`**. `${VAR}` compiles to the attribute reference `__env.VAR` (not textual paste), so `expr = "${STAGE}"` ✅ yields the value, but `expr = "'${STAGE}'"` ❌ yields the literal string `"__env.STAGE"`. Call methods directly: `"${STAGE}.upper()"`.
+- **Declared args → bare name**: `expr = "_count * 2"`. The bare name is the arg's typed Python value (int, bool, list, or `None` if not passed), for public and private `_` args alike. `${name}` is only the env-string form (`'3'`, not `3`), and isn't a usable value when the arg is a false boolean or wasn't passed. (No-parens `script = "mod:fn"` auto-passes args as kwargs — never name them in the call.)
+- **Env vars in `expr` → unquoted `${VAR}`**. `${VAR}` compiles to the attribute reference `__env.VAR` (not textual paste), so `expr = "${STAGE}"` ✅ yields the value, but `expr = "'${STAGE}'"` ❌ yields the literal string `"__env.STAGE"`. Call methods directly: `"${STAGE}.upper()"`. If VAR may be unset, give it a default (`env.STAGE.default = "dev"`).
+- **Env vars in `script` calls → `environ['VAR']`**. `${VAR}` isn't supported there: unquoted it is a config error, quoted it is passed through literally.
 
 Mechanism and more cases: `references/task-types.md`.
 

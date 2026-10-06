@@ -52,7 +52,7 @@ script = "myapp:run"                             # calls myapp.run()
 help = "Start the development server"
 
 [tool.poe.tasks.deploy]
-script = "my_pkg.deploy:run(env, dry_run=True)"  # with inline args
+script = "my_pkg.deploy:run('staging', dry_run=True)"  # with literal args
 
 [tool.poe.tasks.http-server]
 script = "http.server"                           # runs module's __main__
@@ -75,10 +75,10 @@ args = [
 **Private args in call expression**:
 
 ```toml
-script = "deploy:main(_env, dry_run=_dry_run)"
+script = "deploy:main(_env, dry_run=_dry, region=environ['AWS_REGION'])"
 args = [
   { name = "_env", positional = true },
-  { name = "_dry_run", type = "boolean", options = ["--dry-run"] }
+  { name = "_dry", type = "boolean", options = ["--dry-run"] }
 ]
 ```
 
@@ -273,8 +273,6 @@ control.expr = "sys.platform"
 
 ```toml
 [tool.poe.tasks.deploy]
-# ✅ Reference the arg by bare variable name. Do NOT write `${STAGE}` here —
-#    that routes through the environment and silently breaks for private args.
 control.expr = "STAGE"
 args = [{ name = "STAGE", positional = true, choices = ["staging", "production"] }]
 
@@ -295,22 +293,7 @@ args = [{ name = "STAGE", positional = true, choices = ["staging", "production"]
 - Matching is by string comparison: the control output is `str()`-ed and compared against each `case` value (also `str()`-ed).
 - `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, `uses_env`, or `deps`.
 
-**Branching on a private (`_`-prefixed) arg**: in an `expr` control, reference it by **bare variable name**, never `${...}`. Private args aren't exported as env vars, so `control.expr = "${_target}"` silently resolves to an empty string and the switch falls through to `default`. Use the bare-variable form:
-
-```toml
-[tool.poe.tasks.deploy]
-control.expr = "_target"          # ✅ bare variable — works for both public and private args
-# control.expr = "${_target}"     # ❌ broken: ${_target} routes through env, silent empty for private args
-args = [{ name = "_target", positional = true, choices = ["dev", "prod"] }]
-
-  [[tool.poe.tasks.deploy.switch]]
-  case = "dev"
-  cmd = "deploy --env dev"
-
-  [[tool.poe.tasks.deploy.switch]]
-  case = "prod"
-  cmd = "deploy --env prod"
-```
+In an `expr` control, reference a declared arg by its **bare name** (`control.expr = "STAGE"`, or `"_target"` for a private arg): that is the arg's typed value. `${STAGE}` gives the env-string form instead, which isn't a usable value when the arg is a false boolean or wasn't passed.
 
 ---
 
@@ -327,9 +310,9 @@ Use when: outputting computed values, platform checks, file counts, or lightweig
 >
 > To call a method on the value, do **not** wrap it: `expr = "${STAGE}.upper()"` → `__env.STAGE.upper()` → yields `"STAGING"`. (Writing `"'${STAGE}'.upper()"` would call `.upper()` on the literal string `"__env.STAGE"` and return `"__ENV.STAGE"` — broken.)
 
-**Referencing declared args.** A declared arg is in scope as a **bare Python variable** under its declared name. The canonical form is `expr = "AWS_REGION"`, not `expr = "${AWS_REGION}"`.
+**Referencing declared args.** A declared arg (public or private `_`) is in scope as a **bare Python variable** under its declared name, with its declared type: `expr = "_count * 2"` with an integer arg gives a number. Prefer this over `${_count}`, which is the env-string form (`'2'`) and isn't a usable value when the arg is a false boolean or wasn't passed (the bare name gives `False` / `None`).
 
-> The `${AWS_REGION}` form routes through the *environment* (not the args namespace). For a **public** arg this coincides because public args are also exported to env — but for a **private `_`-prefixed arg it silently breaks**: private args are deliberately not exported, so `${_target}` resolves to an empty/missing env var rather than the arg's value. Always use the bare-variable form when an `expr` references an arg.
+**Unset env vars.** If a variable referenced as `${VAR}` may be unset, give it a default with `env.VAR.default = "..."` rather than relying on how an unset `${VAR}` resolves.
 
 See `args-reference.md` for the full per-task-type table.
 
@@ -348,9 +331,9 @@ help = "Count hidden files in the project root"
 
 ```toml
 [tool.poe.tasks.check-venv]
-expr = "${VIRTUAL_ENV}.endswith('.venv')"
+expr = "sys.prefix.endswith('.venv')"
 assert = true
-help = "Verify the correct virtualenv is active"
+help = "Verify the task runs in the project's .venv"
 ```
 
 **Options**:
