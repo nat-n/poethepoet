@@ -116,7 +116,7 @@ def test_poetry_command_from_included_file_with_empty_prefix(run_poetry_2, proje
 
 
 @pytest.mark.slow
-@pytest.mark.usefixtures("_setup_poetry_project_empty_prefix")
+@pytest.mark.usefixtures("_setup_poetry_project_with_prefix")
 def test_poetry_help_with_poe_command_prefix(run_poetry_2, projects):
     result = run_poetry_2([], cwd=projects["poetry_plugin/with_prefix"].parent)
     assert result.stdout.startswith("Poetry (version ")
