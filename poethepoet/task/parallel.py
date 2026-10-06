@@ -25,9 +25,23 @@ T = TypeVar("T")
 
 SUBTASK_OPTIONS_BLOCKLIST = ("args", "deps", "uses", "uses_env")
 
-BUFFERED_STDOUT_LIMIT = int(
-    os.environ.get("POE_BUFFERED_STDOUT_LIMIT", 4 * 1024 * 1024)
-)
+DEFAULT_BUFFERED_STDOUT_LIMIT = 4 * 1024 * 1024
+
+
+def _get_buffered_stdout_limit() -> int:
+    """
+    Get the size limit for buffered subtask output, which may be overridden via the
+    POE_BUFFERED_STDOUT_LIMIT environment variable. Invalid values are ignored.
+    """
+    try:
+        if (limit := int(os.environ["POE_BUFFERED_STDOUT_LIMIT"])) > 0:
+            return limit
+    except (KeyError, ValueError):
+        pass
+    return DEFAULT_BUFFERED_STDOUT_LIMIT
+
+
+BUFFERED_STDOUT_LIMIT = _get_buffered_stdout_limit()
 
 
 class ColorCycle:

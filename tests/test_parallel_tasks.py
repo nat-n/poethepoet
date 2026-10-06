@@ -1033,6 +1033,23 @@ def test_parallel_unterminated_last_line_is_unchanged_without_prefix(
     assert result.stdout == "no-newline"
 
 
+@pytest.mark.parametrize("limit", ["abc", "0", "-5"])
+def test_parallel_ignores_invalid_buffered_stdout_limit(
+    run_poe_subproc, temp_pyproject, limit
+):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.par]
+        parallel = [{ cmd = "poe_test_echo hello" }]
+        """)
+
+    result = run_poe_subproc(
+        "par", cwd=project_path, env={"POE_BUFFERED_STDOUT_LIMIT": limit}, timeout=10
+    )
+
+    assert result.stdout == f"{format_parallel_prefix('par[0]')}hello\n"
+    assert result.code == 0
+
+
 @pytest.mark.parametrize("prefix_max", [0, -3])
 def test_parallel_prefix_max_must_be_positive(run_poe, temp_pyproject, prefix_max):
     project_path = temp_pyproject(f"""
