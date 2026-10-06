@@ -136,18 +136,18 @@ def test_pass_dry_run_and_verbosity_to_script(run_poe):
     assert result.stderr == ""
 
 
-def test_poe_env_vars_are_set(run_poe_subproc):
+def test_poe_env_vars_are_set(run_poe_subproc, projects):
     result = run_poe_subproc("show_env", env=poetry_vars)
     assert result.capture == "Poe => poe_test_env\n"
-    for env_var in (
-        "POE_VERBOSITY=0",
-        "POE_CONF_DIR=",
-        "POE_ACTIVE=poetry",
-        "POE_CWD=",
-        "POE_ROOT=",
-        "POE_PWD=",
-    ):
-        assert env_var in result.stdout
+    task_env = dict(line.split("=", 1) for line in result.output_lines if "=" in line)
+    example_project = str(projects["example"])
+    assert task_env["POE_VERBOSITY"] == "0"
+    assert task_env["POE_ACTIVE"] == "poetry"
+    assert task_env["POE_ROOT"] == example_project
+    assert task_env["POE_CONF_DIR"] == example_project
+    assert task_env["POE_CWD"] == example_project
+    assert task_env["POE_PWD"] == example_project
+    assert "POE_EXTRA_ARGS" not in task_env
 
 
 def test_documentation_of_single_task_with_no_help_or_args(run_poe):

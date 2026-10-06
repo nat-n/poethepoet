@@ -156,9 +156,15 @@ def build_poe_test_env(env: Mapping[str, str] | None = None) -> dict[str, str]:
     semantics more closely than a direct pass-through of os.environ.
     """
 
-    base_env = dict(os.environ)
-    for var_name in ("VIRTUAL_ENV", "POE_CWD", "POE_PWD", "POE_PROJECT_DIR"):
-        base_env.pop(var_name, None)
+    # Drop vars inherited from an outer poe/poetry invocation (e.g. `poe test` sets
+    # POE_EXTRA_ARGS, POE_CONF_DIR, POE_ACTIVE, ...) so they can't leak into tasks;
+    # vars a test passes explicitly via `env` are applied below.
+    base_env = {
+        var_name: value
+        for var_name, value in os.environ.items()
+        if not var_name.startswith("POE_")
+        and var_name not in ("VIRTUAL_ENV", "POETRY_ACTIVE")
+    }
 
     xdg_cache = PROJECT_ROOT / "tests" / "temp" / "xdg_cache"
     uv_cache = PROJECT_ROOT / "tests" / "temp" / "uv_cache"
