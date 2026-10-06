@@ -284,17 +284,22 @@ class TestResolveTemplate:
         result = self._resolve("${A:-${B}}", {"B": "inner"}, require_braces=True)
         assert result == "inner"
 
-    def test_invalid_operator_raises_parse_error(self):
+    def test_invalid_operator_raises_poe_exception(self):
         """
-        Unsupported operators like :? produce a ParseError that propagates
-        to the caller.
+        Unsupported operators like :? produce a PoeException naming the template,
+        chained from the underlying ParseError.
         """
         import pytest
 
+        from poethepoet.exceptions import PoeException
         from poethepoet.helpers.parse.core import ParseError
 
-        with pytest.raises(ParseError, match="Unsupported operator"):
+        with pytest.raises(
+            PoeException,
+            match=r"Invalid template '\$\{VAR:\?error\}': .*Unsupported operator",
+        ) as exc_info:
             self._resolve("${VAR:?error}", {})
+        assert isinstance(exc_info.value.__cause__, ParseError)
 
     def test_spy_dict_default_operator_var_exists(self):
         """

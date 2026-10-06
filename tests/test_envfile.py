@@ -294,6 +294,25 @@ def test_envfile_syntax_error_reports_line(temp_pyproject, run_poe, tmp_path):
     assert "Traceback" not in result.capture
 
 
+def test_global_envfile_syntax_error(temp_pyproject, run_poe, tmp_path):
+    envfile = tmp_path / "bad.env"
+    envfile.write_text("A=1\nB 2\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{A}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert "Syntax error in referenced envfile" in result.capture
+    assert "Expected '=' after variable name 'B' (near line 2" in result.capture
+    assert result.stdout == ""
+
+
 def test_envfile_not_utf8(temp_pyproject, run_poe, tmp_path):
     envfile = tmp_path / "latin1.env"
     envfile.write_bytes(b"A=caf\xe9\n")

@@ -1,3 +1,5 @@
+import pytest
+
 EXAMPLE_CONFIG = """
 [tool.poe.env]
 GLOBAL_POE_ROOT = "${POE_ROOT}"
@@ -213,3 +215,92 @@ def test_default_value_in_capture_stdout(temp_pyproject, run_poe, tmp_path):
     assert result.code == 0
     assert result.stderr == ""
     assert (output_dir / "result.txt").read_text().strip() == "captured"
+
+
+# ---------------------------------------------------------------------------
+# Invalid template syntax gives a helpful error rather than a traceback
+# ---------------------------------------------------------------------------
+
+bad_template_examples = [
+    (
+        "task env",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        env = { X = "${U-x}" }
+        """,
+        "Invalid template '${U-x}'",
+        "Illegal character in parameter name '-'",
+    ),
+    (
+        "task cwd",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        cwd = "${HOME"
+        """,
+        "Invalid template '${HOME'",
+        "expected closing '}' after '${'",
+    ),
+    (
+        "task envfile",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        envfile = "${}"
+        """,
+        "Invalid template '${}'",
+        "Bad substitution: ${}",
+    ),
+    (
+        "capture_stdout",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        capture_stdout = "${X:=y}"
+        """,
+        "Invalid template '${X:=y}'",
+        "Unsupported operator ':='",
+    ),
+    (
+        "global env",
+        """
+        [tool.poe]
+        env = { X = "${U:?message}" }
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        """,
+        "Invalid template '${U:?message}'",
+        "Unsupported operator ':?'",
+    ),
+    (
+        "global envfile",
+        """
+        [tool.poe]
+        envfile = "${.env"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        """,
+        "Invalid template '${.env'",
+        "Illegal first character in parameter name '.'",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("config", "expected_error", "expected_detail"),
+    [example[1:] for example in bad_template_examples],
+    ids=[example[0] for example in bad_template_examples],
+)
+def test_bad_template_syntax_is_reported(
+    temp_pyproject, run_poe, config, expected_error, expected_detail
+):
+    project_path = temp_pyproject(config)
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert expected_error in result.capture
+    assert expected_detail in result.capture
+    assert "Traceback" not in result.capture
+    assert result.stdout == ""

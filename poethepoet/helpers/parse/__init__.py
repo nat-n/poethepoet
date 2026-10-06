@@ -25,9 +25,16 @@ def parse_template(source: str, require_braces: bool = False) -> Template:
 
     The result can be resolved via Template.resolve(env), or inspected
     directly (e.g. to find ParamExpansion nodes by name).
+
+    Raises a PoeException naming the template if it has invalid syntax.
     """
+    from ...exceptions import PoeException
     from .command import ParseConfig, ParseCursor
+    from .core import ParseError
     from .template import Template
 
     config = ParseConfig(require_braces=require_braces)
-    return Template(ParseCursor.from_string(source), config)
+    try:
+        return Template(ParseCursor.from_string(source), config)
+    except ParseError as error:
+        raise PoeException(f"Invalid template {source!r}: {error.message}") from error

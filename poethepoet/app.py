@@ -166,9 +166,18 @@ class PoeThePoet:
         if not task:
             return 1
 
-        if task.has_deps():
-            return await self._run_task_graph(task)
-        return await self._run_task(task)
+        try:
+            if task.has_deps():
+                return await self._run_task_graph(task)
+            return await self._run_task(task)
+        except ExecutionError as error:
+            # e.g. failure to load the global envfile when creating the RunContext
+            self.ui.print_error(error=error)
+            return 1
+        except PoeException as error:
+            # e.g. invalid global env templates when creating the RunContext
+            self.print_help(error=error)
+            return 1
 
     def modify_verbosity(self, offset: int):
         """
