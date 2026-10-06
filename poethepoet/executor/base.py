@@ -314,9 +314,6 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         else:
             popen_kwargs["start_new_session"] = True
 
-        # TODO: exclude the subprocess from coverage more gracefully
-        _stop_coverage()
-
         if shell:
             proc = await asyncio.create_subprocess_shell("".join(cmd), **popen_kwargs)
         else:
@@ -430,8 +427,10 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
 def _stop_coverage():
     """
-    Running coverage around subprocesses seems to be problematic, esp. on windows.
-    There's probably a more elegant solution that this.
+    Stop and save any active coverage measurement before the process image is
+    replaced via exec, since atexit handlers (and coverage's own save) never run then.
+    Must not be used before spawning a subprocess, as it would stop the caller's
+    coverage for the rest of its lifetime.
     """
     if "coverage" in sys.modules:
         # If Coverage is running then it ends here
