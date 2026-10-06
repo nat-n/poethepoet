@@ -421,7 +421,7 @@ class ParallelTask(PoeTask):
             )
             prefix = b""
 
-        write = sys.stdout.buffer.write
+        write = self._get_stdout_writer()
         flush = sys.stdout.flush
         if self.spec.options.output_mode == "buffer":
             buffered_lines: list[bytes] = []
@@ -447,6 +447,21 @@ class ParallelTask(PoeTask):
             async for line in self._iter_output_lines(subproc.stdout, task_name):
                 write(line)
                 flush()
+
+    @staticmethod
+    def _get_stdout_writer() -> Callable[[bytes], int]:
+        """
+        Get a function for writing raw subtask output to stdout. If stdout doesn't
+        expose a binary buffer (e.g. it was replaced with a StringIO) then the output
+        is decoded and written as text instead.
+        """
+        if (stdout_buffer := getattr(sys.stdout, "buffer", None)) is not None:
+            return stdout_buffer.write
+
+        def write_text(content: bytes) -> int:
+            return sys.stdout.write(content.decode("utf-8", errors="replace"))
+
+        return write_text
 
     async def _iter_output_lines(
         self, stdout: asyncio.StreamReader, subtask_name: str

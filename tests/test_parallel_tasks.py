@@ -1,5 +1,7 @@
 # ruff: noqa: E501
 import asyncio
+import contextlib
+import io
 import os
 import sys
 import time
@@ -977,6 +979,21 @@ def test_parallel_empty_string_item_is_a_config_error(run_poe, temp_pyproject):
         assert "Error: Invalid task 'empty_item'" in result.capture
         assert "Item #0 in parallel task must not be empty" in result.capture
         assert result.code == 1
+
+
+def test_parallel_output_to_stdout_without_buffer(run_poe, temp_pyproject):
+    # e.g. when poe is embedded and stdout is redirected to a StringIO
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.par]
+        parallel = [{ cmd = "poe_test_echo hello" }]
+        """)
+
+    text_stdout = io.StringIO()
+    with contextlib.redirect_stdout(text_stdout):
+        result = run_poe("par", cwd=project_path)
+
+    assert result.code == 0
+    assert text_stdout.getvalue() == f"{format_parallel_prefix('par[0]')}hello\n"
 
 
 def test_parallel_bool_flag(run_poe):
