@@ -33,6 +33,8 @@ debug_flag = "server ${DEBUG:+--debug}"
 - `empty_glob = "fail"` — fail the task if pattern matches nothing
 - `empty_glob = "pass"` — pass pattern through unchanged (default)
 
+`#` starts a comment only at the start of a word: `cmd = "echo a#b # note"` runs `echo a#b`.
+
 **Extra args**: Free args are auto-appended (for a task without declared `args` that is every argument after the task name; with `args`, those after `--`). Use `$POE_EXTRA_ARGS` for explicit placement:
 
 ```toml
@@ -152,7 +154,7 @@ script = "validate:schema"
 ref = "test"
 ```
 
-Tasks defined inline within a `sequence` or `parallel` may **not** declare `args`, `deps`, `uses`, or `uses_env` (config error). To use `deps`/`uses`/`uses_env`, put them on a named task and reference it.
+Tasks defined inline within a `sequence` or `parallel` may **not** declare `args`, `deps`, `uses`, `uses_env`, or `use_exec` (config error). To use `deps`/`uses`/`uses_env`, put them on a named task and reference it.
 
 **ignore_fail options**:
 
@@ -294,9 +296,9 @@ args = [{ name = "STAGE", positional = true, choices = ["staging", "production"]
 
 - Control task type must be `expr`, `cmd`, or `script`.
 - Matching is by string comparison: the control output is `str()`-ed and compared against each `case` value (also `str()`-ed).
-- `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, `uses_env`, or `deps`.
+- `args` declared on the switch task propagate automatically to the control task **and** every case task. Neither the control nor the cases may declare `args`, `uses`, `uses_env`, or `deps`.
 
-In an `expr` control, reference a declared arg by its **bare name** (`control.expr = "STAGE"`, or `"_target"` for a private arg): that is the arg's typed value. `${STAGE}` gives the env-string form instead, which isn't a usable value when the arg is a false boolean or wasn't passed.
+In an `expr` control, reference a declared arg by its **bare name** (`control.expr = "STAGE"`, or `"_target"` for a private arg): that is the arg's typed value. `${STAGE}` gives the env-string form instead, which is `''` when the arg is a false boolean or wasn't passed.
 
 ---
 
@@ -313,9 +315,9 @@ Use when: outputting computed values, platform checks, file counts, or lightweig
 >
 > To call a method on the value, do **not** wrap it: `expr = "${STAGE}.upper()"` → `__env.STAGE.upper()` → yields `"STAGING"`. (Writing `"'${STAGE}'.upper()"` would call `.upper()` on the literal string `"__env.STAGE"` and return `"__ENV.STAGE"` — broken.)
 
-**Referencing declared args.** A declared arg (public or private `_`) is in scope as a **bare Python variable** under its declared name, with its declared type: `expr = "_count * 2"` with an integer arg gives a number. Prefer this over `${_count}`, which is the env-string form (`'2'`) and isn't a usable value when the arg is a false boolean or wasn't passed (the bare name gives `False` / `None`).
+**Referencing declared args.** A declared arg (public or private `_`) is in scope as a **bare Python variable** under its declared name, with its declared type: `expr = "_count * 2"` with an integer arg gives a number. Prefer this over `${_count}`, which is the env-string form (`'2'`), and `''` when the arg is a false boolean or wasn't passed (the bare name gives `False` / `None`).
 
-**Unset env vars.** If a variable referenced as `${VAR}` may be unset, give it a default with `env.VAR.default = "..."` rather than relying on how an unset `${VAR}` resolves.
+**Unset env vars.** An unset `${VAR}` evaluates to `""`. For another fallback, set a default with `env.VAR.default = "..."`.
 
 See `args-reference.md` for the full per-task-type table.
 

@@ -117,6 +117,8 @@ cmd = "aws s3 sync ./build s3://my-bucket"
 deps = ["build-frontend", "build-backend"]
 ```
 
+Cyclic references between tasks (through `deps`, `uses`, `ref`, `sequence` or `parallel`) are a config error.
+
 `deps` and `uses` task references are similar to ref tasks so they can also pass arguments to those tasks and reference environment variables or args via parameter expansions.
 
 ---

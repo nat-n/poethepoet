@@ -53,8 +53,8 @@ help = "Host to bind"
 | Option       | Type               | Description                                                                    |
 | ------------ | ------------------ | ------------------------------------------------------------------------------ |
 | `name`       | string             | Arg name — required in array form                                              |
-| `options`    | list[str]          | CLI flags, e.g. `["-h", "--host"]`. Default: `["--name"]`                      |
-| `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators |
+| `options`    | list[str]          | CLI flags (non-empty), e.g. `["-h", "--host"]`. Default: `["--name"]`          |
+| `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators. Converted to the arg's `type`, and must be valid for `type` and `choices` (config error otherwise) |
 | `help`       | string             | Help text in `poe --help <task>`                                               |
 | `type`       | string             | `"string"` (default), `"integer"`, `"float"`, `"boolean"`                      |
 | `true_string` / `false_string` | string | Boolean args only (poe 0.49.0+): literal string for the true / false value in expansion and the environment |
@@ -175,7 +175,7 @@ How they're available:
 
 - **`cmd` tasks**: Auto-appended to the command. Use `$POE_EXTRA_ARGS` for explicit placement
 - **`shell` tasks**: Only via `$POE_EXTRA_ARGS`; if the script doesn't reference it, free args are silently dropped. It is a shell-quoted string, so plain `$POE_EXTRA_ARGS` is only safe for simple args; use `eval "pytest $POE_EXTRA_ARGS"` to keep args with spaces or quotes intact
-- **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`)
+- **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`, empty if there are none)
 - **`ref` tasks**: Auto-appended to the referenced task's invocation
 
 **Forwarding to subtasks** — a sequence/parallel item receives free args when it passes `$POE_EXTRA_ARGS` (subtasks inherit the variable, so a subtask whose own definition references `$POE_EXTRA_ARGS` also sees them):
