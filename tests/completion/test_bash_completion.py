@@ -25,7 +25,8 @@ def test_bash_completion(run_poe_main):
     # some lines to stdout and none for stderr
     assert len(result.stdout.split("\n")) > 5
     assert result.stderr == ""
-    assert "Error: Unrecognised task" not in result.stdout
+    assert "Unrecognized task" not in result.stdout
+    assert result.stdout.startswith("# Bash completion for poe\n")
 
 
 class TestCompletionBuiltinDispatch:
