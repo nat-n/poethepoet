@@ -110,7 +110,7 @@ Alternatively you can declare other task types inline like so:
 
 .. warning::
 
-  Tasks defined inline within a parallel task may not include the ``args``, ``deps``, ``uses``, or ``uses_env`` options. To use ``deps``, ``uses``, or ``uses_env``, declare a named task with those options and reference it from the parallel task.
+  Tasks defined inline within a parallel task may not include the ``args``, ``deps``, ``uses``, ``uses_env``, or ``use_exec`` options. To use ``deps``, ``uses``, or ``uses_env``, declare a named task with those options and reference it from the parallel task. String items in the parallel array must not be empty.
 
 
 Forwarding free arguments to subtasks
