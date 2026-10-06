@@ -332,7 +332,7 @@ def _index_of_first_non_option(tokens: list[str]):
     options_with_args = ("--project", "-P", "--directory", "-C")
     previous_token = ""
     for index, token in enumerate(tokens):
-        if token[0] != "-" and previous_token not in options_with_args:
+        if not token.startswith("-") and previous_token not in options_with_args:
             return index
         previous_token = token
 
