@@ -97,16 +97,22 @@ class PoetryExecutor(PoeExecutor):
             clean_env.pop("VIRTUAL_ENV", None)
             clean_env["PYTHONIOENCODING"] = "utf-8"
 
-            proc = await asyncio.create_subprocess_exec(
-                self._poetry_cmd(),
-                "--no-plugins",
-                "env",
-                "info",
-                "-p",
-                stdout=PIPE,
-                cwd=self.context.config.project_dir,
-                env=clean_env,
-            )
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    self._poetry_cmd(),
+                    "--no-plugins",
+                    "env",
+                    "info",
+                    "-p",
+                    stdout=PIPE,
+                    cwd=self.context.config.project_dir,
+                    env=clean_env,
+                )
+            except FileNotFoundError as error:
+                raise ExecutionError(
+                    "executable 'poetry' could not be found, but is required by the "
+                    "poetry executor"
+                ) from error
             outputs = await proc.communicate()
             exec_cache["poetry_virtualenv"] = outputs[0].decode().strip()
 
