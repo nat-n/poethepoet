@@ -398,8 +398,9 @@ class ArgSpec(PoeOptions):
                     )
             if (
                 self.default is not None
+                and self.type != "boolean"
                 and (not isinstance(self.default, str) or "${" not in self.default)
-                and self.default not in self.choices
+                and _convert_default(self.default, self.type) not in self.choices
             ):
                 raise ConfigValidationError(
                     f"Argument {self.name!r} has default value {self.default!r} that "
@@ -633,7 +634,14 @@ class PoeTaskArgs:
         if isinstance(default, str):
             default = env.fill_template(default)
         try:
-            return _convert_default(default, arg.type)
+            value = _convert_default(default, arg.type)
+            # argparse only checks choices for values given on the CLI
+            if arg.choices is not None and value not in arg.choices:
+                raise ConfigValidationError(
+                    f"Default value {value!r} is not included in the configured "
+                    f"choices {arg.choices!r}"
+                )
+            return value
         except ConfigValidationError as error:
             error.context = f"Invalid default for argument {arg.name!r}"
             error.task_name = self._task_name
