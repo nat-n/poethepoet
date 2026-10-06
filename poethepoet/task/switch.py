@@ -237,7 +237,7 @@ class SwitchTask(PoeTask):
 
         self.control_task = self.spec.control_task_spec.create_task(
             invocation=control_invocation,
-            ctx=TaskContext.from_task(self, self.spec),
+            ctx=TaskContext.from_task(self, self.spec.control_task_spec),
             capture_stdout=True,
         )
 

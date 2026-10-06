@@ -339,3 +339,15 @@ def test_switch_case_error_propagates(
     result = run_poe("sw", cwd=project_path)
     assert result.code == 1, result.capture
     assert expected_error in result.capture
+
+
+def test_switch_control_task_verbosity(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control = { expr = "'a'", verbosity = -1 }
+        switch = [{ case = "a", cmd = "poe_test_echo A" }]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.capture == "Poe => poe_test_echo A\n"
+    assert result.stdout == "A\n"
