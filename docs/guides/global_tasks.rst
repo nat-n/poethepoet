@@ -48,7 +48,7 @@ However for bash you'll need to generate a new completion script for the alias s
 
 .. note::
 
-  These examples assume your global poe alias is ``edgar``, and your global tasks live at ``~/.poethepoet``.
+  These examples assume your global poe alias is ``edgar``, and your global tasks live at ``~/.poethepoet``. The generated completion script calls the ``poe`` executable, so it must be available on your ``PATH``.
 
 How to ensure installed bash completions are enabled may vary depending on your system.
 
