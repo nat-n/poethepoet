@@ -78,6 +78,8 @@ When including files from another location, you can also specify that tasks from
   path = "my_subproject/pyproject.toml"
   cwd  = "my_subproject"
 
+This also applies when an included task is invoked by another task (e.g. via ``deps``, ``uses``, a ``ref`` task, or a ``sequence``), unless the referencing task sets its own ``cwd`` option, in which case that is used instead.
+
 The directory indicated by the ``cwd`` option will also be used as the base directory for global or task level ``envfile`` imports for tasks defined within an included file.
 
 Tasks and config in an included file can access the ``cwd`` value via the ``POE_CONF_DIR`` environment variable. When no ``cwd`` is set on the include then ``POE_CONF_DIR`` refers to the parent directory of the config file where a task is defined.
