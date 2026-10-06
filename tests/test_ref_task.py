@@ -419,3 +419,47 @@ def test_unbalanced_quotes_in_expanded_invocation_is_reported(
     assert "Invalid task invocation" in result.capture
     assert "No closing quotation" in result.capture
     assert result.stdout == ""
+
+
+@pytest.mark.parametrize("task", ["via_ref", "via_sequence", "via_env"])
+def test_ref_does_not_reexpand_values(temp_pyproject, run_poe, task):
+    """
+    Values substituted into a ref invocation are expanded once, so text like $HOME
+    in an arg or env var value is passed through verbatim
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo"
+
+        [tool.poe.tasks.via_ref]
+        ref = "show ${x}"
+        args = ["x"]
+
+        [tool.poe.tasks.via_sequence]
+        sequence = ["show ${x}"]
+        args = ["x"]
+
+        [tool.poe.tasks.via_env]
+        ref = "show ${MSG}"
+        """)
+    result = run_poe(
+        task,
+        *(("--x", "$HOME") if task != "via_env" else ()),
+        cwd=project_path,
+        env={"MSG": "$HOME", "HOME": "/home/nope"},
+    )
+    assert result.code == 0, result.capture
+    assert result.stdout == "$HOME\n"
+
+
+def test_ref_escaped_dollar_is_literal(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo"
+
+        [tool.poe.tasks.r]
+        ref = "show \\\\${HOME}"
+        """)
+    result = run_poe("r", cwd=project_path, env={"HOME": "/home/nope"})
+    assert result.code == 0, result.capture
+    assert result.stdout == "${HOME}\n"

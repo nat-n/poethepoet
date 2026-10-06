@@ -155,10 +155,7 @@ class RefTask(PoeTask):
         extra_args = self._parse_and_register_args(env)
 
         expanded_content = env.fill_template(self._parse_content())
-        invocation_tokens = tuple(
-            env.fill_template(token)
-            for token in split_task_invocation(expanded_content, self.name)
-        )
+        invocation_tokens = split_task_invocation(expanded_content, self.name)
         if self._content_uses_extra_args():
             ref_invocation = invocation_tokens
         else:
