@@ -118,6 +118,14 @@ args = [{ name = "target", default = "default" }]
 [tool.poe.tasks.echo-extra-args-no-named]
 shell = "poe_test_echo $POE_EXTRA_ARGS"
 
+[tool.poe.tasks.missing_interpreter]
+interpreter = "pwsh"
+shell = "poe_test_echo hi"
+
+[tool.poe.tasks.missing_interpreters]
+interpreter = ["zsh", "fish"]
+shell = "poe_test_echo hi"
+
 [tool.poe.tasks.whitespace_only]
 shell = "   "
 

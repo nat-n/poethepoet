@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from poethepoet.task.shell import _unindent_code
+from poethepoet.task.shell import ShellTask, _unindent_code
 
 
 def _strip_terminal_control_sequences(text: str) -> str:
@@ -253,6 +253,31 @@ def test_shell_task_extra_args_via_poe_extra_args_without_named_args(run_poe):
     result = run_poe("echo-extra-args-no-named", "foo", "bar", project="shells")
     assert result.capture == "Poe => poe_test_echo $POE_EXTRA_ARGS\n"
     assert result.stdout == "foo bar\n"
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("task_name", "described_interpreters"),
+    [
+        ("missing_interpreter", "'pwsh'"),
+        ("missing_interpreters", "any of 'zsh', 'fish'"),
+    ],
+)
+def test_shell_task_with_missing_interpreter(
+    run_poe, monkeypatch, task_name, described_interpreters
+):
+    """
+    If none of the configured interpreters can be found then the error lists them
+    """
+    monkeypatch.setattr(ShellTask, "_locate_interpreter", lambda self, name: None)
+    result = run_poe(task_name, project="shells")
+    assert result.code == 1
+    assert (
+        "Error: Couldn't locate interpreter executable for "
+        f"{described_interpreters} to run shell task. "
+        "Some dependencies may be missing from your system.\n"
+    ) in result.capture
+    assert result.stdout == ""
     assert result.stderr == ""
 
 
