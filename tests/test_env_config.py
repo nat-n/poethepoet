@@ -331,3 +331,24 @@ def test_git_vars_without_git_executable(temp_pyproject, run_poe):
     assert result.code == 0
     assert result.stdout == "dir=. root=.\n"
     assert result.stderr == ""
+
+
+def test_poe_extra_args_not_inherited_from_host_env(run_poe):
+    """
+    POE_EXTRA_ARGS in the host environment (e.g. set by an outer poe task that runs
+    poe again) doesn't leak into a task that received no free arguments.
+    """
+    result = run_poe(
+        "echo-extra-args", project="cmds", env={"POE_EXTRA_ARGS": "from-outer"}
+    )
+    assert result.capture == "Poe => poe_test_echo extra:\n"
+    assert result.stdout == "extra:\n"
+
+    result = run_poe(
+        "echo-extra-args",
+        "mine",
+        project="cmds",
+        env={"POE_EXTRA_ARGS": "from-outer"},
+    )
+    assert result.capture == "Poe => poe_test_echo extra: mine\n"
+    assert result.stdout == "extra: mine\n"

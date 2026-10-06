@@ -75,6 +75,11 @@ class TaskEnv(Mapping[str, str]):
 
         base_env["POE_ROOT"] = str(config.project_dir)
 
+        # POE_EXTRA_ARGS is set per task from its own free arguments, so a value
+        # from the host env (e.g. set by an outer poe task that runs poe again)
+        # must not leak into tasks that received none.
+        base_env.pop("POE_EXTRA_ARGS", None)
+
         if "POE_CWD" not in base_env:
             base_env["POE_CWD"] = cwd
             base_env["POE_PWD"] = cwd
