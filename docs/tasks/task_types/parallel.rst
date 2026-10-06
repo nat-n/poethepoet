@@ -10,7 +10,7 @@ A **Parallel task** is defined by an array of other tasks to be run concurrently
 
 By default the contents of the array are interpreted as references to other tasks (actually an inline :doc:`ref<ref>` task). However, this behaviour can be altered by setting the :toml:`default_item_type` option locally on the parallel task.
 
-Subtask outputs are forwarded to the console with a prefix identifying the task, in either streaming or buffered mode.
+Subtask stdout is forwarded to the console with a prefix identifying the task, in either streaming or buffered mode. Note that only stdout is captured in this way, stderr from subtasks is written directly to the console without a prefix or buffering.
 
 .. note::
 
@@ -46,20 +46,20 @@ The following options are also accepted:
 **output_mode** : ``Literal["stream", "buffer"]`` :ref:`📖<Buffer subtask output>`
   Controls how subtask stdout is handled. The default ``stream`` mode outputs each line as it arrives, while ``buffer`` keeps each task's stdout grouped together and prints it when the task subprocess completes.
 
-**prefix** : ``str`` :ref:`📖<Customize output prefixing>`
-  Set the prefix applied to each line of output from subtasks. By default this is the task name.
+**prefix** : ``str`` | ``bool`` :ref:`📖<Customize output prefixing>`
+  Set the prefix applied to each line of output from subtasks. By default this is the task name. Set to :toml:`false` (or an empty string) to disable prefixing.
 
 **prefix_max** : ``int`` :ref:`📖<Customize output prefixing>`
   Set the maximum width of the prefix. Longer prefixes will be truncated. Default is 16 characters.
 
 **prefix_template** : ``str`` :ref:`📖<Customize output prefixing>`
-  Specifies a template for how the prefix is applied after truncating it to the prefix_max length. The default prefix_template is ``{color_start}{prefix}{color_end} |``
+  Specifies a template for how the prefix is applied after truncating it to the prefix_max length. The default prefix_template is ``"{color_start}{prefix}{color_end} | "``
 
 
 Continue on subtask failure
 ---------------------------
 
-A failure (non-zero result) will result in any remaining subtasks being cancelled, unless the :toml:`ignore_fail` option is set on the task like so:
+A failure (non-zero result) will result in any remaining subtasks being cancelled and poe exiting with status 1, unless the :toml:`ignore_fail` option is set on the task like so:
 
 .. code-block:: toml
 
@@ -67,7 +67,9 @@ A failure (non-zero result) will result in any remaining subtasks being cancelle
   attempts.parallel = ["task1", "task2", "task3"]
   attempts.ignore_fail = true
 
-If you want to run all the subtasks to completion but return non-zero result in the end of the parallel group if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` like so:
+Setting :toml:`ignore_fail = true` is equivalent to :toml:`ignore_fail = "return_zero"`, meaning that all subtasks are run to completion, and the parallel task always returns zero, even if some subtasks failed.
+
+If you want to run all the subtasks to completion but return a non-zero result (exit status 1) in the end of the parallel group if any of the subtasks have failed you can set :toml:`ignore_fail` option to the :toml:`return_non_zero` like so:
 
 .. code-block:: toml
 
@@ -79,7 +81,7 @@ If you want to run all the subtasks to completion but return non-zero result in 
 Changing the default item type
 ------------------------------
 
-If you want strings in the array to be interpreted as a task type other than :doc:`ref<ref>` you may specify then :toml:`default_item_type` option like so:
+If you want strings in the array to be interpreted as a task type other than :doc:`ref<ref>` you may specify the :toml:`default_item_type` option like so:
 
 .. code-block:: toml
 
@@ -89,7 +91,7 @@ If you want strings in the array to be interpreted as a task type other than :do
     "linters:run_pylint",
     "linters:run_flake8",
   ]
-  default_item_type = "script"
+  check.default_item_type = "script"
 
 Alternatively you can declare other task types inline like so:
 
@@ -114,7 +116,7 @@ Alternatively you can declare other task types inline like so:
 Forwarding free arguments to subtasks
 --------------------------------------
 
-By default, free arguments passed to a parallel task are not forwarded to any of its subtasks. However, they can be forwarded selectively by referencing the special ``$POE_EXTRA_ARGS`` environment variable in individual subtask definitions. Only subtasks that explicitly reference ``$POE_EXTRA_ARGS`` will receive them.
+By default, free arguments passed to a parallel task are not appended to any of its subtasks. However, they can be forwarded selectively by referencing the special ``$POE_EXTRA_ARGS`` environment variable in individual subtask definitions. Only subtasks that reference ``$POE_EXTRA_ARGS`` (or ``_extra_args`` in script and expr tasks) will receive them. Note that this variable is inherited by all subtasks, so this includes referenced tasks whose own content references it.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
 
@@ -179,15 +181,15 @@ Example output:
 
 This behavior is customizable with the following options:
 
-- Setting the ``prefix`` changes the prefix content: default ``{name}``. The ``{index}`` tag is also available which indicates the index of the subtask within the parallel array.
+- Setting the ``prefix`` changes the prefix content: default ``{name}``. The ``{index}`` tag is also available which indicates the 0-based position of the subtask within the parallel array. Setting :toml:`prefix = false` disables prefixing entirely.
 - Setting the ``prefix_max`` changes the maximum width of the prefix: default ``16``
-- Setting the ``prefix_template`` changes how the prefix is formatted: default ``{color_start}{prefix}{color_end} |``
+- Setting the ``prefix_template`` changes how the prefix is formatted: default ``"{color_start}{prefix}{color_end} | "``
 
 For example:
 
 .. code-block:: toml
 
-  [tool.poe.tasks]
+  [tool.poe.tasks.checks]
   parallel = ["build", "test", "deploy-to-prod"]
   prefix = "{index}:{name}"
   prefix_max = 10
@@ -197,14 +199,16 @@ will result in output rendered like:
 
 .. code-block:: text
 
-  [1:build] first task output line
-  [2:test] second task output line
-  [3:deploy_…] third task output line
+  [0:build] first task output line
+  [1:test] second task output line
+  [2:deploy-…] third task output line
 
 Note that:
 
-1. When the ``{prefix}`` portion of the tempalate is longer that the configured ``prefix_max`` then it is truncated with ellipsis
+1. When the ``{prefix}`` portion of the template is longer than the configured ``prefix_max`` then it is truncated with ellipsis
 2. omitting the ``{color_start}`` and ``{color_end}`` tags from the template disables prefix coloring.
+3. ``{name}`` is the name of the task that produced the output. So if a subtask is itself a :doc:`sequence<sequence>` (or a ref to another composite task) then the name will be that of the inner task that is running, while ``{index}`` refers to the position of the subtask in the outer parallel array.
+4. Output options (``prefix``, ``prefix_max``, ``prefix_template``, and ``output_mode``) only take effect on the outermost parallel task, and are ignored on parallel tasks nested within it.
 
 .. hint::
 
