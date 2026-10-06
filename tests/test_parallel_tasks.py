@@ -212,7 +212,7 @@ def test_parallel_task_buffered_long_complete_line_emitted_whole(
     project_path = temp_pyproject(f"""
             [tool.poe.tasks.buffered_huge_line]
             parallel = [
-              {{ shell = "print('X' * {line_size}, flush=True)", interpreter = "python" }},
+              {{ shell = "import os; os.write(1, b'X' * {line_size} + bytes([10]))", interpreter = "python" }},
             ]
             output_mode = "buffer"
         """)
@@ -238,7 +238,7 @@ def test_parallel_task_streaming_long_complete_line_emitted_whole(
     project_path = temp_pyproject(f"""
             [tool.poe.tasks.streamed_huge_line]
             parallel = [
-              {{ shell = "print('X' * {line_size}, flush=True)", interpreter = "python" }},
+              {{ shell = "import os; os.write(1, b'X' * {line_size} + bytes([10]))", interpreter = "python" }},
             ]
         """)
     prefix = format_parallel_prefix("streamed_huge_line[0]")
