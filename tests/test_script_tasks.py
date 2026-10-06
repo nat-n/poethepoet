@@ -567,6 +567,24 @@ def test_async_script_task(run_poe, projects):
     assert result.stderr == ""
 
 
+def test_async_script_task_not_detected_as_coroutine_function(run_poe):
+    """
+    Async callables that are not detected by iscoroutinefunction (e.g. wrapped by
+    a sync decorator, or an object with an async __call__) are still awaited
+    """
+    result = run_poe("wrapped-async-task", "--a=foo", project="scripts", env=no_venv)
+    assert result.capture == "Poe => wrapped-async-task --a=foo\n"
+    assert result.stdout == (
+        "I'm a wrapped async task! () {'a': 'foo'}\nwrapped result\n"
+    )
+    assert result.stderr == ""
+
+    result = run_poe("async-callable-task", project="scripts", env=no_venv)
+    assert result.capture == "Poe => async-callable-task\n"
+    assert result.stdout == "I'm an async callable! (1,) {'x': 2}\n"
+    assert result.stderr == ""
+
+
 def test_call_module_as_task(run_poe):
     result = run_poe(
         "module-as-task", "--foo", "cheese", project="scripts", env=no_venv
