@@ -51,7 +51,7 @@ If you've installed it as a :doc:`poetry plugin<../poetry_plugin>` (for poetry >
 
 .. code-block:: sh
 
-  poetry self add poethepoet[poetry_plugin]
+  poetry self add 'poethepoet[poetry_plugin]'
   poetry poe [options] test [task_args]
 
 

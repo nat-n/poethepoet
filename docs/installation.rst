@@ -56,10 +56,12 @@ You can install the poethepoet poetry plugin globally like so:
 
 Or add it to poetry on a per project basis by adding the following to your *pyproject.toml*:
 
-.. code-block:: sh
+.. code-block:: toml
 
   [tool.poetry.requires-plugins]
-  poethepoet = { version = "~0.35.0", extras = ["poetry_plugin"]}
+  poethepoet = { version = ">=0.48", extras = ["poetry_plugin"] }
+
+Note that the ``tool.poetry.requires-plugins`` table requires Poetry >= 2.0.
 
 See the |poetry_plugin_link| for more installation options, or see the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
 
@@ -98,7 +100,7 @@ With uv
 Enable tab completion for your shell
 ------------------------------------
 
-Poe comes with tab completion scripts for bash, zsh, and fish to save you keystrokes.
+Poe comes with tab completion scripts for bash, zsh, fish, and PowerShell to save you keystrokes.
 How to install them will depend on your shell setup.
 
 .. tip::
@@ -121,6 +123,8 @@ Zsh
   # without oh-my-zsh
   mkdir -p ~/.zfunc/
   poe _zsh_completion > ~/.zfunc/_poe
+  # then make sure your ~/.zshrc includes the following line *before* compinit is called
+  fpath+=~/.zfunc
 
 Zsh completion includes:
 
@@ -174,6 +178,12 @@ Fish
 
   # Homebrew fish
   poe _fish_completion > (brew --prefix)/share/fish/vendor_completions.d/poe.fish
+
+Fish completion includes:
+
+- Task names
+
+Fish completion doesn't currently include global CLI options or task-specific arguments.
 
 Powershell
 ~~~~~~~~~~
