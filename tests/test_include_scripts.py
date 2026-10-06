@@ -75,3 +75,66 @@ def test_included_script_with_cwd(run_poe, projects, is_windows):
     else:
         assert "Poe => poe_test_echo POE_CONF_DIR=" in result.capture
         assert result.stdout.endswith("include_scripts_project/src\n")
+
+
+INCLUDE_SCRIPT_ERRORS_MODULE = """
+def as_list():
+    return [1, 2]
+
+def as_none():
+    return None
+
+def as_int():
+    return 5
+
+def tool_not_dict():
+    return {"tool": "x"}
+
+def tool_poe_not_dict():
+    return {"tool": {"poe": "x"}}
+"""
+
+
+@pytest.mark.parametrize(
+    ("function_name", "expected_error"),
+    [
+        ("as_list", "got 'list'"),
+        ("as_none", "got 'NoneType'"),
+        ("as_int", "got 'int'"),
+        ("tool_not_dict", "Unrecognized option 'tool'"),
+        ("tool_poe_not_dict", "Option 'tool.poe' must be a table"),
+    ],
+)
+def test_include_script_returning_invalid_config(
+    run_poe, temp_pyproject, function_name, expected_error
+):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        executor = "simple"
+        include_script = {{ script = "errscripts:{function_name}" }}
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        """
+    )
+    project_path.joinpath("errscripts.py").write_text(INCLUDE_SCRIPT_ERRORS_MODULE)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid content in loaded config from errscripts" in result.capture
+    assert expected_error in result.capture
+
+
+@pytest.mark.parametrize("include_script", ["5", "[5]", '["tasks:x", true]'])
+def test_include_script_item_of_invalid_type(run_poe, temp_pyproject, include_script):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        include_script = {include_script}
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        """
+    )
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Option 'include_script" in result.capture
+    assert "must have a value of type" in result.capture

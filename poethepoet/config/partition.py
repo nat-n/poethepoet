@@ -381,7 +381,9 @@ class ProjectConfig(ConfigPartition):
                 for item in include_script:
                     if isinstance(item, str):
                         config["include_script"].append({"script": item})
-                    elif isinstance(executor_config := item.get("executor"), str):
+                    elif isinstance(item, Mapping) and isinstance(
+                        executor_config := item.get("executor"), str
+                    ):
                         config["include_script"].append(
                             {**item, "executor": {"type": executor_config}}
                         )
