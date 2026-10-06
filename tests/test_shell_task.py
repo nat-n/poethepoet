@@ -1,5 +1,6 @@
 import re
 import shutil
+import sys
 
 import pytest
 
@@ -250,4 +251,19 @@ def test_shell_task_extra_args_via_poe_extra_args_without_named_args(run_poe):
     result = run_poe("echo-extra-args-no-named", "foo", "bar", project="shells")
     assert result.capture == "Poe => poe_test_echo $POE_EXTRA_ARGS\n"
     assert result.stdout == "foo bar\n"
+    assert result.stderr == ""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Relies on symlinking python3")
+def test_interpreter_python_resolves_python3(run_poe, tmp_path):
+    """
+    The python interpreter falls back to python3 if there is no python on the PATH
+    """
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    bin_dir.joinpath("python3").symlink_to(sys.executable)
+
+    result = run_poe("python_executable", project="shells", env={"PATH": str(bin_dir)})
+    assert result.capture == "Poe => import sys; print(sys.executable)\n"
+    assert result.stdout == f"{bin_dir / 'python3'}\n"
     assert result.stderr == ""

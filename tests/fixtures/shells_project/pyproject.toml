@@ -117,3 +117,7 @@ args = [{ name = "target", default = "default" }]
 
 [tool.poe.tasks.echo-extra-args-no-named]
 shell = "poe_test_echo $POE_EXTRA_ARGS"
+
+[tool.poe.tasks.python_executable]
+interpreter = "python"
+shell = "import sys; print(sys.executable)"
