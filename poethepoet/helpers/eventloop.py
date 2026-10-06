@@ -27,6 +27,7 @@ async def async_noop(result=None, *args, **kwargs) -> Any:
 
 
 _SENTINEL = object()
+_META_IDX = -1
 
 
 async def async_iter_merge(
@@ -67,31 +68,41 @@ async def async_iter_merge(
         for idx, it in enumerate(iters)
     ]
     finished: set[int] = set()
+    # The meta generator counts as a source in its own right, so that the merge
+    # doesn't complete before it is exhausted, and so that its errors propagate
+    meta_running = generator is not None
 
     if generator:
 
         async def meta_pump(meta_src: AsyncIterable[AsyncIterable[T]]) -> None:
-            async for src in meta_src:
-                iters.append(src.__aiter__())  # type: ignore[call-arg]
-                pump_tasks.append(
-                    asyncio.create_task(
-                        pump(len(iters) - 1, iters[-1]),
-                        name=f"async_iter_merge:meta_pump:pump:{len(iters) - 1}",
+            try:
+                async for src in meta_src:
+                    iters.append(src.__aiter__())  # type: ignore[call-arg]
+                    pump_tasks.append(
+                        asyncio.create_task(
+                            pump(len(iters) - 1, iters[-1]),
+                            name=f"async_iter_merge:meta_pump:pump:{len(iters) - 1}",
+                        )
                     )
-                )
+            except Exception as error:
+                await queue.put((_META_IDX, error))
+            finally:
+                with contextlib.suppress(asyncio.CancelledError):
+                    await queue.put((_META_IDX, _SENTINEL))
 
         pump_tasks.append(
-            asyncio.create_task(
-                meta_pump(generator), name="async_iter_merge:meta_pump}"
-            )
+            asyncio.create_task(meta_pump(generator), name="async_iter_merge:meta_pump")
         )
 
     try:
-        while len(finished) < len(iters):
+        while meta_running or len(finished) < len(iters):
             idx, payload = await queue.get()
 
             if payload is _SENTINEL:
-                finished.add(idx)
+                if idx == _META_IDX:
+                    meta_running = False
+                else:
+                    finished.add(idx)
                 continue
 
             if isinstance(payload, Exception):
