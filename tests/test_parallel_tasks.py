@@ -960,6 +960,7 @@ def sequences_are_similar(seq1: Sequence, seq2: Sequence, distance: int = 1):
         ("uses", 'uses = { CFG = "_load" }'),
         ("uses_env", 'uses_env = "_load"'),
         ("deps", "deps = []"),
+        ("use_exec", "use_exec = true"),
     ],
 )
 def test_parallel_rejects_unsupported_inline_subtask_option(

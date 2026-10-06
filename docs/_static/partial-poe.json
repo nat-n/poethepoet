@@ -1004,6 +1004,10 @@
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "use_exec": { "const": false } } }
               }
             ]
           },
@@ -1129,6 +1133,10 @@
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "use_exec": { "const": false } } }
               }
             ]
           },
@@ -1561,6 +1569,10 @@
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "use_exec": { "const": false } } }
               }
             ]
           },
@@ -1662,6 +1674,10 @@
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
+              },
+              {
+                "if": { "type": "object" },
+                "then": { "properties": { "use_exec": { "const": false } } }
               }
             ]
           },

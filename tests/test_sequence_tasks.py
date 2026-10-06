@@ -213,6 +213,7 @@ def test_sequence_task_forwards_extra_args_with_trailing_args(run_poe):
         ("uses", 'uses = { CFG = "_load" }'),
         ("uses_env", 'uses_env = "_load"'),
         ("deps", "deps = []"),
+        ("use_exec", "use_exec = true"),
     ],
 )
 def test_sequence_rejects_unsupported_inline_subtask_option(

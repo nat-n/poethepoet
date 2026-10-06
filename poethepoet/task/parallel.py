@@ -191,6 +191,12 @@ class ParallelTask(PoeTask):
                             f"Unsupported option {banned_option!r} for task "
                             "declared inside parallel"
                         )
+                if subtask.options.get("use_exec", False):
+                    # The process would be replaced, silently skipping other subtasks
+                    raise ConfigValidationError(
+                        "Unsupported option 'use_exec' for task declared inside "
+                        "parallel"
+                    )
 
                 subtask.validate(config, task_specs)
 
@@ -223,6 +229,10 @@ class ParallelTask(PoeTask):
                     }
                     for opt in SUBTASK_OPTIONS_BLOCKLIST
                 ),
+                {
+                    "if": {"type": "object"},
+                    "then": {"properties": {"use_exec": {"const": False}}},
+                },
             ],
         }
         return fragment
