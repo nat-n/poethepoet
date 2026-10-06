@@ -1066,6 +1066,35 @@ def test_parallel_prefix_max_must_be_positive(run_poe, temp_pyproject, prefix_ma
     assert result.code == 1
 
 
+def test_parallel_prefix_colour_is_per_subtask(run_poe_subproc, temp_pyproject):
+    # Each subtask keeps one colour, even if it runs several processes, and each
+    # parallel task starts its colours afresh
+    project_path = temp_pyproject("""
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        b = "poe_test_echo b"
+        c = "poe_test_delayed_echo 300 c"
+
+        [tool.poe.tasks.par]
+        parallel = ["a", ["b", "c"]]
+        prefix = "{index}"
+
+        [tool.poe.tasks.twice]
+        sequence = ["par", "par"]
+        """)
+
+    result = run_poe_subproc("--ansi", "twice", cwd=project_path)
+
+    assert sorted(result.output_lines) == sorted(
+        [
+            "\x1b[31m0\x1b[0m | a",
+            "\x1b[32m1\x1b[0m | b",
+            "\x1b[32m1\x1b[0m | c",
+        ]
+        * 2
+    )
+
+
 def test_parallel_bool_flag(run_poe):
     """Parallel task: both cmd and expr subtasks see boolean args from parent"""
     result = run_poe("bool_parallel", "--flag", project="parallel")

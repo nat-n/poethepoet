@@ -45,8 +45,12 @@ BUFFERED_STDOUT_LIMIT = _get_buffered_stdout_limit()
 
 
 class ColorCycle:
+    """
+    Assigns each subtask of a parallel task a colour by its position, so that all
+    output from one subtask shares a colour.
+    """
+
     def __init__(self):
-        self.index = 0
         self.colors = [
             "31",  # Red
             "32",  # Green
@@ -56,13 +60,9 @@ class ColorCycle:
             "36",  # Cyan
         ]
 
-    def next(self) -> str:
-        color = self.colors[self.index]
-        self.index = (self.index + 1) % len(self.colors)
-        return color
-
-    def start(self, ansi_enabled: bool = True) -> str:
-        return f"\x1b[{self.next()}m" if ansi_enabled else ""
+    def start(self, index: int, ansi_enabled: bool = True) -> str:
+        color = self.colors[index % len(self.colors)]
+        return f"\x1b[{color}m" if ansi_enabled else ""
 
     def end(self, ansi_enabled: bool = True) -> str:
         return "\x1b[0m" if ansi_enabled else ""
@@ -422,7 +422,7 @@ class ParallelTask(PoeTask):
                 ansi_enabled = self.ctx.io.ansi_enabled
                 prefix = options.prefix_template.format(
                     prefix=prefix_content,
-                    color_start=self.colors.start(ansi_enabled),
+                    color_start=self.colors.start(subtask_index, ansi_enabled),
                     color_end=self.colors.end(ansi_enabled),
                 ).encode("utf-8", errors="replace")
             else:
