@@ -19,6 +19,14 @@ if TYPE_CHECKING:
     from .base import PoeProcess
 
 
+def _as_exit_status(return_code: int) -> int:
+    """
+    Map a subprocess return code to a shell style exit status. asyncio reports a
+    process killed by signal N as -N, which the shell convention reports as 128 + N.
+    """
+    return 128 - return_code if return_code < 0 else return_code
+
+
 class PoeTaskRunEvent:
     """
     An event that is emitted when a PoeTaskRun completes or fails.
@@ -257,26 +265,32 @@ class PoeTaskRun:
         """
         Return the combined return code of all processes and child tasks, or None if any
         are still running.
+        The combined return code is that of the first process or child task (in the
+        order they were added) with a non-ignored failure. A process killed by signal N
+        is reported as 128 + N, following the shell convention.
         If force_failure is set, return at least 1 if everything else is zero.
         If ignore_failure is set, always return 0 regardless of actual return codes.
         """
         if any(process.returncode is None for process in self._processes):
             return None
-        if any(child.return_code is None for child in self._children):
+        child_return_codes = [child.return_code for child in self._children]
+        if any(return_code is None for return_code in child_return_codes):
             return None
         if self._ignore_failure and not self._ignore_failure_codes:
             return 0
 
-        ignore_failure_codes = (0, None, *self._ignore_failure_codes)
-        return sum(
-            process.returncode or 0
-            for process in self._processes
-            if process.returncode not in ignore_failure_codes
-        ) + sum(
-            child.return_code or 0
-            for child in self._children
-            if child.return_code not in ignore_failure_codes
-        ) or int(self._force_failure)
+        ignore_failure_codes = (0, *self._ignore_failure_codes)
+        return next(
+            (
+                _as_exit_status(return_code)
+                for return_code in (
+                    *(process.returncode for process in self._processes),
+                    *child_return_codes,
+                )
+                if return_code is not None and return_code not in ignore_failure_codes
+            ),
+            int(self._force_failure),
+        )
 
     async def add_process(
         self, process: PoeProcess, finalize: bool = False
