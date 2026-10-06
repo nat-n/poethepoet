@@ -233,11 +233,17 @@ class PoetryPlugin(ApplicationPlugin):
         if post_hooks:
             application.event_dispatcher.add_listener(
                 TERMINATE,
-                self._get_command_event_handler(post_hooks, application, poe_config),
+                self._get_command_event_handler(
+                    post_hooks, application, poe_config, skip_on_failure=True
+                ),
             )
 
     def _get_command_event_handler(
-        self, hooks: dict[str, str], application: Application, poe_config: PoeConfig
+        self,
+        hooks: dict[str, str],
+        application: Application,
+        poe_config: PoeConfig,
+        skip_on_failure: bool = False,
     ):
         def command_event_handler(
             event: ConsoleCommandEvent,
@@ -246,6 +252,10 @@ class PoetryPlugin(ApplicationPlugin):
         ) -> None:
             task = hooks.get(event.command.name)
             if not task:
+                return
+
+            # Post hooks only run after the poetry command succeeded
+            if skip_on_failure and getattr(event, "exit_code", None):
                 return
 
             import shlex
