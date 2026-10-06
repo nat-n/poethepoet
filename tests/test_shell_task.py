@@ -4,6 +4,8 @@ import sys
 
 import pytest
 
+from poethepoet.task.shell import _unindent_code
+
 
 def _strip_terminal_control_sequences(text: str) -> str:
     return re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text)
@@ -251,6 +253,38 @@ def test_shell_task_extra_args_via_poe_extra_args_without_named_args(run_poe):
     result = run_poe("echo-extra-args-no-named", "foo", "bar", project="shells")
     assert result.capture == "Poe => poe_test_echo $POE_EXTRA_ARGS\n"
     assert result.stdout == "foo bar\n"
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ("", ""),
+        ("   ", ""),
+        ("a\n  b", "a\n  b"),
+        ("  a\n  b", "a\nb"),
+        ("  a\n    b\n  c", "a\n  b\nc"),
+        ("  a\nb\n  c", "a\nb\nc"),
+        ("\ta\n\t\tb", "a\n\tb"),
+        ("\n  a", "\n  a"),
+    ],
+)
+def test_unindent_code(content, expected):
+    assert _unindent_code(content) == expected
+
+
+def test_shell_task_with_whitespace_only_content(run_poe):
+    result = run_poe("whitespace_only", project="shells")
+    assert result.code == 0
+    assert result.capture == "Poe => \n"
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_interpreter_python_with_tab_indentation(run_poe):
+    result = run_poe("python_tab_indented", project="shells")
+    assert result.capture == "Poe => print(1)\nif True:\n\tprint(2)\n"
+    assert result.stdout == "1\n2\n"
     assert result.stderr == ""
 
 

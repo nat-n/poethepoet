@@ -196,7 +196,7 @@ class ShellTask(PoeTask):
 
 def _unindent_code(python_code: str):
     """
-    Unindent all lines by the indent level of the first line.
+    Unindent all lines by the indent (spaces and/or tabs) of the first line.
     This is rather naive, but should usually work as one would naively expect for a
     multiline script in a multiline string value in toml.
 
@@ -204,14 +204,9 @@ def _unindent_code(python_code: str):
     quoted multiline python string or similar. Let's say that's OK for now.
     """
 
-    if not python_code.startswith(" "):
+    if not (prefix := python_code[: len(python_code) - len(python_code.lstrip(" \t"))]):
         return python_code
 
-    indent = 0
-    while python_code[indent] == " ":
-        indent += 1
-
-    prefix = " " * indent
     return "\n".join(
         line.removeprefix(prefix) for line in re.split(r"(?:\r\n|\r|\n)", python_code)
     )
