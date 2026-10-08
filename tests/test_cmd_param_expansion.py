@@ -1,4 +1,5 @@
 import shlex
+from pathlib import Path
 
 import pytest
 
@@ -267,3 +268,99 @@ def test_param_expansion_argument_tokenization(
         f"  expected: {expected_capture!r}\n"
         f"  actual:   {result.capture!r}"
     )
+
+
+BRACKET_GLOB_BUG = pytest.mark.xfail(
+    strict=True, reason="bracket glob swallows parameter expansion and quotes"
+)
+UNMATCHED_GLOB_BUG = pytest.mark.xfail(
+    strict=True, reason="unmatched glob passes the escaped pattern, not the word"
+)
+
+
+@pytest.mark.parametrize(
+    ("cmd_args", "expected_args"),
+    [
+        pytest.param("[${S}]", ["[val]"], marks=BRACKET_GLOB_BUG, id="brace"),
+        pytest.param("[$S]", ["[val]"], marks=BRACKET_GLOB_BUG, id="bare"),
+        pytest.param("x[${S}]", ["x[val]"], marks=BRACKET_GLOB_BUG, id="prefix"),
+        pytest.param(
+            "a[${S}]b c", ["a[val]b", "c"], marks=BRACKET_GLOB_BUG, id="infix"
+        ),
+        pytest.param("[!${S}]", ["[!val]"], marks=BRACKET_GLOB_BUG, id="negated"),
+        pytest.param(
+            "[${S:+y}]", ["[y]"], marks=BRACKET_GLOB_BUG, id="alt_value_operator"
+        ),
+        pytest.param('x["a b"]', ["x[a b]"], marks=BRACKET_GLOB_BUG, id="quoted"),
+        pytest.param(
+            '"${G}"*', ["v[1]*"], marks=UNMATCHED_GLOB_BUG, id="quoted_glob_value"
+        ),
+        pytest.param("'a[b'*", ["a[b*"], marks=UNMATCHED_GLOB_BUG, id="quoted_bracket"),
+        pytest.param(
+            "'a?b'*", ["a?b*"], marks=UNMATCHED_GLOB_BUG, id="quoted_question_mark"
+        ),
+        pytest.param(
+            r"\*${S}*", ["*val*"], marks=UNMATCHED_GLOB_BUG, id="escaped_star"
+        ),
+        pytest.param("${S}*", ["val*"], id="param_then_star"),
+        pytest.param("[abc]", ["[abc]"], id="literal_bracket_glob"),
+        pytest.param('"[${S}]"', ["[val]"], id="double_quoted"),
+        pytest.param(r"\[${S}]", ["[val]"], id="escaped_bracket"),
+        pytest.param("'[${S}]'", ["[${S}]"], id="single_quoted"),
+        pytest.param("${S}[x]", ["val[x]"], id="param_then_bracket_glob"),
+        pytest.param("${G}", ["v[1]"], id="param_with_glob_chars"),
+    ],
+)
+def test_param_expansion_in_unmatched_glob(
+    cmd_args, expected_args, run_poe, temp_pyproject
+):
+    """
+    A glob word that matches nothing is passed on as bash would: the word after
+    parameter expansion and quote removal.
+    """
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.run]
+        cmd = '''echo {cmd_args}'''
+        """
+    )
+    result = run_poe("run", cwd=project_path, env={"S": "val", "G": "v[1]"})
+
+    assert result.code == 0, result.capture
+    assert result.capture == f"Poe => {shlex.join(['echo', *expected_args])}\n"
+
+
+@pytest.mark.parametrize(
+    ("cmd_args", "expected_matches"),
+    [
+        pytest.param("[${S}]", ["a", "v"], marks=BRACKET_GLOB_BUG, id="brace"),
+        pytest.param("[$S]", ["a", "v"], marks=BRACKET_GLOB_BUG, id="bare"),
+        pytest.param("x[${S}]", ["xa"], marks=BRACKET_GLOB_BUG, id="prefix"),
+        pytest.param("${S}*", ["valX"], id="param_then_star"),
+        pytest.param("[abc]", ["a"], id="literal_bracket_glob"),
+        pytest.param(r"\[${S}]", ["[val]"], id="escaped_bracket"),
+        pytest.param("'[${S}]'", ["[${S}]"], id="single_quoted"),
+    ],
+)
+def test_param_expansion_in_matched_glob(
+    cmd_args, expected_matches, run_poe, temp_pyproject, tmp_path
+):
+    """
+    A glob word is matched against files after parameter expansion, so the
+    pattern a bracket expression contributes is the expanded value. Matches are
+    compared by file name, ignoring order.
+    """
+    for name in ("v", "a", "S", "$", "{", "}", "valX", "x", "xa"):
+        (tmp_path / name).touch()
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.run]
+        cmd = '''echo {cmd_args}'''
+        """
+    )
+    result = run_poe("run", cwd=project_path, env={"S": "val"})
+
+    assert result.code == 0, result.capture
+    assert result.capture.startswith("Poe => echo ")
+    args = shlex.split(result.capture)[3:]
+    assert sorted(Path(arg).name for arg in args) == expected_matches
