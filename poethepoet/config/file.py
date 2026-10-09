@@ -86,7 +86,7 @@ class PoeConfigFile:
                     yield from scan_dir(parent_path)
 
         elif target_path.exists() and target_path.name.endswith(
-            (".toml", ".json", ".yaml")
+            (".toml", ".json", ".yaml", ".yml")
         ):
             yield cls(target_path)
 
@@ -104,7 +104,7 @@ class PoeConfigFile:
                         f"Couldn't parse json file from {path}", error
                     ) from error
 
-            elif path.suffix.endswith(".yaml"):
+            elif path.suffix.endswith((".yaml", "yml")):
                 import yaml
 
                 try:
