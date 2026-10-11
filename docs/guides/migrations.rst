@@ -3,6 +3,25 @@ Migration Guides
 
 As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
 
+0.49.0
+------
+
+``sys.argv`` in script and expr tasks with declared args
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When a script task or an expr task declares args, the Python code it runs now receives those args in :python:`sys.argv` as parsed: each arg is re-emitted from its value with defaults applied, followed by any free arguments given after ``--``. Script tasks that run a module already worked this way, so a function call, a module, and an expression now all see the same :python:`sys.argv`.
+
+Previously script tasks that call a function, and expr tasks, received the arguments in :python:`sys.argv` exactly as typed. This only affects code that reads :python:`sys.argv` directly in a task with declared args. The values passed to the function or available as Python variables are unchanged, as are tasks without declared args. For example, given:
+
+.. code-block:: toml
+
+   [tool.poe.tasks.serve]
+   script = "myapp:main()"
+   args = [{ name = "port", default = "8000" }]
+
+``poe serve -- --reload`` used to give ``sys.argv[1:] == ["--", "--reload"]``, and now gives ``["--port", "8000", "--reload"]``. The ``Poe =>`` line that poe prints for these tasks shows the args in the same form.
+
+
 0.47.0
 ------
 

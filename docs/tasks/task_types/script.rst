@@ -11,7 +11,7 @@
 
 As in the second example, it is possible to hard code literal arguments to the target callable. In fact a subset of Python syntax, operators, and globals can be used inline to define the arguments to the function using normal Python syntax, including environ (from the os package) to access environment variables that are available to the task.
 
-If extra arguments are passed to task on the command line (and no CLI args are declared), then they will be available within the called Python function via :python:`sys.argv`. If :doc:`args <../options>` are configured for the task then they will be available as Python variables.
+If no :doc:`args <../options>` are declared for the task, then any arguments passed to the task on the command line are available within the called Python function via :python:`sys.argv`, exactly as given. If args are declared then they are available as Python variables, and :python:`sys.argv` holds them as parsed, with defaults applied (see `Task arguments`_ below).
 
 If the target Python function is an async function then it will be executed with :python:`asyncio.run`.
 
@@ -60,7 +60,7 @@ For example, the following task will run the ``http.server`` module as a script 
     { name = "bind", options = ["-b", "--bind"], default = "127.0.0.1" },
   ]
 
-When :doc:`args <../options>` are declared on the task, the parsed values (with defaults applied) are re-emitted onto the module's :python:`sys.argv`. CLI tokens that aren't matched by a declared arg, and any tokens that follow :sh:`--`, are forwarded to the module verbatim.
+When :doc:`args <../options>` are declared on the task, the module receives them in :python:`sys.argv` in the same form as a callable script task does: re-emitted from their parsed values with defaults applied, followed by any free arguments given after :sh:`--` (see `Task arguments`_ below). Without declared args, all arguments are passed to the module as given.
 
 Like the callable form, the module form also implicitly adds :sh:`<project_root>/src` to the subprocess :sh:`PYTHONPATH` so that modules placed in a ``src/`` directory at the project root are importable without extra configuration.
 
@@ -131,7 +131,7 @@ Task arguments
 As with other task types, script tasks support configuring named arguments via the ``args`` option. Arguments are accessible in the referenced Python function in three ways:
 
 - As **Python variables** that can be referenced directly in the function call expression. Values retain their configured type — booleans are ``True``/``False``, integers are ``int``, multiple args are ``list``, etc.
-- Via **sys.argv** which is populated with the full invocation including any extra arguments.
+- Via **sys.argv**, in the same form whether the script task calls a function or runs a module. Each declared arg is re-emitted from its parsed value with defaults applied, using its first option or its position, except that a boolean flag is included only if it was passed on the command line. Any free arguments given after :sh:`--` follow, without the :sh:`--` itself. To pass a literal :sh:`--` to the script, give it twice.
 - As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case all declared args are passed as kwargs.
 
 See :ref:`Arguments for script tasks` for more details and examples.

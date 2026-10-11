@@ -21,7 +21,7 @@
 - use most builtin functions including all members of
   `this collection <https://github.com/nat-n/poethepoet/blob/main/poethepoet/helpers/python.py#L13>`_
 - reference the |sys_module_link| module without having to specify it as an import
-- directly access whatever arguments were passed to the task from `sys.argv`
+- access the task's arguments from `sys.argv`, in the same form as for :doc:`script tasks <script>`: as given if no args are declared, otherwise re-emitted from their parsed values with defaults applied
 - reference values of named args as Python variables with a Python type matching the configured arg type
 - include environment variables as string values that are injected into the expression
   using the usual templating syntax ``${...}``, including the :ref:`default and alternate value operators <parameter-expansion-operators>`

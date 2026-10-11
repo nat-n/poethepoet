@@ -110,7 +110,11 @@ class ExprTask(PoeTask):
         expr, env_values = self.parse_content(named_arg_values, env, imports)
         argv = [
             self.spec.name,
-            *(env.fill_template(token) for token in self.invocation[1:]),
+            *(
+                self._get_python_argv(env)
+                if self.task_args
+                else (env.fill_template(token) for token in self.invocation[1:])
+            ),
         ]
 
         src_path = self.ctx.config.project_dir / "src"

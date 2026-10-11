@@ -137,7 +137,11 @@ class ScriptTask(PoeTask):
 
         argv = [
             self.name,
-            *(env.fill_template(token) for token in self.invocation[1:]),
+            *(
+                self._get_python_argv(env)
+                if self.task_args
+                else (env.fill_template(token) for token in self.invocation[1:])
+            ),
         ]
 
         has_dry_run_ref = "_dry_run" in function_call.referenced_globals
@@ -185,7 +189,6 @@ class ScriptTask(PoeTask):
         Execute the python module referenced by the task content
         """
 
-        named_arg_values, extra_args = self.get_parsed_arguments(env)
         self._parse_and_register_args(env)
 
         # Approximate the callable path's sys.path.append('src') by appending
@@ -208,14 +211,7 @@ class ScriptTask(PoeTask):
                 ),
             )
 
-        argv = [
-            *(
-                task_args.format_argv(named_arg_values, env)
-                if (task_args := self.task_args)
-                else ()
-            ),
-            *extra_args,
-        ]
+        argv = self._get_python_argv(env)
         cmd = ("python", "-m", self.spec.content, *argv)
 
         action_summary = self.name + (f" {shlex.join(argv)}" if argv else "")

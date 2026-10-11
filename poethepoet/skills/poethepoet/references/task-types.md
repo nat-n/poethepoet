@@ -58,7 +58,7 @@ script = "my_pkg.deploy:run(env, dry_run=True)"  # with inline args
 script = "http.server"                           # runs module's __main__
 ```
 
-When the call expression names a **module** (no `:` or `()`), poe runs `python -m <module>` and any declared args are re-emitted on `sys.argv` (with defaults applied) — useful for delegating to existing CLI modules. With a callable form, declared args are passed as kwargs (no parens) or by reference in the call (with parens). See `args-reference.md` for the full table.
+When the call expression names a **module** (no `:` or `()`), poe runs `python -m <module>` and any declared args are re-emitted on `sys.argv` (with defaults applied) — useful for delegating to existing CLI modules. Callable script and `expr` tasks see the same `sys.argv`: with declared args it holds the re-emitted args (boolean flags only if passed) followed by free args after `--`; without declared args it holds the arguments as given. With a callable form, declared args are passed as kwargs (no parens) or by reference in the call (with parens). See `args-reference.md` for the full table.
 
 **With task args** (passed as keyword args when no parentheses):
 

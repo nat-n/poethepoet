@@ -64,10 +64,10 @@ def test_script_task_with_cli_args(run_poe, is_windows):
         project="scripts",
         env=no_venv,
     )
-    assert result.capture == "Poe => greet-passed-args --greeting=hello --user=nat\n", [
+    assert result.capture == "Poe => greet-passed-args --greeting hello --user nat\n", [
         li
         for li in difflib.ndiff(
-            result.capture, "Poe => greet-passed-args --greeting=hello --user=nat\n"
+            result.capture, "Poe => greet-passed-args --greeting hello --user nat\n"
         )
         if li[0] != " "
     ]
@@ -89,8 +89,8 @@ def test_script_task_with_args_optional(run_poe, projects, is_windows):
         env=no_venv,
     )
     assert result.capture == (
-        f"Poe => greet-passed-args --greeting=hello --user=nat "
-        f"'--optional=welcome to {named_args_project_path}'\n"
+        f"Poe => greet-passed-args --greeting hello --user nat "
+        f"--optional 'welcome to {named_args_project_path}'\n"
     )
 
     if is_windows:
@@ -106,8 +106,8 @@ def test_script_task_with_args_optional(run_poe, projects, is_windows):
 
 def test_script_task_default_arg(run_poe):
     result = run_poe("greet-full-args", project="scripts", env=no_venv)
-    assert result.capture == "Poe => greet-full-args\n"
     # hi is the default value for --greeting
+    assert result.capture == "Poe => greet-full-args --greeting hi\n"
     assert result.stdout == "hi None None None\n"
     assert result.stderr == ""
 
@@ -124,8 +124,8 @@ def test_script_task_include_boolean_flag_and_numeric_args(run_poe):
         env=no_venv,
     )
     assert result.capture == (
-        "Poe => greet-full-args --greeting=hello --user=nat --upper --age=42 "
-        "--height=1.23\n"
+        "Poe => greet-full-args --greeting hello --user nat --upper --age 42 "
+        "--height 1.23\n"
     )
     assert result.stdout == "HELLO NAT 1.23 42\n"
     assert result.stderr == ""
@@ -143,7 +143,7 @@ def test_script_task_with_short_args(run_poe):
         env=no_venv,
     )
     assert result.capture == (
-        "Poe => greet-full-args -g=Ciao --user=toni -a 109 -h=1.09\n"
+        "Poe => greet-full-args --greeting Ciao --user toni --age 109 --height 1.09\n"
     )
     assert result.stdout == "Ciao toni 1.09 109\n"
     assert result.stderr == ""
@@ -198,7 +198,7 @@ def test_required_args(run_poe):
         project="scripts",
         env=no_venv,
     )
-    assert result.capture == "Poe => greet-strict --greeting=yo --name dude\n"
+    assert result.capture == "Poe => greet-strict --greeting yo --name dude\n"
     assert result.stdout == "yo dude\n"
     assert result.stderr == ""
 
@@ -253,7 +253,7 @@ def test_script_with_positional_args(run_poe):
 
     # Omission of optional positional arg
     result = run_poe("greet-positional", "Santa", project="scripts", env=no_venv)
-    assert result.capture == "Poe => greet-positional Santa\n"
+    assert result.capture == "Poe => greet-positional yo Santa\n"
     assert result.stdout == "yo Santa\n"
     assert result.stderr == ""
 
@@ -291,7 +291,7 @@ def test_script_with_positional_args_and_options(run_poe):
     result = run_poe(
         "greet-positional", "--upper", "help!", "Santa", project="scripts", env=no_venv
     )
-    assert result.capture == "Poe => greet-positional --upper 'help!' Santa\n"
+    assert result.capture == "Poe => greet-positional 'help!' Santa --upper\n"
     assert result.stdout == "HELP! SANTA\n"
     assert result.stderr == ""
 
@@ -562,7 +562,7 @@ def test_async_script_task(run_poe, projects):
         project="scripts",
         env=no_venv,
     )
-    assert result.capture == "Poe => async-task --a=foo --b=bar\n"
+    assert result.capture == "Poe => async-task --a foo --b bar\n"
     assert result.stdout == "I'm an async task! () {'a': 'foo', 'b': 'bar'}\n"
     assert result.stderr == ""
 
@@ -849,3 +849,54 @@ def test_module_script_forwards_flag_with_default_from_uses(
     result = run_poe("run-mod", *(("--fast",) if toggle else ()), cwd=project_path)
     assert result.code == 0, result.capture
     assert result.stdout.endswith("['--fast']\n" if toggle else "[]\n")
+
+
+@pytest.mark.parametrize(
+    ("cli_args", "expected_argv"),
+    [
+        ((), ["--port", "8000"]),
+        (("--port", "1234", "--fast"), ["--port", "1234", "--fast"]),
+        (("--", "extra"), ["--port", "8000", "extra"]),
+    ],
+)
+@pytest.mark.parametrize("task_name", ["callable", "module", "expression"])
+def test_declared_args_give_python_tasks_the_same_argv(
+    temp_pyproject, run_poe, task_name, cli_args, expected_argv
+):
+    """
+    With declared args, every Python based task receives them in sys.argv as
+    re-emitted from their parsed values with defaults applied, followed by any free
+    args given after "--".
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.callable]
+        script = "probe:main()"
+        args = [
+            { name = "port", default = "${POE_TEST_PORT:-8000}" },
+            { name = "fast", type = "boolean" },
+        ]
+
+        [tool.poe.tasks.module]
+        script = "probe"
+        args = [
+            { name = "port", default = "${POE_TEST_PORT:-8000}" },
+            { name = "fast", type = "boolean" },
+        ]
+
+        [tool.poe.tasks.expression]
+        expr = "sys.argv[1:]"
+        args = [
+            { name = "port", default = "${POE_TEST_PORT:-8000}" },
+            { name = "fast", type = "boolean" },
+        ]
+        """)
+    (project_path / "probe.py").write_text(
+        "import sys\n\n"
+        "def main():\n"
+        "    print(sys.argv[1:])\n\n"
+        "if __name__ == '__main__':\n"
+        "    main()\n"
+    )
+    result = run_poe(task_name, *cli_args, cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == f"{expected_argv!r}\n"
