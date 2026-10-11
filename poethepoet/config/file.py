@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from ..exceptions import PoeException
+from ..exceptions import ConfigValidationError, PoeException
 
 
 class PoeConfigFile:
@@ -39,9 +39,25 @@ class PoeConfigFile:
                 self._valid = False
                 return None
 
-            if self.is_pyproject or content.get("tool", {}).get("poe", {}):
+            if content is None:
+                # e.g. an empty yaml file
+                content = {}
+            elif not isinstance(content, Mapping):
+                self._error = ConfigValidationError(
+                    f"Config file at {self.path} must contain a table at the top "
+                    f"level, not {type(content).__name__!r}",
+                    filename=str(self.path),
+                )
+                self._valid = False
+                return None
+
+            tool_config = content.get("tool", {})
+            if not isinstance(tool_config, Mapping):
+                tool_config = {}
+
+            if self.is_pyproject or tool_config.get("poe", {}):
                 self._content = content
-                self._valid = bool(content.get("tool", {}).get("poe", {}))
+                self._valid = bool(tool_config.get("poe", {}))
             else:
                 if tool_poe := content.get("tool.poe"):
                     self._content = {"tool": {"poe": tool_poe}}
@@ -91,43 +107,41 @@ class PoeConfigFile:
             yield cls(target_path)
 
     @staticmethod
-    def _read_config_file(path: Path) -> Mapping[str, Any]:
+    def _read_config_file(path: Path) -> Any:
+        if path.suffix == ".json":
+            file_format = "json"
+        elif path.suffix in (".yaml", ".yml"):
+            file_format = "yaml"
+        else:
+            file_format = "toml"
+
         try:
-            if path.suffix.endswith(".json"):
-                import json
+            with path.open("rb") as file:
+                if file_format == "json":
+                    import json
 
-                try:
-                    with path.open("rb") as file:
-                        return json.load(file)
-                except json.decoder.JSONDecodeError as error:
-                    raise PoeException(
-                        f"Couldn't parse json file from {path}", error
-                    ) from error
+                    return json.load(file)
 
-            elif path.suffix.endswith((".yaml", ".yml")):
-                import yaml
+                if file_format == "yaml":
+                    import yaml
 
-                try:
-                    with path.open("rb") as file:
-                        return yaml.safe_load(file)
-                except yaml.parser.ParserError as error:
-                    raise PoeException(
-                        f"Couldn't parse yaml file from {path}", error
-                    ) from error
+                    return yaml.safe_load(file)
 
-            else:
                 try:
                     import tomllib as tomli
                 except ImportError:
                     import tomli  # type: ignore[no-redef]
 
-                try:
-                    with path.open("rb") as file:
-                        return tomli.load(file)
-                except tomli.TOMLDecodeError as error:
-                    raise PoeException(
-                        f"Couldn't parse toml file at {path}", error
-                    ) from error
+                return tomli.load(file)
 
+        except OSError as error:
+            raise ConfigValidationError(
+                f"Couldn't open file at {path}: {error.strerror or error}",
+                filename=str(path),
+            ) from None
         except Exception as error:
-            raise PoeException(f"Couldn't open file at {path}") from error
+            # The decoder's own message says where in the file parsing failed
+            raise ConfigValidationError(
+                f"Couldn't parse {file_format} file at {path}: {error}",
+                filename=str(path),
+            ) from None
