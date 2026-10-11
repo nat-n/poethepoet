@@ -104,7 +104,7 @@ class PoeConfigFile:
                         f"Couldn't parse json file from {path}", error
                     ) from error
 
-            elif path.suffix.endswith((".yaml", "yml")):
+            elif path.suffix.endswith((".yaml", ".yml")):
                 import yaml
 
                 try:

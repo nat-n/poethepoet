@@ -34,6 +34,7 @@ class PoeConfig:
         "pyproject.toml",
         "poe_tasks.toml",
         "poe_tasks.yaml",
+        "poe_tasks.yml",
         "poe_tasks.json",
     )
     """

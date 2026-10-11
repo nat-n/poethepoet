@@ -47,7 +47,7 @@ class PoeThePoet:
     :param config_name:
         The name of the file to load tasks and configuration from. If not set then poe
         will search for config by the following file names: pyproject.toml
-        poe_tasks.toml poe_tasks.yaml poe_tasks.json
+        poe_tasks.toml poe_tasks.yaml poe_tasks.yml poe_tasks.json
     :type config_name: str, optional
 
     :param program_name:

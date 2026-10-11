@@ -7,6 +7,7 @@ include = [
   "sub2/poe_tasks.yaml",
   "sub2/poe_tasks.json",
   "sub3/poe_tasks.json",
+  "sub4/poe_tasks.yml",
 ]
 
 [tool.poe.tasks]

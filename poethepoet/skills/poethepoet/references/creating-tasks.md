@@ -13,7 +13,7 @@ ls poetry.lock uv.lock 2>/dev/null
 grep -c "tool.poe" pyproject.toml 2>/dev/null
 
 # Check for standalone task files
-ls poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null
+ls poe_tasks.toml poe_tasks.yaml poe_tasks.yml poe_tasks.json 2>/dev/null
 ```
 
 **Project type determines the poe command and how to add dependencies:**
@@ -29,7 +29,7 @@ ls poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null
 ## Step 2: Choose where to put tasks
 
 - **Existing project with `[tool.poe]` in pyproject.toml** → add to `pyproject.toml`
-- **Existing `poe_tasks.toml` or `poe_tasks.yaml`** → use that file
+- **Existing `poe_tasks.toml` or `poe_tasks.yaml`/`.yml`** → use that file
 - **New project with no poe config** → add `[tool.poe.tasks]` to `pyproject.toml`
 - **Complex task sets warranting separation** → create `poe_tasks.toml` (exclude from `[tool.poe]` in pyproject.toml)
 
