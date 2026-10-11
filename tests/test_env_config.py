@@ -1,3 +1,9 @@
+import shutil
+import sys
+from pathlib import Path
+
+import pytest
+
 EXAMPLE_CONFIG = """
 [tool.poe.env]
 GLOBAL_POE_ROOT = "${POE_ROOT}"
@@ -213,3 +219,136 @@ def test_default_value_in_capture_stdout(temp_pyproject, run_poe, tmp_path):
     assert result.code == 0
     assert result.stderr == ""
     assert (output_dir / "result.txt").read_text().strip() == "captured"
+
+
+# ---------------------------------------------------------------------------
+# Invalid template syntax gives a helpful error rather than a traceback
+# ---------------------------------------------------------------------------
+
+bad_template_examples = [
+    (
+        "task env",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        env = { X = "${U-x}" }
+        """,
+        "Invalid template '${U-x}'",
+        "Illegal character in parameter name '-'",
+    ),
+    (
+        "task cwd",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        cwd = "${HOME"
+        """,
+        "Invalid template '${HOME'",
+        "expected closing '}' after '${'",
+    ),
+    (
+        "task envfile",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        envfile = "${}"
+        """,
+        "Invalid template '${}'",
+        "Bad substitution: ${}",
+    ),
+    (
+        "capture_stdout",
+        """
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        capture_stdout = "${X:=y}"
+        """,
+        "Invalid template '${X:=y}'",
+        "Unsupported operator ':='",
+    ),
+    (
+        "global env",
+        """
+        [tool.poe]
+        env = { X = "${U:?message}" }
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        """,
+        "Invalid template '${U:?message}'",
+        "Unsupported operator ':?'",
+    ),
+    (
+        "global envfile",
+        """
+        [tool.poe]
+        envfile = "${.env"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo hi"
+        """,
+        "Invalid template '${.env'",
+        "Illegal first character in parameter name '.'",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("config", "expected_error", "expected_detail"),
+    [example[1:] for example in bad_template_examples],
+    ids=[example[0] for example in bad_template_examples],
+)
+def test_bad_template_syntax_is_reported(
+    temp_pyproject, run_poe, config, expected_error, expected_detail
+):
+    project_path = temp_pyproject(config)
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert expected_error in result.capture
+    assert expected_detail in result.capture
+    assert "Traceback" not in result.capture
+    assert result.stdout == ""
+
+
+VENV_BIN_DIR = str(Path(sys.executable).parent)
+
+
+@pytest.mark.skipif(
+    shutil.which("git", path=VENV_BIN_DIR) is not None,
+    reason="git is installed alongside the python executable",
+)
+def test_git_vars_without_git_executable(temp_pyproject, run_poe):
+    """
+    If the git executable isn't available then POE_GIT_DIR and POE_GIT_ROOT resolve
+    to empty values, just as when the project isn't inside a git repo.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo dir=${GIT_DIR_VAL}. root=${GIT_ROOT_VAL}."
+        env = { GIT_DIR_VAL = "${POE_GIT_DIR}", GIT_ROOT_VAL = "${POE_GIT_ROOT}" }
+        """)
+    result = run_poe("show", cwd=project_path, env={"PATH": VENV_BIN_DIR})
+    assert result.code == 0
+    assert result.stdout == "dir=. root=.\n"
+    assert result.stderr == ""
+
+
+def test_poe_extra_args_not_inherited_from_host_env(run_poe):
+    """
+    POE_EXTRA_ARGS in the host environment (e.g. set by an outer poe task that runs
+    poe again) doesn't leak into a task that received no free arguments.
+    """
+    result = run_poe(
+        "echo-extra-args", project="cmds", env={"POE_EXTRA_ARGS": "from-outer"}
+    )
+    assert result.capture == "Poe => poe_test_echo extra:\n"
+    assert result.stdout == "extra:\n"
+
+    result = run_poe(
+        "echo-extra-args",
+        "mine",
+        project="cmds",
+        env={"POE_EXTRA_ARGS": "from-outer"},
+    )
+    assert result.capture == "Poe => poe_test_echo extra: mine\n"
+    assert result.stdout == "extra: mine\n"

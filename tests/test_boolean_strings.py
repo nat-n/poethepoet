@@ -175,6 +175,6 @@ def test_boolean_strings_require_string_values(run_poe, temp_pyproject, option, 
         """)
     result = run_poe("bad", cwd=project)
     assert result.code != 0
-    assert option in result.capture
-    assert "str" in result.capture
+    assert "Error: Invalid argument 'flag' declared in task 'bad'" in result.capture
+    assert f"Option {option!r} must have a value of type: str" in result.capture
     assert "Unrecognized option" not in result.capture

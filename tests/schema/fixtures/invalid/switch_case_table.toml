@@ -1,0 +1,4 @@
+# expected_error: expected a string, number, boolean, or a non-empty array
+[tool.poe.tasks.bad]
+control.expr = "1"
+switch = [{ case = { a = 1 }, cmd = "echo one" }]

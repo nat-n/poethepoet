@@ -7,7 +7,7 @@ args = [{ name = "power_level", positional = true, type = "integer", default = 4
 expr = """"power level is " + (f"only {sys.argv[1]}" if int(sys.argv[1]) <= 9000 else 'over nine thousand!') """
 
 [tool.poe.tasks.expr_with_env_vars]
-expr = "[${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + '${NOTHING}'"
+expr = "[${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + ${NOTHING}"
 
 [tool.poe.tasks.expr_with_imports]
 help    = "check if the argument looks like an email address"
@@ -90,3 +90,14 @@ expr = "len(_extra_args)"
 [tool.poe.tasks.label-extra-args]
 expr = "f'{label}: {_extra_args}'"
 args = [{ name = "label", default = "Files" }]
+
+[tool.poe.tasks.method-on-arg]
+expr = "name.upper() + ''.join(part.lower() for part in [name])"
+args = ["name"]
+
+[tool.poe.tasks.dotted-import-call]
+expr = "xml.sax.saxutils.escape('<a>') + alias.escape('&')"
+imports = ["xml.sax.saxutils", "xml.sax.saxutils as alias"]
+
+[tool.poe.tasks.undefined-call-target]
+expr = "undefined_module.thing()"

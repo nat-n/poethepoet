@@ -110,12 +110,21 @@ Task environment state is built by layering values in roughly this order:
 2. Project-level `envfile`
 3. Project-level `env`
 4. Parent task state
-5. Task-level `envfile`
-6. Task-level `env`
-7. `uses` outputs
-8. Task args
+5. `uses_env` outputs
+6. `uses` outputs
+7. Task-level `envfile`
+8. Task-level `env`
+9. Task args
 
 The principle is: values closer to the running task override values further away.
+`uses`/`uses_env` outputs are applied *before* the task's own `envfile` and `env`
+(see `PoeTask.TaskSpec.get_task_env`) so that task `env` values can template them,
+e.g. `env = { URL = "s3://${_bucket}" }`. A consequence is that a task-level `env`
+value overrides a `uses`/`uses_env` value of the same name (unless declared with
+`.default`). Conversely, task args are registered after the task's `env`/`envfile`
+are resolved, so a task's own args cannot be referenced when templating its own
+`env`/`envfile` (args of a parent task can be). Project-level `env`/`envfile` from
+included configs are applied before the main config's (see `RunContext.__init__`).
 Child tasks always inherit parent task state first, and then apply their own config and
 argument parsing on top.
 
@@ -154,6 +163,10 @@ have special environment projection semantics:
 - typed value `True` projects to environment value `"True"`
 - typed value `False` remains available as `False` to `expr`/`script`, but its
   environment projection is **unset**
+- these boolean projections can be replaced with custom strings via the
+  `true_string`/`false_string` arg options
+- the same unset projection applies to an omitted arg with no default (`None`) and to
+  a `multiple` arg that received no values (`[]`)
 
 This gives consistent falsey behavior across shells and subprocesses while preserving
 typed access for task types that can consume python values directly.

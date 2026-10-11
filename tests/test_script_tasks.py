@@ -237,10 +237,37 @@ def test_script_task_bad_content(run_poe, projects):
     assert (
         "Error: Invalid task 'bad-type'\n"
         "     | Invalid callable reference 'dummy_package:main[greeting]'\n"
+        "     | Expected a function call, instead got: main[greeting]\n"
         "     | (expected something like `module:callable` or `module:callable()`)\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("content", "reason"),
+    [
+        (
+            "pkg:fn((y := 1))",
+            "Expression should not include named expressions: fn((y := 1))",
+        ),
+        # The specific SyntaxError message varies across python versions
+        ("pkg:fn(1", "Invalid script content: fn(1 ("),
+    ],
+)
+def test_script_task_bad_content_includes_reason(
+    temp_pyproject, run_poe, content, reason
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.bad]
+        script = "{content}"
+        """)
+    result = run_poe("bad", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"     | Invalid callable reference {content!r}\n     | {reason}"
+        in result.capture
+    )
 
 
 def test_script_with_positional_args(run_poe):
@@ -567,6 +594,24 @@ def test_async_script_task(run_poe, projects):
     assert result.stderr == ""
 
 
+def test_async_script_task_not_detected_as_coroutine_function(run_poe):
+    """
+    Async callables that are not detected by iscoroutinefunction (e.g. wrapped by
+    a sync decorator, or an object with an async __call__) are still awaited
+    """
+    result = run_poe("wrapped-async-task", "--a=foo", project="scripts", env=no_venv)
+    assert result.capture == "Poe => wrapped-async-task --a=foo\n"
+    assert result.stdout == (
+        "I'm a wrapped async task! () {'a': 'foo'}\nwrapped result\n"
+    )
+    assert result.stderr == ""
+
+    result = run_poe("async-callable-task", project="scripts", env=no_venv)
+    assert result.capture == "Poe => async-callable-task\n"
+    assert result.stdout == "I'm an async callable! (1,) {'x': 2}\n"
+    assert result.stderr == ""
+
+
 def test_call_module_as_task(run_poe):
     result = run_poe(
         "module-as-task", "--foo", "cheese", project="scripts", env=no_venv
@@ -626,6 +671,23 @@ def test_script_task_extra_args_available_as_list_via_extra_args_var(run_poe):
     )
     assert result.capture == "Poe => echo-extra-args-script foo bar\n"
     assert result.stdout == "str: foo\nstr: bar\n"
+    assert result.stderr == ""
+
+
+def test_script_task_method_call_on_arg(run_poe):
+    result = run_poe(
+        "method-on-arg-script", "--name", "ab", project="scripts", env=no_venv
+    )
+    assert result.capture == "Poe => method-on-arg-script --name ab\n"
+    assert result.stdout == "args ('AB', 'X')\nkwargs {}\n"
+    assert result.stderr == ""
+
+
+def test_script_task_extra_args_empty_list_without_free_args(run_poe):
+    """_extra_args is an empty list when no free args are passed"""
+    result = run_poe("echo-extra-args-list-script", project="scripts", env=no_venv)
+    assert result.capture == "Poe => echo-extra-args-list-script\n"
+    assert result.stdout == "list: []\n"
     assert result.stderr == ""
 
 
@@ -825,3 +887,59 @@ def test_module_script_task_finds_src_layout_modules(temp_pyproject, run_poe):
     result = run_poe("run", cwd=project_path)
     assert result.code == 0, result.capture + result.stderr
     assert "hello from src layout" in result.stdout
+
+
+def _write_module(project_path, name: str, source: str) -> None:
+    (project_path / f"{name}.py").write_text(source)
+
+
+def test_bare_script_subtask_receives_only_own_args_as_kwargs(temp_pyproject, run_poe):
+    """
+    A no-parens script subtask of a sequence only gets its own declared args as
+    kwargs, not args inherited from the parent sequence (args_guide example).
+    The parenthesised form can still reference the inherited arg by name.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.build]
+        script = "util:build_app"
+        args = [{ name = "target", positional = true }]
+
+        [tool.poe.tasks.check]
+        sequence = ["build ${_target}", { script = "util:run_tests(_target)" }]
+        args = ["_target"]
+        """)
+    _write_module(
+        project_path,
+        "util",
+        "def build_app(target):\n"
+        "    print('build', target)\n"
+        "def run_tests(target):\n"
+        "    print('test', target)\n",
+    )
+    result = run_poe("check", "--target", "foo", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "build foo\ntest foo\n"
+
+
+def test_bare_script_ref_target_without_args_gets_no_kwargs(temp_pyproject, run_poe):
+    """
+    A no-parens script task without declared args, referenced from a task that
+    declares args, is called without kwargs (options.rst private var example).
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.run]
+        ref = "_serve"
+        args = ["_favorite_number"]
+
+        [tool.poe.tasks._serve]
+        script = "myapp:run"
+        env = { PORT = "${_favorite_number}" }
+        """)
+    _write_module(
+        project_path,
+        "myapp",
+        "import os\ndef run():\n    print('PORT', os.environ['PORT'])\n",
+    )
+    result = run_poe("run", "--favorite_number", "42", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "PORT 42\n"

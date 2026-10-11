@@ -202,16 +202,13 @@ class EnvFileValue(SyntaxNode):
                     self._children.append(param_node)
                     last_was_whitespace = False
                 else:
-                    # ParamExpansion cancelled, $ pushed back; read as unquoted
-                    if text_node := EnvFileUnquotedTextCls(chars, self.config):
-                        self._children.append(text_node)
-                        last_char = text_node.content[-1:] if text_node.content else ""
-                        last_was_whitespace = last_char in (" ", "\t")
-                    else:
-                        # bare $ at a stop position — should not happen, but
-                        # consume to avoid an infinite loop
-                        chars.take()
-                        last_was_whitespace = False
+                    # ParamExpansion cancelled and pushed $ back. Force
+                    # EnvFileUnquotedText to accept it as a literal by prepending
+                    # a backslash escape so it reads \$ → $ (as bash does).
+                    chars.pushback("\\")
+                    text_node = EnvFileUnquotedTextCls(chars, self.config)
+                    self._children.append(text_node)
+                    last_was_whitespace = text_node.content[-1:] in (" ", "\t")
 
             elif next_char == "'":
                 chars.take()  # consume opening '
@@ -246,7 +243,8 @@ class EnvAssignment(SyntaxNode):
         [export] IDENTIFIER=value
 
     Leading whitespace is skipped. The 'export' keyword is optional and must
-    be followed by at least one space or tab. The identifier must immediately
+    be followed by at least one space or tab (otherwise it is read as the start
+    of the identifier, e.g. `exports=1`). The identifier must immediately
     precede '=' with no intervening whitespace.
     """
 
@@ -266,15 +264,22 @@ class EnvAssignment(SyntaxNode):
             for expected in "export":
                 ch = chars.peek()
                 if ch != expected:
-                    chars.pushback(*reversed(saved))
+                    chars.pushback(*saved)
                     break
                 saved.append(chars.take())
             else:
-                # 'export' fully matched — require whitespace after it
-                if chars.peek() not in (" ", "\t"):
+                following = chars.peek()
+                if following is not None and (
+                    following.isalnum() or following in ("_", "=")
+                ):
+                    # Not the keyword, just a name that starts with 'export'
+                    chars.pushback(*saved)
+                elif following not in (" ", "\t"):
+                    # 'export' keyword must be followed by whitespace
                     raise ParseError("Expected whitespace after 'export'", chars)
-                while chars.peek() in (" ", "\t"):
-                    chars.take()
+                else:
+                    while chars.peek() in (" ", "\t"):
+                        chars.take()
 
         # Read identifier: [a-zA-Z_][a-zA-Z_0-9]*
         name_chars: list[str] = []

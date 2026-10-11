@@ -1,0 +1,4 @@
+# expected_error: Option 'options' must be a list
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${flag}"
+args = [{ name = "flag", options = "--flag" }]

@@ -320,8 +320,8 @@ class TestZshCompletionE2E:
 
         assert result.arguments_called
         specs_text = "\n".join(result.arguments_specs)
-        # Quoted choices should appear
-        assert "quick run" in specs_text or "'quick run'" in specs_text
+        # Quoted choices are re-quoted with backslashes for the (...) action
+        assert ":value:(quick\\ run full\\ test smoke)" in specs_text
 
     # ========== Option=value style completion tests ==========
 
@@ -363,6 +363,35 @@ class TestZshCompletionE2E:
         for spec in result.arguments_specs:
             if spec.startswith(":"):
                 assert "=[" not in spec, f"Positional arg should NOT have '=': {spec}"
+
+    def test_arg_specs_escape_special_chars(self, zsh_harness, completion_script):
+        """
+        ] in help, and : ( ) in choices must be escaped in _arguments specs,
+        otherwise zsh fails to parse the specs and offers no completions.
+        """
+        mock_output = {
+            "_zsh_describe_tasks": "pick:Pick something",
+            "_describe_task_args": (
+                "--flavor,-f\tstring\tFlavor [x] here\ta:b x(y) 'choc chip'\n"
+                "--upper\tboolean\ta]b\t_\n"
+                "size\tpositional\tServing size\th:1 t(2)"
+            ),
+        }
+
+        result = zsh_harness(
+            completion_script,
+            words=["poe", "pick", ""],
+            current=3,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.arguments_called
+        assert (
+            "(--flavor -f)--flavor=[Flavor [x\\] here]:value:(a\\:b x\\(y\\) choc\\ chip)"
+            in result.arguments_specs
+        )
+        assert "--upper[a\\]b]" in result.arguments_specs
+        assert ":size -- Serving size:(h\\:1 t\\(2\\))" in result.arguments_specs
 
     def test_single_option_spec_includes_equals(self, zsh_harness, completion_script):
         """Single-form value options should also include '='."""
@@ -1913,6 +1942,28 @@ class TestZshBackwardCompatibility:
         assert result.describe_called
         # Tasks should be offered
         assert any("simple-task" in item for item in result.describe_items)
+
+    def test_list_tasks_fallback_escapes_colons(self, zsh_harness, completion_script):
+        """The _list_tasks fallback should escape colons in namespaced task names."""
+        mock_output = {
+            "_zsh_describe_tasks": "",  # Fails
+            "_list_tasks": "db:migrate ns:sub:task greet",
+        }
+
+        result = zsh_harness(
+            completion_script,
+            words=["poe", ""],
+            current=2,
+            mock_poe_output=mock_output,
+        )
+
+        assert result.describe_called
+        # _describe splits on the first unescaped colon
+        assert result.describe_items == [
+            "db\\:migrate:",
+            "ns\\:sub\\:task:",
+            "greet:",
+        ]
 
     def test_partial_task_name_with_old_poe(self, zsh_harness, completion_script):
         """Partial task completion should work with old poe versions."""

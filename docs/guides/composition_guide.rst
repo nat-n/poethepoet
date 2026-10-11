@@ -121,7 +121,7 @@ Normally the key in the uses table will be set as an environment variable for th
 
 .. important::
 
-  Note that captured output that is exposed as an environment variable via the ``uses`` is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash.
+  Note that captured output that is exposed as an environment variable via the ``uses`` is compacted to have new lines removed. This is similar to how interpolated command output is treated by bash. Specifically, any leading and trailing new lines are removed, and every remaining run of whitespace (including new lines and tabs) is collapsed to a single space. Other leading or trailing spaces are kept.
 
 Sourcing variables from dependency task output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -142,8 +142,26 @@ This is useful for loading several related variables produced together by one co
   uses_env = "_aws-creds --profile ${_profile}"
   args = [{ name = "_profile", default = "dev", help = "AWS profile to use" }]
 
-Here ``_aws-creds`` returns several ``AWS_*=...`` lines, which are then exposed in the environment of the ``deploy`` task. ``uses_env`` also accepts a list of task invocations (including parameter expansions), applied in order so that later entries override earlier ones. Notice that the ``_aws-creds`` task optionally accepts an argument to pass to aws-vault to choose which AWS profile to use.
+Here ``_aws-creds`` returns several ``AWS_*=...`` lines, which are then exposed in the environment of the ``deploy`` task. Variable references within the output (e.g. ``${VAR}``) are expanded as in an env file, with reference to the variables inherited by the task (e.g. from the host or global config or a parent task), but not variables from the task's own ``env``, ``envfile``, or args. ``uses_env`` also accepts a list of task invocations (including parameter expansions), applied in order so that later entries override earlier ones. Notice that the ``_aws-creds`` task optionally accepts an argument to pass to aws-vault to choose which AWS profile to use.
+
+.. important::
+
+  Unlike with ``uses``, the output of tasks referenced via ``uses_env`` is **not** whitespace-collapsed before being parsed, so multi-line and whitespace-sensitive values are preserved as they would be when loading an env file.
 
 .. note::
 
   As is conventional in poethepoet, lowercase variables prefixed with ``_`` (e.g. ``_my_private_var``) are considered private — accessible within task config but not exposed on the subprocess environment at runtime.
+
+How deps are run
+~~~~~~~~~~~~~~~~
+
+Tasks referenced via ``deps`` or ``uses`` are planned together with the task that requires them as an execution graph, in which each upstream task is run at most once. Deduplication only applies within a single graph however, so for example if a sequence task references two tasks that each depend on the same ``setup`` task, then ``setup`` will be run once for each of them. Also a task that is referenced both via ``deps`` and via ``uses`` is run twice, once with its output captured and once without.
+
+Upstream tasks run standalone, so they do not inherit environment variables from the task that depends on them or from its parent tasks (e.g. a sequence that contains it), although the invocations listed in ``deps`` and ``uses`` can reference such variables via parameter expansion.
+
+Cyclic task references
+----------------------
+
+Since a task that (directly or indirectly) references itself would recurse without limit, poe rejects any cycle of task references via ``ref``, ``sequence``, or ``parallel`` tasks or the ``deps``, ``uses``, or ``uses_env`` options as invalid configuration, with an error message naming the tasks in the cycle, e.g. ``Cyclic task reference detected: a -> b -> c -> a``.
+
+References from the cases of a :doc:`switch<../tasks/task_types/switch>` task are not considered, since a recursion through a switch case may terminate depending on the output of the control task.

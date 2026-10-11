@@ -200,7 +200,8 @@ def test_zsh_completion(run_poe_main):
     # some lines to stdout and none for stderr
     assert len(result.stdout.split("\n")) > 5
     assert result.stderr == ""
-    assert "Error: Unrecognised task" not in result.stdout
+    assert "Unrecognized task" not in result.stdout
+    assert result.stdout.startswith("#compdef poe\n")
 
 
 class TestZshCompletionScript:
@@ -776,7 +777,8 @@ def test_fish_completion(run_poe_main):
     # some lines to stdout and none for stderr
     assert len(result.stdout.split("\n")) > 5
     assert result.stderr == ""
-    assert "Error: Unrecognised task" not in result.stdout
+    assert "Unrecognized task" not in result.stdout
+    assert result.stdout.startswith("function __list_poe_tasks\n")
 
 
 class TestZshCompletionSpecialTaskNames:
@@ -812,7 +814,11 @@ class TestZshCompletionSpecialTaskNames:
 
         # Colons in task names should be escaped as \:
         # Format is "task_name:description" so internal colons need escaping
-        assert "docker\\:build" in result.stdout or "docker:build" in result.stdout
+        lines = result.stdout.splitlines()
+        assert "docker\\:build:Namespaced task with colon" in lines
+        assert "ns\\:sub\\:task:Task with multiple colons" in lines
+        assert "build_v2-fast+ci\\:latest:Task with all special chars" in lines
+        assert not any(line.startswith("docker:") for line in lines)
         assert result.stderr == ""
 
     def test_describe_task_args_with_colon_task(self, run_poe_main, projects):

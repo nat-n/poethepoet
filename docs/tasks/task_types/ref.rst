@@ -9,7 +9,7 @@ follows:
 .. code-block:: toml
 
   [tool.poe.tasks]
-  do_things.cmd = "do_cmd"
+  do_things.cmd = "do_cmd ${things}"
   do_things.args = [{ name = "things", multiple = true, positional = true }]
 
   do_specific_things.ref = "do_things thing1 thing2"
@@ -64,7 +64,7 @@ By default if the referenced task fails (has a non-zero exit code) then the ref 
 .. code-block:: toml
 
   [tool.poe.tasks.test]
-  test = "pytest"
+  cmd = "pytest"
 
   [tool.poe.tasks.always-pass]
   ref = "test"

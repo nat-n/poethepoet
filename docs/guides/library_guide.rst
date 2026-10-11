@@ -19,6 +19,15 @@ The following script replicates the main functionality of the `poe` standalone c
         if result:
             sys.exit(result)
 
+Instead of loading config from a file, you can also pass the config directly as a mapping, either with the same structure as a pyproject.toml file, or with just the content of its ``tool.poe`` table. In this case no config file is searched for.
+
+.. code-block:: python
+
+    from poethepoet.app import PoeThePoet
+
+    app = PoeThePoet(config={"tasks": {"hello": "echo hello"}})
+    app(cli_args=["hello"])
+
 The `PoeThePoet <https://github.com/nat-n/poethepoet/blob/main/poethepoet/app.py>`_ class accepts various optional arguments to customize its behavior as described below.
 
 .. autoclass:: poethepoet.app.PoeThePoet

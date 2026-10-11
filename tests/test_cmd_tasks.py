@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,23 @@ def test_call_echo_task(run_poe_subproc, projects, esc_prefix, is_windows):
 
     assert result.stdout == f"POE_ROOT:{projects['cmds']} Password1, task_args: foo !\n"
     assert result.stderr == ""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="use_exec is ignored on windows")
+def test_use_exec_with_missing_executable(run_poe_subproc):
+    """
+    A use_exec task with a missing executable gives the same friendly error as a
+    task run as a subprocess, rather than a FileNotFoundError traceback
+    """
+    result = run_poe_subproc("exec-missing-executable", project="cmds")
+    assert result.code == 1
+    assert result.capture.startswith("Poe => no_such_binary_for_poe_tests a\n")
+    assert (
+        "Error: executable 'no_such_binary_for_poe_tests' could not be found\n"
+        "     | From: FileNotFoundError(2, 'No such file or directory')\n"
+    ) in result.capture
+    assert result.stdout == ""
+    assert "Traceback" not in result.stderr
 
 
 def test_setting_envvar_in_task(run_poe, projects):
@@ -490,4 +508,134 @@ def test_cmd_task_with_extra_args_only_in_comment_still_appends_extra_args(run_p
     result = run_poe("echo-comment-mentions-extra-args", "foo", "bar", project="cmds")
     assert result.capture == "Poe => poe_test_echo actual foo bar\n"
     assert result.stdout == "actual foo bar\n"
+    assert result.stderr == ""
+
+
+def test_cmd_hash_inside_word_is_not_a_comment(run_poe):
+    """
+    Like bash, a # only starts a comment at the beginning of a word
+    """
+    result = run_poe("hash-in-word", project="cmds")
+    assert result.capture == ("Poe => poe_test_echo 'http://x/#anchor' 'ab#c' after\n")
+    assert result.stdout == "http://x/#anchor ab#c after\n"
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "task_name",
+    [
+        "multiple-command-lines",
+        "semicolon-after-comment",
+        "semicolon-after-comment-line",
+    ],
+)
+def test_cmd_with_multiple_command_lines_is_rejected(run_poe, task_name):
+    """
+    A ; separating commands is rejected, even if it follows a comment
+    """
+    result = run_poe(task_name, project="cmds")
+    assert result.code == 1
+    assert (
+        f"Error: Invalid cmd task {task_name!r} includes multiple command lines\n"
+        in result.capture
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("task_name", "env"),
+    [
+        ("empty-after-expansion", {}),
+        ("empty-after-expansion", {"UNSET_CMD_VAR": "   "}),
+        ("empty-after-null-glob", {}),
+    ],
+)
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_cmd_resolving_to_empty_command_line(run_poe, task_name, env, dry_run):
+    """
+    A cmd that resolves to zero tokens gives a clear error rather than crashing
+    """
+    run_args = ("-d", task_name) if dry_run else (task_name,)
+    result = run_poe(*run_args, project="cmds", env=env)
+    assert result.code == 1
+    assert result.capture == (
+        f"Error: Task {task_name!r} resolved to an empty command line\n"
+    )
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_cmd_with_absolute_glob_pattern(run_poe, temp_pyproject, tmp_path):
+    """
+    A glob pattern with an absolute path is matched relative to its own anchor
+    instead of crashing with NotImplementedError
+    """
+    glob_dir = tmp_path / "glob_dir"
+    glob_dir.mkdir()
+    for file_name in ("a.txt", "b.txt", "c.log"):
+        glob_dir.joinpath(file_name).touch()
+    project_path = temp_pyproject(
+        "[tool.poe.tasks.abs-glob]\n"
+        f"cmd = \"poe_test_echo '{glob_dir.as_posix()}'/*.txt\"\n"
+    )
+
+    result = run_poe("abs-glob", cwd=project_path)
+    assert result.code == 0
+    assert result.capture.startswith("Poe => poe_test_echo ")
+    assert sorted(result.stdout.split()) == [
+        str(glob_dir / "a.txt"),
+        str(glob_dir / "b.txt"),
+    ]
+    assert result.stderr == ""
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13),
+    reason="pathlib accepts ** within a path component from python 3.13",
+)
+def test_cmd_with_invalid_glob_pattern(run_poe, temp_pyproject):
+    """
+    A glob pattern that pathlib rejects gives a clear error instead of a traceback
+    """
+    project_path = temp_pyproject(
+        '[tool.poe.tasks.bad-glob]\ncmd = "poe_test_echo **.txt"\n'
+    )
+
+    result = run_poe("bad-glob", cwd=project_path)
+    assert result.code == 1
+    assert result.capture.startswith("Error: Invalid glob pattern '**.txt'")
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("capture_stdout", "expected_path"),
+    [
+        ("missing_dir/out.txt", "missing_dir/out.txt"),
+        ("existing_dir", "existing_dir"),
+        ("${UNSET_CAPTURE_PATH}", ""),
+    ],
+)
+def test_cmd_with_capture_stdout_to_unwritable_path(
+    run_poe, temp_pyproject, capture_stdout, expected_path
+):
+    """
+    A capture_stdout path that cannot be opened for writing gives a clear error
+    """
+    project_path = temp_pyproject(
+        "[tool.poe.tasks.capture]\n"
+        'cmd = "poe_test_echo hi"\n'
+        f'capture_stdout = "{capture_stdout}"\n'
+    )
+    project_path.joinpath("existing_dir").mkdir()
+
+    result = run_poe("capture", cwd=project_path)
+    assert result.code == 1
+    assert result.capture.startswith(
+        "Poe <= poe_test_echo hi\n"
+        "Error: Cannot open file "
+        f"{str(project_path.joinpath(expected_path))!r} for capture_stdout"
+    )
+    assert result.stdout == ""
     assert result.stderr == ""

@@ -6,6 +6,7 @@ the completion logic works correctly. The harness captures what our
 script passes to compgen, _filedir, and COMPREPLY.
 """
 
+import io
 import shutil
 import subprocess
 
@@ -832,6 +833,72 @@ class TestBashDirectoryOption:
         poe_calls_str = " ".join(result.poe_calls)
         assert "/custom/path" in poe_calls_str
 
+    @pytest.fixture
+    def alias_script_and_path(self, run_poe_main, projects):
+        """
+        A script generated for a global tasks alias, as per the global tasks docs.
+        """
+        global_tasks_path = str(projects["example"])
+        result = run_poe_main("_bash_completion", "edgar", global_tasks_path)
+        assert result.code == 0
+        return result.stdout, global_tasks_path
+
+    def test_alias_with_path_lists_tasks_from_path(
+        self, bash_harness, alias_script_and_path
+    ):
+        """
+        poe _bash_completion edgar <path>: completion calls the real poe with path.
+        """
+        script, global_tasks_path = alias_script_and_path
+        assert "complete -F _edgar_complete edgar\n" in script
+
+        result = bash_harness(
+            script,
+            words=["edgar", ""],
+            current=1,
+            mock_poe_output={"_list_tasks": "echo greet"},
+        )
+
+        assert result.poe_calls == [f"poe _list_tasks {global_tasks_path}"]
+        assert result.compreply == ["echo", "greet"]
+
+    def test_alias_with_path_describes_task_args_from_path(
+        self, bash_harness, alias_script_and_path
+    ):
+        """
+        Task args for an alias with a path are fetched from that path.
+        """
+        script, global_tasks_path = alias_script_and_path
+
+        result = bash_harness(
+            script,
+            words=["edgar", "greet", "-"],
+            current=2,
+            mock_poe_output={"_describe_task_args": "--name\tstring\tName\t_"},
+        )
+
+        assert result.poe_calls == [
+            f"poe _describe_task_args greet {global_tasks_path}"
+        ]
+        assert result.compreply == ["--name"]
+
+    def test_alias_with_path_directory_option_overrides(
+        self, bash_harness, alias_script_and_path
+    ):
+        """
+        An explicit -C on the command line takes precedence over the baked path.
+        """
+        script, _ = alias_script_and_path
+
+        result = bash_harness(
+            script,
+            words=["edgar", "-C", "/other", ""],
+            current=3,
+            mock_poe_output={"_list_tasks": "other"},
+        )
+
+        assert result.poe_calls == ["poe _list_tasks /other"]
+
     def test_multiple_directory_options_last_wins(
         self, bash_harness, completion_script
     ):
@@ -1275,11 +1342,9 @@ class TestBashTaskNamePatterns:
             mock_poe_output=mock_output,
         )
 
-        # Should filter to docker:* tasks
-        assert "docker:build" in result.compreply
-        assert "docker:push" in result.compreply
-        assert "docker:test" in result.compreply
-        assert "npm:build" not in result.compreply
+        # Should filter to docker:* tasks, relative to the colon (readline only
+        # replaces the text after the last COMP_WORDBREAKS char)
+        assert result.compreply == ["build", "push", "test"]
 
     def test_completion_with_plus_prefix(self, bash_harness, completion_script):
         """Partial completion with plus should work."""
@@ -1619,7 +1684,7 @@ class TestBashEqualsStyleOptions:
         assert "remote-task" in result.compreply
 
     def test_task_option_equals_value_completion(self, bash_harness, completion_script):
-        """poe pick --flavor= should offer prefixed choices."""
+        """poe pick --flavor= should offer the choices (readline keeps --flavor=)."""
         mock_output = {
             "_list_tasks": "pick",
             "_describe_task_args": (
@@ -1634,12 +1699,10 @@ class TestBashEqualsStyleOptions:
             mock_poe_output=mock_output,
         )
 
-        assert "--flavor=vanilla" in result.compreply
-        assert "--flavor=chocolate" in result.compreply
-        assert "--flavor=strawberry" in result.compreply
+        assert result.compreply == ["vanilla", "chocolate", "strawberry"]
 
     def test_task_option_equals_partial_value(self, bash_harness, completion_script):
-        """poe pick --flavor=van should filter to --flavor=vanilla."""
+        """poe pick --flavor=van should filter to vanilla."""
         mock_output = {
             "_list_tasks": "pick",
             "_describe_task_args": (
@@ -1654,8 +1717,7 @@ class TestBashEqualsStyleOptions:
             mock_poe_output=mock_output,
         )
 
-        assert "--flavor=vanilla" in result.compreply
-        assert "--flavor=chocolate" not in result.compreply
+        assert result.compreply == ["vanilla"]
 
     def test_used_option_equals_filtered(self, bash_harness, completion_script):
         """poe task --mode=debug -<TAB> should filter --mode/-m from completions."""
@@ -1696,7 +1758,7 @@ class TestBashEqualsStyleOptions:
         assert "remote-task" in result.compreply
 
     def test_executor_equals_value_completion(self, bash_harness, completion_script):
-        """poe --executor= should offer --executor=auto, etc."""
+        """poe --executor= should offer auto, etc. (readline keeps --executor=)."""
         mock_output = {"_list_tasks": "greet"}
 
         result = bash_harness(
@@ -1706,6 +1768,184 @@ class TestBashEqualsStyleOptions:
             mock_poe_output=mock_output,
         )
 
-        assert "--executor=auto" in result.compreply
-        assert "--executor=poetry" in result.compreply
-        assert "--executor=simple" in result.compreply
+        assert "auto" in result.compreply
+        assert "poetry" in result.compreply
+        assert "simple" in result.compreply
+
+
+@requires_bash
+@pytest.mark.parametrize(
+    "use_init_completion", [True, False], ids=["bash-completion", "fallback"]
+)
+class TestBashWordbreakHandling:
+    """
+    Tests for words split by COMP_WORDBREAKS (= and : by default).
+
+    Readline splits `db:migrate` into `db`, `:`, `migrate` in COMP_WORDS and only
+    replaces the text after the last wordbreak char, so the script must rejoin the
+    words and return candidates relative to that last wordbreak char.
+    """
+
+    @pytest.fixture
+    def completion_script(self, run_poe_main):
+        """
+        Get the generated bash completion script.
+        """
+        result = run_poe_main("_bash_completion")
+        return result.stdout
+
+    namespaced_mock_output = {
+        "_list_tasks": "db:migrate db:seed greet",
+        "_describe_task_args": "--target\tstring\tTarget\tup down\n"
+        "--host\tstring\tHost\tlocal:80 remote:80",
+    }
+
+    def test_namespaced_task_after_colon(
+        self, bash_harness, completion_script, use_init_completion
+    ):
+        """
+        poe db:<TAB> offers the part of each task name after the colon.
+        """
+        result = bash_harness(
+            completion_script,
+            words=["poe", "db:"],
+            current=1,
+            mock_poe_output=self.namespaced_mock_output,
+            use_init_completion=use_init_completion,
+        )
+
+        assert result.compreply == ["migrate", "seed"]
+
+    def test_namespaced_task_partial(
+        self, bash_harness, completion_script, use_init_completion
+    ):
+        """
+        poe db:m<TAB> completes to db:migrate.
+        """
+        result = bash_harness(
+            completion_script,
+            words=["poe", "db:m"],
+            current=1,
+            mock_poe_output=self.namespaced_mock_output,
+            use_init_completion=use_init_completion,
+        )
+
+        assert result.compreply == ["migrate"]
+
+    def test_namespaced_task_options(
+        self, bash_harness, completion_script, use_init_completion
+    ):
+        """
+        poe db:migrate --t<TAB> completes options of the namespaced task.
+        """
+        result = bash_harness(
+            completion_script,
+            words=["poe", "db:migrate", "--t"],
+            current=2,
+            mock_poe_output=self.namespaced_mock_output,
+            use_init_completion=use_init_completion,
+        )
+
+        assert result.detected_task == "db:migrate"
+        assert "poe _describe_task_args db:migrate" in result.poe_calls
+        assert result.compreply == ["--target"]
+
+    def test_namespaced_task_option_choices(
+        self, bash_harness, completion_script, use_init_completion
+    ):
+        """
+        poe db:migrate --target <TAB> offers the option's choices.
+        """
+        result = bash_harness(
+            completion_script,
+            words=["poe", "db:migrate", "--target", ""],
+            current=3,
+            mock_poe_output=self.namespaced_mock_output,
+            use_init_completion=use_init_completion,
+        )
+
+        assert result.compreply == ["up", "down"]
+
+    def test_option_equals_value(
+        self, bash_harness, completion_script, use_init_completion
+    ):
+        """
+        poe db:migrate --target=u<TAB> offers only the value, as readline keeps
+        the --target= prefix on the command line.
+        """
+        result = bash_harness(
+            completion_script,
+            words=["poe", "db:migrate", "--target=u"],
+            current=2,
+            mock_poe_output=self.namespaced_mock_output,
+            use_init_completion=use_init_completion,
+        )
+
+        assert result.compreply == ["up"]
+
+    def test_choice_containing_colon(
+        self, bash_harness, completion_script, use_init_completion
+    ):
+        """
+        poe db:migrate --host local:<TAB> offers the part after the colon.
+        """
+        result = bash_harness(
+            completion_script,
+            words=["poe", "db:migrate", "--host", "local:"],
+            current=3,
+            mock_poe_output=self.namespaced_mock_output,
+            use_init_completion=use_init_completion,
+        )
+
+        assert result.compreply == ["80"]
+
+    def test_global_option_equals_value(
+        self, bash_harness, completion_script, use_init_completion
+    ):
+        """
+        poe --executor=s<TAB> offers only the value.
+        """
+        result = bash_harness(
+            completion_script,
+            words=["poe", "--executor=s"],
+            current=1,
+            mock_poe_output=self.namespaced_mock_output,
+            use_init_completion=use_init_completion,
+        )
+
+        assert result.compreply == ["simple"]
+
+
+@requires_bash
+@pytest.mark.parametrize(
+    ("shell", "harness_input", "expected_output"),
+    [
+        (
+            "bash",
+            "# WORDS: poe greet --g\n# CURRENT: 2\n# MOCK _list_tasks: greet\n"
+            "# MOCK _describe_task_args: --greeting,-g\\tstring\\tThe greeting\\t_\n",
+            "=== COMPREPLY (completions) ===\n  --greeting\n",
+        ),
+        pytest.param(
+            "zsh",
+            "# WORDS: poe greet --greeting hello\n# CURRENT: 5\n"
+            "# MOCK _zsh_describe_tasks: greet:Greet someone\n"
+            "# MOCK _describe_task_args: --name\\tstring\\tName to greet\\t_\n",
+            "  --name=[Name to greet]:value:()\n",
+            marks=pytest.mark.skipif(
+                shutil.which("zsh") is None, reason="zsh not available"
+            ),
+        ),
+    ],
+)
+def test_harness_task_reads_stdin_without_prompting(
+    harness_tasks, monkeypatch, capsys, shell, harness_input, expected_output
+):
+    """
+    `poe zsh-harness -` and `poe bash-harness -` read the input from stdin, so
+    they must not then prompt for Enter (which raised EOFError).
+    """
+    monkeypatch.setattr("sys.stdin", io.StringIO(harness_input))
+
+    assert harness_tasks[shell]("-") == 0
+    assert expected_output in capsys.readouterr().out

@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "poethepoet_plugin_conflicting_prefix"
+version = "0.1.0"
+description = "A project with a command prefix that conflicts with poetry."
+authors = ["Nat Noordanus <n@natn.me>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+
+[tool.poe]
+poetry_command = "build"
+
+[tool.poe.tasks]
+say = "echo"

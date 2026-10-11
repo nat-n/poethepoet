@@ -1,0 +1,3 @@
+# expected_error: Item #0 in parallel task must not be empty
+[tool.poe.tasks.bad]
+parallel = [""]

@@ -20,7 +20,7 @@ The following options can be configured on your tasks and are not specific to an
 
 **cwd** :  ``str`` :ref:`📖<Running a task with a specific working directory>`
   Specify the current working directory that this task should run with. The given path is resolved relative to the parent directory of the ``pyproject.toml``, or it may be absolute.
-  Resolves environment variables in the format ``${VAR_NAME}``.
+  Resolves environment variables in the format ``${VAR_NAME}`` or ``$VAR_NAME``.
 
 **deps** :  ``list[str]`` :doc:`📖<../guides/composition_guide>`
   A list of task invocations that will be executed before this one.
@@ -35,7 +35,7 @@ The following options can be configured on your tasks and are not specific to an
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.
 
-**executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
+**executor** : ``str`` | ``dict[str, Any]`` :ref:`📖<Configure the executor for a task>`
   Specify executor type and/or configuration for this task.
 
 **verbosity** : ``int`` :ref:`📖<Configure task level verbosity>`
@@ -97,6 +97,12 @@ It is also possible to reference existing environment variables when defining a 
     [tool.poe.tasks.serve]
     cmd = "flask run"
     env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
+
+Note that within ``env`` values only the braced form ``${VAR}`` is expanded, a bare ``$VAR`` is left as is.
+
+.. important::
+
+  When templating ``env`` values or ``envfile`` paths, the task's *own* args are not yet available, so a reference to one of them will resolve as empty (or to an inherited value with the same name). Args of a parent task (e.g. a :doc:`ref<task_types/ref>` or :doc:`sequence<task_types/sequence>` task that invokes this task) are available, as demonstrated in the ``_serve`` example above. Values from :doc:`uses<../guides/composition_guide>` and ``uses_env`` *are* available, and are overridden by the task's own ``env`` (see :ref:`variable precedence<How Poe the Poet uses environment variables>`).
 
 
 .. _envfile_option:
@@ -163,9 +169,9 @@ By default tasks are run from the project root – that is the parent directory 
 
 In this example, the npx executable is executed inside the :sh:`./client` subdirectory of the project (when ``cwd`` is a relative path, it gets resolved relatively to the project root), and will use the nodejs package.json configuration from that location and evaluate paths relative to that location.
 
-The ``cwd`` option also accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}``, including the :ref:`default and alternate value operators <parameter-expansion-operators>`.
+The ``cwd`` option also accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}`` (or ``$VAR_NAME``, so a literal ``$`` in the path must be escaped with a backslash, e.g. ``cwd = "a\\$b"``), including the :ref:`default and alternate value operators <parameter-expansion-operators>`.
 
-Poe provides its own :sh:`$POE_PWD` variable that is by default set to the directory, from which poe was executed; this may be overridden by setting the variable to a different value beforehand. Using :sh:`$POE_PWD`, a task's working directory may be set to the one from which it was executed like so:
+Poe provides its own :sh:`$POE_PWD` variable that is set to the directory from which poe was executed (or inherited from the outer poe process if poe is run from within a poe task, see :ref:`Internal Environment variables<Internal Environment variables>`). Using :sh:`$POE_PWD`, a task's working directory may be set to the one from which it was executed like so:
 
 .. code-block:: toml
 
@@ -185,7 +191,7 @@ You can configure poe to redirect the standard output of a task to a file on dis
     cmd            = "gunicorn ./my_app:run"
     capture_stdout = "gunicorn_log.txt"
 
-If a relative path is provided, as in the example above, then it will be resolved relative to the project root directory.
+If a relative path is provided, as in the example above, then it will be resolved relative to the project root directory. The parent directory of the file must already exist, and any existing file at that path is overwritten (not appended to).
 
 The ``capture_stdout`` option supports referencing environment variables, including the :ref:`default and alternate value operators <parameter-expansion-operators>`. For example setting ``capture_stdout = "${POE_PWD}/output.txt"`` will cause the output file to be created within the current working directory of the parent process.
 
@@ -258,7 +264,7 @@ You can also specify a dependency on the task level without needing to add it as
     cmd      = "pytest"
     executor = {type = "uv", with = ["pytest"], isolated = true}
 
-Executor options can also be set at runtime via the ``--executor-opt`` CLI option (before the task name) to override or add to the executor configuration for a specific task invocation.
+Executor options can also be set at runtime via the ``--executor-opt`` CLI option (before the task name) to override or add to the executor configuration for a specific task invocation. Note that options are overridden as a whole, so for example passing ``--executor-opt with=...`` replaces any ``with`` list configured for the task rather than adding to it. The same applies to executor options configured at the project, group, and task levels.
 
 .. code-block:: bash
 
@@ -280,7 +286,7 @@ You can specify the verbosity level for a task by providing the :toml:`verbosity
 
 This overrides the project level verbosity setting, which defaults to 0. The verbosity level can be set to an integer from -2 (least verbose) to 2 (most verbose).
 
-Passing the ``-v`` or ``-q`` global options (before the task name on the command line) will override increment or decrement all verbosity levels.
+Passing the ``-v`` or ``-q`` global options (before the task name on the command line) will increment or decrement all verbosity levels.
 
 
 Verbosity levels
@@ -307,7 +313,7 @@ Defining tasks that run via exec instead of a subprocess
 
 Normally tasks are executed as subprocesses of the ``poe`` executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.
 
-However in certain situations it can be desirable to define a task that is instead executed within the same process via an *exec* call. :doc:`task_types/cmd` and :doc:`task_types/script` tasks can be configured to work this way using the :toml:`use_exec` option like so:
+However in certain situations it can be desirable to define a task that is instead executed within the same process via an *exec* call. :doc:`task_types/cmd`, :doc:`task_types/script`, and :doc:`task_types/expr` tasks can be configured to work this way using the :toml:`use_exec` option like so:
 
 .. code-block:: toml
 

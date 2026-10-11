@@ -396,7 +396,11 @@ class LiteralType(TypeAnnotation):
         return self._values[0]
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
-        if value not in self._values:
+        # Compare types as well as values, since e.g. True == 1 and 1.0 == 1
+        if not any(
+            type(value) is type(literal) and value == literal
+            for literal in self._values
+        ):
             yield f"Option {self._format_path(path)!r} must be one of {self._values!r}"
 
 
@@ -497,7 +501,10 @@ class PrimitiveType(TypeAnnotation):
         return self._annotation()
 
     def validate(self, path: tuple[str | int, ...], value: Any) -> Iterator[str]:
-        if not isinstance(value, self._annotation):
+        if not isinstance(value, self._annotation) or (
+            # bool is a subclass of int, but is not a valid value for a numeric option
+            isinstance(value, bool) and self._annotation is not bool
+        ):
             yield (
                 f"Option {self._format_path(path)!r} must have a value of type: {self}"
             )

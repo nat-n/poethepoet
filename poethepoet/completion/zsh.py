@@ -193,6 +193,16 @@ def _get_describe_task_args_completion(name: str) -> str:
                     fi
                 fi
 
+                if [[ -n "$choices" ]]; then
+                    # Re-quote each choice with backslashes so chars like ( and )
+                    # survive the eval of the (...) action, then escape colons
+                    # which would otherwise split the _arguments spec
+                    choices="${{(j: :)${{(@q)${{(@Q)${{(z)choices}}}}}}}}"
+                    choices="${{choices//:/\\\\:}}"
+                fi
+                # An unescaped ] would end the [description] of an option spec
+                local opt_help="${{help_text//\\]/\\\\]}}"
+
                 # Build value completion spec: use choices if available
                 if [[ -n "$choices" ]]; then
                     val_compl=":value:($choices)"
@@ -208,10 +218,10 @@ def _get_describe_task_args_completion(name: str) -> str:
                     for opt in $opt_arr; do
                         case "$arg_type" in
                             boolean)
-                                arg_specs+=("${{excl}}${{opt}}"'['"$help_text"']')
+                                arg_specs+=("${{excl}}${{opt}}"'['"$opt_help"']')
                                 ;;
                             *)
-                                arg_specs+=("${{excl}}${{opt}}="'['"$help_text"']'"$val_compl")
+                                arg_specs+=("${{excl}}${{opt}}="'['"$opt_help"']'"$val_compl")
                                 ;;
                         esac
                     done
@@ -219,7 +229,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                     # Single option form
                     case "$arg_type" in
                         boolean)
-                            arg_specs+=("$opts"'['"$help_text"']')
+                            arg_specs+=("$opts"'['"$opt_help"']')
                             ;;
                         positional)
                             # Use choices if available, otherwise file completion
@@ -238,7 +248,7 @@ def _get_describe_task_args_completion(name: str) -> str:
                             fi
                             ;;
                         *)
-                            arg_specs+=("$opts="'['"$help_text"']'"$val_compl")
+                            arg_specs+=("$opts="'['"$opt_help"']'"$val_compl")
                             ;;
                     esac
                 fi
@@ -302,7 +312,8 @@ _poe_fetch_tasks() {{
             tasks="$({name} _list_tasks $target_path 2>/dev/null)"
             result=""
             for task in ${{=tasks}}; do
-                result+="$task:"$'\\n'
+                # Escape colons in namespaced task names for _describe
+                result+="${{task//:/\\\\:}}:"$'\\n'
             done
         fi
         if (( _POE_CACHE_ENABLED )) && [[ -n "$result" ]]; then

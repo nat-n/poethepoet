@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence  # noqa: TC003
+from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict, get_args
 
@@ -113,15 +113,16 @@ class GroupConfig:
     def __init__(
         self,
         name: str,
-        group_def: dict[str, Any],
+        group_def: Mapping[str, Any],
     ):
+        # Values are type checked by config validation, but this may also be
+        # instantiated from unvalidated config in order to display help after a
+        # validation error, so tolerate invalid values here.
         self.name = name
         heading = group_def.get("heading", name)
-        assert isinstance(heading, str)
-        self.heading = heading
+        self.heading = heading if isinstance(heading, str) else name
         executor = group_def.get("executor")
-        assert executor is None or isinstance(executor, dict)
-        self.executor = executor
+        self.executor = executor if isinstance(executor, dict) else None
 
 
 class TaskConfig:
@@ -150,6 +151,15 @@ class TaskConfig:
             return self.task_def.get(key, default)
         return default
 
+    @property
+    def help_text(self) -> str:
+        """
+        The task's help text, or an empty string if it is unset or invalid.
+        """
+        if isinstance(help_text := self.get("help", ""), str):
+            return help_text
+        return ""
+
 
 class ConfigPartition:
     options: PoeOptions
@@ -170,11 +180,20 @@ class ConfigPartition:
         cwd: Path | None = None,
         strict: bool = True,
     ):
-        self.poe_options: Mapping[str, Any] = (
+        poe_options = (
             full_config["tool"].get("poe", {})
-            if "tool" in full_config
+            if isinstance(full_config.get("tool"), Mapping)
             else full_config.get("tool.poe", {})
         )
+        if not isinstance(poe_options, Mapping):
+            if strict:
+                raise ConfigValidationError(
+                    "Option 'tool.poe' must be a table, not "
+                    f"{type(poe_options).__name__!r}",
+                    filename=str(path),
+                )
+            poe_options = {}
+        self.poe_options: Mapping[str, Any] = poe_options
         self.options = next(
             self.ConfigOptions.parse(
                 self.poe_options,
@@ -204,13 +223,25 @@ class ConfigPartition:
         """
         Collect tasks configured in this partition (including from groups).
         """
+        # Non-mapping values are skipped here, they are rejected by config validation
+        # but may still be present if the config was loaded without strict validation
+        tasks = self.get("tasks", {})
         result = {
             task_name: TaskConfig(task_name, task_def, self)
-            for task_name, task_def in self.get("tasks", {}).items()
+            for task_name, task_def in (
+                tasks.items() if isinstance(tasks, Mapping) else ()
+            )
         }
 
-        for group_name, group_def in self.get("groups", {}).items():
-            for task_name, task_def in group_def.get("tasks", {}).items():
+        groups = self.get("groups", {})
+        for group_name, group_def in (
+            groups.items() if isinstance(groups, Mapping) else ()
+        ):
+            if not isinstance(group_def, Mapping) or not isinstance(
+                group_tasks := group_def.get("tasks", {}), Mapping
+            ):
+                continue
+            for task_name, task_def in group_tasks.items():
                 if strict and task_name in result:
                     raise ConfigValidationError(
                         f"Config from {self.path} contains task "
@@ -272,12 +303,12 @@ class ProjectConfig(ConfigPartition):
         executor types accept additional configuration options.
         """
 
-        include: str | Sequence[str | IncludeItem] = ()
+        include: str | IncludeItem | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """
 
-        include_script: str | Sequence[str | IncludeScriptItem] = ()
+        include_script: str | IncludeScriptItem | Sequence[str | IncludeScriptItem] = ()
         """
         Load dynamically generated tasks from one or more python functions.
         """
@@ -294,7 +325,10 @@ class ProjectConfig(ConfigPartition):
         commands.
         """
 
-        shell_interpreter: ShellInterpreter | Sequence[ShellInterpreter] = "posix"
+        shell_interpreter: (
+            ShellInterpreter
+            | Annotated[Sequence[ShellInterpreter], Metadata(min_items=1)]
+        ) = "posix"
         """
         Change the default shell interpreter for executing shell tasks. Normally,
         tasks are executed using a posix shell, but this can be overridden here.
@@ -334,9 +368,11 @@ class ProjectConfig(ConfigPartition):
                 config["executor"] = {"type": executor}
 
             # Normalize group executor options:
-            if groups := config.get("groups"):
+            if (groups := config.get("groups")) and isinstance(groups, Mapping):
                 for group_def in groups.values():
-                    if isinstance(group_def.get("executor"), str):
+                    if isinstance(group_def, dict) and isinstance(
+                        group_def.get("executor"), str
+                    ):
                         group_def["executor"] = {"type": group_def["executor"]}
 
             # > include_script: Union[str, Sequence[str], Sequence[IncludeScriptItem]]
@@ -348,7 +384,9 @@ class ProjectConfig(ConfigPartition):
                 for item in include_script:
                     if isinstance(item, str):
                         config["include_script"].append({"script": item})
-                    elif isinstance(executor_config := item.get("executor"), str):
+                    elif isinstance(item, Mapping) and isinstance(
+                        executor_config := item.get("executor"), str
+                    ):
                         config["include_script"].append(
                             {**item, "executor": {"type": executor_config}}
                         )
@@ -468,15 +506,17 @@ class IncludedConfig(ConfigPartition):
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
         """
-        A map of environment variables to be set for all tasks in the included
-        config.
+        A map of environment variables to be set for all tasks, including tasks
+        defined outside of the included config. Values from later includes take
+        precedence over earlier ones, and the main config's env takes precedence
+        over all of them.
         """
 
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
-        Provide one or more env files to be loaded before running tasks from this
-        included config. If an array is provided, files will be loaded in the
-        given order.
+        Provide one or more env files to be loaded before running any task,
+        including tasks defined outside of the included config. If an array is
+        provided, files will be loaded in the given order.
         """
 
         tasks: Mapping[str, Any] = EmptyDict
@@ -490,7 +530,7 @@ class IncludedConfig(ConfigPartition):
         Define groups of tasks contributed by this included config.
         """
 
-        include: str | Sequence[str | IncludeItem] = ()
+        include: str | IncludeItem | Sequence[str | IncludeItem] = ()
         """
         Specify one or more other toml or json files to load tasks from.
         """

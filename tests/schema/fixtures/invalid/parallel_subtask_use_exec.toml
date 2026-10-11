@@ -1,0 +1,3 @@
+# expected_error: Unsupported option 'use_exec' for task declared inside parallel
+[tool.poe.tasks.bad]
+parallel = [{ cmd = "echo one", use_exec = true }, { cmd = "echo two" }]

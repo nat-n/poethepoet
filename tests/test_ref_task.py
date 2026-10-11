@@ -1,5 +1,7 @@
 import uuid
 
+import pytest
+
 
 def test_ref_task(run_poe, projects, esc_prefix, is_windows):
     # This should be exactly the same as calling the echo task directly
@@ -311,3 +313,153 @@ def test_ref_alternate_value_operator(temp_pyproject, run_poe):
     assert result.code == 0
     assert result.stdout == "hi friend\n"
     assert result.stderr == ""
+
+
+def test_ref_to_task_with_deps_propagates_error(temp_pyproject, run_poe):
+    """
+    An error raised by the referenced task is reported when it runs as the sink of a
+    task graph, as it is when it has no deps
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.failing]
+        cmd = "poe_test_echo *.nomatch"
+        empty_glob = "fail"
+        deps = ["ok"]
+
+        [tool.poe.tasks.r]
+        ref = "failing"
+
+        [tool.poe.tasks.r_ignore]
+        ref = "failing"
+        ignore_fail = true
+        """)
+    result = run_poe("r", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert result.stdout == "OK\n"
+    assert "Error: Glob pattern '*.nomatch' did not match any files" in (result.capture)
+
+    result = run_poe("r_ignore", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "Warning: Glob pattern '*.nomatch' did not match any files" in (
+        result.capture
+    )
+
+
+@pytest.mark.parametrize(
+    ("ref_content", "expected_error"),
+    [
+        ('""', "Ref task content must name a task to run"),
+        ('"   "', "Ref task content must name a task to run"),
+        (
+            '"ok \'unterminated"',
+            'Invalid ref content "ok \'unterminated": No closing quotation',
+        ),
+    ],
+    ids=["empty", "whitespace", "unbalanced_quotes"],
+)
+def test_ref_rejects_invalid_content(
+    temp_pyproject, run_poe, ref_content, expected_error
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.r]
+        ref = {ref_content}
+        """)
+    result = run_poe("ok", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'r'" in result.capture
+    assert expected_error in result.capture
+
+
+@pytest.mark.parametrize(
+    "task", ["via_ref", "via_deps", "via_uses", "via_uses_env", "via_sequence"]
+)
+def test_unbalanced_quotes_in_expanded_invocation_is_reported(
+    temp_pyproject, run_poe, task
+):
+    """
+    An arg value that makes a task invocation unparseable is reported as an error,
+    rather than raising an unhandled exception
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo shown"
+        args = [{ name = "value", positional = true }]
+
+        [tool.poe.tasks.via_ref]
+        ref = "show ${x}"
+        args = ["x"]
+
+        [tool.poe.tasks.via_deps]
+        cmd = "poe_test_echo main"
+        deps = ["show ${x}"]
+        args = ["x"]
+
+        [tool.poe.tasks.via_uses]
+        cmd = "poe_test_echo main"
+        uses = { V = "show ${x}" }
+        args = ["x"]
+
+        [tool.poe.tasks.via_uses_env]
+        cmd = "poe_test_echo main"
+        uses_env = "show ${x}"
+        args = ["x"]
+
+        [tool.poe.tasks.via_sequence]
+        sequence = ["show ${x}"]
+        args = ["x"]
+        """)
+    result = run_poe(task, "--x", "it's", cwd=project_path)
+    assert result.code == 1
+    assert "Invalid task invocation" in result.capture
+    assert "No closing quotation" in result.capture
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize("task", ["via_ref", "via_sequence", "via_env"])
+def test_ref_does_not_reexpand_values(temp_pyproject, run_poe, task):
+    """
+    Values substituted into a ref invocation are expanded once, so text like $HOME
+    in an arg or env var value is passed through verbatim
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo"
+
+        [tool.poe.tasks.via_ref]
+        ref = "show ${x}"
+        args = ["x"]
+
+        [tool.poe.tasks.via_sequence]
+        sequence = ["show ${x}"]
+        args = ["x"]
+
+        [tool.poe.tasks.via_env]
+        ref = "show ${MSG}"
+        """)
+    result = run_poe(
+        task,
+        *(("--x", "$HOME") if task != "via_env" else ()),
+        cwd=project_path,
+        env={"MSG": "$HOME", "HOME": "/home/nope"},
+    )
+    assert result.code == 0, result.capture
+    assert result.stdout == "$HOME\n"
+
+
+def test_ref_escaped_dollar_is_literal(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo"
+
+        [tool.poe.tasks.r]
+        ref = "show \\\\${HOME}"
+        """)
+    result = run_poe("r", cwd=project_path, env={"HOME": "/home/nope"})
+    assert result.code == 0, result.capture
+    assert result.stdout == "${HOME}\n"

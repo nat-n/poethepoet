@@ -1,0 +1,7 @@
+# expected_error: Option 'uses.X' value ' ' does not match pattern
+[tool.poe.tasks.ok]
+cmd = "echo ok"
+
+[tool.poe.tasks.bad]
+cmd = "echo hi"
+uses = { X = " " }

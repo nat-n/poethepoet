@@ -1,0 +1,4 @@
+# expected_error: must be one of
+[tool.poe.tasks]
+a = "echo a"
+seq = { sequence = ["a"], ignore_fail = 1 }

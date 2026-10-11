@@ -7,7 +7,7 @@ from cleo.events.console_events import COMMAND, TERMINATE
 from poetry.console.application import COMMANDS, Application
 from poetry.plugins.application_plugin import ApplicationPlugin
 
-from .exceptions import PoePluginException
+from .exceptions import PoeException, PoePluginException
 
 if TYPE_CHECKING:
     from cleo.events.console_command_event import ConsoleCommandEvent
@@ -78,12 +78,13 @@ class PoeCommand(Command):
             ),
         )
 
+        # Check most verbose first, since is_verbose() is also true for -vv and -vvv
         if io.output.is_quiet():
             poe.modify_verbosity(-1)
-        elif io.is_verbose():
-            poe.modify_verbosity(1)
         elif io.is_very_verbose():
             poe.modify_verbosity(2)
+        elif io.is_verbose():
+            poe.modify_verbosity(1)
 
         return poe
 
@@ -98,11 +99,15 @@ class PoetryPlugin(ApplicationPlugin):
             import sys
 
             debug = bool(int(os.environ.get("DEBUG_POE_PLUGIN", "0")))
-            print(
-                "error: poethepoet plugin encountered an error."
-                + ("" if debug else " Set DEBUG_POE_PLUGIN=1 for details."),
-                file=sys.stderr,
-            )
+            if isinstance(error := sys.exc_info()[1], PoeException):
+                # Problems with the plugin config have a helpful message to show
+                print(f"error: poethepoet plugin: {error.msg}", file=sys.stderr)
+            else:
+                print(
+                    "error: poethepoet plugin encountered an error."
+                    + ("" if debug else " Set DEBUG_POE_PLUGIN=1 for details."),
+                    file=sys.stderr,
+                )
             if debug:
                 import traceback
 
@@ -133,12 +138,12 @@ class PoetryPlugin(ApplicationPlugin):
                 if task_name in COMMANDS:
                     raise PoePluginException(
                         f"Poe task {task_name!r} conflicts with a poetry command. "
-                        "Please rename the task or the configure a command prefix."
+                        "Please rename the task or configure a command prefix."
                     )
                 if task_name.startswith("_"):
                     continue
                 self._register_command(
-                    application, poe_config, task_name, task.get("help", "")
+                    application, poe_config, task_name, task.help_text
                 )
         else:
             self._register_command(
@@ -155,7 +160,7 @@ class PoetryPlugin(ApplicationPlugin):
                     application,
                     poe_config,
                     task_name,
-                    task.get("help", ""),
+                    task.help_text,
                     f"{command_prefix} ",
                 )
 
@@ -228,16 +233,24 @@ class PoetryPlugin(ApplicationPlugin):
         if pre_hooks:
             application.event_dispatcher.add_listener(
                 COMMAND,
-                self._get_command_event_handler(pre_hooks, application, poe_config),
+                self._get_command_event_handler(
+                    pre_hooks, application, poe_config, hook_type="pre"
+                ),
             )
         if post_hooks:
             application.event_dispatcher.add_listener(
                 TERMINATE,
-                self._get_command_event_handler(post_hooks, application, poe_config),
+                self._get_command_event_handler(
+                    post_hooks, application, poe_config, hook_type="post"
+                ),
             )
 
     def _get_command_event_handler(
-        self, hooks: dict[str, str], application: Application, poe_config: PoeConfig
+        self,
+        hooks: dict[str, str],
+        application: Application,
+        poe_config: PoeConfig,
+        hook_type: str,
     ):
         def command_event_handler(
             event: ConsoleCommandEvent,
@@ -248,10 +261,24 @@ class PoetryPlugin(ApplicationPlugin):
             if not task:
                 return
 
+            # Post hooks only run after the poetry command succeeded
+            if hook_type == "post" and getattr(event, "exit_code", None):
+                return
+
             import shlex
 
+            try:
+                cli_args = shlex.split(task)
+            except ValueError as error:
+                hook_name = f"{hook_type}_{event.command.name.replace(' ', '_')}"
+                event.io.write_error_line(
+                    "<error>error: poethepoet plugin: Invalid value for poetry hook "
+                    f"{hook_name!r}: {error}</error>"
+                )
+                raise SystemExit(1) from None
+
             task_status = PoeCommand.get_poe(application, event.io, poe_config)(
-                cli_args=shlex.split(task), internal=True
+                cli_args=cli_args, internal=True
             )
 
             if task_status:
@@ -309,15 +336,15 @@ class PoetryPlugin(ApplicationPlugin):
 def _index_of_first_non_option(tokens: list[str]):
     """
     Find the index of the first token that doesn't start with `-`, and isn't directly
-    preceded by either `--project` or `--directory`.
+    preceded by poetry's `--project`/`-P` or `--directory`/`-C` options.
 
     Returns len(tokens) if none is found.
     """
 
-    options_with_args = ("--project", "--directory")
+    options_with_args = ("--project", "-P", "--directory", "-C")
     previous_token = ""
     for index, token in enumerate(tokens):
-        if token[0] != "-" and previous_token not in options_with_args:
+        if not token.startswith("-") and previous_token not in options_with_args:
             return index
         previous_token = token
 

@@ -1,0 +1,4 @@
+# expected_error: Cannot interpret 'abc' as an integer
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${count}"
+args = [{ name = "count", type = "integer", default = "abc" }]

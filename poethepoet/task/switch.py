@@ -70,6 +70,16 @@ class SwitchTask(PoeTask):
                                     f"incompatible option {banned_option!r}"
                                 )
 
+                    # The control task is run directly with the switch's args, so
+                    # these options would be ignored
+                    if isinstance(control_def := item.get("control"), dict):
+                        for banned_option in SUBTASK_OPTIONS_BLOCKLIST:
+                            if banned_option in control_def:
+                                raise ConfigValidationError(
+                                    "Control task includes incompatible option "
+                                    f"{banned_option!r}"
+                                )
+
                 yield item
 
     class TaskSpec(PoeTask.TaskSpec):
@@ -109,6 +119,15 @@ class SwitchTask(PoeTask):
             for switch_item in task_def["switch"]:
                 case_task_def = dict(switch_item, args=switch_args)
                 case = case_task_def.pop("case", DEFAULT_CASE)
+                case_values = case if isinstance(case, list) else (case,)
+                if not case_values or not all(
+                    isinstance(value, str | int | float) for value in case_values
+                ):
+                    raise ConfigValidationError(
+                        f"Invalid case {case!r}, expected a string, number, boolean, "
+                        "or a non-empty array of these",
+                        task_name=self.name,
+                    )
                 case_tuple = (
                     tuple(str(value) for value in case)
                     if isinstance(case, list)
@@ -210,6 +229,13 @@ class SwitchTask(PoeTask):
                 {"type": "string"},
                 *({"$ref": f"#/definitions/{key}_task"} for key in CONTROL_TASK_TYPES),
             ],
+            "allOf": [
+                {
+                    "if": {"type": "object"},
+                    "then": {"type": "object", "properties": {opt: False}},
+                }
+                for opt in SUBTASK_OPTIONS_BLOCKLIST
+            ],
         }
         if control_description:
             control_schema["description"] = control_description
@@ -237,7 +263,7 @@ class SwitchTask(PoeTask):
 
         self.control_task = self.spec.control_task_spec.create_task(
             invocation=control_invocation,
-            ctx=TaskContext.from_task(self, self.spec),
+            ctx=TaskContext.from_task(self, self.spec.control_task_spec),
             capture_stdout=True,
         )
 
@@ -287,6 +313,9 @@ class SwitchTask(PoeTask):
 
         if case_task is None:
             if self.spec.options.default == "pass":
+                if self.capture_stdout is True:
+                    # No case task ran, so the output of this task is empty
+                    context.save_task_output(self.invocation, b"")
                 return
             raise ExecutionError(
                 f"Control value {control_task_output!r} did not match any cases in "
@@ -296,11 +325,13 @@ class SwitchTask(PoeTask):
         case_task_run = await case_task.run(context=context, parent_env=env)
         await task_state.add_child(case_task_run)
         await task_state.finalize()
+        # Errors from child task runs are otherwise suppressed, so they must be
+        # raised here to fail this task
+        await case_task_run.wait(suppress_errors=False)
 
         if self.capture_stdout is True:
             # The executor saved output for the case task, but we need it to be
             # registered for this switch task as well
-            await case_task_run.wait(suppress_errors=False)
             context.save_task_output(
                 self.invocation,
                 context.get_task_output(

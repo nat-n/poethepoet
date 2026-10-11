@@ -360,3 +360,61 @@ def test_poe_git_vars_for_task_level_envfile_and_env(
     assert f"POE_GIT_DIR_2={poe_project_path}" in result.stdout
     assert "BASE_ENV_LOADED=" in result.stdout
     assert result.stderr == ""
+
+
+def test_single_table_include_and_include_script(run_poe):
+    for task_name in ("local", "included", "generated"):
+        result = run_poe(task_name, project="single_table_includes")
+        assert result.code == 0
+        assert result.capture == f"Poe => poe_test_echo {task_name}\n"
+        assert result.stdout == f"{task_name}\n"
+
+
+@pytest.mark.parametrize(
+    ("task", "expected_dir"),
+    [
+        ("subpwd", "sub"),
+        ("via_deps", "sub"),
+        ("via_uses", "sub"),
+        ("via_ref", "sub"),
+        ("via_sequence", "sub"),
+        ("via_sequence_with_cwd", "other"),
+    ],
+)
+def test_included_task_runs_in_include_cwd_when_referenced(
+    temp_pyproject, run_poe, task, expected_dir
+):
+    """
+    A task from an include with a cwd runs in that cwd however it is invoked, unless
+    a cwd is set explicitly on the referencing task
+    """
+    project_path = temp_pyproject("""
+        [tool.poe]
+        include = { path = "sub/tasks.toml", cwd = "sub" }
+
+        [tool.poe.tasks.via_deps]
+        cmd = "poe_test_echo"
+        deps = ["subpwd"]
+
+        [tool.poe.tasks.via_uses]
+        cmd = "poe_test_echo ${DIR}"
+        uses = { DIR = "subpwd" }
+
+        [tool.poe.tasks.via_ref]
+        ref = "subpwd"
+
+        [tool.poe.tasks.via_sequence]
+        sequence = ["subpwd"]
+
+        [tool.poe.tasks.via_sequence_with_cwd]
+        sequence = ["subpwd"]
+        cwd = "other"
+        """)
+    (project_path / "sub").mkdir()
+    (project_path / "other").mkdir()
+    (project_path / "sub" / "tasks.toml").write_text(
+        '[tool.poe.tasks]\nsubpwd = "poe_test_pwd"\n'
+    )
+    result = run_poe(task, cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout.splitlines()[0] == str((project_path / expected_dir).resolve())

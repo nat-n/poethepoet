@@ -47,7 +47,6 @@ async def test_aclose_called_on_normal_completion():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip
 async def test_meta_generator_exception_closes_previously_added_sources():
     # first source is long lived and should be closed when meta raises
     closed = asyncio.Event()
@@ -103,7 +102,6 @@ async def test_many_sources_preserve_per_source_order():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip
 async def test_exception_from_dynamic_source_propagates_and_closes_others():
     closed = asyncio.Event()
 
@@ -125,3 +123,26 @@ async def test_exception_from_dynamic_source_propagates_and_closes_others():
             await asyncio.sleep(0)
 
     await asyncio.wait_for(closed.wait(), timeout=1.0)
+
+
+@pytest.mark.asyncio
+async def test_generator_only_sources_are_merged():
+    async def meta():
+        yield _make_async_gen([1, 2])()
+        yield _make_async_gen(["a"])()
+
+    collected = [item async for item in async_iter_merge(generator=meta())]
+    assert sorted(collected, key=str) == [1, 2, "a"]
+
+
+@pytest.mark.asyncio
+async def test_source_added_after_others_finished_is_not_dropped():
+    async def meta():
+        await asyncio.sleep(0.05)
+        yield _make_async_gen([3])()
+
+    collected = [
+        item
+        async for item in async_iter_merge(_make_async_gen([1, 2])(), generator=meta())
+    ]
+    assert collected == [1, 2, 3]

@@ -310,6 +310,21 @@ args = [{ name = "MY_FLAG", type = "boolean", default = true }]
 [tool.poe.tasks.echo-extra-args-script]
 script = "pkg:describe_args(*_extra_args)"
 
+[tool.poe.tasks.method-on-arg-script]
+script = "pkg:echo_script(name.upper(), environ.get('NOPE', 'x').upper())"
+args = ["name"]
+
+[tool.poe.tasks.echo-extra-args-list-script]
+script = "pkg:describe_args(_extra_args)"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.poe.tasks.wrapped-async-task]
+script = "pkg:wrapped_async_task"
+args = ["a"]
+print_result = true
+
+[tool.poe.tasks.async-callable-task]
+script = "pkg:async_callable(1, x=2)"

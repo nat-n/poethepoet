@@ -18,7 +18,7 @@ An example use case for this might be opening some ssh tunnels in the background
 
 .. seealso::
 
-    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. When running on Windows, poe will first look for |git_bash_link| at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.
+    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. When running on Windows, poe looks for ``sh`` on the PATH and then at the usual location of a |git_bash_link| installation. If the ``bash`` interpreter is used, then poe prefers git bash at its usual location over any ``bash`` found on the PATH (which may be the WSL launcher). Finding a suitable shell on Windows might not always be possible.
 
 
 Available task options
@@ -82,6 +82,8 @@ pwsh
     Uses powershell version 6 or higher.
 powershell
     Uses the newest version of powershell that can be found.
+python
+    Runs the task content as python code using the ``python`` executable found in the task's environment (e.g. from the project virtualenv). Note that the code is passed to the interpreter via stdin.
 
 The default value can be changed with the global ``shell_interpreter`` option.
 
@@ -118,6 +120,13 @@ See the :doc:`args guide<../../guides/args_guide>` for full details on configuri
 Accessing free arguments via ``$POE_EXTRA_ARGS``
 ------------------------------------------------
 
-Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside shell task scripts as the ``$POE_EXTRA_ARGS`` environment variable. The value is a shell-quoted, space-delimited string, ready to be expanded inline.
+Free arguments (all arguments if the task declares no named args, or otherwise arguments passed after :sh:`--`) are available inside shell task scripts as the ``$POE_EXTRA_ARGS`` environment variable. Unlike for cmd tasks, free arguments are not appended to the shell script, so they are silently ignored unless the script references ``$POE_EXTRA_ARGS``.
+
+The value of ``$POE_EXTRA_ARGS`` is a shell-quoted, space-delimited string. Simply expanding it inline (e.g. ``pytest $POE_EXTRA_ARGS``) works for arguments without spaces or other special characters, however the shell will not re-interpret the quotes within the value, so arguments that need quoting would arrive with literal quote characters and be split on whitespace. To preserve argument boundaries exactly, pass the command through ``eval`` like so:
+
+.. code-block:: toml
+
+  [tool.poe.tasks.test]
+  shell = "eval \"pytest $POE_EXTRA_ARGS\""
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.

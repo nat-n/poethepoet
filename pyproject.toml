@@ -248,6 +248,11 @@ ignore_directives = [
 ]
 
 
+[tool.coverage.run]
+# Measure python subprocesses (e.g. poe launched by run_poe_subproc) when
+# running with --cov; their data is combined by pytest-cov
+patch = ["subprocess"]
+
 [tool.coverage.report]
 omit = ["**/site-packages/**", "poethepoet/completion/*", "poethepoet/plugin.py"]
 

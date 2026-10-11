@@ -4,9 +4,16 @@ import shlex
 from typing import TYPE_CHECKING, Any
 
 from ..exceptions import ConfigValidationError, ExecutionError
-from .base import PoeTask, TaskContext
+from .base import (
+    PoeTask,
+    TaskContext,
+    parse_task_reference_name,
+    split_task_invocation,
+)
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
@@ -47,6 +54,8 @@ class RefTask(PoeTask):
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["properties"].pop("executor", None)
+        # The content must name a task to run
+        fragment["properties"]["ref"]["pattern"] = r"\S"
         return fragment
 
     class TaskSpec(PoeTask.TaskSpec):
@@ -58,7 +67,15 @@ class RefTask(PoeTask):
             Perform validations on this TaskSpec that apply to a specific task type
             """
 
-            task_name_ref = shlex.split(self.content)[0]
+            try:
+                tokens = shlex.split(self.content)
+            except ValueError as error:
+                raise ConfigValidationError(
+                    f"Invalid ref content {self.content!r}: {error}"
+                ) from None
+            if not tokens:
+                raise ConfigValidationError("Ref task content must name a task to run")
+            task_name_ref = tokens[0]
 
             if task_name_ref not in task_specs:
                 raise ConfigValidationError(
@@ -81,6 +98,14 @@ class RefTask(PoeTask):
                     f"{task_name_ref!r}"
                 )
 
+        def iter_task_references(self) -> Iterator[str]:
+            """
+            A ref task always runs the referenced task
+            """
+            yield from super().iter_task_references()
+            if task_name := parse_task_reference_name(self.content):
+                yield task_name
+
         def accepts_option(
             self,
             option_name: str,
@@ -98,9 +123,9 @@ class RefTask(PoeTask):
                     return True
                 _seen.add(id(self))
 
-                target_name = shlex.split(self.content)[0]
-                if target_name not in task_specs:
-                    # Unknown target; let _task_validations report this error
+                target_name = parse_task_reference_name(self.content)
+                if target_name is None or target_name not in task_specs:
+                    # Invalid or unknown target; let _task_validations report this error
                     return True
                 return task_specs.get(target_name).accepts_option(
                     option_name, task_specs, _seen
@@ -130,9 +155,7 @@ class RefTask(PoeTask):
         extra_args = self._parse_and_register_args(env)
 
         expanded_content = env.fill_template(self._parse_content())
-        invocation_tokens = tuple(
-            env.fill_template(token) for token in shlex.split(expanded_content)
-        )
+        invocation_tokens = split_task_invocation(expanded_content, self.name)
         if self._content_uses_extra_args():
             ref_invocation = invocation_tokens
         else:
@@ -183,9 +206,12 @@ class RefTask(PoeTask):
             for stage_task in stage:
                 if stage_task == task:
                     # The final sink task gets special treatment
-                    return await task_state.add_child(
-                        await task.run(context=context, parent_env=env)
-                    )
+                    sink_task_run = await task.run(context=context, parent_env=env)
+                    await task_state.add_child(sink_task_run)
+                    # Errors from child task runs are otherwise suppressed, so they
+                    # must be raised here to fail this task
+                    await sink_task_run.wait(suppress_errors=False)
+                    return
 
                 dep_task = await stage_task.run(context=context)
                 await task_state.add_child(dep_task)

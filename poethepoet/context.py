@@ -143,6 +143,14 @@ class RunContext:
         finally:
             context._shutdown_manager.restore_handler()
 
+    @property
+    def interrupted_exit_code(self) -> int | None:
+        """
+        If poe has been asked to shut down (e.g. by Ctrl+C) then return the exit status
+        it should report, otherwise None.
+        """
+        return self._shutdown_manager.interrupted_exit_code
+
     def register_subprocess(self, proc: PoeProcess):
         self._shutdown_manager.processes.add(proc)
 
@@ -247,7 +255,7 @@ class RunContext:
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
             dry=False if delegate_dry_run else self.dry,
-            io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
+            io=io or (self.ui.io if self.ui else PoeIO.get_default_io()),
         )
 
     def _resolve_executor_config(
@@ -375,7 +383,7 @@ class InitializationContext:
             capture_stdout=capture_stdout,
             resolve_python=resolve_python,
             dry=False,
-            io=io or self.ui.io if self.ui else PoeIO.get_default_io(),
+            io=io or (self.ui.io if self.ui else PoeIO.get_default_io()),
         )
 
 

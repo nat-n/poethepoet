@@ -24,10 +24,13 @@ class Virtualenv:
             return self.path.joinpath("Scripts")
         return self.path.joinpath("bin")
 
-    def resolve_executable(self, executable: str) -> str:
+    def resolve_executable(
+        self, executable: str, search_path: str | None = None
+    ) -> str:
         """
         If the given executable can be found in the bin_dir then return its absolute
-        path. Otherwise return the input.
+        path. Otherwise return the input, or on windows the executable as resolved
+        from the search_path (defaults to the PATH of the current process).
         """
         bin_dir = self.bin_dir()
         if bin_dir.joinpath(executable).is_file():
@@ -39,7 +42,7 @@ class Virtualenv:
                 return str(bin_dir.joinpath(f"{executable}.exe"))
             if bin_dir.joinpath(f"{executable}.bat").is_file():
                 return str(bin_dir.joinpath(f"{executable}.bat"))
-            return shutil.which(executable) or executable
+            return shutil.which(executable, path=search_path) or executable
         return executable
 
     @staticmethod
@@ -82,12 +85,28 @@ class Virtualenv:
 
     def get_env_vars(self, base_env: Mapping[str, str]) -> dict[str, str]:
         bin_dir = str(self.bin_dir())
-        # Revert path update from existing virtualenv if applicable
-        path_var = os.environ.get("_OLD_VIRTUAL_PATH", "") or os.environ.get("PATH", "")
+        path_delim = ";" if self._is_windows else ":"
+        path_var = base_env.get("PATH", "")
+
+        if (active_venv_path := base_env.get("VIRTUAL_ENV")) and (
+            active_venv := Virtualenv(Path(active_venv_path))
+        ).path != self.path:
+            # Revert path update from another active virtualenv
+            active_bin_dir = active_venv.bin_dir()
+            active_bin_dirs = {
+                str(active_bin_dir),
+                str(Path(active_venv_path, active_bin_dir.name)),
+            }
+            path_var = path_delim.join(
+                entry
+                for entry in path_var.split(path_delim)
+                if entry not in active_bin_dirs
+            )
         old_path_var = path_var
 
-        if not path_var.startswith(bin_dir):
-            path_delim = ";" if self._is_windows else ":"
+        if not path_var:
+            path_var = bin_dir
+        elif path_var.split(path_delim)[0] != bin_dir:
             path_var = bin_dir + path_delim + path_var
 
         result = dict(

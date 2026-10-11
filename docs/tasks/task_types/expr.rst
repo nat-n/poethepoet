@@ -53,7 +53,7 @@ The expression can reference environment variables using templating syntax as in
   [tool.poe.tasks.venv-active]
   expr = """(
     f'{target_venv} is active'
-    if '${VIRTUAL_ENV}'.endswith(target_venv)
+    if ${VIRTUAL_ENV}.endswith(target_venv)
     else f'{target_venv} is not active'
   )"""
   args = [{ name = "target-venv", default = ".venv", positional = true }]
@@ -63,12 +63,16 @@ The expression can reference environment variables using templating syntax as in
   $ poe venv-active poethepoet-LCpCQf8S-py3.10
   Poe => (
     f'{target_venv} is active'
-    if '${VIRTUAL_ENV}'.endswith(target_venv)
+    if ${VIRTUAL_ENV}.endswith(target_venv)
     else f'{target_venv} is not active'
   )
-  poethepoet-LCpCQf8S-py3.10 is not active
+  poethepoet-LCpCQf8S-py3.10 is active
 
 In this example the ``VIRTUAL_ENV`` environment variable is templated into the expression using the usual templating syntax, and the ``target_venv`` argument is referenced directly as a variable.
+
+.. important::
+
+  A templated variable such as ``${VIRTUAL_ENV}`` is exposed to the expression as a python string value, so it should **not** be wrapped in quotes. Writing ``'${VIRTUAL_ENV}'`` would create a string literal that doesn't contain the value of the variable. If the variable is not set then it evaluates to an empty string.
 
 Notice that the expression may be formatted over multiple lines, as in normal python code.
 
@@ -123,7 +127,7 @@ Expr tasks can reference the results of other tasks by leveraging the :doc:`uses
 Accessing free arguments via ``_extra_args``
 --------------------------------------------
 
-Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside expr tasks as the ``_extra_args`` variable — a ``list[str]``.
+Free arguments (all arguments if the task declares no named args, or otherwise arguments passed after :sh:`--`) are available inside expr tasks as the ``_extra_args`` variable — a ``list[str]``, which is empty if no free arguments were passed.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
 

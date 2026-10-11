@@ -44,10 +44,11 @@ class PoetryExecutor(PoeExecutor):
             # Execute the task in the virtualenv from poetry, this is much faster than
             # invoking `poetry run` each time.
             venv = Virtualenv(Path(poetry_env))
+            venv_env = venv.get_env_vars(self.env.get_subprocess_env_vars())
             return await self._execute_cmd(
-                (venv.resolve_executable(cmd[0]), *cmd[1:]),
+                (venv.resolve_executable(cmd[0], venv_env.get("PATH")), *cmd[1:]),
                 input=input,
-                env=venv.get_env_vars(self.env.get_subprocess_env_vars()),
+                env=venv_env,
                 use_exec=use_exec,
             )
 
@@ -97,16 +98,22 @@ class PoetryExecutor(PoeExecutor):
             clean_env.pop("VIRTUAL_ENV", None)
             clean_env["PYTHONIOENCODING"] = "utf-8"
 
-            proc = await asyncio.create_subprocess_exec(
-                self._poetry_cmd(),
-                "--no-plugins",
-                "env",
-                "info",
-                "-p",
-                stdout=PIPE,
-                cwd=self.context.config.project_dir,
-                env=clean_env,
-            )
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    self._poetry_cmd(),
+                    "--no-plugins",
+                    "env",
+                    "info",
+                    "-p",
+                    stdout=PIPE,
+                    cwd=self.context.config.project_dir,
+                    env=clean_env,
+                )
+            except FileNotFoundError as error:
+                raise ExecutionError(
+                    "executable 'poetry' could not be found, but is required by the "
+                    "poetry executor"
+                ) from error
             outputs = await proc.communicate()
             exec_cache["poetry_virtualenv"] = outputs[0].decode().strip()
 

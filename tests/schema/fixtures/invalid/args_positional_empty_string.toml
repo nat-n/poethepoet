@@ -1,0 +1,4 @@
+# expected_error: positional name '' for arg 'target' is not a valid 'identifier'
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${target}"
+args = [{ name = "target", positional = "" }]

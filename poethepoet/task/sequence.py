@@ -6,7 +6,7 @@ from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from ..config import ConfigPartition, PoeConfig
     from ..config.partition import GroupConfig
@@ -88,6 +88,11 @@ class SequenceTask(PoeTask):
                         "type: str | dict | list",
                         task_name=self.name,
                     )
+                if isinstance(sub_task_def, str) and not sub_task_def.strip():
+                    raise ConfigValidationError(
+                        f"Item #{index} in sequence task must not be empty",
+                        task_name=self.name,
+                    )
 
                 subtask_name = (
                     sub_task_def
@@ -130,8 +135,22 @@ class SequenceTask(PoeTask):
                             f"Unsupported option {banned_option!r} for task "
                             "declared inside sequence"
                         )
+                if subtask.options.get("use_exec", False):
+                    # The process would be replaced, silently skipping other subtasks
+                    raise ConfigValidationError(
+                        "Unsupported option 'use_exec' for task declared inside "
+                        "sequence"
+                    )
 
                 subtask.validate(config, task_specs)
+
+        def iter_task_references(self) -> Iterator[str]:
+            """
+            A sequence task runs each of its subtasks
+            """
+            yield from super().iter_task_references()
+            for subtask in self.subtasks:
+                yield from subtask.iter_task_references()
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
@@ -145,6 +164,8 @@ class SequenceTask(PoeTask):
         fragment["properties"]["sequence"]["items"] = {
             "allOf": [
                 {"$ref": "#/definitions/task_def"},
+                # String items must not be empty
+                {"if": {"type": "string"}, "then": {"pattern": r"\S"}},
                 *(
                     {
                         "if": {"type": "object"},
@@ -152,6 +173,10 @@ class SequenceTask(PoeTask):
                     }
                     for opt in SUBTASK_OPTIONS_BLOCKLIST
                 ),
+                {
+                    "if": {"type": "object"},
+                    "then": {"properties": {"use_exec": {"const": False}}},
+                },
             ],
         }
         return fragment

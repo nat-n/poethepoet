@@ -40,7 +40,7 @@ A typical ``tox.ini`` file might look like this:
 .. code-block:: ini
 
     [tox]
-    envlist = py310,py311,py312,py313
+    envlist = py39,py310,py311,py312
 
     [testenv]
     deps = pytest
@@ -72,6 +72,8 @@ Here's the equivalent configuration using Poe the Poet with the :ref:`uv executo
 
     [tool.poe.tasks.test-all]
     sequence = ["test-py39", "test-py310", "test-py311", "test-py312"]
+
+Note that this assumes ``pytest`` and ``pytest-cov`` are already included in your project's default dependency groups (e.g. the ``dev`` group), which uv installs into the isolated environment. Otherwise, to mirror the tox ``deps`` setting, add them via the ``with`` executor option, e.g. :toml:`executor = {isolated = true, python = "3.9", with = ["pytest", "pytest-cov"]}`.
 
 Run all tests with:
 
@@ -137,7 +139,7 @@ Use sequence tasks to run commands before and after tests:
     cmd = "coverage report"
 
     [tool.poe.tasks.ci]
-    sequence = ["lint", "test-py311", "coverage-report"
+    sequence = ["lint", "test-py311", "coverage-report"]
 
 Or define a DAG of tasks with task ``deps``:
 

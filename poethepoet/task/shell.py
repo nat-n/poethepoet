@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 class ShellTask(PoeTask):
     """
-    Executes the content as a shell scripts inside a new shell interpreter.
-    Normally the bash interpreter to used unless specified otherwise.
+    Executes the content as a shell script inside a new shell interpreter.
+    By default a posix shell (sh, bash or zsh) is used unless specified otherwise.
     """
 
     content: str
@@ -77,9 +77,12 @@ class ShellTask(PoeTask):
         interpreter_cmd = self.resolve_interpreter_cmd()
         if not interpreter_cmd:
             config_value = self._get_interpreter_config()
+            described_interpreters = ", ".join(repr(item) for item in config_value)
+            if len(config_value) != 1:
+                described_interpreters = f"any of {described_interpreters or '()'}"
             message = (
-                f"Couldn't locate interpreter executable for {config_value!r} to run "
-                "shell task. "
+                "Couldn't locate interpreter executable for "
+                f"{described_interpreters} to run shell task. "
             )
             if self._is_windows and set(config_value).issubset({"posix", "bash"}):
                 message += "Installing Git Bash or using WSL should fix this."
@@ -92,7 +95,7 @@ class ShellTask(PoeTask):
         self._print_action(content, context.dry)
 
         executor = self._get_executor(
-            context, env, resolve_python=interpreter_cmd == "python"
+            context, env, resolve_python=interpreter_cmd == ["python"]
         )
         process = await executor.execute(interpreter_cmd, input=content.encode())
         await task_state.add_process(process, finalize=True)
@@ -196,7 +199,7 @@ class ShellTask(PoeTask):
 
 def _unindent_code(python_code: str):
     """
-    Unindent all lines by the indent level of the first line.
+    Unindent all lines by the indent (spaces and/or tabs) of the first line.
     This is rather naive, but should usually work as one would naively expect for a
     multiline script in a multiline string value in toml.
 
@@ -204,14 +207,9 @@ def _unindent_code(python_code: str):
     quoted multiline python string or similar. Let's say that's OK for now.
     """
 
-    if not python_code.startswith(" "):
+    if not (prefix := python_code[: len(python_code) - len(python_code.lstrip(" \t"))]):
         return python_code
 
-    indent = 0
-    while python_code[indent] == " ":
-        indent += 1
-
-    prefix = " " * indent
     return "\n".join(
         line.removeprefix(prefix) for line in re.split(r"(?:\r\n|\r|\n)", python_code)
     )

@@ -1,0 +1,3 @@
+# expected_error: Ref task content must name a task to run
+[tool.poe.tasks.bad]
+ref = ""

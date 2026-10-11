@@ -1,0 +1,4 @@
+# expected_error: Cannot interpret 1.5 as an integer
+[tool.poe.tasks.bad]
+cmd = "poe_test_echo ${count}"
+args = [{ name = "count", type = "integer", default = 1.5 }]

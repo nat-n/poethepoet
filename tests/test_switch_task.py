@@ -308,3 +308,105 @@ def test_switch_case_module_script_receives_args(temp_pyproject, run_poe):
     result = run_poe("sw", "--size", "3", "--loud", cwd=project_path)
     assert result.code == 0, result.capture
     assert result.stdout.endswith("['--size', '3', '--loud']\n")
+
+
+@pytest.mark.parametrize(
+    ("case_task", "expected_error"),
+    [
+        (
+            'cmd = "poe_test_echo *.nomatch"\nempty_glob = "fail"',
+            "Error: Glob pattern '*.nomatch' did not match any files",
+        ),
+        ("expr = \"f'{1} is even')\"", "Error: Invalid expr content: f'{1} is even')"),
+    ],
+    ids=["execution_error", "invalid_expr"],
+)
+def test_switch_case_error_propagates(
+    temp_pyproject, run_poe, case_task, expected_error
+):
+    """
+    An error raised while running the selected case task fails the switch with the
+    case's error message
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        {case_task}
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert expected_error in result.capture
+
+
+def test_switch_control_task_verbosity(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control = { expr = "'a'", verbosity = -1 }
+        switch = [{ case = "a", cmd = "poe_test_echo A" }]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.capture == "Poe => poe_test_echo A\n"
+    assert result.stdout == "A\n"
+
+
+@pytest.mark.parametrize(
+    ("option", "option_toml"),
+    [
+        ("args", 'args = ["x"]'),
+        ("deps", 'deps = ["_dep"]'),
+        ("uses", 'uses = { X = "_dep" }'),
+        ("uses_env", 'uses_env = "_dep"'),
+    ],
+)
+def test_switch_control_may_not_declare_graph_options_or_args(
+    temp_pyproject, run_poe, option, option_toml
+):
+    """
+    The control task is run directly with the switch's args, so options that would be
+    ignored are rejected
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks._dep]
+        cmd = "poe_test_echo dep"
+
+        [tool.poe.tasks.sw]
+        control = {{ expr = "'a'", {option_toml} }}
+        switch = [{{ case = "a", cmd = "poe_test_echo A" }}]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'sw'" in result.capture
+    assert f"Control task includes incompatible option {option!r}" in result.capture
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize(
+    "case_toml", ["[]", "{ a = 1 }", "[[1, 2]]"], ids=["empty", "table", "nested"]
+)
+def test_switch_rejects_invalid_case_value(temp_pyproject, run_poe, case_toml):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+        switch = [{{ case = {case_toml}, cmd = "poe_test_echo A" }}]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'sw'" in result.capture
+    assert "expected a string, number, boolean, or a non-empty array" in (
+        result.capture
+    )
+
+
+def test_switch_float_case(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "1.5"
+        switch = [{ case = 1.5, cmd = "poe_test_echo HIT" }]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "HIT\n"

@@ -1,0 +1,7 @@
+# expected_error: Control task includes incompatible option 'deps'
+[tool.poe.tasks.dep]
+cmd = "echo dep"
+
+[tool.poe.tasks.bad]
+control = { expr = "1", deps = ["dep"] }
+switch = [{ case = "1", cmd = "echo one" }]

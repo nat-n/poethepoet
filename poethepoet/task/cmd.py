@@ -7,6 +7,8 @@ from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
@@ -114,6 +116,11 @@ class CmdTask(PoeTask):
         else:
             cmd = (*self._resolve_commandline(context, env), *extra_args)
 
+        if not cmd:
+            raise ExecutionError(
+                f"Task {self.name!r} resolved to an empty command line"
+            )
+
         self._print_action(shlex.join(cmd), context.dry)
 
         process = await executor.execute(
@@ -148,13 +155,17 @@ class CmdTask(PoeTask):
     def _resolve_commandline(self, context: RunContext, env: TaskEnv):
         self.__passed_unmatched_glob = False
 
-        command_lines = self._parse_content().command_lines
+        lines = self._parse_content().lines
+        command_line_indices = [index for index, line in enumerate(lines) if line.words]
 
-        if not command_lines:
+        if not command_line_indices:
             raise PoeException(
                 f"Invalid cmd task {self.name!r} does not include any command lines"
             )
-        if any(line.terminator == ";" for line in command_lines[:-1]):
+        if any(
+            line.terminator == ";"
+            for line in lines[command_line_indices[0] : command_line_indices[-1]]
+        ):
             # lines terminated by a line break or comment are implicitly joined
             raise PoeException(
                 f"Invalid cmd task {self.name!r} includes multiple command lines"
@@ -163,11 +174,11 @@ class CmdTask(PoeTask):
         working_dir = self.get_working_dir(env)
 
         result = []
-        for line in command_lines:
-            for cmd_token, has_glob in line.resolve_tokens(env):
+        for line_index in command_line_indices:
+            for cmd_token, has_glob in lines[line_index].resolve_tokens(env):
                 if has_glob:
                     # Resolve glob pattern from the working directory
-                    if matches := [str(match) for match in working_dir.glob(cmd_token)]:
+                    if matches := self._glob(cmd_token, working_dir):
                         result.extend(matches)
                     elif self.spec.options.empty_glob == "fail":
                         raise ExecutionError(
@@ -183,3 +194,23 @@ class CmdTask(PoeTask):
                     result.append(cmd_token)
 
         return result
+
+    @staticmethod
+    def _glob(pattern: str, working_dir: Path) -> list[str]:
+        """
+        Resolve a glob pattern relative to the working directory, or relative to its
+        own anchor if the pattern is an absolute path.
+        """
+        from pathlib import Path
+
+        base_dir, relative_pattern = working_dir, pattern
+        if anchor := Path(pattern).anchor:
+            # pathlib doesn't support globbing with non-relative patterns
+            base_dir, relative_pattern = Path(anchor), pattern[len(anchor) :]
+
+        try:
+            return [str(match) for match in base_dir.glob(relative_pattern)]
+        except (ValueError, NotImplementedError) as error:
+            raise ExecutionError(
+                f"Invalid glob pattern {pattern!r}: {error}"
+            ) from error

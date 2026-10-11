@@ -1,0 +1,6 @@
+# expected_error: Item #1 in sequence task must not be empty
+[tool.poe.tasks.ok]
+cmd = "echo ok"
+
+[tool.poe.tasks.bad]
+sequence = ["ok", " "]
