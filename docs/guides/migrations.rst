@@ -17,7 +17,7 @@ When a script task or an expr task declares args, :python:`sys.argv` now holds t
    script = "myapp:main()"
    args = [{ name = "port", default = "8000" }]
 
-``poe serve -- --reload`` used to give ``sys.argv[1:] == ["--", "--reload"]``, and now gives ``["--port", "8000", "--reload"]``. The ``Poe =>`` line that poe prints for these tasks shows the args in the same form.
+``poe serve -- --reload`` used to give ``sys.argv[1:] == ["--", "--reload"]``, and now gives ``["--port", "8000", "--reload"]``. For script tasks, the ``Poe =>`` line that poe prints shows the args in the same form.
 
 
 0.47.0

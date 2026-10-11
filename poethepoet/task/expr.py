@@ -143,7 +143,7 @@ class ExprTask(PoeTask):
         Get the CLI arguments that the expression receives in sys.argv, after the
         program name. Declared args are re-emitted from their parsed values with
         defaults applied, followed by any free arguments given after "--". Without
-        declared args, all arguments are passed through as given.
+        declared args, all arguments are passed through with templates expanded.
         """
         if task_args := self.task_args:
             named_arg_values, extra_args = self.get_parsed_arguments(env)

@@ -131,7 +131,7 @@ Task arguments
 As with other task types, script tasks support configuring named arguments via the ``args`` option. Arguments are accessible in the referenced Python function in three ways:
 
 - As **Python variables** that can be referenced directly in the function call expression. Values retain their configured type — booleans are ``True``/``False``, integers are ``int``, multiple args are ``list``, etc.
-- Via **sys.argv**, in the same form whether the script task calls a function or runs a module. Each declared arg is re-emitted from its parsed value with defaults applied, using its first option or its position, except that a boolean flag is included only if it was passed on the command line. Any free arguments given after :sh:`--` follow, without the :sh:`--` itself; give :sh:`--` twice to pass a literal :sh:`--`. Tasks without declared args receive the arguments exactly as given.
+- Via **sys.argv**, in the same form whether the script task calls a function or runs a module. Each declared arg is re-emitted from its parsed value with defaults applied, using its first option or its position, except that a boolean flag is included only if it was passed on the command line. Any free arguments given after :sh:`--` follow, without the :sh:`--` itself; give :sh:`--` twice to pass a literal :sh:`--`. Without declared args, a script task that runs a module receives the arguments as given, and one that calls a function receives them with any ``${VAR}`` templates expanded.
 - As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case all declared args are passed as kwargs.
 
 See :ref:`Arguments for script tasks` for more details and examples.
