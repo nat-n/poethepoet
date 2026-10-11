@@ -46,7 +46,7 @@ This example can be invoked as
 
     poe serve --host 0.0.0.0 --port 8001
 
-When used with a :doc:`script task<../tasks/task_types/script>` in this way the ``run`` function from the ``myapp`` module will be called passing the ``host`` and ``port`` as keyword arguments with whatever values are provided on the CLI, in addition to ``host`` and ``port`` being set as environment variables on the task subprocess, and ``sys.argv`` holding the args as parsed, with defaults applied.
+When used with a :doc:`script task<../tasks/task_types/script>` in this way the ``run`` function from the ``myapp`` module will be called passing the ``host`` and ``port`` as keyword arguments with whatever values are provided on the CLI, in addition to ``host`` and ``port`` being set as environment variables on the task subprocess, and ``sys.argv`` being populated with the args.
 
 The following example demonstrates a slightly different form where the private ``_food`` arg is explicitly passed to the ``frying_pan`` function.
 
