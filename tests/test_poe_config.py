@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 # Setting POETRY_VIRTUALENVS_CREATE stops poetry from creating the virtualenv and
@@ -112,20 +114,26 @@ def test_config_file_without_top_level_table(run_poe, tmp_path, filename, conten
 
 
 @pytest.mark.parametrize(
-    "content",
+    ("content", "expected_error"),
     [
-        '[tool]\npoe = "foo"\n',
-        '[tool.poe]\ntasks = "foo"\n',
-        '[tool.poe.groups]\ng = "foo"\n',
-        '[tool.poe.groups.g]\ntasks = "foo"\n',
+        ('[tool]\npoe = "foo"\n', "Option 'tool.poe' must be a table"),
+        ('[tool.poe]\ntasks = "foo"\n', "Option 'tasks' must be a dict"),
+        ('[tool.poe.groups]\ng = "foo"\n', "Option 'groups.g' must be a dict"),
+        (
+            '[tool.poe.groups.g]\ntasks = "foo"\n',
+            "Option 'groups.g.tasks' must be a dict",
+        ),
     ],
 )
-def test_pyproject_with_non_table_poe_config(run_poe, temp_pyproject, content):
+def test_pyproject_with_non_table_poe_config(temp_pyproject, content, expected_error):
+    # Checked at the config level, since the CLI output for these cases also
+    # depends on help rendering tolerating the invalid config
+    from poethepoet.config import PoeConfig
+    from poethepoet.exceptions import ConfigValidationError
+
     project_path = temp_pyproject(content)
-    result = run_poe("a", cwd=project_path)
-    assert result.code == 1
-    assert "Error: " in result.capture
-    assert "must be a" in result.capture
+    with pytest.raises(ConfigValidationError, match=re.escape(expected_error)):
+        PoeConfig(cwd=project_path).load_sync()
 
 
 @pytest.mark.parametrize(
