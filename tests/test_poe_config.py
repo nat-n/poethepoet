@@ -164,3 +164,76 @@ def test_include_file_without_top_level_table(
         in result.capture
     )
     assert "at the top level" in result.capture
+
+
+@pytest.mark.parametrize(
+    ("filename", "content", "file_format", "detail"),
+    [
+        ("pyproject.toml", "[tool.poe.tasks]\na = \n", "toml", "line 2, column 5"),
+        ("poe_tasks.toml", "a = \n", "toml", "line 1, column 5"),
+        ("poe_tasks.json", '{"tasks": }', "json", "line 1 column 11"),
+        ("poe_tasks.yaml", "tasks: [\n", "yaml", "line 2, column 1"),
+        ("poe_tasks.yaml", 'tasks:\n  a: "echo\n', "yaml", "line 3, column 1"),
+        ("poe_tasks.yml", "tasks:\n\ta: echo\n", "yaml", "line 2, column 1"),
+    ],
+)
+def test_malformed_config_file(
+    run_poe, tmp_path, filename, content, file_format, detail
+):
+    config_path = tmp_path.joinpath(filename)
+    config_path.write_text(content)
+    result = run_poe("a", cwd=tmp_path)
+    assert result.code == 1
+    assert (
+        f"Error: Couldn't parse {file_format} file at {config_path}: " in result.capture
+    )
+    assert detail in result.capture
+    assert "Couldn't open file" not in result.capture
+    assert "From: " not in result.capture
+
+
+@pytest.mark.parametrize(
+    ("filename", "content", "file_format"),
+    [
+        ("broken.toml", "a = \n", "toml"),
+        ("broken.json", '{"tasks": }', "json"),
+        ("broken.yml", "tasks: [\n", "yaml"),
+    ],
+)
+def test_malformed_include_file(
+    run_poe, temp_pyproject, filename, content, file_format
+):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        include = "{filename}"
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        """
+    )
+    project_path.joinpath(filename).write_text(content)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Error: Couldn't parse {file_format} file at {project_path / filename}: "
+        in result.capture
+    )
+    assert "From: " not in result.capture
+
+
+def test_unreadable_include_file(run_poe, temp_pyproject):
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        include = "tasks.toml"
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        """
+    )
+    project_path.joinpath("tasks.toml").mkdir()
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Error: Couldn't open file at {project_path / 'tasks.toml'}: "
+        in result.capture
+    )
