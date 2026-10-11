@@ -336,3 +336,45 @@ def test_mixed_positional_and_option() -> None:
         "--out",
         "build",
     ]
+
+
+def test_positionals_are_emitted_before_options() -> None:
+    args = _args(
+        [
+            {"name": "items", "options": ["--items"], "multiple": True},
+            {"name": "out", "options": ["--out"]},
+            {"name": "target", "positional": True},
+        ]
+    )
+    assert args.format_argv(
+        {"items": ["a", "b"], "out": "build", "target": "alice"}, _env()
+    ) == ["alice", "--items", "a", "b", "--out", "build"]
+
+
+def test_multi_value_options_are_emitted_before_other_options() -> None:
+    args = _args(
+        [
+            {"name": "flag", "options": ["--flag"], "type": "boolean"},
+            {"name": "out", "options": ["--out"]},
+            {"name": "items", "options": ["--items"], "multiple": True},
+        ]
+    )
+    assert args.format_argv(
+        {"flag": True, "out": "build", "items": ["a", "b"]}, _env()
+    ) == ["--items", "a", "b", "--flag", "--out", "build"]
+
+
+@pytest.mark.parametrize(
+    ("options", "value", "expected"),
+    [
+        (["--out"], "-x", ["--out=-x"]),
+        (["-o", "--out"], "-x", ["-o=-x"]),
+        (["--out"], "-1", ["--out=-1"]),
+        (["--out"], "x-1", ["--out", "x-1"]),
+    ],
+)
+def test_option_value_starting_with_dash_is_one_token(
+    options: list[str], value: str, expected: list[str]
+) -> None:
+    args = _args([{"name": "out", "options": options}])
+    assert args.format_argv({"out": value}, _env()) == expected

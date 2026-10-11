@@ -604,20 +604,25 @@ class PoeTaskArgs:
         """
         Re-emit parsed argument values as CLI tokens — the inverse of
         :meth:`parse`. Used to forward declared args (with defaults already
-        applied by the parser) into a subprocess that does its own CLI
-        parsing, e.g. ``python -m some_module``.
+        applied by the parser) into Python code that does its own CLI parsing,
+        e.g. ``python -m some_module``.
 
-        Conventions: positionals are emitted in declared order; option args
-        use the first entry of their ``options`` list as the flag name;
-        boolean flags are emitted iff the resolved value differs from the
-        default from the latest successful parse (i.e. the user provided the
-        flag on the CLI). If parse has not been called, defaults are resolved
-        against the supplied env;
-        multi-value args are emitted space-separated, matching argparse's
-        ``nargs="+"`` style.
+        Conventions: option args use the first entry of their ``options`` list as
+        the flag name; boolean flags are emitted iff the resolved value differs
+        from the default from the latest successful parse (i.e. the user provided
+        the flag on the CLI). If parse has not been called, defaults are resolved
+        against the supplied env. A single value starting with ``-`` is emitted as
+        one ``option=value`` token, as it must have been given on the CLI.
+
+        Positionals are emitted first, then multi-value options, then other
+        options and flags, so that values following a multi-value option can't be
+        mistaken for more of its values. Free args appended after the result are
+        still taken by a trailing multi-value option, if no other option follows.
         """
 
-        result: list[str] = []
+        positionals: list[str] = []
+        multi_value_options: list[str] = []
+        other_options: list[str] = []
         for arg in self._args:
             name = arg.name.replace("-", "_")
             if name not in values:
@@ -631,26 +636,28 @@ class PoeTaskArgs:
                     else self._get_argument_params(arg, env)["default"]
                 )
                 if value != default_bool:
-                    result.append(arg.options[0])
+                    other_options.append(arg.options[0])
                 continue
 
             if arg.positional:
                 if arg.multiple:
-                    result.extend(str(item) for item in value)
+                    positionals.extend(str(item) for item in value)
                 elif value is not None:
-                    result.append(str(value))
+                    positionals.append(str(value))
                 continue
 
             flag = arg.options[0]
             if arg.multiple:
                 if value:
-                    result.append(flag)
-                    result.extend(str(item) for item in value)
+                    multi_value_options.append(flag)
+                    multi_value_options.extend(str(item) for item in value)
             elif value is not None:
-                result.append(flag)
-                result.append(str(value))
+                if (value_str := str(value)).startswith("-"):
+                    other_options.append(f"{flag}={value_str}")
+                else:
+                    other_options.extend((flag, value_str))
 
-        return result
+        return [*positionals, *multi_value_options, *other_options]
 
 
 _BOOL_TRUE_LITERALS = frozenset({"t", "true", "1"})

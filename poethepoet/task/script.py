@@ -135,14 +135,7 @@ class ScriptTask(PoeTask):
         )
         function_ref = function_call.function_ref
 
-        argv = [
-            self.name,
-            *(
-                self._get_python_argv(env)
-                if self.task_args
-                else (env.fill_template(token) for token in self.invocation[1:])
-            ),
-        ]
+        argv = [self.name, *self._get_python_argv(env)]
 
         has_dry_run_ref = "_dry_run" in function_call.referenced_globals
         dry_run = self.ctx.ui["dry_run"]

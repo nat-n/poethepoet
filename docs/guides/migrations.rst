@@ -6,10 +6,10 @@ As a rule we avoid making breaking changes to poethepoet. However once in a whil
 0.49.0
 ------
 
-``sys.argv`` in script and expr tasks with declared args
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``sys.argv`` in script and expr tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When a script task or an expr task declares args, :python:`sys.argv` now holds them as parsed, with defaults applied, as it already did for script tasks that run a module. Previously script tasks that call a function, and expr tasks, received the arguments exactly as typed. Values passed to the function or available as Python variables are unchanged, as are tasks without declared args. See the :doc:`script task docs<../tasks/task_types/script>` for the details. For example, given:
+When a script task or an expr task declares args, :python:`sys.argv` now holds them as parsed, with defaults applied, as it already did for script tasks that run a module. Previously script tasks that call a function, and expr tasks, received the arguments exactly as typed. Values passed to the function or available as Python variables are unchanged. Arguments given on the command line are also no longer expanded as ``${VAR}`` templates, matching other task types. See the :doc:`script task docs<../tasks/task_types/script>` for the details. For example, given:
 
 .. code-block:: toml
 

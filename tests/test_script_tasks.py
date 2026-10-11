@@ -851,12 +851,39 @@ def test_module_script_forwards_flag_with_default_from_uses(
     assert result.stdout.endswith("['--fast']\n" if toggle else "[]\n")
 
 
+PYTHON_TASKS_PROBE = (
+    "import sys\n\n"
+    "def main():\n"
+    "    print(sys.argv[1:])\n\n"
+    "if __name__ == '__main__':\n"
+    "    main()\n"
+)
+
+
 @pytest.mark.parametrize(
     ("cli_args", "expected_argv"),
     [
-        ((), ["--port", "8000"]),
-        (("--port", "1234", "--fast"), ["--port", "1234", "--fast"]),
-        (("--", "extra"), ["--port", "8000", "extra"]),
+        ((), ["t", "-n", "d"]),
+        (
+            ("P", "--items", "a", "b", "--name=x", "--no-slow"),
+            ["P", "--items", "a", "b", "-n", "x", "--no-slow"],
+        ),
+        # Spelling and order are normalized
+        (("-n", "y", "P"), ["P", "-n", "y"]),
+        # A value starting with a dash stays in one token
+        (("--name=-x",), ["t", "-n=-x"]),
+        # Free args follow the other options, so a multi-value option can't take them
+        (
+            ("P", "--items", "a", "--", "extra"),
+            ["P", "--items", "a", "-n", "d", "extra"],
+        ),
+        # A second "--" is passed on
+        (("--", "--", "x"), ["t", "-n", "d", "--", "x"]),
+        # Args from the command line aren't expanded
+        (
+            ("--name", "${POE_ROOT}", "--", "${POE_ROOT}"),
+            ["t", "-n", "${POE_ROOT}", "${POE_ROOT}"],
+        ),
     ],
 )
 @pytest.mark.parametrize("task_name", ["callable", "module", "expression"])
@@ -868,35 +895,47 @@ def test_declared_args_give_python_tasks_the_same_argv(
     re-emitted from their parsed values with defaults applied, followed by any free
     args given after "--".
     """
-    project_path = temp_pyproject("""
+    # Declared in the opposite order to the one they're emitted in
+    args_config = """[
+        { name = "name", options = ["-n", "--name"], default = "d" },
+        { name = "slow", type = "boolean", default = true, options = ["--no-slow"] },
+        { name = "items", options = ["--items"], multiple = true },
+        { name = "target", positional = true, default = "t" },
+    ]"""
+    project_path = temp_pyproject(f"""
         [tool.poe.tasks.callable]
         script = "probe:main()"
-        args = [
-            { name = "port", default = "${POE_TEST_PORT:-8000}" },
-            { name = "fast", type = "boolean" },
-        ]
+        args = {args_config}
 
         [tool.poe.tasks.module]
         script = "probe"
-        args = [
-            { name = "port", default = "${POE_TEST_PORT:-8000}" },
-            { name = "fast", type = "boolean" },
-        ]
+        args = {args_config}
 
         [tool.poe.tasks.expression]
         expr = "sys.argv[1:]"
-        args = [
-            { name = "port", default = "${POE_TEST_PORT:-8000}" },
-            { name = "fast", type = "boolean" },
-        ]
+        args = {args_config}
         """)
-    (project_path / "probe.py").write_text(
-        "import sys\n\n"
-        "def main():\n"
-        "    print(sys.argv[1:])\n\n"
-        "if __name__ == '__main__':\n"
-        "    main()\n"
-    )
+    (project_path / "probe.py").write_text(PYTHON_TASKS_PROBE)
     result = run_poe(task_name, *cli_args, cwd=project_path)
     assert result.code == 0, result.capture
     assert result.stdout == f"{expected_argv!r}\n"
+
+
+@pytest.mark.parametrize("task_name", ["callable", "module", "expression"])
+def test_python_tasks_without_declared_args_get_args_as_given(
+    temp_pyproject, run_poe, task_name
+):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.callable]
+        script = "probe:main()"
+
+        [tool.poe.tasks.module]
+        script = "probe"
+
+        [tool.poe.tasks.expression]
+        expr = "sys.argv[1:]"
+        """)
+    (project_path / "probe.py").write_text(PYTHON_TASKS_PROBE)
+    result = run_poe(task_name, "-x", "${POE_ROOT}", "--", "--y", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == f"{['-x', '${POE_ROOT}', '--', '--y']!r}\n"
