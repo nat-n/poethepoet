@@ -182,6 +182,18 @@ class ScriptTask(PoeTask):
         )
         await task_state.add_process(process, finalize=True)
 
+    def _get_python_argv(self, env: TaskEnv) -> list[str]:
+        """
+        Get the CLI arguments that Python code run by this task receives in sys.argv,
+        after the program name. Declared args are re-emitted from their parsed values
+        with defaults applied, followed by any free arguments given after "--".
+        Without declared args, all arguments are passed through as given.
+        """
+        named_arg_values, extra_args = self.get_parsed_arguments(env)
+        if task_args := self.task_args:
+            return [*task_args.format_argv(named_arg_values, env), *extra_args]
+        return list(extra_args)
+
     async def _run_module(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):

@@ -108,14 +108,7 @@ class ExprTask(PoeTask):
         imports = self.spec.options.imports
 
         expr, env_values = self.parse_content(named_arg_values, env, imports)
-        argv = [
-            self.spec.name,
-            *(
-                self._get_python_argv(env)
-                if self.task_args
-                else (env.fill_template(token) for token in self.invocation[1:])
-            ),
-        ]
+        argv = [self.spec.name, *self._get_python_argv(env)]
 
         src_path = self.ctx.config.project_dir / "src"
         src_path_append = (
@@ -144,6 +137,18 @@ class ExprTask(PoeTask):
         executor = self._get_executor(context, env, resolve_python=True)
         process = await executor.execute(cmd, use_exec=self.spec.options.use_exec)
         await task_state.add_process(process, finalize=True)
+
+    def _get_python_argv(self, env: TaskEnv) -> list[str]:
+        """
+        Get the CLI arguments that the expression receives in sys.argv, after the
+        program name. Declared args are re-emitted from their parsed values with
+        defaults applied, followed by any free arguments given after "--". Without
+        declared args, all arguments are passed through as given.
+        """
+        if task_args := self.task_args:
+            named_arg_values, extra_args = self.get_parsed_arguments(env)
+            return [*task_args.format_argv(named_arg_values, env), *extra_args]
+        return [env.fill_template(token) for token in self.invocation[1:]]
 
     def parse_content(
         self,
