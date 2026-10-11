@@ -237,3 +237,21 @@ def test_unreadable_include_file(run_poe, temp_pyproject):
         f"Error: Couldn't open file at {project_path / 'tasks.toml'}: "
         in result.capture
     )
+
+
+def test_no_config_found_in_directory(run_poe, tmp_path):
+    result = run_poe("-C", str(tmp_path), "a", cwd=tmp_path)
+    assert result.code == 1
+    assert f"Error: No poe configuration found from location {tmp_path}" in (
+        result.capture
+    )
+
+
+def test_no_config_found_for_non_config_file(run_poe, tmp_path):
+    readme_path = tmp_path.joinpath("README.md")
+    readme_path.write_text("# hello\n")
+    result = run_poe("-C", str(readme_path), "a", cwd=tmp_path)
+    assert result.code == 1
+    assert f"Error: No poe configuration found from location {readme_path}" in (
+        result.capture
+    )
