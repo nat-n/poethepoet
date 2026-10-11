@@ -28,7 +28,7 @@ Run these before doing anything else:
 ```bash
 which poe 2>/dev/null && poe --version 2>/dev/null        # find poe + version
 poe 2>&1                                                  # list all tasks
-ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null  # find config
+ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.yml poe_tasks.json 2>/dev/null  # find config
 ```
 
 Poe finds tasks in a supported config file in the working directory or any parent.
