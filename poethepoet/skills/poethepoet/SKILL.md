@@ -44,8 +44,10 @@ Poe finds tasks in a supported config file in the working directory or any paren
 
 **Version**: compare `poe --version` with the 0.48.0 this skill targets.
 
-- **poe is newer** → this copy of the skill is stale and will mislead you. Run `poe _install_skill --upgrade` (installs the skill bundled with that poe), then re-read it before writing tasks.
-- **poe is older** → some features described here may not exist; verify before relying on them.
+- **poe is newer** → this copy of the skill is stale and may mislead you. Tell the user, and suggest they update it with `poe _install_skill --upgrade` (installs the skill bundled with their poe). Until then, verify behaviour against the docs or source before relying on this skill.
+- **poe is older** → some features described here may not exist. Tell the user, and suggest upgrading poethepoet; otherwise verify a feature exists before using it.
+
+Don't update the skill or poethepoet yourself unless the user asks.
 
 ## Using existing tasks
 
