@@ -6,7 +6,7 @@ All options are available on any task type unless noted.
 
 ## Parameter expansion
 
-Parameter expansion is the default across poe: task bodies (`cmd`, `ref`, `expr`) and most config options (`env` values, `cwd`, `capture_stdout`, `envfile` paths and values, arg `default` values, include paths) all support it. When you need to make something conditional on an environment variable, reach for expansion first.
+Parameter expansion is the default across poe: task bodies (`cmd`, `ref`, `expr`) and most config options (`env` values, `cwd`, `capture_stdout`, `envfile` paths and values, arg `default` values, `deps`/`uses`/`uses_env` task references, include paths) all support it, including the `:-` and `:+` operators. When you need to make something conditional on an environment variable, reach for expansion first.
 
 | Syntax            | Meaning                                                   |
 | ----------------- | --------------------------------------------------------- |
@@ -60,7 +60,7 @@ PORT.default = "8080"
 
 ```toml
 [tool.poe.tasks.deploy]
-env.REGION = "${AWS_DEFAULT_REGION:-us-east-1}"
+env.API_URL = "http://localhost:${PORT:-8080}"
 ```
 
 **Private variables** (lowercase + `_` prefix): available in task config expansion but NOT exposed to subprocesses — useful for sensitive values or just to avoid spamming the environment with unnecessary variables:
@@ -104,7 +104,7 @@ cmd = "aws s3 sync ./build s3://my-bucket"
 deps = ["build-frontend", "build-backend"]
 ```
 
-`deps` and `uses` task references are similar to ref tasks so they can also pass arguments to those tasks and reference environment variables or args via parameter expansions.
+Each entry is a task invocation, written like a `ref`: a task name, optionally followed by arguments, with parameter expansion (`deps = ["_check --stage ${_stage}"]`). See [How deps, uses and uses_env resolve](#how-deps-uses-and-uses_env-resolve-the-task-graph) for ordering.
 
 ---
 
@@ -146,6 +146,61 @@ uses_env = "_aws-creds"   # or a list: uses_env = ["_aws-creds", "_other-creds"]
 - Output is **not** whitespace-collapsed (unlike `uses`) — newlines separate assignments
 - Loaded `_`-prefixed lowercase names stay private to the subprocess, like `uses`
 - On a name collision, explicit `uses` entries take precedence over variables loaded via `uses_env`
+
+---
+
+## How deps, uses and uses_env resolve (the task graph)
+
+`deps`, `uses` and `uses_env` are not steps that run in the order you wrote them. Each entry declares an edge: "this task needs that task invocation to have finished". Before running anything, poe follows these edges from the task you invoked, through the upstream tasks' own `deps`/`uses`/`uses_env`, and builds a dependency graph (a DAG). It then runs each node once, upstream first.
+
+```toml
+[tool.poe.tasks._check-login]
+cmd = "aws sts get-caller-identity"
+
+[tool.poe.tasks._stack-name]
+cmd = "echo ${_family}${_family:+.}${_stage}"
+args = [
+  { name = "_family", options = ["--family"], default = "" },
+  { name = "_stage", options = ["--stage"], required = true },
+]
+
+[tool.poe.tasks._kms-key]
+cmd = "aws kms describe-key --key-id alias/${_stack} --query KeyMetadata.Arn --output text"
+deps = ["_check-login"]
+uses = { _stack = "_stack-name --family \"${_family}\" --stage ${_stage}" }
+args = [
+  { name = "_family", options = ["--family"], default = "" },
+  { name = "_stage", options = ["--stage"], required = true },
+]
+
+[tool.poe.tasks.stack-init]
+help = "Create a stack encrypted with its KMS key"
+cmd = "pulumi stack init ${_stack} --secrets-provider awskms://${_key}"
+uses = { _stack = "_stack-name --family \"${_family}\" --stage ${_stage}", _key = "_kms-key --family \"${_family}\" --stage ${_stage}" }
+args = [
+  { name = "_family", options = ["--family"], default = "", help = "Stack family, omit for shared stacks" },
+  { name = "_stage", options = ["--stage"], required = true, choices = ["dev", "prod"], help = "Target stage" },
+]
+```
+
+`poe stack-init --stage dev` runs `_check-login` and `_stack-name` (once, although two tasks use it), then `_kms-key`, then `stack-init`.
+
+The rules that follow from this:
+
+- **Everything upstream finishes before the task body starts** (for a `switch`, before its control). If an upstream task fails, the run aborts and the body never starts.
+- **The same invocation is one node.** A task referenced with the same arguments from several places runs once and its result is shared. Different arguments make a different node. (A task that is both a `deps` entry and a `uses` source runs twice, because one run is captured and the other is not.)
+- **Entries on the same task are not ordered relative to each other.** Nothing guarantees that a `deps` entry runs before a sibling `uses` entry, or that entries run in the order listed. To make `_check-login` run before `_kms-key`, put it in `_kms-key`'s own `deps` as above; listing both on `stack-init` does not do it.
+- **Invocation strings are expanded when the graph is built**, from the task's args and env, before any upstream task has run. So a value produced by `uses` or `uses_env` cannot be used in a sibling entry:
+
+  ```toml
+  # ❌ ${_stack} is still empty when the _kms-key invocation is expanded; no error is raised
+  uses = { _stack = "_stack-name --stage ${_stage}", _key = "_kms-key --stack ${_stack}" }
+
+  # ✅ move the inner dependency onto the task that needs it (as _kms-key does above)
+  uses = { _key = "_kms-key --stage ${_stage}" }
+  ```
+
+- **After expansion the string is split into words like a shell command.** A value that may be empty must be quoted or it vanishes and the next word is taken as the option's value: write `--family \"${_family}\"` (or `--family=${_family}`), not `--family ${_family}`.
 
 ---
 
