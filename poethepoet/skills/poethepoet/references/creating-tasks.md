@@ -51,7 +51,7 @@ Use `cmd` by default. Only reach for other types when you genuinely need their f
 | Need                                                                     | Use                                 |
 | ------------------------------------------------------------------------ | ----------------------------------- |
 | Run a CLI command                                                        | **`cmd`** (default)                 |
-| Pipes, redirects, loops, or tests on runtime state (files, exit codes)   | **`shell`**                         |
+| Shell scripting: pipes, redirects, loops, tests on runtime state         | **`shell`**                         |
 | Python logic or async                                                    | **`script`**                        |
 | Run A then B                                                             | **`sequence`** (or array shorthand) |
 | Run A and B simultaneously                                               | **`parallel`**                      |
@@ -62,7 +62,7 @@ Use `cmd` by default. Only reach for other types when you genuinely need their f
 
 ### Declare it in poe before scripting it in bash
 
-Bash is the familiar tool, so it is tempting to write a `shell` task whenever a task needs a fallback, a branch, or a computed value. Poe has a declarative feature for almost all of these. The poe form shows up in `poe --help <task>` and `poe -d`, is validated before anything runs, and works on Windows; the bash form does none of that.
+Bash is the familiar tool, so it is tempting to write a `shell` task whenever a task needs a fallback, a branch, or a computed value. Poe has a declarative feature for most of these, and it is usually the better fit: it shows up in `poe --help <task>` and `poe -d`, is validated before anything runs, and stays portable.
 
 | If you are about to write this in bash…                    | …use this instead                                                         |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
@@ -80,7 +80,7 @@ Bash is the familiar tool, so it is tempting to write a `shell` task whenever a 
 | `a & b & wait`                                              | `parallel = ["a", "b"]`                                                   |
 | `… \|\| true`                                                | `ignore_fail = true`                                                      |
 
-What is left for `shell` is what genuinely needs a shell: pipes, redirects, loops, and tests on state that only exists at run time.
+`shell` tasks are still the right tool when the work is genuinely a shell script: pipes, redirects, loops, tests on state that only exists at run time, or a longer script that would be awkward to break into poe features. The point is to check this table first, not to avoid `shell`.
 
 ---
 

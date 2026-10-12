@@ -70,7 +70,7 @@ If `poe`'s output isn't enough (e.g. you need a task's implementation or args), 
 | --- | --- | --- |
 | `cmd` | running any CLI command (default) | `task = "command"` |
 | `script` | calling a Python function | `task.script = "module:fn"` |
-| `shell` | pipes, redirects, loops — things only a shell can do | `task.shell = "cmd1 \| cmd2"` |
+| `shell` | shell scripts (pipes, redirects, loops, multi-step scripting) | `task.shell = "cmd1 \| cmd2"` |
 | `sequence` | run tasks in order | `task = ["a", "b"]` |
 | `parallel` | run tasks concurrently | `task.parallel = ["a", "b"]` |
 | `ref` | reference another task | `task.ref = "other"` |
@@ -131,7 +131,7 @@ Read `references/creating-tasks.md` before creating tasks — it covers project-
 
 - **Never hand-edit dependency arrays** in `pyproject.toml` (`[project]`, `[tool.uv]`, `[dependency-groups]`, `[tool.poetry.group.*]`). Use `uv add --dev <pkg>` / `poetry add --group dev <pkg>` so the lockfile stays in sync — this applies to poe itself too.
 - **Don't add `#` comments to task config** unless asked. Task docs belong in `help`, which surfaces in `poe` and `poe --help <task>`; config comments surface nowhere. If a task needs a comment to explain it, rename it, refine its `help`, or split it.
-- **Declare, don't script.** Before writing bash logic in a `shell` task, look for the poe feature that expresses it: a fallback value is an arg `default`, a `case` on an arg is a `switch`, `$(...)` is `uses`, `&&` is a `sequence`, an optional flag is `${var:+--flag}`. The full mapping is in `references/creating-tasks.md`. Keep `shell` for pipes, redirects and loops.
+- **Declare before you script.** Before writing bash logic in a `shell` task, check whether a poe feature already expresses it: a fallback value is an arg `default`, a `case` on an arg is a `switch`, `$(...)` is `uses`, `&&` is a `sequence`, an optional flag is `${var:+--flag}`. The full mapping is in `references/creating-tasks.md`. `shell` remains the right choice for pipes, redirects, loops, and scripts whose logic is genuinely shell-shaped.
 - **Compose, don't recurse.** To run one task from another, use `deps`, `uses`, `ref`, or a `sequence`/`parallel` — never `cmd = "poe other-task"`. Shelling out spawns a second poe process and hides the dependency from poe (no ordering, dedup, or dry-run visibility), and it can't invoke private `_`-tasks at all.
 - **Leave a clean set.** Delete throwaway tasks you created while developing or debugging before finishing. Aim for a small, intentional set where every task pulls its weight and a newcomer can see why each exists and how they're organized — not a pile of overlapping one-offs.
 
