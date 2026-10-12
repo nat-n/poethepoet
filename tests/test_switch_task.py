@@ -339,3 +339,80 @@ def test_switch_case_error_propagates(
     result = run_poe("sw", cwd=project_path)
     assert result.code == 1, result.capture
     assert expected_error in result.capture
+
+
+@pytest.mark.parametrize(
+    ("case_def", "expected_error"),
+    [
+        pytest.param(
+            """expr = "'only ' + _nope" """,
+            "Error: Invalid variable reference in expr: _nope",
+            id="expr",
+        ),
+        pytest.param(
+            """sequence = [
+                { cmd = "poe_test_echo first" },
+                { expr = "'second ' + _nope" },
+                { cmd = "poe_test_echo third" },
+            ]""",
+            "Error: Invalid variable reference in expr: _nope",
+            id="sequence",
+        ),
+        pytest.param(
+            """control.expr = "'nothing'"
+            switch = [{ case = "something", cmd = "poe_test_echo third" }]""",
+            "Error: Control value 'nothing' did not match any cases in switch task "
+            "'sw[a]'.",
+            id="nested_switch",
+        ),
+    ],
+)
+def test_switch_case_error_is_not_swallowed(
+    temp_pyproject, run_poe, case_def, expected_error
+):
+    """
+    An error raised by the selected case task before it spawns a process must fail
+    the switch task, just like it would for the same task outside of a switch
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "_p"
+        args = [{{ name = "_p", options = ["--p"], default = "a" }}]
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        {case_def}
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert expected_error in result.capture
+    assert "third" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    "case_def",
+    [
+        pytest.param("""cmd = "poe_test_fail 0 1" """, id="cmd"),
+        pytest.param(
+            """sequence = [
+                { cmd = "poe_test_fail 0 1" },
+                { cmd = "poe_test_echo third" },
+            ]""",
+            id="sequence",
+        ),
+    ],
+)
+def test_switch_case_process_failure_fails_the_switch(
+    temp_pyproject, run_poe, case_def
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        {case_def}
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert "third" not in result.stdout
