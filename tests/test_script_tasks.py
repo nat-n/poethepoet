@@ -871,7 +871,7 @@ PYTHON_TASKS_PROBE = (
         # Spelling and order are normalized
         (("-n", "y", "P"), ["P", "-n", "y"]),
         # A value starting with a dash stays in one token
-        (("--name=-x",), ["t", "-n=-x"]),
+        (("--name=-x",), ["t", "-n-x"]),
         # Free args follow the other options, so a multi-value option can't take them
         (
             ("P", "--items", "a", "--", "extra"),

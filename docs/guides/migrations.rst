@@ -9,7 +9,7 @@ As a rule we avoid making breaking changes to poethepoet. However once in a whil
 ``sys.argv`` in script and expr tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When a script task or an expr task declares args, :python:`sys.argv` now holds them as parsed, with defaults applied, as it already did for script tasks that run a module. Previously script tasks that call a function, and expr tasks, received the arguments exactly as typed. Values passed to the function or available as Python variables are unchanged. Arguments given on the command line are also no longer expanded as ``${VAR}`` templates, matching other task types. See the :doc:`script task docs<../tasks/task_types/script>` for the details. For example, given:
+Script tasks that call a function, and expr tasks, now get the same :python:`sys.argv` as script tasks that run a module. If the task declares args, :python:`sys.argv` holds them as parsed, with defaults applied, followed by any args given after ``--``. For example, given:
 
 .. code-block:: toml
 
@@ -17,7 +17,11 @@ When a script task or an expr task declares args, :python:`sys.argv` now holds t
    script = "myapp:main()"
    args = [{ name = "port", default = "8000" }]
 
-``poe serve -- --reload`` used to give ``sys.argv[1:] == ["--", "--reload"]``, and now gives ``["--port", "8000", "--reload"]``. For script tasks, the ``Poe =>`` line that poe prints shows the args in the same form.
+``poe serve -- --reload`` used to give ``sys.argv[1:] == ["--", "--reload"]``, and now gives ``["--port", "8000", "--reload"]``.
+
+Also, ``${VAR}`` templates in arguments given on the command line are no longer expanded for these tasks, matching other task types.
+
+See the :doc:`script task docs<../tasks/task_types/script>` for details.
 
 
 0.47.0

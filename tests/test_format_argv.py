@@ -368,7 +368,7 @@ def test_multi_value_options_are_emitted_before_other_options() -> None:
     ("options", "value", "expected"),
     [
         (["--out"], "-x", ["--out=-x"]),
-        (["-o", "--out"], "-x", ["-o=-x"]),
+        (["-o", "--out"], "-x", ["-o-x"]),
         (["--out"], "-1", ["--out=-1"]),
         (["--out"], "x-1", ["--out", "x-1"]),
     ],

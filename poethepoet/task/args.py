@@ -611,13 +611,15 @@ class PoeTaskArgs:
         the flag name; boolean flags are emitted iff the resolved value differs
         from the default from the latest successful parse (i.e. the user provided
         the flag on the CLI). If parse has not been called, defaults are resolved
-        against the supplied env. A single value starting with ``-`` is emitted as
-        one ``option=value`` token, as it must have been given on the CLI.
+        against the supplied env. A single option value starting with ``-`` is
+        emitted in the same token as its flag (``-ovalue`` or ``--out=value``).
 
         Positionals are emitted first, then multi-value options, then other
         options and flags, so that values following a multi-value option can't be
-        mistaken for more of its values. Free args appended after the result are
-        still taken by a trailing multi-value option, if no other option follows.
+        mistaken for more of its values. Remaining ambiguities: free args appended
+        after the result are still taken by a trailing multi-value option if no
+        other option follows, and positional or multi-value items starting with
+        ``-`` may be read as options.
         """
 
         positionals: list[str] = []
@@ -653,7 +655,14 @@ class PoeTaskArgs:
                     multi_value_options.extend(str(item) for item in value)
             elif value is not None:
                 if (value_str := str(value)).startswith("-"):
-                    other_options.append(f"{flag}={value_str}")
+                    # Keep the value in the same token as its flag, so it can't be
+                    # read as an option. Short flags take the attached form, which
+                    # unlike "-o=value" is also understood by parsers like click.
+                    other_options.append(
+                        f"{flag}{value_str}"
+                        if len(flag) == 2
+                        else f"{flag}={value_str}"
+                    )
                 else:
                     other_options.extend((flag, value_str))
 
