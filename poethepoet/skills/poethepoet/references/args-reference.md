@@ -162,6 +162,8 @@ args = [{ name = "_target", positional = true }]
 | `expr`                 | As Python variables: `name` is directly accessible                                 |
 | `sequence`/`parallel`  | Via env vars, or forwarded via `$POE_EXTRA_ARGS`                                   |
 
+With declared args, `script` (callable or module form) and `expr` tasks also get them in `sys.argv`: each arg re-emitted from its parsed value with defaults applied (boolean flags only if passed), then any free args given after `--`. Pass `--` twice to forward a literal `--`. Without declared args, `sys.argv` holds the arguments as given.
+
 ---
 
 ## Free arguments (after --)

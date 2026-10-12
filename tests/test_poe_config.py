@@ -7,8 +7,8 @@ import pytest
 poetry_vars = {"POETRY_VIRTUALENVS_CREATE": "false"}
 
 
-def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
-    # Also tests passing of extra_args to sys.argv
+def test_setting_default_task_type(run_poe_subproc, esc_prefix):
+    # Also tests passing of extra_args to sys.argv, without expanding them
     result = run_poe_subproc(
         "echo-args",
         "nat,",
@@ -17,10 +17,8 @@ def test_setting_default_task_type(run_poe_subproc, projects, esc_prefix):
         env=poetry_vars,
         shell=True,
     )
-    assert (
-        result.capture == f"Poe => echo-args nat, 'welcome to {projects['scripts']}'\n"
-    )
-    assert result.stdout == f"hello nat, welcome to {projects['scripts']}\n"
+    assert result.capture == "Poe => echo-args nat, 'welcome to ${POE_ROOT}'\n"
+    assert result.stdout == "hello nat, welcome to ${POE_ROOT}\n"
     result.assert_no_err()
 
 
