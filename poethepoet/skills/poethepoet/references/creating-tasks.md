@@ -51,14 +51,36 @@ Use `cmd` by default. Only reach for other types when you genuinely need their f
 | Need                                                                     | Use                                 |
 | ------------------------------------------------------------------------ | ----------------------------------- |
 | Run a CLI command                                                        | **`cmd`** (default)                 |
-| Shell pipes, loops, conditionals                                         | **`shell`**                         |
+| Shell scripting: pipes, redirects, loops, tests on runtime state         | **`shell`**                         |
 | Python logic or async                                                    | **`script`**                        |
 | Run A then B                                                             | **`sequence`** (or array shorthand) |
 | Run A and B simultaneously                                               | **`parallel`**                      |
-| Platform-specific behavior or switching task content based on conditions | **`switch`**                        |
+| Different steps depending on an arg, env var, or platform                | **`switch`**                        |
 | Computed output                                                          | **`expr`**                          |
 
 **When in doubt, use `cmd`.** It's portable, predictable, and the right choice for the vast majority of tasks.
+
+### Declare it in poe before scripting it in bash
+
+Bash is the familiar tool, so it is tempting to write a `shell` task whenever a task needs a fallback, a branch, or a computed value. Poe has a declarative feature for most of these, and it is usually the better fit: it shows up in `poe --help <task>` and `poe -d`, is validated before anything runs, and stays portable.
+
+| If you are about to write this in bash…                    | …use this instead                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `REGION="${REGION:-eu-west-1}"`, `if [ -z "$X" ]; then X=…` | arg `default = "eu-west-1"`, or `default = "${SOME_ENV_VAR:-eu-west-1}"`   |
+| `if [ -z "$X" ]; then echo "X is required"; exit 1; fi`     | arg `required = true`                                                     |
+| `case "$X" in a\|b) ;; *) exit 1 ;; esac` to validate       | arg `choices = ["a", "b"]`                                                |
+| `case "$TARGET" in app) … ;; *) … ;; esac` to pick steps     | `switch` with `control.expr = "TARGET"`; a case can be a `sequence`       |
+| `[ -n "$TAG" ] && ARGS="--tag $TAG"`                        | `${TAG:+--tag ${TAG}}` in the `cmd`                                       |
+| `NAME="$(some-command)"`                                    | `uses = { _name = "_some-task" }`                                         |
+| `eval "$(creds-command)"`, `source .env`                    | `uses_env = "_creds-task"`, `envfile = ".env"`                            |
+| `step-one && step-two`                                      | `sequence = ["step-one", "step-two"]`                                     |
+| `check-login \|\| exit 1` before the real work               | `deps = ["_check-login"]`                                                 |
+| `cd subdir && …`                                            | `cwd = "subdir"`                                                          |
+| `export X=…`                                                | `env.X = "…"`                                                             |
+| `a & b & wait`                                              | `parallel = ["a", "b"]`                                                   |
+| `… \|\| true`                                                | `ignore_fail = true`                                                      |
+
+`shell` tasks are still the right tool when the work is genuinely a shell script: pipes, redirects, loops, tests on state that only exists at run time, or a longer script that would be awkward to break into poe features. The point is to check this table first, not to avoid `shell`.
 
 ---
 

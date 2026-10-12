@@ -83,6 +83,42 @@
         "Response declares args on the switch task, not on individual case tasks",
         "Response does not place args on case tasks"
       ]
+    },
+    {
+      "id": 8,
+      "fixture": "uv_with_test",
+      "prompt": "Add a `stack-init` task that takes `--project` (either `app` or `shared`) and `--stage`. For `app` it should run `pulumi stack init app-<stage>` and then `pulumi config set tier web`. For `shared` it should only run `pulumi stack init shared-<stage>`.",
+      "expected_output": "Agent defines a switch task whose control is an expr referencing the project arg by bare name, with args declared once on the switch (project with choices, both required). The app case is an inline sequence of two cmd steps; the shared case is a single cmd. No shell task with a bash case/if statement.",
+      "expectations": [
+        "Response defines the task as a `switch` with a `control`",
+        "Response does not implement the branching with a bash `case` or `if` statement in a shell task",
+        "Response implements the two-step app branch as a `sequence` inside the switch case",
+        "Response declares the args on the switch task, with `choices` for the project arg"
+      ]
+    },
+    {
+      "id": 9,
+      "fixture": "uv_with_test",
+      "prompt": "Add a `serve` task that runs `uvicorn app:main --port <port> --log-level <level>`. The port should come from `--port`, falling back to 8080. The log level should come from `--log-level`, falling back to the LOG_LEVEL environment variable if set, or `info` otherwise.",
+      "expected_output": "Agent defines a cmd task with two args whose fallbacks are expressed as arg defaults: default 8080 for the port, and default \"${LOG_LEVEL:-info}\" for the log level. No shell task, and no fallback logic written in bash.",
+      "expectations": [
+        "Response defines `serve` as a cmd task, not a shell task",
+        "Response expresses the port fallback as the arg's `default`",
+        "Response expresses the log level fallback as an arg `default` using `${LOG_LEVEL:-info}`",
+        "Response includes a help = line for the task"
+      ]
+    },
+    {
+      "id": 10,
+      "fixture": "poe_project",
+      "prompt": "I have two private tasks: `_stack-name --stage <stage>` prints a stack name, and `_kms-key --stack <name>` prints the KMS key ARN for a stack. My `deploy` task needs both values. I wrote `uses = { _stack = \"_stack-name --stage ${_stage}\", _key = \"_kms-key --stack ${_stack}\" }` but `_kms-key` receives an empty --stack. Why, and how should I structure it?",
+      "expected_output": "Agent explains that deps/uses/uses_env entries form a dependency graph and their invocation strings are expanded when the graph is built, before any upstream task has run, so one uses value is not available to a sibling uses entry. The fix is to move the dependency onto the task that needs it: `_kms-key` takes the stage and declares its own `uses` of `_stack-name`, and `deploy` uses both tasks.",
+      "expectations": [
+        "Response explains that a `uses` value is not available when a sibling `uses` invocation is expanded",
+        "Response does not claim that `uses` entries are resolved in listed order",
+        "Response restructures so that `_kms-key` gets the stack name through its own `uses` (nesting), rather than from deploy's sibling entry",
+        "Response does not suggest calling `poe` recursively or replacing the tasks with a shell script"
+      ]
     }
   ]
 }

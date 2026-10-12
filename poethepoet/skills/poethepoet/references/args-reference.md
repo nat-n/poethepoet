@@ -160,7 +160,8 @@ args = [{ name = "_target", positional = true }]
 | `script` (with parens) | Explicitly in call: `"module:fn(_x, y=_y)"`                                        |
 | `script` (module form) | Re-emitted on the module's `sys.argv` (with defaults applied)                      |
 | `expr`                 | As Python variables: `name` is directly accessible                                 |
-| `sequence`/`parallel`  | Via env vars, or forwarded via `$POE_EXTRA_ARGS`                                   |
+| `sequence`/`parallel`  | Inline `cmd`/`expr` items see them like a standalone task (private args included). Referenced tasks only inherit public args as env vars; pass others explicitly: `"sub --flag ${_x}"`. Free args are forwarded via `$POE_EXTRA_ARGS` |
+| `switch`               | Bare name in `control.expr`; each case sees them according to its own type        |
 
 With declared args, `script` (callable or module form) and `expr` tasks also get them in `sys.argv`: each arg re-emitted from its parsed value with defaults applied (boolean flags only if passed), then any free args given after `--`. Pass `--` twice to forward a literal `--`. Without declared args, `sys.argv` holds the arguments as given.
 
@@ -191,21 +192,48 @@ sequence = [
 ]
 ```
 
-The follow task types have subtacks: sequence, parallel, switch, ref
+The following task types have subtasks: sequence, parallel, switch, ref
 
 If no args are declared then all cli arguments are captured as "free args", so a task declared as simply `test.cmd = "pytest"` for example will forward any arguments passed on the CLI to pytest.
 
 ---
 
-## Defaults from environment variables
+## Defaults and fallback values
+
+A fallback value belongs in the arg's `default`, not in bash logic inside the task. The default may be a literal or come from the environment with its own fallback:
 
 ```toml
-args = [{ name = "AWS_REGION", options = ["--region", "-r"], default = "${AWS_DEFAULT_REGION:-us-east-1}" }]
+[tool.poe.tasks.serve]
+cmd = "uvicorn app:main --port ${_port} --log-level ${_log_level}"
+args = [
+  { name = "_port", options = ["--port", "-p"], type = "integer", default = 8080, help = "Port to listen on" },
+  { name = "_log_level", options = ["--log-level"], default = "${LOG_LEVEL:-info}", help = "Log verbosity" },
+]
 ```
 
-The fact that args are normally exposed as environment variables can be useful when the task explicitly needed, for example calling an arg `"AWS_REGION"` will set that environment variable for all subprocesses of the task.
+`poe serve` uses port 8080 and `$LOG_LEVEL` if set, otherwise `info`. No `shell` task and no `${PORT:-8080}` in the body are needed. The default is appended to the help message automatically.
 
-If provided, the default value is appended to the help message automatically.
+- A default is expanded against the environment only. It **cannot reference another arg**: `default = "app-${_stage}"` resolves `${_stage}` to an empty string. Compose args in the task body instead (`cmd = "… app-${_stage}"`).
+- A public arg is exported as an environment variable under its name, so naming an arg `AWS_REGION` sets that variable for the task's subprocesses.
+
+---
+
+## Args that only some invocations need
+
+Poe args are a flat list: there is no way to declare "required unless `--project shared`". Don't add a task to validate the combination. Make the arg optional with `default = ""`, say when it applies in its `help`, and let expansion drop what is absent:
+
+```toml
+[tool.poe.tasks._stack-name]
+cmd = "echo ${_family}${_family:+.}${_stage}"
+args = [
+  { name = "_family", options = ["--family"], default = "", help = "Stack family, omit for shared stacks" },
+  { name = "_stage", options = ["--stage"], required = true, choices = ["dev", "prod"], help = "Target stage" },
+]
+```
+
+`--family web --stage dev` gives `web.dev`; `--stage dev` alone gives `dev`. `${_family:+.}` adds the separator only when a family was given, and `${_tag:+--tag ${_tag}}` does the same for a whole optional flag.
+
+If the invocations differ by more than one or two args, use a `switch` on the deciding arg, or split into two tasks with their own args.
 
 ---
 
@@ -228,4 +256,6 @@ Poe validates the value at runtime and shows the choices in help output.
 - The `choices` arg option should be used whenever a small set of allowed options is known.
 - The inline tables syntax is usually the best.
 - Help text should be limited to 1 line (<80 chars) when possible.
-- prefer \_private arg names for most tasks types when there is no need to access the variables from the environment at runtime. - **NEVER** use \_private arg names with shell tasks which can only access variables from the environment at runtime.
+- Prefer \_private arg names for most task types when there is no need to access the variables from the environment at runtime.
+- **NEVER** use \_private arg names with shell tasks, which can only access variables from the environment at runtime.
+- Give no `default` to an arg that selects a deployment target (environment, stage, account, region). Make it `required` so every invocation states it; a silently defaulted target is an expensive mistake.
