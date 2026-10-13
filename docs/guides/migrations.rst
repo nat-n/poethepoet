@@ -23,6 +23,11 @@ Also, ``${VAR}`` templates in arguments given on the command line are no longer 
 
 See the :doc:`script task docs<../tasks/task_types/script>` for details.
 
+Square bracket glob patterns in cmd tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whitespace, backslashes, quotes, and parameter expansions inside a square bracket pattern are now interpreted like in bash, instead of being taken literally. To match a space or a backslash, escape it with a backslash, for example ``[a\ b]``.
+
 
 0.47.0
 ------

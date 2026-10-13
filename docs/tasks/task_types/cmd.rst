@@ -102,15 +102,9 @@ Glob expansion
 
 Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. Glob patterns are evaluated relative to the working directory of the task.
 
-Glob patterns are parsed like in bash, so within a square bracket pattern unquoted whitespace ends the word, a backslash escapes the character that follows it, and parameter expansions and quotes work as usual, for example ``[${CHARS}]`` or ``["a b"]``. Quoted or escaped content only ever matches itself.
+The supported glob syntax is that of the |glob_link|, which differs from bash in that square bracket patterns don't support character classes or negation with ``^``.
 
-Patterns are matched using the |glob_link|, which differs from bash in that square bracket patterns don't support character classes like ``[[:alpha:]]``, and can only be negated with ``!`` and not with ``^``.
-
-.. versionchanged:: 0.49.0
-
-   Square bracket patterns used to be taken as they are up to the closing bracket, including any whitespace, backslashes, quotes, or parameter expansions.
-
-If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash), that is following parameter expansion and with any quotes removed. This behavior can be overridden for a specific task by setting the :toml:`empty_glob` option to ``"null"`` or ``"fail"``. If set to ``"null"`` then the pattern will be replaced with nothing (similar to how bash behaves when |nullglob_link| is set), and if set to ``"fail"`` then a glob pattern with no matches will cause task execution to fail with an error.
+If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the :toml:`empty_glob` option to ``"null"`` or ``"fail"``. If set to ``"null"`` then the pattern will be replaced with nothing (similar to how bash behaves when |nullglob_link| is set), and if set to ``"fail"`` then a glob pattern with no matches will cause task execution to fail with an error.
 
 The following task uses glob patterns to specify all ``.pyc`` files and ``__pycache__`` directories in the project for removal, and thanks to the :toml:`empty_glob` option it will succeed even if there are no matches since no arguments will be passed to the ``rm`` command.
 
