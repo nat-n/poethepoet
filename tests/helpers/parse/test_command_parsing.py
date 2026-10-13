@@ -1,3 +1,5 @@
+import pytest
+
 from poethepoet.helpers.parse import parse_poe_cmd
 
 
@@ -8,41 +10,41 @@ def test_resolve_command_tokens():
     line = script.command_lines[0]
 
     assert list(line.resolve_tokens({"thing2": ""})) == [
-        ("abcdef", False),
-        ("*?", True),
+        ("abcdef", None),
+        ("*?", "*?"),
     ]
 
     assert list(line.resolve_tokens({"thing1": " space ", "thing2": "s p a c e"})) == [
-        ("abc", False),
-        ("space", False),
-        ("def", False),
-        ("*s", True),
-        ("p", False),
-        ("a", False),
-        ("c", False),
-        ("e?", True),
+        ("abc", None),
+        ("space", None),
+        ("def", None),
+        ("*s", "*s"),
+        ("p", None),
+        ("a", None),
+        ("c", None),
+        ("e?", "e?"),
     ]
 
     assert list(line.resolve_tokens({"thing1": " space ", "thing2": "s p a c e"})) == [
-        ("abc", False),
-        ("space", False),
-        ("def", False),
-        ("*s", True),
-        ("p", False),
-        ("a", False),
-        ("c", False),
-        ("e?", True),
+        ("abc", None),
+        ("space", None),
+        ("def", None),
+        ("*s", "*s"),
+        ("p", None),
+        ("a", None),
+        ("c", None),
+        ("e?", "e?"),
     ]
 
     assert list(
         line.resolve_tokens({"thing1": "x'[!] ]'y", "thing2": "z [foo ? "})
     ) == [
-        ("abcx'[!]", True),
-        ("]'ydef", False),
-        ("*z", True),
-        ("[foo", False),
-        ("?", True),
-        ("?", True),
+        ("abcx'[!]", None),
+        ("]'ydef", None),
+        ("*z", "*z"),
+        ("[foo", None),
+        ("?", "?"),
+        ("?", "?"),
     ]
 
     line = parse_poe_cmd("""
@@ -50,9 +52,9 @@ def test_resolve_command_tokens():
         """).command_lines[0]
 
     assert list(line.resolve_tokens({"thing1": r" *\o/", "thing2": ""})) == [
-        (r"ab *\o/* and ? ' *\o/'", False),
-        ("${thing1}", False),
-        ("", False),
+        (r"ab *\o/* and ? ' *\o/'", None),
+        ("${thing1}", None),
+        ("", None),
     ]
 
     script = parse_poe_cmd("""
@@ -66,10 +68,85 @@ def test_resolve_command_tokens():
     assert [
         token for line in script.command_lines for token in line.resolve_tokens({})
     ] == [
-        ("one", False),
-        ("two", False),
-        ("three", False),
+        ("one", None),
+        ("two", None),
+        ("three", None),
     ]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_tokens"),
+    [
+        # A group pattern may include parameter expansions and quotes
+        ("[${S}]", [("[val]", "[val]")]),
+        ("[$S]", [("[val]", "[val]")]),
+        ("a[!${S}]b", [("a[!val]b", "a[!val]b")]),
+        ("[${S:+y}]", [("[y]", "[y]")]),
+        ("[$RANGE]", [("[a-c]", "[a-c]")]),
+        ('x["a b"]', [("x[a b]", "x[a b]")]),
+        ("[${S}][x]", [("[val][x]", "[val][x]")]),
+        # ... or be split over multiple parameter expansions
+        ("${OPEN}${CLOSE}", [("[ab]", "[ab]")]),
+        ("[$CLOSE", [("[b]", "[b]")]),
+        # Glob chars are not special inside a group
+        ('["*"]', [("[*]", "[*]")]),
+        ("[${S:+*?[}]", [("[*?[]", "[*?[]")]),
+        ("[$STAR]", [("[*]", "[*]")]),
+        # Quoted chars that would be special by their position in a group are moved
+        ('["!"a]', [("[!a]", "[a!]")]),
+        ('["!"]', [("[!]", "!")]),
+        ('["!""-"]', [("[!-]", "[-!]")]),
+        ('[!"!"]', [("[!!]", "[!!]")]),
+        ('[a"]"]', [("[a]]", "[]a]")]),
+        ('[!"]"a]', [("[!]a]", "[!]a]")]),
+        ('[a"-"c]', [("[a-c]", "[ac-]")]),
+        ('["a"-c]', [("[a-c]", "[a-c]")]),
+        ('[-$RANGE"]"]', [("[-a-c]]", "[]a-c-]")]),
+        # Backslash escaped chars only match themselves
+        (r"[a\ b]", [("[a b]", "[a b]")]),
+        (r"[a\]b]", [("[a]b]", "[]ab]")]),
+        (r"[\!a]", [("[!a]", "[a!]")]),
+        (r"[a\-c]", [("[a-c]", "[ac-]")]),
+        (r"[\*]", [("[*]", "[*]")]),
+        (r"[${S}\]x]", [("[val]x]", "[]valx]")]),
+        (r'[\!"a"]', [("[!a]", "[a!]")]),
+        (r"[${S:+a\]}]", [("[a]]", "[]a]")]),
+        # Whitespace ends the word, and so the group
+        ("[a b]", [("[a", None), ("b]", None)]),
+        ("[ -f foo ]", [("[", None), ("-f", None), ("foo", None), ("]", None)]),
+        ("x[a b$S]", [("x[a", None), ("bval]", None)]),
+        # A group that is never closed is not a pattern
+        ("[${S}", [("[val", None)]),
+        ('["a b"', [("[a b", None)]),
+        ('[${S}"]"', [("[val]", None)]),
+        ("[!]$EMPTY", [("[!]", None)]),
+        ("[ -n ${S} ]", [("[", None), ("-n", None), ("val", None), ("]", None)]),
+        ("[${S}*", [("[val*", "[[]val*")]),
+        # Whatever is quoted or escaped only matches itself
+        ('"${GLOB}"*', [("v[1]*", "v[[]1]*")]),
+        ("'a[b?'*", [("a[b?*", "a[[]b[?]*")]),
+        (r"\*${S}*", [("*val*", "[*]val*")]),
+        (r"\[${S}]*", [("[val]*", "[[]val]*")]),
+        ("${S:+*}?", [("*?", "[*]?")]),
+        ("${GLOB}", [("v[1]", "v[1]")]),
+        ('"[${S}]"', [("[val]", None)]),
+    ],
+)
+def test_resolve_glob_patterns(source, expected_tokens):
+    """
+    Each token is yielded with its glob pattern if it has one. The token itself is
+    always what bash would pass on if the pattern matched nothing.
+    """
+    line = parse_poe_cmd(source).command_lines[0]
+    env = {
+        "S": "val",
+        "GLOB": "v[1]",
+        "RANGE": "a-c",
+        "OPEN": "[a",
+        "CLOSE": "b]",
+        "STAR": "*",
+    }
+    assert list(line.resolve_tokens(env)) == expected_tokens
 
 
 def test_resolve_alternate_value_preserves_quotes():
@@ -83,46 +160,46 @@ def test_resolve_alternate_value_preserves_quotes():
     # Default value not applied when var is set
     line = parse_poe_cmd("echo ${FLAG:- -m 'not build'}").command_lines[0]
     assert list(line.resolve_tokens({"FLAG": "yes"})) == [
-        ("echo", False),
-        ("yes", False),
+        ("echo", None),
+        ("yes", None),
     ]
 
     # Expansion embedded in a word — leading/trailing text joins adjacent tokens
     # bash: printf '[%s]\n' x${F:+ -m 'not build'}y → [x] [-m] [not buildy]
     line = parse_poe_cmd("x${FLAG:+ -m 'not build'}y").command_lines[0]
     assert list(line.resolve_tokens({"FLAG": "yes"})) == [
-        ("x", False),
-        ("-m", False),
-        ("not buildy", False),
+        ("x", None),
+        ("-m", None),
+        ("not buildy", None),
     ]
 
     # Nested expansion in alternate value — inner value is word-split
     # bash: F=y O="hello world"; printf '[%s]\n' ${F:+ $O} → [hello] [world]
     line = parse_poe_cmd("${FLAG:+ $OTHER}").command_lines[0]
     assert list(line.resolve_tokens({"FLAG": "y", "OTHER": "hello world"})) == [
-        ("hello", False),
-        ("world", False),
+        ("hello", None),
+        ("world", None),
     ]
 
     # Outer double quotes suppress word splitting of nested expansion
     # bash: F=y O="hello world"; printf '[%s]\n' "${F:+ $O}" → [ hello world]
     line = parse_poe_cmd('"${FLAG:+ $OTHER}"').command_lines[0]
     assert list(line.resolve_tokens({"FLAG": "y", "OTHER": "hello world"})) == [
-        (" hello world", False),
+        (" hello world", None),
     ]
 
     # Nested operations: alternate value containing default value with quotes
     # bash: F=y; printf '[%s]\n' ${F:+${UNSET:-'hello world'}} → [hello world]
     line = parse_poe_cmd("${FLAG:+${UNSET:-'hello world'}}").command_lines[0]
     assert list(line.resolve_tokens({"FLAG": "y"})) == [
-        ("hello world", False),
+        ("hello world", None),
     ]
 
     # Empty alternate value produces nothing
     # bash: F=y; printf '[%s]\n' A${F:+}B → [AB]
     line = parse_poe_cmd("A${FLAG:+}B").command_lines[0]
     assert list(line.resolve_tokens({"FLAG": "y"})) == [
-        ("AB", False),
+        ("AB", None),
     ]
 
 

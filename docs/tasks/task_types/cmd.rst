@@ -102,7 +102,7 @@ Glob expansion
 
 Glob patterns in cmd tasks are expanded and replaced with the list of matching files and directories. Glob patterns are evaluated relative to the working directory of the task.
 
-The supported glob syntax is that of the |glob_link|, which differs from bash in that square bracket patterns don't support character classes, don't break on whitespace, and don't allow escaping of contained characters.
+The supported glob syntax is that of the |glob_link|, which differs from bash in that square bracket patterns don't support character classes or negation with ``^``.
 
 If there are no matches then by default the pattern is passed through to the command unchanged (just like in bash). This behavior can be overridden for a specific task by setting the :toml:`empty_glob` option to ``"null"`` or ``"fail"``. If set to ``"null"`` then the pattern will be replaced with nothing (similar to how bash behaves when |nullglob_link| is set), and if set to ``"fail"`` then a glob pattern with no matches will cause task execution to fail with an error.
 

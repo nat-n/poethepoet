@@ -164,22 +164,23 @@ class CmdTask(PoeTask):
 
         result = []
         for line in command_lines:
-            for cmd_token, has_glob in line.resolve_tokens(env):
-                if has_glob:
-                    # Resolve glob pattern from the working directory
-                    if matches := [str(match) for match in working_dir.glob(cmd_token)]:
-                        result.extend(matches)
-                    elif self.spec.options.empty_glob == "fail":
-                        raise ExecutionError(
-                            f"Glob pattern {cmd_token!r} did not match any files in "
-                            f"working directory {working_dir!s}"
-                        )
-                    elif self.spec.options.empty_glob == "pass":
-                        # If the glob pattern does not match any files, we just pass it
-                        # through as is
-                        self.__passed_unmatched_glob = True
-                        result.append(cmd_token)
-                else:
+            for cmd_token, glob_pattern in line.resolve_tokens(env):
+                if glob_pattern is None:
+                    result.append(cmd_token)
+                # Resolve glob pattern from the working directory
+                elif matches := [
+                    str(match) for match in working_dir.glob(glob_pattern)
+                ]:
+                    result.extend(matches)
+                elif self.spec.options.empty_glob == "fail":
+                    raise ExecutionError(
+                        f"Glob pattern {cmd_token!r} did not match any files in "
+                        f"working directory {working_dir!s}"
+                    )
+                elif self.spec.options.empty_glob == "pass":
+                    # If the glob pattern does not match any files, we just pass the
+                    # token through as it would be without the pattern
+                    self.__passed_unmatched_glob = True
                     result.append(cmd_token)
 
         return result

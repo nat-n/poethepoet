@@ -1,4 +1,5 @@
 import shlex
+from pathlib import Path
 
 import pytest
 
@@ -267,3 +268,148 @@ def test_param_expansion_argument_tokenization(
         f"  expected: {expected_capture!r}\n"
         f"  actual:   {result.capture!r}"
     )
+
+
+@pytest.mark.parametrize(
+    ("cmd_args", "expected_args"),
+    [
+        pytest.param("[${S}]", ["[val]"], id="brace"),
+        pytest.param("[$S]", ["[val]"], id="bare"),
+        pytest.param("x[${S}]", ["x[val]"], id="prefix"),
+        pytest.param("a[${S}]b c", ["a[val]b", "c"], id="infix"),
+        pytest.param("[!${S}]", ["[!val]"], id="negated"),
+        pytest.param("[${S:+y}]", ["[y]"], id="alt_value_operator"),
+        pytest.param('x["a b"]', ["x[a b]"], id="quoted"),
+        pytest.param('"${G}"*', ["v[1]*"], id="quoted_glob_value"),
+        pytest.param("'a[b'*", ["a[b*"], id="quoted_bracket"),
+        pytest.param("'a?b'*", ["a?b*"], id="quoted_question_mark"),
+        pytest.param(r"\*${S}*", ["*val*"], id="escaped_star"),
+        pytest.param("${S}*", ["val*"], id="param_then_star"),
+        pytest.param("[abc]", ["[abc]"], id="literal_bracket_glob"),
+        pytest.param('"[${S}]"', ["[val]"], id="double_quoted"),
+        pytest.param(r"\[${S}]", ["[val]"], id="escaped_bracket"),
+        pytest.param("'[${S}]'", ["[${S}]"], id="single_quoted"),
+        pytest.param("${S}[x]", ["val[x]"], id="param_then_bracket_glob"),
+        pytest.param("${G}", ["v[1]"], id="param_with_glob_chars"),
+        pytest.param('["*"]', ["[*]"], id="quoted_star_in_bracket"),
+        pytest.param('["$S"]', ["[val]"], id="quoted_param_in_bracket"),
+        pytest.param("[${S}][x]", ["[val][x]"], id="consecutive_brackets"),
+        pytest.param("${OPEN}${CLOSE}", ["[ab]"], id="bracket_split_over_params"),
+        pytest.param("[${S}", ["[val"], id="unclosed_bracket"),
+        pytest.param("[ -n ${S} ]", ["[", "-n", "val", "]"], id="bracket_command"),
+        pytest.param("[a$]", ["[a$]"], id="dollar_without_param"),
+        pytest.param("[ -f foo ]", ["[", "-f", "foo", "]"], id="test_command"),
+        pytest.param("[a b]", ["[a", "b]"], id="whitespace_in_bracket"),
+        pytest.param(r"[a\ b]", ["[a b]"], id="escaped_space_in_bracket"),
+    ],
+)
+def test_param_expansion_in_unmatched_glob(
+    cmd_args, expected_args, run_poe, temp_pyproject
+):
+    """
+    A glob word that matches nothing is passed on as bash would: the word after
+    parameter expansion and quote removal.
+    """
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.run]
+        cmd = '''echo {cmd_args}'''
+        """
+    )
+    result = run_poe(
+        "run",
+        cwd=project_path,
+        env={"S": "val", "G": "v[1]", "OPEN": "[a", "CLOSE": "b]"},
+    )
+
+    assert result.code == 0, result.capture
+    assert result.capture == f"Poe => {shlex.join(['echo', *expected_args])}\n"
+
+
+@pytest.mark.parametrize(
+    ("cmd_args", "expected_args"),
+    [
+        pytest.param("x [${S}] y", ["x", "y"], id="bracket"),
+        pytest.param("""x "${G}"* y""", ["x", "y"], id="quoted_glob_value"),
+        # A bracket that is never closed is not a pattern, so nothing is dropped
+        pytest.param("x [${S} y", ["x", "[val", "y"], id="unclosed_bracket"),
+        pytest.param("[ -n ${S} ]", ["[", "-n", "val", "]"], id="bracket_command"),
+    ],
+)
+def test_param_expansion_in_unmatched_glob_with_empty_glob_null(
+    cmd_args, expected_args, run_poe, temp_pyproject
+):
+    """
+    Only words that turn out to be patterns once expanded are dropped
+    """
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.run]
+        cmd = '''echo {cmd_args}'''
+        empty_glob = "null"
+        """
+    )
+    result = run_poe("run", cwd=project_path, env={"S": "val", "G": "v[1]"})
+
+    assert result.code == 0, result.capture
+    assert result.capture == f"Poe => {shlex.join(['echo', *expected_args])}\n"
+
+
+def test_unmatched_glob_failure_reports_expanded_word(run_poe, temp_pyproject):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.run]
+        cmd = '''echo "${G}"[${S}]'''
+        empty_glob = "fail"
+        """
+    )
+    result = run_poe("run", cwd=project_path, env={"S": "val", "G": "v[1]"})
+
+    assert result.code == 1, result.capture
+    assert result.capture.startswith(
+        "Error: Glob pattern 'v[1][val]' did not match any files in working directory"
+    )
+
+
+@pytest.mark.parametrize(
+    ("cmd_args", "expected_matches"),
+    [
+        pytest.param("[${S}]", ["a", "v"], id="brace"),
+        pytest.param("[$S]", ["a", "v"], id="bare"),
+        pytest.param("x[${S}]", ["xa"], id="prefix"),
+        pytest.param("[!${S}]", ["$", "S", "x", "{", "}"], id="negated"),
+        pytest.param("[${S:+y}${S}]", ["a", "v"], id="alt_value_operator"),
+        pytest.param('["${S}"]', ["a", "v"], id="quoted_param_in_bracket"),
+        pytest.param("""'x'["a"'v']""", ["xa"], id="quoted_bracket_content"),
+        pytest.param('["$"S]', ["$", "S"], id="quoted_dollar_in_bracket"),
+        pytest.param("[${S}]*", ["a", "v", "valX"], id="bracket_then_star"),
+        pytest.param("[ -f x ]", ["-f", "[", "]", "x"], id="test_command"),
+        pytest.param(r"[\$\}v]", ["$", "v", "}"], id="escaped_bracket_content"),
+        pytest.param("${S}*", ["valX"], id="param_then_star"),
+        pytest.param("[abc]", ["a"], id="literal_bracket_glob"),
+        pytest.param(r"\[${S}]", ["[val]"], id="escaped_bracket"),
+        pytest.param("'[${S}]'", ["[${S}]"], id="single_quoted"),
+    ],
+)
+def test_param_expansion_in_matched_glob(
+    cmd_args, expected_matches, run_poe, temp_pyproject, tmp_path
+):
+    """
+    A glob word is matched against files after parameter expansion, so the
+    pattern a bracket expression contributes is the expanded value. Matches are
+    compared by file name, ignoring order.
+    """
+    for name in ("v", "a", "S", "$", "{", "}", "valX", "x", "xa"):
+        (tmp_path / name).touch()
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.run]
+        cmd = '''echo {cmd_args}'''
+        """
+    )
+    result = run_poe("run", cwd=project_path, env={"S": "val"})
+
+    assert result.code == 0, result.capture
+    assert result.capture.startswith("Poe => echo ")
+    args = shlex.split(result.capture)[3:]
+    assert sorted(Path(arg).name for arg in args) == expected_matches
