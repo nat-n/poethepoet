@@ -75,7 +75,7 @@ If you want to run all the subtasks to completion but return non-zero result in 
   attempts.parallel = ["task1", "task2", "task3"]
   attempts.ignore_fail = "return_non_zero"
 
-When a parallel task fails, poe exits with the exit code of the subtask that failed, or with 1 if that subtask failed without an exit code of its own. Subtasks that are cancelled because of the failure are not taken into account. If more than one subtask has failed, which is to be expected with :toml:`return_non_zero`, then the exit code of the one that failed first is used.
+A failed parallel task exits with the exit code of the first subtask that failed.
 
 
 Changing the default item type
