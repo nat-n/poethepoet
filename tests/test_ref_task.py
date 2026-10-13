@@ -1,5 +1,7 @@
 import uuid
 
+import pytest
+
 
 def test_ref_task(run_poe, projects, esc_prefix, is_windows):
     # This should be exactly the same as calling the echo task directly
@@ -311,3 +313,70 @@ def test_ref_alternate_value_operator(temp_pyproject, run_poe):
     assert result.code == 0
     assert result.stdout == "hi friend\n"
     assert result.stderr == ""
+
+
+def test_ref_to_task_with_deps_propagates_error(temp_pyproject, run_poe):
+    """
+    An error raised by the referenced task is reported when it runs as the sink of a
+    task graph, as it is when it has no deps
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.failing]
+        cmd = "poe_test_echo *.nomatch"
+        empty_glob = "fail"
+        deps = ["ok"]
+
+        [tool.poe.tasks.r]
+        ref = "failing"
+
+        [tool.poe.tasks.r_ignore]
+        ref = "failing"
+        ignore_fail = true
+        """)
+    result = run_poe("r", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert result.stdout == "OK\n"
+    assert "Error: Glob pattern '*.nomatch' did not match any files" in (result.capture)
+
+    result = run_poe("r_ignore", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "Warning: Glob pattern '*.nomatch' did not match any files" in (
+        result.capture
+    )
+
+
+@pytest.mark.parametrize(
+    ("sink_def", "expected_code", "expected_error"),
+    [
+        pytest.param("""cmd = "poe_test_fail 0 3" """, 3, None, id="exit_code"),
+        pytest.param(
+            """expr = "'x' + _nope" """,
+            1,
+            "Error: Invalid variable reference in expr: _nope",
+            id="invalid_expr",
+        ),
+    ],
+)
+def test_ref_to_task_with_deps_fails_like_the_task_itself(
+    temp_pyproject, run_poe, sink_def, expected_code, expected_error
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.failing]
+        {sink_def}
+        deps = ["ok"]
+
+        [tool.poe.tasks.r]
+        ref = "failing"
+        """)
+    for task_name in ("failing", "r"):
+        result = run_poe(task_name, cwd=project_path)
+        assert result.code == expected_code, result.capture
+        assert result.stdout == "OK\n"
+        if expected_error:
+            assert expected_error in result.capture

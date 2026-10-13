@@ -308,3 +308,145 @@ def test_switch_case_module_script_receives_args(temp_pyproject, run_poe):
     result = run_poe("sw", "--size", "3", "--loud", cwd=project_path)
     assert result.code == 0, result.capture
     assert result.stdout.endswith("['--size', '3', '--loud']\n")
+
+
+@pytest.mark.parametrize(
+    ("case_task", "expected_error"),
+    [
+        (
+            'cmd = "poe_test_echo *.nomatch"\nempty_glob = "fail"',
+            "Error: Glob pattern '*.nomatch' did not match any files",
+        ),
+        ("expr = \"f'{1} is even')\"", "Error: Invalid expr content: f'{1} is even')"),
+    ],
+    ids=["execution_error", "invalid_expr"],
+)
+def test_switch_case_error_propagates(
+    temp_pyproject, run_poe, case_task, expected_error
+):
+    """
+    An error raised while running the selected case task fails the switch with the
+    case's error message
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        {case_task}
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert expected_error in result.capture
+
+
+@pytest.mark.parametrize(
+    ("case_def", "expected_error"),
+    [
+        pytest.param(
+            """expr = "'only ' + _nope" """,
+            "Error: Invalid variable reference in expr: _nope",
+            id="expr",
+        ),
+        pytest.param(
+            """sequence = [
+                { cmd = "poe_test_echo first" },
+                { expr = "'second ' + _nope" },
+                { cmd = "poe_test_echo third" },
+            ]""",
+            "Error: Invalid variable reference in expr: _nope",
+            id="sequence",
+        ),
+        pytest.param(
+            """control.expr = "'nothing'"
+            switch = [{ case = "something", cmd = "poe_test_echo third" }]""",
+            "Error: Control value 'nothing' did not match any cases in switch task "
+            "'sw[a]'.",
+            id="nested_switch",
+        ),
+    ],
+)
+def test_switch_case_error_is_not_swallowed(
+    temp_pyproject, run_poe, case_def, expected_error
+):
+    """
+    An error raised by the selected case task before it spawns a process must fail
+    the switch task, just like it would for the same task outside of a switch
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "_p"
+        args = [{{ name = "_p", options = ["--p"], default = "a" }}]
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        {case_def}
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert expected_error in result.capture
+    assert "third" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("case_def", "expected_code", "expected_error"),
+    [
+        pytest.param("""cmd = "poe_test_fail 0 3" """, 3, None, id="cmd"),
+        pytest.param(
+            """sequence = [
+                { cmd = "poe_test_fail 0 3" },
+                { cmd = "poe_test_echo third" },
+            ]""",
+            3,
+            "Error: Sequence aborted after failed subtask 'sw[a][0]'",
+            id="sequence",
+        ),
+    ],
+)
+def test_switch_case_exit_code_matches_the_same_task_outside_a_switch(
+    temp_pyproject, run_poe, case_def, expected_code, expected_error
+):
+    """
+    A failing case fails the switch with the exit code of the process that failed,
+    and with the same error as that task reports outside of a switch
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        {case_def}
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == expected_code, result.capture
+    if expected_error:
+        assert expected_error in result.capture
+    else:
+        assert "Error" not in result.capture
+    assert "third" not in result.stdout
+
+
+def test_switch_case_error_can_be_ignored_by_parent_sequence(temp_pyproject, run_poe):
+    """
+    An execution error from a switch case is handled by ignore_fail on an enclosing
+    sequence like any other subtask failure: it is reported and the sequence continues
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        cmd = "poe_test_echo *.nomatch"
+        empty_glob = "fail"
+
+        [tool.poe.tasks.seq]
+        sequence = ["sw", { cmd = "poe_test_echo after" }]
+        ignore_fail = true
+        """)
+    result = run_poe("seq", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "Warning: Glob pattern '*.nomatch' did not match any files" in result.capture
+    assert result.stdout == "after\n"

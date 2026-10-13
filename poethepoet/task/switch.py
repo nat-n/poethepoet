@@ -296,11 +296,13 @@ class SwitchTask(PoeTask):
         case_task_run = await case_task.run(context=context, parent_env=env)
         await task_state.add_child(case_task_run)
         await task_state.finalize()
+        # Errors from child task runs are otherwise suppressed, so they must be
+        # raised here to fail this task
+        await case_task_run.wait(suppress_errors=False)
 
         if self.capture_stdout is True:
             # The executor saved output for the case task, but we need it to be
             # registered for this switch task as well
-            await case_task_run.wait(suppress_errors=False)
             context.save_task_output(
                 self.invocation,
                 context.get_task_output(

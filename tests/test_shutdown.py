@@ -201,3 +201,14 @@ def test_sighup_terminates_task_and_children(long_running_task):
     assert _wait_for_proc_exit(poe_handle.process), "poe should exit after SIGHUP"
     poe_handle.process.wait()  # Reap zombie
     assert _wait_for_pid_exit(child_pid), "child should exit after SIGHUP"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_task_killed_by_signal_exits_with_128_plus_signum(run_poe, temp_pyproject):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.selfkill]
+        shell = "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"
+        interpreter = "python"
+        """)
+    result = run_poe("selfkill", cwd=project_path)
+    assert result.code == 128 + signal.SIGTERM

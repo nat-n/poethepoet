@@ -75,6 +75,8 @@ If you want to run all the subtasks to completion but return non-zero result in 
   attempts.parallel = ["task1", "task2", "task3"]
   attempts.ignore_fail = "return_non_zero"
 
+A failed parallel task exits with the exit code of the first subtask that failed.
+
 
 Changing the default item type
 ------------------------------
