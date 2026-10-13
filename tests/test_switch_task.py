@@ -390,21 +390,27 @@ def test_switch_case_error_is_not_swallowed(
 
 
 @pytest.mark.parametrize(
-    "case_def",
+    ("case_def", "expected_code", "expected_error"),
     [
-        pytest.param("""cmd = "poe_test_fail 0 1" """, id="cmd"),
+        pytest.param("""cmd = "poe_test_fail 0 3" """, 3, None, id="cmd"),
         pytest.param(
             """sequence = [
-                { cmd = "poe_test_fail 0 1" },
+                { cmd = "poe_test_fail 0 3" },
                 { cmd = "poe_test_echo third" },
             ]""",
+            1,
+            "Error: Sequence aborted after failed subtask 'sw[a][0]'",
             id="sequence",
         ),
     ],
 )
-def test_switch_case_process_failure_fails_the_switch(
-    temp_pyproject, run_poe, case_def
+def test_switch_case_exit_code_matches_the_same_task_outside_a_switch(
+    temp_pyproject, run_poe, case_def, expected_code, expected_error
 ):
+    """
+    A case that is a single process passes its exit code through, whereas a case that
+    is a sequence aborts with an error and exit code 1, like any other sequence
+    """
     project_path = temp_pyproject(f"""
         [tool.poe.tasks.sw]
         control.expr = "'a'"
@@ -414,5 +420,33 @@ def test_switch_case_process_failure_fails_the_switch(
         {case_def}
         """)
     result = run_poe("sw", cwd=project_path)
-    assert result.code == 1, result.capture
+    assert result.code == expected_code, result.capture
+    if expected_error:
+        assert expected_error in result.capture
+    else:
+        assert "Error" not in result.capture
     assert "third" not in result.stdout
+
+
+def test_switch_case_error_can_be_ignored_by_parent_sequence(temp_pyproject, run_poe):
+    """
+    An execution error from a switch case is handled by ignore_fail on an enclosing
+    sequence like any other subtask failure: it is reported and the sequence continues
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control.expr = "'a'"
+
+        [[tool.poe.tasks.sw.switch]]
+        case = "a"
+        cmd = "poe_test_echo *.nomatch"
+        empty_glob = "fail"
+
+        [tool.poe.tasks.seq]
+        sequence = ["sw", { cmd = "poe_test_echo after" }]
+        ignore_fail = true
+        """)
+    result = run_poe("seq", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "Warning: Glob pattern '*.nomatch' did not match any files" in result.capture
+    assert result.stdout == "after\n"

@@ -1,5 +1,7 @@
 import uuid
 
+import pytest
+
 
 def test_ref_task(run_poe, projects, esc_prefix, is_windows):
     # This should be exactly the same as calling the echo task directly
@@ -344,3 +346,37 @@ def test_ref_to_task_with_deps_propagates_error(temp_pyproject, run_poe):
     assert "Warning: Glob pattern '*.nomatch' did not match any files" in (
         result.capture
     )
+
+
+@pytest.mark.parametrize(
+    ("sink_def", "expected_code", "expected_error"),
+    [
+        pytest.param("""cmd = "poe_test_fail 0 3" """, 3, None, id="exit_code"),
+        pytest.param(
+            """expr = "'x' + _nope" """,
+            1,
+            "Error: Invalid variable reference in expr: _nope",
+            id="invalid_expr",
+        ),
+    ],
+)
+def test_ref_to_task_with_deps_fails_like_the_task_itself(
+    temp_pyproject, run_poe, sink_def, expected_code, expected_error
+):
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.ok]
+        cmd = "poe_test_echo OK"
+
+        [tool.poe.tasks.failing]
+        {sink_def}
+        deps = ["ok"]
+
+        [tool.poe.tasks.r]
+        ref = "failing"
+        """)
+    for task_name in ("failing", "r"):
+        result = run_poe(task_name, cwd=project_path)
+        assert result.code == expected_code, result.capture
+        assert result.stdout == "OK\n"
+        if expected_error:
+            assert expected_error in result.capture
