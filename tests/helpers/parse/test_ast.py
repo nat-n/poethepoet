@@ -3,7 +3,7 @@ from io import StringIO
 import pytest
 
 from poethepoet.helpers.parse import parse_poe_cmd
-from poethepoet.helpers.parse.command import Glob, PythonGlob, Script
+from poethepoet.helpers.parse.command import Glob, Script
 from poethepoet.helpers.parse.core import ParseConfig, ParseCursor, ParseError
 
 
@@ -471,59 +471,89 @@ def test_parse_non_globs():
     )
 
 
-def test_parse_python_style_globs():
+def test_parse_interrupted_glob_groups():
+    """
+    A group including a quote or a param expansion is parsed as just its opening
+    bracket, followed by whatever the rest of the word would otherwise parse as.
+    """
     tree = parse_poe_cmd(
         """
-        * ? []xyz\\ ]d [!]] [!] ]
-        a*b?c[]xyz\\ ]d[!]][!] ]
-        "a*b?c[]xyz\\ ]d[!]][!] ]"
-        'a*b?c[]xyz\\ ]d[!]][!] ]'
+        [${x}] a[!$x]b
+        ["x y"] ['x'y]
+        [$x [!$x
+        [$] [x$] [$1]
         """,
-        config=ParseConfig(substitute_nodes={Glob: PythonGlob}),
+        config=ParseConfig(),
     )
     print(tree.pretty())
     assert len(tree.lines) == 4
     assert tree.lines[0] == (
-        (("*",),),
-        (("?",),),
-        (("[]xyz\\ ]", "d"),),
-        (("[!]]",),),
-        (("[!] ]",),),
+        (("[", "x", "]"),),
+        (("a", "[", "!", "x", "]b"),),
     )
     assert tree.lines[1] == (
-        (
-            (
-                "a",
-                "*",
-                "b",
-                "?",
-                "c",
-                "[]xyz\\ ]",
-                "d",
-                "[!]]",
-                "[!] ]",
-            ),
-        ),
+        (("[",), ("x y",), ("]",)),
+        (("[",), ("x",), ("y]",)),
     )
-    assert tree.lines[2] == ((("a*b?c[]xyz\\ ]d[!]][!] ]",),),)
-    assert tree.lines[3] == ((("a*b?c[]xyz\\ ]d[!]][!] ]",),),)
+    assert tree.lines[2] == (
+        (("[", "x"),),
+        (("[", "!", "x"),),
+    )
+    # A dollar that doesn't start a param expansion doesn't interrupt the group
+    assert tree.lines[3] == (
+        (("[$]",),),
+        (("[x$]",),),
+        (("[$1]",),),
+    )
+
+    first_node = tree.lines[0].words[0].segments[0][0]
+    assert isinstance(first_node, Glob)
+    assert first_node.content == "["
 
 
-def test_parse_python_style_non_globs():
-    tree = Script(
-        ParseCursor.from_file(
-            StringIO("""
-                ab[c d
-                """)
-        ),
-        config=ParseConfig(substitute_nodes={Glob: PythonGlob}),
-    )
+def test_parse_glob_group_parts():
+    """
+    Backslash escaped chars in a group are distinguished from the rest
+    """
+    tree = parse_poe_cmd(r"[ab] [a\]\ b] [\!]")
     print(tree.pretty())
-    assert len(tree.lines) == 1
     assert tree.lines[0] == (
-        (("ab", "[c"),),
-        (("d",),),
+        (("[ab]",),),
+        (("[a] b]",),),
+        (("[!]",),),
     )
+    globs = [word.segments[0][0] for word in tree.lines[0].words]
+    assert globs[0].parts == (("[", 2), ("a", 2), ("b", 2), ("]", 2))
+    assert globs[1].parts == (
+        ("[", 2),
+        ("a", 2),
+        ("]", 0),
+        (" ", 0),
+        ("b", 2),
+        ("]", 2),
+    )
+    assert globs[2].parts == (("[", 2), ("!", 0), ("]", 2))
+
+
+def test_parse_whitespace_ends_glob_group():
+    tree = parse_poe_cmd("[ -f foo ] [a b] x[a b$y]")
+    print(tree.pretty())
+    assert tree.lines[0] == (
+        (("[",),),
+        (("-f",),),
+        (("foo",),),
+        (("]",),),
+        (("[a",),),
+        (("b]",),),
+        (("x", "[a"),),
+        (("b", "y", "]"),),
+    )
+
+
+def test_parse_invalid_glob_group_keeps_escapes():
+    tree = parse_poe_cmd("""[a\\ b""", config=ParseConfig())
+    print(tree.pretty())
+    assert tree.lines[0] == ((("[a b",),),)
 
 
 def test_parse_line_breaks():

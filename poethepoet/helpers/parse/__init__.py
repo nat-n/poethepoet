@@ -8,13 +8,12 @@ if TYPE_CHECKING:
 
 
 def parse_poe_cmd(source: str, config: ParseConfig | None = None):
-    from .command import Glob, ParseConfig, ParseCursor, PythonGlob, Script
+    from .command import ParseConfig, ParseCursor, Script
 
     if not config:
         # Poe cmd task content differs from POSIX command lines in that new lines are
-        # ignored (except in comments) and glob patterns are constrained to what the
-        # python standard library glob module can support
-        config = ParseConfig(substitute_nodes={Glob: PythonGlob}, line_separators=";")
+        # ignored (except in comments)
+        config = ParseConfig(line_separators=";")
 
     return Script(ParseCursor.from_string(source), config)
 

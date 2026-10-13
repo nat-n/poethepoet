@@ -5,7 +5,7 @@ including:
 
 - line breaks and comments
 - single or double quotes and character escaping
-- basic glob patterns (python style glob patterns also supported)
+- basic glob patterns
 - basic parameter expansion
 - parameter expansion operators: `:+` and `:-`
 """
@@ -31,6 +31,12 @@ PARAM_INIT_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
 PARAM_CHARS = PARAM_INIT_CHARS + "0123456789"
 LINE_BREAK_CHARS = "\r\n\f\v"
 LINE_SEP_CHARS = LINE_BREAK_CHARS + ";"
+GLOB_CHARS = "*?["
+
+# How glob syntax applies to one part of a resolved token
+QUOTED = 0  # nothing is special
+UNQUOTED = 1  # only the syntax within a bracket pattern is special: `]`, `!`, `-`
+PATTERN = 2  # everything is special, including `*`, `?`, and `[`
 
 
 class SingleQuotedText(ContentNode):
@@ -68,9 +74,19 @@ class DoubleQuotedText(ContentNode):
 
 class UnquotedText(ContentNode):
     _break_chars = "'\";#$?*["
+    _parts: tuple[tuple[str, int], ...] = ()
+
+    @property
+    def parts(self) -> tuple[tuple[str, int], ...]:
+        """
+        The content of this node as (text, kind) pairs, which differs from simply
+        being UNQUOTED if it includes backslash escaped chars.
+        """
+        return self._parts or ((self._content, UNQUOTED),)
 
     def _parse(self, chars: ParseCursor):
         content: list[str] = []
+        escaped_indexes: set[int] = set()
         for char in chars:
             if char == "\\":
                 # Backslash is always an escape when outside of quotes
@@ -80,6 +96,7 @@ class UnquotedText(ContentNode):
                         "Unexpected end of input after backslash",
                         chars,
                     )
+                escaped_indexes.add(len(content))
                 content.append(escaped_char)
                 continue
 
@@ -91,6 +108,11 @@ class UnquotedText(ContentNode):
 
         if content:
             self._content = "".join(content)
+            if escaped_indexes:
+                self._parts = tuple(
+                    (char, QUOTED if index in escaped_indexes else UNQUOTED)
+                    for index, char in enumerate(content)
+                )
         else:
             # This should not happen
             self._cancelled = True
@@ -98,14 +120,37 @@ class UnquotedText(ContentNode):
 
 class Glob(ContentNode):
     """
-    This implementation recognises a subset of bash style glob patterns.
+    This implementation recognises a subset of bash style glob patterns, limited to
+    what can be translated for the python standard library glob module.
+
+    A group pattern that includes a quote or a parameter expansion cannot be
+    captured as a single node. In that case only the opening bracket is captured,
+    the rest of the group is left to be parsed as part of the word, and whether the
+    bracket really opens a group is determined when the word is resolved.
     """
 
-    # This pattern is equivalent to what this node might parse
-    PATTERN = (
-        r"(?P<simple>[\?\*])"
-        r"|(?P<complex>\[(?:\!?\](?:[^\s\]\\]|\\.)*|(?:[^\s\]\\]|\\.)+)\])"
-    )
+    _parts: tuple[tuple[str, int], ...] = ()
+
+    @property
+    def parts(self) -> tuple[tuple[str, int], ...]:
+        """
+        The content of this node as (text, kind) pairs, which differs from simply
+        being a PATTERN if it is a group including backslash escaped chars.
+        """
+        return self._parts or ((self._content, PATTERN),)
+
+    def _interrupts_group(self, char: str, chars: ParseCursor) -> bool:
+        """
+        Check whether the given char, just taken from chars, starts a quote or a
+        parameter expansion.
+        """
+        if char in "'\"":
+            return True
+        if char == "$" and (next_char := chars.peek()):
+            return next_char == "{" or (
+                not self.config.require_braces and next_char in PARAM_INIT_CHARS
+            )
+        return False
 
     def _parse(self, chars: ParseCursor):
         char = chars.peek()
@@ -115,21 +160,33 @@ class Glob(ContentNode):
 
         if char == "[":
             # Match pattern [groups]
-            group_chars = []
+            group_chars: list[tuple[str, int]] = []
+            # The chars consumed so far, including backslashes
+            source_chars: list[str] = []
             chars.take()
             for char in chars:
+                if self._interrupts_group(char, chars):
+                    chars.pushback(*source_chars, char)
+                    self._content = "["
+                    return
+
+                source_chars.append(char)
                 if char.isspace():
                     # GOTO invalid group pattern
-                    group_chars.append(char)
                     break
 
                 if char == "]":
-                    if group_chars and group_chars != ["!"]:
+                    if group_chars and group_chars != [("!", PATTERN)]:
                         # Group complete
-                        self._content = f"[{''.join(group_chars)}]"
+                        self._parts = (
+                            ("[", PATTERN),
+                            *group_chars,
+                            ("]", PATTERN),
+                        )
+                        self._content = "".join(text for text, _ in self._parts)
                         return
                     # ] at start of group is interpreted as content
-                    group_chars.append(char)
+                    group_chars.append((char, PATTERN))
 
                 elif char == "\\":
                     # Backslash is always an escape when inside a group pattern
@@ -139,13 +196,14 @@ class Glob(ContentNode):
                             "Invalid pattern: unexpected end of input after backslash",
                             chars,
                         )
-                    group_chars.append(escaped_char)
+                    source_chars.append(escaped_char)
+                    group_chars.append((escaped_char, QUOTED))
 
                 else:
-                    group_chars.append(char)
+                    group_chars.append((char, PATTERN))
 
             # invalid group pattern, pretend it never happened
-            chars.pushback("[", *group_chars)
+            chars.pushback("[", *source_chars)
             self._cancelled = True
             return
 
@@ -155,51 +213,101 @@ class Glob(ContentNode):
         self._cancelled = True
 
 
-class PythonGlob(Glob):
+def compose_glob_pattern(token_parts: Iterable[tuple[str, int]]) -> str | None:
     """
-    This implementation recognises glob patterns supports by the python standard library
-    glob module.
+    Compose a python style glob pattern from the (text, kind) parts of a resolved
+    token, or return None if the token turns out not to include a pattern.
 
-    The key divergences from bash style pattern matching are that within square bracket
-    patterns:
-        1. unescaped spaces are allowed
-        2. backslashes are not interpreted as escapes
+    Group patterns are recognised here rather than by the parser so that they may
+    include parameter expansions and quotes, as in `[${chars}]` or `["a b"]`.
     """
+    chars = [
+        (char, kind == PATTERN or (kind == UNQUOTED and char not in GLOB_CHARS))
+        for text, kind in token_parts
+        for char in text
+    ]
 
-    # This pattern is equivalent to what this node might parse
-    PATTERN = r"(?P<simple>[\?\*])|(?P<complex>\[\!?\]?[^\]]*\])"
+    pattern: list[str] = []
+    includes_glob = False
+    index = 0
+    while index < len(chars):
+        char, is_special = chars[index]
+        index += 1
+        if char not in GLOB_CHARS:
+            pattern.append(char)
+        elif not is_special:
+            pattern.append(f"[{char}]")
+        elif char != "[":
+            pattern.append(char)
+            includes_glob = True
+        elif group_end := _find_group_end(chars, index):
+            pattern.append(_compose_group_pattern(chars[index:group_end]))
+            index = group_end + 1
+            includes_glob = True
+        else:
+            # A bracket that is never closed only matches itself
+            pattern.append("[[]")
 
-    def _parse(self, chars: ParseCursor):
-        char = chars.peek()
-        if char in "*?":
-            self._content = chars.take()
-            return
+    return "".join(pattern) if includes_glob else None
 
-        if char == "[":
-            # Match pattern [groups]
-            group_chars: list[str] = []
-            chars.take()
-            for char in chars:
-                if char == "]":
-                    if group_chars and group_chars != ["!"]:
-                        # Group complete
-                        self._content = f"[{''.join(group_chars)}]"
-                        return
-                    # ] at start of group is interpreted as content
-                    group_chars.append(char)
 
-                else:
-                    group_chars.append(char)
+def _find_group_end(chars: list[tuple[str, bool]], start: int) -> int:
+    """
+    Return the index of the bracket closing the group pattern with content starting
+    at the given index, or 0 if the group is never closed.
+    """
+    if start < len(chars) and chars[start] == ("!", True):
+        start += 1
+    if start < len(chars) and chars[start][0] == "]":
+        # A closing bracket at the start of a group is part of its content
+        start += 1
+    return next(
+        (index for index in range(start, len(chars)) if chars[index] == ("]", True)),
+        0,
+    )
 
-            # invalid group pattern, pretend it never happened
-            chars.pushback("[", *group_chars)
-            self._cancelled = True
-            return
 
-        # This should not happen
-        # ruff: noqa: B011
-        assert False
-        self._cancelled = True
+def _compose_group_pattern(content: list[tuple[str, bool]]) -> str:
+    """
+    Compose a group pattern from the chars between its brackets.
+
+    Python style group patterns have no means of escaping, so a quoted char that
+    would be special because of its position is moved to where it is not.
+    """
+    if all(is_special for _, is_special in content):
+        return f"[{''.join(char for char, _ in content)}]"
+
+    negation = "!" if content[0] == ("!", True) else ""
+    members = content[len(negation) :]
+    moved = {
+        char
+        for char, is_special in members
+        if char == "!" or (not is_special and char in "]-")
+    }
+    result = "".join(
+        char
+        for char, is_special in members
+        if char != "!" and (is_special or char not in "]-")
+    )
+    if result.startswith("-") or result.endswith("-"):
+        # A dash at either end is not part of a range, but could end up in one
+        # once other chars are moved
+        moved.add("-")
+        result = result.strip("-")
+    if "]" in moved and not result.startswith("]"):
+        result = f"]{result}"
+    if "!" in moved:
+        if result or negation:
+            result = f"{result}!"
+        elif "-" in moved:
+            return "[-!]"
+        else:
+            # There is no way to express a group of just this char
+            return "!"
+    if "-" in moved:
+        result = f"{result}-"
+
+    return f"[{negation}{result}]"
 
 
 class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
@@ -567,45 +675,42 @@ class Line(SyntaxNode[Word | Comment]):
     def terminator(self):
         return self._terminator
 
-    def resolve_tokens(self, env: Mapping[str, str]) -> Iterator[tuple[str, bool]]:
+    def resolve_tokens(
+        self, env: Mapping[str, str]
+    ) -> Iterator[tuple[str, str | None]]:
         """
         Resolve parameter expansions in this line against env and yield
-        (token, has_glob) pairs. Glob patterns embedded in literal text are
-        flagged; glob characters inside expanded variable values are also
-        detected and the surrounding literal portions are escaped so they can
-        be passed safely to the glob engine.
-        """
-        import re
-        from glob import escape
+        (token, glob_pattern) pairs.
 
-        glob_cls = cast("type[Glob]", self.config.resolve_node_cls(Glob))
-        glob_pattern = re.compile(glob_cls.PATTERN)
+        The token is the word as it should be passed on if not used as a pattern,
+        that is after parameter expansion and quote removal. The glob_pattern is
+        None unless the word includes glob syntax, either from the unquoted text of
+        the word or from the value of an unquoted parameter expansion. Everything
+        else in the pattern is escaped so that it only matches itself.
+        """
 
         def finalize_token(token_parts):
-            includes_glob = any(has_glob for _, has_glob in token_parts)
-            token = "".join(
-                (
-                    (escape(part) if not has_glob else part)
-                    for part, has_glob in token_parts
-                )
-                if includes_glob
-                else (part for part, _ in token_parts)
+            token = "".join(part for part, _ in token_parts)
+            glob_pattern = (
+                compose_glob_pattern(token_parts)
+                if any(kind == PATTERN for _, kind in token_parts)
+                else None
             )
             token_parts.clear()
-            return (token, includes_glob)
+            return (token, glob_pattern)
 
         def resolve_argument_tokens(
             argument: ParamArgument,
-            token_parts: list[tuple[str, bool]],
-        ) -> Iterator[tuple[str, bool]]:
+            token_parts: list[tuple[str, int]],
+        ) -> Iterator[tuple[str, str | None]]:
             for arg_segment in argument.segments:
                 if arg_segment.is_quoted:
                     for element in arg_segment:
                         if isinstance(element, ParamExpansion):
                             if flat := element.expand(env):
-                                token_parts.append((flat, False))
+                                token_parts.append((flat, QUOTED))
                         else:
-                            token_parts.append((element.content, False))
+                            token_parts.append((element.content, QUOTED))
                 else:
                     for element in arg_segment:
                         if isinstance(element, WhitespaceText):
@@ -619,12 +724,13 @@ class Line(SyntaxNode[Word | Comment]):
                                     param_value, token_parts
                                 )
                         else:
-                            token_parts.append((element.content, False))
+                            # glob chars are not special in an operator argument
+                            token_parts.extend(element.parts)
 
         def emit_unquoted_param_value(
             param_value: str,
-            token_parts: list[tuple[str, bool]],
-        ) -> Iterator[tuple[str, bool]]:
+            token_parts: list[tuple[str, int]],
+        ) -> Iterator[tuple[str, str | None]]:
             if param_value.isspace():
                 if token_parts:
                     yield finalize_token(token_parts)
@@ -632,7 +738,11 @@ class Line(SyntaxNode[Word | Comment]):
             if param_value[0].isspace() and token_parts:
                 yield finalize_token(token_parts)
             param_words = (
-                (word, bool(glob_pattern.search(word))) for word in param_value.split()
+                (
+                    word,
+                    PATTERN if any(char in word for char in GLOB_CHARS) else UNQUOTED,
+                )
+                for word in param_value.split()
             )
             token_parts.append(next(param_words))
             for param_word in param_words:
@@ -646,7 +756,7 @@ class Line(SyntaxNode[Word | Comment]):
             if isinstance(word, Comment):
                 continue
 
-            token_parts: list[tuple[str, bool]] = []
+            token_parts: list[tuple[str, int]] = []
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):
@@ -657,17 +767,17 @@ class Line(SyntaxNode[Word | Comment]):
                             continue
                         if param_value := element.expand(env):
                             if segment.is_quoted:
-                                token_parts.append((param_value, False))
+                                token_parts.append((param_value, QUOTED))
                             else:
                                 yield from emit_unquoted_param_value(
                                     param_value, token_parts
                                 )
 
-                    elif isinstance(element, Glob):
-                        token_parts.append((element.content, True))
+                    elif isinstance(element, (Glob, UnquotedText)):
+                        token_parts.extend(element.parts)
 
                     else:
-                        token_parts.append((element.content, False))
+                        token_parts.append((element.content, QUOTED))
 
             if token_parts:
                 yield finalize_token(token_parts)
