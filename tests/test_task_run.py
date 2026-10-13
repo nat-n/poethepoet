@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, cast
 
 import pytest
@@ -88,4 +89,44 @@ async def test_return_code_does_not_count_processes_killed_with_the_task_run():
 
     await parent.kill()
     assert killed_sibling.has_failure
+    assert parent.return_code == 3
+
+
+class PendingProcess(FakeProcess):
+    """
+    A stand-in for an asyncio subprocess that exits when told to.
+    """
+
+    def __init__(self):
+        self.pid = 12345
+        self.returncode = None
+        self._exited = asyncio.Event()
+
+    def exit(self, returncode: int):
+        self.returncode = returncode
+        self._exited.set()
+
+    async def wait(self):
+        await self._exited.wait()
+        return self.returncode
+
+
+@pytest.mark.asyncio
+async def test_return_code_reports_the_child_that_failed_first_in_time():
+    parent = PoeTaskRun("parent")
+    processes = []
+    for name in ("declared_first", "declared_second"):
+        processes.append(process := PendingProcess())
+        child = PoeTaskRun(name)
+        await child.add_process(PoeProcess(cast("Any", process)), finalize=True)
+        await parent.add_child(child)
+    await parent.finalize()
+
+    processes[1].exit(3)
+    # Let the failure of the second child be observed before the first one fails
+    for _ in range(10):
+        await asyncio.sleep(0)
+    processes[0].exit(2)
+    await parent.wait()
+
     assert parent.return_code == 3

@@ -56,9 +56,9 @@ switch = [{ case = "a", cmd = "poe_test_echo case" }]
         ("seq_nested", 3),
         ("ref_seq", 3),
         ("switch_seq", 3),
-        # If every subtask is run, the first failure in the declared order is used
+        # If every subtask is run, the code of the first one to fail is still used
         ("seq_return_non_zero", 2),
-        ("par_return_non_zero", 2),
+        ("par_return_non_zero", 3),
         ("seq_ignored", 0),
         # A subtask that fails without running a process has no code to report
         ("seq_no_process", 1),

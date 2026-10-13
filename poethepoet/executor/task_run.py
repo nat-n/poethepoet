@@ -82,6 +82,7 @@ class PoeTaskRun:
             )
         )
         self._children: list[PoeTaskRun] = []
+        self._failed_children: list[PoeTaskRun] = []
         self._processes: list[PoeProcess] = []
         self._killed_processes: set[PoeProcess] = set()
         self._update_condition = asyncio.Condition()
@@ -266,9 +267,11 @@ class PoeTaskRun:
         """
         Return the combined return code of all processes and child tasks, or None if any
         are still running.
-        The combined return code is that of the first process or child task (in the
-        order they were added) with a non-ignored failure. A process killed by signal N
-        is reported as 128 + N, following the shell convention. Processes that were
+        The combined return code is that of the first process or child task with a
+        non-ignored failure. Child tasks are considered in the order that they were
+        seen to fail, which matters when they run in parallel, and otherwise in the
+        order they were added. A process killed by signal N is reported as 128 + N,
+        following the shell convention. Processes that were
         killed along with this task run are not counted, because they are a
         consequence of the failure rather than its cause.
         If force_failure is set, return at least 1 if everything else is zero.
@@ -276,7 +279,17 @@ class PoeTaskRun:
         """
         if any(process.returncode is None for process in self._processes):
             return None
-        child_return_codes = [child.return_code for child in self._children]
+        child_return_codes = [
+            child.return_code
+            for child in (
+                *self._failed_children,
+                *(
+                    child
+                    for child in self._children
+                    if child not in self._failed_children
+                ),
+            )
+        ]
         if any(return_code is None for return_code in child_return_codes):
             return None
         if self._ignore_failure and not self._ignore_failure_codes:
@@ -319,6 +332,9 @@ class PoeTaskRun:
         await self._notify_update()
 
         async def notify(event: PoeTaskRunEvent):
+            if isinstance(event, PoeTaskRunError):
+                # Keep track of the order in which child tasks fail
+                self._failed_children.append(child)
             await self._notify_update()
 
         child.add_done_callback(notify)
