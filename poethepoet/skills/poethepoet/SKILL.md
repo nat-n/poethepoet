@@ -28,7 +28,7 @@ Run these before doing anything else:
 ```bash
 which poe 2>/dev/null && poe --version 2>/dev/null        # find poe + version
 poe 2>&1                                                  # list all tasks
-ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.json 2>/dev/null  # find config
+ls pyproject.toml poe_tasks.toml poe_tasks.yaml poe_tasks.yml poe_tasks.json 2>/dev/null  # find config
 ```
 
 Poe finds tasks in a supported config file in the working directory or any parent.
@@ -42,7 +42,12 @@ Poe finds tasks in a supported config file in the working directory or any paren
 | poetry plugin installed | `poetry poe` |
 | not installed | `pipx install poethepoet` or `uv tool install poethepoet` |
 
-**Version**: if `poe --version` differs much from 0.48.0, some features here may not exist. Latest: https://raw.githubusercontent.com/nat-n/poethepoet/refs/heads/main/poethepoet/skills/poethepoet/version.txt
+**Version**: compare `poe --version` with the 0.48.0 this skill targets.
+
+- **poe is newer** → this copy of the skill is stale and may mislead you. Tell the user, and suggest they update it with `poe _install_skill --upgrade` (installs the skill bundled with their poe). Until then, verify behaviour against the docs or source before relying on this skill.
+- **poe is older** → some features described here may not exist. Tell the user, and suggest upgrading poethepoet; otherwise verify a feature exists before using it.
+
+Don't update the skill or poethepoet yourself unless the user asks.
 
 ## Using existing tasks
 
@@ -67,12 +72,12 @@ If `poe`'s output isn't enough (e.g. you need a task's implementation or args), 
 | --- | --- | --- |
 | `cmd` | running any CLI command (default) | `task = "command"` |
 | `script` | calling a Python function | `task.script = "module:fn"` |
-| `shell` | shell scripts (pipes, loops) | `task.shell = "cmd1 \| cmd2"` |
+| `shell` | shell scripts (pipes, redirects, loops, multi-step scripting) | `task.shell = "cmd1 \| cmd2"` |
 | `sequence` | run tasks in order | `task = ["a", "b"]` |
 | `parallel` | run tasks concurrently | `task.parallel = ["a", "b"]` |
 | `ref` | reference another task | `task.ref = "other"` |
 | `expr` | Python expression output | `task.expr = "sys.platform"` |
-| `switch` | conditional branching | `task.switch = [...]` |
+| `switch` | different steps depending on an arg, env var, or platform | `task.switch = [...]` |
 
 Full syntax and examples per type: `references/task-types.md`.
 
@@ -128,6 +133,7 @@ Read `references/creating-tasks.md` before creating tasks — it covers project-
 
 - **Never hand-edit dependency arrays** in `pyproject.toml` (`[project]`, `[tool.uv]`, `[dependency-groups]`, `[tool.poetry.group.*]`). Use `uv add --dev <pkg>` / `poetry add --group dev <pkg>` so the lockfile stays in sync — this applies to poe itself too.
 - **Don't add `#` comments to task config** unless asked. Task docs belong in `help`, which surfaces in `poe` and `poe --help <task>`; config comments surface nowhere. If a task needs a comment to explain it, rename it, refine its `help`, or split it.
+- **Declare before you script.** Before writing bash logic in a `shell` task, check whether a poe feature already expresses it: a fallback value is an arg `default`, a `case` on an arg is a `switch`, `$(...)` is `uses`, `&&` is a `sequence`, an optional flag is `${var:+--flag}`. The full mapping is in `references/creating-tasks.md`. `shell` remains the right choice for pipes, redirects, loops, and scripts whose logic is genuinely shell-shaped.
 - **Compose, don't recurse.** To run one task from another, use `deps`, `uses`, `ref`, or a `sequence`/`parallel` — never `cmd = "poe other-task"`. Shelling out spawns a second poe process and hides the dependency from poe (no ordering, dedup, or dry-run visibility), and it can't invoke private `_`-tasks at all.
 - **Leave a clean set.** Delete throwaway tasks you created while developing or debugging before finishing. Aim for a small, intentional set where every task pulls its weight and a newcomer can see why each exists and how they're organized — not a pile of overlapping one-offs.
 
@@ -140,7 +146,7 @@ After creating or changing a task, run `poe --help <task>` to confirm it parses 
 | `help` | one-line description shown in `poe` listing — always add this |
 | `args` | CLI arguments the task accepts |
 | `env` | environment variables for the task |
-| `deps` | tasks to run before this one |
+| `deps` | tasks that must finish before this one (edges in poe's task graph) |
 | `uses` | capture another task's stdout as a variable |
 | `uses_env` | load env vars from another task's stdout, parsed as an env file |
 | `cwd` | working directory (relative to project root) |

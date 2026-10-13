@@ -58,7 +58,7 @@ script = "my_pkg.deploy:run(env, dry_run=True)"  # with inline args
 script = "http.server"                           # runs module's __main__
 ```
 
-When the call expression names a **module** (no `:` or `()`), poe runs `python -m <module>` and any declared args are re-emitted on `sys.argv` (with defaults applied) — useful for delegating to existing CLI modules. With a callable form, declared args are passed as kwargs (no parens) or by reference in the call (with parens). See `args-reference.md` for the full table.
+When the call expression names a **module** (no `:` or `()`), poe runs `python -m <module>` and any declared args are re-emitted on `sys.argv` (with defaults applied) — useful for delegating to existing CLI modules. Callable script and `expr` tasks see the same `sys.argv` (details in `args-reference.md`). With a callable form, declared args are passed as kwargs (no parens) or by reference in the call (with parens). See `args-reference.md` for the full table.
 
 **With task args** (passed as keyword args when no parentheses):
 
@@ -249,7 +249,7 @@ args = [{ name = "_target", positional = true, default = "" }]
 
 Runs different sub-tasks based on a control value. The control task runs first; its output selects the branch.
 
-Use when: behavior differs by platform, environment, or argument value.
+Use when: the steps to run differ by platform, environment, or argument value. If you are about to write `case "$ARG" in …` or `if [ "$ARG" = … ]` in a `shell` task, this is the task type you want.
 
 ```toml
 [tool.poe.tasks.install]
@@ -269,23 +269,40 @@ control.expr = "sys.platform"
   shell = "echo 'Unsupported platform'"
 ```
 
-**Switch on environment variable or arg**:
+**Switch on an arg, with multi-step cases and shared setup**:
 
 ```toml
-[tool.poe.tasks.deploy]
-# ✅ Reference the arg by bare variable name. Do NOT write `${STAGE}` here —
+[tool.poe.tasks.stack-init]
+help = "Create the stack for a project and stage"
+# ✅ Reference the arg by bare variable name. Do NOT write `${_project}` here —
 #    that routes through the environment and silently breaks for private args.
-control.expr = "STAGE"
-args = [{ name = "STAGE", positional = true, choices = ["staging", "production"] }]
+control.expr = "_project"
+deps = ["_login"]
+uses = { _stack = "_stack-name --family \"${_family}\" --stage ${_stage}" }
+cwd = "deploy/${_project}"
+args = [
+  { name = "_project", options = ["--project"], required = true, choices = ["app", "shared"], help = "Project to deploy" },
+  { name = "_stage", options = ["--stage"], required = true, choices = ["dev", "prod"], help = "Target stage" },
+  { name = "_family", options = ["--family"], default = "", help = "Stack family (app only)" },
+]
 
-  [[tool.poe.tasks.deploy.switch]]
-  case = "staging"
-  cmd = "deploy --env staging"
+  [[tool.poe.tasks.stack-init.switch]]
+  case = "app"
+  sequence = [
+    { cmd = "pulumi stack init ${_stack}" },
+    { cmd = "pulumi config set family ${_family}" },
+  ]
 
-  [[tool.poe.tasks.deploy.switch]]
-  case = "production"
-  cmd = "deploy --env production"
+  [[tool.poe.tasks.stack-init.switch]]
+  case = "shared"
+  cmd = "pulumi stack init ${_stack}"
 ```
+
+What this shows:
+
+- **A case is a whole task of any type.** When a branch needs several steps, make the case an inline `sequence` (or `parallel`), not a `shell` script.
+- **Options on the switch are shared by every case.** `args`, `deps`, `uses`, `uses_env`, `env` and `cwd` are declared once on the switch. The `deps` and `uses` tasks run once, before the control, and `${_stack}` is available in whichever case is selected.
+- **`choices` already rejects unknown values**, so no default case is needed here.
 
 **default option**: `"pass"` (succeed silently with no match) or `"fail"` (fail if no case matched). Default is `"fail"`.
 
@@ -294,6 +311,7 @@ args = [{ name = "STAGE", positional = true, choices = ["staging", "production"]
 - Control task type must be `expr`, `cmd`, or `script`.
 - Matching is by string comparison: the control output is `str()`-ed and compared against each `case` value (also `str()`-ed).
 - `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, `uses_env`, or `deps`.
+- A switch's stdout is the selected case's stdout. The control's output is consumed to pick the case and is never printed or captured, so a private switch task is a clean way to compute a value with branches for another task's `uses`.
 
 **Branching on a private (`_`-prefixed) arg**: in an `expr` control, reference it by **bare variable name**, never `${...}`. Private args aren't exported as env vars, so `control.expr = "${_target}"` silently resolves to an empty string and the switch falls through to `default`. Use the bare-variable form:
 

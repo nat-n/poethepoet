@@ -10,7 +10,8 @@ def test_prefer_valid_pyproject(run_poe, projects):
         "  sub1_poetasks_json    \n"
         "  sub2_poetasks_yaml    \n"
         "  sub2_poetasks_json    \n"
-        "  sub3_poetasks_json    \n\n"
+        "  sub3_poetasks_json    \n"
+        "  sub4_poetasks_yml     \n\n"
     ) in result.capture
     assert result.stdout == ""
     assert result.stderr == ""
@@ -39,5 +40,28 @@ def test_load_poe_tasks_json(run_poe, projects):
     assert (
         "Configured tasks:\n  sub3_poetasks_json    \n  sub2_poetasks_yaml    \n\n"
     ) in result.capture
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_prefer_poe_tasks_yaml_over_yml(run_poe, projects):
+    result = run_poe(cwd=projects["poe_tasks_file"] / "sub4")
+    assert ("Configured tasks:\n  sub4_poetasks_yaml    \n\n") in result.capture
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_load_poe_tasks_yml_by_path(run_poe, projects):
+    result = run_poe(
+        "-C", str(projects["poe_tasks_file"] / "sub4" / "poe_tasks.yml"), "-h"
+    )
+    assert ("Configured tasks:\n  sub4_poetasks_yml     \n\n") in result.capture
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_prefer_poe_tasks_yml_over_json(run_poe, projects):
+    result = run_poe(cwd=projects["poe_tasks_file"] / "sub5")
+    assert ("Configured tasks:\n  sub5_poetasks_yml     \n\n") in result.capture
     assert result.stdout == ""
     assert result.stderr == ""

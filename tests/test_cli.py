@@ -107,7 +107,7 @@ def test_dry_run_cmd(run_poe):
 
 def test_dry_run_script(run_poe):
     result = run_poe("-d", "multiple-lines-help", project="scripts")
-    assert result.capture == "Poe => multiple-lines-help\n"
+    assert result.capture == "Poe => multiple-lines-help --engines true\n"
     assert result.stdout == ""
     assert result.stderr == ""
 

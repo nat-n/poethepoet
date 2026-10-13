@@ -3,6 +3,27 @@ Migration Guides
 
 As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
 
+0.49.0
+------
+
+``sys.argv`` in script and expr tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Script tasks that call a function, and expr tasks, now get the same :python:`sys.argv` as script tasks that run a module. If the task declares args, :python:`sys.argv` holds them as parsed, with defaults applied, followed by any args given after ``--``. For example, given:
+
+.. code-block:: toml
+
+   [tool.poe.tasks.serve]
+   script = "myapp:main()"
+   args = [{ name = "port", default = "8000" }]
+
+``poe serve -- --reload`` used to give ``sys.argv[1:] == ["--", "--reload"]``, and now gives ``["--port", "8000", "--reload"]``.
+
+Also, ``${VAR}`` templates in arguments given on the command line are no longer expanded for these tasks, matching other task types.
+
+See the :doc:`script task docs<../tasks/task_types/script>` for details.
+
+
 0.47.0
 ------
 
