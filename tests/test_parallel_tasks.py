@@ -112,7 +112,7 @@ def test_parallel_task_buffered_output_flushes_on_failure(
         "Warning: Parallel subtask 'buffered_failure[0]' failed with non-zero exit status",
         "Error: Parallel task 'buffered_failure' aborted after failed subtask 'buffered_failure[0]'",
     ]
-    assert result.code == 1
+    assert result.code == 3
 
 
 @pytest.mark.flaky(reruns=3, reruns_delay=1)
@@ -139,7 +139,7 @@ def test_parallel_task_buffered_output_flushes_on_cancellation(
     assert result.stdout == (
         f"{format_parallel_prefix('buffered_cancelled[0]')}cancelled-output\n"
     )
-    assert result.code == 1
+    assert result.code == 7
     # The abort is attributed to the failing sibling [1], not the cancelled [0].
     assert (
         "Warning: Parallel subtask 'buffered_cancelled[1]' "

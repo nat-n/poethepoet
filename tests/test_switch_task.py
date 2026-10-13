@@ -398,7 +398,7 @@ def test_switch_case_error_is_not_swallowed(
                 { cmd = "poe_test_fail 0 3" },
                 { cmd = "poe_test_echo third" },
             ]""",
-            1,
+            3,
             "Error: Sequence aborted after failed subtask 'sw[a][0]'",
             id="sequence",
         ),
@@ -408,8 +408,8 @@ def test_switch_case_exit_code_matches_the_same_task_outside_a_switch(
     temp_pyproject, run_poe, case_def, expected_code, expected_error
 ):
     """
-    A case that is a single process passes its exit code through, whereas a case that
-    is a sequence aborts with an error and exit code 1, like any other sequence
+    A failing case fails the switch with the exit code of the process that failed,
+    and with the same error as that task reports outside of a switch
     """
     project_path = temp_pyproject(f"""
         [tool.poe.tasks.sw]

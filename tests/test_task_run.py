@@ -56,3 +56,36 @@ async def test_return_code_respects_ignored_codes():
     await task_run.add_process(PoeProcess(cast("Any", FakeProcess(4))))
     await task_run.finalize()
     assert task_run.return_code == 4
+
+
+class RunningProcess(FakeProcess):
+    """
+    A stand-in for an asyncio subprocess that runs until it is killed.
+    """
+
+    def __init__(self):
+        self.pid = 12345
+        self.returncode = None
+
+    def kill(self):
+        self.returncode = -9
+
+    async def wait(self):
+        return self.returncode
+
+
+@pytest.mark.asyncio
+async def test_return_code_does_not_count_processes_killed_with_the_task_run():
+    # A sibling that is killed because another subtask failed is a consequence of
+    # the failure, so it must not be reported in place of the code of the cause
+    parent = PoeTaskRun("parent")
+    killed_sibling = PoeTaskRun("killed_sibling")
+    await killed_sibling.add_process(PoeProcess(cast("Any", RunningProcess())))
+    await killed_sibling.finalize()
+    await parent.add_child(killed_sibling)
+    await parent.add_child(await _task_run_with_codes(3))
+    await parent.finalize()
+
+    await parent.kill()
+    assert killed_sibling.has_failure
+    assert parent.return_code == 3

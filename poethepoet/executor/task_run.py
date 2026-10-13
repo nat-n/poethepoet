@@ -83,6 +83,7 @@ class PoeTaskRun:
         )
         self._children: list[PoeTaskRun] = []
         self._processes: list[PoeProcess] = []
+        self._killed_processes: set[PoeProcess] = set()
         self._update_condition = asyncio.Condition()
         self._force_failure = False
         self._finalized = False
@@ -267,7 +268,9 @@ class PoeTaskRun:
         are still running.
         The combined return code is that of the first process or child task (in the
         order they were added) with a non-ignored failure. A process killed by signal N
-        is reported as 128 + N, following the shell convention.
+        is reported as 128 + N, following the shell convention. Processes that were
+        killed along with this task run are not counted, because they are a
+        consequence of the failure rather than its cause.
         If force_failure is set, return at least 1 if everything else is zero.
         If ignore_failure is set, always return 0 regardless of actual return codes.
         """
@@ -284,7 +287,11 @@ class PoeTaskRun:
             (
                 _as_exit_status(return_code)
                 for return_code in (
-                    *(process.returncode for process in self._processes),
+                    *(
+                        process.returncode
+                        for process in self._processes
+                        if process not in self._killed_processes
+                    ),
                     *child_return_codes,
                 )
                 if return_code is not None and return_code not in ignore_failure_codes
@@ -332,6 +339,7 @@ class PoeTaskRun:
             self.asyncio_task.cancel()
         for process in self._processes:
             if process.returncode is None:
+                self._killed_processes.add(process)
                 process.kill()
         for child in self._children:
             await child.kill()

@@ -292,7 +292,7 @@ For `sequence`/`parallel` tasks:
 
 - `true` — continue running; return 0 if remaining tasks succeed
 - `"return_zero"` — always return 0 regardless of failures
-- `"return_non_zero"` — continue but propagate failure in exit code
+- `"return_non_zero"` — continue but propagate failure in exit code (the first failed subtask's exit code, or 1 if it has none)
 
 ---
 

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from .config import PoeConfig
     from .context import RunContext
+    from .executor.task_run import PoeTaskRun
     from .io import PoeIO
     from .task.base import PoeTask, TaskSpecFactory
     from .ui import PoeUi
@@ -227,6 +228,7 @@ class PoeThePoet:
 
     async def _run_task(self, task: PoeTask, context: RunContext | None = None) -> int:
         async with self.run_context(existing=context) as context:
+            task_run: PoeTaskRun | None = None
             try:
                 task_run = await task.run(context=context)
                 await task_run.wait(suppress_errors=False)
@@ -235,7 +237,7 @@ class PoeThePoet:
                 return task_run.return_code or int(task_run.has_failure)
             except ExecutionError as error:
                 self.ui.print_error(error=error)
-                return 1
+                return await self._get_failure_exit_code(task_run)
             except PoeException as error:
                 self.print_help(error=error)
                 return 1
@@ -261,6 +263,7 @@ class PoeThePoet:
                         # The final sink task gets special treatment
                         return await self._run_task(stage_task, context)
 
+                    task_run: PoeTaskRun | None = None
                     try:
                         task_run = await stage_task.run(context=context)
                         await task_run.wait(suppress_errors=False)
@@ -274,8 +277,22 @@ class PoeThePoet:
                         return 1
                     except ExecutionError as error:
                         self.ui.print_error(error=error)
-                        return 1
+                        return await self._get_failure_exit_code(task_run)
         return 0
+
+    @staticmethod
+    async def _get_failure_exit_code(task_run: PoeTaskRun | None) -> int:
+        """
+        The exit code to report for a task run that failed with an ExecutionError:
+        that of the first process or subtask that failed, or 1 if there is none, e.g.
+        because the task failed before it could start a process.
+        """
+        if task_run is None:
+            return 1
+        # Wait for any processes that are being killed as a result of the failure,
+        # because the return code is not known until they have all exited
+        await task_run.wait()
+        return task_run.return_code or 1
 
     @asynccontextmanager
     async def run_context(

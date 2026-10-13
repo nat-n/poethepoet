@@ -53,6 +53,8 @@ If you want to run all the subtasks in the sequence but return non-zero result i
   attempts.sequence = ["task1", "task2", "task3"]
   attempts.ignore_fail = "return_non_zero"
 
+When a sequence fails, poe exits with the exit code of the first subtask that failed. If that subtask failed without an exit code of its own (for example because of an error raised before its command could run) then the exit code is 1.
+
 .. |array_of_tables_link| raw:: html
 
    <a href="https://toml.io/en/v1.0.0#array-of-tables" target="_blank">array of tables</a>
