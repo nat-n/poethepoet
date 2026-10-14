@@ -491,3 +491,128 @@ def test_cmd_task_with_extra_args_only_in_comment_still_appends_extra_args(run_p
     assert result.capture == "Poe => poe_test_echo actual foo bar\n"
     assert result.stdout == "actual foo bar\n"
     assert result.stderr == ""
+
+
+@pytest.fixture
+def glob_project(temp_pyproject, tmp_path):
+    """
+    Create some files to match, and return a function that writes a project with a
+    single try-glob task running poe_test_echo with the given arguments
+    """
+    for file_path in ("glob_a.txt", "glob_b.txt", "nested/glob_c.txt"):
+        tmp_path.joinpath(file_path).parent.mkdir(exist_ok=True)
+        tmp_path.joinpath(file_path).touch()
+
+    def generator(cmd: str, empty_glob: str = "pass"):
+        return temp_pyproject(
+            "[tool.poe.tasks.try-glob]\n"
+            f"cmd = '''poe_test_echo {cmd}'''\n"
+            f'empty_glob = "{empty_glob}"\n'
+            # run from elsewhere to prove absolute patterns ignore the working dir
+            'cwd = "nested"\n'
+        )
+
+    return generator
+
+
+def test_cmd_with_absolute_glob(run_poe, glob_project, tmp_path):
+    project_path = glob_project(f"{tmp_path.as_posix()}/glob_*.txt")
+    result = run_poe("try-glob", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert sorted(result.stdout.split()) == [
+        str(tmp_path / "glob_a.txt"),
+        str(tmp_path / "glob_b.txt"),
+    ]
+    assert result.stderr == ""
+
+
+def test_cmd_with_absolute_recursive_glob(run_poe, glob_project, tmp_path):
+    project_path = glob_project(f"{tmp_path.as_posix()}/**/glob_c.*")
+    result = run_poe("try-glob", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == f"{tmp_path / 'nested' / 'glob_c.txt'}\n"
+    assert result.stderr == ""
+
+
+def test_cmd_with_absolute_empty_glob_pass(run_poe, glob_project, tmp_path):
+    pattern = f"{tmp_path.as_posix()}/n*thing"
+    project_path = glob_project(pattern)
+    result = run_poe("try-glob", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == f"{pattern}\n"
+    assert result.stderr == ""
+
+
+def test_cmd_with_absolute_empty_glob_fail(run_poe, glob_project, tmp_path):
+    pattern = f"{tmp_path.as_posix()}/n*thing"
+    project_path = glob_project(pattern, empty_glob="fail")
+    result = run_poe("try-glob", cwd=project_path)
+    assert result.code == 1
+    assert result.capture.startswith(
+        f"Error: Glob pattern {pattern!r} did not match any files\n"
+    )
+    assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "pattern", ["../glob_**.txt", "../glob_***", "../**glob_?.txt"]
+)
+def test_cmd_with_glob_stars_inside_path_component(
+    run_poe, glob_project, tmp_path, pattern
+):
+    """
+    Like in bash (without globstar) ** is only recursive as a whole path component
+    """
+    project_path = glob_project(pattern)
+    result = run_poe("try-glob", cwd=project_path)
+    assert result.code == 0, result.capture
+    # ../ segments are preserved rather than resolved in the matched paths
+    assert sorted(result.stdout.split()) == [
+        str(tmp_path / "nested" / ".." / "glob_a.txt"),
+        str(tmp_path / "nested" / ".." / "glob_b.txt"),
+    ]
+    assert result.stderr == ""
+
+
+def test_cmd_with_glob_error_is_reported_cleanly(run_poe, glob_project, monkeypatch):
+    project_path = glob_project("b*om")
+    original_glob = Path.glob
+
+    def failing_glob(self, pattern, **kwargs):
+        if pattern == "b*om":
+            raise ValueError("Unacceptable pattern")
+        return original_glob(self, pattern, **kwargs)
+
+    monkeypatch.setattr(Path, "glob", failing_glob)
+
+    result = run_poe("try-glob", cwd=project_path)
+    assert result.code == 1
+    assert result.capture.startswith(
+        "Error: Failed to expand glob pattern 'b*om' in cmd task 'try-glob'\n"
+    )
+    assert "Unacceptable pattern" in result.capture
+    assert result.stderr == ""
+
+
+def test_cmd_with_absolute_glob_from_param_expansion(run_poe, glob_project, tmp_path):
+    project_path = glob_project("${GLOB_DIR}/glob_*.txt")
+    result = run_poe(
+        "try-glob", cwd=project_path, env={"GLOB_DIR": tmp_path.as_posix()}
+    )
+    assert result.code == 0, result.capture
+    assert sorted(result.stdout.split()) == [
+        str(tmp_path / "glob_a.txt"),
+        str(tmp_path / "glob_b.txt"),
+    ]
+    assert result.stderr == ""
+
+
+def test_cmd_with_quoted_glob_stars_inside_path_component(run_poe, glob_project):
+    """
+    Quoted stars only match themselves, so they must not be collapsed into a wildcard
+    """
+    project_path = glob_project('../glob_"**"?.txt')
+    result = run_poe("try-glob", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "../glob_**?.txt\n"
+    assert result.stderr == ""

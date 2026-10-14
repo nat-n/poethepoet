@@ -26,7 +26,7 @@ tables = "aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}"
 debug_flag = "server ${DEBUG:+--debug}"
 ```
 
-**Glob expansion**: Patterns like `*.py`, `**/*.txt` are expanded via Python's glob module.
+**Glob expansion**: Patterns like `*.py`, `**/*.txt` are expanded via Python's `pathlib.Path.glob` (so wildcards also match dotfiles), relative to the task's working directory.
 
 - `empty_glob = "null"` — treat no-match as empty string (like shell nullglob)
 - `empty_glob = "fail"` — fail the task if pattern matches nothing
