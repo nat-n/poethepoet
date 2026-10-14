@@ -7,7 +7,7 @@ description: Use when about to run or manage a common Python dev task — tests,
 
 Poethepoet (poe) is a Python task runner: teams define, document, and run dev tasks (test, lint, build, deploy…) from `pyproject.toml` or a standalone config file — no Makefiles or shell scripts. Tasks self-document via `help` text and run as `poe <task>`. Poe detects uv/poetry projects (or a local venv) and runs each task in the right environment automatically — no need to remember `poetry run` vs `uv run`.
 
-**Targets poe 0.48.0.** Full docs: https://poethepoet.natn.io
+**Targets poe 0.49.0.** Full docs: https://poethepoet.natn.io
 
 ## When poe behaviour is unclear
 
@@ -42,7 +42,7 @@ Poe finds tasks in a supported config file in the working directory or any paren
 | poetry plugin installed | `poetry poe` |
 | not installed | `pipx install poethepoet` or `uv tool install poethepoet` |
 
-**Version**: compare `poe --version` with the 0.48.0 this skill targets.
+**Version**: compare `poe --version` with the 0.49.0 this skill targets.
 
 - **poe is newer** → this copy of the skill is stale and may mislead you. Tell the user, and suggest they update it with `poe _install_skill --upgrade` (installs the skill bundled with their poe). Until then, verify behaviour against the docs or source before relying on this skill.
 - **poe is older** → some features described here may not exist. Tell the user, and suggest upgrading poethepoet; otherwise verify a feature exists before using it.
