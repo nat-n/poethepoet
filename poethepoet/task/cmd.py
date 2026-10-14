@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import shlex
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Literal
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
@@ -12,6 +14,8 @@ if TYPE_CHECKING:
     from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
     from .base import TaskSpecFactory
+
+_PATH_SEPARATORS = os.sep + (os.altsep or "")
 
 
 class CmdTask(PoeTask):
@@ -167,15 +171,31 @@ class CmdTask(PoeTask):
             for cmd_token, glob_pattern in line.resolve_tokens(env):
                 if glob_pattern is None:
                     result.append(cmd_token)
-                # Resolve glob pattern from the working directory
-                elif matches := [
-                    str(match) for match in working_dir.glob(glob_pattern)
-                ]:
+                    continue
+
+                # Resolve glob pattern from the working directory, or from the
+                # filesystem root if the pattern is absolute
+                glob_root, pattern = self._split_glob_pattern(working_dir, glob_pattern)
+                try:
+                    matches = [str(match) for match in glob_root.glob(pattern)]
+                except (ValueError, NotImplementedError, OSError) as error:
+                    raise ExecutionError(
+                        f"Failed to expand glob pattern {cmd_token!r} in cmd task "
+                        f"{self.name!r}",
+                        error,
+                    )
+
+                if matches:
                     result.extend(matches)
                 elif self.spec.options.empty_glob == "fail":
+                    searched_in = (
+                        f" in working directory {working_dir!s}"
+                        if glob_root == working_dir
+                        else ""
+                    )
                     raise ExecutionError(
-                        f"Glob pattern {cmd_token!r} did not match any files in "
-                        f"working directory {working_dir!s}"
+                        f"Glob pattern {cmd_token!r} did not match any files"
+                        f"{searched_in}"
                     )
                 elif self.spec.options.empty_glob == "pass":
                     # If the glob pattern does not match any files, we just pass the
@@ -184,3 +204,31 @@ class CmdTask(PoeTask):
                     result.append(cmd_token)
 
         return result
+
+    @staticmethod
+    def _split_glob_pattern(working_dir: Path, pattern: str) -> tuple[Path, str]:
+        """
+        Translate a glob pattern into the directory to search from and a relative
+        pattern that pathlib will accept across all supported python versions.
+
+        - pathlib only supports relative patterns, so an absolute pattern is split
+          into its anchor (e.g. "/" or "C:\\") to search from and the remainder.
+        - before python 3.13 pathlib rejects "**" unless it is a whole path
+          component, so anywhere else we collapse it to "*", which is how newer
+          python versions (and bash without globstar) interpret it. Literal stars
+          are already escaped as "[*]" so they are unaffected.
+        """
+        glob_root = working_dir
+        if anchor := PurePath(pattern).anchor:
+            glob_root = Path(anchor)
+            pattern = pattern[len(anchor) :].lstrip(_PATH_SEPARATORS)
+
+        if "**" in pattern:
+            import re
+
+            pattern = "".join(
+                part if part == "**" else re.sub(r"\*{2,}", "*", part)
+                for part in re.split(f"([{re.escape(_PATH_SEPARATORS)}])", pattern)
+            )
+
+        return glob_root, pattern
