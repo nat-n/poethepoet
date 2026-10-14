@@ -282,6 +282,7 @@
 <span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;return_non_zero&quot;</span>
 </pre></div>
 </div>
+<p>A failed sequence exits with the exit code of the first subtask that failed.</p>
 </section>
 <section id="changing-the-default-item-type">
 <h2>Changing the default item type<a class="headerlink" href="#changing-the-default-item-type" title="Link to this heading">¶</a></h2>
@@ -321,6 +322,7 @@
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Note that tasks defined inline within a sequence may not include some options that would otherwise be available to them, for example <code class="docutils literal notranslate"><span class="pre">help</span></code> and <code class="docutils literal notranslate"><span class="pre">args</span></code> are forbidden because they don’t make sense in this context.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">deps</span></code>, <code class="docutils literal notranslate"><span class="pre">uses</span></code>, and <code class="docutils literal notranslate"><span class="pre">uses_env</span></code> options are also forbidden on inline tasks. To use them, declare a named task with those options and reference it from the sequence.</p>
 </div>
 </section>
 <section id="forwarding-free-arguments-to-subtasks">
@@ -432,7 +434,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=e3f0b77b"></script>
+</div><script src="../../_static/documentation_options.js?v=9225fd22"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

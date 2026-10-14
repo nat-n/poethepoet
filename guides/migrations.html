@@ -245,7 +245,49 @@
 <h1>Migration Guides<a class="headerlink" href="#migration-guides" title="Link to this heading">¶</a></h1>
 <p>As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.</p>
 <section id="id1">
-<h2>0.46.0<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<h2>0.49.0<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<section id="sys-argv-in-script-and-expr-tasks">
+<h3><code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> in script and expr tasks<a class="headerlink" href="#sys-argv-in-script-and-expr-tasks" title="Link to this heading">¶</a></h3>
+<p>Script tasks that call a function, and expr tasks, now get the same <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code> as script tasks that run a module. If the task declares args, <code class="code highlight python docutils literal highlight-python"><span class="n">sys</span><span class="o">.</span><span class="n">argv</span></code> holds them as parsed, with defaults applied, followed by any args given after <code class="docutils literal notranslate"><span class="pre">--</span></code>. For example, given:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.serve]</span>
+<span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myapp:main()&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;port&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;8000&quot;</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">poe</span> <span class="pre">serve</span> <span class="pre">--</span> <span class="pre">--reload</span></code> used to give <code class="docutils literal notranslate"><span class="pre">sys.argv[1:]</span> <span class="pre">==</span> <span class="pre">[&quot;--&quot;,</span> <span class="pre">&quot;--reload&quot;]</span></code>, and now gives <code class="docutils literal notranslate"><span class="pre">[&quot;--port&quot;,</span> <span class="pre">&quot;8000&quot;,</span> <span class="pre">&quot;--reload&quot;]</span></code>.</p>
+<p>Also, <code class="docutils literal notranslate"><span class="pre">${VAR}</span></code> templates in arguments given on the command line are no longer expanded for these tasks, matching other task types.</p>
+<p>See the <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script task docs</span></a> for details.</p>
+</section>
+<section id="square-bracket-glob-patterns-in-cmd-tasks">
+<h3>Square bracket glob patterns in cmd tasks<a class="headerlink" href="#square-bracket-glob-patterns-in-cmd-tasks" title="Link to this heading">¶</a></h3>
+<p>Whitespace, backslashes, quotes, and parameter expansions inside a square bracket pattern are now interpreted like in bash, instead of being taken literally. To match a space or a backslash, escape it with a backslash, for example <code class="docutils literal notranslate"><span class="pre">[a\</span> <span class="pre">b]</span></code>.</p>
+</section>
+</section>
+<section id="id2">
+<h2>0.47.0<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<section id="boolean-arg-defaults-must-be-boolean-values">
+<h3>Boolean arg defaults must be boolean values<a class="headerlink" href="#boolean-arg-defaults-must-be-boolean-values" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">default</span></code> of an arg with <code class="code highlight toml docutils literal highlight-toml"><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span></code> is now validated when the config is loaded. It must be a TOML boolean, one of the case-insensitive string literals <code class="docutils literal notranslate"><span class="pre">&quot;t&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;true&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;1&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;f&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;false&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;0&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>, or a templated string such as <code class="docutils literal notranslate"><span class="pre">&quot;${SOME_VAR}&quot;</span></code> that resolves to one of those literals. Any other string is rejected as a config error.</p>
+<p>From 0.43.0 through 0.46.0 an arbitrary string default was accepted and exposed as the value of the variable when the flag was not provided, which made it possible to switch between two strings using the <code class="docutils literal notranslate"><span class="pre">:-</span></code> operator:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># OLD: no longer supported</span>
+<span class="k">[tool.poe.tasks.greet]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;echo ${hello:-hello!}&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hi!&quot;</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
+<p>As of 0.49.0 the same result is achieved with the <code class="docutils literal notranslate"><span class="pre">true_string</span></code> and <code class="docutils literal notranslate"><span class="pre">false_string</span></code> options, which set the string that a boolean arg is exposed as when its value is true or false respectively. The arg can then be referenced directly, without an expansion operator:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># NEW: requires 0.49.0 or later</span>
+<span class="k">[tool.poe.tasks.greet]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;echo &quot;${hello}&quot;&#39;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hello&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">true_string</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hello!&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">false_string</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;hi!&quot;</span><span class="w"> </span><span class="p">}]</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">:-</span></code> and <code class="docutils literal notranslate"><span class="pre">:+</span></code> operators test the resulting string rather than the boolean value, so a nonempty <code class="docutils literal notranslate"><span class="pre">false_string</span></code> makes <code class="docutils literal notranslate"><span class="pre">${hello:+...}</span></code> expand even when the flag is false. See the <a class="reference internal" href="args_guide.html"><span class="doc">args guide</span></a> for details.</p>
+<p>These options were not available in 0.47.x and 0.48.0, where the workaround is to make the arg a string type or move the logic into a shell or expr task.</p>
+</section>
+</section>
+<section id="id3">
+<h2>0.46.0<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
 <p>This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. Two edge-case behaviours changed.</p>
 <section id="whitespace-in-unquoted-values-is-now-preserved">
 <h3>Whitespace in unquoted values is now preserved<a class="headerlink" href="#whitespace-in-unquoted-values-is-now-preserved" title="Link to this heading">¶</a></h3>
@@ -281,8 +323,8 @@
 </div>
 </section>
 </section>
-<section id="id2">
-<h2>0.44.0<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<section id="id4">
+<h2>0.44.0<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
 <p>This release adds support for recursive includes, which allows included files to themselves include other files. If a project includes config from another file which in turn includes config from other files then these transitive includes will now also be included in the main project by default. This new behavior can be disabled by setting <code class="docutils literal notranslate"><span class="pre">recursive</span> <span class="pre">=</span> <span class="pre">false</span></code> for a specific include, which will prevent any includes from that file from being followed. For more details see the <a class="reference internal" href="include_guide.html"><span class="doc">include guide</span></a>.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe]</span>
 <span class="w"> </span><span class="n">include</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;external/tasks.toml&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">recursive</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">}]</span>
@@ -290,14 +332,15 @@
 </div>
 <p>When <code class="docutils literal notranslate"><span class="pre">recursive</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>, the included file’s own tasks and environment variables are still loaded, but any <code class="docutils literal notranslate"><span class="pre">include</span></code> entries within that file are not followed.</p>
 </section>
-<section id="id3">
-<h2>0.43.0<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<section id="id5">
+<h2>0.43.0<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
 <p>This release included a major refactor of how variables are managed which could unexpectedly change behavior in some situations.</p>
 <section id="change-in-handling-of-boolean-args">
 <h3>Change in handling of boolean args<a class="headerlink" href="#change-in-handling-of-boolean-args" title="Link to this heading">¶</a></h3>
 <p>To better support usage of boolean args in task logic, instead of mapping the arg value <code class="docutils literal notranslate"><span class="pre">false</span></code> to the string value <code class="docutils literal notranslate"><span class="pre">False</span></code> in the corresponding environment variable, it is instead mapped to <em>the environment variable being unset</em>, even if it was previously set on the environment. This allows more natural usage from most contexts, such as parameter expansion logic in cmd or shell tasks.</p>
 <p>However some tasks or scripts may need to be updated if they previously checked for <code class="docutils literal notranslate"><span class="pre">&quot;False&quot;</span></code> specifically, or if they use <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">-u</span></code>.</p>
 <p>Additionally if the variable was accessed from a python script via <code class="code highlight python docutils literal highlight-python"><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;flag&quot;</span><span class="p">]</span></code> then this will break now. It is recommended to instead use <code class="code highlight python docutils literal highlight-python"><span class="s2">&quot;flag&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span></code> or <code class="code highlight python docutils literal highlight-python"><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;flag&quot;</span><span class="p">)</span></code> to check if the flag is set to true.</p>
+<p>As of 0.49.0 the string value for each case can be configured per arg with the <code class="docutils literal notranslate"><span class="pre">true_string</span></code> and <code class="docutils literal notranslate"><span class="pre">false_string</span></code> options. For example setting <code class="code highlight toml docutils literal highlight-toml"><span class="n">false_string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span></code> results in the variable being set to an empty string instead of unset when the flag is false, which avoids both of the problems described above. See the <a class="reference internal" href="args_guide.html"><span class="doc">args guide</span></a> for details.</p>
 <p>Note that as of this release you can reference the flag directly like a local python variable with a bool value in expr or script tasks, even if the arg was provided to a parent task, like a switch or sequence.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.check-flag]</span>
 <span class="n">expr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;flag and &#39;cli flag was set&#39; or &#39;cli flag was not set&#39;&quot;</span>
@@ -384,13 +427,22 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Migration Guides</a><ul>
-<li><a class="reference internal" href="#id1">0.46.0</a><ul>
+<li><a class="reference internal" href="#id1">0.49.0</a><ul>
+<li><a class="reference internal" href="#sys-argv-in-script-and-expr-tasks"><code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> in script and expr tasks</a></li>
+<li><a class="reference internal" href="#square-bracket-glob-patterns-in-cmd-tasks">Square bracket glob patterns in cmd tasks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">0.47.0</a><ul>
+<li><a class="reference internal" href="#boolean-arg-defaults-must-be-boolean-values">Boolean arg defaults must be boolean values</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id3">0.46.0</a><ul>
 <li><a class="reference internal" href="#whitespace-in-unquoted-values-is-now-preserved">Whitespace in unquoted values is now preserved</a></li>
 <li><a class="reference internal" href="#semicolons-are-no-longer-assignment-separators">Semicolons are no longer assignment separators</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id2">0.44.0</a></li>
-<li><a class="reference internal" href="#id3">0.43.0</a><ul>
+<li><a class="reference internal" href="#id4">0.44.0</a></li>
+<li><a class="reference internal" href="#id5">0.43.0</a><ul>
 <li><a class="reference internal" href="#change-in-handling-of-boolean-args">Change in handling of boolean args</a></li>
 <li><a class="reference internal" href="#introduction-of-private-variables">Introduction of private variables</a></li>
 </ul>
@@ -406,7 +458,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=e3f0b77b"></script>
+</div><script src="../_static/documentation_options.js?v=9225fd22"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

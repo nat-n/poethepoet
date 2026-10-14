@@ -297,6 +297,7 @@
 <span class="n">attempts</span><span class="p">.</span><span class="n">ignore_fail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;return_non_zero&quot;</span>
 </pre></div>
 </div>
+<p>A failed parallel task exits with the exit code of the first subtask that failed.</p>
 </section>
 <section id="changing-the-default-item-type">
 <h2>Changing the default item type<a class="headerlink" href="#changing-the-default-item-type" title="Link to this heading">¶</a></h2>
@@ -322,6 +323,10 @@
 <div class="admonition hint">
 <p class="admonition-title">Hint</p>
 <p>An array within a parallel task is interpreted as a <a class="reference internal" href="sequence.html"><span class="doc">sequence</span></a> task, so you can run certain parallel subtasks <a class="reference internal" href="../../guides/composition_guide.html#composing-tasks-to-run-in-parallel"><span class="std std-ref">with strict ordering</span></a>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Tasks defined inline within a parallel task may not include the <code class="docutils literal notranslate"><span class="pre">args</span></code>, <code class="docutils literal notranslate"><span class="pre">deps</span></code>, <code class="docutils literal notranslate"><span class="pre">uses</span></code>, or <code class="docutils literal notranslate"><span class="pre">uses_env</span></code> options. To use <code class="docutils literal notranslate"><span class="pre">deps</span></code>, <code class="docutils literal notranslate"><span class="pre">uses</span></code>, or <code class="docutils literal notranslate"><span class="pre">uses_env</span></code>, declare a named task with those options and reference it from the parallel task.</p>
 </div>
 </section>
 <section id="forwarding-free-arguments-to-subtasks">
@@ -488,7 +493,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=e3f0b77b"></script>
+</div><script src="../../_static/documentation_options.js?v=9225fd22"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

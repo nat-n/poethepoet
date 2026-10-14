@@ -284,7 +284,7 @@ a sub-table.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>serve<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8001</span>
 </pre></div>
 </div>
-<p>When used with a <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script task</span></a> in this way the <code class="docutils literal notranslate"><span class="pre">run</span></code> function from the <code class="docutils literal notranslate"><span class="pre">myapp</span></code> module will be called passing the <code class="docutils literal notranslate"><span class="pre">host</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code> as keyword arguments with whatever values are provided on the CLI, in addition to <code class="docutils literal notranslate"><span class="pre">host</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code> being set as environment variables on the task subprocess, and the <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> being populated with the full invocation.</p>
+<p>When used with a <a class="reference internal" href="../tasks/task_types/script.html"><span class="doc">script task</span></a> in this way the <code class="docutils literal notranslate"><span class="pre">run</span></code> function from the <code class="docutils literal notranslate"><span class="pre">myapp</span></code> module will be called passing the <code class="docutils literal notranslate"><span class="pre">host</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code> as keyword arguments with whatever values are provided on the CLI, in addition to <code class="docutils literal notranslate"><span class="pre">host</span></code> and <code class="docutils literal notranslate"><span class="pre">port</span></code> being set as environment variables on the task subprocess, and <code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> being populated with the args.</p>
 <p>The following example demonstrates a slightly different form where the private <code class="docutils literal notranslate"><span class="pre">_food</span></code> arg is explicitly passed to the <code class="docutils literal notranslate"><span class="pre">frying_pan</span></code> function.</p>
 <div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.poe.tasks.cook]</span>
 <span class="n">script</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;kitchen:frying_pan(_food)&quot;</span>
@@ -439,11 +439,18 @@ args = [{ name = “FILE_PATHS”, positional = true, multiple = true }]</p>
 </dd>
 </dl>
 </li>
+<li><dl>
+<dt><strong>true_string</strong>, <strong>false_string</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>Customize the string exposed by a boolean argument in parameter expansion and the subprocess environment when its value is true or false, respectively. These options require <code class="docutils literal notranslate"><span class="pre">type</span> <span class="pre">=</span> <span class="pre">&quot;boolean&quot;</span></code> and accept literal strings: <code class="docutils literal notranslate"><span class="pre">${...}</span></code> references are not expanded. An explicitly configured empty string sets the variable to empty rather than unsetting it.</p>
+<p>These options apply to the resolved boolean value, independently of <code class="docutils literal notranslate"><span class="pre">default</span></code>. Python variables in expr and callable script tasks remain booleans, and module script tasks continue to forward the flag when it was provided on the CLI.</p>
+</dd>
+</dl>
+</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>When a <code class="code highlight toml docutils literal highlight-toml"><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span></code> flag arg evaluates to <code class="code highlight toml docutils literal highlight-toml"><span class="n">false</span></code>, this results in the corresponding environment variable (if any) being <em>unset</em> for the task, even if it was previously set by some other means. This ensures consistent <em>non-truthy</em> semantics for <a class="reference internal" href="../tasks/task_types/cmd.html#parameter-expansion-operators"><span class="std std-ref">parameter expansion operators</span></a>, in config, shells or other subprocesses.</p>
-<p>If the flag value is <code class="code highlight toml docutils literal highlight-toml"><span class="n">true</span></code> then it is exposed as a python variable with the value <code class="docutils literal notranslate"><span class="pre">True</span></code> in expr or script tasks, and an environment variable with the string value <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+<p>When a <code class="code highlight toml docutils literal highlight-toml"><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;boolean&quot;</span></code> flag arg evaluates to <code class="code highlight toml docutils literal highlight-toml"><span class="n">false</span></code> and <code class="docutils literal notranslate"><span class="pre">false_string</span></code> is omitted, this results in the corresponding environment variable (if any) being <em>unset</em> for the task, even if it was previously set by some other means. This ensures consistent <em>non-truthy</em> semantics for <a class="reference internal" href="../tasks/task_types/cmd.html#parameter-expansion-operators"><span class="std std-ref">parameter expansion operators</span></a>, in config, shells or other subprocesses.</p>
+<p>If the flag value is <code class="code highlight toml docutils literal highlight-toml"><span class="n">true</span></code> and <code class="docutils literal notranslate"><span class="pre">true_string</span></code> is omitted, its environment string is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+<p>Parameter expansion operators test the resulting string, not the typed boolean. A nonempty <code class="docutils literal notranslate"><span class="pre">false_string</span></code> activates <code class="docutils literal notranslate"><span class="pre">:+</span></code> even when the flag is false; an empty <code class="docutils literal notranslate"><span class="pre">true_string</span></code> activates <code class="docutils literal notranslate"><span class="pre">:-</span></code> even when the flag is true. Use <code class="docutils literal notranslate"><span class="pre">${name}</span></code> directly when both output strings are configured.</p>
 </div>
 </section>
 <section id="constraining-argument-values">
@@ -716,7 +723,7 @@ example.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=e3f0b77b"></script>
+</div><script src="../_static/documentation_options.js?v=9225fd22"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
