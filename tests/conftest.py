@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import shlex
@@ -5,6 +6,7 @@ import shutil
 import signal
 import sys
 import time
+import tomllib
 import venv
 from collections.abc import Mapping
 from contextlib import contextmanager
@@ -18,11 +20,6 @@ import virtualenv
 
 from poethepoet.app import PoeThePoet
 from poethepoet.virtualenv import Virtualenv
-
-try:
-    import tomllib as tomli
-except ImportError:
-    import tomli  # type: ignore[no-redef]
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TOML = PROJECT_ROOT / "pyproject.toml"
@@ -42,7 +39,7 @@ def delay_factor(request):
 @pytest.fixture(scope="session")
 def pyproject():
     with PROJECT_TOML.open("rb") as toml_file:
-        return tomli.load(toml_file)
+        return tomllib.load(toml_file)
 
 
 @pytest.fixture(scope="session")
@@ -217,13 +214,8 @@ def run_poe_subproc_handle(temp_file, is_windows):
     )
     wrapper_script_template = (
         '"{coverage_setup}'
-        + (
-            "import tomli;"
-            # ruff: noqa: YTT204
-            if sys.version_info.minor < 11
-            else "import tomllib as tomli;"
-        )
-        + "from poethepoet.app import PoeThePoet;"
+        "import json;"
+        "from poethepoet.app import PoeThePoet;"
         "from pathlib import Path;"
         r"poe = PoeThePoet(cwd=r\"{cwd}\", config={config}, output={output});"
         'exit(poe([{run_args}]));"'
@@ -288,10 +280,9 @@ def run_poe_subproc(run_poe_subproc_handle, projects, tmp_path, is_windows):
 
         if config is not None:
             config_path = tmp_path.joinpath("tmp_test_config_file")
-            with config_path.open("w+") as config_file:
-                tomli.dump(config, config_file)
-                config_file.seek(0)
-            config_arg = rf"tomli.load(open(r\"{config_path}\", \"rb\"))"
+            with config_path.open("w") as config_file:
+                json.dump(config, config_file)
+            config_arg = rf"json.load(open(r\"{config_path}\"))"
 
         else:
             config_arg = "None"

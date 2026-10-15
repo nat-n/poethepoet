@@ -28,18 +28,12 @@ Runtime lazy validation (not a spec §7 issue, but a structural reality):
 from __future__ import annotations
 
 import copy
+import tomllib
 from pathlib import Path
 from typing import Any
 
 import pytest
 from jsonschema import Draft7Validator
-
-# Match the project-wide pattern (tests/conftest.py:21-25) — `tomllib`
-# is stdlib only in Python 3.11+, but the project supports 3.10.
-try:
-    import tomllib as tomli
-except ImportError:
-    import tomli  # type: ignore[no-redef]
 
 from poethepoet.exceptions import ConfigValidationError
 from poethepoet.schema import build_schema
@@ -313,7 +307,7 @@ def _load_seed(name: str) -> dict:
     """Load and return the [tool.poe] section of a seed TOML file."""
     path = SEEDS_DIR / f"{name}.toml"
     with path.open("rb") as fh:
-        data = tomli.load(fh)
+        data = tomllib.load(fh)
     return data.get("tool", {}).get("poe", {})
 
 
