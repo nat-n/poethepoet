@@ -48,10 +48,10 @@ poe = "poethepoet:main"
 
 
 [tool.poetry.group.ci.dependencies]
-mypy                 = "^1.18.2"
-rstcheck             = { version = "^6.2.4", python = "<4" }
-ruff                 = "^0.14.5"
-types-pyyaml         = "^6.0.12.20250915"
+mypy                 = "^2.4.0"
+rstcheck             = { version = "^6.3.0", python = "<4" }
+ruff                 = "^0.17.1"
+types-pyyaml         = "^6.0.12.20260906"
 
 [tool.poetry.group.test.dependencies]
 jsonschema           = "^4.0"
@@ -59,15 +59,16 @@ poe_test_helpers     = { path = "./tests/fixtures/packages/poe_test_helpers" }
 pytest               = "^9.0.1"
 pytest-asyncio       = "^1.3.0"
 pytest-cov           = "^7.0.0"
-pytest-rerunfailures = "^16.1"
-virtualenv           = "^20.35.4"
+pytest-rerunfailures = "^16.7"
+virtualenv           = "^21.14.7"
 
+# Sphinx 9 requires python >=3.12, so the docs toolchain is only installable there
 [tool.poetry.group.docs.dependencies]
-furo                = "^2023.3.27"
-livereload          = "^2.6.3"
-sphinx              = "^7.4.7"
-sphinx-copybutton   = "^0.5.1"
-sphinxext-opengraph = "^0.9.0"
+furo                = { version = "^2025.12.19", python = ">=3.12" }
+livereload          = { version = "^2.6.3", python = ">=3.12" }
+sphinx              = { version = "^9.1.0", python = ">=3.12" }
+sphinx-copybutton   = { version = "^0.5.1", python = ">=3.12" }
+sphinxext-opengraph = { version = "^0.13.0", python = ">=3.12" }
 
 [tool.poe.tasks]
 _clean_docs.script = "shutil:rmtree('docs/_build', ignore_errors=1)"
@@ -257,6 +258,10 @@ markers = [
   "schema: schema validation tests (slow; require jsonschema; auto-applied to parity tests in tests/schema/)",
 ]
 
+
+[tool.ruff.format]
+# Code samples in markdown docs are formatted for readability, not by ruff
+exclude = ["*.md"]
 
 [tool.ruff.lint]
 select  = [
