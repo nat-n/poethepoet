@@ -59,7 +59,15 @@ def mock_uv_path(tmp_path, is_windows):
 
 
 @pytest.fixture
-def uv_cache_env(tmp_path):
+def uv_test_env(tmp_path, monkeypatch):
+    """
+    Isolate uv from the developer's uv settings, which can make it print warnings or
+    behave differently, and give it a fresh cache.
+    """
+    for var_name in list(os.environ):
+        if var_name.startswith("UV_"):
+            monkeypatch.delenv(var_name)
+
     xdg_cache = tmp_path / "xdg_cache"
     uv_cache = tmp_path / "uv_cache"
     xdg_cache.mkdir(parents=True, exist_ok=True)
@@ -73,8 +81,8 @@ def uv_cache_env(tmp_path):
 @pytest.mark.skipif(
     not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
 )
-def test_uv_package_script_task(run_poe_subproc, projects, uv_cache_env):
-    result = run_poe_subproc("-q", "script-task", project="uv", env=uv_cache_env)
+def test_uv_package_script_task(run_poe_subproc, projects, uv_test_env):
+    result = run_poe_subproc("-q", "script-task", project="uv", env=uv_test_env)
 
     assert result.capture == ""
     assert result.stderr == ""
@@ -84,8 +92,8 @@ def test_uv_package_script_task(run_poe_subproc, projects, uv_cache_env):
 @pytest.mark.skipif(
     not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
 )
-def test_uv_executor_env(run_poe_subproc, projects, is_windows, uv_cache_env):
-    result = run_poe_subproc("show-env", project="uv", env=uv_cache_env)
+def test_uv_executor_env(run_poe_subproc, projects, is_windows, uv_test_env):
+    result = run_poe_subproc("show-env", project="uv", env=uv_test_env)
 
     assert result.capture == "Poe => poe_test_env\n"
     assert result.stderr == ""
@@ -101,17 +109,17 @@ def test_uv_executor_env(run_poe_subproc, projects, is_windows, uv_cache_env):
     not UV_INTEGRATION_AVAILABLE, reason="No uv available or network blocked"
 )
 def test_uv_executor_task_with_cwd(
-    run_poe_subproc, projects, poe_project_path, is_windows, uv_cache_env
+    run_poe_subproc, projects, poe_project_path, is_windows, uv_test_env
 ):
     if is_windows:
         subproject_path = f"{projects['uv']}\\subproject"
         result = run_poe_subproc(
-            "-C", subproject_path, "test-cwd", "..\\..", env=uv_cache_env
+            "-C", subproject_path, "test-cwd", "..\\..", env=uv_test_env
         )
     else:
         subproject_path = f"{projects['uv']}/subproject"
         result = run_poe_subproc(
-            "-C", subproject_path, "test-cwd", "../..", env=uv_cache_env
+            "-C", subproject_path, "test-cwd", "../..", env=uv_test_env
         )
 
     assert result.capture == (
