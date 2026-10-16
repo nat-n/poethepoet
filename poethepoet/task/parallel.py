@@ -260,15 +260,13 @@ class ParallelTask(PoeTask):
 
             await task_state.finalize()
 
-            # The failure handler is only created once all subtasks have been added,
+            # The failure handler only starts once all subtasks have been added,
             # because it only receives events from children present when it starts.
-            first_error: Exception | None = None
+            # It runs in the body of the task group rather than as a task in it, so
+            # that a subtask failure doesn't cut the output task short.
+            failure: Exception | None = None
             try:
                 async with asyncio.TaskGroup() as task_group:
-                    task_group.create_task(
-                        self._handle_task_failures(context, task_state),
-                        name="handle_task_failures:" + self.name,
-                    )
                     if streaming_enabled:
                         # Only collect outputs if output streaming wasn't already
                         # enabled. This avoids double output collection in nested
@@ -277,20 +275,29 @@ class ParallelTask(PoeTask):
                             self._collect_output_streams(task_state, task_group),
                             name="collect_output_streams:" + self.name,
                         )
+                    failure = await self._handle_task_failures(context, task_state)
             except ExceptionGroup as group:
-                # Surface the first failure as is rather than wrapped in the group
-                first_error = group.exceptions[0]
+                # A subtask failure takes precedence over an error collecting output,
+                # and either is surfaced as is rather than wrapped in the group
+                failure = failure or group.exceptions[0]
 
-            if first_error is not None:
+            if failure is not None:
                 self.ctx.io.print_debug(
                     " x Killing parallel task %r due to error: %r",
                     self.name,
-                    first_error,
+                    failure,
                 )
                 # Raised outside the except block so the group isn't chained to it
-                raise first_error
+                raise failure
 
-    async def _handle_task_failures(self, context: RunContext, task_state: PoeTaskRun):
+    async def _handle_task_failures(
+        self, context: RunContext, task_state: PoeTaskRun
+    ) -> ExecutionError | None:
+        """
+        Report subtasks that fail, and return the error that the parallel task should
+        fail with, if any. Unless failures are ignored, the remaining subtasks are
+        stopped as soon as one fails.
+        """
         ignore_fail = self.spec.options.ignore_fail
         non_zero_subtasks = []
         # listen for completion and error events from subtasks
@@ -312,7 +319,10 @@ class ParallelTask(PoeTask):
 
                 if not ignore_fail:
                     task_state.force_failure()
-                    raise ExecutionError(
+                    # Stop the subtasks, but not this task, which is the one running
+                    # this, so it can wait for their output before failing
+                    await task_state.kill()
+                    return ExecutionError(
                         f"Parallel task {self.name!r} aborted after failed subtask "
                         f"{event.name!r}"
                     )
@@ -321,10 +331,11 @@ class ParallelTask(PoeTask):
         if non_zero_subtasks and ignore_fail == "return_non_zero":
             task_state.force_failure()
             plural = "s" if len(non_zero_subtasks) > 1 else ""
-            raise ExecutionError(
+            return ExecutionError(
                 f"Subtask{plural} {', '.join(repr(st) for st in non_zero_subtasks)} "
                 "returned non-zero exit status"
             )
+        return None
 
     async def _collect_output_streams(
         self, task_state: PoeTaskRun, task_group: asyncio.TaskGroup
@@ -372,7 +383,7 @@ class ParallelTask(PoeTask):
             buffered_lines: list[bytes] = []
             buffered_size = 0
             try:
-                async for line in self._iter_output_lines(subproc.stdout, task_name):
+                async for line in self._iter_output_lines(subproc, task_name):
                     buffered_lines.append(line)
                     buffered_size += len(line)
                     if buffered_size >= BUFFERED_STDOUT_LIMIT:
@@ -384,17 +395,17 @@ class ParallelTask(PoeTask):
             return
 
         if prefix:
-            async for line in self._iter_output_lines(subproc.stdout, task_name):
+            async for line in self._iter_output_lines(subproc, task_name):
                 write(prefix)
                 write(line)
                 flush()
         else:
-            async for line in self._iter_output_lines(subproc.stdout, task_name):
+            async for line in self._iter_output_lines(subproc, task_name):
                 write(line)
                 flush()
 
     async def _iter_output_lines(
-        self, stdout: asyncio.StreamReader, subtask_name: str
+        self, subproc: PoeProcess, subtask_name: str
     ) -> AsyncIterator[bytes]:
         """
         Yield subtask stdout one line at a time. A complete line is emitted whole; a
@@ -406,7 +417,7 @@ class ParallelTask(PoeTask):
         buffered_output = bytearray()
         cursor = 0
         wrapping_line = False
-        while chunk := await stdout.read(128 * 1024):
+        async for chunk in subproc.read_output(128 * 1024):
             if cursor:
                 del buffered_output[:cursor]
                 cursor = 0
