@@ -116,8 +116,8 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
 
 ## Commit messages
 
-PRs are squash-merged. Write PR titles and suggested squash commit messages in
-this style:
+PRs are squash-merged, so only PR titles and squash commit messages need to
+follow this style. Commits on a PR branch can be more verbose.
 
 - **Subject**: Conventional Commits, `type: summary` (`feat`, `fix`, `refactor`,
   `chore`, `docs`, `test`), with an optional scope like `fix(cmd):` and `!` for
