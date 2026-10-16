@@ -114,6 +114,45 @@ Tests use fixture projects in `tests/fixtures/*_project/`. The `run_poe` fixture
 - Branch from `development` for features/bugfixes
 - Branch from `main` only for docs or hotfixes
 
+## Commit messages
+
+PRs are squash-merged. Write PR titles and suggested squash commit messages in
+this style:
+
+- **Subject**: Conventional Commits, `type: summary` (`feat`, `fix`, `refactor`,
+  `chore`, `docs`, `test`), with an optional scope like `fix(cmd):` and `!` for
+  breaking changes (`feat!:`). Lowercase after the colon, imperative, describing
+  the user-facing change rather than the implementation, no trailing period. At
+  most 72 characters including the ` (#N)` that GitHub appends.
+- **Body**: hard-wrapped at 72 columns.
+  - Open with 1–3 sentences of plain prose on the main change. For a breaking
+    change, say what changed and how to get the old behaviour back.
+  - Side changes go in a single `Also ...` sentence, or under `Also:` as terse
+    `-` bullets (lowercase start, no trailing full stops).
+  - End with issue references like `fixes #123`, and keep `Co-authored-by:`
+    trailers for human contributors.
+  - A longer explanation can go at the bottom, but only when something is
+    really worth explaining. Usually nothing is.
+- **Leave out**: markdown headings, Why/What/Testing sections, file lists, test
+  results, commands run, and the story of how a bug was found.
+
+Example:
+
+```
+test: clean up .venv redirect files and isolate uv tests (#433)
+
+virtualenv>=21 writes a PEP 832 .venv redirect file next to new
+environments in folders with a pyproject.toml, so the use_virtualenv
+fixture left untracked .venv files in the simple_project and
+venv_project fixtures. The fixture now removes them on teardown.
+
+Also:
+- unset ambient UV_* env vars in uv executor tests, so warnings from
+  local uv config (e.g. the deprecated UV_NATIVE_TLS) don't break
+  stderr assertions
+- rename the uv_cache_env fixture to uv_test_env
+```
+
 ## Development process
 
 - The user docs are in the repo and good source of context on how the product is meant to work.
