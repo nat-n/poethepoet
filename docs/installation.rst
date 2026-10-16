@@ -228,7 +228,7 @@ You can also install the skill directly from github, such as by using |vercel_sk
 Supported python versions
 -------------------------
 
-Poe the Poet officially supports python >=3.10, and is tested with python 3.10 to 3.14 on
+Poe the Poet officially supports python >=3.11, and is tested with python 3.11 to 3.15 on
 macOS, linux and windows.
 
 

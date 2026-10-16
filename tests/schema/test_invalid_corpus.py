@@ -16,6 +16,7 @@ caught by ``PoeOptions.parse`` and task-level errors caught by
 from __future__ import annotations
 
 import asyncio
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -24,13 +25,6 @@ from jsonschema import Draft7Validator
 from poethepoet.app import PoeThePoet
 from poethepoet.exceptions import ConfigValidationError
 from poethepoet.schema import build_schema
-
-# Match the project-wide pattern (tests/conftest.py:21-25) — `tomllib`
-# is stdlib only in Python 3.11+, but the project supports 3.10.
-try:
-    import tomllib as tomli
-except ImportError:
-    import tomli  # type: ignore[no-redef]
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 INVALID_DIR = REPO_ROOT / "tests" / "schema" / "fixtures" / "invalid"
@@ -98,7 +92,7 @@ def test_invalid_fixture_rejected_by_both_validators(
     Both runtime and schema must reject the fixture's [tool.poe] block.
     """
     raw = fixture_path.read_bytes()
-    data = tomli.loads(raw.decode())
+    data = tomllib.loads(raw.decode())
     poe_config = data.get("tool", {}).get("poe", data)
 
     # 1. Runtime rejects with the expected error substring — via the same

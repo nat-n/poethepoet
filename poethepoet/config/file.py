@@ -127,12 +127,9 @@ class PoeConfigFile:
 
                     return yaml.safe_load(file)
 
-                try:
-                    import tomllib as tomli
-                except ImportError:
-                    import tomli  # type: ignore[no-redef]
+                import tomllib
 
-                return tomli.load(file)
+                return tomllib.load(file)
 
         except OSError as error:
             raise ConfigValidationError(

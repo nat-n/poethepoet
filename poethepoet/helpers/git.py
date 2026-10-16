@@ -38,7 +38,7 @@ class GitRepo:
             captured_lines = (
                 line.strip() for line in captured_stdout.decode().strip().split("\n")
             )
-            longest_line = sorted((len(line), line) for line in captured_lines)[-1][1]
+            longest_line = max((len(line), line) for line in captured_lines)[1]
             return Path(longest_line)
         return None
 

@@ -6,17 +6,11 @@ of the test suite); the schema must too.
 
 from __future__ import annotations
 
+import tomllib
 from pathlib import Path
 
 import pytest
 from jsonschema import Draft7Validator
-
-# Match the project-wide pattern (tests/conftest.py:21-25) — `tomllib`
-# is stdlib only in Python 3.11+, but the project supports 3.10.
-try:
-    import tomllib as tomli
-except ImportError:
-    import tomli  # type: ignore[no-redef]
 
 from poethepoet.schema import build_schema
 
@@ -100,7 +94,7 @@ def test_fixture_config_validates(
     validate against the schema.
     """
     raw = config_path.read_bytes()
-    data = tomli.loads(raw.decode())
+    data = tomllib.loads(raw.decode())
 
     # Extract the poe-config part.
     if config_path.name == "pyproject.toml":

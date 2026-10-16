@@ -62,7 +62,7 @@ def immortal_echo():
         try:
             print(" ".join(content), flush=True)
             time.sleep(timeout)
-        except KeyboardInterrupt:  # noqa: PERF203
+        except KeyboardInterrupt:
             signal_count += 1
 
 

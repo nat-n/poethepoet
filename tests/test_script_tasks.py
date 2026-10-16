@@ -1,4 +1,5 @@
 import difflib
+import sys
 
 import pytest
 
@@ -71,7 +72,9 @@ def test_script_task_with_cli_args(run_poe, is_windows):
         )
         if li[0] != " "
     ]
-    if is_windows:
+    if is_windows and not sys.flags.utf8_mode:
+        # Without UTF-8 mode (the default before python 3.15) the windows console
+        # encoding can't represent the emoji
         assert result.stdout == "hello nat \\U0001f44b None\n"
     else:
         assert result.stdout == "hello nat 👋 None\n"
@@ -93,7 +96,7 @@ def test_script_task_with_args_optional(run_poe, projects, is_windows):
         f"--optional 'welcome to {named_args_project_path}'\n"
     )
 
-    if is_windows:
+    if is_windows and not sys.flags.utf8_mode:
         assert (
             result.stdout
             == f"hello nat \\U0001f44b welcome to {named_args_project_path}\n"

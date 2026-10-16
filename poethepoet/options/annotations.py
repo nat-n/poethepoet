@@ -16,7 +16,7 @@ from typing import (
 )
 
 T = TypeVar("T", bound=Any)
-_registered_type_hint_globals = {}
+_registered_type_hint_globals: dict[str, Any] = {}
 
 
 def option_annotation(cls: T) -> T:
