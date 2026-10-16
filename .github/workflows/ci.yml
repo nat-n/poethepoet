@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install uv for use in tests
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           cache-suffix: ${{ matrix.os }}-${{ matrix.python-version }}
 
