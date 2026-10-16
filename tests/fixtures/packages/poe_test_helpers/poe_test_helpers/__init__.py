@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import time
 
@@ -91,3 +92,46 @@ def fail():
     return_code = sys.argv[2] if len(sys.argv) > 2 else "1"
     time.sleep(int(delay) / 1000)
     sys.exit(int(return_code))
+
+
+def hold_output():
+    """
+    Print a line and exit, leaving a detached process that holds stdout open, like a
+    daemon that escaped its parent's process group.
+
+    Usage: hold_output pid_file hold_ms [tick_ms]
+
+    The detached process writes its pid to pid_file and holds stdout open for hold_ms,
+    printing a line every tick_ms if given.
+    """
+    pid_file, hold_ms = sys.argv[1], sys.argv[2]
+    tick_ms = sys.argv[3] if len(sys.argv) > 3 else "0"
+    detach: dict = (
+        {
+            "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP
+            | subprocess.DETACHED_PROCESS
+        }
+        if sys.platform == "win32"
+        else {"start_new_session": True}
+    )
+    holder = subprocess.Popen(
+        [sys.executable, "-c", _HOLDER_CODE, hold_ms, tick_ms],
+        stdin=subprocess.DEVNULL,
+        stdout=sys.stdout,
+        stderr=subprocess.DEVNULL,
+        **detach,
+    )
+    with open(pid_file, "w") as pid_file_handle:
+        pid_file_handle.write(str(holder.pid))
+    print("started", flush=True)
+
+
+_HOLDER_CODE = """
+import sys, time
+hold_ms, tick_ms = int(sys.argv[1]), int(sys.argv[2])
+deadline = time.monotonic() + hold_ms / 1000
+while time.monotonic() < deadline:
+    if tick_ms:
+        print("tick", flush=True)
+    time.sleep((tick_ms or hold_ms) / 1000)
+"""
