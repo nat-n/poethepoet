@@ -506,6 +506,10 @@ def use_virtualenv(install_into_virtualenv):
             f"Test requires no directory already exists at {location}, "
             "maybe try delete it (via `poe clean`) and try again"
         )
+        # virtualenv>=21 writes a PEP 832 .venv redirect file beside a new
+        # environment if the parent folder has a pyproject.toml and no .venv yet
+        redirect_path = location.parent / ".venv"
+        redirect_did_exist = redirect_path.exists() or redirect_path.is_symlink()
 
         try:
             # create new virtualenv
@@ -520,6 +524,8 @@ def use_virtualenv(install_into_virtualenv):
             # dangerous
             if not did_exist:
                 try_rm_dir(location)
+            if not redirect_did_exist and redirect_path.is_file():
+                redirect_path.unlink()
 
     return use_virtualenv
 
