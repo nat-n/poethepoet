@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from ..executor.task_run import PoeTaskRun, PoeTaskRunError
-from ..helpers.eventloop import DynamicTaskSet
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
-    import asyncio
     from collections.abc import AsyncIterator, Callable, Sequence
 
     from ..config import ConfigPartition, PoeConfig
@@ -244,12 +243,6 @@ class ParallelTask(PoeTask):
         if ignore_fail in (True, "return_zero"):
             task_state.ignore_failure()
 
-        task_group = DynamicTaskSet()
-        task_group.create_task(
-            self._handle_task_failures(task_state),
-            name="handle_task_failures:" + self.name,
-        )
-
         with context.output_streaming(enabled=True) as streaming_enabled:
             for subtask in self._subtasks:
                 subtask_run: PoeTaskRun | None = None
@@ -267,23 +260,35 @@ class ParallelTask(PoeTask):
 
             await task_state.finalize()
 
-            if streaming_enabled:
-                # Only collect outputs if output streaming wasn't already enabled
-                # This avoids double output collection in nested parallel tasks
-                task_group.create_task(
-                    self._collect_output_streams(task_state, task_group),
-                    name="collect_output_streams:" + self.name,
-                )
-
+            # The failure handler is only created once all subtasks have been added,
+            # because it only receives events from children present when it starts.
+            first_error: Exception | None = None
             try:
-                await task_group.wait()
-                if exception := task_group.exception():
-                    raise exception
-            except Exception as error:
+                async with asyncio.TaskGroup() as task_group:
+                    task_group.create_task(
+                        self._handle_task_failures(task_state),
+                        name="handle_task_failures:" + self.name,
+                    )
+                    if streaming_enabled:
+                        # Only collect outputs if output streaming wasn't already
+                        # enabled. This avoids double output collection in nested
+                        # parallel tasks
+                        task_group.create_task(
+                            self._collect_output_streams(task_state, task_group),
+                            name="collect_output_streams:" + self.name,
+                        )
+            except ExceptionGroup as group:
+                # Surface the first failure as is rather than wrapped in the group
+                first_error = group.exceptions[0]
+
+            if first_error is not None:
                 self.ctx.io.print_debug(
-                    " x Killing parallel task %r due to error: %r", self.name, error
+                    " x Killing parallel task %r due to error: %r",
+                    self.name,
+                    first_error,
                 )
-                raise
+                # Raised outside the except block so the group isn't chained to it
+                raise first_error
 
     async def _handle_task_failures(self, task_state: PoeTaskRun):
         ignore_fail = self.spec.options.ignore_fail
@@ -322,7 +327,7 @@ class ParallelTask(PoeTask):
             )
 
     async def _collect_output_streams(
-        self, task_state: PoeTaskRun, task_group: DynamicTaskSet
+        self, task_state: PoeTaskRun, task_group: asyncio.TaskGroup
     ):
         async for task_run, subproc in task_state.processes():
             subtask_index = task_state.get_child_index(task_run)
