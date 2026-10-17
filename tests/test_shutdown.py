@@ -1,9 +1,11 @@
 import asyncio
+import gc
 import os
 import signal
 import subprocess
 import sys
 import time
+import weakref
 from typing import Any, cast
 
 import pytest
@@ -168,6 +170,28 @@ def test_shutdown_escalates_until_process_groups_exit(
 
     assert process.stop_requests == ["interrupt", "interrupt", "terminate"]
     assert not shutdown_manager.processes
+
+
+def test_shutdown_keeps_track_of_processes_it_has_signalled(
+    shutdown_manager, fake_poe_process
+):
+    # e.g. once the task run that started a process has been garbage collected, which
+    # would otherwise drop it from the weakly held processes while its group runs on
+    process = fake_poe_process(stops_on="interrupt", group_stops_on="terminate")
+    shutdown_manager.processes.add(process)
+    shutdown_manager._urgency = 1
+    shutdown_manager._shutdown()
+    process_ref = weakref.ref(process)
+    del process
+    gc.collect()
+
+    assert (process := process_ref()) is not None
+    for urgency in range(2, 4):
+        shutdown_manager._urgency = urgency
+        shutdown_manager._shutdown()
+    assert process.stop_requests == ["interrupt", "interrupt", "terminate"]
+    shutdown_manager._shutdown()
+    assert not shutdown_manager._tracked_processes()
 
 
 @pytest.fixture
@@ -367,7 +391,7 @@ def _background_job_ignoring_interrupts(pid_file):
         "import os, signal, time; signal.signal(signal.SIGINT, signal.SIG_IGN); "
         f"open('{pid_file}', 'w').write(str(os.getpid())); time.sleep(30)"
     )
-    return f'"{python}" -c "{code}" > /dev/null &'
+    return f'"{python}" -c "{code}" > /dev/null 2>&1 &'
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
@@ -395,16 +419,23 @@ def test_parallel_abort_stops_background_jobs_that_ignore_interrupts(
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+@pytest.mark.parametrize("deps", ["", 'deps = ["noop"]'])
 def test_interrupt_stops_background_jobs_that_ignore_interrupts(
-    run_poe_subproc_handle, temp_pyproject, tmp_path
+    run_poe_subproc_handle, temp_pyproject, tmp_path, deps
 ):
+    # With deps, the task runs as the last stage of a task graph, whose own run ends
+    # before poe waits for what is left in its process group
     pid_file = tmp_path / "background.pid"
     project_path = temp_pyproject(f"""
+        [tool.poe.tasks.noop]
+        cmd = "poe_test_echo noop"
+
         [tool.poe.tasks.task]
         shell = '''
         {_background_job_ignoring_interrupts(pid_file)}
         wait
         '''
+        {deps}
         """)
     poe_handle = _start_task_and_wait_for_pid_file(
         run_poe_subproc_handle, project_path, pid_file

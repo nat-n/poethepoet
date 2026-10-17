@@ -88,6 +88,9 @@ class ShutdownManager:
         self._urgency = 0
         self.tasks: WeakSet[asyncio.Task] = WeakSet()
         self.processes: WeakSet[PoeProcess] = WeakSet()
+        # Processes are only held weakly until they are signalled, after which they're
+        # kept while stopping, even once the task runs that started them are gone
+        self._signalled_processes: set[PoeProcess] = set()
         self._backup_sighup = None
         self._backup_sigint = None
         self._backup_sigterm = None
@@ -115,8 +118,11 @@ class ShutdownManager:
             # The calling task is finishing anyway, so it needn't be cancelled
             self.tasks.discard(current_task)
         # Nothing signals when the rest of a process group exits, so it's polled
-        while any(_needs_stopping(proc) for proc in tuple(self.processes)):  # noqa: ASYNC110
+        while any(_needs_stopping(proc) for proc in self._tracked_processes()):  # noqa: ASYNC110
             await asyncio.sleep(GROUP_POLL_INTERVAL_S)
+
+    def _tracked_processes(self) -> set[PoeProcess]:
+        return {*self.processes, *self._signalled_processes}
 
     def shutdown(self, signum=None, frame=None):
         self._io.print_debug(" ! Termination requested with signal: '%s'", signum or "")
@@ -142,7 +148,7 @@ class ShutdownManager:
         """
         Call shutdown again every interval_s seconds until everything is dead
         """
-        while self.processes or self.tasks:
+        while self._tracked_processes() or self.tasks:
             self._shutdown()
             await asyncio.sleep(escalation_interval_s)
             self._urgency += 1
@@ -151,13 +157,15 @@ class ShutdownManager:
         self._io.print_debug(
             " ! Shutdown triggered level %s: commencing cleanup", self._urgency
         )
-        for proc in tuple(self.processes):
+        for proc in self._tracked_processes():
             if _needs_stopping(proc):
                 signal_shutdown(proc, self._urgency)
+                self._signalled_processes.add(proc)
             else:
                 self.processes.discard(proc)
+                self._signalled_processes.discard(proc)
 
-        if not self.processes:
+        if not self._tracked_processes():
             self._io.print_debug(" ! Cleaning up tasks")
             # Clean up async tasks if there are no more subprocesses
             for task in tuple(self.tasks):
@@ -170,6 +178,7 @@ class ShutdownManager:
         if self._urgency >= KILL_URGENCY:
             # Stop waiting on subprocesses once they have been killed
             self.processes.clear()
+            self._signalled_processes.clear()
 
     def _propagate_sighup(self, signum=None, frame=None):
         """
