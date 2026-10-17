@@ -135,6 +135,22 @@ async def test_read_output_reads_until_the_output_closes():
 
 
 @pytest.mark.asyncio
+async def test_read_output_reads_everything_written_before_exit_for_a_slow_consumer(
+    monkeypatch,
+):
+    monkeypatch.setattr(executor_base, "OUTPUT_DEADLINE_S", 0.2)
+    process = await _start_process(
+        sys.executable, "-c", "import sys; sys.stdout.write('x' * 300_000)"
+    )
+    received = []
+    async for chunk in process.read_output(16 * 1024):
+        received.append(chunk)
+        # Takes far longer to consume the output than the deadline allows
+        await asyncio.sleep(0.05)
+    assert b"".join(received) == b"x" * 300_000
+
+
+@pytest.mark.asyncio
 async def test_wait_returns_when_the_process_exits_while_its_output_is_held_open(
     output_holder_pid_file,
 ):

@@ -122,7 +122,12 @@ class PoeProcess:
                 if not (chunk := read_task.result()):
                     return
                 read_task = None
+                yielded_at = loop.time()
                 yield chunk
+                if deadline is not None:
+                    # The deadline only limits waiting for output, so time spent by
+                    # the consumer, e.g. writing to a slow terminal, doesn't count
+                    deadline += loop.time() - yielded_at
         finally:
             exit_task.cancel()
             if read_task:
