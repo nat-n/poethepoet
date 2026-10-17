@@ -10,7 +10,7 @@ import time
 import tomllib
 import venv
 from collections.abc import Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from io import StringIO
 from pathlib import Path
 from subprocess import PIPE, Popen, TimeoutExpired
@@ -560,6 +560,20 @@ def temp_pyproject(tmp_path):
         return tmp_path
 
     return generator
+
+
+@pytest.fixture
+def output_holder_pid_file(tmp_path):
+    """
+    Return a path for poe_test_hold_output to record the detached process it leaves
+    holding output open, which is killed after the test if it's still running.
+    """
+    pid_file = tmp_path / "output_holder.pid"
+    yield pid_file
+    # The holder removes its pid file as it exits, which may be while this reads it
+    with suppress(OSError):
+        if pid := pid_file.read_text().strip():
+            os.kill(int(pid), getattr(signal, "SIGKILL", signal.SIGTERM))
 
 
 class FakeSubprocess:

@@ -1135,3 +1135,133 @@ def test_parallel_failure_handler_sees_subtasks_that_yield_while_starting(
             f"{format_parallel_prefix('para[0]')}first",
             f"{format_parallel_prefix('para[1]')}second",
         }
+
+
+@pytest.mark.parametrize(
+    ("ignore_fail", "subtasks", "expected_code", "expected_output"),
+    [
+        (
+            "false",
+            '"fail_with_output", { cmd = "poe_test_delayed_echo 5000 slow" }',
+            3,
+            [
+                "fail_with_output | one",
+                "fail_with_output | two",
+                "fail_with_output | three",
+            ],
+        ),
+        (
+            '"return_non_zero"',
+            '{ cmd = "poe_test_fail 0 3" }, { cmd = "poe_test_echo_lines one two three" }',
+            3,
+            ["failing[1] | one", "failing[1] | two", "failing[1] | three"],
+        ),
+    ],
+)
+def test_parallel_failure_waits_for_subtask_output(
+    run_poe,
+    temp_pyproject,
+    monkeypatch,
+    ignore_fail,
+    subtasks,
+    expected_code,
+    expected_output,
+):
+    """
+    A subtask failure doesn't cut short output that subtasks have already produced,
+    even when writing it out lags behind.
+    """
+    import asyncio
+
+    from poethepoet.task.parallel import ParallelTask
+
+    original_iter_output_lines = ParallelTask._iter_output_lines
+
+    async def lagging_iter_output_lines(self, *args, **kwargs):
+        async for line in original_iter_output_lines(self, *args, **kwargs):
+            await asyncio.sleep(0.05)
+            yield line
+
+    monkeypatch.setattr(ParallelTask, "_iter_output_lines", lagging_iter_output_lines)
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.fail_with_output]
+        interpreter = "python"
+        shell = "import sys; print('one\\\\ntwo\\\\nthree'); sys.exit(3)"
+
+        [tool.poe.tasks.failing]
+        parallel = [{subtasks}]
+        ignore_fail = {ignore_fail}
+        """
+    )
+
+    result = run_poe("failing", cwd=project_path)
+
+    assert result.code == expected_code, result.capture
+    assert result.output_lines == expected_output
+
+
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+@pytest.mark.parametrize("fail", [False, True])
+def test_parallel_does_not_wait_for_output_held_open_by_a_detached_process(
+    run_poe_subproc, temp_pyproject, output_holder_pid_file, fail
+):
+    """
+    A process that a subtask started outside its process group can hold the subtask's
+    output open after it exits, which poe stops waiting on once the output goes quiet.
+    """
+    import time
+
+    pid_file = str(output_holder_pid_file).replace("\\", "/")
+    sibling = "poe_test_fail 500 3" if fail else "poe_test_echo other"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.held]
+        parallel = [
+          {{ cmd = "poe_test_hold_output {pid_file} 30000" }},
+          {{ cmd = "{sibling}" }},
+        ]
+        """)
+
+    start_time = time.monotonic()
+    result = run_poe_subproc("held", cwd=project_path, timeout=60)
+
+    # Far less than the detached process holds the output open for
+    assert time.monotonic() - start_time < 20
+    assert result.code == (3 if fail else 0)
+    assert "held[0] | started" in result.output_lines
+
+
+def test_parallel_task_exits_quietly_when_its_output_is_closed(
+    run_poe_subproc_handle, temp_pyproject
+):
+    """
+    When whatever is reading poe's output stops, e.g. head, poe stops the subtasks
+    and exits as if killed by SIGPIPE, rather than crashing or hanging.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.chatty]
+        parallel = [
+          { interpreter = "python", shell = '''
+        import os
+        try:
+            while True:
+                print("chat", flush=True)
+        except BaseException:
+            os._exit(1)
+        ''' },
+        ]
+        """)
+
+    handle = run_poe_subproc_handle("chatty", cwd=str(project_path))
+    try:
+        assert handle.process.stdout.readline().rstrip() == b"chatty[0] | chat"
+        handle.process.stdout.close()
+        exit_code = handle.process.wait(timeout=30)
+    finally:
+        if handle.process.poll() is None:
+            handle.process.kill()
+    stderr = handle.process.stderr.read().decode()
+
+    assert exit_code == 141
+    assert "Error" not in stderr
+    assert "Exception ignored" not in stderr

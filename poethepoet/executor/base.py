@@ -15,11 +15,18 @@ from ..options import PoeOptions
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process
-    from collections.abc import Mapping, MutableMapping, Sequence
+    from collections.abc import AsyncIterator, Mapping, MutableMapping, Sequence
 
     from ..context import ContextProtocol
     from ..env.task_env import TaskEnv
     from ..io import PoeIO
+
+# Once a subprocess has exited, processes it started may still hold its output open,
+# so reading its output stops when it goes quiet for OUTPUT_IDLE_TIMEOUT_S, or at the
+# latest OUTPUT_DEADLINE_S after the subprocess exited
+OUTPUT_IDLE_TIMEOUT_S = 0.25
+OUTPUT_DEADLINE_S = 2.5
+EXIT_POLL_INTERVAL_S = 0.05
 
 
 class PoeProcess:
@@ -61,7 +68,78 @@ class PoeProcess:
         return self._process.stdin
 
     async def wait(self) -> int:
-        return await self._process.wait()
+        """
+        Wait for the subprocess to exit and return its return code, without waiting
+        for any processes it started that may still hold its output open.
+        """
+        if sys.version_info >= (3, 13):
+            return await self._process.wait()
+
+        # Before python 3.13, wait() also waits for the subprocess's pipes to close
+        # (see gh-119710), so watch for the return code being set on exit as well
+        wait_task = asyncio.ensure_future(self._process.wait())
+        try:
+            while (returncode := self._process.returncode) is None:
+                await asyncio.wait([wait_task], timeout=EXIT_POLL_INTERVAL_S)
+            return returncode
+        finally:
+            wait_task.cancel()
+
+    async def read_output(self, chunk_size: int = 2**16) -> AsyncIterator[bytes]:
+        """
+        Yield chunks of the subprocess's stdout until it closes, or until it goes
+        quiet or reaches the deadline once the subprocess has exited.
+        """
+        if (stdout := self._process.stdout) is None:
+            return
+
+        loop = asyncio.get_running_loop()
+        exit_task: asyncio.Future[Any] = asyncio.ensure_future(self.wait())
+        read_task: asyncio.Future[bytes] | None = None
+        deadline: float | None = None
+        try:
+            while True:
+                # Only one read can be pending at a time, so it's kept across waits
+                read_task = read_task or asyncio.ensure_future(stdout.read(chunk_size))
+                if deadline is None and exit_task.done():
+                    deadline = loop.time() + OUTPUT_DEADLINE_S
+
+                if deadline is None:
+                    await asyncio.wait(
+                        [read_task, exit_task], return_when=asyncio.FIRST_COMPLETED
+                    )
+                elif (remaining_s := deadline - loop.time()) > 0:
+                    await asyncio.wait(
+                        [read_task], timeout=min(OUTPUT_IDLE_TIMEOUT_S, remaining_s)
+                    )
+
+                if not read_task.done():
+                    if deadline is None:
+                        continue  # The subprocess exited, so start the deadline
+                    # Quiet for too long, or out of time, since it exited
+                    self._close_pipes()
+                    return
+                if not (chunk := read_task.result()):
+                    return
+                read_task = None
+                yielded_at = loop.time()
+                yield chunk
+                if deadline is not None:
+                    # The deadline only limits waiting for output, so time spent by
+                    # the consumer, e.g. writing to a slow terminal, doesn't count
+                    deadline += loop.time() - yielded_at
+        finally:
+            exit_task.cancel()
+            if read_task:
+                read_task.cancel()
+
+    def _close_pipes(self) -> None:
+        """
+        Close the pipes of an exited subprocess that are still held open by other
+        processes, rather than leave asyncio to close them once its loop has closed.
+        """
+        if transport := getattr(self._process, "_transport", None):
+            transport.close()
 
     def interrupt(self) -> None:
         """
@@ -416,14 +494,16 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             #       from cleaning it up too early
             asyncio.create_task(self._pass_input_to_proc(proc, input))  # noqa: RUF006
 
-        if self.capture_stdout is True:
-            captured_stdout = await proc.stdout.read() if proc.stdout else b""
-            self.context.save_task_output(self.invocation, captured_stdout)
-
         no_console_ctrl = (
             self._is_windows and not shell and cmd[0].lower().endswith((".bat", ".cmd"))
         )
-        return PoeProcess(proc, no_console_ctrl=no_console_ctrl, io=self._io)
+        process = PoeProcess(proc, no_console_ctrl=no_console_ctrl, io=self._io)
+
+        if self.capture_stdout is True:
+            captured_stdout = b"".join([chunk async for chunk in process.read_output()])
+            self.context.save_task_output(self.invocation, captured_stdout)
+
+        return process
 
     async def _pass_input_to_proc(self, proc: Process, input: bytes):
         if not proc.stdin:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 
@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from .io import PoeIO
     from .task.base import PoeTask, TaskSpecFactory
     from .ui import PoeUi
+
+
+# The shell convention for the exit status of a process killed by SIGPIPE
+SIGPIPE_EXIT_STATUS = 128 + 13
 
 
 class PoeThePoet:
@@ -143,6 +147,13 @@ class PoeThePoet:
             return run_async(self._call(internal))
         except asyncio.CancelledError:
             return 1
+        except OSError as error:
+            if not _is_broken_pipe(error):
+                raise
+            # Whatever was reading poe's output has stopped, e.g. head, so exit quietly
+            # as if killed by SIGPIPE, as a task's own process would be
+            _discard_stdout()
+            return SIGPIPE_EXIT_STATUS
 
     async def _call(self, internal: bool = False) -> int:
         should_display_help = self.ui["help"] != Ellipsis
@@ -373,3 +384,31 @@ class PoeThePoet:
         self.ui.print_help(
             tasks=tasks_help, groups=groups_headings, info=info, error=error
         )
+
+
+def _is_broken_pipe(error: OSError) -> bool:
+    """
+    Check whether an error is from writing to a pipe that is no longer read. Windows
+    can report this as EINVAL rather than EPIPE, which errors about a file name, e.g.
+    an invalid one, also use.
+    """
+    import errno
+
+    return isinstance(error, BrokenPipeError) or (
+        sys.platform == "win32"
+        and error.errno == errno.EINVAL
+        and error.filename is None
+    )
+
+
+def _discard_stdout() -> None:
+    """
+    Point stdout at the null device, so that writing to it, including the flush on
+    exit, doesn't fail again once its pipe is broken.
+    """
+    with suppress(OSError, ValueError):
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        try:
+            os.dup2(devnull, sys.stdout.fileno())
+        finally:
+            os.close(devnull)
