@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import re
@@ -13,12 +14,13 @@ from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
 from subprocess import PIPE, Popen, TimeoutExpired
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 import pytest
 import virtualenv
 
 from poethepoet.app import PoeThePoet
+from poethepoet.executor.base import PoeProcess
 from poethepoet.virtualenv import Virtualenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -558,3 +560,81 @@ def temp_pyproject(tmp_path):
         return tmp_path
 
     return generator
+
+
+class FakeSubprocess:
+    """
+    A stand-in for an asyncio subprocess, which has either exited with the given
+    returncode, or runs until told to exit.
+    """
+
+    def __init__(self, returncode: int | None = None):
+        self.pid = 12345
+        self.returncode = returncode
+        self.signals_sent: list[int] = []
+        self._exited = asyncio.Event()
+        if returncode is not None:
+            self._exited.set()
+
+    def exit(self, returncode: int):
+        self.returncode = returncode
+        self._exited.set()
+
+    async def wait(self):
+        await self._exited.wait()
+        return self.returncode
+
+    def send_signal(self, sig: int):
+        self.signals_sent.append(sig)
+
+
+class FakePoeProcess(PoeProcess):
+    """
+    A PoeProcess for a FakeSubprocess, which records requests to stop it instead of
+    sending signals, so that tests can never signal a real process. It exits as if
+    killed by the corresponding signal when it gets the request given as stops_on.
+    """
+
+    exit_codes = {"interrupt": -2, "terminate": -15, "kill": -9}
+
+    def __init__(self, returncode: int | None = None, stops_on: str = "interrupt"):
+        super().__init__(cast("Any", FakeSubprocess(returncode)))
+        self.stop_requests: list[str] = []
+        self._stops_on = stops_on
+
+    def exit(self, returncode: int):
+        self._process.exit(returncode)
+
+    def interrupt(self):
+        self._request_stop("interrupt")
+
+    def terminate(self):
+        self._request_stop("terminate")
+
+    def kill(self):
+        self._request_stop("kill")
+
+    def signal_group(self, sig: int):
+        raise AssertionError("A fake process must not be signalled")
+
+    def _request_stop(self, request: str):
+        self.stop_requests.append(request)
+        if request == self._stops_on:
+            self.exit(self.exit_codes[request])
+
+
+@pytest.fixture
+def fake_subprocess():
+    """
+    Return a function that creates a FakeSubprocess, for wrapping in a real PoeProcess
+    whose OS level calls are patched out.
+    """
+    return FakeSubprocess
+
+
+@pytest.fixture
+def fake_poe_process():
+    """
+    Return a function that creates a FakePoeProcess.
+    """
+    return FakePoeProcess

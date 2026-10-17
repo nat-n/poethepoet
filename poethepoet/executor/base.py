@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 import shutil
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -23,11 +25,24 @@ if TYPE_CHECKING:
 class PoeProcess:
     """
     Wraps asyncio.subprocess.Process with poe-specific metadata for shutdown handling.
+
+    Each subprocess is started in a new process group, so the methods for stopping it
+    act on the whole group, reaching any processes it started in turn.
     """
 
-    def __init__(self, process: Process, *, no_console_ctrl: bool = False):
+    _is_windows: ClassVar[bool] = sys.platform == "win32"
+
+    def __init__(
+        self,
+        process: Process,
+        *,
+        no_console_ctrl: bool = False,
+        io: PoeIO | None = None,
+    ):
         self._process = process
         self.no_console_ctrl = no_console_ctrl
+        self.shutdown_urgency = 0
+        self._io = io
 
     @property
     def pid(self) -> int:
@@ -48,11 +63,69 @@ class PoeProcess:
     async def wait(self) -> int:
         return await self._process.wait()
 
-    def send_signal(self, signal: int) -> None:
-        self._process.send_signal(signal)
+    def interrupt(self) -> None:
+        """
+        Interrupt the process group, as pressing ctrl+c would.
+        """
+        if not self._is_windows:
+            self.signal_group(signal.SIGINT)
+        elif self.no_console_ctrl:
+            # Processes that can't take console ctrl events are force-terminated
+            # instead, to avoid corrupting the console
+            self._taskkill(force=True)
+        else:
+            self._print_debug(
+                " ! Sending CTRL_BREAK_EVENT to subprocess group %s", self.pid
+            )
+            # Delivery can fail, e.g. without a console, in which case escalating to
+            # terminate will stop the process instead
+            with contextlib.suppress(OSError):
+                self._process.send_signal(signal.CTRL_BREAK_EVENT)  # type: ignore[attr-defined]
+
+    def terminate(self) -> None:
+        """
+        Ask the process group to terminate.
+        """
+        if self._is_windows:
+            self._taskkill(force=False)
+        else:
+            self.signal_group(signal.SIGTERM)
 
     def kill(self) -> None:
-        self._process.kill()
+        """
+        Kill the process group.
+        """
+        if self._is_windows:
+            self._taskkill(force=True)
+        else:
+            self.signal_group(signal.SIGKILL)
+
+    def signal_group(self, sig: int) -> None:
+        """
+        Send a POSIX signal to the process group led by this subprocess.
+        """
+        self._print_debug(
+            " ! Sending %s to subprocess group %s", signal.Signals(sig).name, self.pid
+        )
+        # macOS refuses with EPERM, rather than ESRCH, once every process in the group
+        # has exited but not yet been reaped
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.killpg(self.pid, sig)  # type: ignore[attr-defined]
+
+    def _taskkill(self, force: bool) -> None:
+        self._print_debug(
+            " ! %s subprocess tree %s",
+            "Force-terminating" if force else "Terminating",
+            self.pid,
+        )
+        subprocess.run(
+            ["taskkill", *(["/F"] if force else []), "/T", "/PID", str(self.pid)],
+            capture_output=True,
+        )
+
+    def _print_debug(self, message: str, *args: Any) -> None:
+        if self._io:
+            self._io.print_debug(message, *args)
 
 
 class MetaPoeExecutor(type):
@@ -280,7 +353,8 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         if self.dry:
             # A dry run doesn't execute the command, so we just return a dummy process
             return PoeProcess(
-                await asyncio.create_subprocess_exec(sys.executable, "-c", "")
+                await asyncio.create_subprocess_exec(sys.executable, "-c", ""),
+                io=self._io,
             )
         popen_kwargs: MutableMapping[str, Any] = {}
         popen_kwargs["env"] = dict(
@@ -330,7 +404,7 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         no_console_ctrl = (
             self._is_windows and not shell and cmd[0].lower().endswith((".bat", ".cmd"))
         )
-        return PoeProcess(proc, no_console_ctrl=no_console_ctrl)
+        return PoeProcess(proc, no_console_ctrl=no_console_ctrl, io=self._io)
 
     async def _pass_input_to_proc(self, proc: Process, input: bytes):
         if not proc.stdin:

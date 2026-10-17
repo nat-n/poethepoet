@@ -7,9 +7,8 @@ from typing import Any, cast
 
 import pytest
 
-from poethepoet.executor.base import PoeProcess
 from poethepoet.io import PoeIO
-from poethepoet.shutdown import ShutdownManager
+from poethepoet.shutdown import ShutdownManager, signal_shutdown, stop_process
 
 
 def _wait_for_proc_exit(proc, timeout: float = 5.0) -> bool:
@@ -43,74 +42,61 @@ def _pid_exists(pid: int) -> bool:
         return False
 
 
-def test_windows_shutdown_avoids_console_ctrl_for_batch_processes(monkeypatch):
-    ctrl_break_event = getattr(signal, "CTRL_BREAK_EVENT", 1)
-    monkeypatch.setattr(signal, "CTRL_BREAK_EVENT", ctrl_break_event, raising=False)
-
-    class FakeProcess:
-        def __init__(self):
-            self.pid = 12345
-            self.returncode = None
-            self.signal_calls: list[int] = []
-
-        def send_signal(self, sig: int):
-            self.signal_calls.append(sig)
-
-    taskkill_calls: list[list[str]] = []
-
-    def fake_taskkill(cmd: list[str], **_kwargs):
-        taskkill_calls.append(cmd)
-
-    monkeypatch.setattr("subprocess.run", fake_taskkill)
-
+@pytest.fixture
+def shutdown_manager():
     loop = asyncio.new_event_loop()
-    manager = ShutdownManager(loop, PoeIO(make_default=False))
-    manager._is_windows = True
-    fake_proc = FakeProcess()
-    process = PoeProcess(cast("Any", fake_proc), no_console_ctrl=True)
-    manager.processes.add(process)
-
-    manager._urgency = 1
-    manager._shutdown()
-
-    assert fake_proc.signal_calls == []
-    assert taskkill_calls == [["taskkill", "/F", "/T", "/PID", str(process.pid)]]
+    yield ShutdownManager(loop, PoeIO(make_default=False))
     loop.close()
 
 
-def test_windows_shutdown_sends_ctrl_break_for_normal_processes(monkeypatch):
-    ctrl_break_event = getattr(signal, "CTRL_BREAK_EVENT", 1)
-    monkeypatch.setattr(signal, "CTRL_BREAK_EVENT", ctrl_break_event, raising=False)
+def test_shutdown_escalates_from_interrupting_to_terminating_to_killing(
+    shutdown_manager, fake_poe_process
+):
+    process = fake_poe_process(stops_on="never")
+    shutdown_manager.processes.add(process)
 
-    class FakeProcess:
-        def __init__(self):
-            self.pid = 12345
-            self.returncode = None
-            self.signal_calls: list[int] = []
+    for urgency in range(1, 5):
+        shutdown_manager._urgency = urgency
+        shutdown_manager._shutdown()
 
-        def send_signal(self, sig: int):
-            self.signal_calls.append(sig)
+    assert process.stop_requests == ["interrupt", "interrupt", "terminate", "kill"]
+    assert not shutdown_manager.processes
 
-    taskkill_calls: list[list[str]] = []
 
-    def fake_taskkill(cmd: list[str], **_kwargs):
-        taskkill_calls.append(cmd)
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("stops_on", "expected_requests"),
+    [
+        ("interrupt", ["interrupt"]),
+        ("terminate", ["interrupt", "interrupt", "terminate"]),
+        ("kill", ["interrupt", "interrupt", "terminate", "kill"]),
+    ],
+)
+async def test_stop_process_escalates_like_ctrl_c_until_it_exits(
+    fake_poe_process, stops_on, expected_requests
+):
+    process = fake_poe_process(stops_on=stops_on)
+    await stop_process(process, escalation_interval_s=0.01)
+    assert process.stop_requests == expected_requests
+    assert process.returncode is not None
 
-    monkeypatch.setattr("subprocess.run", fake_taskkill)
 
-    loop = asyncio.new_event_loop()
-    manager = ShutdownManager(loop, PoeIO(make_default=False))
-    manager._is_windows = True
-    fake_proc = FakeProcess()
-    process = PoeProcess(cast("Any", fake_proc))
-    manager.processes.add(process)
+@pytest.mark.asyncio
+async def test_stop_process_continues_an_escalation_already_in_progress(
+    fake_poe_process,
+):
+    # e.g. a subtask aborted after ctrl+c was pressed is not sent a second interrupt
+    # straight away, which a process may take as a request to skip a graceful exit
+    process = fake_poe_process(stops_on="terminate")
+    signal_shutdown(process, 1)
+    await stop_process(process, escalation_interval_s=0.01)
+    assert process.stop_requests == ["interrupt", "interrupt", "terminate"]
 
-    manager._urgency = 1
-    manager._shutdown()
 
-    assert fake_proc.signal_calls == [ctrl_break_event]
-    assert taskkill_calls == []
-    loop.close()
+def test_signal_shutdown_skips_processes_that_have_exited(fake_poe_process):
+    process = fake_poe_process(0)
+    signal_shutdown(process, 4)
+    assert process.stop_requests == []
 
 
 @pytest.fixture
@@ -212,3 +198,78 @@ def test_task_killed_by_signal_exits_with_128_plus_signum(run_poe, temp_pyprojec
         """)
     result = run_poe("selfkill", cwd=project_path)
     assert result.code == 128 + signal.SIGTERM
+
+
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_abort_stops_processes_started_by_subtasks(
+    run_poe_subproc, temp_pyproject, tmp_path, delay_factor
+):
+    """
+    Aborting a parallel task also stops processes started by its subtasks, which
+    would otherwise keep running, holding the subtask's output open so that poe waits
+    for them to exit.
+    """
+    pid_file = tmp_path / "grandchild.pid"
+    # Use forward slashes for Windows compatibility in the command string
+    pid_file_str = str(pid_file).replace("\\", "/")
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.spawner]
+        interpreter = "python"
+        shell = '''
+        import subprocess, sys, time
+        grandchild = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(60)"]
+        )
+        with open("{pid_file_str}", "w") as pid_file:
+            pid_file.write(str(grandchild.pid))
+        print("started", flush=True)
+        time.sleep(60)
+        '''
+
+        [tool.poe.tasks.aborted]
+        parallel = ["spawner", {{ cmd = "poe_test_fail {1000 * delay_factor} 3" }}]
+        """)
+
+    start_time = time.monotonic()
+    result = run_poe_subproc("aborted", cwd=project_path, timeout=60)
+
+    assert result.code == 3
+    assert result.stdout == "spawner | started\n"
+    # Far less than the grandchild would take to exit by itself
+    assert time.monotonic() - start_time < 30
+    if sys.platform != "win32":
+        assert _wait_for_pid_exit(int(pid_file.read_text())), "grandchild should exit"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signal handlers")
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_abort_interrupts_subtasks_like_ctrl_c(
+    run_poe_subproc, temp_pyproject, tmp_path, delay_factor
+):
+    """
+    Subtasks stopped by an abort are interrupted as by ctrl+c, giving them a chance
+    to exit gracefully, and are interrupted only once.
+    """
+    log_file = tmp_path / "interrupts.log"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.graceful]
+        interpreter = "python"
+        shell = '''
+        import signal, sys, time
+        def on_interrupt(signum, frame):
+            with open("{log_file}", "a") as log:
+                log.write("interrupted\\n")
+            sys.exit(130)
+        signal.signal(signal.SIGINT, on_interrupt)
+        print("ready", flush=True)
+        time.sleep(60)
+        '''
+
+        [tool.poe.tasks.aborted]
+        parallel = ["graceful", {{ cmd = "poe_test_fail {1000 * delay_factor} 3" }}]
+        """)
+
+    result = run_poe_subproc("aborted", cwd=project_path, timeout=30)
+
+    assert result.code == 3
+    assert log_file.read_text() == "interrupted\n"
