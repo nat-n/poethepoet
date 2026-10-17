@@ -570,8 +570,9 @@ def output_holder_pid_file(tmp_path):
     """
     pid_file = tmp_path / "output_holder.pid"
     yield pid_file
-    if pid_file.exists() and (pid := pid_file.read_text().strip()):
-        with suppress(OSError):
+    # The holder removes its pid file as it exits, which may be while this reads it
+    with suppress(OSError):
+        if pid := pid_file.read_text().strip():
             os.kill(int(pid), getattr(signal, "SIGKILL", signal.SIGTERM))
 
 
