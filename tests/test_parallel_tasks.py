@@ -1008,3 +1008,130 @@ def test_parallel_subtask_ref_to_task_with_deps_and_uses(temp_pyproject, run_poe
     assert result.code == 0, result.capture
     assert "dep-ran" in result.stdout
     assert "cfg=loaded" in result.stdout
+
+
+@pytest.mark.parametrize("ignore_fail", [False, True])
+def test_parallel_subtask_that_fails_to_start(run_poe, temp_pyproject, ignore_fail):
+    """
+    A subtask that fails before it starts (here due to a malformed envfile) aborts the
+    parallel task, unless ignore_fail is set, in which case its siblings carry on.
+    Either way the failure is reported once, and not again as a failure of the parallel
+    task itself after it has already finished.
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.spawn_fail]
+        parallel = [
+          {{ cmd = "poe_test_delayed_echo 300 sibling-output" }},
+          {{ cmd = "poe_test_echo never", envfile = "bad.env" }},
+        ]
+        ignore_fail = {str(ignore_fail).lower()}
+        """)
+    (project_path / "bad.env").write_text('BROKEN="unterminated\n')
+
+    result = run_poe("spawn_fail", cwd=project_path)
+
+    envfile_error = (
+        f"Syntax error in referenced envfile: {str(project_path / 'bad.env')!r}; "
+        "Unexpected end of input with unmatched double quote"
+    )
+    warnings = [line for line in result.capture_lines if line.startswith("Warning:")]
+    if ignore_fail:
+        assert result.code == 0, result.capture
+        assert warnings == [f"Warning: {envfile_error}"]
+        assert result.stdout == (
+            f"{format_parallel_prefix('spawn_fail[0]')}sibling-output\n"
+        )
+    else:
+        assert result.code == 1
+        assert warnings == []
+        assert result.capture_lines[-2:] == [
+            "Error: Parallel task aborted after failed subtask 'spawn_fail[1]'",
+            f"     | From: ExecutionError({envfile_error!r})",
+        ]
+        assert "sibling-output" not in result.stdout
+
+
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_cancelled_nested_parallel_reports_no_collateral_failures(
+    run_poe_subproc, temp_pyproject, delay_factor
+):
+    """
+    When a parallel task is cancelled because its parent aborted, its subtasks are
+    killed as a consequence, so they must not be reported as failures in their own
+    right, which would happen if the cancelled task's failure handler outlived it.
+    """
+    fail_delay = 300 * delay_factor
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.inner]
+        parallel = [
+          {{ cmd = "poe_test_delayed_echo 10000 inner-0" }},
+          {{ cmd = "poe_test_delayed_echo 10000 inner-1" }},
+        ]
+
+        [tool.poe.tasks.outer]
+        parallel = [{{ cmd = "poe_test_fail {fail_delay} 4" }}, "inner"]
+        """)
+
+    result = run_poe_subproc("outer", cwd=project_path, timeout=15)
+
+    assert result.code == 4
+    assert result.stdout == ""
+    assert [line for line in result.capture_lines if "Poe =>" not in line] == [
+        "Warning: Parallel subtask 'outer[0]' failed with non-zero exit status",
+        "Error: Parallel task 'outer' aborted after failed subtask 'outer[0]'",
+    ]
+
+
+@pytest.mark.parametrize("fail", [False, True])
+def test_parallel_failure_handler_sees_subtasks_that_yield_while_starting(
+    run_poe, temp_pyproject, monkeypatch, fail
+):
+    """
+    The parallel task's failure handler only receives events from subtasks that exist
+    when it starts listening, so it must not start until all subtasks have been added,
+    even if starting a subtask yields to the event loop.
+    """
+    import asyncio
+
+    from poethepoet.task.base import PoeTask
+    from poethepoet.task.parallel import ParallelTask
+
+    original_run = PoeTask.run
+    original_handle_task_failures = ParallelTask._handle_task_failures
+
+    async def yielding_run(self, *args, **kwargs):
+        await asyncio.sleep(0.01)
+        return await original_run(self, *args, **kwargs)
+
+    async def checked_handle_task_failures(self, task_state):
+        # Fail fast, rather than wait forever on events that will never arrive. The
+        # parallel task finalizes its own run once every subtask has been added.
+        assert task_state._finalized, "failure handler started before all subtasks"
+        return await original_handle_task_failures(self, task_state)
+
+    monkeypatch.setattr(PoeTask, "run", yielding_run)
+    monkeypatch.setattr(
+        ParallelTask, "_handle_task_failures", checked_handle_task_failures
+    )
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.para]
+        parallel = [
+          {{ cmd = "poe_test_echo first" }},
+          {{ cmd = "{"poe_test_fail 0 5" if fail else "poe_test_echo second"}" }},
+        ]
+        """)
+
+    result = run_poe("para", cwd=project_path)
+
+    if fail:
+        assert result.code == 5
+        assert result.capture_lines[-2:] == [
+            "Warning: Parallel subtask 'para[1]' failed with non-zero exit status",
+            "Error: Parallel task 'para' aborted after failed subtask 'para[1]'",
+        ]
+    else:
+        assert result.code == 0, result.capture
+        assert set(result.stdout.splitlines()) == {
+            f"{format_parallel_prefix('para[0]')}first",
+            f"{format_parallel_prefix('para[1]')}second",
+        }
