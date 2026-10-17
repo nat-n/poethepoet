@@ -6,6 +6,7 @@ import inspect
 from typing import TYPE_CHECKING
 
 from ..helpers.eventloop import async_iter_merge, async_noop
+from ..shutdown import stop_process
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -89,6 +90,7 @@ class PoeTaskRun:
         self._force_failure = False
         self._finalized = False
         self._completion_watcher: asyncio.Task | None = None
+        self._stopping: asyncio.Task | None = None
         self._done_callbacks: list[
             Callable[[PoeTaskRunEvent], None] | Callable[[PoeTaskRunEvent], Awaitable]
         ] = []
@@ -152,15 +154,35 @@ class PoeTaskRun:
     async def events(self) -> AsyncIterable[PoeTaskRunEvent]:
         """
         An async generator that yields events when the task or any of its direct child
-        tasks completes or fails.
+        tasks completes or fails, until every child present when iteration starts has
+        reported its outcome.
+
+        This waits for the events themselves rather than for the children to be done,
+        because a child is done slightly before its event is emitted.
         """
         queue: asyncio.Queue[PoeTaskRunEvent] = asyncio.Queue()
-        unsubscribe = self.subscribe(queue.put_nowait)
+        unreported_children = set(self._children)
+
+        def on_child_event(child: PoeTaskRun) -> Callable[[PoeTaskRunEvent], None]:
+            def callback(event: PoeTaskRunEvent):
+                unreported_children.discard(child)
+                queue.put_nowait(event)
+
+            return callback
+
+        cancel_callbacks = [
+            self.add_done_callback(queue.put_nowait),
+            *(
+                child.add_done_callback(on_child_event(child))
+                for child in self._children
+            ),
+        ]
         try:
-            while not self.done() or not queue.empty():
+            while unreported_children or not queue.empty():
                 yield await queue.get()
         finally:
-            unsubscribe()
+            for cancel_callback in cancel_callbacks:
+                cancel_callback()
 
     def add_new_process_callback(
         self, callback: Callable[[PoeProcess], None]
@@ -350,16 +372,44 @@ class PoeTaskRun:
         return self
 
     async def kill(self):
+        """
+        Stop this task run along with its child task runs. Running processes are
+        stopped the same way as on ctrl+c, escalating until they exit.
+        """
+        # Shielded so that a cancelled caller doesn't abandon stopping for the others
+        await asyncio.shield(self._start_stopping())
+
+    def _start_stopping(self) -> asyncio.Task:
+        """
+        Immediately stop this task run and its descendants from doing anything more,
+        then stop their running processes in the background.
+        """
+        if self._stopping:
+            return self._stopping
+
         self._finalized = True
         if asyncio.current_task() is not self.asyncio_task:
             self.asyncio_task.cancel()
-        for process in self._processes:
-            if process.returncode is None:
-                self._killed_processes.add(process)
-                process.kill()
-        for child in self._children:
-            await child.kill()
+        stopping_children = [child._start_stopping() for child in self._children]
+        running_processes = [
+            process for process in self._processes if process.returncode is None
+        ]
+        self._killed_processes.update(running_processes)
+        self._stopping = asyncio.create_task(
+            self._stop(running_processes, stopping_children),
+            name=f"PoeTaskRun._stop:{self.name}",
+        )
+        return self._stopping
+
+    async def _stop(
+        self,
+        processes: Collection[PoeProcess],
+        stopping_children: Collection[Awaitable],
+    ):
         await self._notify_update()
+        await asyncio.gather(
+            *(stop_process(process) for process in processes), *stopping_children
+        )
 
     async def wait(self, suppress_errors: bool = True) -> None:
         while not self._finalized:
@@ -378,24 +428,9 @@ class PoeTaskRun:
             # responsibility to handle them according to its own ignore_failure setting.
             await child.wait(suppress_errors=True)
 
-    def subscribe(
-        self, callback: Callable[[PoeTaskRunEvent], None]
-    ) -> Callable[[], None]:
-        """
-        Subscribe to events on this task run. The callback will be called with a
-        PoeTaskRunEvent when the task or any of its direct child tasks completes or
-        fails.
-        """
-        cancel_callbacks = [
-            self.add_done_callback(callback),
-            *(child.add_done_callback(callback) for child in self._children),
-        ]
-
-        def unsubscribe():
-            for cancel_callback in cancel_callbacks:
-                cancel_callback()
-
-        return unsubscribe
+        if self._stopping:
+            # Let a kill in progress finish, without being affected by its outcome
+            await asyncio.wait([self._stopping])
 
     async def processes(self) -> AsyncIterable[tuple[PoeTaskRun, PoeProcess]]:
         """

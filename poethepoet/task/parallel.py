@@ -251,7 +251,7 @@ class ParallelTask(PoeTask):
                     await task_state.add_child(subtask_run)
                 except ExecutionError as error:
                     if ignore_fail:
-                        self.ctx.io.print_warning(error.msg, message_verbosity=0)
+                        self._warn_subtask_failure(context, error.msg)
                     else:
                         raise ExecutionError(
                             "Parallel task aborted after failed subtask "
@@ -266,7 +266,7 @@ class ParallelTask(PoeTask):
             try:
                 async with asyncio.TaskGroup() as task_group:
                     task_group.create_task(
-                        self._handle_task_failures(task_state),
+                        self._handle_task_failures(context, task_state),
                         name="handle_task_failures:" + self.name,
                     )
                     if streaming_enabled:
@@ -290,24 +290,24 @@ class ParallelTask(PoeTask):
                 # Raised outside the except block so the group isn't chained to it
                 raise first_error
 
-    async def _handle_task_failures(self, task_state: PoeTaskRun):
+    async def _handle_task_failures(self, context: RunContext, task_state: PoeTaskRun):
         ignore_fail = self.spec.options.ignore_fail
         non_zero_subtasks = []
         # listen for completion and error events from subtasks
         async for event in task_state.events():
             if isinstance(event, PoeTaskRunError):
                 if event.exception is None:
-                    self.ctx.io.print_warning(
+                    self._warn_subtask_failure(
+                        context,
                         "Parallel subtask %r failed with non-zero exit status",
                         event.name,
-                        message_verbosity=0,
                     )
                 else:
-                    self.ctx.io.print_warning(
+                    self._warn_subtask_failure(
+                        context,
                         "Parallel subtask %r failed with exception: %s",
                         event.name,
                         event.exception,
-                        message_verbosity=0,
                     )
 
                 if not ignore_fail:

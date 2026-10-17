@@ -201,6 +201,15 @@ def parse_and_validate(
     return root_node
 
 
+# One-line source for python subprocesses that poe generates, which leaves uncaught
+# KeyboardInterrupts to exit the process with the usual status but no traceback, as
+# they result from poe interrupting the subprocess to stop it
+QUIET_INTERRUPT_HOOK = (
+    "sys.excepthook=lambda exc_type,exc,trace,_hook=sys.excepthook:"
+    "None if issubclass(exc_type,KeyboardInterrupt) else _hook(exc_type,exc,trace);"
+)
+
+
 def format_class(attrs: dict[str, Any] | None, classname: str = "__args") -> str:
     """
     Generates source for a python class with the entries of the given dictionary

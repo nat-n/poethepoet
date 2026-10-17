@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import re
 import sys
 from collections.abc import Iterator, Mapping, Sequence
@@ -655,6 +656,14 @@ class PoeTask(metaclass=MetaPoeTask):
         Run this task
         """
 
+        if context.interrupted_exit_status is not None:
+            # No more tasks are started once poe is shutting down, so cancel whatever
+            # is starting this one, e.g. a sequence with ignore_fail
+            self.ctx.io.print_debug(
+                f" ! Not starting task {self.name!r}: shutting down"
+            )
+            raise asyncio.CancelledError
+
         if self.ctx.io.is_debug_enabled():
             task_type_key = self.__key__  # type: ignore[attr-defined]
             self.ctx.io.print_debug(f" * Running     {task_type_key}:{self.name}")
@@ -716,6 +725,14 @@ class PoeTask(metaclass=MetaPoeTask):
         supplied task_state.
         """
         raise NotImplementedError
+
+    def _warn_subtask_failure(self, context: RunContext, message: str, *values: Any):
+        """
+        Report a subtask failure that this task carries on after, unless it is a
+        consequence of poe shutting down, which poe's exit status reports instead.
+        """
+        if context.interrupted_exit_status is None:
+            self.ctx.io.print_warning(message, *values, message_verbosity=0)
 
     def _get_executor(
         self,

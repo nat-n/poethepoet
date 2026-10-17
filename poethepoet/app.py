@@ -226,16 +226,41 @@ class PoeThePoet:
         )
         return task_spec.create_task(invocation=task, ctx=task_context)
 
-    async def _run_task(self, task: PoeTask, context: RunContext | None = None) -> int:
+    async def _run_task(
+        self,
+        task: PoeTask,
+        context: RunContext | None = None,
+        abort_message: str | None = None,
+    ) -> int:
+        """
+        Run the task and return the exit code for it. If an abort_message is given,
+        e.g. for a stage of a task graph, a failure is reported with that message, and
+        otherwise the exit code is zero, whatever the task's return code.
+        """
         async with self.run_context(existing=context) as context:
             task_run: PoeTaskRun | None = None
             try:
                 task_run = await task.run(context=context)
                 await task_run.wait(suppress_errors=False)
+                if abort_message is not None:
+                    if task_run.has_failure:
+                        raise ExecutionError(abort_message)
+                    return context.interrupted_exit_status or 0
                 # A task run can fail without a non-zero return code, e.g. if an
                 # error raised by a child task run was not propagated
-                return task_run.return_code or int(task_run.has_failure)
+                return (
+                    context.interrupted_exit_status
+                    or task_run.return_code
+                    or int(task_run.has_failure)
+                )
+            except asyncio.CancelledError:
+                if (exit_status := context.interrupted_exit_status) is None:
+                    raise
+                return exit_status
             except ExecutionError as error:
+                if (exit_status := context.interrupted_exit_status) is not None:
+                    # The failure is a consequence of the shutdown
+                    return exit_status
                 self.ui.print_error(error=error)
                 return await self._get_failure_exit_code(task_run)
             except PoeException as error:
@@ -263,21 +288,14 @@ class PoeThePoet:
                         # The final sink task gets special treatment
                         return await self._run_task(stage_task, context)
 
-                    task_run: PoeTaskRun | None = None
-                    try:
-                        task_run = await stage_task.run(context=context)
-                        await task_run.wait(suppress_errors=False)
-                        if task_run.has_failure:
-                            raise ExecutionError(
-                                "Task graph aborted after failed task "
-                                f"{stage_task.name!r}"
-                            )
-                    except PoeException as error:
-                        self.print_help(error=error)
-                        return 1
-                    except ExecutionError as error:
-                        self.ui.print_error(error=error)
-                        return await self._get_failure_exit_code(task_run)
+                    if exit_code := await self._run_task(
+                        stage_task,
+                        context,
+                        abort_message=(
+                            f"Task graph aborted after failed task {stage_task.name!r}"
+                        ),
+                    ):
+                        return exit_code
         return 0
 
     @staticmethod

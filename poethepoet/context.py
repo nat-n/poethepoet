@@ -140,8 +140,17 @@ class RunContext:
         try:
             context._shutdown_manager.install_handler()
             yield context
+            await context._shutdown_manager.wait_for_processes()
         finally:
             context._shutdown_manager.restore_handler()
+
+    @property
+    def interrupted_exit_status(self) -> int | None:
+        """
+        The exit status for poe to report once it has been asked to shut down, e.g. by
+        ctrl+c, or None until then.
+        """
+        return self._shutdown_manager.interrupted_exit_status
 
     def register_subprocess(self, proc: PoeProcess):
         self._shutdown_manager.processes.add(proc)

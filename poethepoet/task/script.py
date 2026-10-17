@@ -117,7 +117,7 @@ class ScriptTask(PoeTask):
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
-        from ..helpers.python import format_class
+        from ..helpers.python import QUIET_INTERRUPT_HOOK, format_class
 
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
@@ -147,6 +147,7 @@ class ScriptTask(PoeTask):
 
         script = [
             "import asyncio,os,sys;",
+            QUIET_INTERRUPT_HOOK,
             "from inspect import iscoroutinefunction as _c;",
             "from importlib import import_module as _i;",
             "environ = os.environ;",

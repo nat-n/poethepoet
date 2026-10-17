@@ -1103,11 +1103,11 @@ def test_parallel_failure_handler_sees_subtasks_that_yield_while_starting(
         await asyncio.sleep(0.01)
         return await original_run(self, *args, **kwargs)
 
-    async def checked_handle_task_failures(self, task_state):
+    async def checked_handle_task_failures(self, context, task_state):
         # Fail fast, rather than wait forever on events that will never arrive. The
         # parallel task finalizes its own run once every subtask has been added.
         assert task_state._finalized, "failure handler started before all subtasks"
-        return await original_handle_task_failures(self, task_state)
+        return await original_handle_task_failures(self, context, task_state)
 
     monkeypatch.setattr(PoeTask, "run", yielding_run)
     monkeypatch.setattr(
