@@ -566,7 +566,7 @@ def temp_pyproject(tmp_path):
 def output_holder_pid_file(tmp_path):
     """
     Return a path for poe_test_hold_output to record the detached process it leaves
-    holding output open, which is killed after the test.
+    holding output open, which is killed after the test if it's still running.
     """
     pid_file = tmp_path / "output_holder.pid"
     yield pid_file
