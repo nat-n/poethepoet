@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from .executor.base import PoeProcess
     from .io import PoeIO
 
-ESCALATION_INTERVAL_S = 0.8
+ESCALATION_INTERVAL_S = 0.75
 # The urgency at which subprocesses are killed, after being interrupted then terminated
 KILL_URGENCY = 4
 GROUP_POLL_INTERVAL_S = 0.05
