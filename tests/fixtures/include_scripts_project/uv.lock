@@ -15,5 +15,5 @@ requires-dist = [{ name = "poe-test-helpers", directory = "../packages/poe_test_
 
 [[package]]
 name = "poe-test-helpers"
-version = "0.3.0"
+version = "0.4.0"
 source = { directory = "../packages/poe_test_helpers" }

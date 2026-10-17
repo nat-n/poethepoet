@@ -1,6 +1,8 @@
 import os
+import subprocess
 import sys
 import time
+from pathlib import Path
 
 
 def echo():
@@ -91,3 +93,57 @@ def fail():
     return_code = sys.argv[2] if len(sys.argv) > 2 else "1"
     time.sleep(int(delay) / 1000)
     sys.exit(int(return_code))
+
+
+def hold_output():
+    """
+    Print a line and exit, leaving a detached process that holds stdout open, like a
+    daemon that escaped its parent's process group.
+
+    Usage: hold_output pid_file hold_ms [tick_ms]
+
+    The detached process holds stdout open for hold_ms, printing a line every tick_ms
+    if given. Its pid is in pid_file for as long as it runs.
+    """
+    pid_file, hold_ms = sys.argv[1], sys.argv[2]
+    tick_ms = sys.argv[3] if len(sys.argv) > 3 else "0"
+    detach: dict = (
+        {
+            "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP
+            | subprocess.DETACHED_PROCESS
+        }
+        if sys.platform == "win32"
+        else {"start_new_session": True}
+    )
+    subprocess.Popen(
+        [sys.executable, "-c", _HOLDER_CODE, pid_file, hold_ms, tick_ms],
+        stdin=subprocess.DEVNULL,
+        stdout=sys.stdout,
+        stderr=subprocess.DEVNULL,
+        **detach,
+    )
+    deadline = time.monotonic() + 10
+    while not Path(pid_file).exists() and time.monotonic() < deadline:
+        time.sleep(0.01)
+    print("started", flush=True)
+
+
+# The pid file is removed on exit, including when the output is closed, so that it
+# never names a process that has exited, whose pid may since have been reused
+_HOLDER_CODE = """
+import os, sys, time
+pid_file, hold_ms, tick_ms = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+with open(pid_file + ".tmp", "w") as pid_file_handle:
+    pid_file_handle.write(str(os.getpid()))
+os.replace(pid_file + ".tmp", pid_file)
+try:
+    deadline = time.monotonic() + hold_ms / 1000
+    while time.monotonic() < deadline:
+        if tick_ms:
+            print("tick", flush=True)
+        time.sleep((tick_ms or hold_ms) / 1000)
+except BrokenPipeError:
+    sys.stdout = None
+finally:
+    os.remove(pid_file)
+"""

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import inspect
 from typing import TYPE_CHECKING
 
@@ -412,25 +411,29 @@ class PoeTaskRun:
         )
 
     async def wait(self, suppress_errors: bool = True) -> None:
+        """
+        Wait for this task run to finish, including its processes, its child task runs
+        and any kill in progress, and then raise the error it failed with, unless
+        suppress_errors is set.
+        """
         while not self._finalized:
             await self._wait_for_update()
 
-        if suppress_errors:
-            with contextlib.suppress(Exception, asyncio.CancelledError):
-                await self.asyncio_task
-        else:
-            await self.asyncio_task
-
+        # Wait on these without taking on how they ended, so that cancelling the caller
+        # still takes effect, and so that a failed task run is fully stopped before
+        # its error is raised
+        await asyncio.wait([self.asyncio_task])
         for process in self._processes:
             await process.wait()
         for child in self._children:
             # Always suppress errors from child tasks, because it is the parent's
             # responsibility to handle them according to its own ignore_failure setting.
             await child.wait(suppress_errors=True)
-
         if self._stopping:
-            # Let a kill in progress finish, without being affected by its outcome
             await asyncio.wait([self._stopping])
+
+        if not suppress_errors:
+            self.asyncio_task.result()
 
     async def processes(self) -> AsyncIterable[tuple[PoeTaskRun, PoeProcess]]:
         """

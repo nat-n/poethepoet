@@ -570,3 +570,31 @@ def test_task_reused_with_different_args_is_not_a_cycle(temp_pyproject, run_poe)
         ["one", "two", "three", "left", "right", "top"]
     )
     assert result.stdout.endswith("top\n")
+
+
+def test_uses_does_not_wait_for_output_held_open_by_a_detached_process(
+    run_poe, temp_pyproject, output_holder_pid_file
+):
+    """
+    A process that a task started outside its process group can hold the task's
+    output open after it exits, which poe stops waiting on once the output goes quiet.
+    """
+    import time
+
+    pid_file = str(output_holder_pid_file).replace("\\", "/")
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks._load]
+        cmd = "poe_test_hold_output {pid_file} 30000"
+
+        [tool.poe.tasks.consumer]
+        cmd = "poe_test_echo value=${{VALUE}}"
+        uses = {{ VALUE = "_load" }}
+        """)
+
+    start_time = time.monotonic()
+    result = run_poe("consumer", cwd=project_path)
+
+    # Far less than the detached process holds the output open for
+    assert time.monotonic() - start_time < 20
+    assert result.code == 0, result.capture
+    assert result.stdout == "value=started\n"

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "poe_test_helpers"
-version = "0.3.0"
+version = "0.4.0"
 description = "Provides cross platform executables to help with testing"
 authors = ["Nat Noordanus <n@natn.me>"]
 
@@ -16,6 +16,7 @@ poe_test_delayed_echo = "poe_test_helpers:delayed_echo"
 poe_test_delayed_echo_with_pidfile = "poe_test_helpers:delayed_echo_with_pidfile"
 poe_test_fail = "poe_test_helpers:fail"
 poe_test_immortal = "poe_test_helpers:immortal_echo"
+poe_test_hold_output = "poe_test_helpers:hold_output"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
