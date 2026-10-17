@@ -389,12 +389,15 @@ class PoeThePoet:
 def _is_broken_pipe(error: OSError) -> bool:
     """
     Check whether an error is from writing to a pipe that is no longer read. Windows
-    can report this as EINVAL rather than EPIPE.
+    can report this as EINVAL rather than EPIPE, which errors about a file name, e.g.
+    an invalid one, also use.
     """
     import errno
 
     return isinstance(error, BrokenPipeError) or (
-        sys.platform == "win32" and error.errno == errno.EINVAL
+        sys.platform == "win32"
+        and error.errno == errno.EINVAL
+        and error.filename is None
     )
 
 
@@ -404,4 +407,8 @@ def _discard_stdout() -> None:
     exit, doesn't fail again once its pipe is broken.
     """
     with suppress(OSError, ValueError):
-        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        try:
+            os.dup2(devnull, sys.stdout.fileno())
+        finally:
+            os.close(devnull)
