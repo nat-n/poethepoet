@@ -100,6 +100,23 @@ class PoeProcess:
         else:
             self.signal_group(signal.SIGKILL)
 
+    def is_running(self) -> bool:
+        """
+        Check whether the subprocess is still running, or on POSIX, whether anything
+        it left running in its process group is. The group's id can't be reused by a
+        new group until every process in it has exited.
+        """
+        if self._process.returncode is None:
+            return True
+        if self._is_windows:
+            return False
+        try:
+            os.killpg(self.pid, 0)  # type: ignore[attr-defined]
+        except (ProcessLookupError, PermissionError):
+            # As for signal_group, macOS refuses with EPERM once all have exited
+            return False
+        return True
+
     def signal_group(self, sig: int) -> None:
         """
         Send a POSIX signal to the process group led by this subprocess.
@@ -350,13 +367,20 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     ) -> PoeProcess:
         from subprocess import PIPE
 
+        # Every subprocess leads its own process group, which is signalled to stop it
+        popen_kwargs: MutableMapping[str, Any] = (
+            {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}  # type: ignore[attr-defined]
+            if self._is_windows
+            else {"start_new_session": True}
+        )
         if self.dry:
             # A dry run doesn't execute the command, so we just return a dummy process
             return PoeProcess(
-                await asyncio.create_subprocess_exec(sys.executable, "-c", ""),
+                await asyncio.create_subprocess_exec(
+                    sys.executable, "-c", "", **popen_kwargs
+                ),
                 io=self._io,
             )
-        popen_kwargs: MutableMapping[str, Any] = {}
         popen_kwargs["env"] = dict(
             (self.env.get_subprocess_env_vars() if env is None else env),
             POE_ACTIVE=self.__key__,
@@ -378,11 +402,6 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
 
         if self.working_dir is not None:
             popen_kwargs["cwd"] = self.working_dir
-
-        if self._is_windows:
-            popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
-        else:
-            popen_kwargs["start_new_session"] = True
 
         # TODO: exclude the subprocess from coverage more gracefully
         _stop_coverage()

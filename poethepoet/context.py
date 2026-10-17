@@ -140,6 +140,7 @@ class RunContext:
         try:
             context._shutdown_manager.install_handler()
             yield context
+            await context._shutdown_manager.wait_for_processes()
         finally:
             context._shutdown_manager.restore_handler()
 

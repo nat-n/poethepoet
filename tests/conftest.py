@@ -593,14 +593,23 @@ class FakePoeProcess(PoeProcess):
     A PoeProcess for a FakeSubprocess, which records requests to stop it instead of
     sending signals, so that tests can never signal a real process. It exits as if
     killed by the corresponding signal when it gets the request given as stops_on.
+    If group_stops_on is given, processes it left in its group run until that request.
     """
 
     exit_codes = {"interrupt": -2, "terminate": -15, "kill": -9}
 
-    def __init__(self, returncode: int | None = None, stops_on: str = "interrupt"):
+    def __init__(
+        self,
+        returncode: int | None = None,
+        stops_on: str = "interrupt",
+        group_stops_on: str | None = None,
+    ):
         super().__init__(cast("Any", FakeSubprocess(returncode)))
         self.stop_requests: list[str] = []
         self._stops_on = stops_on
+        # If given, the request that stops what the process leaves in its group
+        self._group_stops_on = group_stops_on
+        self._group_running = group_stops_on is not None
 
     def exit(self, returncode: int):
         self._process.exit(returncode)
@@ -614,6 +623,9 @@ class FakePoeProcess(PoeProcess):
     def kill(self):
         self._request_stop("kill")
 
+    def is_running(self) -> bool:
+        return self.returncode is None or self._group_running
+
     def signal_group(self, sig: int):
         raise AssertionError("A fake process must not be signalled")
 
@@ -621,6 +633,8 @@ class FakePoeProcess(PoeProcess):
         self.stop_requests.append(request)
         if request == self._stops_on:
             self.exit(self.exit_codes[request])
+        if request == self._group_stops_on:
+            self._group_running = False
 
 
 @pytest.fixture

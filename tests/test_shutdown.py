@@ -1,6 +1,7 @@
 import asyncio
 import os
 import signal
+import subprocess
 import sys
 import time
 from typing import Any, cast
@@ -123,6 +124,50 @@ def test_signal_shutdown_skips_processes_that_have_exited(fake_poe_process):
     process = fake_poe_process(0)
     signal_shutdown(process, 4)
     assert process.stop_requests == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("group_stops_on", "expected_requests"),
+    [
+        ("terminate", ["interrupt", "interrupt", "terminate"]),
+        # Anything left once the group is killed can only be a zombie, so isn't awaited
+        ("never", ["interrupt", "interrupt", "terminate", "kill"]),
+    ],
+)
+async def test_stop_process_escalates_until_its_process_group_exits(
+    fake_poe_process, group_stops_on, expected_requests
+):
+    # e.g. a shell exits on the interrupt, but a job it ran in the background ignores it
+    process = fake_poe_process(stops_on="interrupt", group_stops_on=group_stops_on)
+    await asyncio.wait_for(stop_process(process, escalation_interval_s=0.01), 5)
+    assert process.stop_requests == expected_requests
+
+
+@pytest.mark.asyncio
+async def test_stop_process_leaves_alone_what_an_exited_process_left_running(
+    fake_poe_process,
+):
+    process = fake_poe_process(0, group_stops_on="kill")
+    await stop_process(process, escalation_interval_s=0.01)
+    signal_shutdown(process, 1)
+    assert process.stop_requests == []
+
+
+def test_shutdown_escalates_until_process_groups_exit(
+    shutdown_manager, fake_poe_process
+):
+    process = fake_poe_process(stops_on="interrupt", group_stops_on="terminate")
+    shutdown_manager.processes.add(process)
+
+    for urgency in range(1, 4):
+        shutdown_manager._urgency = urgency
+        shutdown_manager._shutdown()
+        assert process in shutdown_manager.processes
+    shutdown_manager._shutdown()
+
+    assert process.stop_requests == ["interrupt", "interrupt", "terminate"]
+    assert not shutdown_manager.processes
 
 
 @pytest.fixture
@@ -299,6 +344,78 @@ def test_parallel_abort_interrupts_subtasks_like_ctrl_c(
 
     assert result.code == 3
     assert log_file.read_text() == "interrupted\n"
+
+
+def _is_alive(pid: int) -> bool:
+    """
+    Check whether a process is running, not counting a zombie that hasn't been reaped
+    yet, as can happen to an orphan when its new parent is slow to reap it.
+    """
+    state = subprocess.run(
+        ["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True
+    ).stdout.strip()
+    return bool(state) and not state.startswith("Z")
+
+
+def _background_job_ignoring_interrupts(pid_file):
+    """
+    Shell syntax for a job run in the background that ignores SIGINT, as sh does for
+    background jobs, and writes its pid to pid_file. It exits by itself after 30s.
+    """
+    python = sys.executable.replace("\\", "/")
+    code = (
+        "import os, signal, time; signal.signal(signal.SIGINT, signal.SIG_IGN); "
+        f"open('{pid_file}', 'w').write(str(os.getpid())); time.sleep(30)"
+    )
+    return f'"{python}" -c "{code}" > /dev/null &'
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+@pytest.mark.flaky(reruns=3, reruns_delay=1)
+def test_parallel_abort_stops_background_jobs_that_ignore_interrupts(
+    run_poe_subproc, temp_pyproject, tmp_path, delay_factor
+):
+    pid_file = tmp_path / "background.pid"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.background]
+        shell = '''
+        {_background_job_ignoring_interrupts(pid_file)}
+        wait
+        '''
+
+        [tool.poe.tasks.aborted]
+        parallel = ["background", {{ cmd = "poe_test_fail {1000 * delay_factor} 3" }}]
+        """)
+
+    result = run_poe_subproc("aborted", cwd=project_path, timeout=30)
+
+    assert result.code == 3
+    # It would otherwise keep running for 30s
+    assert not _is_alive(int(pid_file.read_text()))
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+def test_interrupt_stops_background_jobs_that_ignore_interrupts(
+    run_poe_subproc_handle, temp_pyproject, tmp_path
+):
+    pid_file = tmp_path / "background.pid"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.task]
+        shell = '''
+        {_background_job_ignoring_interrupts(pid_file)}
+        wait
+        '''
+        """)
+    poe_handle = _start_task_and_wait_for_pid_file(
+        run_poe_subproc_handle, project_path, pid_file
+    )
+
+    poe_handle.process.send_signal(signal.SIGINT)
+    result = poe_handle.result(timeout=10)
+
+    assert result.code == 128 + signal.SIGINT
+    # It would otherwise keep running for 30s
+    assert not _is_alive(int(pid_file.read_text()))
 
 
 def _start_task_and_wait_for_pid_file(run_poe_subproc_handle, project_path, pid_file):
