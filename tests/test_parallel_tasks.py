@@ -1229,3 +1229,39 @@ def test_parallel_does_not_wait_for_output_held_open_by_a_detached_process(
     assert time.monotonic() - start_time < 20
     assert result.code == (3 if fail else 0)
     assert "held[0] | started" in result.output_lines
+
+
+def test_parallel_task_exits_quietly_when_its_output_is_closed(
+    run_poe_subproc_handle, temp_pyproject
+):
+    """
+    When whatever is reading poe's output stops, e.g. head, poe stops the subtasks
+    and exits as if killed by SIGPIPE, rather than crashing or hanging.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.chatty]
+        parallel = [
+          { interpreter = "python", shell = '''
+        import os
+        try:
+            while True:
+                print("chat", flush=True)
+        except BaseException:
+            os._exit(1)
+        ''' },
+        ]
+        """)
+
+    handle = run_poe_subproc_handle("chatty", cwd=str(project_path))
+    try:
+        assert handle.process.stdout.readline().rstrip() == b"chatty[0] | chat"
+        handle.process.stdout.close()
+        exit_code = handle.process.wait(timeout=30)
+    finally:
+        if handle.process.poll() is None:
+            handle.process.kill()
+    stderr = handle.process.stderr.read().decode()
+
+    assert exit_code == 141
+    assert "Error" not in stderr
+    assert "Exception ignored" not in stderr
