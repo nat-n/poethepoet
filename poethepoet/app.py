@@ -234,8 +234,19 @@ class PoeThePoet:
                 await task_run.wait(suppress_errors=False)
                 # A task run can fail without a non-zero return code, e.g. if an
                 # error raised by a child task run was not propagated
-                return task_run.return_code or int(task_run.has_failure)
+                return (
+                    context.interrupted_exit_status
+                    or task_run.return_code
+                    or int(task_run.has_failure)
+                )
+            except asyncio.CancelledError:
+                if (exit_status := context.interrupted_exit_status) is None:
+                    raise
+                return exit_status
             except ExecutionError as error:
+                if (exit_status := context.interrupted_exit_status) is not None:
+                    # The failure is a consequence of the shutdown
+                    return exit_status
                 self.ui.print_error(error=error)
                 return await self._get_failure_exit_code(task_run)
             except PoeException as error:
@@ -272,10 +283,17 @@ class PoeThePoet:
                                 "Task graph aborted after failed task "
                                 f"{stage_task.name!r}"
                             )
+                    except asyncio.CancelledError:
+                        if (exit_status := context.interrupted_exit_status) is None:
+                            raise
+                        return exit_status
                     except PoeException as error:
                         self.print_help(error=error)
                         return 1
                     except ExecutionError as error:
+                        if (exit_status := context.interrupted_exit_status) is not None:
+                            # The failure is a consequence of the shutdown
+                            return exit_status
                         self.ui.print_error(error=error)
                         return await self._get_failure_exit_code(task_run)
         return 0

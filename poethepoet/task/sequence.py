@@ -198,7 +198,7 @@ class SequenceTask(PoeTask):
                 await subtask_run.wait(suppress_errors=False)
             except ExecutionError as error:
                 if ignore_fail:
-                    self.ctx.io.print_warning(error.msg, message_verbosity=0)
+                    self._warn_subtask_failure(context, error.msg)
                 else:
                     raise ExecutionError(
                         f"Sequence aborted after failed subtask {subtask.name!r}"

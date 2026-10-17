@@ -54,7 +54,7 @@ class ShutdownManager:
     def __init__(self, loop: asyncio.AbstractEventLoop, io: PoeIO):
         self._loop = loop
         self._io = io
-        self._shutting_down = asyncio.Event()
+        self._shutdown_signal: int | None = None
         self._urgency = 0
         self.tasks: WeakSet[asyncio.Task] = WeakSet()
         self.processes: WeakSet[PoeProcess] = WeakSet()
@@ -64,9 +64,22 @@ class ShutdownManager:
         self._backup_sigbreak = None
         self._shutdown_worker: asyncio.Task | None = None
 
+    @property
+    def interrupted_exit_status(self) -> int | None:
+        """
+        The exit status for poe to report once shutdown has been requested by a signal,
+        following the shell convention of 128 + its number, or None until then.
+        """
+        if self._shutdown_signal is None:
+            return None
+        return 128 + self._shutdown_signal
+
     def shutdown(self, signum=None, frame=None):
         self._io.print_debug(" ! Termination requested with signal: '%s'", signum or "")
-        if signum is signal.SIGTERM:
+        if self._shutdown_signal is None:
+            self._shutdown_signal = int(signum or signal.SIGINT)
+        # Signal handlers receive the signal number as a plain int
+        if signum == signal.SIGTERM:
             self._urgency += max(1, 3 - self._urgency)
         else:
             self._urgency += 1

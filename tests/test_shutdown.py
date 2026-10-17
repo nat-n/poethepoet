@@ -49,6 +49,32 @@ def shutdown_manager():
     loop.close()
 
 
+def test_sigterm_escalates_straight_to_terminating(shutdown_manager):
+    # Signal handlers receive the signal number as a plain int, not the enum member
+    shutdown_manager.shutdown(int(signal.SIGTERM))
+    assert shutdown_manager._urgency == 3
+
+    shutdown_manager.shutdown(int(signal.SIGTERM))
+    assert shutdown_manager._urgency == 4
+
+
+def test_sigint_escalates_one_step_at_a_time(shutdown_manager):
+    shutdown_manager.shutdown(int(signal.SIGINT))
+    assert shutdown_manager._urgency == 1
+
+    shutdown_manager.shutdown(int(signal.SIGINT))
+    assert shutdown_manager._urgency == 2
+
+
+def test_interrupted_exit_status_follows_the_first_signal(shutdown_manager):
+    assert shutdown_manager.interrupted_exit_status is None
+
+    shutdown_manager.shutdown(int(signal.SIGINT))
+    shutdown_manager.shutdown(int(signal.SIGTERM))
+
+    assert shutdown_manager.interrupted_exit_status == 128 + signal.SIGINT
+
+
 def test_shutdown_escalates_from_interrupting_to_terminating_to_killing(
     shutdown_manager, fake_poe_process
 ):
@@ -273,3 +299,71 @@ def test_parallel_abort_interrupts_subtasks_like_ctrl_c(
 
     assert result.code == 3
     assert log_file.read_text() == "interrupted\n"
+
+
+def _start_task_and_wait_for_pid_file(run_poe_subproc_handle, project_path, pid_file):
+    poe_handle = run_poe_subproc_handle("task", cwd=str(project_path))
+    deadline = time.monotonic() + 10.0
+    while time.monotonic() < deadline:
+        if poe_handle.process.poll() is not None:
+            pytest.fail(f"Poe exited early: {poe_handle.result()}")
+        if pid_file.exists() and pid_file.stat().st_size > 0:
+            return poe_handle
+        time.sleep(0.1)
+    poe_handle.process.kill()
+    pytest.fail("Child process did not write PID file in time")
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize(
+    ("task_def", "sig"),
+    [
+        (
+            'sequence = ["hang", { cmd = "poe_test_echo after" }]\nignore_fail = true',
+            signal.SIGINT,
+        ),
+        (
+            'sequence = ["hang", { cmd = "poe_test_echo after" }]\nignore_fail = true',
+            signal.SIGTERM,
+        ),
+        (
+            'sequence = [{ parallel = ["hang"] }, { cmd = "poe_test_echo after" }]\n'
+            "ignore_fail = true",
+            signal.SIGINT,
+        ),
+        ('parallel = ["hang", "hang"]', signal.SIGINT),
+        ('parallel = ["hang"]\nignore_fail = true', signal.SIGINT),
+        ('ref = "hang"\nignore_fail = true', signal.SIGINT),
+        ('cmd = "poe_test_echo after"\ndeps = ["hang"]', signal.SIGINT),
+    ],
+)
+def test_interrupt_stops_the_task_and_exits_with_the_signal_status(
+    run_poe_subproc_handle, temp_pyproject, tmp_path, task_def, sig
+):
+    """
+    Once interrupted no further tasks are started, even with ignore_fail, the
+    failures that the interrupt causes are not reported, and poe exits with the shell
+    convention status for the signal.
+    """
+    pid_file = tmp_path / "child.pid"
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.hang]
+        cmd = "poe_test_delayed_echo_with_pidfile 60000 'done' '{pid_file}'"
+
+        [tool.poe.tasks.task]
+        {task_def}
+        """)
+    poe_handle = _start_task_and_wait_for_pid_file(
+        run_poe_subproc_handle, project_path, pid_file
+    )
+
+    poe_handle.process.send_signal(sig)
+    result = poe_handle.result(timeout=10)
+
+    assert result.code == 128 + sig
+    assert "after" not in result.stdout
+    assert "poe_test_echo after" not in result.capture
+    assert not [
+        line for line in result.capture_lines if line.startswith(("Warning:", "Error:"))
+    ]
+    assert _wait_for_pid_exit(int(pid_file.read_text()))
