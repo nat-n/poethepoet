@@ -1,4 +1,9 @@
+import errno
+import sys
+
 import pytest
+
+from poethepoet.app import _is_broken_pipe
 
 _TASKS = """
 [tool.poe.tasks]
@@ -86,3 +91,20 @@ def test_failed_subtask_exit_code_is_propagated(
     result = run_poe_subproc(task_name, cwd=project_path)
     assert result.code == expected_code, result.capture
     assert "sink" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("platform", "error", "is_broken_pipe"),
+    [
+        ("linux", BrokenPipeError(errno.EPIPE, "Broken pipe"), True),
+        ("linux", OSError(errno.EINVAL, "Invalid argument"), False),
+        ("win32", OSError(errno.EINVAL, "Invalid argument"), True),
+        # e.g. from opening a capture_stdout file with an invalid name
+        ("win32", OSError(errno.EINVAL, "Invalid argument", "out?.txt"), False),
+    ],
+)
+def test_only_errors_writing_to_a_closed_pipe_count_as_broken_pipes(
+    monkeypatch, platform, error, is_broken_pipe
+):
+    monkeypatch.setattr(sys, "platform", platform)
+    assert _is_broken_pipe(error) == is_broken_pipe
