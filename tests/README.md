@@ -38,6 +38,10 @@ tests/
 |   `-- test_zsh_completion_harness.py
 |-- env/                   # tests related to envfile parsing
 |   `-- test_parse_env_file.py
+|-- executor/              # unit tests for the poethepoet.executor subpackage
+|   |-- conftest.py
+|   |-- test_base.py
+|   `-- test_task_run.py
 |-- fixtures/              # example projects for tests to work with
 |   |-- *_project/
 |   `-- packages/          # python packages for use in tests

@@ -150,7 +150,7 @@ class RefTask(PoeTask):
                 await self._run_task_graph(task, context, env, task_state)
             except ExecutionError as error:
                 if ignore_fail:
-                    self.ctx.io.print_warning(error.msg, message_verbosity=0)
+                    self._warn_subtask_failure(context, error.msg)
                 else:
                     raise
             await task_state.finalize()
@@ -163,7 +163,7 @@ class RefTask(PoeTask):
             await child_task.wait(suppress_errors=False)
         except ExecutionError as error:
             if ignore_fail:
-                self.ctx.io.print_warning(error.msg, message_verbosity=0)
+                self._warn_subtask_failure(context, error.msg)
             else:
                 raise
 

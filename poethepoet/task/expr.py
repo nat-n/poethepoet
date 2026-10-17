@@ -97,7 +97,7 @@ class ExprTask(PoeTask):
     async def _handle_run(
         self, context: RunContext, env: TaskEnv, task_state: PoeTaskRun
     ):
-        from ..helpers.python import format_class
+        from ..helpers.python import QUIET_INTERRUPT_HOOK, format_class
 
         if ignore_fail := self.spec.options.ignore_fail:
             task_state.ignore_failure(ignore_fail)
@@ -116,7 +116,9 @@ class ExprTask(PoeTask):
         )
 
         script = [
-            f"import sys;{src_path_append}sys.argv = {argv!r};",
+            "import sys;",
+            QUIET_INTERRUPT_HOOK,
+            f"{src_path_append}sys.argv = {argv!r};",
             (f"import {', '.join(imports)}; " if imports else ""),
             f"{format_class(named_arg_values)}",
             f"{format_class(env_values, classname='__env')}",

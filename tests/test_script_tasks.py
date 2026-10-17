@@ -942,3 +942,25 @@ def test_python_tasks_without_declared_args_get_args_as_given(
     result = run_poe(task_name, "-x", "${POE_ROOT}", "--", "--y", cwd=project_path)
     assert result.code == 0, result.capture
     assert result.stdout == f"{['-x', '${POE_ROOT}', '--', '--y']!r}\n"
+
+
+@pytest.mark.parametrize("task_name", ["callable", "expression"])
+def test_python_tasks_exit_quietly_when_interrupted(temp_pyproject, run_poe, task_name):
+    """
+    Poe interrupts a python task's process to stop it, so the resulting
+    KeyboardInterrupt exits the process without printing a traceback.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.callable]
+        script = "_thread:interrupt_main()"
+
+        [tool.poe.tasks.expression]
+        expr = "_thread.interrupt_main()"
+        imports = ["_thread"]
+        """)
+    result = run_poe(task_name, cwd=project_path)
+    if sys.platform != "win32":
+        assert result.code == 130
+    assert result.code != 0
+    assert result.stdout == ""
+    assert result.stderr == ""

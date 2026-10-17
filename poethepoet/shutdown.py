@@ -2,16 +2,80 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import os
 import signal
-import subprocess
-import sys
 from typing import TYPE_CHECKING
 from weakref import WeakSet
 
 if TYPE_CHECKING:
     from .executor.base import PoeProcess
     from .io import PoeIO
+
+ESCALATION_INTERVAL_S = 0.8
+# The urgency at which subprocesses are killed, after being interrupted then terminated
+KILL_URGENCY = 4
+GROUP_POLL_INTERVAL_S = 0.05
+
+
+def signal_shutdown(process: PoeProcess, urgency: int) -> None:
+    """
+    Signal a subprocess to shut down with the given urgency, which escalates the same
+    way as repeatedly pressing ctrl+c: 1 or 2 interrupts it, 3 asks it to terminate,
+    and 4 or more kills it.
+
+    Each urgency level is only signalled once per subprocess, so that a shutdown and
+    an aborting task stopping the same subprocess share one escalation.
+    """
+    if urgency <= process.shutdown_urgency or not _needs_stopping(process):
+        return
+    process.shutdown_urgency = urgency
+    if urgency < 3:
+        process.interrupt()
+    elif urgency < KILL_URGENCY:
+        process.terminate()
+    else:
+        process.kill()
+
+
+async def stop_process(
+    process: PoeProcess, escalation_interval_s: float = ESCALATION_INTERVAL_S
+) -> None:
+    """
+    Stop a subprocess as if ctrl+c were pressed, escalating the urgency each interval
+    until it exits, along with anything it left running in its process group.
+    """
+    urgency = 1
+    while _needs_stopping(process):
+        if urgency > KILL_URGENCY and process.returncode is not None:
+            # Anything left in the group after it was killed can only be a zombie
+            return
+        signal_shutdown(process, urgency)
+        await _wait_until_stopped(process, escalation_interval_s)
+        urgency += 1
+
+
+async def _wait_until_stopped(process: PoeProcess, timeout_s: float) -> None:
+    """
+    Wait up to timeout_s for a subprocess to exit, along with anything it left running
+    in its process group.
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout_s
+    with contextlib.suppress(TimeoutError):
+        await asyncio.wait_for(process.wait(), timeout_s)
+    # Nothing signals when the rest of a process group exits, so it's polled
+    while process.is_running() and (remaining_s := deadline - loop.time()) > 0:  # noqa: ASYNC110
+        await asyncio.sleep(min(GROUP_POLL_INTERVAL_S, remaining_s))
+
+
+def _needs_stopping(process: PoeProcess) -> bool:
+    """
+    Check whether a subprocess is still running, or, once it has been signalled to shut
+    down, whether anything it left in its process group is. Processes left running by a
+    subprocess that exited by itself are left alone, as they may be meant to outlive it.
+    """
+    if process.returncode is None:
+        return True
+    return process.shutdown_urgency > 0 and process.is_running()
 
 
 class ShutdownManager:
@@ -20,20 +84,52 @@ class ShutdownManager:
     def __init__(self, loop: asyncio.AbstractEventLoop, io: PoeIO):
         self._loop = loop
         self._io = io
-        self._shutting_down = asyncio.Event()
+        self._shutdown_signal: int | None = None
         self._urgency = 0
         self.tasks: WeakSet[asyncio.Task] = WeakSet()
         self.processes: WeakSet[PoeProcess] = WeakSet()
+        # Processes are only held weakly until they are signalled, after which they're
+        # kept while stopping, even once the task runs that started them are gone
+        self._signalled_processes: set[PoeProcess] = set()
         self._backup_sighup = None
         self._backup_sigint = None
         self._backup_sigterm = None
         self._backup_sigbreak = None
-        self._is_windows = sys.platform == "win32"
         self._shutdown_worker: asyncio.Task | None = None
+
+    @property
+    def interrupted_exit_status(self) -> int | None:
+        """
+        The exit status for poe to report once shutdown has been requested by a signal,
+        following the shell convention of 128 + its number, or None until then.
+        """
+        if self._shutdown_signal is None:
+            return None
+        return 128 + self._shutdown_signal
+
+    async def wait_for_processes(self) -> None:
+        """
+        Once shutdown has begun, wait for what is left running in the process groups of
+        the subprocesses it has signalled, until they exit or have been killed.
+        """
+        if self._shutdown_signal is None:
+            return
+        if current_task := asyncio.current_task():
+            # The calling task is finishing anyway, so it needn't be cancelled
+            self.tasks.discard(current_task)
+        # Nothing signals when the rest of a process group exits, so it's polled
+        while any(_needs_stopping(proc) for proc in self._tracked_processes()):  # noqa: ASYNC110
+            await asyncio.sleep(GROUP_POLL_INTERVAL_S)
+
+    def _tracked_processes(self) -> set[PoeProcess]:
+        return {*self.processes, *self._signalled_processes}
 
     def shutdown(self, signum=None, frame=None):
         self._io.print_debug(" ! Termination requested with signal: '%s'", signum or "")
-        if signum is signal.SIGTERM:
+        if self._shutdown_signal is None:
+            self._shutdown_signal = int(signum or signal.SIGINT)
+        # Signal handlers receive the signal number as a plain int
+        if signum == signal.SIGTERM:
             self._urgency += max(1, 3 - self._urgency)
         else:
             self._urgency += 1
@@ -46,11 +142,13 @@ class ShutdownManager:
             self._shutdown_loop(), name="ShutdownWorker"
         )
 
-    async def _shutdown_loop(self, escalation_interval_s: float = 0.8):
+    async def _shutdown_loop(
+        self, escalation_interval_s: float = ESCALATION_INTERVAL_S
+    ):
         """
         Call shutdown again every interval_s seconds until everything is dead
         """
-        while self.processes or self.tasks:
+        while self._tracked_processes() or self.tasks:
             self._shutdown()
             await asyncio.sleep(escalation_interval_s)
             self._urgency += 1
@@ -59,38 +157,15 @@ class ShutdownManager:
         self._io.print_debug(
             " ! Shutdown triggered level %s: commencing cleanup", self._urgency
         )
-        if self._is_windows:
-            for proc in tuple(self.processes):
-                if proc.returncode is None:
-                    if proc.no_console_ctrl:
-                        self._io.print_debug(
-                            " ! Force-terminating subprocess tree %s"
-                            " to avoid console corruption",
-                            proc.pid,
-                        )
-                        subprocess.run(
-                            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                            capture_output=True,
-                        )
-                    else:
-                        self._io.print_debug(
-                            " ! Sending CTRL_BREAK_EVENT to subprocess %s",
-                            proc.pid,
-                        )
-                        proc.send_signal(signal.CTRL_BREAK_EVENT)
-                else:
-                    self.processes.discard(proc)
-        else:
-            for proc in tuple(self.processes):
-                if proc.returncode is None:
-                    self._io.print_debug(
-                        " ! Sending SIGINT to subprocess group %s", proc.pid
-                    )
-                    self._send_signal_to_group(proc, signal.SIGINT)
-                else:
-                    self.processes.discard(proc)
+        for proc in self._tracked_processes():
+            if _needs_stopping(proc):
+                signal_shutdown(proc, self._urgency)
+                self._signalled_processes.add(proc)
+            else:
+                self.processes.discard(proc)
+                self._signalled_processes.discard(proc)
 
-        if not self.processes:
+        if not self._tracked_processes():
             self._io.print_debug(" ! Cleaning up tasks")
             # Clean up async tasks if there are no more subprocesses
             for task in tuple(self.tasks):
@@ -100,46 +175,10 @@ class ShutdownManager:
                     self._io.print_debug(" ! Cancelling task: %s", task.get_name())
                     task.cancel()
 
-        if self._urgency >= 3:
-            self._io.print_debug(
-                " ! Forceful shutdown triggered: terminating subprocesses"
-            )
-            # Tell subprocesses to terminate
-            if self._is_windows:
-                for proc in self.processes:
-                    if proc.returncode is None:
-                        subprocess.run(
-                            ["taskkill", "/T", "/PID", str(proc.pid)],
-                            capture_output=True,
-                        )
-                    else:
-                        self.processes.discard(proc)
-            else:
-                while self.processes:
-                    proc = self.processes.pop()
-                    if proc.returncode is None:
-                        self._send_signal_to_group(proc, 9)
-
-        if self._urgency >= 4:
-            self._io.print_debug(" ! Forceful shutdown triggered: killing subprocesses")
-            # Kill subprocesses with extreme prejudice
-            if self._is_windows:
-                while self.processes:
-                    proc = self.processes.pop()
-                    if proc.returncode is None:
-                        subprocess.run(
-                            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                            capture_output=True,
-                        )
-            else:
-                while self.processes:
-                    proc = self.processes.pop()
-                    if proc.returncode is None:
-                        self._send_signal_to_group(proc, signal.SIGKILL)
-
-    def _send_signal_to_group(self, proc: PoeProcess, sig: int):
-        with contextlib.suppress(ProcessLookupError):
-            os.killpg(os.getpgid(proc.pid), sig)  # type: ignore[attr-defined]
+        if self._urgency >= KILL_URGENCY:
+            # Stop waiting on subprocesses once they have been killed
+            self.processes.clear()
+            self._signalled_processes.clear()
 
     def _propagate_sighup(self, signum=None, frame=None):
         """
@@ -150,10 +189,7 @@ class ShutdownManager:
         self._io.print_debug(" ! SIGHUP received: propagating to subprocess groups")
         for proc in tuple(self.processes):
             if proc.returncode is None:
-                self._io.print_debug(
-                    " ! Sending SIGHUP to subprocess group %s", proc.pid
-                )
-                self._send_signal_to_group(proc, signal.SIGHUP)
+                proc.signal_group(signal.SIGHUP)
             else:
                 self.processes.discard(proc)
         # Also trigger shutdown so poe exits cleanly
