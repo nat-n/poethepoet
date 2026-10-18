@@ -331,7 +331,7 @@ class PoeConfig:
 
             if subproc.returncode != 0:
                 self._handle_error(
-                    "include_script subprocess returned non-zero for "
+                    "include_script subprocess returned non-zero for"
                     f" {include_script['script']!r}",
                     strict=strict,
                 )

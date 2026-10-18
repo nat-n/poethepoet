@@ -92,6 +92,9 @@ def tool_not_dict():
 
 def tool_poe_not_dict():
     return {"tool": {"poe": "x"}}
+
+def fails():
+    raise SystemExit(1)
 """
 
 
@@ -122,6 +125,24 @@ def test_include_script_returning_invalid_config(
     assert result.code == 1
     assert "Error: Invalid content in loaded config from errscripts" in result.capture
     assert expected_error in result.capture
+
+
+def test_include_script_that_fails(run_poe, temp_pyproject):
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        executor = "simple"
+        include_script = "errscripts:fails"
+        [tool.poe.tasks]
+        a = "poe_test_echo a"
+        """
+    )
+    project_path.joinpath("errscripts.py").write_text(INCLUDE_SCRIPT_ERRORS_MODULE)
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert (
+        "Error: include_script subprocess returned non-zero for 'errscripts:fails'\n"
+    ) in result.capture
 
 
 @pytest.mark.parametrize("include_script", ["5", "[5]", '["tasks:x", true]'])
