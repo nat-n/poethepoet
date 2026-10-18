@@ -412,15 +412,15 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         except OSError as error:
             if error.filename == cmd[0]:
                 # e.g. the file isn't executable or has no shebang
-                raise PoeException(
+                raise ExecutionError(
                     f"executable {cmd[0]!r} could not be run: {error.strerror}"
-                ) from error
+                ) from None
             raise
 
     async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
     ):
-        raise PoeException(f"executable {cmd[0]!r} could not be found") from error
+        raise ExecutionError(f"executable {cmd[0]!r} could not be found") from error
 
     def _exec(
         self,
@@ -450,9 +450,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
             raise
         except OSError as error:
             # execvpe may report the path it resolved rather than cmd[0]
-            raise PoeException(
+            raise ExecutionError(
                 f"executable {cmd[0]!r} could not be run: {error.strerror}"
-            ) from error
+            ) from None
 
     async def _exec_via_subproc(
         self,
