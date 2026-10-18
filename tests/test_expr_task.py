@@ -343,6 +343,31 @@ def test_expr_unset_env_var_is_empty_string(temp_pyproject, run_poe):
     assert result.stdout == "True\n"
 
 
+def test_expr_operator_depends_on_value_of_set_var(temp_pyproject, run_poe):
+    """
+    The default and alternate value operators treat a set but empty variable as
+    empty, and an import containing a comment is rejected rather than commenting
+    out the rest of the generated script.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.ops]
+        expr = "(${POE_TEST_EMPTY:-1}, ${POE_TEST_EMPTY:+2})"
+
+        [tool.poe.tasks.commented-import]
+        expr = "path.sep"
+        imports = ["os.path as path  # comment"]
+        """)
+    result = run_poe("ops", cwd=project_path, env={"POE_TEST_EMPTY": ""})
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "(1, '')\n"
+    assert result.stderr == ""
+
+    result = run_poe("commented-import", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid variable reference in expr: path" in result.capture
+    assert result.stdout == ""
+
+
 def test_expr_lazy_env_var(run_poe):
     """
     Lazily resolved variables like POE_GIT_DIR aren't mistaken for unset variables,

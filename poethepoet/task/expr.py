@@ -218,8 +218,12 @@ class ExprTask(PoeTask):
                 if spy_env.get(node.param_name) is None:
                     accessed_vars[node.param_name] = ""
                 expression_parts.append(f"__env.{node.param_name}")
+            elif argument := node.active_argument(env):
+                # Whether an operator applies depends on the value of the variable,
+                # rather than the reference that the spy returns
+                expression_parts.append(argument.flatten(spy_env))
             else:
-                expression_parts.append(node.expand(spy_env))
+                expression_parts.append(spy_env.get(node.param_name, ""))
 
         return "".join(expression_parts), accessed_vars
 
@@ -233,6 +237,9 @@ def _get_import_names(imports: Iterable[str]) -> Iterator[str]:
     import ast
 
     for import_ref in imports:
+        if "#" in import_ref:
+            # This would comment out the rest of the generated script
+            continue
         try:
             import_nodes = ast.parse(f"import {import_ref}").body
         except SyntaxError:
