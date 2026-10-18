@@ -323,6 +323,15 @@ literal_dollar_examples = [
     ("UQ=a$#b\nUQ2=a$ #comment\n", {"UQ": "a$#b", "UQ2": "a$"}),
     # $ that isn't an expansion mixed with ones that are
     ("X=1\nUQ=$-$X-$\n", {"X": "1", "UQ": "$-1-$"}),
+    # $ before a double quote or a command substitution
+    ('UQ=a$"b"\n', {"UQ": "a$b"}),
+    ('UQ=$(ls)\nDQ="$(ls)"\n', {"UQ": "$(ls)", "DQ": "$(ls)"}),
+    # special parameters stay paired inside the argument of another expansion too
+    (
+        'X=xv\nUQ=${U:-pa$$word}\nDQ="${U:-pa$$word}"\nQ="${U:-$$X}"\n',
+        {"X": "xv", "UQ": "pa$$word", "DQ": "pa$$word", "Q": "$$X"},
+    ),
+    ("X=1\nUQ=${X:+a$$b$?c}\n", {"X": "1", "UQ": "a$$b$?c"}),
 ]
 
 

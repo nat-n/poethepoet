@@ -7,8 +7,13 @@ single/double quoting, backslash escaping, and parameter expansion.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .command import ParamExpansion, SingleQuotedText
 from .core import ContentNode, ParseCursor, ParseError, SyntaxNode
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class EnvFileUnquotedText(ContentNode):
@@ -73,18 +78,36 @@ class EnvFileLiteralText(ContentNode):
     Reads a single character that is kept literally because it has no special
     meaning where it appears: a # that doesn't start a comment, or a $ that doesn't
     start a parameter expansion, i.e. isn't followed by a name or {.
-
-    A $ followed by one of the shell's special parameters $, ?, !, #, - or 0 is kept
-    together with it (e.g. $$ stays $$, rather than the second $ starting another
-    expansion), since these have no meaning in an envfile.
     """
-
-    _SPECIAL_PARAMS = frozenset("$?!#-0")
 
     def _parse(self, chars: ParseCursor):
         self._content = chars.take()
-        if self._content == "$" and chars.peek() in self._SPECIAL_PARAMS:
-            self._content += chars.take()
+
+
+class EnvFileParamExpansion(ParamExpansion):
+    """
+    A ParamExpansion in an envfile value, which also reads the shell's special
+    parameters $$, $?, $!, $#, $- and $0. These have no meaning in an envfile, so
+    they expand to themselves. Reading them as a pair means that e.g. the second $
+    of $$ doesn't start another expansion, also inside the argument of ${VAR:-...}.
+    """
+
+    _SPECIAL_PARAMS = frozenset("$?!#-0")
+    _is_special: bool = False
+
+    def _parse(self, chars: ParseCursor):
+        assert chars.take() == "$"
+        if chars.peek() in self._SPECIAL_PARAMS:
+            self._content = "$" + chars.take()
+            self._is_special = True
+            return
+        chars.pushback("$")
+        super()._parse(chars)
+
+    def expand(self, env: Mapping[str, str]) -> str:
+        if self._is_special:
+            return self._content
+        return super().expand(env)
 
 
 class EnvFileDQText(ContentNode):
@@ -141,7 +164,7 @@ class EnvFileDQString(SyntaxNode):
 
         EnvFileDQTextCls = self.get_child_node_cls(EnvFileDQText)
         EnvFileLiteralTextCls = self.get_child_node_cls(EnvFileLiteralText)
-        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
+        ParamExpansionCls = self.get_child_node_cls(EnvFileParamExpansion)
 
         while True:
             next_char = chars.peek()
@@ -181,7 +204,7 @@ class EnvFileValue(SyntaxNode):
         EnvFileLiteralTextCls = self.get_child_node_cls(EnvFileLiteralText)
         SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
         EnvFileDQStringCls = self.get_child_node_cls(EnvFileDQString)
-        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
+        ParamExpansionCls = self.get_child_node_cls(EnvFileParamExpansion)
 
         # Leading space/tab before content is invalid (bash disallows VAR= value)
         next_char = chars.peek()

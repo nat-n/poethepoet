@@ -27,17 +27,21 @@ def parse_env_file(
 
 
 def _parse_to_ast(content: str) -> EnvFile:
+    from ..helpers.parse.command import ParamExpansion
     from ..helpers.parse.core import ParseConfig, ParseCursor
     from ..helpers.parse.core import ParseError as AstParseError
-    from ..helpers.parse.envfile import EnvFile
+    from ..helpers.parse.envfile import EnvFile, EnvFileParamExpansion
 
     # Ignore a leading UTF-8 byte order mark, as written by some Windows editors
     content = content.removeprefix("\ufeff")
     if not content.endswith("\n"):
         # Terminate the last line, without adding a line that error positions count
         content += "\n"
+    # Use the envfile flavour of ParamExpansion everywhere, including in the argument
+    # of ${VAR:-...}, so special parameters like $$ are kept literally there too
+    config = ParseConfig(substitute_nodes={ParamExpansion: EnvFileParamExpansion})
     try:
-        return EnvFile(ParseCursor.from_string(content), ParseConfig())
+        return EnvFile(ParseCursor.from_string(content), config)
     except AstParseError as error:
         message = error.message
         if error.has_position:
