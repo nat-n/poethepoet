@@ -70,6 +70,11 @@ def main(version: str | None = None) -> None:
         root,
         lambda c: c.replace(current, new_version),
     )
+
+    if not re.fullmatch(r"\d+\.\d+\.\d+", new_version):
+        print("  Skipped README.md and docs: they never reference pre-releases")
+        return
+
     _update_file(
         root / "README.md",
         root,
