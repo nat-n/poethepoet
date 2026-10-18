@@ -616,3 +616,18 @@ def test_cmd_with_quoted_glob_stars_inside_path_component(run_poe, glob_project)
     assert result.code == 0, result.capture
     assert result.stdout == "../glob_**?.txt\n"
     assert result.stderr == ""
+
+
+def test_cmd_parse_error_reports_one_based_position(run_poe, temp_pyproject):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks]
+        bad = 'echo "unterminated'
+        """
+    )
+    result = run_poe("bad", cwd=project_path)
+    assert result.code == 1
+    assert (
+        "Unexpected end of input with unmatched double quote, near line 1, "
+        "position 19." in result.capture
+    )

@@ -11,7 +11,7 @@ class PoeException(RuntimeError):
         if args:
             cause = args[0]
             position_clause = (
-                f", near line {cause.line}, position {cause.position}."
+                f", near {cause.location}."
                 if getattr(cause, "has_position", False)
                 else "."
             )

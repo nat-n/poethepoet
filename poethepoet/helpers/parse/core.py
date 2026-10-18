@@ -81,7 +81,7 @@ class ParseCursor:
         for item in reversed(items):
             self._pushback_stack.append(item)
             if item == "\n":
-                self._position = self._line_lengths.pop(0)
+                self._position = self._line_lengths.pop()
                 self._line = max(0, self._line - 1)
             else:
                 self._position -= 1
@@ -270,10 +270,22 @@ class ParseError(RuntimeError):
         self.message = message
         if cursor is not None:
             self.line, self.position = cursor.position
+        else:
+            self.line = self.position = None
 
     @property
     def has_position(self) -> bool:
         return None not in (self.line, self.position)
+
+    @property
+    def location(self) -> str:
+        """
+        Describe the position of the error for users, with 1-based line and position
+        numbers (line and position themselves are 0-based).
+        """
+        if self.line is None or self.position is None:
+            return "unknown location"
+        return f"line {self.line + 1}, position {self.position + 1}"
 
     def __repr__(self):
         details = (
