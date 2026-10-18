@@ -160,7 +160,7 @@ Normally envfile paths are resolved relative to the project root (that is the pa
     [tool.poe]
     envfile = "${POE_GIT_DIR}/.env"
 
-See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work. If the project is not inside a git repository then such an envfile is not loaded, and poe warns about it unless it is optional.
+See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work. If the project is not inside a git repository then an envfile with a path that uses ``${POE_GIT_DIR}`` or ``${POE_GIT_ROOT}`` is not loaded, and poe warns about it unless it is optional.
 
 .. note::
 
