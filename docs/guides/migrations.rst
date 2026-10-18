@@ -28,6 +28,18 @@ Square bracket glob patterns in cmd tasks
 
 Whitespace, backslashes, quotes, and parameter expansions inside a square bracket pattern are now interpreted like in bash, instead of being taken literally. To match a space or a backslash, escape it with a backslash, for example ``[a\ b]``.
 
+Dollar signs and escaped whitespace in env files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A few edge cases in env file values now behave like bash:
+
+- A ``$`` that doesn't start an expansion is kept in unquoted values too. From 0.46.0 it was dropped, so ``PRICE=100$`` gave ``100`` and ``DIR=$/tmp`` gave ``/tmp``.
+- ``$1`` to ``$9``, ``$@`` and ``$*`` expand to an empty string, as in a bash script run without arguments. Previously ``abc$1def`` gave ``abc1def`` unquoted and ``abc$1def`` double-quoted, and now gives ``abcdef``.
+- ``$$``, ``$?``, ``$!``, ``$#``, ``$-`` and ``$0`` are kept literally. Previously ``pa$$word`` gave ``pa$``, and now gives ``pa$$word``. Bash would expand these to details of the shell process, such as its PID for ``$$``.
+- Whitespace escaped with a backslash is part of the value: it is no longer stripped from the end of an unquoted value, and a ``#`` after it no longer starts a comment. So ``A=foo\ #bar`` gives ``foo #bar`` rather than ``foo``, as it did before 0.46.0.
+
+To keep a value exactly as written, wrap it in single quotes, for example ``PASSWORD='pa$1word'``. See :ref:`Parameter expansion in env files` for details.
+
 
 0.47.0
 ------
@@ -63,7 +75,7 @@ These options were not available in 0.47.x and 0.48.0, where the workaround is t
 0.46.0
 ------
 
-This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. This means that a ``$`` in env file values may now be interpreted differently, and two other edge-case behaviours changed.
+This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. This means that a ``$`` in env file values may now be interpreted differently, and two other edge-case behaviours changed. Some further unintended changes to ``$`` and escaped whitespace handling in 0.46.0 were fixed in :ref:`0.49.0<Dollar signs and escaped whitespace in env files>`.
 
 Parameter expansion in unquoted and double-quoted values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
