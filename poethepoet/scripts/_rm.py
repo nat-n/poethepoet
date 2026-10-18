@@ -13,7 +13,8 @@ def rm(
     """
     This function is intended for use in a script task to delete files and directories
     matching any of the given patterns, as a platform agnostic alternative to
-    ``rm -rf [patterns]``
+    ``rm -rf [patterns]``. It never deletes the working directory or a directory
+    containing it.
 
     Example usage:
 
@@ -37,6 +38,7 @@ def rm(
     """
     verbosity = int(verbosity)
     failed = False
+    protected_paths = {(cwd_path := Path(cwd).resolve()), *cwd_path.parents}
 
     for pattern in patterns:
         matches = _glob(pattern, cwd)
@@ -46,7 +48,7 @@ def rm(
             print(f"Deleting paths matching {pattern!r}")
 
         for match in matches:
-            if not _delete_path(match, verbosity, dry_run):
+            if not _delete_path(match, verbosity, dry_run, protected_paths):
                 failed = True
 
     if failed:
@@ -78,7 +80,9 @@ def _glob(pattern: str, cwd: str) -> list[Path]:
         raise SystemExit(f"Error: Invalid pattern {pattern!r}: {message}")
 
 
-def _delete_path(path: Path, verbosity: int, dry_run: bool) -> bool:
+def _delete_path(
+    path: Path, verbosity: int, dry_run: bool, protected_paths: set[Path]
+) -> bool:
     """
     Delete the given path, returning False if this failed.
     """
@@ -86,6 +90,9 @@ def _delete_path(path: Path, verbosity: int, dry_run: bool) -> bool:
         # Delete the link itself, rather than its target
         is_dir = False
     elif path.exists():
+        if path.resolve() in protected_paths:
+            print(f"Error: Refusing to delete '{path}'", file=sys.stderr)
+            return False
         is_dir = path.is_dir()
     else:
         # Already deleted, e.g. as the descendant of a previous match

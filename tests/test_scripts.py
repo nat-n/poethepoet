@@ -222,6 +222,32 @@ def test_rm_empty_pattern(test_dir_structure, capsys, test_file_tree_nodes):
         assert path.exists()
 
 
+def test_rm_never_deletes_filesystem_root(test_dir_structure, capsys):
+    root = test_dir_structure.anchor
+
+    rm(root, verbosity=1, dry_run=True)
+
+    captured = capsys.readouterr()
+    assert captured.out == f"No files or directories to delete matching {root!r}\n"
+    assert captured.err == ""
+
+
+@pytest.mark.parametrize("pattern", ["..", "pkg/..", "*/..", "<abs>/.."])
+def test_rm_never_deletes_cwd_or_its_parents(
+    test_dir_structure, capsys, test_file_tree_nodes, pattern
+):
+    pattern = pattern.replace("<abs>", str(test_dir_structure / "pkg"))
+
+    with pytest.raises(SystemExit) as error:
+        rm(pattern, dry_run=True)
+
+    assert error.value.code == 1
+    captured = capsys.readouterr()
+    assert captured.err.startswith("Error: Refusing to delete ")
+    for path, _ in test_file_tree_nodes:
+        assert path.exists()
+
+
 @pytest.mark.skipif(
     sys.version_info >= (3, 13), reason="'**foo' is a valid pattern since 3.13"
 )
