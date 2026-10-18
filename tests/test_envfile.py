@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 
 def test_global_envfile_and_default(run_poe):
     result = run_poe("deploy-dev", project="envfile")
@@ -309,6 +311,9 @@ def test_envfile_not_utf8(temp_pyproject, run_poe, tmp_path):
     assert (
         f"Envfile at {str(envfile)!r} could not be decoded as UTF-8" in result.capture
     )
+    # The decode error isn't shown, since its repr includes the file's content
+    assert "caf" not in result.capture
+    assert "UnicodeDecodeError" not in result.capture
     assert "Traceback" not in result.capture
 
 
@@ -368,6 +373,7 @@ def test_git_dir_envfile_outside_git_repo(temp_pyproject, run_poe, tmp_path):
         """
     )
     result = run_poe(
+        "-vvv",
         "twice",
         cwd=project_path,
         # Make sure git doesn't find a repo above the temp dir
@@ -386,15 +392,21 @@ def test_git_dir_envfile_outside_git_repo(temp_pyproject, run_poe, tmp_path):
             )
             == 1
         )
+    # The optional envfile is skipped silently, with a debug message
+    assert (
+        "Skipping optional envfile at '${POE_GIT_DIR}/x' because the project is "
+        "not inside a git repository, so POE_GIT_DIR has no value"
+    ) in result.capture
     assert "at '/.env'" not in result.capture
     assert "'/x'" not in result.capture
 
 
-def test_git_dir_include_outside_git_repo(temp_pyproject, run_poe, tmp_path):
+@pytest.mark.parametrize("git_var", ["POE_GIT_DIR", "POE_GIT_ROOT"])
+def test_git_dir_include_outside_git_repo(temp_pyproject, run_poe, tmp_path, git_var):
     project_path = temp_pyproject(
-        """
+        f"""
         [tool.poe]
-        include = "${POE_GIT_DIR}/tasks.toml"
+        include = "${{{git_var}}}/tasks.toml"
 
         [tool.poe.tasks.show]
         cmd = "poe_test_echo ok"
@@ -408,7 +420,8 @@ def test_git_dir_include_outside_git_repo(temp_pyproject, run_poe, tmp_path):
     assert result.code == 0, result.capture
     assert result.stdout == "ok\n"
     assert (
-        "Warning: Poe could not include file from '${POE_GIT_DIR}/tasks.toml' because "
-        "the project is not inside a git repository, so POE_GIT_DIR has no value"
+        f"Warning: Poe could not include file from '${{{git_var}}}/tasks.toml' "
+        "because the project is not inside a git repository, so "
+        f"{git_var} has no value"
     ) in result.capture
     assert "/tasks.toml\n" not in result.capture
