@@ -232,6 +232,15 @@ def test_rm_never_deletes_filesystem_root(test_dir_structure, capsys):
     assert captured.err == ""
 
 
+def test_rm_never_deletes_process_working_dir(test_dir_structure, capsys):
+    with pytest.raises(SystemExit) as error:
+        rm(test_dir_structure.name, cwd="..", dry_run=True)
+
+    assert error.value.code == 1
+    captured = capsys.readouterr()
+    assert captured.err.startswith("Error: Refusing to delete ")
+
+
 @pytest.mark.parametrize("pattern", ["..", "pkg/..", "*/..", "<abs>/.."])
 def test_rm_never_deletes_cwd_or_its_parents(
     test_dir_structure, capsys, test_file_tree_nodes, pattern

@@ -13,8 +13,8 @@ def rm(
     """
     This function is intended for use in a script task to delete files and directories
     matching any of the given patterns, as a platform agnostic alternative to
-    ``rm -rf [patterns]``. It never deletes the working directory or a directory
-    containing it.
+    ``rm -rf [patterns]``. It never deletes the working directory, the ``cwd``
+    directory, or a directory containing either.
 
     Example usage:
 
@@ -38,7 +38,7 @@ def rm(
     """
     verbosity = int(verbosity)
     failed = False
-    protected_paths = {(cwd_path := Path(cwd).resolve()), *cwd_path.parents}
+    protected_paths = _get_protected_paths(Path(cwd), Path.cwd())
 
     for pattern in patterns:
         matches = _glob(pattern, cwd)
@@ -53,6 +53,30 @@ def rm(
 
     if failed:
         raise SystemExit(1)
+
+
+def _get_protected_paths(*working_dirs: Path) -> set[tuple[int, int] | Path]:
+    """
+    Identify the given directories and all of their parents.
+    """
+    resolved_dirs = [working_dir.resolve() for working_dir in working_dirs]
+    return {
+        _get_path_id(path)
+        for resolved_dir in resolved_dirs
+        for path in (resolved_dir, *resolved_dir.parents)
+        if path.exists()
+    }
+
+
+def _get_path_id(path: Path) -> tuple[int, int] | Path:
+    """
+    Identify an existing path by its device and inode, which is robust to case
+    insensitive file systems, or by its resolved path if there is no inode number.
+    """
+    stat_result = path.stat()
+    if stat_result.st_ino:
+        return (stat_result.st_dev, stat_result.st_ino)
+    return path.resolve()
 
 
 def _glob(pattern: str, cwd: str) -> list[Path]:
@@ -81,7 +105,10 @@ def _glob(pattern: str, cwd: str) -> list[Path]:
 
 
 def _delete_path(
-    path: Path, verbosity: int, dry_run: bool, protected_paths: set[Path]
+    path: Path,
+    verbosity: int,
+    dry_run: bool,
+    protected_paths: set[tuple[int, int] | Path],
 ) -> bool:
     """
     Delete the given path, returning False if this failed.
@@ -90,7 +117,7 @@ def _delete_path(
         # Delete the link itself, rather than its target
         is_dir = False
     elif path.exists():
-        if path.resolve() in protected_paths:
+        if _get_path_id(path) in protected_paths:
             print(f"Error: Refusing to delete '{path}'", file=sys.stderr)
             return False
         is_dir = path.is_dir()
