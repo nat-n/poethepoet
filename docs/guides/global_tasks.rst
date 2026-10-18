@@ -20,13 +20,23 @@ You can choose any location to define the tasks, and whatever name you like for 
 
   For this to work Poe the Poet must be installed globally such as via pipx or homebrew.
 
+.. tip::
+
+  Global tasks run in the global project's directory (e.g. ``~/.poethepoet``) rather than the directory you call them from. The calling directory is available as ``POE_PWD``, so a task that should operate on it can set the :ref:`cwd option<Running a task with a specific working directory>` like so:
+
+  .. code-block:: toml
+
+    [tool.poe.tasks.count-files]
+    shell = "ls | wc -l"
+    cwd = "${POE_PWD}"
+
 
 Shell completions for global tasks
 ----------------------------------
 
 If you use zsh or fish then the usual completion script should just work with your alias (as long as it was created with poethepoet >=0.28.0).
 
-However for bash you'll need to generate a new completion script for the alias specifying the alias and the path to you global tasks like so:
+However for bash you'll need to generate a new completion script for the alias specifying the alias and the path to your global tasks like so:
 
 .. code-block:: bash
 

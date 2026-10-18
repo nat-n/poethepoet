@@ -1,7 +1,7 @@
 Migration Guides
 ================
 
-As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
+As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts. For the full list of changes in each release, see the `release notes on GitHub <https://github.com/nat-n/poethepoet/releases>`_.
 
 0.49.0
 ------

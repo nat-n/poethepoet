@@ -12,14 +12,14 @@ You can install the poethepoet poetry plugin globally like so:
 
   poetry self add 'poethepoet[poetry_plugin]'
 
-Or add it to poetry on a per project basis by adding the following to your *pyproject.toml*:
+Or with poetry >= 2.0, add it to poetry on a per project basis by adding the following to your *pyproject.toml*:
 
-.. code-block:: sh
+.. code-block:: toml
 
   [tool.poetry.requires-plugins]
-  poethepoet = { version = "~0.35.0", extras = ["poetry_plugin"]}
+  poethepoet = { version = ">=0.49", extras = ["poetry_plugin"] }
 
-See the |poetry_plugin_link| for more installation options, or see the :doc:`poetry plugin docs <poetry_plugin>` for more details about this option.
+See the |poetry_plugin_link| for more installation options.
 
 
 Configuring the plugin
@@ -116,6 +116,11 @@ to consider when using the Poe the Poet poetry plugin.
   task at runtime. This is not supported by cleo. The plugin implements a workaround
   that mostly works, but still if the `--no-plugins` option is provided *anywhere* in
   the command line then the poe plugin will never be invoked.
+
+  Similarly, poetry applies its own global options such as ``-q``/``--quiet`` and
+  ``-n``/``--no-interaction`` even if they come after the task name. Before poetry 2.1
+  these options are also passed on to the task. Since poetry 2.1 they are not, and the
+  same applies to ``-C``/``--directory`` and ``-P``/``--project``.
 
 2.
   Poetry comes with its own |poetry_comp_link|, which includes completion of task names but poe's command line completion won't work.
