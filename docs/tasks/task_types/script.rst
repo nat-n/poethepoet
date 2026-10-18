@@ -140,6 +140,6 @@ See :ref:`Arguments for script tasks` for more details and examples.
 Accessing free arguments via ``_extra_args``
 --------------------------------------------
 
-Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside script tasks as the ``_extra_args`` variable — a ``list[str]``, which is empty if there are none — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
+Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside script tasks as the ``_extra_args`` variable — a ``list[str]`` — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.

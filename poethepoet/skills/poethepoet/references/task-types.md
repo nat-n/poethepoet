@@ -345,7 +345,7 @@ Use when: outputting computed values, platform checks, file counts, or lightweig
 
 **Referencing declared args.** A declared arg (public or private `_`) is in scope as a **bare Python variable** under its declared name, with its declared type. The canonical form is `expr = "AWS_REGION"`, not `expr = "${AWS_REGION}"`.
 
-> The `${AWS_REGION}` form is the arg's env string rather than its typed value: `'2'` rather than `2`, and `''` for a false boolean or an arg that wasn't passed (the bare name gives `False` / `None`).
+> The `${AWS_REGION}` form is the arg's string form rather than its typed value: `'2'` rather than `2`, and `''` for a false boolean or an unset arg (the bare name gives `False` / `None`).
 
 **Unset env vars.** An unset `${VAR}` is an empty string, so `expr = "${VIRTUAL_ENV}.endswith('.venv')"` gives `False` when no venv is active.
 
