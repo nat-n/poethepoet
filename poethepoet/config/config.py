@@ -354,9 +354,14 @@ class PoeConfig:
 
             if not isinstance(parsed_result, dict):
                 self._handle_error(
-                    f"Invalid content in loaded config from {target_module}: "
-                    "include_script must return a dict (or a json object string), "
-                    f"got {type(parsed_result).__name__!r}",
+                    "Invalid content in loaded config from include_script "
+                    f"{include_script['script']!r}: expected a dict or a json object "
+                    "string, got "
+                    + (
+                        "None"
+                        if parsed_result is None
+                        else type(parsed_result).__name__
+                    ),
                     strict=strict,
                 )
                 return
@@ -391,7 +396,8 @@ class PoeConfig:
             )
         except (PoeException, KeyError) as error:
             raise ConfigValidationError(
-                f"Invalid content in loaded config from {target_module}"
+                "Invalid content in loaded config from include_script "
+                f"{include_script['script']!r}"
             ) from error
 
     def _handle_error(
