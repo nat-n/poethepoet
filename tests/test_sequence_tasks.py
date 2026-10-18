@@ -261,3 +261,26 @@ def test_sequence_subtask_ref_to_task_with_deps_and_uses(temp_pyproject, run_poe
     assert result.code == 0, result.capture
     assert "dep-ran" in result.stdout
     assert "cfg=loaded" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("task_def", "expected_error"),
+    [
+        ("sequence = 5", "Content for SequenceTask must be a list"),
+        ('sequence = [{ help = "x" }]', "Failed to interpret subtask #0 in sequence"),
+    ],
+)
+def test_sequence_with_invalid_content(
+    temp_pyproject, run_poe, task_def, expected_error
+):
+    """
+    Invalid sequence content is reported as a config error rather than crashing
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.seq]
+        {task_def}
+        """)
+    result = run_poe("seq", cwd=project_path)
+    assert result.code == 1
+    assert f"Error: Invalid task 'seq'\n     | {expected_error}\n" in result.capture
+    assert result.stdout == ""

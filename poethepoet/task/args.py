@@ -196,7 +196,8 @@ class ArgSpec(PoeOptions):
     ):
         positional = arg.get("positional", False)
         name = name or arg.get("name")
-        stripped = (name or "").lstrip("_")
+        # Invalid name or options values are reported by validation
+        stripped = name.lstrip("_") if isinstance(name, str) else ""
         if positional:
             if strict and arg.get("options"):
                 raise ConfigValidationError(
@@ -209,7 +210,8 @@ class ArgSpec(PoeOptions):
             if isinstance(positional, str):
                 return [positional]
             return [stripped or name]
-        return tuple(arg.get("options", [f"--{stripped}"]))
+        options = arg.get("options", [f"--{stripped}"])
+        return tuple(options) if isinstance(options, list | tuple) else options
 
     @classmethod
     def __schema_fragment__(cls, ctx: Any) -> dict:
@@ -396,6 +398,8 @@ class PoeTaskArgs:
                     format_arg_details(arg),
                 )
                 for arg in ArgSpec.normalize(args_def, strict=False)  # type: ignore[arg-type]
+                # options may be invalid if rendering help after a validation error
+                if isinstance(arg["options"], list | tuple)
             ]
         except ConfigValidationError as error:
             if suppress_errors:

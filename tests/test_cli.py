@@ -220,6 +220,16 @@ def test_non_string_task_help_is_reported(
             '[{ name = "x", choices = 5 }]',
             "Error: Invalid argument 'x' declared in task 'bad'",
         ),
+        (
+            "[{ name = 5 }]",
+            "Error: Invalid argument 5 declared in task 'bad'\n"
+            "     | Option 'name' must have a value of type: str",
+        ),
+        (
+            '[{ name = "x", options = 5 }]',
+            "Error: Invalid argument 'x' declared in task 'bad'\n"
+            "     | Option 'options' must be a list",
+        ),
     ],
 )
 @pytest.mark.parametrize("cli_args", [("--help",), ("--help", "bad"), ("other",)])

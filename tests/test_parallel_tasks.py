@@ -1265,3 +1265,26 @@ def test_parallel_task_exits_quietly_when_its_output_is_closed(
     assert exit_code == 141
     assert "Error" not in stderr
     assert "Exception ignored" not in stderr
+
+
+@pytest.mark.parametrize(
+    ("task_def", "expected_error"),
+    [
+        ('parallel = "poe_test_echo a"', "Content for ParallelTask must be a list"),
+        ('parallel = [{ help = "x" }]', "Failed to interpret subtask #1 in parallel"),
+    ],
+)
+def test_parallel_with_invalid_content(
+    temp_pyproject, run_poe, task_def, expected_error
+):
+    """
+    Invalid parallel content is reported as a config error rather than crashing
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.par]
+        {task_def}
+        """)
+    result = run_poe("par", cwd=project_path)
+    assert result.code == 1
+    assert f"Error: Invalid task 'par'\n     | {expected_error}\n" in result.capture
+    assert result.stdout == ""
