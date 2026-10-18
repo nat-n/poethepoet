@@ -187,8 +187,44 @@ def test_documentation_of_unknown_single_task(run_poe):
     assert "Configured tasks:\n  echo" in result.capture, "Should list tasks"
 
 
+@pytest.mark.parametrize(
+    "cli_args", [("--help",), ("--help", "other"), ("--help", "not_a_task")]
+)
+def test_help_reports_config_errors(run_poe, temp_pyproject, cli_args):
+    """
+    --help shows a config validation error and exits non-zero, so it can be used
+    to check that the config is valid
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks]
+        bad = { cmd = "poe_test_echo bad", unknown_option = 1 }
+        other = { cmd = "poe_test_echo other", help = "Other task" }
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    assert result.code == 1
+    assert "Error: Invalid task 'bad'\n" in result.capture
+    assert "Unrecognized option 'unknown_option'" in result.capture
+    if cli_args == ("--help", "other"):
+        # the help for the given task follows the error
+        assert "poe [global options] other [named arguments]" in result.capture
+    else:
+        assert "  other                 Other task" in result.capture
+
+
+def test_help_without_config(run_poe, tmp_path):
+    """
+    --help without a config still shows the help and succeeds
+    """
+    result = run_poe("--help", cwd=tmp_path)
+    assert result.code == 0
+    assert "Error:" not in result.capture
+    assert "Usage:\n" in result.capture
+
+
 @pytest.mark.parametrize("help_value", ["5", "true", '["a"]', '{ a = "b" }'])
-@pytest.mark.parametrize("cli_args", [(), ("other",), ("--help", "bad")])
+@pytest.mark.parametrize("cli_args", [(), ("other",), ("--help",), ("--help", "bad")])
 def test_non_string_task_help_is_reported(
     run_poe, temp_pyproject, help_value, cli_args
 ):
@@ -202,15 +238,10 @@ def test_non_string_task_help_is_reported(
         """
     )
     result = run_poe(*cli_args, cwd=project_path)
-    if cli_args and cli_args[0] == "--help":
-        # --help hides config errors, but must not crash
-        assert result.code == 0
-        if cli_args == ("--help",):
-            assert "  other                 Other task" in result.capture
-    else:
-        assert result.code == 1
-        assert "Error: Invalid task 'bad'" in result.capture
-        assert "Option 'help' must have a value of type: str" in result.capture
+    assert result.code == 1
+    assert "Error: Invalid task 'bad'" in result.capture
+    assert "Option 'help' must have a value of type: str" in result.capture
+    if cli_args != ("--help", "bad"):
         assert "  other                 Other task" in result.capture
 
 
@@ -248,14 +279,9 @@ def test_help_with_malformed_task_args(
         """
     )
     result = run_poe(*cli_args, cwd=project_path)
-    if cli_args[0] == "--help":
-        # --help hides config errors, but must not crash
-        assert result.code == 0
-        if cli_args == ("--help",):
-            assert "  other                 Other task" in result.capture
-    else:
-        assert result.code == 1
-        assert expected_error in result.capture
+    assert result.code == 1
+    assert expected_error in result.capture
+    if cli_args != ("--help", "bad"):
         assert "  other                 Other task" in result.capture
 
 

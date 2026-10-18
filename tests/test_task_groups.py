@@ -131,10 +131,6 @@ def test_task_duplicated_in_group_is_reported(run_poe, temp_pyproject, cli_args)
     )
     result = run_poe(*cli_args, cwd=project_path)
     assert "Configured tasks:" in result.capture
-    if cli_args == ("--help",):
-        # --help hides config errors, but must not crash
-        assert result.code == 0
-        return
     assert result.code == 1
     assert "Error: Config from" in result.capture
     assert (
@@ -172,10 +168,6 @@ def test_invalid_group_option_is_reported(
     )
     result = run_poe(*cli_args, cwd=project_path)
     assert "Configured tasks:\n  other" in result.capture
-    if cli_args == ("--help",):
-        # --help hides config errors, but must not crash
-        assert result.code == 0
-        return
     assert result.code == 1
     assert f"Error: {expected_error}" in result.capture
 

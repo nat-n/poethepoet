@@ -24,6 +24,10 @@ class CyclicDependencyError(PoeException):
     pass
 
 
+class ConfigNotFoundError(PoeException):
+    pass
+
+
 class ExpressionParseError(PoeException):
     pass
 

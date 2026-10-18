@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 
-from .exceptions import ExecutionError, PoeException
+from .exceptions import ConfigNotFoundError, ExecutionError, PoeException
 from .helpers.eventloop import run_async
 
 if TYPE_CHECKING:
@@ -164,7 +164,7 @@ class PoeThePoet:
             for task_spec in self.task_specs.load_all():
                 task_spec.validate(self.config, self.task_specs)
         except PoeException as error:
-            if should_display_help:
+            if should_display_help and isinstance(error, ConfigNotFoundError):
                 self.print_help(config_is_valid=False)
                 return 0
             self.print_help(error=error)

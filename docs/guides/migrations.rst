@@ -27,6 +27,11 @@ Errors from parsing env files and cmd tasks now give 1-based line and position n
 
 Following `no-color.org <https://no-color.org/>`_, setting ``NO_COLOR`` to any non-empty value now disables ansi colors, including ``NO_COLOR=0``. To keep colors, unset ``NO_COLOR``, set it to an empty string, or pass ``--ansi``.
 
+``poe --help`` reports config errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``poe --help`` and ``poe --help <task>`` now show any error in the config and exit with status 1, as running ``poe`` with no arguments does. Previously they hid the error and exited 0. Without any config, ``poe --help`` still exits 0.
+
 
 0.49.0
 ------

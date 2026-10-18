@@ -5,7 +5,12 @@ from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
+from ..exceptions import (
+    ConfigNotFoundError,
+    ConfigValidationError,
+    ExpressionParseError,
+    PoeException,
+)
 from ..helpers.eventloop import run_async
 from .file import PoeConfigFile
 from .partition import (
@@ -251,10 +256,10 @@ class PoeConfig:
 
         else:
             if target_path is not None:
-                raise PoeException(
+                raise ConfigNotFoundError(
                     f"No poe configuration found from location {target_path}"
                 )
-            raise PoeException(
+            raise ConfigNotFoundError(
                 f"No poe configuration found from location {self._project_dir}"
             )
 
