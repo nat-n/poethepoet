@@ -1,4 +1,5 @@
 import shutil
+from functools import cached_property
 from pathlib import Path
 from subprocess import PIPE, Popen
 
@@ -6,20 +7,19 @@ from subprocess import PIPE, Popen
 class GitRepo:
     def __init__(self, seed_path: Path):
         self._seed_path = seed_path
-        self._path: Path | None = None
-        self._main_path: Path | None = None
 
     @property
+    def seed_path(self) -> Path:
+        return self._seed_path
+
+    @cached_property
     def path(self) -> Path | None:
-        if self._path is None:
-            self._path = self._resolve_path()
-        return self._path
+        # Cached even if None, so git isn't run again for each reference outside a repo
+        return self._resolve_path()
 
-    @property
+    @cached_property
     def main_path(self) -> Path | None:
-        if self._main_path is None:
-            self._main_path = self._resolve_main_path()
-        return self._main_path
+        return self._resolve_main_path()
 
     def init(self):
         self._exec("init")

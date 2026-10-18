@@ -347,3 +347,68 @@ def test_envfile_changes_seen_by_later_runs(temp_pyproject, run_poe, tmp_path):
     assert run_poe("show", cwd=project_path).stdout == "first\n"
     envfile.write_text("A=second\n")
     assert run_poe("show", cwd=project_path).stdout == "second\n"
+
+
+def test_git_dir_envfile_outside_git_repo(temp_pyproject, run_poe, tmp_path):
+    """
+    Outside a git repo, an envfile path relative to POE_GIT_DIR or POE_GIT_ROOT is
+    reported as such (once), rather than resolved relative to the filesystem root.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        envfile = "${POE_GIT_DIR}/.env"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ok"
+        envfile = { expected = "${POE_GIT_ROOT}/.env", optional = "${POE_GIT_DIR}/x" }
+
+        [tool.poe.tasks.twice]
+        sequence = ["show", "show"]
+        """
+    )
+    result = run_poe(
+        "twice",
+        cwd=project_path,
+        # Make sure git doesn't find a repo above the temp dir
+        env={"GIT_CEILING_DIRECTORIES": str(tmp_path.parent)},
+    )
+    assert result.code == 0, result.capture
+    assert result.stdout == "ok\nok\n"
+    for path, var_name in (
+        ("${POE_GIT_DIR}/.env", "POE_GIT_DIR"),
+        ("${POE_GIT_ROOT}/.env", "POE_GIT_ROOT"),
+    ):
+        assert (
+            result.capture.count(
+                f"Warning: Poe failed to locate envfile at {path!r} because the "
+                f"project is not inside a git repository, so {var_name} has no value"
+            )
+            == 1
+        )
+    assert "at '/.env'" not in result.capture
+    assert "'/x'" not in result.capture
+
+
+def test_git_dir_include_outside_git_repo(temp_pyproject, run_poe, tmp_path):
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        include = "${POE_GIT_DIR}/tasks.toml"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ok"
+        """
+    )
+    result = run_poe(
+        "show",
+        cwd=project_path,
+        env={"GIT_CEILING_DIRECTORIES": str(tmp_path.parent)},
+    )
+    assert result.code == 0, result.capture
+    assert result.stdout == "ok\n"
+    assert (
+        "Warning: Poe could not include file from '${POE_GIT_DIR}/tasks.toml' because "
+        "the project is not inside a git repository, so POE_GIT_DIR has no value"
+    ) in result.capture
+    assert "/tasks.toml\n" not in result.capture

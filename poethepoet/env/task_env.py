@@ -252,6 +252,11 @@ class TaskEnv(Mapping[str, str]):
 
         if envfile_option:
             for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
+                if git_var := _find_unset_git_var(envfile_path, scoped_vars):
+                    self._envfiles.skip_outside_git_repo(
+                        envfile_path, git_var, optional=is_optional
+                    )
+                    continue
                 resolved_envfile = config_working_dir.joinpath(
                     parse_template(envfile_path, require_braces=True).resolve(
                         scoped_vars
@@ -280,6 +285,18 @@ class TaskEnv(Mapping[str, str]):
             )
             self.set(key, resolved_value)
             scoped_vars.set(key, resolved_value)
+
+
+def _find_unset_git_var(path_template: str, env: TaskEnv) -> str | None:
+    """
+    Return the name of a git variable (POE_GIT_DIR or POE_GIT_ROOT) that the given
+    path template references but that is empty, because the project is not inside a
+    git repo. Otherwise such a path would resolve relative to the filesystem root.
+    """
+    for var_name in ("POE_GIT_DIR", "POE_GIT_ROOT"):
+        if f"${{{var_name}}}" in path_template and not env.get(var_name):
+            return var_name
+    return None
 
 
 def _iter_envfile_paths(

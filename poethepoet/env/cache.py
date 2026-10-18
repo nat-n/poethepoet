@@ -28,6 +28,21 @@ class EnvFileCache:
         # reported once per run even though task envs may be resolved repeatedly
         self._missing_warned = set()
 
+    def skip_outside_git_repo(self, envfile: str, git_var: str, *, optional: bool):
+        """
+        Report that an envfile can't be loaded because its path references a git
+        variable, but the project is not inside a git repository.
+        """
+        message = (
+            f"envfile at {envfile!r} because the project is not inside a git "
+            f"repository, so {git_var} has no value"
+        )
+        if optional:
+            self._io.print_debug(f" - Skipping optional {message}")
+        elif envfile not in self._missing_warned:
+            self._missing_warned.add(envfile)
+            self._io.print_warning(f"Poe failed to locate {message}")
+
     def get(
         self,
         envfile: str | Path,
