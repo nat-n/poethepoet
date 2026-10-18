@@ -600,7 +600,8 @@ def test_async_script_task(run_poe, projects):
 def test_async_script_task_not_detected_as_coroutine_function(run_poe):
     """
     Async callables that are not detected by iscoroutinefunction (e.g. wrapped by
-    a sync decorator, or an object with an async __call__) are still awaited
+    a sync decorator, an object with an async __call__, or a function returning
+    an awaitable that isn't a coroutine) are still awaited
     """
     result = run_poe("wrapped-async-task", "--a=foo", project="scripts", env=no_venv)
     assert result.capture == "Poe => wrapped-async-task --a foo\n"
@@ -612,6 +613,11 @@ def test_async_script_task_not_detected_as_coroutine_function(run_poe):
     result = run_poe("async-callable-task", project="scripts", env=no_venv)
     assert result.capture == "Poe => async-callable-task\n"
     assert result.stdout == "I'm an async callable! (1,) {'x': 2}\n"
+    assert result.stderr == ""
+
+    result = run_poe("awaitable-task", project="scripts", env=no_venv)
+    assert result.capture == "Poe => awaitable-task\n"
+    assert result.stdout == "awaited result\n"
     assert result.stderr == ""
 
 
@@ -687,7 +693,9 @@ def test_script_task_method_call_on_arg(run_poe):
 
 
 def test_script_task_extra_args_empty_list_without_free_args(run_poe):
-    """_extra_args is an empty list when no free args are passed"""
+    """
+    _extra_args is an empty list when no free args are passed
+    """
     result = run_poe("echo-extra-args-list-script", project="scripts", env=no_venv)
     assert result.capture == "Poe => echo-extra-args-list-script\n"
     assert result.stdout == "list: []\n"
@@ -1057,7 +1065,43 @@ def test_bare_script_subtask_receives_only_own_args_as_kwargs(temp_pyproject, ru
     )
     result = run_poe("check", "--target", "foo", cwd=project_path, env=no_venv)
     assert result.code == 0, result.capture + result.stderr
+    assert result.capture == "Poe => build foo\nPoe => 'check[1]'\n"
     assert result.stdout == "build foo\ntest foo\n"
+    assert result.stderr == ""
+
+
+def test_bare_script_kwargs_with_args_shared_with_parent(temp_pyproject, run_poe):
+    """
+    A no-parens script subtask's own arg takes its own value even if a parent task
+    declares an arg of the same name, and a switch's args are passed as kwargs to
+    its cases, since cases share the switch's args rather than inheriting them.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.build]
+        script = "util:show"
+        args = ["flavor"]
+
+        [tool.poe.tasks.all]
+        sequence = ["build --flavor own"]
+        args = ["flavor"]
+
+        [tool.poe.tasks.pick]
+        control.expr = "flavor"
+        args = ["flavor"]
+
+          [[tool.poe.tasks.pick.switch]]
+          script = "util:show"
+        """)
+    _write_module(project_path, "util", "def show(**kwargs):\n    print(kwargs)\n")
+    result = run_poe("all", "--flavor", "parent", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "{'flavor': 'own'}\n"
+    assert result.stderr == ""
+
+    result = run_poe("pick", "--flavor", "sweet", cwd=project_path, env=no_venv)
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "{'flavor': 'sweet'}\n"
+    assert result.stderr == ""
 
 
 def test_bare_script_ref_target_without_args_gets_no_kwargs(temp_pyproject, run_poe):
@@ -1081,4 +1125,6 @@ def test_bare_script_ref_target_without_args_gets_no_kwargs(temp_pyproject, run_
     )
     result = run_poe("run", "--favorite_number", "42", cwd=project_path, env=no_venv)
     assert result.code == 0, result.capture + result.stderr
+    assert result.capture == "Poe => _serve\n"
     assert result.stdout == "PORT 42\n"
+    assert result.stderr == ""

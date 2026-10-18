@@ -325,6 +325,10 @@ print_result = true
 [tool.poe.tasks.async-callable-task]
 script = "pkg:async_callable(1, x=2)"
 
+[tool.poe.tasks.awaitable-task]
+script = "pkg:get_awaitable"
+print_result = true
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

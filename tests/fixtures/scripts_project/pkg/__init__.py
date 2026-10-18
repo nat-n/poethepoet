@@ -1,3 +1,4 @@
+import asyncio
 import sys
 
 
@@ -86,3 +87,13 @@ class AsyncCallable:
 
 
 async_callable = AsyncCallable()
+
+
+class _Awaitable:
+    def __await__(self):
+        yield from asyncio.sleep(0).__await__()
+        return "awaited result"
+
+
+def get_awaitable():
+    return _Awaitable()
