@@ -381,7 +381,8 @@ class PoeTaskArgs:
             parts: list[str] = []
             if default := arg.get("default"):
                 parts.append(f"default: {default}")
-            if choices := arg.get("choices"):
+            # choices may be invalid if rendering help after a validation error
+            if isinstance(choices := arg.get("choices"), (list, tuple)) and choices:
                 parts.append(f"choices: {', '.join(map(repr, choices))}")
             if parts:
                 return f"[{'; '.join(parts)}]"
