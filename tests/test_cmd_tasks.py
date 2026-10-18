@@ -67,11 +67,43 @@ def test_cmd_with_executable_that_cannot_be_run(
 
     result = run_poe_subproc("bad-script", cwd=str(project_path))
     assert result.code == 1
-    assert f"Error: executable './script.sh' could not be run: {reason}\n" in (
-        result.capture
+    assert result.capture == (
+        "Poe => ./script.sh\n"
+        f"Error: executable './script.sh' could not be run: {reason}\n"
     )
     assert result.stdout == ""
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="posix file permissions")
+def test_sequence_ignore_fail_with_executables_that_cannot_run(run_poe, temp_pyproject):
+    """
+    Failing to start an executable is a task failure, so ignore_fail applies to it
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks]
+        missing = "./missing.sh"
+        not-executable = "./script.sh"
+        last = "poe_test_echo last"
+
+        [tool.poe.tasks.all]
+        sequence = ["missing", "not-executable", "last"]
+        ignore_fail = true
+        """
+    )
+    project_path.joinpath("script.sh").write_text("#!/bin/sh\necho hi\n")
+
+    result = run_poe("all", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.capture == (
+        "Poe => ./missing.sh\n"
+        "Warning: executable './missing.sh' could not be found\n"
+        "Poe => ./script.sh\n"
+        "Warning: executable './script.sh' could not be run: Permission denied\n"
+        "Poe => poe_test_echo last\n"
+    )
+    assert result.stdout == "last\n"
 
 
 def test_setting_envvar_in_task(run_poe, projects):
@@ -708,3 +740,25 @@ def test_cmd_resolving_to_empty_command_line(run_poe, task_name, env, dry_run):
     )
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+@pytest.mark.parametrize("use_exec", [False, True])
+@pytest.mark.parametrize("cmd", ["''", "'' arg"])
+def test_cmd_resolving_to_empty_command(run_poe_subproc, temp_pyproject, cmd, use_exec):
+    """
+    A cmd whose first word is empty gives a clear error rather than crashing
+    """
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.empty-command]
+        cmd = '''{cmd}'''
+        use_exec = {str(use_exec).lower()}
+        """
+    )
+    result = run_poe_subproc("empty-command", cwd=str(project_path))
+    assert result.code == 1
+    assert (
+        result.capture == "Error: Task 'empty-command' resolved to an empty command\n"
+    )
+    assert result.stdout == ""
+    assert "Traceback" not in result.stderr

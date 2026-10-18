@@ -221,11 +221,12 @@ def test_poetry_executor_without_poetry_installed(run_poe, tmp_path):
         env={"PATH": str(tmp_path)},
     )
     assert result.code == 1
-    assert result.capture == (
+    assert result.capture.startswith(
         "Poe => poe_test_env\n"
         "Error: executable 'poetry' could not be found, but is required by the "
         "poetry executor\n"
-        "     | From: FileNotFoundError(2, 'No such file or directory')\n"
+        # the rest of the cause is platform specific
+        "     | From: FileNotFoundError(2, "
     )
     assert result.stdout == ""
     assert result.stderr == ""
