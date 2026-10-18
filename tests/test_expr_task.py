@@ -192,7 +192,9 @@ def test_expr_task_extra_args_available_as_list(run_poe):
 
 
 def test_expr_task_extra_args_empty_list_without_free_args(run_poe):
-    """_extra_args is an empty list when no free args are passed"""
+    """
+    _extra_args is an empty list when no free args are passed
+    """
     result = run_poe("count-extra-args", project="expr")
     assert result.capture == "Poe => len(_extra_args)\n"
     assert result.stdout == "0\n"
@@ -291,9 +293,14 @@ def test_expr_method_call_on_arg(run_poe):
     assert result.stderr == ""
 
 
-def test_expr_method_call_on_dotted_and_aliased_import(run_poe):
+def test_expr_references_dotted_and_aliased_imports(run_poe):
+    """
+    Names bound by imports like `pkg.mod`, `pkg.mod as alias` or `mod1, mod2` can be
+    referenced, whether or not they're called.
+    """
     result = run_poe("dotted-import-call", project="expr")
-    assert result.stdout == "&lt;a&gt;&amp;\n"
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "&lt;a&gt;&amp;xml.sax.saxutilsos1\n"
     assert result.stderr == ""
 
 
@@ -334,3 +341,14 @@ def test_expr_unset_env_var_is_empty_string(temp_pyproject, run_poe):
     )
     assert result.code == 0, result.capture + result.stderr
     assert result.stdout == "True\n"
+
+
+def test_expr_lazy_env_var(run_poe):
+    """
+    Lazily resolved variables like POE_GIT_DIR aren't mistaken for unset variables,
+    with or without an operator.
+    """
+    result = run_poe("git-dir", project="expr")
+    assert result.code == 0, result.capture + result.stderr
+    assert result.stdout == "(True, True)\n"
+    assert result.stderr == ""

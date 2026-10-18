@@ -207,14 +207,16 @@ class ExprTask(PoeTask):
             accessed_vars[key] = value
             return f"__env.{key}"
 
-        spy_env = SpyDict(env, getitem_spy=getitem_spy)
+        # The fallback resolves lazy variables such as POE_GIT_DIR on access
+        spy_env = SpyDict(env, getitem_spy=getitem_spy, fallback=env.get)
         expression_parts = []
         for node in parse_template(content, require_braces=True):
             if not isinstance(node, ParamExpansion):
                 expression_parts.append(node.content)
-            elif node.operation is None and node.param_name not in spy_env:
+            elif node.operation is None:
                 # An unset variable is still a string value, rather than nothing
-                accessed_vars[node.param_name] = ""
+                if spy_env.get(node.param_name) is None:
+                    accessed_vars[node.param_name] = ""
                 expression_parts.append(f"__env.{node.param_name}")
             else:
                 expression_parts.append(node.expand(spy_env))
@@ -225,8 +227,18 @@ class ExprTask(PoeTask):
 def _get_import_names(imports: Iterable[str]) -> Iterator[str]:
     """
     Yield the names bound by each of the given imports, i.e. the alias if the import
-    is like `module as alias`, or else the top level package name.
+    is like `module as alias`, or else the top level package name. An import may
+    list several modules separated by commas.
     """
+    import ast
+
     for import_ref in imports:
-        module_name, _, alias = import_ref.partition(" as ")
-        yield alias.strip() or module_name.strip().split(".")[0]
+        try:
+            import_nodes = ast.parse(f"import {import_ref}").body
+        except SyntaxError:
+            # Invalid imports fail when the expression is run
+            continue
+        for import_node in import_nodes:
+            if isinstance(import_node, ast.Import):
+                for alias in import_node.names:
+                    yield alias.asname or alias.name.split(".")[0]
