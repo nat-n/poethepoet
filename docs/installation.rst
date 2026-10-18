@@ -222,7 +222,7 @@ You can also install the skill directly from github, such as by using |vercel_sk
 
 .. code-block:: sh
 
-   npx skills add https://github.com/nat-n/poethepoet/tree/v0.46.0/poethepoet/skills/poethepoet
+   npx skills add https://github.com/nat-n/poethepoet/tree/v0.49.0/poethepoet/skills/poethepoet
 
 .. note::
 
