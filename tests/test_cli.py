@@ -212,15 +212,27 @@ def test_non_string_task_help_is_reported(
         assert "  other                 Other task" in result.capture
 
 
+@pytest.mark.parametrize(
+    ("args_value", "expected_error"),
+    [
+        ("{ x = 5 }", "Error: Invalid task 'bad'"),
+        (
+            '[{ name = "x", choices = 5 }]',
+            "Error: Invalid argument 'x' declared in task 'bad'",
+        ),
+    ],
+)
 @pytest.mark.parametrize("cli_args", [("--help",), ("--help", "bad"), ("other",)])
-def test_help_with_malformed_task_args(run_poe, temp_pyproject, cli_args):
+def test_help_with_malformed_task_args(
+    run_poe, temp_pyproject, cli_args, args_value, expected_error
+):
     project_path = temp_pyproject(
-        """
+        f"""
         [tool.poe]
         executor = "simple"
         [tool.poe.tasks]
-        bad = { cmd = "poe_test_echo bad", args = { x = 5 } }
-        other = { cmd = "poe_test_echo other", help = "Other task" }
+        bad = {{ cmd = "poe_test_echo bad", args = {args_value} }}
+        other = {{ cmd = "poe_test_echo other", help = "Other task" }}
         """
     )
     result = run_poe(*cli_args, cwd=project_path)
@@ -229,7 +241,7 @@ def test_help_with_malformed_task_args(run_poe, temp_pyproject, cli_args):
         assert result.code == 0
     else:
         assert result.code == 1
-        assert "Error: Invalid task 'bad'" in result.capture
+        assert expected_error in result.capture
         assert "  other                 Other task" in result.capture
 
 
