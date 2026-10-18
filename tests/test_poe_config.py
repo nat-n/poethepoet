@@ -116,6 +116,7 @@ def test_config_file_without_top_level_table(run_poe, tmp_path, filename, conten
     [
         ('[tool]\npoe = "foo"\n', "Option 'tool.poe' must be a table"),
         ('[tool.poe]\ntasks = "foo"\n', "Option 'tasks' must be a dict"),
+        ('[tool.poe]\ngroups = "foo"\n', "Option 'groups' must be a dict"),
         ('[tool.poe.groups]\ng = "foo"\n', "Option 'groups.g' must be a dict"),
         (
             '[tool.poe.groups.g]\ntasks = "foo"\n',
@@ -123,15 +124,20 @@ def test_config_file_without_top_level_table(run_poe, tmp_path, filename, conten
         ),
     ],
 )
-def test_pyproject_with_non_table_poe_config(temp_pyproject, content, expected_error):
-    # Checked at the config level, since the CLI output for these cases also
-    # depends on help rendering tolerating the invalid config
+def test_pyproject_with_non_table_poe_config(
+    run_poe, temp_pyproject, content, expected_error
+):
     from poethepoet.config import PoeConfig
     from poethepoet.exceptions import ConfigValidationError
 
     project_path = temp_pyproject(content)
     with pytest.raises(ConfigValidationError, match=re.escape(expected_error)):
         PoeConfig(cwd=project_path).load_sync()
+
+    result = run_poe("a", cwd=project_path)
+    assert result.code == 1
+    assert f"Error: {expected_error}" in result.capture
+    assert result.stderr == ""
 
 
 @pytest.mark.parametrize(

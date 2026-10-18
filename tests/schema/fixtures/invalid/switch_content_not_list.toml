@@ -1,0 +1,4 @@
+# expected_error: Content for SwitchTask must be a list
+[tool.poe.tasks.a]
+control = "echo 1"
+switch = 5

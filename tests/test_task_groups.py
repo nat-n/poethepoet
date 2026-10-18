@@ -1,5 +1,7 @@
 """Tests for task grouping feature."""
 
+import pytest
+
 # -- Help output and heading precedence --
 
 
@@ -106,3 +108,89 @@ def test_group_executor_overridden_by_cli(run_poe, projects):
     result = run_poe("--executor", "simple", "venv_group_task", cwd=projects["groups"])
     assert result.code == 0
     assert "should_not_run" in result.capture
+
+
+# -- Invalid group config is reported cleanly --
+
+
+@pytest.mark.parametrize("cli_args", [(), ("--help",), ("other",)])
+def test_task_duplicated_in_group_is_reported(run_poe, temp_pyproject, cli_args):
+    """
+    A task name used both at top level and in a group gives a clean error.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        executor = "simple"
+        [tool.poe.tasks]
+        test = "poe_test_echo top"
+        other = "poe_test_echo other"
+        [tool.poe.groups.testing.tasks]
+        test = "poe_test_echo grouped"
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    assert "Configured tasks:" in result.capture
+    assert result.code == 1
+    assert "Error: Config from" in result.capture
+    assert (
+        "contains task 'test' multiple times, including in group testing"
+        in result.capture
+    )
+
+
+@pytest.mark.parametrize(
+    ("option", "expected_error"),
+    [
+        ("heading", "Option 'groups.grp.heading' must have a value of type: str"),
+        # the order of the types listed in this error isn't stable
+        ("executor", "Option 'groups.grp.executor' must have a value of type: "),
+    ],
+)
+@pytest.mark.parametrize("cli_args", [(), ("--help",), ("other",)])
+def test_invalid_group_option_is_reported(
+    run_poe, temp_pyproject, cli_args, option, expected_error
+):
+    """
+    A group option with an invalid value gives a clean validation error.
+    """
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        executor = "simple"
+        [tool.poe.tasks]
+        other = "poe_test_echo other"
+        [tool.poe.groups.grp]
+        {option} = 5
+        [tool.poe.groups.grp.tasks]
+        grouped = "poe_test_echo grouped"
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    assert "Configured tasks:\n  other" in result.capture
+    assert result.code == 1
+    assert f"Error: {expected_error}" in result.capture
+
+
+def test_group_executor_string_in_included_file(run_poe, temp_pyproject):
+    """
+    A group executor given as a string in an included file is applied.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        executor = { type = "virtualenv", location = "no_such_venv" }
+        include = "included.toml"
+        """
+    )
+    project_path.joinpath("included.toml").write_text(
+        """
+        [groups.grp]
+        executor = "simple"
+        [groups.grp.tasks]
+        show-executor = "poe_test_env"
+        """
+    )
+    result = run_poe("show-executor", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "POE_ACTIVE=simple\n" in result.stdout

@@ -22,6 +22,16 @@ To keep a value exactly as written, wrap it in single quotes, for example ``PASS
 
 Errors from parsing env files and cmd tasks now give 1-based line and position numbers, and env file syntax errors include a location.
 
+``NO_COLOR=0`` disables colors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Following `no-color.org <https://no-color.org/>`_, setting ``NO_COLOR`` to any non-empty value now disables ansi colors, including ``NO_COLOR=0``. To keep colors, unset ``NO_COLOR``, set it to an empty string, or pass ``--ansi``.
+
+``poe --help`` reports config errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``poe --help`` and ``poe --help <task>`` now show any error in the config and exit with status 1, as running ``poe`` with no arguments does. Previously they hid the error and exited 0. Without any config, ``poe --help`` still exits 0.
+
 
 0.49.0
 ------

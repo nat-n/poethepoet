@@ -450,3 +450,51 @@ def test_switch_case_error_can_be_ignored_by_parent_sequence(temp_pyproject, run
     assert result.code == 0, result.capture
     assert "Warning: Glob pattern '*.nomatch' did not match any files" in result.capture
     assert result.stdout == "after\n"
+
+
+@pytest.mark.parametrize(
+    ("switch_value", "expected_error"),
+    [
+        ("5", "Content for SwitchTask must be a list"),
+        (
+            '["poe_test_echo one"]',
+            "Item #0 in switch task should be a value of type: dict",
+        ),
+        ("[[1]]", "Item #0 in switch task should be a value of type: dict"),
+    ],
+)
+@pytest.mark.parametrize("cli_args", [("sw",), ()])
+def test_switch_with_invalid_content(
+    temp_pyproject, run_poe, switch_value, expected_error, cli_args
+):
+    """
+    Invalid switch content is reported as a config error rather than crashing
+    """
+    project_path = temp_pyproject(f"""
+        [tool.poe.tasks.sw]
+        control = "poe_test_echo one"
+        switch = {switch_value}
+        """)
+    result = run_poe(*cli_args, cwd=project_path)
+    assert result.code == 1
+    assert f"Error: Invalid task 'sw'\n     | {expected_error}\n" in result.capture
+    assert result.stdout == ""
+
+
+def test_switch_case_without_task_type(temp_pyproject, run_poe):
+    """
+    A switch case with no task type is reported as a config error
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.sw]
+        control = "poe_test_echo one"
+        switch = [{ case = "one", help = "no task here" }]
+        """)
+    result = run_poe("sw", cwd=project_path)
+    assert result.code == 1
+    assert (
+        "Error: Invalid task 'sw[one]'\n"
+        "     | Task definition must be a string, a list, or a table including "
+        "exactly one task key\n"
+    ) in result.capture
+    assert result.stdout == ""

@@ -72,9 +72,15 @@ class TaskSpecFactory:
     ) -> PoeTask.TaskSpec:
         if task_def and parent:
             # This is probably a subtask and will be cached by the parent task_spec
-            if not task_type:
-                task_type = PoeTask.resolve_task_type(task_def, self.config)
-                assert task_type
+            if not task_type and not (
+                task_type := PoeTask.resolve_task_type(task_def, self.config)
+            ):
+                raise ConfigValidationError(
+                    "Task definition must be a string, a list, or a table including "
+                    "exactly one task key\n"
+                    f"Available task keys: {set(PoeTask.get_task_types())!r}",
+                    task_name=task_name,
+                )
             return self.create(
                 task_name, task_type, task_def, source=parent.source, parent=parent
             )

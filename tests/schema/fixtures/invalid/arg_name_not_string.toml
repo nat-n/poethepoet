@@ -1,0 +1,4 @@
+# expected_error: Option 'name' must have a value of type: str
+[tool.poe.tasks.a]
+cmd = "echo"
+args = [{ name = 5 }]

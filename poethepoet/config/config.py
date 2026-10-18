@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import ConfigValidationError, ExpressionParseError, PoeException
+from ..exceptions import (
+    ConfigNotFoundError,
+    ConfigValidationError,
+    ExpressionParseError,
+    PoeException,
+)
 from ..helpers.eventloop import run_async
 from .file import PoeConfigFile
 from .partition import (
@@ -17,7 +23,7 @@ from .partition import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Iterator, Sequence
 
     from ..helpers.git import GitRepo
     from ..io import PoeIO
@@ -76,28 +82,38 @@ class PoeConfig:
 
             self._io = PoeIO.get_default_io()
 
-    def get_tasks(self) -> Mapping[str, TaskConfig]:
+    def get_tasks(self, strict: bool = True) -> Mapping[str, TaskConfig]:
         """
         Collect tasks from across configs and groups.
         Project config tasks appear first and take precedence over includes.
         Group config (heading, executor) comes from the highest-precedence
         partition that defines that group; tasks are merged across partitions.
-        """
-        if not self._tasks:
-            result: dict[str, TaskConfig] = {}
-            group_configs: dict[str, GroupConfig] = {}
-            for partition in self.partitions(included_first=False):
-                for group_name, group_def in partition.get("groups", {}).items():
-                    if group_name not in group_configs:
-                        group_configs[group_name] = GroupConfig(group_name, group_def)
-                for task_name, task_config in partition.collect_tasks().items():
-                    if task_name not in result:
-                        if task_config.group:
-                            task_config.group = group_configs[task_config.group.name]
-                        result[task_name] = task_config
-            self._tasks = result
 
-        return self._tasks
+        If strict is false then structural errors such as duplicate task names are
+        tolerated (e.g. for displaying help after a validation error), and the result
+        is not cached.
+        """
+        if self._tasks:
+            return self._tasks
+
+        result: dict[str, TaskConfig] = {}
+        group_configs: dict[str, GroupConfig] = {}
+        for partition in self.partitions(included_first=False):
+            if isinstance(groups := partition.get("groups", {}), Mapping):
+                for group_name, group_def in groups.items():
+                    if group_name not in group_configs and isinstance(
+                        group_def, Mapping
+                    ):
+                        group_configs[group_name] = GroupConfig(group_name, group_def)
+            for task_name, task_config in partition.collect_tasks(strict).items():
+                if task_name not in result:
+                    if task_config.group:
+                        task_config.group = group_configs[task_config.group.name]
+                    result[task_name] = task_config
+
+        if strict:
+            self._tasks = result
+        return result
 
     def lookup_task(self, name: str) -> TaskConfig | None:
         return self.get_tasks().get(name)
@@ -240,10 +256,10 @@ class PoeConfig:
 
         else:
             if target_path is not None:
-                raise PoeException(
+                raise ConfigNotFoundError(
                     f"No poe configuration found from location {target_path}"
                 )
-            raise PoeException(
+            raise ConfigNotFoundError(
                 f"No poe configuration found from location {self._project_dir}"
             )
 
@@ -320,7 +336,7 @@ class PoeConfig:
 
             if subproc.returncode != 0:
                 self._handle_error(
-                    "include_script subprocess returned non-zero for "
+                    "include_script subprocess returned non-zero for"
                     f" {include_script['script']!r}",
                     strict=strict,
                 )
@@ -333,7 +349,6 @@ class PoeConfig:
                 parsed_result = json.loads(script_result)
                 if isinstance(parsed_result, str):
                     parsed_result = json.loads(parsed_result)
-                self._packaged_config_cache[invocation] = parsed_result
             except json.decoder.JSONDecodeError as error:
                 self._handle_error(
                     "Return value from include_script script must be valid json",
@@ -342,12 +357,28 @@ class PoeConfig:
                 )
                 return
 
+            if not isinstance(parsed_result, dict):
+                self._handle_error(
+                    "Invalid content in loaded config from include_script "
+                    f"{include_script['script']!r}: expected a dict or a json object "
+                    "string, got "
+                    + (
+                        "None"
+                        if parsed_result is None
+                        else type(parsed_result).__name__
+                    ),
+                    strict=strict,
+                )
+                return
+
+            self._packaged_config_cache[invocation] = parsed_result
+
         try:
             config_json = dict(self._packaged_config_cache[invocation])
             config_path = Path(
                 config_json.pop("config_path", self._project_config.path)
             )
-            if config_json.get("tool", {}).get("poe"):
+            if isinstance(tool := config_json.get("tool"), dict) and tool.get("poe"):
                 pass
             elif tool_poe := config_json.get("tool.poe"):
                 config_json = {"tool": {"poe": tool_poe}}
@@ -370,7 +401,8 @@ class PoeConfig:
             )
         except (PoeException, KeyError) as error:
             raise ConfigValidationError(
-                f"Invalid content in loaded config from {target_module}"
+                "Invalid content in loaded config from include_script "
+                f"{include_script['script']!r}"
             ) from error
 
     def _handle_error(

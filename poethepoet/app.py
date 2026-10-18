@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any
 
-from .exceptions import ExecutionError, PoeException
+from .exceptions import ConfigNotFoundError, ExecutionError, PoeException
 from .helpers.eventloop import run_async
 
 if TYPE_CHECKING:
@@ -164,13 +164,19 @@ class PoeThePoet:
             for task_spec in self.task_specs.load_all():
                 task_spec.validate(self.config, self.task_specs)
         except PoeException as error:
-            if should_display_help:
-                self.print_help()
+            if should_display_help and isinstance(error, ConfigNotFoundError):
+                self.print_help(config_is_valid=False)
                 return 0
             self.print_help(error=error)
             return 1
 
         if should_display_help:
+            if (
+                isinstance(help_task := self.ui["help"], str)
+                and help_task not in self.config.get_tasks()
+            ):
+                self.print_help(error=PoeException(f"Unrecognized task {help_task!r}"))
+                return 1
             self.print_help()
             return 0
 
@@ -354,21 +360,33 @@ class PoeThePoet:
         self,
         info: str | None = None,
         error: str | PoeException | None = None,
+        *,
+        config_is_valid: bool = True,
     ):
         from .task.args import PoeTaskArgs
 
         if isinstance(error, str):
             error = PoeException(error)
 
-        all_tasks = self.config.get_tasks()
+        # If the config is invalid then tolerate errors in rendering help for tasks
+        lenient = error is not None or not config_is_valid
+
+        try:
+            all_tasks = self.config.get_tasks()
+        except PoeException:
+            if not lenient:
+                raise
+            # The config is already known to be invalid, so collect tasks leniently
+            # in order to still display them
+            all_tasks = self.config.get_tasks(strict=False)
 
         tasks_help: dict[
             str, tuple[str, Sequence[tuple[tuple[str, ...], str, str]], str | None]
         ] = {
             task_name: (
-                task.get("help", ""),
+                task.help_text,
                 PoeTaskArgs.get_help_content(
-                    task.get("args"), task_name, suppress_errors=bool(error)
+                    task.get("args"), task_name, suppress_errors=lenient
                 ),
                 task.group.name if task.group else None,
             )
