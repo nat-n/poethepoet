@@ -65,13 +65,13 @@ class TaskEnv(Mapping[str, str]):
         Create a base TaskEnv
         """
 
-        from ..helpers.git import GitRepo
         from .cache import EnvFileCache
 
         base_env = dict(base_env or {})
         io = io or PoeIO.get_default_io()
         cwd = str(cwd or os.getcwd())
-        git_repo = GitRepo(config.project_dir)
+        # Share the config's GitRepo, so git is run (and missing git warned about) once
+        git_repo = config.git_repo
 
         base_env["POE_ROOT"] = str(config.project_dir)
 
@@ -85,7 +85,7 @@ class TaskEnv(Mapping[str, str]):
         return TaskEnv(
             env=base_env,
             args={},
-            envfiles=EnvFileCache(config.project_dir, io),
+            envfiles=EnvFileCache(config.project_dir, io, git_repo),
             lazy_vars={
                 "POE_GIT_DIR": lambda: str(git_repo.path or ""),
                 "POE_GIT_ROOT": lambda: str(git_repo.main_path or ""),

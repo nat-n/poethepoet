@@ -1,3 +1,5 @@
+import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -425,3 +427,48 @@ def test_git_dir_include_outside_git_repo(temp_pyproject, run_poe, tmp_path, git
         f"{git_var} has no value"
     ) in result.capture
     assert "/tasks.toml\n" not in result.capture
+
+
+VENV_BIN_DIR = str(Path(sys.executable).parent)
+
+
+@pytest.mark.skipif(
+    shutil.which("git", path=VENV_BIN_DIR) is not None,
+    reason="git is installed alongside the python executable",
+)
+def test_git_dir_paths_without_git_executable(temp_pyproject, run_poe):
+    """
+    Without git, envfile and include paths relative to POE_GIT_DIR are skipped as
+    outside a git repo, with one warning that git wasn't found.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        include = "${POE_GIT_ROOT}/tasks.toml"
+        envfile = "${POE_GIT_DIR}/.env"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ok"
+        envfile = "${POE_GIT_DIR}/task.env"
+        """
+    )
+    result = run_poe("show", cwd=project_path, env={"PATH": VENV_BIN_DIR})
+    assert result.code == 0, result.capture
+    assert result.stdout == "ok\n"
+    assert (
+        result.capture.count(
+            "Warning: Poe could not find the git executable, so POE_GIT_DIR and "
+            "POE_GIT_ROOT have no value"
+        )
+        == 1
+    )
+    assert (
+        "Warning: Poe could not include file from '${POE_GIT_ROOT}/tasks.toml' "
+        "because POE_GIT_ROOT has no value\n"
+    ) in result.capture
+    for path in ("${POE_GIT_DIR}/.env", "${POE_GIT_DIR}/task.env"):
+        assert (
+            f"Warning: Poe failed to locate envfile at {path!r} because "
+            "POE_GIT_DIR has no value\n"
+        ) in result.capture
+    assert "not inside a git repository" not in result.capture

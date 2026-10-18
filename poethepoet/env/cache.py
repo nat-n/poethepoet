@@ -8,6 +8,7 @@ from ..exceptions import ExecutionError
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from ..helpers.git import GitRepo
     from ..helpers.parse.envfile import EnvFile
     from ..io import PoeIO
 
@@ -17,10 +18,12 @@ class EnvFileCache:
     _io: PoeIO
     _project_dir: Path
     _missing_warned: set[str]
+    _git_repo: GitRepo | None
 
-    def __init__(self, project_dir: Path, io: PoeIO):
+    def __init__(self, project_dir: Path, io: PoeIO, git_repo: GitRepo | None = None):
         self._project_dir = project_dir
         self._io = io
+        self._git_repo = git_repo
         # Parsed envfiles by path. This lives on the instance (one per run) so that
         # changes to envfiles are picked up by later runs in the same process.
         self._ast_cache = {}
@@ -33,10 +36,14 @@ class EnvFileCache:
         Report that an envfile can't be loaded because its path references a git
         variable, but the project is not inside a git repository.
         """
-        message = (
-            f"envfile at {envfile!r} because the project is not inside a git "
-            f"repository, so {git_var} has no value"
+        from ..helpers.git import git_unset_reason
+
+        reason = (
+            git_unset_reason(self._git_repo, git_var)
+            if self._git_repo
+            else f"{git_var} has no value"
         )
+        message = f"envfile at {envfile!r} because {reason}"
         if optional:
             self._io.print_debug(f" - Skipping optional {message}")
         elif envfile not in self._missing_warned:

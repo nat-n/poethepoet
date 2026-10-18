@@ -1,12 +1,30 @@
+from __future__ import annotations
+
 import shutil
 from functools import cached_property
 from pathlib import Path
 from subprocess import PIPE, Popen
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..io import PoeIO
+
+
+def git_unset_reason(git_repo: GitRepo, git_var: str) -> str:
+    """
+    Explain why the given git variable has no value. If git is missing then poe has
+    already warned about that, so don't repeat it.
+    """
+    if git_repo.git_missing:
+        return f"{git_var} has no value"
+    return f"the project is not inside a git repository, so {git_var} has no value"
 
 
 class GitRepo:
-    def __init__(self, seed_path: Path):
+    def __init__(self, seed_path: Path, io: PoeIO | None = None):
         self._seed_path = seed_path
+        self._io = io
+        self._git_missing = False
 
     @property
     def seed_path(self) -> Path:
@@ -20,6 +38,13 @@ class GitRepo:
     @cached_property
     def main_path(self) -> Path | None:
         return self._resolve_main_path()
+
+    @property
+    def git_missing(self) -> bool:
+        """
+        Whether the git executable couldn't be found, so no git repo can be found.
+        """
+        return self._git_missing
 
     def init(self):
         self._exec("init")
@@ -64,6 +89,13 @@ class GitRepo:
             )
         except OSError:
             # The git executable isn't available, so no git repo can be found
+            if not self._git_missing:
+                self._git_missing = True
+                if self._io:
+                    self._io.print_warning(
+                        "Poe could not find the git executable, so POE_GIT_DIR and "
+                        "POE_GIT_ROOT have no value"
+                    )
             return 1, b""
         captured_stdout, _ = proc.communicate()
         return proc.returncode, captured_stdout
