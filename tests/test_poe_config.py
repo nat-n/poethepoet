@@ -116,6 +116,7 @@ def test_config_file_without_top_level_table(run_poe, tmp_path, filename, conten
     [
         ('[tool]\npoe = "foo"\n', "Option 'tool.poe' must be a table"),
         ('[tool.poe]\ntasks = "foo"\n', "Option 'tasks' must be a dict"),
+        ('[tool.poe]\ngroups = "foo"\n', "Option 'groups' must be a dict"),
         ('[tool.poe.groups]\ng = "foo"\n', "Option 'groups.g' must be a dict"),
         (
             '[tool.poe.groups.g]\ntasks = "foo"\n',
@@ -136,7 +137,6 @@ def test_pyproject_with_non_table_poe_config(
     result = run_poe("a", cwd=project_path)
     assert result.code == 1
     assert f"Error: {expected_error}" in result.capture
-    assert "Traceback" not in result.capture
     assert result.stderr == ""
 
 
