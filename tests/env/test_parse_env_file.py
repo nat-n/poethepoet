@@ -438,3 +438,81 @@ def test_parse_env_file_ignores_leading_utf8_bom():
 def test_parse_env_file_error_location(content, location):
     with pytest.raises(ValueError, match=location):
         parse_env_file(content)
+
+
+line_continuation_examples = [
+    # a continuation is removed before anything else is interpreted, so it can't
+    # break a name off from its $, in unquoted text, double quotes or arguments
+    ("A=$\\\nX\n", {"A": "xv"}),
+    ("A=$X\\\nY\n", {"A": ""}),
+    ("A=${X:-a\\\nb}\n", {"A": "xv"}),
+    ('A="${U:-a\\\nb}"\n', {"A": "ab"}),
+    ('A="x\\\ny"\n', {"A": "xy"}),
+    # also in names and the export keyword
+    ("A\\\nB=1\n", {"AB": "1"}),
+    ("ex\\\nport A=1\n", {"A": "1"}),
+    # but not in single quotes, including inside an argument
+    ("A='x\\\ny'\n", {"A": "x\\\ny"}),
+    ("A=${U:-'a\\\nb'}\n", {"A": "a\\\nb"}),
+    # nor in a comment
+    ("A=1 # c \\\nB=2\n", {"A": "1", "B": "2"}),
+    # an escaped backslash before a newline isn't a continuation
+    ("A=a\\\\\nB=2\n", {"A": "a\\", "B": "2"}),
+    ('A="a\\\\"\nB=2\n', {"A": "a\\", "B": "2"}),
+    # a # after a continuation is a comment only if it follows whitespace
+    ("A=b\\\n  #c\n", {"A": "b"}),
+    ("A=b\\ \\\n#c\n", {"A": "b #c"}),
+]
+
+
+@pytest.mark.parametrize(("content", "expected"), line_continuation_examples)
+def test_parse_env_file_line_continuations(content, expected):
+    """
+    Backslash-newline line continuations are handled as in bash.
+    """
+    result = parse_env_file(content, base_env={"X": "xv"})
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        # a backslash at the end of the file is kept, as in bash
+        ("A=x\\", {"A": "x\\"}),
+        ("A=x\\\\", {"A": "x\\"}),
+        ("A=x\\\\\\", {"A": "x\\\\"}),
+    ],
+)
+def test_parse_env_file_backslash_at_end_of_file(content, expected):
+    assert parse_env_file(content) == expected
+
+
+def test_parse_env_file_whitespace_in_expansion_arguments():
+    """
+    Whitespace in the argument of an expansion is kept as written.
+    """
+    assert parse_env_file(
+        'X=1\nA=${U:-a   b}\nB="${U:-a   b}"\nC=${U:- x\ty }\nD=${X:+a  b}\n'
+        'E="${U:-x  "q  r"  y}"\n'
+    ) == {
+        "X": "1",
+        "A": "a   b",
+        "B": "a   b",
+        "C": " x\ty ",
+        "D": "a  b",
+        "E": "x  q  r  y",
+    }
+
+
+@pytest.mark.parametrize(
+    ("content", "location"),
+    [
+        # positions count the lines of the original content, with continuations
+        ("A=1\\\n\nB 2\n", "near line 3, position 1"),
+        ("A\\\nB C=1\n", "near line 2, position 1"),
+        ('A=x\\\ny\nB="q\\\nr', "near line 4, position 2"),
+    ],
+)
+def test_parse_env_file_error_location_after_continuations(content, location):
+    with pytest.raises(ValueError, match=location):
+        parse_env_file(content)

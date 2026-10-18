@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .command import ParamExpansion, SingleQuotedText
+from .command import ParamExpansion, SingleQuotedText, WhitespaceText
 from .core import ContentNode, ParseCursor, ParseError, SyntaxNode
 
 if TYPE_CHECKING:
@@ -20,9 +20,10 @@ class EnvFileUnquotedText(ContentNode):
     """
     Reads unquoted envfile value text up to a stop character or end of input.
 
-    Stop characters: $, ', ", newline, #. Handles backslash escaping:
-    - backslash + newline: line continuation (consume both, emit nothing)
-    - backslash + any other char: emit just that char (backslash dropped)
+    Stop characters: $, ', ", newline, #. A backslash escapes the next char, which
+    is emitted without the backslash. Line continuations are removed before parsing,
+    so a backslash before a newline (or the end of input) can only be at the end of
+    the file, and is kept literally as bash does.
 
     Whitespace and semicolons are regular characters (not stop chars). Escaped
     whitespace is literal: it is never stripped as trailing whitespace, and a #
@@ -53,12 +54,10 @@ class EnvFileUnquotedText(ContentNode):
         content: list[str] = []
         for char in chars:
             if char == "\\":
-                next_char = chars.peek()
-                if next_char == "\n":
-                    chars.take()  # consume the newline (continuation)
+                if chars.peek() in ("\n", None):
+                    content.append(char)
+                    self._escaped_len = len(content)
                     continue
-                if next_char is None:
-                    raise ParseError("Unexpected end of input after backslash", chars)
                 content.append(chars.take())  # \X → X
                 self._escaped_len = len(content)
                 continue
@@ -110,6 +109,19 @@ class EnvFileParamExpansion(ParamExpansion):
         return super().expand(env)
 
 
+class EnvFileWhitespaceText(WhitespaceText):
+    """
+    Whitespace in the argument of a parameter expansion like ${VAR:-a   b}, which is
+    kept as written in an envfile, rather than collapsed to one space as in cmd tasks.
+    """
+
+    def _parse(self, chars: ParseCursor):
+        content: list[str] = []
+        while (char := chars.peek()) is not None and char.isspace():
+            content.append(chars.take())
+        self._content = "".join(content)
+
+
 class EnvFileDQText(ContentNode):
     """
     Reads text inside a double-quoted envfile value segment.
@@ -120,14 +132,15 @@ class EnvFileDQText(ContentNode):
     - backslash + \\ → \\
     - backslash + $ → $
     - backslash + ` → `
-    - backslash + newline → line continuation (nothing emitted)
     - backslash + any other char → backslash kept, then char
+
+    Line continuations are removed before parsing.
 
     Empty content is valid (e.g. the text portion of an empty double-quoted
     string ""), so this node never cancels.
     """
 
-    _DQ_SPECIAL = frozenset('"\\$`\n')
+    _DQ_SPECIAL = frozenset('"\\$`')
 
     def _parse(self, chars: ParseCursor):
         content: list[str] = []
@@ -138,10 +151,7 @@ class EnvFileDQText(ContentNode):
             if char == "\\":
                 next_char = chars.peek()
                 if next_char in self._DQ_SPECIAL:
-                    consumed = chars.take()
-                    if consumed == "\n":
-                        continue  # line continuation
-                    content.append(consumed)
+                    content.append(chars.take())
                 else:
                     content.append(char)  # keep backslash
                     if next_char is not None:
