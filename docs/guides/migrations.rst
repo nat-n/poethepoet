@@ -22,6 +22,11 @@ To keep a value exactly as written, wrap it in single quotes, for example ``PASS
 
 Errors from parsing env files and cmd tasks now give 1-based line and position numbers, and env file syntax errors include a location.
 
+``NO_COLOR`` disables colors whatever its value
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Following `no-color.org <https://no-color.org/>`_, setting ``NO_COLOR`` to any non-empty value now disables ansi colors, including ``NO_COLOR=0``. To keep colors, unset ``NO_COLOR``, set it to an empty string, or pass ``--ansi``.
+
 
 0.49.0
 ------
