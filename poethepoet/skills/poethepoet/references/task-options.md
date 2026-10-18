@@ -23,7 +23,7 @@ cwd = "${SUBPROJECT:-client}"
 args = ["_port", "_debug"]
 ```
 
-`cmd` task bodies additionally support glob expansion. Expansion in `envfile` values follows the same rules but in-file definitions take precedence over the base environment during expansion.
+`cmd` task bodies additionally support glob expansion. Expansion in unquoted and double-quoted `envfile` values follows the same rules, and also expands bare `$VAR`, with in-file definitions taking precedence over the base environment. A `$` that isn't followed by a name or `{` (e.g. `$1`, `$$`, a trailing `$`) is kept literally. To keep a value exactly as written, such as a password hash, single-quote it (`'pa$word'`) or escape the `$` (`\$`).
 
 ---
 

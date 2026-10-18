@@ -100,4 +100,4 @@ Normally include paths are resolved relative to the project root (that is the pa
   [tool.poe]
   include = "${POE_GIT_DIR}/tasks.toml"
 
-See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
+See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work. If the project is not inside a git repository then poe warns that it can't include a file with a path that uses ``${POE_GIT_DIR}`` or ``${POE_GIT_ROOT}``.

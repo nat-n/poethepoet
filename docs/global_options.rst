@@ -6,7 +6,7 @@ The following options can be set for all tasks in a project directly under ``[to
 **env** : ``dict[str, str]`` :ref:`📖<Global environment variables>`
   Define environment variables to be exposed to all tasks. These can be :ref:`extended on the task level<Setting task specific environment variables>`.
 
-**envfile** : ``str`` | ``list[str]`` :ref:`📖<Global environment variables>`
+**envfile** : ``str`` | ``list[str | dict]`` | ``dict[str, str | list[str]]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
 **executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor>`
@@ -106,7 +106,29 @@ Env file values support bash-style parameter expansion. Each variable can refere
    # Use an alternate value when a variable is set
    DEBUG_FLAG=${DEBUG:+--debug}
 
-Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``.
+Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``. To keep a ``$`` literally in an unquoted or double-quoted value, escape it with a backslash (``\$``).
+
+A ``$`` only starts an expansion when it is followed by a variable name or ``{``. Any other ``$`` is kept as is, for example at the end of the value, or before a space, ``/`` or a digit. So unlike in bash, ``$1``, ``$@``, ``$$``, ``$?`` and other special parameters are kept literally, consistent with the rest of poe's templating. Command substitution (``$(...)``) and ``$'...'`` or ``$"..."`` quoting are not supported either, so the ``$`` is kept literally there too.
+
+.. code-block:: bash
+
+   PRICE=100$                    # 100$
+   PASSWORD=pa$$word             # pa$$word
+   ARG=a$1b                      # a$1b
+   ESCAPED=abc\$def              # abc$def
+
+To be sure a value is kept exactly as written, such as a password hash, wrap it in single quotes.
+
+Escaping whitespace with a backslash makes it part of the value, so it isn't stripped from the end of an unquoted value, and a ``#`` after it doesn't start a comment:
+
+.. code-block:: bash
+
+   PADDED=foo\                   # "foo " (with a trailing space)
+   HASH=foo\ #bar                # "foo #bar"
+
+As in bash, a backslash at the end of a line continues the line, except in single quotes and comments, and whitespace in the argument of an expansion like ``${VAR:-a   b}`` is kept as written.
+
+A UTF-8 byte order mark (BOM) at the start of an env file is ignored.
 
 Optional env files
 """"""""""""""""""
@@ -128,6 +150,8 @@ You can combine optional and expected envfiles like so:
 
 In this example ``shared.env`` is considered mandatory, whereas ``local.env`` may be absent without generating noise. Using :toml:`envfile = ".env"` remains equivalent to setting :toml:`envfile.expected = ".env"` explicitly.
 
+A list of envfiles may also mix plain paths with such tables, for example :toml:`envfile = ["shared.env", { optional = "local.env" }]`.
+
 Resolving env file paths
 """"""""""""""""""""""""
 
@@ -138,7 +162,7 @@ Normally envfile paths are resolved relative to the project root (that is the pa
     [tool.poe]
     envfile = "${POE_GIT_DIR}/.env"
 
-See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
+See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work. If the project is not inside a git repository then an envfile with a path that uses ``${POE_GIT_DIR}`` or ``${POE_GIT_ROOT}`` is not loaded, and poe warns about it unless it is optional.
 
 .. note::
 

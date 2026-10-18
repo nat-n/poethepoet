@@ -42,9 +42,9 @@ valid_examples = [
         },
     ),
     (
-        """
+        r"""
         # values with line breaks
-        WORD=some\\
+        WORD=some\
 thing
         DOUBLE_QUOTED_WORD="some
         thing"
@@ -59,8 +59,10 @@ thing
             "WORD": "something",
             "DOUBLE_QUOTED_WORD": "some\n        thing",
             "SINGLE_QUOTED_WORD": "some\n        thing",
+            # backslash-newline is a line continuation in double quotes...
             "DOUBLE_QUOTED_WORD_ESC": "some        thing",
-            "SINGLE_QUOTED_WORD_ESC": "some        thing",
+            # ...but kept literally in single quotes
+            "SINGLE_QUOTED_WORD_ESC": "some\\\n        thing",
         },
     ),
     (
@@ -104,6 +106,29 @@ c """,
         export\tdinner=chicken
         """,
         {"answer": "42", "question": "undefined", "dinner": "chicken"},
+    ),
+    # names that share a prefix with the export keyword are not scrambled
+    (
+        "e=1\nex=2\nexp=3\nexpor=4\nexit_code=5\nexpected=6\n",
+        {
+            "e": "1",
+            "ex": "2",
+            "exp": "3",
+            "expor": "4",
+            "exit_code": "5",
+            "expected": "6",
+        },
+    ),
+    # names that start with the export keyword are still names
+    (
+        "exports=1\nexport=2\nexporter=3\nexport_4=4\nexport export5=5\n",
+        {
+            "exports": "1",
+            "export": "2",
+            "exporter": "3",
+            "export_4": "4",
+            "export5": "5",
+        },
     ),
     # handling escapes
     (
@@ -149,16 +174,26 @@ b;
             "EX1": "BAR#NOT_COMMENT",
             "EX2": "BAR#NOT_COMMENT",
             "EX3": "BAR#NOT_COMMENT",
-            "EX4": "BAR",
+            "EX4": "BAR #NOT_COMMENT",
             "EX5": "BAR #NOT_COMMENT",
             "EX6": "BAR #NOT_COMMENT",
             "EX7": "BAR#NOT_COMMENT",
             "EX8": "BAR",
-            "EX9": "BAR",
+            "EX9": "BAR ",
             "EX10": "BAR;",
             "EX11": "BAR;#COMMENT",
             "EX12": "BAR;;#COMMENT",
             "EX13": "BAR",
+        },
+    ),
+    # escaped whitespace is literal, so isn't stripped as trailing whitespace
+    (
+        "TRAILING_SPACE=foo\\ \nTRAILING_TAB=foo\\\t\nTWO=a\\ \\  \nMIXED=x\\\t #c\n",
+        {
+            "TRAILING_SPACE": "foo ",
+            "TRAILING_TAB": "foo\t",
+            "TWO": "a  ",
+            "MIXED": "x\t",
         },
     ),
     (
@@ -269,6 +304,67 @@ def test_parse_env_file_param_expansion(example):
     assert parse_env_file(example[0]) == example[1]
 
 
+literal_dollar_examples = [
+    # trailing $
+    ('UQ=100$\nDQ="100$"\n', {"UQ": "100$", "DQ": "100$"}),
+    # $ followed by punctuation
+    ('UQ=x$%y\nDQ="x$%y"\n', {"UQ": "x$%y", "DQ": "x$%y"}),
+    ('UQ=$/tmp\nDQ="$/tmp"\n', {"UQ": "$/tmp", "DQ": "$/tmp"}),
+    # $$ and other special parameters that refer to the state of a shell are kept
+    ('UQ=pa$$word\nDQ="pa$$word"\n', {"UQ": "pa$$word", "DQ": "pa$$word"}),
+    (
+        'UQ=$?$!$#$-$0\nDQ="$?$!$#$-$0"\n',
+        {"UQ": "$?$!$#$-$0", "DQ": "$?$!$#$-$0"},
+    ),
+    # $ surrounded by whitespace
+    ('UQ=a $ b\nDQ="a $ b"\n', {"UQ": "a $ b", "DQ": "a $ b"}),
+    # $ followed by a quote or a comment
+    ("UQ=a$'b'\n", {"UQ": "a$b"}),
+    ("UQ=a$#b\nUQ2=a$ #comment\n", {"UQ": "a$#b", "UQ2": "a$"}),
+    # $ that isn't an expansion mixed with ones that are
+    ("X=1\nUQ=$-$X-$\n", {"X": "1", "UQ": "$-1-$"}),
+    # $ before a double quote or a command substitution
+    ('UQ=a$"b"\n', {"UQ": "a$b"}),
+    ('UQ=$(ls)\nDQ="$(ls)"\n', {"UQ": "$(ls)", "DQ": "$(ls)"}),
+    # special parameters stay paired inside the argument of another expansion too
+    (
+        'X=xv\nUQ=${U:-pa$$word}\nDQ="${U:-pa$$word}"\nQ="${U:-$$X}"\n',
+        {"X": "xv", "UQ": "pa$$word", "DQ": "pa$$word", "Q": "$$X"},
+    ),
+    ("X=1\nUQ=${X:+a$$b$?c}\n", {"X": "1", "UQ": "a$$b$?c"}),
+]
+
+
+@pytest.mark.parametrize(("content", "expected"), literal_dollar_examples)
+def test_parse_env_file_literal_dollar(content, expected):
+    """
+    A $ that doesn't start a parameter expansion is kept literally in unquoted
+    values, consistent with double-quoted values.
+    """
+    assert parse_env_file(content) == expected
+
+
+positional_param_examples = [
+    # positional parameters aren't expansions in envfiles, so are kept literally
+    ('UQ=abc$1def\nDQ="abc$1def"\n', {"UQ": "abc$1def", "DQ": "abc$1def"}),
+    ('UQ=a$10b\nDQ="a$9$10b"\n', {"UQ": "a$10b", "DQ": "a$9$10b"}),
+    ('UQ=a$@b$*c\nDQ="a$@b$*c"\n', {"UQ": "a$@b$*c", "DQ": "a$@b$*c"}),
+    # also when nested in another expansion
+    ('UQ=${MISSING:-x$1y}\nDQ="${MISSING:-x$1y}"\n', {"UQ": "x$1y", "DQ": "x$1y"}),
+    # e.g. bcrypt hashes keep their $<digit> parts
+    ("HASH=$2b$12\n", {"HASH": "$2b$12"}),
+]
+
+
+@pytest.mark.parametrize(("content", "expected"), positional_param_examples)
+def test_parse_env_file_positional_params(content, expected):
+    """
+    $1 to $9, $@ and $* are kept literally, as only a $ followed by a name or { starts
+    an expansion, even if the base env has a variable of that name.
+    """
+    assert parse_env_file(content, base_env={"1": "one", "@": "at"}) == expected
+
+
 def test_parse_env_file_no_expansion_in_single_quotes():
     """
     Single-quoted values should NOT have parameter expansion applied.
@@ -320,3 +416,103 @@ base_env_examples = [
 @pytest.mark.parametrize(("content", "base_env", "expected"), base_env_examples)
 def test_parse_env_file_with_base_env(content, base_env, expected):
     assert parse_env_file(content, base_env) == expected
+
+
+def test_parse_env_file_ignores_leading_utf8_bom():
+    assert parse_env_file("\ufeffA=1\nB=2\n") == {"A": "1", "B": "2"}
+
+
+@pytest.mark.parametrize(
+    ("content", "location"),
+    [
+        # errors at the end of input point at the end of the last line, whether or
+        # not the file ends with a newline
+        ('A=1\nB="x\n', "near line 2, position 5"),
+        ('A=1\nB="x', "near line 2, position 5"),
+        ("A=1\nB=2\nC 3\n", "near line 3, position 1"),
+        # errors at the start of a line point at that line, not the one before
+        ("A=1\n=2\n", "near line 2, position 1"),
+        ("A=1\n\n\n9=2\n", "near line 4, position 1"),
+    ],
+)
+def test_parse_env_file_error_location(content, location):
+    with pytest.raises(ValueError, match=location):
+        parse_env_file(content)
+
+
+line_continuation_examples = [
+    # a continuation is removed before anything else is interpreted, so it can't
+    # break a name off from its $, in unquoted text, double quotes or arguments
+    ("A=$\\\nX\n", {"A": "xv"}),
+    ("A=$X\\\nY\n", {"A": ""}),
+    ("A=${X:-a\\\nb}\n", {"A": "xv"}),
+    ('A="${U:-a\\\nb}"\n', {"A": "ab"}),
+    ('A="x\\\ny"\n', {"A": "xy"}),
+    # also in names and the export keyword
+    ("A\\\nB=1\n", {"AB": "1"}),
+    ("ex\\\nport A=1\n", {"A": "1"}),
+    # but not in single quotes, including inside an argument
+    ("A='x\\\ny'\n", {"A": "x\\\ny"}),
+    ("A=${U:-'a\\\nb'}\n", {"A": "a\\\nb"}),
+    # nor in a comment
+    ("A=1 # c \\\nB=2\n", {"A": "1", "B": "2"}),
+    # an escaped backslash before a newline isn't a continuation
+    ("A=a\\\\\nB=2\n", {"A": "a\\", "B": "2"}),
+    ('A="a\\\\"\nB=2\n', {"A": "a\\", "B": "2"}),
+    # a # after a continuation is a comment only if it follows whitespace
+    ("A=b\\\n  #c\n", {"A": "b"}),
+    ("A=b\\ \\\n#c\n", {"A": "b #c"}),
+]
+
+
+@pytest.mark.parametrize(("content", "expected"), line_continuation_examples)
+def test_parse_env_file_line_continuations(content, expected):
+    """
+    Backslash-newline line continuations are handled as in bash.
+    """
+    result = parse_env_file(content, base_env={"X": "xv"})
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        # a backslash at the end of the file is kept, as in bash
+        ("A=x\\", {"A": "x\\"}),
+        ("A=x\\\\", {"A": "x\\"}),
+        ("A=x\\\\\\", {"A": "x\\\\"}),
+    ],
+)
+def test_parse_env_file_backslash_at_end_of_file(content, expected):
+    assert parse_env_file(content) == expected
+
+
+def test_parse_env_file_whitespace_in_expansion_arguments():
+    """
+    Whitespace in the argument of an expansion is kept as written.
+    """
+    assert parse_env_file(
+        'X=1\nA=${U:-a   b}\nB="${U:-a   b}"\nC=${U:- x\ty }\nD=${X:+a  b}\n'
+        'E="${U:-x  "q  r"  y}"\n'
+    ) == {
+        "X": "1",
+        "A": "a   b",
+        "B": "a   b",
+        "C": " x\ty ",
+        "D": "a  b",
+        "E": "x  q  r  y",
+    }
+
+
+@pytest.mark.parametrize(
+    ("content", "location"),
+    [
+        # positions count the lines of the original content, with continuations
+        ("A=1\\\n\nB 2\n", "near line 3, position 1"),
+        ("A\\\nB C=1\n", "near line 2, position 1"),
+        ('A=x\\\ny\nB="q\\\nr', "near line 4, position 2"),
+    ],
+)
+def test_parse_env_file_error_location_after_continuations(content, location):
+    with pytest.raises(ValueError, match=location):
+        parse_env_file(content)

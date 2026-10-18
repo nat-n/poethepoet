@@ -1,3 +1,10 @@
+import shutil
+import sys
+from pathlib import Path
+
+import pytest
+
+
 def test_global_envfile_and_default(run_poe):
     result = run_poe("deploy-dev", project="envfile")
     assert (
@@ -52,6 +59,39 @@ def test_multiple_envfiles(run_poe, projects):
     assert result.stderr == ""
 
 
+def test_missing_envfile_warned_once_per_run(temp_pyproject, run_poe):
+    """
+    A missing envfile referenced by several tasks in a run is only warned about once.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.child]
+        cmd = "poe_test_echo child"
+        envfile = "missing.env"
+
+        [tool.poe.tasks.parent]
+        sequence = ["child", "child"]
+        envfile = ["missing.env", "absent.env"]
+        """
+    )
+    result = run_poe("parent", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "child\nchild\n"
+    assert result.capture.count("missing.env'") == 1
+    assert result.capture.count("absent.env'") == 1
+
+
+def test_mixed_list_of_envfiles(run_poe, projects):
+    """
+    A list of envfiles may mix plain paths with tables of expected/optional paths.
+    """
+    result = run_poe(f"-C={projects['envfile/mixed_envfiles']}", "show_me_the_vals")
+
+    assert result.stdout == "VAL_A-VAL_B-NOT_C-VAL_D-VAL_E\n"
+    assert "Warning" not in result.capture
+    assert result.stderr == ""
+
+
 def test_trying_to_load_nonexistent_envfiles(run_poe, projects):
     result = run_poe(
         f"-C={projects['envfile/multiple_envfiles']}", "handle_disappointment"
@@ -59,8 +99,9 @@ def test_trying_to_load_nonexistent_envfiles(run_poe, projects):
 
     assert "Poe => poe_test_echo OK\n" in result.capture
     assert "Warning: Poe failed to locate envfile at" in result.capture
-    assert "not-real.env" in result.capture
-    assert "imaginary.env" in result.capture
+    # Each missing envfile is only warned about once
+    assert result.capture.count("not-real.env") == 1
+    assert result.capture.count("imaginary.env") == 1
     assert "nothingness.env" not in result.capture
     assert "lies.env" not in result.capture
     assert result.stdout == "OK\n"
@@ -214,3 +255,220 @@ def test_envfile_nested_default_value(temp_pyproject, run_poe, tmp_path):
     result = run_poe("show", cwd=project_path)
     assert result.code == 0
     assert result.stdout == "fallback\n"
+
+
+def test_envfile_with_utf8_bom(temp_pyproject, run_poe, tmp_path):
+    """
+    A UTF-8 byte order mark at the start of an envfile (as written by some Windows
+    editors) is ignored.
+    """
+    envfile = tmp_path / "bom.env"
+    envfile.write_bytes(b"\xef\xbb\xbfFIRST=one\nSECOND=two\n")
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        envfile = "{envfile.as_posix()}"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ${{FIRST}}-${{SECOND}}"
+        """
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 0
+    assert result.stdout == "one-two\n"
+
+
+ENVFILE_ERROR_PROJECT = """
+    [tool.poe.tasks.show]
+    cmd = "poe_test_echo ${{A}}"
+    envfile = "{envfile}"
+    """
+
+
+def test_envfile_syntax_error_reports_line(temp_pyproject, run_poe, tmp_path):
+    envfile = tmp_path / "bad.env"
+    envfile.write_text("A=1\nB=2\nC 3\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert "Syntax error in referenced envfile" in result.capture
+    # Line and position numbers are 1-based
+    assert (
+        "Expected '=' after variable name 'C' (near line 3, position 1)"
+        in result.capture
+    )
+    assert "Traceback" not in result.capture
+
+
+def test_envfile_not_utf8(temp_pyproject, run_poe, tmp_path):
+    envfile = tmp_path / "latin1.env"
+    envfile.write_bytes(b"A=caf\xe9\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Envfile at {str(envfile)!r} could not be decoded as UTF-8" in result.capture
+    )
+    # The decode error isn't shown, since its repr includes the file's content
+    assert "caf" not in result.capture
+    assert "UnicodeDecodeError" not in result.capture
+    assert "Traceback" not in result.capture
+
+
+def test_envfile_unreadable(temp_pyproject, run_poe, tmp_path, monkeypatch):
+    envfile = tmp_path / "unreadable.env"
+    envfile.write_text("A=1\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    original_open = Path.open
+
+    def guarded_open(self, *args, **kwargs):
+        if self.name == "unreadable.env":
+            raise PermissionError(13, "Permission denied")
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", guarded_open)
+    result = run_poe("show", cwd=project_path)
+    assert result.code == 1
+    assert (
+        f"Failed to read envfile at {str(envfile)!r}: Permission denied"
+        in result.capture
+    )
+    assert "Traceback" not in result.capture
+
+
+def test_envfile_changes_seen_by_later_runs(temp_pyproject, run_poe, tmp_path):
+    """
+    Envfiles are parsed afresh for each run, so a long-lived process sees changes.
+    """
+    envfile = tmp_path / "changing.env"
+    envfile.write_text("A=first\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    assert run_poe("show", cwd=project_path).stdout == "first\n"
+    envfile.write_text("A=second\n")
+    assert run_poe("show", cwd=project_path).stdout == "second\n"
+
+
+def test_git_dir_envfile_outside_git_repo(temp_pyproject, run_poe, tmp_path):
+    """
+    Outside a git repo, an envfile path relative to POE_GIT_DIR or POE_GIT_ROOT is
+    reported as such (once), rather than resolved relative to the filesystem root.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        envfile = "${POE_GIT_DIR}/.env"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ok"
+        envfile = { expected = "${POE_GIT_ROOT}/.env", optional = "${POE_GIT_DIR}/x" }
+
+        [tool.poe.tasks.twice]
+        sequence = ["show", "show"]
+        """
+    )
+    result = run_poe(
+        "-vvv",
+        "twice",
+        cwd=project_path,
+        # Make sure git doesn't find a repo above the temp dir
+        env={"GIT_CEILING_DIRECTORIES": str(tmp_path.parent)},
+    )
+    assert result.code == 0, result.capture
+    assert result.stdout == "ok\nok\n"
+    for path, var_name in (
+        ("${POE_GIT_DIR}/.env", "POE_GIT_DIR"),
+        ("${POE_GIT_ROOT}/.env", "POE_GIT_ROOT"),
+    ):
+        assert (
+            result.capture.count(
+                f"Warning: Poe failed to locate envfile at {path!r} because the "
+                f"project is not inside a git repository, so {var_name} has no value"
+            )
+            == 1
+        )
+    # The optional envfile is skipped silently, with a debug message
+    assert (
+        "Skipping optional envfile at '${POE_GIT_DIR}/x' because the project is "
+        "not inside a git repository, so POE_GIT_DIR has no value"
+    ) in result.capture
+    assert "at '/.env'" not in result.capture
+    assert "'/x'" not in result.capture
+
+
+@pytest.mark.parametrize("git_var", ["POE_GIT_DIR", "POE_GIT_ROOT"])
+def test_git_dir_include_outside_git_repo(temp_pyproject, run_poe, tmp_path, git_var):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        include = "${{{git_var}}}/tasks.toml"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ok"
+        """
+    )
+    result = run_poe(
+        "show",
+        cwd=project_path,
+        env={"GIT_CEILING_DIRECTORIES": str(tmp_path.parent)},
+    )
+    assert result.code == 0, result.capture
+    assert result.stdout == "ok\n"
+    assert (
+        f"Warning: Poe could not include file from '${{{git_var}}}/tasks.toml' "
+        "because the project is not inside a git repository, so "
+        f"{git_var} has no value"
+    ) in result.capture
+    assert "/tasks.toml\n" not in result.capture
+
+
+VENV_BIN_DIR = str(Path(sys.executable).parent)
+
+
+@pytest.mark.skipif(
+    shutil.which("git", path=VENV_BIN_DIR) is not None,
+    reason="git is installed alongside the python executable",
+)
+def test_git_dir_paths_without_git_executable(temp_pyproject, run_poe):
+    """
+    Without git, envfile and include paths relative to POE_GIT_DIR are skipped as
+    outside a git repo, with one warning that git wasn't found.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        include = "${POE_GIT_ROOT}/tasks.toml"
+        envfile = "${POE_GIT_DIR}/.env"
+
+        [tool.poe.tasks.show]
+        cmd = "poe_test_echo ok"
+        envfile = "${POE_GIT_DIR}/task.env"
+        """
+    )
+    result = run_poe("show", cwd=project_path, env={"PATH": VENV_BIN_DIR})
+    assert result.code == 0, result.capture
+    assert result.stdout == "ok\n"
+    assert (
+        result.capture.count(
+            "Warning: Poe could not find the git executable, so POE_GIT_DIR and "
+            "POE_GIT_ROOT have no value"
+        )
+        == 1
+    )
+    assert (
+        "Warning: Poe could not include file from '${POE_GIT_ROOT}/tasks.toml' "
+        "because POE_GIT_ROOT has no value\n"
+    ) in result.capture
+    for path in ("${POE_GIT_DIR}/.env", "${POE_GIT_DIR}/task.env"):
+        assert (
+            f"Warning: Poe failed to locate envfile at {path!r} because "
+            "POE_GIT_DIR has no value\n"
+        ) in result.capture
+    assert "not inside a git repository" not in result.capture

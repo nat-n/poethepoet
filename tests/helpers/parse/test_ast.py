@@ -406,6 +406,42 @@ def test_parse_unmatched_quotes():
     )
 
 
+def test_parse_error_position():
+    with pytest.raises(ParseError) as excinfo:
+        parse_poe_cmd("ok\nok'not ok")
+    error = excinfo.value
+    assert error.has_position
+    assert (error.line, error.position) == (1, 8)
+    # location is for users, so it's 1-based
+    assert error.location == "line 2, position 9"
+    assert repr(error) == (
+        'ParseError("Unexpected end of input with unmatched single quote", '
+        "line=1, position=8)"
+    )
+
+
+def test_cursor_position_after_pushing_back_a_newline():
+    cursor = ParseCursor.from_string("a\ncde\nf")
+    for _ in range(6):
+        cursor.take()
+    # Just after a newline with more input to come, the position is the next line
+    assert cursor.position == (2, 0)
+    cursor.pushback("\n")
+    # Back at the end of the second line, not the first
+    assert cursor.position == (1, 2)
+    assert cursor.take() == "\n"
+    assert cursor.take() == "f"
+    assert cursor.position == (2, 0)
+
+
+def test_parse_error_without_position():
+    error = ParseError("no cursor")
+    assert not error.has_position
+    assert error.line is None
+    assert error.position is None
+    assert repr(error) == 'ParseError("no cursor")'
+
+
 def test_invalid_features():
     with pytest.raises(ParseError) as excinfo:
         parse_poe_cmd("""end\\""")
