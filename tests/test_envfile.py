@@ -290,7 +290,11 @@ def test_envfile_syntax_error_reports_line(temp_pyproject, run_poe, tmp_path):
     result = run_poe("show", cwd=project_path)
     assert result.code == 1
     assert "Syntax error in referenced envfile" in result.capture
-    assert "Expected '=' after variable name 'C' (near line 3" in result.capture
+    # Line and position numbers are 1-based
+    assert (
+        "Expected '=' after variable name 'C' (near line 3, position 1)"
+        in result.capture
+    )
     assert "Traceback" not in result.capture
 
 
@@ -329,3 +333,17 @@ def test_envfile_unreadable(temp_pyproject, run_poe, tmp_path, monkeypatch):
         in result.capture
     )
     assert "Traceback" not in result.capture
+
+
+def test_envfile_changes_seen_by_later_runs(temp_pyproject, run_poe, tmp_path):
+    """
+    Envfiles are parsed afresh for each run, so a long-lived process sees changes.
+    """
+    envfile = tmp_path / "changing.env"
+    envfile.write_text("A=first\n")
+    project_path = temp_pyproject(
+        ENVFILE_ERROR_PROJECT.format(envfile=envfile.as_posix())
+    )
+    assert run_poe("show", cwd=project_path).stdout == "first\n"
+    envfile.write_text("A=second\n")
+    assert run_poe("show", cwd=project_path).stdout == "second\n"

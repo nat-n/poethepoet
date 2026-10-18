@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 from ..exceptions import ExecutionError
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class EnvFileCache:
-    _ast_cache: ClassVar[dict[str, EnvFile]] = {}
+    _ast_cache: dict[str, EnvFile]
     _io: PoeIO
     _project_dir: Path
     _missing_warned: set[str]
@@ -21,6 +21,9 @@ class EnvFileCache:
     def __init__(self, project_dir: Path, io: PoeIO):
         self._project_dir = project_dir
         self._io = io
+        # Parsed envfiles by path. This lives on the instance (one per run) so that
+        # changes to envfiles are picked up by later runs in the same process.
+        self._ast_cache = {}
         # Paths of missing envfiles already warned about, so that each is only
         # reported once per run even though task envs may be resolved repeatedly
         self._missing_warned = set()
