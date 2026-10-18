@@ -126,6 +126,8 @@ Escaping whitespace with a backslash makes it part of the value, so it isn't str
    PADDED=foo\                   # "foo " (with a trailing space)
    HASH=foo\ #bar                # "foo #bar"
 
+As in bash, a backslash at the end of a line continues the line, except in single quotes and comments, and whitespace in the argument of an expansion like ``${VAR:-a   b}`` is kept as written.
+
 A UTF-8 byte order mark (BOM) at the start of an env file is ignored.
 
 Optional env files
