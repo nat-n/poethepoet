@@ -1096,9 +1096,9 @@ def test_inline_bare_script_gets_no_kwargs_from_parent_args(
     temp_pyproject, run_poe, task_name
 ):
     """
-    An inline script task in a sequence or switch declares no args of its own, so a
-    no-parens one gets no kwargs even though its parent has args, whereas the
-    parenthesised form can reference them by name.
+    An inline script task in a sequence, or a switch's case or control, declares no
+    args of its own, so a no-parens one gets no kwargs even though its parent has
+    args, whereas the parenthesised form can reference them by name.
     """
     project_path = temp_pyproject("""
         [tool.poe.tasks.seq]
@@ -1115,9 +1115,22 @@ def test_inline_bare_script_gets_no_kwargs_from_parent_args(
 
           [[tool.poe.tasks.pick.switch]]
           script = "util:show(flavor)"
+
+        [tool.poe.tasks.pick-by-script]
+        control.script = "util:has_kwargs"
+        args = ["flavor"]
+
+          [[tool.poe.tasks.pick-by-script.switch]]
+          case = "False"
+          script = "util:show(flavor)"
         """)
     _write_module(
-        project_path, "util", "def show(*args, **kwargs):\n    print(args, kwargs)\n"
+        project_path,
+        "util",
+        "def show(*args, **kwargs):\n"
+        "    print(args, kwargs)\n"
+        "def has_kwargs(**kwargs):\n"
+        "    print(bool(kwargs))\n",
     )
     if task_name == "seq":
         result = run_poe("seq", "--flavor", "sweet", cwd=project_path, env=no_venv)
@@ -1128,6 +1141,11 @@ def test_inline_bare_script_gets_no_kwargs_from_parent_args(
         assert result.code == 0, result.capture + result.stderr
         assert result.stdout == "() {}\n"
         result = run_poe("pick", "--flavor", "sweet", cwd=project_path, env=no_venv)
+        assert result.code == 0, result.capture + result.stderr
+        assert result.stdout == "('sweet',) {}\n"
+        result = run_poe(
+            "pick-by-script", "--flavor", "sweet", cwd=project_path, env=no_venv
+        )
         assert result.code == 0, result.capture + result.stderr
         assert result.stdout == "('sweet',) {}\n"
     assert result.stderr == ""
