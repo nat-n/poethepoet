@@ -409,6 +409,13 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     f"'{self.working_dir}'"
                 )
             raise
+        except OSError as error:
+            if error.filename == cmd[0]:
+                # e.g. the file isn't executable or has no shebang
+                raise PoeException(
+                    f"executable {cmd[0]!r} could not be run: {error.strerror}"
+                ) from error
+            raise
 
     async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
@@ -437,7 +444,15 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         # if running tests then wrap up coverage instrumentation while we still can
         _stop_coverage()
 
-        os.execvpe(cmd[0], tuple(cmd), exec_env)
+        try:
+            os.execvpe(cmd[0], tuple(cmd), exec_env)
+        except FileNotFoundError:
+            raise
+        except OSError as error:
+            # execvpe may report the path it resolved rather than cmd[0]
+            raise PoeException(
+                f"executable {cmd[0]!r} could not be run: {error.strerror}"
+            ) from error
 
     async def _exec_via_subproc(
         self,

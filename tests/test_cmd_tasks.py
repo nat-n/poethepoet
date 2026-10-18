@@ -38,6 +38,42 @@ def test_use_exec_with_missing_executable(run_poe_subproc):
     assert "Traceback" not in result.stderr
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="posix file permissions")
+@pytest.mark.parametrize("use_exec", [False, True])
+@pytest.mark.parametrize(
+    ("script_content", "mode", "reason"),
+    [
+        ("#!/bin/sh\necho hi\n", 0o644, "Permission denied"),
+        ("echo hi\n", 0o755, "Exec format error"),
+    ],
+)
+def test_cmd_with_executable_that_cannot_be_run(
+    run_poe_subproc, temp_pyproject, script_content, mode, reason, use_exec
+):
+    """
+    An executable that exists but can't be run gives a clear error rather than a
+    PermissionError or OSError traceback
+    """
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.bad-script]
+        cmd = "./script.sh"
+        use_exec = {str(use_exec).lower()}
+        """
+    )
+    script_path = project_path / "script.sh"
+    script_path.write_text(script_content)
+    script_path.chmod(mode)
+
+    result = run_poe_subproc("bad-script", cwd=str(project_path))
+    assert result.code == 1
+    assert f"Error: executable './script.sh' could not be run: {reason}\n" in (
+        result.capture
+    )
+    assert result.stdout == ""
+    assert "Traceback" not in result.stderr
+
+
 def test_setting_envvar_in_task(run_poe, projects):
     result = run_poe("show_env", project="cmds")
     assert result.capture == "Poe => poe_test_env\n"
