@@ -27,21 +27,22 @@ def parse_env_file(
 
 
 def _parse_to_ast(content: str) -> EnvFile:
+    from ..helpers.parse.command import ParamExpansion
     from ..helpers.parse.core import ParseConfig, ParseCursor
     from ..helpers.parse.core import ParseError as AstParseError
-    from ..helpers.parse.envfile import EnvFile
+    from ..helpers.parse.envfile import EnvFile, EnvFileParamExpansion
 
     # Ignore a leading UTF-8 byte order mark, as written by some Windows editors
-    content = content.removeprefix("﻿")
+    content = content.removeprefix("\ufeff")
+    # Also use the envfile flavour of ParamExpansion for nested expansions, such as
+    # in the argument of ${VAR:-$1}
+    config = ParseConfig(substitute_nodes={ParamExpansion: EnvFileParamExpansion})
     try:
-        return EnvFile(ParseCursor.from_string(content + "\n"), ParseConfig())
+        return EnvFile(ParseCursor.from_string(content + "\n"), config)
     except AstParseError as error:
         message = error.message
-        line = getattr(error, "line", None)
-        position = getattr(error, "position", None)
-        if line is not None and position is not None:
-            # Report the (approximate) location as 1-based line and column numbers
-            message += f" (near line {line + 1}, position {position + 1})"
+        if error.has_position:
+            message += f" (near {error.location})"
         raise ValueError(message) from error
 
 

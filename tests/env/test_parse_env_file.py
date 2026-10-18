@@ -42,9 +42,9 @@ valid_examples = [
         },
     ),
     (
-        """
+        r"""
         # values with line breaks
-        WORD=some\\
+        WORD=some\
 thing
         DOUBLE_QUOTED_WORD="some
         thing"
@@ -59,8 +59,10 @@ thing
             "WORD": "something",
             "DOUBLE_QUOTED_WORD": "some\n        thing",
             "SINGLE_QUOTED_WORD": "some\n        thing",
+            # backslash-newline is a line continuation in double quotes...
             "DOUBLE_QUOTED_WORD_ESC": "some        thing",
-            "SINGLE_QUOTED_WORD_ESC": "some        thing",
+            # ...but kept literally in single quotes
+            "SINGLE_QUOTED_WORD_ESC": "some\\\n        thing",
         },
     ),
     (
@@ -172,16 +174,26 @@ b;
             "EX1": "BAR#NOT_COMMENT",
             "EX2": "BAR#NOT_COMMENT",
             "EX3": "BAR#NOT_COMMENT",
-            "EX4": "BAR",
+            "EX4": "BAR #NOT_COMMENT",
             "EX5": "BAR #NOT_COMMENT",
             "EX6": "BAR #NOT_COMMENT",
             "EX7": "BAR#NOT_COMMENT",
             "EX8": "BAR",
-            "EX9": "BAR",
+            "EX9": "BAR ",
             "EX10": "BAR;",
             "EX11": "BAR;#COMMENT",
             "EX12": "BAR;;#COMMENT",
             "EX13": "BAR",
+        },
+    ),
+    # escaped whitespace is literal, so isn't stripped as trailing whitespace
+    (
+        "TRAILING_SPACE=foo\\ \nTRAILING_TAB=foo\\\t\nTWO=a\\ \\  \nMIXED=x\\\t #c\n",
+        {
+            "TRAILING_SPACE": "foo ",
+            "TRAILING_TAB": "foo\t",
+            "TWO": "a  ",
+            "MIXED": "x\t",
         },
     ),
     (
@@ -298,8 +310,12 @@ literal_dollar_examples = [
     # $ followed by punctuation
     ('UQ=x$%y\nDQ="x$%y"\n', {"UQ": "x$%y", "DQ": "x$%y"}),
     ('UQ=$/tmp\nDQ="$/tmp"\n', {"UQ": "$/tmp", "DQ": "$/tmp"}),
-    # $ followed by a digit
-    ('UQ=abc$1def\nDQ="abc$1def"\n', {"UQ": "abc$1def", "DQ": "abc$1def"}),
+    # $$ and other special parameters that refer to the state of a shell are kept
+    ('UQ=pa$$word\nDQ="pa$$word"\n', {"UQ": "pa$$word", "DQ": "pa$$word"}),
+    (
+        'UQ=$?$!$#$-$0\nDQ="$?$!$#$-$0"\n',
+        {"UQ": "$?$!$#$-$0", "DQ": "$?$!$#$-$0"},
+    ),
     # $ surrounded by whitespace
     ('UQ=a $ b\nDQ="a $ b"\n', {"UQ": "a $ b", "DQ": "a $ b"}),
     # $ followed by a quote or a comment
@@ -317,6 +333,25 @@ def test_parse_env_file_literal_dollar(content, expected):
     values, consistent with double-quoted values.
     """
     assert parse_env_file(content) == expected
+
+
+positional_param_examples = [
+    # positional parameters are always empty, and only take a single digit
+    ('UQ=abc$1def\nDQ="abc$1def"\n', {"UQ": "abcdef", "DQ": "abcdef"}),
+    ('UQ=a$10b\nDQ="a$9$10b"\n', {"UQ": "a0b", "DQ": "a0b"}),
+    ('UQ=a$@b$*c\nDQ="a$@b$*c"\n', {"UQ": "abc", "DQ": "abc"}),
+    # also when nested in another expansion
+    ("UQ=${MISSING:-x$1y}\n", {"UQ": "xy"}),
+]
+
+
+@pytest.mark.parametrize(("content", "expected"), positional_param_examples)
+def test_parse_env_file_positional_params(content, expected):
+    """
+    As in a bash script run without arguments, $1 to $9, $@ and $* expand to an
+    empty string, even if the base env has a variable of that name.
+    """
+    assert parse_env_file(content, base_env={"1": "one", "@": "at"}) == expected
 
 
 def test_parse_env_file_no_expansion_in_single_quotes():
@@ -373,4 +408,4 @@ def test_parse_env_file_with_base_env(content, base_env, expected):
 
 
 def test_parse_env_file_ignores_leading_utf8_bom():
-    assert parse_env_file("﻿A=1\nB=2\n") == {"A": "1", "B": "2"}
+    assert parse_env_file("\ufeffA=1\nB=2\n") == {"A": "1", "B": "2"}
