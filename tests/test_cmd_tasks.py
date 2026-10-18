@@ -629,5 +629,5 @@ def test_cmd_parse_error_reports_one_based_position(run_poe, temp_pyproject):
     assert result.code == 1
     assert (
         "Unexpected end of input with unmatched double quote, near line 1, "
-        "position 19." in result.capture
+        "position 18." in result.capture
     )

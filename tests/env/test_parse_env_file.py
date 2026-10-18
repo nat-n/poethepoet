@@ -411,3 +411,18 @@ def test_parse_env_file_with_base_env(content, base_env, expected):
 
 def test_parse_env_file_ignores_leading_utf8_bom():
     assert parse_env_file("\ufeffA=1\nB=2\n") == {"A": "1", "B": "2"}
+
+
+@pytest.mark.parametrize(
+    ("content", "location"),
+    [
+        # errors at the end of input point at the end of the last line, whether or
+        # not the file ends with a newline
+        ('A=1\nB="x\n', "near line 2, position 5"),
+        ('A=1\nB="x', "near line 2, position 5"),
+        ("A=1\nB=2\nC 3\n", "near line 3, position 1"),
+    ],
+)
+def test_parse_env_file_error_location(content, location):
+    with pytest.raises(ValueError, match=location):
+        parse_env_file(content)

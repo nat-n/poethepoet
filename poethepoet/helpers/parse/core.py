@@ -49,6 +49,10 @@ class ParseCursor:
 
     @property
     def position(self):
+        if self._position < 0 and self._line_lengths:
+            # Just after a line break, so point at the end of the previous line
+            # rather than before the start of the next one
+            return (self._line - 1, self._line_lengths[-1] + 1)
         return (max(0, self._line), max(0, self._position))
 
     def peek(self):
@@ -72,7 +76,7 @@ class ParseCursor:
             self._line_lengths.append(self._position)
             self._line += 1
             self._position = -1
-        else:
+        elif result is not None:
             self._position += 1
 
         return result

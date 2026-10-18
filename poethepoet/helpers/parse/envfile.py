@@ -219,7 +219,7 @@ class EnvFileValue(SyntaxNode):
                     self._children.append(param_node)
                 else:
                     # Not an expansion (ParamExpansion pushed the $ back), so
-                    # keep the $ literally as bash does
+                    # keep the $ literally
                     self._children.append(EnvFileLiteralTextCls(chars, self.config))
                 last_was_whitespace = False
 

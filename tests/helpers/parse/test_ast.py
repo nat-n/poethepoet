@@ -411,12 +411,12 @@ def test_parse_error_position():
         parse_poe_cmd("ok\nok'not ok")
     error = excinfo.value
     assert error.has_position
-    assert (error.line, error.position) == (1, 9)
+    assert (error.line, error.position) == (1, 8)
     # location is for users, so it's 1-based
-    assert error.location == "line 2, position 10"
+    assert error.location == "line 2, position 9"
     assert repr(error) == (
         'ParseError("Unexpected end of input with unmatched single quote", '
-        "line=1, position=9)"
+        "line=1, position=8)"
     )
 
 
@@ -424,7 +424,8 @@ def test_cursor_position_after_pushing_back_a_newline():
     cursor = ParseCursor.from_string("a\ncde\nf")
     for _ in range(6):
         cursor.take()
-    assert cursor.position == (2, 0)
+    # Just after a newline, the position is the end of the line it ended
+    assert cursor.position == (1, 3)
     cursor.pushback("\n")
     # Back at the end of the second line, not the first
     assert cursor.position == (1, 2)
