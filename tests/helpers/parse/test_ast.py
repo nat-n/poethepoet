@@ -424,8 +424,8 @@ def test_cursor_position_after_pushing_back_a_newline():
     cursor = ParseCursor.from_string("a\ncde\nf")
     for _ in range(6):
         cursor.take()
-    # Just after a newline, the position is the end of the line it ended
-    assert cursor.position == (1, 3)
+    # Just after a newline with more input to come, the position is the next line
+    assert cursor.position == (2, 0)
     cursor.pushback("\n")
     # Back at the end of the second line, not the first
     assert cursor.position == (1, 2)

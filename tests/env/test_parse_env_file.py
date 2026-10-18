@@ -421,6 +421,9 @@ def test_parse_env_file_ignores_leading_utf8_bom():
         ('A=1\nB="x\n', "near line 2, position 5"),
         ('A=1\nB="x', "near line 2, position 5"),
         ("A=1\nB=2\nC 3\n", "near line 3, position 1"),
+        # errors at the start of a line point at that line, not the one before
+        ("A=1\n=2\n", "near line 2, position 1"),
+        ("A=1\n\n\n9=2\n", "near line 4, position 1"),
     ],
 )
 def test_parse_env_file_error_location(content, location):
