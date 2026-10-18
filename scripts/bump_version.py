@@ -19,12 +19,24 @@ def main(version: str | None = None) -> None:
     if not match:
         sys.exit(f"Could not find __version__ in {ver_file}")
     current = match.group(1)
-    parts = current.split(".")
+    if not (
+        current_match := re.fullmatch(r"(\d+)\.(\d+)\.(\d+)((?:a|b|rc)\d+)?", current)
+    ):
+        sys.exit(f"Could not parse current version {current!r}")
+    major, minor, tiny, prerelease = current_match.groups()
 
+    # Like `poetry version`, a pre-release bumped at its own level is finalised,
+    # e.g. 0.50.0rc1 -> minor -> 0.50.0
     if version == "minor":
-        new_version = f"{parts[0]}.{int(parts[1]) + 1}.0"
+        if prerelease and tiny == "0":
+            new_version = f"{major}.{minor}.0"
+        else:
+            new_version = f"{major}.{int(minor) + 1}.0"
     elif version == "tiny":
-        new_version = f"{parts[0]}.{parts[1]}.{int(parts[2]) + 1}"
+        if prerelease:
+            new_version = f"{major}.{minor}.{tiny}"
+        else:
+            new_version = f"{major}.{minor}.{int(tiny) + 1}"
     elif re.fullmatch(r"\d+\.\d+\.\d+(a|b|rc)\d+|\d+\.\d+\.\d+", version):
         new_version = version
     else:
