@@ -31,14 +31,13 @@ Whitespace, backslashes, quotes, and parameter expansions inside a square bracke
 Dollar signs and escaped whitespace in env files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A few edge cases in env file values now behave like bash:
+A few edge cases in env file values changed:
 
 - A ``$`` that doesn't start an expansion is kept in unquoted values too. From 0.46.0 it was dropped, so ``PRICE=100$`` gave ``100`` and ``DIR=$/tmp`` gave ``/tmp``.
-- ``$1`` to ``$9``, ``$@`` and ``$*`` expand to an empty string, as in a bash script run without arguments. Previously ``abc$1def`` gave ``abc1def`` unquoted and ``abc$1def`` double-quoted, and now gives ``abcdef``.
-- ``$$``, ``$?``, ``$!``, ``$#``, ``$-`` and ``$0`` are kept literally. Previously ``pa$$word`` gave ``pa$``, and now gives ``pa$$word``. Bash would expand these to details of the shell process, such as its PID for ``$$``.
-- Whitespace escaped with a backslash is part of the value: it is no longer stripped from the end of an unquoted value, and a ``#`` after it no longer starts a comment. So ``A=foo\ #bar`` gives ``foo #bar`` rather than ``foo``, as it did before 0.46.0.
+- Only a ``$`` followed by a variable name or ``{`` starts an expansion. So ``$1``, ``$@``, ``$$``, ``$?`` and other shell special parameters are kept literally, consistent with poe's other templating. Previously ``abc$1def`` gave ``abc1def`` unquoted, and ``pa$$word`` gave ``pa$``.
+- Whitespace escaped with a backslash is part of the value, as in bash: it is no longer stripped from the end of an unquoted value, and a ``#`` after it no longer starts a comment. So ``A=foo\ #bar`` gives ``foo #bar`` rather than ``foo``, as it did before 0.46.0.
 
-To keep a value exactly as written, wrap it in single quotes, for example ``PASSWORD='pa$1word'``. See :ref:`Parameter expansion in env files` for details.
+To keep a value exactly as written, wrap it in single quotes, for example ``PASSWORD='pa$word'``. See :ref:`Parameter expansion in env files` for details.
 
 
 0.47.0

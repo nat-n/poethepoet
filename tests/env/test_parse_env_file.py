@@ -336,20 +336,22 @@ def test_parse_env_file_literal_dollar(content, expected):
 
 
 positional_param_examples = [
-    # positional parameters are always empty, and only take a single digit
-    ('UQ=abc$1def\nDQ="abc$1def"\n', {"UQ": "abcdef", "DQ": "abcdef"}),
-    ('UQ=a$10b\nDQ="a$9$10b"\n', {"UQ": "a0b", "DQ": "a0b"}),
-    ('UQ=a$@b$*c\nDQ="a$@b$*c"\n', {"UQ": "abc", "DQ": "abc"}),
+    # positional parameters aren't expansions in envfiles, so are kept literally
+    ('UQ=abc$1def\nDQ="abc$1def"\n', {"UQ": "abc$1def", "DQ": "abc$1def"}),
+    ('UQ=a$10b\nDQ="a$9$10b"\n', {"UQ": "a$10b", "DQ": "a$9$10b"}),
+    ('UQ=a$@b$*c\nDQ="a$@b$*c"\n', {"UQ": "a$@b$*c", "DQ": "a$@b$*c"}),
     # also when nested in another expansion
-    ("UQ=${MISSING:-x$1y}\n", {"UQ": "xy"}),
+    ('UQ=${MISSING:-x$1y}\nDQ="${MISSING:-x$1y}"\n', {"UQ": "x$1y", "DQ": "x$1y"}),
+    # e.g. bcrypt hashes keep their $<digit> parts
+    ("HASH=$2b$12\n", {"HASH": "$2b$12"}),
 ]
 
 
 @pytest.mark.parametrize(("content", "expected"), positional_param_examples)
 def test_parse_env_file_positional_params(content, expected):
     """
-    As in a bash script run without arguments, $1 to $9, $@ and $* expand to an
-    empty string, even if the base env has a variable of that name.
+    $1 to $9, $@ and $* are kept literally, as only a $ followed by a name or { starts
+    an expansion, even if the base env has a variable of that name.
     """
     assert parse_env_file(content, base_env={"1": "one", "@": "at"}) == expected
 

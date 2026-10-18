@@ -108,14 +108,16 @@ Env file values support bash-style parameter expansion. Each variable can refere
 
 Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``. To keep a ``$`` literally in an unquoted or double-quoted value, escape it with a backslash (``\$``).
 
-As in bash, a ``$`` that doesn't start an expansion, for example because it's followed by a space or ``/`` or is at the end of the value, is kept as is. The positional parameters ``$1`` to ``$9``, ``$@`` and ``$*`` always expand to an empty string, as in a bash script run without arguments. Unlike in bash, the special parameters ``$$``, ``$?``, ``$!``, ``$#``, ``$-`` and ``$0`` are kept literally, since they refer to the state of a running shell. Command substitution (``$(...)``) and ``$'...'`` or ``$"..."`` quoting are not supported, so the ``$`` is kept literally there too.
+A ``$`` only starts an expansion when it is followed by a variable name or ``{``. Any other ``$`` is kept as is, for example at the end of the value, or before a space, ``/`` or a digit. So unlike in bash, ``$1``, ``$@``, ``$$``, ``$?`` and other special parameters are kept literally, consistent with the rest of poe's templating. Command substitution (``$(...)``) and ``$'...'`` or ``$"..."`` quoting are not supported either, so the ``$`` is kept literally there too.
 
 .. code-block:: bash
 
    PRICE=100$                    # 100$
    PASSWORD=pa$$word             # pa$$word
-   ARG=a$1b                      # ab
+   ARG=a$1b                      # a$1b
    ESCAPED=abc\$def              # abc$def
+
+To be sure a value is kept exactly as written, such as a password hash, wrap it in single quotes.
 
 Escaping whitespace with a backslash makes it part of the value, so it isn't stripped from the end of an unquoted value, and a ``#`` after it doesn't start a comment:
 

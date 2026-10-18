@@ -7,13 +7,8 @@ single/double quoting, backslash escaping, and parameter expansion.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from .command import ParamExpansion, SingleQuotedText
 from .core import ContentNode, ParseCursor, ParseError, SyntaxNode
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 
 class EnvFileUnquotedText(ContentNode):
@@ -77,11 +72,11 @@ class EnvFileLiteralText(ContentNode):
     """
     Reads a single character that is kept literally because it has no special
     meaning where it appears: a # that doesn't start a comment, or a $ that doesn't
-    start a parameter expansion.
+    start a parameter expansion, i.e. isn't followed by a name or {.
 
-    A $ followed by one of the special parameters $, ?, !, #, - or 0 is kept
-    together with it (e.g. $$ stays $$), since these refer to the state of a running
-    shell and have no meaning in an envfile.
+    A $ followed by one of the shell's special parameters $, ?, !, #, - or 0 is kept
+    together with it (e.g. $$ stays $$, rather than the second $ starting another
+    expansion), since these have no meaning in an envfile.
     """
 
     _SPECIAL_PARAMS = frozenset("$?!#-0")
@@ -92,36 +87,11 @@ class EnvFileLiteralText(ContentNode):
             self._content += chars.take()
 
 
-class EnvFileParamExpansion(ParamExpansion):
-    """
-    A parameter expansion in an envfile value.
-
-    In addition to named parameters this recognises the positional parameters $1 to
-    $9, $@ and $*. An envfile has no arguments so, as in a bash script run without
-    arguments, these always expand to an empty string.
-    """
-
-    _POSITIONAL_PARAMS = frozenset("123456789@*")
-
-    def _parse(self, chars: ParseCursor):
-        assert chars.take() == "$"
-        if chars.peek() in self._POSITIONAL_PARAMS:
-            self._content = chars.take()
-            return
-        chars.pushback("$")
-        super()._parse(chars)
-
-    def expand(self, env: Mapping[str, str]) -> str:
-        if self._content in self._POSITIONAL_PARAMS:
-            return ""
-        return super().expand(env)
-
-
 class EnvFileDQText(ContentNode):
     """
     Reads text inside a double-quoted envfile value segment.
 
-    Stops at " or $ (to allow EnvFileParamExpansion to take over). Handles backslash
+    Stops at " or $ (to allow ParamExpansion to take over). Handles backslash
     escape sequences per bash double-quote rules:
     - backslash + " → "
     - backslash + \\ → \\
@@ -162,7 +132,7 @@ class EnvFileDQText(ContentNode):
 class EnvFileDQString(SyntaxNode):
     """
     Parses a complete double-quoted envfile value string from opening " to
-    closing ", dispatching EnvFileDQText and EnvFileParamExpansion alternately.
+    closing ", dispatching EnvFileDQText and ParamExpansion alternately.
     """
 
     def _parse(self, chars: ParseCursor):
@@ -171,7 +141,7 @@ class EnvFileDQString(SyntaxNode):
 
         EnvFileDQTextCls = self.get_child_node_cls(EnvFileDQText)
         EnvFileLiteralTextCls = self.get_child_node_cls(EnvFileLiteralText)
-        ParamExpansionCls = self.get_child_node_cls(EnvFileParamExpansion)
+        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
 
         while True:
             next_char = chars.peek()
@@ -211,7 +181,7 @@ class EnvFileValue(SyntaxNode):
         EnvFileLiteralTextCls = self.get_child_node_cls(EnvFileLiteralText)
         SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
         EnvFileDQStringCls = self.get_child_node_cls(EnvFileDQString)
-        ParamExpansionCls = self.get_child_node_cls(EnvFileParamExpansion)
+        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
 
         # Leading space/tab before content is invalid (bash disallows VAR= value)
         next_char = chars.peek()
