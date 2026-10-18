@@ -205,6 +205,8 @@ def test_non_string_task_help_is_reported(
     if cli_args and cli_args[0] == "--help":
         # --help hides config errors, but must not crash
         assert result.code == 0
+        if cli_args == ("--help",):
+            assert "  other                 Other task" in result.capture
     else:
         assert result.code == 1
         assert "Error: Invalid task 'bad'" in result.capture
@@ -249,6 +251,8 @@ def test_help_with_malformed_task_args(
     if cli_args[0] == "--help":
         # --help hides config errors, but must not crash
         assert result.code == 0
+        if cli_args == ("--help",):
+            assert "  other                 Other task" in result.capture
     else:
         assert result.code == 1
         assert expected_error in result.capture
