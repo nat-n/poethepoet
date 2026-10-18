@@ -122,6 +122,9 @@ class GroupConfig:
         heading = group_def.get("heading", name)
         self.heading = heading if isinstance(heading, str) else name
         executor = group_def.get("executor")
+        if isinstance(executor, str):
+            # Only the project config normalizes the string form when it's loaded
+            executor = {"type": executor}
         self.executor = executor if isinstance(executor, dict) else None
 
 

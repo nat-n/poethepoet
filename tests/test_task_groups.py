@@ -115,7 +115,9 @@ def test_group_executor_overridden_by_cli(run_poe, projects):
 
 @pytest.mark.parametrize("cli_args", [(), ("--help",), ("other",)])
 def test_task_duplicated_in_group_is_reported(run_poe, temp_pyproject, cli_args):
-    """A task name used both at top level and in a group gives a clean error."""
+    """
+    A task name used both at top level and in a group gives a clean error.
+    """
     project_path = temp_pyproject(
         """
         [tool.poe]
@@ -141,25 +143,62 @@ def test_task_duplicated_in_group_is_reported(run_poe, temp_pyproject, cli_args)
     )
 
 
-@pytest.mark.parametrize("cli_args", [(), ("other",)])
-def test_non_string_group_heading_is_reported(run_poe, temp_pyproject, cli_args):
-    """A non-string group heading gives a clean validation error."""
+@pytest.mark.parametrize(
+    ("option", "expected_error"),
+    [
+        ("heading", "Option 'groups.grp.heading' must have a value of type: str"),
+        # the order of the types listed in this error isn't stable
+        ("executor", "Option 'groups.grp.executor' must have a value of type: "),
+    ],
+)
+@pytest.mark.parametrize("cli_args", [(), ("--help",), ("other",)])
+def test_invalid_group_option_is_reported(
+    run_poe, temp_pyproject, cli_args, option, expected_error
+):
+    """
+    A group option with an invalid value gives a clean validation error.
+    """
     project_path = temp_pyproject(
-        """
+        f"""
         [tool.poe]
         executor = "simple"
         [tool.poe.tasks]
         other = "poe_test_echo other"
         [tool.poe.groups.grp]
-        heading = 5
+        {option} = 5
         [tool.poe.groups.grp.tasks]
         grouped = "poe_test_echo grouped"
         """
     )
     result = run_poe(*cli_args, cwd=project_path)
-    assert result.code == 1
-    assert (
-        "Error: Option 'groups.grp.heading' must have a value of type: str"
-        in result.capture
-    )
     assert "Configured tasks:\n  other" in result.capture
+    if cli_args == ("--help",):
+        # --help hides config errors, but must not crash
+        assert result.code == 0
+        return
+    assert result.code == 1
+    assert f"Error: {expected_error}" in result.capture
+
+
+def test_group_executor_string_in_included_file(run_poe, temp_pyproject):
+    """
+    A group executor given as a string in an included file is applied.
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe]
+        executor = { type = "virtualenv", location = "no_such_venv" }
+        include = "included.toml"
+        """
+    )
+    project_path.joinpath("included.toml").write_text(
+        """
+        [groups.grp]
+        executor = "simple"
+        [groups.grp.tasks]
+        show-executor = "poe_test_env"
+        """
+    )
+    result = run_poe("show-executor", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert "POE_ACTIVE=simple\n" in result.stdout

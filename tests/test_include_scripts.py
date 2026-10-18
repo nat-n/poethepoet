@@ -101,9 +101,9 @@ def fails():
 @pytest.mark.parametrize(
     ("function_name", "expected_error"),
     [
-        ("as_list", "got 'list'"),
-        ("as_none", "got 'NoneType'"),
-        ("as_int", "got 'int'"),
+        ("as_list", "expected a dict or a json object string, got list"),
+        ("as_none", "expected a dict or a json object string, got None"),
+        ("as_int", "expected a dict or a json object string, got int"),
         ("tool_not_dict", "Unrecognized option 'tool'"),
         ("tool_poe_not_dict", "Option 'tool.poe' must be a table"),
     ],
@@ -123,7 +123,10 @@ def test_include_script_returning_invalid_config(
     project_path.joinpath("errscripts.py").write_text(INCLUDE_SCRIPT_ERRORS_MODULE)
     result = run_poe("a", cwd=project_path)
     assert result.code == 1
-    assert "Error: Invalid content in loaded config from errscripts" in result.capture
+    assert (
+        "Error: Invalid content in loaded config from include_script "
+        f"'errscripts:{function_name}'"
+    ) in result.capture
     assert expected_error in result.capture
 
 
