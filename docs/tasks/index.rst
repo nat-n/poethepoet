@@ -28,7 +28,7 @@ Tasks can also be defined as sub-tables, which allows for specifying the task ty
 .. code-block:: toml
 
   [tool.poe.tasks.test-quick]
-  help = "Run tests excluding those makes as slow."
+  help = "Run tests excluding those marked as slow."
   cmd  = "pytest -m \"not slow\"" # here the cmd key identifies the task type and content
 
 This implies that you can also define tasks of other types on a single line, like so:
