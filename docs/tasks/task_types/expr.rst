@@ -23,7 +23,7 @@
 - reference the |sys_module_link| module without having to specify it as an import
 - access the task's arguments from `sys.argv`, in the same form as for :doc:`script tasks <script>`
 - reference values of named args as Python variables with a Python type matching the configured arg type
-- include environment variables as string values that are injected into the expression
+- include environment variables as string values (empty if unset) that are injected into the expression
   using the usual templating syntax ``${...}``, including the :ref:`default and alternate value operators <parameter-expansion-operators>`
 
 Available task options
@@ -123,7 +123,7 @@ Expr tasks can reference the results of other tasks by leveraging the :doc:`uses
 Accessing free arguments via ``_extra_args``
 --------------------------------------------
 
-Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside expr tasks as the ``_extra_args`` variable — a ``list[str]``.
+Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside expr tasks as the ``_extra_args`` variable — a ``list[str]``, which is empty if there are none.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
 
