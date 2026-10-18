@@ -37,8 +37,11 @@ def _parse_to_ast(content: str) -> EnvFile:
     # Also use the envfile flavour of ParamExpansion for nested expansions, such as
     # in the argument of ${VAR:-$1}
     config = ParseConfig(substitute_nodes={ParamExpansion: EnvFileParamExpansion})
+    if not content.endswith("\n"):
+        # Terminate the last line, without adding a line that error positions count
+        content += "\n"
     try:
-        return EnvFile(ParseCursor.from_string(content + "\n"), config)
+        return EnvFile(ParseCursor.from_string(content), config)
     except AstParseError as error:
         message = error.message
         if error.has_position:

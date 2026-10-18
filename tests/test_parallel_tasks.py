@@ -1032,7 +1032,7 @@ def test_parallel_subtask_that_fails_to_start(run_poe, temp_pyproject, ignore_fa
 
     envfile_error = (
         f"Syntax error in referenced envfile: {str(project_path / 'bad.env')!r}; "
-        "Unexpected end of input with unmatched double quote"
+        "Unexpected end of input with unmatched double quote (near line 2, position 1)"
     )
     warnings = [line for line in result.capture_lines if line.startswith("Warning:")]
     if ignore_fail:
