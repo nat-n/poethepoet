@@ -54,7 +54,7 @@ You can install the poethepoet poetry plugin globally like so:
 
   poetry self add 'poethepoet[poetry_plugin]'
 
-Or with Poetry >= 2.0, add it to poetry on a per project basis by adding the following to your *pyproject.toml*:
+Or with poetry >= 2.0, add it to poetry on a per project basis by adding the following to your *pyproject.toml*:
 
 .. code-block:: toml
 
@@ -179,7 +179,7 @@ Fish
 
 Fish completion currently includes task names only.
 
-Powershell
+PowerShell
 ~~~~~~~~~~
 
 .. code-block:: pwsh
@@ -188,7 +188,7 @@ Powershell
   poe _powershell_completion | out-string | invoke-expression
 
 
-Powershell completion includes:
+PowerShell completion includes:
 
 - Global CLI options (``-v``, ``-C``, etc.)
 - Task names

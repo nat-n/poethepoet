@@ -134,7 +134,7 @@ When you run ``poe`` without specifying a task, ungrouped tasks appear first, fo
     </div>
 
 
-Group names must consist of only alphanumeric characters, dashes, or underscores. Task names must be unique across all groups and ungrouped tasks.
+Group names must consist of only alphanumeric characters, dashes, or underscores. Task names must be unique across all groups and ungrouped tasks within a config file.
 
 
 Group options

@@ -1,7 +1,7 @@
 Using toml syntax
 =================
 
-TOML offers several equivalent ways of writing the same structure, so a task can be defined more tersely or more expressively depending on how much configuration it needs. Poe the Poet only sees the resulting structure, so you can choose whichever style reads best for each task.
+TOML offers several equivalent ways of writing the same structure. Poe the Poet only sees the resulting structure, so you can choose whichever style reads best for each task.
 
 For example, the following definitions of a task with a help message and an argument are all equivalent.
 
