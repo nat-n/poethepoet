@@ -57,7 +57,11 @@ class SwitchTask(PoeTask):
             for item in super().normalize(source, strict):
                 if strict:
                     # Subtasks may not declare certain options
-                    for subtask_def in item.get("switch", ()):
+                    # Invalid cases are reported by validation
+                    cases = item.get("switch", ())
+                    for subtask_def in cases if isinstance(cases, list) else ():
+                        if not isinstance(subtask_def, dict):
+                            continue
                         for banned_option in SUBTASK_OPTIONS_BLOCKLIST:
                             if banned_option in subtask_def:
                                 if "case" not in subtask_def:
@@ -106,7 +110,16 @@ class SwitchTask(PoeTask):
             )
 
             case_task_specs = []
-            for switch_item in task_def["switch"]:
+            # Non-list content is reported by validation
+            content = task_def["switch"]
+            for index, switch_item in enumerate(
+                content if isinstance(content, list) else ()
+            ):
+                if not isinstance(switch_item, dict):
+                    raise ConfigValidationError(
+                        f"Item #{index} in switch task should be a value of type: dict",
+                        task_name=self.name,
+                    )
                 case_task_def = dict(switch_item, args=switch_args)
                 case = case_task_def.pop("case", DEFAULT_CASE)
                 case_tuple = (

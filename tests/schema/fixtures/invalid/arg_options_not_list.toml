@@ -1,0 +1,4 @@
+# expected_error: Option 'options' must be a list
+[tool.poe.tasks.a]
+cmd = "echo"
+args = [{ name = "x", options = 5 }]

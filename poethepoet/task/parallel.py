@@ -140,7 +140,11 @@ class ParallelTask(PoeTask):
             )
 
             self.subtasks = []
-            for index, sub_task_def in enumerate(task_def[ParallelTask.__key__]):
+            # Non-list content is reported by validation
+            content = task_def[ParallelTask.__key__]
+            for index, sub_task_def in enumerate(
+                content if isinstance(content, list) else ()
+            ):
                 if not isinstance(sub_task_def, str | dict | list):
                     raise ConfigValidationError(
                         f"Item #{index} in parallel task should be a value of "
