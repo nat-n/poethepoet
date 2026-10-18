@@ -131,12 +131,14 @@ class ScriptTask(PoeTask):
         named_arg_values.setdefault("_extra_args", [])
 
         # Only the task's own args are passed implicitly as kwargs, whereas args
-        # inherited from a parent task may still be referenced explicitly by name
+        # inherited from a parent task may still be referenced explicitly by name.
+        # An inline task can't declare args, so any it has are shared by its parent
+        # switch task.
         target_module, function_call = parse_script_reference(
             self.spec.content,
             named_arg_values,
             allowed_vars={"sys", "os", "environ", "_dry_run"},
-            own_args=self.get_parsed_arguments(env)[0],
+            own_args={} if self.spec.parent else self.get_parsed_arguments(env)[0],
         )
 
         argv = [self.name, *self._get_python_argv(env)]

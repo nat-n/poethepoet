@@ -132,7 +132,7 @@ As with other task types, script tasks support configuring named arguments via t
 
 - As **Python variables** that can be referenced directly in the function call expression. Values retain their configured type — booleans are ``True``/``False``, integers are ``int``, multiple args are ``list``, etc.
 - Via **sys.argv**, in the same form whether the script task calls a function or runs a module. Each declared arg is re-emitted from its parsed value with defaults applied, using its first option or its position, except that a boolean flag is included only if it was passed on the command line. Any free arguments given after :sh:`--` follow, without the :sh:`--` itself; give :sh:`--` twice to pass a literal :sh:`--`. Without declared args, the arguments are passed as given.
-- As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case all args declared on the task itself are passed as kwargs. Args inherited from a parent task, such as a sequence or ref, are not passed as kwargs, but can be referenced by name when the parentheses are included.
+- As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case only the args declared by the task itself are passed as kwargs, while args inherited from a parent task can be referenced by name with parentheses.
 
 See :ref:`Arguments for script tasks` for more details and examples.
 

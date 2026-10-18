@@ -1070,11 +1070,10 @@ def test_bare_script_subtask_receives_only_own_args_as_kwargs(temp_pyproject, ru
     assert result.stderr == ""
 
 
-def test_bare_script_kwargs_with_args_shared_with_parent(temp_pyproject, run_poe):
+def test_bare_script_own_arg_shares_name_with_parent_arg(temp_pyproject, run_poe):
     """
     A no-parens script subtask's own arg takes its own value even if a parent task
-    declares an arg of the same name, and a switch's args are passed as kwargs to
-    its cases, since cases share the switch's args rather than inheriting them.
+    declares an arg of the same name.
     """
     project_path = temp_pyproject("""
         [tool.poe.tasks.build]
@@ -1084,13 +1083,6 @@ def test_bare_script_kwargs_with_args_shared_with_parent(temp_pyproject, run_poe
         [tool.poe.tasks.all]
         sequence = ["build --flavor own"]
         args = ["flavor"]
-
-        [tool.poe.tasks.pick]
-        control.expr = "flavor"
-        args = ["flavor"]
-
-          [[tool.poe.tasks.pick.switch]]
-          script = "util:show"
         """)
     _write_module(project_path, "util", "def show(**kwargs):\n    print(kwargs)\n")
     result = run_poe("all", "--flavor", "parent", cwd=project_path, env=no_venv)
@@ -1098,9 +1090,46 @@ def test_bare_script_kwargs_with_args_shared_with_parent(temp_pyproject, run_poe
     assert result.stdout == "{'flavor': 'own'}\n"
     assert result.stderr == ""
 
-    result = run_poe("pick", "--flavor", "sweet", cwd=project_path, env=no_venv)
-    assert result.code == 0, result.capture + result.stderr
-    assert result.stdout == "{'flavor': 'sweet'}\n"
+
+@pytest.mark.parametrize("task_name", ["seq", "pick"])
+def test_inline_bare_script_gets_no_kwargs_from_parent_args(
+    temp_pyproject, run_poe, task_name
+):
+    """
+    An inline script task in a sequence or switch declares no args of its own, so a
+    no-parens one gets no kwargs even though its parent has args, whereas the
+    parenthesised form can reference them by name.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.seq]
+        sequence = [{ script = "util:show" }, { script = "util:show(flavor)" }]
+        args = ["flavor"]
+
+        [tool.poe.tasks.pick]
+        control.expr = "flavor"
+        args = ["flavor"]
+
+          [[tool.poe.tasks.pick.switch]]
+          case = "plain"
+          script = "util:show"
+
+          [[tool.poe.tasks.pick.switch]]
+          script = "util:show(flavor)"
+        """)
+    _write_module(
+        project_path, "util", "def show(*args, **kwargs):\n    print(args, kwargs)\n"
+    )
+    if task_name == "seq":
+        result = run_poe("seq", "--flavor", "sweet", cwd=project_path, env=no_venv)
+        assert result.code == 0, result.capture + result.stderr
+        assert result.stdout == "() {}\n('sweet',) {}\n"
+    else:
+        result = run_poe("pick", "--flavor", "plain", cwd=project_path, env=no_venv)
+        assert result.code == 0, result.capture + result.stderr
+        assert result.stdout == "() {}\n"
+        result = run_poe("pick", "--flavor", "sweet", cwd=project_path, env=no_venv)
+        assert result.code == 0, result.capture + result.stderr
+        assert result.stdout == "('sweet',) {}\n"
     assert result.stderr == ""
 
 
