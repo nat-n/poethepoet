@@ -80,6 +80,27 @@ def main(version: str | None = None) -> None:
             count=1,
         ),
     )
+    for doc in ("installation.rst", "poetry_plugin.rst"):
+        _update_file(
+            root / "docs" / doc,
+            root,
+            lambda c: re.sub(
+                r'(poethepoet\s*=\s*\{\s*version\s*=\s*">=)[^"]+(")',
+                rf"\g<1>{new_floor}\2",
+                c,
+                count=1,
+            ),
+        )
+    _update_file(
+        root / "docs" / "installation.rst",
+        root,
+        lambda c: re.sub(
+            r"(poethepoet/tree/v)[^/]+(/poethepoet/skills/)",
+            rf"\g<1>{new_version}\2",
+            c,
+            count=1,
+        ),
+    )
 
 
 def _update_file(path: Path, root: Path, transform) -> None:
