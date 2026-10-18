@@ -284,7 +284,7 @@ Arguments for script tasks
 
 Arguments can be defined for :doc:`script<../tasks/task_types/script>` tasks in the same way, but how they are exposed to the underlying Python function depends on how the script is defined.
 
-In the following example, since no parenthesis are included for the referenced function, all provided args will be passed to the function as keyword arguments:
+In the following example, since no parenthesis are included for the referenced function, all of the task's own args will be passed to the function as keyword arguments:
 
 .. code-block:: toml
 

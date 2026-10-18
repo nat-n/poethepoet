@@ -8,7 +8,7 @@ from ..options.annotations import Metadata
 from .base import PoeTask
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
 
     from ..config import PoeConfig
     from ..context import RunContext
@@ -104,6 +104,8 @@ class ExprTask(PoeTask):
 
         self._parse_and_register_args(env)
         named_arg_values = env.get_args()
+        # _extra_args is always available, even if no free args were passed
+        named_arg_values.setdefault("_extra_args", [])
 
         imports = self.spec.options.imports
 
@@ -176,7 +178,7 @@ class ExprTask(PoeTask):
         expression = resolve_expression(
             source=expression,
             arguments=set(args or ()),
-            allowed_vars={"sys", "__env", *imports},
+            allowed_vars={"sys", "__env", *imports, *_get_import_names(imports)},
         )
         # Strip out any new lines because they can be problematic on windows
         expression = re.sub(r"((\r\n|\r|\n) | (\r\n|\r|\n))", " ", expression)
@@ -194,6 +196,7 @@ class ExprTask(PoeTask):
 
         from ..env.utils import SpyDict
         from ..helpers.parse import parse_template
+        from ..helpers.parse.command import ParamExpansion
 
         # Spy on access to the env, so that instead of replacing template ${keys} with
         # the corresponding value, replace them with a python name and keep track of
@@ -204,8 +207,45 @@ class ExprTask(PoeTask):
             accessed_vars[key] = value
             return f"__env.{key}"
 
-        expression = parse_template(content, require_braces=True).resolve(
-            SpyDict(env, getitem_spy=getitem_spy)
-        )
+        # The fallback resolves lazy variables such as POE_GIT_DIR on access
+        spy_env = SpyDict(env, getitem_spy=getitem_spy, fallback=env.get)
+        expression_parts = []
+        for node in parse_template(content, require_braces=True):
+            if not isinstance(node, ParamExpansion):
+                expression_parts.append(node.content)
+            elif node.operation is None:
+                # An unset variable is still a string value, rather than nothing
+                if spy_env.get(node.param_name) is None:
+                    accessed_vars[node.param_name] = ""
+                expression_parts.append(f"__env.{node.param_name}")
+            elif argument := node.active_argument(env):
+                # Whether an operator applies depends on the value of the variable,
+                # rather than the reference that the spy returns
+                expression_parts.append(argument.flatten(spy_env))
+            else:
+                expression_parts.append(spy_env.get(node.param_name, ""))
 
-        return expression, accessed_vars
+        return "".join(expression_parts), accessed_vars
+
+
+def _get_import_names(imports: Iterable[str]) -> Iterator[str]:
+    """
+    Yield the names bound by each of the given imports, i.e. the alias if the import
+    is like `module as alias`, or else the top level package name. An import may
+    list several modules separated by commas.
+    """
+    import ast
+
+    for import_ref in imports:
+        if "#" in import_ref:
+            # This would comment out the rest of the generated script
+            continue
+        try:
+            import_nodes = ast.parse(f"import {import_ref}").body
+        except SyntaxError:
+            # Invalid imports fail when the expression is run
+            continue
+        for import_node in import_nodes:
+            if isinstance(import_node, ast.Import):
+                for alias in import_node.names:
+                    yield alias.asname or alias.name.split(".")[0]

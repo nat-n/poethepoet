@@ -13,7 +13,7 @@ As in the second example, it is possible to hard code literal arguments to the t
 
 Arguments passed to the task on the command line are available within the called Python function via :python:`sys.argv`. If :doc:`args <../options>` are declared for the task then they are also available as Python variables (see `Task arguments`_ below).
 
-If the target Python function is an async function then it will be executed with :python:`asyncio.run`.
+If the target Python function is an async function, or otherwise returns an awaitable, then the result is awaited with :python:`asyncio.run`.
 
 
 Available task options
@@ -132,7 +132,7 @@ As with other task types, script tasks support configuring named arguments via t
 
 - As **Python variables** that can be referenced directly in the function call expression. Values retain their configured type — booleans are ``True``/``False``, integers are ``int``, multiple args are ``list``, etc.
 - Via **sys.argv**, in the same form whether the script task calls a function or runs a module. Each declared arg is re-emitted from its parsed value with defaults applied, using its first option or its position, except that a boolean flag is included only if it was passed on the command line. Any free arguments given after :sh:`--` follow, without the :sh:`--` itself; give :sh:`--` twice to pass a literal :sh:`--`. Without declared args, the arguments are passed as given.
-- As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case all declared args are passed as kwargs.
+- As **keyword arguments** when the script reference doesn't include explicit parentheses — in this case only the args declared by the task itself are passed as kwargs, while args inherited from a parent task can be referenced by name with parentheses.
 
 See :ref:`Arguments for script tasks` for more details and examples.
 

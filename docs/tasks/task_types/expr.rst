@@ -23,7 +23,7 @@
 - reference the |sys_module_link| module without having to specify it as an import
 - access the task's arguments from `sys.argv`, in the same form as for :doc:`script tasks <script>`
 - reference values of named args as Python variables with a Python type matching the configured arg type
-- include environment variables as string values that are injected into the expression
+- include environment variables as string values (empty if unset) that are injected into the expression
   using the usual templating syntax ``${...}``, including the :ref:`default and alternate value operators <parameter-expansion-operators>`
 
 Available task options
@@ -53,7 +53,7 @@ The expression can reference environment variables using templating syntax as in
   [tool.poe.tasks.venv-active]
   expr = """(
     f'{target_venv} is active'
-    if '${VIRTUAL_ENV}'.endswith(target_venv)
+    if ${VIRTUAL_ENV}.endswith(target_venv)
     else f'{target_venv} is not active'
   )"""
   args = [{ name = "target-venv", default = ".venv", positional = true }]
@@ -63,7 +63,7 @@ The expression can reference environment variables using templating syntax as in
   $ poe venv-active poethepoet-LCpCQf8S-py3.10
   Poe => (
     f'{target_venv} is active'
-    if '${VIRTUAL_ENV}'.endswith(target_venv)
+    if ${VIRTUAL_ENV}.endswith(target_venv)
     else f'{target_venv} is not active'
   )
   poethepoet-LCpCQf8S-py3.10 is not active

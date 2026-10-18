@@ -3,6 +3,15 @@ Migration Guides
 
 As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
 
+0.50.0
+------
+
+Inherited args are no longer passed as kwargs to script tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A script task without parentheses, such as :toml:`script = "myapp:build"`, is now called with only the args it declares itself as keyword arguments. Args inherited from a parent task, including a switch task's args for its control and cases, are no longer passed. To pass an inherited arg to the function, name it in the call, for example :toml:`script = "myapp:build(target=target)"`.
+
+
 0.49.0
 ------
 
