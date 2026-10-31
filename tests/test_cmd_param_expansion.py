@@ -413,3 +413,35 @@ def test_param_expansion_in_matched_glob(
     assert result.capture.startswith("Poe => echo ")
     args = shlex.split(result.capture)[3:]
     assert sorted(Path(arg).name for arg in args) == expected_matches
+
+
+@pytest.mark.parametrize(
+    ("cmd_args", "expected_args"),
+    [
+        # Special parameters other than $$ are kept as written, so $? isn't a glob
+        # and $# doesn't start a comment
+        ("a$?b", ["a$?b"]),
+        ("a$#b after", ["a$#b", "after"]),
+        ('"a$#b" a$!b a$-b a$0b', ["a$#b", "a$!b", "a$-b", "a$0b"]),
+        ("${UNSET:-a$?b}", ["a$?b"]),
+        # $$X is a literal $ followed by the value of X
+        ("$$X $${X} pa$$word", ["$xv", "$xv", "pa$"]),
+        ("$$ a$$", ["$$", "a$$"]),
+    ],
+)
+def test_special_params_in_cmd(
+    cmd_args, expected_args, run_poe, temp_pyproject, tmp_path
+):
+    # A file that a$?b would match if it were treated as a glob
+    (tmp_path / "a$xb").touch()
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe.tasks.run]
+        cmd = '''echo {cmd_args}'''
+        """
+    )
+    result = run_poe("run", cwd=project_path, env={"X": "xv"})
+
+    assert result.code == 0, result.capture
+    assert result.capture.startswith("Poe => echo ")
+    assert shlex.split(result.capture.splitlines()[0])[3:] == expected_args

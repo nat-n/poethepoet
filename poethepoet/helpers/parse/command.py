@@ -311,9 +311,22 @@ def _compose_group_pattern(content: list[tuple[str, bool]]) -> str:
 
 
 class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
+    # The shell's special parameters other than $$. They have no meaning here, so they
+    # are read as a pair and kept as written, e.g. so that $# doesn't start a comment.
+    # $$ isn't included, so $$X is a literal $ followed by the value of X.
+    _SPECIAL_PARAMS = frozenset("?!#-0")
+    _is_special: bool = False
+
     @property
     def param_name(self) -> str:
         return self._content
+
+    @property
+    def is_special(self) -> bool:
+        """
+        Whether this is a special parameter like $?, which is kept as written.
+        """
+        return self._is_special
 
     @property
     def operation(self) -> ParamOperation | None:
@@ -341,6 +354,8 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
         Handles :- and :+ operators by delegating to the active argument's
         flatten() when applicable.
         """
+        if self._is_special:
+            return self._content
         if argument := self.active_argument(env):
             return argument.flatten(env)
         return env.get(self.param_name, "")
@@ -352,6 +367,11 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
             # In require_braces mode, bare $VAR is not a param expansion
             chars.pushback("$")
             self._cancelled = True
+            return
+
+        if chars.peek() in self._SPECIAL_PARAMS:
+            self._content = "$" + chars.take()
+            self._is_special = True
             return
 
         param: list[str] = []
@@ -717,7 +737,10 @@ class Line(SyntaxNode[Word | Comment]):
                             if token_parts:
                                 yield finalize_token(token_parts)
                         elif isinstance(element, ParamExpansion):
-                            if arg := element.active_argument(env):
+                            if element.is_special:
+                                # Kept as written, so not globbed or word split
+                                token_parts.append((element.content, QUOTED))
+                            elif arg := element.active_argument(env):
                                 yield from resolve_argument_tokens(arg, token_parts)
                             elif param_value := element.expand(env):
                                 yield from emit_unquoted_param_value(
@@ -760,6 +783,10 @@ class Line(SyntaxNode[Word | Comment]):
             for segment in word:
                 for element in segment:
                     if isinstance(element, ParamExpansion):
+                        if element.is_special:
+                            # Kept as written, so not globbed or word split
+                            token_parts.append((element.content, QUOTED))
+                            continue
                         if not segment.is_quoted and (
                             arg := element.active_argument(env)
                         ):

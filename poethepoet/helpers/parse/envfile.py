@@ -7,13 +7,8 @@ single/double quoting, backslash escaping, and parameter expansion.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from .command import ParamExpansion, SingleQuotedText, WhitespaceText
 from .core import ContentNode, ParseCursor, ParseError, SyntaxNode
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 
 class EnvFileUnquotedText(ContentNode):
@@ -85,28 +80,13 @@ class EnvFileLiteralText(ContentNode):
 
 class EnvFileParamExpansion(ParamExpansion):
     """
-    A ParamExpansion in an envfile value, which also reads the shell's special
-    parameters $$, $?, $!, $#, $- and $0. These have no meaning in an envfile, so
-    they expand to themselves. Reading them as a pair means that e.g. the second $
-    of $$ doesn't start another expansion, also inside the argument of ${VAR:-...}.
+    A ParamExpansion in an envfile value, which also keeps $$ as written, unlike
+    elsewhere where $$X is a literal $ followed by the value of X. Envfile values are
+    data like passwords, where $$ should never expand anything (and in some other
+    dotenv formats $$ is an escaped $).
     """
 
-    _SPECIAL_PARAMS = frozenset("$?!#-0")
-    _is_special: bool = False
-
-    def _parse(self, chars: ParseCursor):
-        assert chars.take() == "$"
-        if chars.peek() in self._SPECIAL_PARAMS:
-            self._content = "$" + chars.take()
-            self._is_special = True
-            return
-        chars.pushback("$")
-        super()._parse(chars)
-
-    def expand(self, env: Mapping[str, str]) -> str:
-        if self._is_special:
-            return self._content
-        return super().expand(env)
+    _SPECIAL_PARAMS = ParamExpansion._SPECIAL_PARAMS | {"$"}
 
 
 class EnvFileWhitespaceText(WhitespaceText):

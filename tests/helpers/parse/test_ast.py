@@ -76,12 +76,13 @@ def test_parse_params():
     assert tree.lines[2] == (
         (("a", "x", "?"),),
         (("a", "y", "b"),),
-        (("a", "$", "?"),),
+        (("a", "$?"),),
         (("z",),),
     )
     assert tree.lines[3] == ((("x", "y", "$ z"),),)
     assert tree.lines[4] == ((("x", " ", "y", " ", "$ z"),),)
-    assert tree.lines[5] == ((("a", "x", "? a", "y", "b a", "$? ", "z"),),)
+    # $? is a special parameter, kept as written
+    assert tree.lines[5] == ((("a", "x", "? a", "y", "b a", "$?", " ", "z"),),)
     assert tree.lines[6] == ((("$x${y}$ z",),),)
     assert tree.lines[7] == ((("$x ${y} $ z",),),)
     assert tree.lines[8] == ((("a$x? a${y}b a$? $z",),),)
@@ -104,12 +105,12 @@ def test_parse_params():
     assert tree.lines[11] == (
         (("a", "xx1", "?"),),
         (("a", "yy2", "b"),),
-        (("a", "$", "?"),),
+        (("a", "$?"),),
         (("z",),),
     )
     assert tree.lines[12] == ((("xx1", "yy2", "$ z"),),)
     assert tree.lines[13] == ((("xx1", " ", "yy2", " ", "$ z"),),)
-    assert tree.lines[14] == ((("a", "xx1", "? a", "yy2", "b a", "$? ", "z"),),)
+    assert tree.lines[14] == ((("a", "xx1", "? a", "yy2", "b a", "$?", " ", "z"),),)
 
 
 def test_parse_param_operators():
