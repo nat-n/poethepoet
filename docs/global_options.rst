@@ -128,8 +128,6 @@ You can combine optional and expected envfiles like so:
 
 In this example ``shared.env`` is considered mandatory, whereas ``local.env`` may be absent without generating noise. Using :toml:`envfile = ".env"` remains equivalent to setting :toml:`envfile.expected = ".env"` explicitly.
 
-A list of envfiles may also mix plain paths with such tables, for example :toml:`envfile = ["shared.env", { optional = "local.env" }]`.
-
 Resolving env file paths
 """"""""""""""""""""""""
 
@@ -140,7 +138,7 @@ Normally envfile paths are resolved relative to the project root (that is the pa
     [tool.poe]
     envfile = "${POE_GIT_DIR}/.env"
 
-See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work. If the project is not inside a git repository then an envfile with a path that uses ``${POE_GIT_DIR}`` or ``${POE_GIT_ROOT}`` is not loaded, and poe warns about it unless it is optional.
+See the documentation on :ref:`Special variables<Special variables>` for a full explanation of how these variables work.
 
 .. note::
 
