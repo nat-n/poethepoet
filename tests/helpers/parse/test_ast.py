@@ -411,12 +411,13 @@ def test_parse_error_position():
         parse_poe_cmd("ok\nok'not ok")
     error = excinfo.value
     assert error.has_position
-    assert (error.line, error.position) == (1, 8)
+    # At the end of input, the position is just after the last char
+    assert (error.line, error.position) == (1, 9)
     # location is for users, so it's 1-based
-    assert error.location == "line 2, position 9"
+    assert error.location == "line 2, position 10"
     assert repr(error) == (
         'ParseError("Unexpected end of input with unmatched single quote", '
-        "line=1, position=8)"
+        "line=1, position=9)"
     )
 
 
@@ -431,7 +432,8 @@ def test_cursor_position_after_pushing_back_a_newline():
     assert cursor.position == (1, 2)
     assert cursor.take() == "\n"
     assert cursor.take() == "f"
-    assert cursor.position == (2, 0)
+    # At the end of input, the position is just after the last char
+    assert cursor.position == (2, 1)
 
 
 def test_parse_error_without_position():
@@ -937,3 +939,21 @@ class TestTemplateParsing:
         assert len(tree) == 2
         assert tree[0] == "\\"
         assert tree[1].param_name == "FOO"
+
+
+def test_cursor_skips_line_continuations():
+    cursor = ParseCursor.from_string("a\\\nb\\\\\nc'\\\nd", line_continuations=True)
+    assert [cursor.take() for _ in range(5)] == ["a", "b", "\\", "\\", "\n"]
+    # A continuation's newline still counts as a line for positions
+    assert cursor.position == (2, 0)
+    assert cursor.take() == "c"
+    assert cursor.take() == "'"
+    # In a raw block a continuation is read as is
+    with cursor.raw():
+        assert [cursor.take() for _ in range(3)] == ["\\", "\n", "d"]
+    assert cursor.take() is None
+
+
+def test_cursor_without_line_continuations_reads_them_as_is():
+    cursor = ParseCursor.from_string("a\\\nb")
+    assert list(cursor) == ["a", "\\", "\n", "b"]

@@ -21,9 +21,9 @@ class EnvFileUnquotedText(ContentNode):
     Reads unquoted envfile value text up to a stop character or end of input.
 
     Stop characters: $, ', ", newline, #. A backslash escapes the next char, which
-    is emitted without the backslash. Line continuations are removed before parsing,
-    so a backslash before a newline (or the end of input) can only be at the end of
-    the file, and is kept literally as bash does.
+    is emitted without the backslash. The cursor skips line continuations, so a
+    backslash with no char after it can only be at the end of the file, and is kept
+    literally as bash does.
 
     Whitespace and semicolons are regular characters (not stop chars). Escaped
     whitespace is literal: it is never stripped as trailing whitespace, and a #
@@ -122,6 +122,16 @@ class EnvFileWhitespaceText(WhitespaceText):
         self._content = "".join(content)
 
 
+class EnvFileSingleQuotedText(SingleQuotedText):
+    """
+    Single-quoted text in an envfile value, in which a line continuation is literal.
+    """
+
+    def _parse(self, chars: ParseCursor):
+        with chars.raw():
+            super()._parse(chars)
+
+
 class EnvFileDQText(ContentNode):
     """
     Reads text inside a double-quoted envfile value segment.
@@ -134,7 +144,7 @@ class EnvFileDQText(ContentNode):
     - backslash + ` → `
     - backslash + any other char → backslash kept, then char
 
-    Line continuations are removed before parsing.
+    The cursor skips line continuations.
 
     Empty content is valid (e.g. the text portion of an empty double-quoted
     string ""), so this node never cancels.
@@ -212,7 +222,7 @@ class EnvFileValue(SyntaxNode):
 
         EnvFileUnquotedTextCls = self.get_child_node_cls(EnvFileUnquotedText)
         EnvFileLiteralTextCls = self.get_child_node_cls(EnvFileLiteralText)
-        SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
+        SingleQuotedTextCls = self.get_child_node_cls(EnvFileSingleQuotedText)
         EnvFileDQStringCls = self.get_child_node_cls(EnvFileDQString)
         ParamExpansionCls = self.get_child_node_cls(EnvFileParamExpansion)
 
@@ -239,9 +249,10 @@ class EnvFileValue(SyntaxNode):
 
             if next_char == "#":
                 if last_was_whitespace:
-                    # Comment: consume to end of line
-                    while chars.peek() not in ("\n", None):
-                        chars.take()
+                    # Comment: consume to end of line (a continuation is literal here)
+                    with chars.raw():
+                        while chars.peek() not in ("\n", None):
+                            chars.take()
                     break
                 # Mid-word hash is a literal character
                 self._children.append(EnvFileLiteralTextCls(chars, self.config))
@@ -375,9 +386,10 @@ class EnvFile(SyntaxNode):
                 line_start.append(chars.take())
 
             if chars.peek() == "#":
-                # Comment line: skip to end of line
-                while chars.peek() not in ("\n", None):
-                    chars.take()
+                # Comment line: skip to end of line (a continuation is literal here)
+                with chars.raw():
+                    while chars.peek() not in ("\n", None):
+                        chars.take()
                 continue
 
             if chars.peek() in ("\n", None):

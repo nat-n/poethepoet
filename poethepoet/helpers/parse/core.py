@@ -6,6 +6,7 @@ See the sibling command, template, and envfile modules for example usage.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from typing import IO, TYPE_CHECKING, Generic, TypeVar, cast
 
 if TYPE_CHECKING:
@@ -20,6 +21,11 @@ class ParseCursor:
 
     The line and position tracking which may be used for error reporting assumes that
     whatever source we're reading the file from encodes new lines as simply '\n'.
+
+    If line_continuations is set then backslash-newline pairs are skipped over, as in
+    bash, so that nodes never see them. A backslash escapes the char after it, so that
+    char never starts a continuation. Nodes that read text in which continuations are
+    literal (e.g. single quotes) do so in a raw() block.
     """
 
     _line: int
@@ -27,13 +33,20 @@ class ParseCursor:
     _line_lengths: list[int]
     _source: Iterator[str]
     _pushback_stack: list[str]
+    _line_continuations: bool
+    _raw_depth: int
+    _escape_next: bool
 
-    def __init__(self, source: Iterator[str]):
+    def __init__(self, source: Iterator[str], line_continuations: bool = False):
         self._source = source
         self._line = 0
         self._position = -1
         self._line_lengths = []
         self._pushback_stack = []
+        self._line_continuations = line_continuations
+        self._raw_depth = 0
+        # Whether the last char taken was an escaping backslash
+        self._escape_next = False
 
     @classmethod
     def from_file(cls, file: IO[str]):
@@ -44,18 +57,56 @@ class ParseCursor:
         return cls(iter_chars())
 
     @classmethod
-    def from_string(cls, string: str):
-        return cls(iter(string))
+    def from_string(cls, string: str, line_continuations: bool = False):
+        return cls(iter(string), line_continuations)
+
+    @contextmanager
+    def raw(self):
+        """
+        Read the input as is within this block, without skipping line continuations.
+        """
+        self._raw_depth += 1
+        try:
+            yield self
+        finally:
+            self._raw_depth -= 1
 
     @property
     def position(self):
-        if self._position < 0 and self._line_lengths and self.peek() is None:
-            # At the end of input just after a line break, so point at the end of
+        if self._peek() is None:
+            # At the end of input, point just after the last char, and at the end of
             # the last line rather than at a line that doesn't exist
-            return (self._line - 1, self._line_lengths[-1] + 1)
+            if self._position < 0 and self._line_lengths:
+                return (self._line - 1, self._line_lengths[-1] + 1)
+            return (max(0, self._line), self._position + 1)
         return (max(0, self._line), max(0, self._position))
 
     def peek(self):
+        if self._line_continuations:
+            self._skip_line_continuations()
+        return self._peek()
+
+    def take(self):
+        if not self._line_continuations:
+            return self._take()
+        self._skip_line_continuations()
+        escaped, self._escape_next = self._escape_next, False
+        result = self._take()
+        if result == "\\" and not escaped and not self._raw_depth:
+            self._escape_next = True
+        return result
+
+    def _skip_line_continuations(self):
+        if self._raw_depth or self._escape_next:
+            return
+        while self._peek() == "\\":
+            backslash = self._take()
+            if self._peek() != "\n":
+                self.pushback(backslash)
+                return
+            self._take()  # The newline, which still counts as a line for positions
+
+    def _peek(self):
         if not self._pushback_stack:
             try:
                 self._pushback_stack.append(next(self._source))
@@ -63,7 +114,7 @@ class ParseCursor:
                 return None
         return self._pushback_stack[-1]
 
-    def take(self):
+    def _take(self):
         if self._pushback_stack:
             result = self._pushback_stack.pop()
         else:
@@ -82,6 +133,7 @@ class ParseCursor:
         return result
 
     def pushback(self, *items: str):
+        self._escape_next = False
         for item in reversed(items):
             self._pushback_stack.append(item)
             if item == "\n":
