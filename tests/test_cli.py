@@ -187,6 +187,30 @@ def test_documentation_of_unknown_single_task(run_poe):
     assert "Configured tasks:\n  echo" in result.capture, "Should list tasks"
 
 
+@pytest.mark.parametrize(
+    ("cli_args", "expected_code"),
+    [(("--help",), 0), (("--help", "other"), 0), (("--help", "not_a_task"), 1)],
+)
+def test_help_with_invalid_config(run_poe, temp_pyproject, cli_args, expected_code):
+    """
+    --help hides config errors, but still reports a task name that isn't configured
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks]
+        bad = { cmd = "poe_test_echo bad", unknown_option = 1 }
+        other = { cmd = "poe_test_echo other", help = "Other task" }
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    assert result.code == expected_code
+    assert "unknown_option" not in result.capture
+    if expected_code:
+        assert "Error: Unrecognized task 'not_a_task'\n" in result.capture
+    else:
+        assert "Error:" not in result.capture
+
+
 @pytest.mark.parametrize("help_value", ["5", "true", '["a"]', '{ a = "b" }'])
 @pytest.mark.parametrize("cli_args", [(), ("other",), ("--help", "bad")])
 def test_non_string_task_help_is_reported(

@@ -165,20 +165,12 @@ class PoeThePoet:
                 task_spec.validate(self.config, self.task_specs)
         except PoeException as error:
             if should_display_help:
-                self.print_help(config_is_valid=False)
-                return 0
+                return self._display_help(config_is_valid=False)
             self.print_help(error=error)
             return 1
 
         if should_display_help:
-            if (
-                isinstance(help_task := self.ui["help"], str)
-                and help_task not in self.config.get_tasks()
-            ):
-                self.print_help(error=PoeException(f"Unrecognized task {help_task!r}"))
-                return 1
-            self.print_help()
-            return 0
+            return self._display_help()
 
         task = self.resolve_task(internal)
         if not task:
@@ -355,6 +347,18 @@ class PoeThePoet:
                 # this is used by the poetry plugin
                 context.exec_cache["poetry_virtualenv"] = self._poetry_env_path
             yield context
+
+    def _display_help(self, config_is_valid: bool = True) -> int:
+        """
+        Handle --help, which hides config errors but reports an unknown task name.
+        """
+        if isinstance(help_task := self.ui["help"], str) and (
+            help_task not in self.config.get_tasks(strict=config_is_valid)
+        ):
+            self.print_help(error=PoeException(f"Unrecognized task {help_task!r}"))
+            return 1
+        self.print_help(config_is_valid=config_is_valid)
+        return 0
 
     def print_help(
         self,
