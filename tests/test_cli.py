@@ -363,12 +363,12 @@ def test_documentation_of_task_named_args(run_poe):
     [
         ({"NO_COLOR": ""}, False),
         ({"NO_COLOR": "0"}, False),
+        ({"NO_COLOR": "0", "FORCE_COLOR": "1"}, True),
         ({"NO_COLOR": "1"}, False),
         ({"FORCE_COLOR": ""}, False),
         ({"FORCE_COLOR": "0"}, False),
         ({"FORCE_COLOR": "1"}, True),
         ({"NO_COLOR": "", "FORCE_COLOR": "1"}, True),
-        ({"NO_COLOR": "0", "FORCE_COLOR": "1"}, False),
         ({"NO_COLOR": "1", "FORCE_COLOR": "1"}, False),
     ],
 )
