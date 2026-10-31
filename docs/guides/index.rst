@@ -8,6 +8,7 @@ This section contains guides for using the various features of Poe the Poet.
 
    running_guide
    help_guide
+   toml_guide
    args_guide
    composition_guide
    include_guide

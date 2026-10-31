@@ -27,12 +27,19 @@ Just like for the :ref:`include<Loading tasks from another file>` global option,
 Passing arguments to the script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The syntax for the function reference is identical to a :doc:`script task<../tasks/task_types/script>`, meaning that it is also possible to pass arguments to the function like so:
+The syntax for the function reference is similar to a :doc:`script task<../tasks/task_types/script>`, meaning that it is also possible to pass arguments to the function like so:
 
 .. code-block:: toml
 
   [tool.poe]
   include_script = "mypkg:get_tasks(task_prefix='foo-', exclude_tasks='docs')"
+
+Unlike in a script task there are no task args to reference, but the arguments can still use ``environ``, ``os``, and ``sys``, for example to pass a value from the environment:
+
+.. code-block:: toml
+
+  [tool.poe]
+  include_script = "mypkg:get_tasks(task_prefix=environ.get('TASK_PREFIX', 'foo-'))"
 
 
 Specifying a different executor
