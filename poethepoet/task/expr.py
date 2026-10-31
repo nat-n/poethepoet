@@ -231,21 +231,11 @@ class ExprTask(PoeTask):
 def _get_import_names(imports: Iterable[str]) -> Iterator[str]:
     """
     Yield the names bound by each of the given imports, i.e. the alias if the import
-    is like `module as alias`, or else the top level package name. An import may
-    list several modules separated by commas.
+    is like `module as alias`, or else the top level package name.
     """
-    import ast
-
     for import_ref in imports:
-        if "#" in import_ref:
-            # This would comment out the rest of the generated script
-            continue
-        try:
-            import_nodes = ast.parse(f"import {import_ref}").body
-        except SyntaxError:
-            # Invalid imports fail when the expression is run
-            continue
-        for import_node in import_nodes:
-            if isinstance(import_node, ast.Import):
-                for alias in import_node.names:
-                    yield alias.asname or alias.name.split(".")[0]
+        match import_ref.split():
+            case [_, "as", alias]:
+                yield alias
+            case [module_name, *_]:
+                yield module_name.split(".")[0]

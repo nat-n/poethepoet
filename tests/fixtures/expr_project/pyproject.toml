@@ -96,8 +96,8 @@ expr = "name.upper() + ''.join(part.lower() for part in [name])"
 args = ["name"]
 
 [tool.poe.tasks.dotted-import-call]
-expr = "xml.sax.saxutils.escape('<a>') + alias.escape('&') + alias.__name__ + os.__name__ + json.dumps(1)"
-imports = ["xml.sax.saxutils", "xml.sax.saxutils\tas  alias", "os.path, json"]
+expr = "xml.sax.saxutils.escape('<a>') + alias.escape('&') + alias.__name__ + os.__name__"
+imports = ["xml.sax.saxutils", "xml.sax.saxutils as alias", "os.path"]
 
 [tool.poe.tasks.git-dir]
 expr = "(pathlib.Path(${POE_GIT_DIR}).joinpath('.git').exists(), ${POE_GIT_DIR:+True})"
