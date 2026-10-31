@@ -4,7 +4,12 @@ import pytest
 
 from poethepoet.helpers.parse import parse_poe_cmd
 from poethepoet.helpers.parse.command import Glob, Script
-from poethepoet.helpers.parse.core import ParseConfig, ParseCursor, ParseError
+from poethepoet.helpers.parse.core import (
+    LineContinuationParseCursor,
+    ParseConfig,
+    ParseCursor,
+    ParseError,
+)
 
 
 def test_parse_comments():
@@ -942,7 +947,7 @@ class TestTemplateParsing:
 
 
 def test_cursor_skips_line_continuations():
-    cursor = ParseCursor.from_string("a\\\nb\\\\\nc'\\\nd", line_continuations=True)
+    cursor = LineContinuationParseCursor.from_string("a\\\nb\\\\\nc'\\\nd")
     assert [cursor.take() for _ in range(5)] == ["a", "b", "\\", "\\", "\n"]
     # A continuation's newline still counts as a line for positions
     assert cursor.position == (2, 0)

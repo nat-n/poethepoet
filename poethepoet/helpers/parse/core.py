@@ -21,11 +21,6 @@ class ParseCursor:
 
     The line and position tracking which may be used for error reporting assumes that
     whatever source we're reading the file from encodes new lines as simply '\n'.
-
-    If line_continuations is set then backslash-newline pairs are skipped over, as in
-    bash, so that nodes never see them. A backslash escapes the char after it, so that
-    char never starts a continuation. Nodes that read text in which continuations are
-    literal (e.g. single quotes) do so in a raw() block.
     """
 
     _line: int
@@ -33,20 +28,13 @@ class ParseCursor:
     _line_lengths: list[int]
     _source: Iterator[str]
     _pushback_stack: list[str]
-    _line_continuations: bool
-    _raw_depth: int
-    _escape_next: bool
 
-    def __init__(self, source: Iterator[str], line_continuations: bool = False):
+    def __init__(self, source: Iterator[str]):
         self._source = source
         self._line = 0
         self._position = -1
         self._line_lengths = []
         self._pushback_stack = []
-        self._line_continuations = line_continuations
-        self._raw_depth = 0
-        # Whether the last char taken was an escaping backslash
-        self._escape_next = False
 
     @classmethod
     def from_file(cls, file: IO[str]):
@@ -57,23 +45,21 @@ class ParseCursor:
         return cls(iter_chars())
 
     @classmethod
-    def from_string(cls, string: str, line_continuations: bool = False):
-        return cls(iter(string), line_continuations)
+    def from_string(cls, string: str):
+        return cls(iter(string))
 
     @contextmanager
     def raw(self):
         """
-        Read the input as is within this block, without skipping line continuations.
+        Read the input as is within this block. This cursor never transforms the
+        input, so this only matters for subclasses that do.
         """
-        self._raw_depth += 1
-        try:
-            yield self
-        finally:
-            self._raw_depth -= 1
+        yield self
 
     @property
     def position(self):
-        if self._peek() is None:
+        # Peek without any transformation a subclass makes, which could move the cursor
+        if ParseCursor.peek(self) is None:
             # At the end of input, point just after the last char, and at the end of
             # the last line rather than at a line that doesn't exist
             if self._position < 0 and self._line_lengths:
@@ -82,31 +68,6 @@ class ParseCursor:
         return (max(0, self._line), max(0, self._position))
 
     def peek(self):
-        if self._line_continuations:
-            self._skip_line_continuations()
-        return self._peek()
-
-    def take(self):
-        if not self._line_continuations:
-            return self._take()
-        self._skip_line_continuations()
-        escaped, self._escape_next = self._escape_next, False
-        result = self._take()
-        if result == "\\" and not escaped and not self._raw_depth:
-            self._escape_next = True
-        return result
-
-    def _skip_line_continuations(self):
-        if self._raw_depth or self._escape_next:
-            return
-        while self._peek() == "\\":
-            backslash = self._take()
-            if self._peek() != "\n":
-                self.pushback(backslash)
-                return
-            self._take()  # The newline, which still counts as a line for positions
-
-    def _peek(self):
         if not self._pushback_stack:
             try:
                 self._pushback_stack.append(next(self._source))
@@ -114,7 +75,7 @@ class ParseCursor:
                 return None
         return self._pushback_stack[-1]
 
-    def _take(self):
+    def take(self):
         if self._pushback_stack:
             result = self._pushback_stack.pop()
         else:
@@ -133,7 +94,6 @@ class ParseCursor:
         return result
 
     def pushback(self, *items: str):
-        self._escape_next = False
         for item in reversed(items):
             self._pushback_stack.append(item)
             if item == "\n":
@@ -152,6 +112,58 @@ class ParseCursor:
 
     def __bool__(self):
         return bool(self.peek())
+
+
+class LineContinuationParseCursor(ParseCursor):
+    """
+    A ParseCursor that skips over backslash-newline line continuations, as in bash, so
+    that nodes never see them. A backslash escapes the char after it, so that char
+    never starts a continuation. Nodes that read text in which continuations are
+    literal (e.g. single quotes) do so in a raw() block.
+
+    A skipped newline still counts as a line, so positions refer to the original text.
+    """
+
+    _raw_depth: int = 0
+    # Whether the last char taken was an escaping backslash
+    _escape_next: bool = False
+
+    @contextmanager
+    def raw(self):
+        """
+        Read the input as is within this block, without skipping line continuations.
+        """
+        self._raw_depth += 1
+        try:
+            yield self
+        finally:
+            self._raw_depth -= 1
+
+    def peek(self):
+        self._skip_line_continuations()
+        return super().peek()
+
+    def take(self):
+        self._skip_line_continuations()
+        escaped, self._escape_next = self._escape_next, False
+        result = super().take()
+        if result == "\\" and not escaped and not self._raw_depth:
+            self._escape_next = True
+        return result
+
+    def pushback(self, *items: str):
+        self._escape_next = False
+        super().pushback(*items)
+
+    def _skip_line_continuations(self):
+        if self._raw_depth or self._escape_next:
+            return
+        while super().peek() == "\\":
+            backslash = super().take()
+            if super().peek() != "\n":
+                super().pushback(backslash)
+                return
+            super().take()  # The newline, which still counts as a line for positions
 
 
 class ParseConfig:

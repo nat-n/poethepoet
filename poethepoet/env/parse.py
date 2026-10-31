@@ -32,7 +32,7 @@ def _parse_to_ast(content: str) -> EnvFile:
         SingleQuotedText,
         WhitespaceText,
     )
-    from ..helpers.parse.core import ParseConfig, ParseCursor
+    from ..helpers.parse.core import LineContinuationParseCursor, ParseConfig
     from ..helpers.parse.core import ParseError as AstParseError
     from ..helpers.parse.envfile import (
         EnvFile,
@@ -54,9 +54,7 @@ def _parse_to_ast(content: str) -> EnvFile:
         }
     )
     try:
-        return EnvFile(
-            ParseCursor.from_string(content, line_continuations=True), config
-        )
+        return EnvFile(LineContinuationParseCursor.from_string(content), config)
     except AstParseError as error:
         message = error.message
         if error.has_position:
