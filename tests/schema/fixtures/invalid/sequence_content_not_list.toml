@@ -1,0 +1,3 @@
+# expected_error: Content for SequenceTask must be a list
+[tool.poe.tasks.a]
+sequence = 5

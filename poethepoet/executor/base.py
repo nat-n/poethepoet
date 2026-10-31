@@ -392,7 +392,11 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     raise ExecutionError("Cannot exec task that requires shell!")
                 if not self._is_windows:
                     # execvpe doesn't work properly on windows so we just don't go there
-                    self._exec(cmd, env=env)
+                    try:
+                        self._exec(cmd, env=env)
+                    except FileNotFoundError as error:
+                        # execvpe reports the last path it tried rather than cmd[0]
+                        await self._handle_file_not_found(cmd, error)
 
             return await self._exec_via_subproc(cmd, input=input, env=env, shell=shell)
         except FileNotFoundError as error:
@@ -405,11 +409,18 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
                     f"'{self.working_dir}'"
                 )
             raise
+        except OSError as error:
+            if error.filename == cmd[0]:
+                # e.g. the file isn't executable or has no shebang
+                raise ExecutionError(
+                    f"executable {cmd[0]!r} could not be run: {error.strerror}"
+                ) from None
+            raise
 
     async def _handle_file_not_found(
         self, cmd: Sequence[str], error: FileNotFoundError
     ):
-        raise PoeException(f"executable {cmd[0]!r} could not be found") from error
+        raise ExecutionError(f"executable {cmd[0]!r} could not be found") from error
 
     def _exec(
         self,
@@ -433,7 +444,15 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         # if running tests then wrap up coverage instrumentation while we still can
         _stop_coverage()
 
-        os.execvpe(cmd[0], tuple(cmd), exec_env)
+        try:
+            os.execvpe(cmd[0], tuple(cmd), exec_env)
+        except FileNotFoundError:
+            raise
+        except OSError as error:
+            # execvpe may report the path it resolved rather than cmd[0]
+            raise ExecutionError(
+                f"executable {cmd[0]!r} could not be run: {error.strerror}"
+            ) from None
 
     async def _exec_via_subproc(
         self,

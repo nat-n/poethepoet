@@ -1,0 +1,4 @@
+# expected_error: Item #0 in switch task should be a value of type: dict
+[tool.poe.tasks.a]
+control = "echo 1"
+switch = ["echo one"]

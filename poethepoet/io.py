@@ -10,11 +10,11 @@ POE_DEBUG = os.environ.get("POE_DEBUG", "0") == "1"
 
 
 def guess_ansi_support(file) -> bool:
-    if os.environ.get("NO_COLOR", "0")[0] != "0":
+    if (no_color := os.environ.get("NO_COLOR")) and no_color[0] != "0":
         # https://no-color.org/
         return False
 
-    if os.environ.get("FORCE_COLOR", "0")[0] != "0":
+    if (force_color := os.environ.get("FORCE_COLOR")) and force_color[0] != "0":
         # https://force-color.org/
         return True
 

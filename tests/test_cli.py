@@ -1,4 +1,7 @@
 import re
+from io import StringIO
+
+import pytest
 
 from poethepoet import __version__
 
@@ -172,6 +175,114 @@ def test_documentation_of_single_task_with_help_and_args(run_poe):
     )
 
 
+def test_documentation_of_unknown_single_task(run_poe):
+    result = run_poe("--help", "not_a_task")
+    assert result.code == 1, "Expected non-zero result"
+    assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
+        "Output should start with poe header line"
+    )
+    assert "Error: Unrecognized task 'not_a_task'" in result.capture, (
+        "Output should include error message"
+    )
+    assert "Configured tasks:\n  echo" in result.capture, "Should list tasks"
+
+
+@pytest.mark.parametrize(
+    ("cli_args", "expected_code"),
+    [(("--help",), 0), (("--help", "other"), 0), (("--help", "not_a_task"), 1)],
+)
+def test_help_with_invalid_config(run_poe, temp_pyproject, cli_args, expected_code):
+    """
+    --help hides config errors, but still reports a task name that isn't configured
+    """
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks]
+        bad = { cmd = "poe_test_echo bad", unknown_option = 1 }
+        other = { cmd = "poe_test_echo other", help = "Other task" }
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    assert result.code == expected_code
+    assert "unknown_option" not in result.capture
+    if expected_code:
+        assert "Error: Unrecognized task 'not_a_task'\n" in result.capture
+    else:
+        assert "Error:" not in result.capture
+
+
+@pytest.mark.parametrize("help_value", ["5", "true", '["a"]', '{ a = "b" }'])
+@pytest.mark.parametrize("cli_args", [(), ("other",), ("--help", "bad")])
+def test_non_string_task_help_is_reported(
+    run_poe, temp_pyproject, help_value, cli_args
+):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        executor = "simple"
+        [tool.poe.tasks]
+        bad = {{ cmd = "poe_test_echo bad", help = {help_value} }}
+        other = {{ cmd = "poe_test_echo other", help = "Other task" }}
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    if cli_args and cli_args[0] == "--help":
+        # --help hides config errors, but must not crash
+        assert result.code == 0
+        if cli_args == ("--help",):
+            assert "  other                 Other task" in result.capture
+    else:
+        assert result.code == 1
+        assert "Error: Invalid task 'bad'" in result.capture
+        assert "Option 'help' must have a value of type: str" in result.capture
+        assert "  other                 Other task" in result.capture
+
+
+@pytest.mark.parametrize(
+    ("args_value", "expected_error"),
+    [
+        ("{ x = 5 }", "Error: Invalid task 'bad'"),
+        (
+            '[{ name = "x", choices = 5 }]',
+            "Error: Invalid argument 'x' declared in task 'bad'",
+        ),
+        (
+            "[{ name = 5 }]",
+            "Error: Invalid argument 5 declared in task 'bad'\n"
+            "     | Option 'name' must have a value of type: str",
+        ),
+        (
+            '[{ name = "x", options = 5 }]',
+            "Error: Invalid argument 'x' declared in task 'bad'\n"
+            "     | Option 'options' must be a list",
+        ),
+    ],
+)
+@pytest.mark.parametrize("cli_args", [("--help",), ("--help", "bad"), ("other",)])
+def test_help_with_malformed_task_args(
+    run_poe, temp_pyproject, cli_args, args_value, expected_error
+):
+    project_path = temp_pyproject(
+        f"""
+        [tool.poe]
+        executor = "simple"
+        [tool.poe.tasks]
+        bad = {{ cmd = "poe_test_echo bad", args = {args_value} }}
+        other = {{ cmd = "poe_test_echo other", help = "Other task" }}
+        """
+    )
+    result = run_poe(*cli_args, cwd=project_path)
+    if cli_args[0] == "--help":
+        # --help hides config errors, but must not crash
+        assert result.code == 0
+        if cli_args == ("--help",):
+            assert "  other                 Other task" in result.capture
+    else:
+        assert result.code == 1
+        assert expected_error in result.capture
+        assert "  other                 Other task" in result.capture
+
+
 def test_documentation_of_task_named_args(run_poe):
     result = run_poe(project="scripts")
     assert result.capture.startswith(f"Poe the Poet (version {__version__})"), (
@@ -245,3 +356,34 @@ def test_documentation_of_task_named_args(run_poe):
         r" \[choices: 'small', 'medium', 'large'\]\n",
         result.capture,
     )
+
+
+@pytest.mark.parametrize(
+    ("env", "expected"),
+    [
+        ({"NO_COLOR": ""}, False),
+        ({"NO_COLOR": "0"}, False),
+        ({"NO_COLOR": "0", "FORCE_COLOR": "1"}, True),
+        ({"NO_COLOR": "1"}, False),
+        ({"FORCE_COLOR": ""}, False),
+        ({"FORCE_COLOR": "0"}, False),
+        ({"FORCE_COLOR": "1"}, True),
+        ({"NO_COLOR": "", "FORCE_COLOR": "1"}, True),
+        ({"NO_COLOR": "1", "FORCE_COLOR": "1"}, False),
+    ],
+)
+def test_guess_ansi_support_from_env(monkeypatch, env, expected):
+    from poethepoet.io import guess_ansi_support
+
+    for var_name in ("NO_COLOR", "FORCE_COLOR", "GITHUB_ACTIONS"):
+        monkeypatch.delenv(var_name, raising=False)
+    for var_name, value in env.items():
+        monkeypatch.setenv(var_name, value)
+
+    assert guess_ansi_support(StringIO()) is expected
+
+
+def test_empty_color_env_vars_do_not_crash(run_poe_subproc):
+    result = run_poe_subproc("--version", env={"NO_COLOR": "", "FORCE_COLOR": ""})
+    assert result.code == 0, "Expected zero result"
+    assert result.capture.strip() == f"Poe the Poet - version: {__version__}"
