@@ -1,25 +1,54 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 from ..exceptions import ExecutionError
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from ..helpers.git import GitRepo
     from ..helpers.parse.envfile import EnvFile
     from ..io import PoeIO
 
 
 class EnvFileCache:
-    _ast_cache: ClassVar[dict[str, EnvFile]] = {}
+    _ast_cache: dict[str, EnvFile]
     _io: PoeIO
     _project_dir: Path
+    _missing_warned: set[str]
+    _git_repo: GitRepo | None
 
-    def __init__(self, project_dir: Path, io: PoeIO):
+    def __init__(self, project_dir: Path, io: PoeIO, git_repo: GitRepo | None = None):
         self._project_dir = project_dir
         self._io = io
+        self._git_repo = git_repo
+        # Parsed envfiles by path. This lives on the instance (one per run) so that
+        # changes to envfiles are picked up by later runs in the same process.
+        self._ast_cache = {}
+        # Paths of missing envfiles already warned about, so that each is only
+        # reported once per run even though task envs may be resolved repeatedly
+        self._missing_warned = set()
+
+    def skip_outside_git_repo(self, envfile: str, git_var: str, *, optional: bool):
+        """
+        Report that an envfile can't be loaded because its path references a git
+        variable, but the project is not inside a git repository.
+        """
+        from ..helpers.git import git_unset_reason
+
+        reason = (
+            git_unset_reason(self._git_repo, git_var)
+            if self._git_repo
+            else f"{git_var} has no value"
+        )
+        message = f"envfile at {envfile!r} because {reason}"
+        if optional:
+            self._io.print_debug(f" - Skipping optional {message}")
+        elif envfile not in self._missing_warned:
+            self._missing_warned.add(envfile)
+            self._io.print_warning(f"Poe failed to locate {message}")
 
     def get(
         self,
@@ -46,6 +75,17 @@ class EnvFileCache:
                             envfile_file.read()
                         )
                     self._io.print_debug(f" + Loaded Envfile from {envfile_path}")
+                except UnicodeDecodeError as error:
+                    # Not chained, since the error's repr includes the file's content
+                    raise ExecutionError(
+                        f"Envfile at {envfile_path_str!r} could not be decoded as "
+                        f"UTF-8 text ({error.reason} at byte {error.start})"
+                    ) from None
+                except OSError as error:
+                    raise ExecutionError(
+                        f"Failed to read envfile at {envfile_path_str!r}: "
+                        f"{error.strerror or error}"
+                    ) from error
                 except ValueError as error:
                     message = error.args[0]
                     raise ExecutionError(
@@ -60,9 +100,11 @@ class EnvFileCache:
                 return {}
 
             else:
-                self._io.print_warning(
-                    f"Poe failed to locate envfile at {envfile_path_str!r}"
-                )
+                if envfile_path_str not in self._missing_warned:
+                    self._missing_warned.add(envfile_path_str)
+                    self._io.print_warning(
+                        f"Poe failed to locate envfile at {envfile_path_str!r}"
+                    )
                 return {}
 
         return _resolve_ast(self._ast_cache[envfile_path_str], base_env or {})

@@ -15,7 +15,7 @@ The following options can be configured on your tasks and are not specific to an
 **env** :  ``dict[str, str]`` :ref:`📖<Setting task specific environment variables>`
   A map of environment variables to be set for this task.
 
-**envfile** :  ``str`` | ``list[str]`` :ref:`📖<Loading environment variables from an env file>`
+**envfile** :  ``str`` | ``list[str | dict]`` | ``dict[str, str | list[str]]`` :ref:`📖<Loading environment variables from an env file>`
   Provide one or more env files to be loaded before running this task.
 
 **cwd** :  ``str`` :ref:`📖<Running a task with a specific working directory>`

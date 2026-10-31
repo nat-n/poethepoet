@@ -1,0 +1,8 @@
+[tool.poe]
+envfile = [{ expected = "first.env" }, "second.env", { optional = ["not-real.env"] }]
+
+[tool.poe.tasks.show_me_the_vals]
+cmd = """
+poe_test_echo "${VAR_A}-${VAR_B}-${VAR_C}-${VAR_D}-${VAR_E}"
+"""
+envfile = ["third.env", { optional = "fourth.env" }]

@@ -6,7 +6,7 @@ The following options can be set for all tasks in a project directly under ``[to
 **env** : ``dict[str, str]`` :ref:`📖<Global environment variables>`
   Define environment variables to be exposed to all tasks. These can be :ref:`extended on the task level<Setting task specific environment variables>`.
 
-**envfile** : ``str`` | ``list[str]`` :ref:`📖<Global environment variables>`
+**envfile** : ``str`` | ``list[str | dict]`` | ``dict[str, str | list[str]]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
 **executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor>`
@@ -106,7 +106,7 @@ Env file values support bash-style parameter expansion. Each variable can refere
    # Use an alternate value when a variable is set
    DEBUG_FLAG=${DEBUG:+--debug}
 
-Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``.
+Expansion is applied in unquoted values and inside double-quoted values. Single-quoted values are never expanded — ``'${VAR}'`` is always the literal string ``${VAR}``. To keep a ``$`` as written, escape it with a backslash (``\$``), or wrap the whole value in single quotes, for example ``PASSWORD='pa$$word'``.
 
 Optional env files
 """"""""""""""""""

@@ -7,7 +7,7 @@ single/double quoting, backslash escaping, and parameter expansion.
 
 from __future__ import annotations
 
-from .command import ParamExpansion, SingleQuotedText
+from .command import ParamExpansion, SingleQuotedText, WhitespaceText
 from .core import ContentNode, ParseCursor, ParseError, SyntaxNode
 
 
@@ -15,27 +15,46 @@ class EnvFileUnquotedText(ContentNode):
     """
     Reads unquoted envfile value text up to a stop character or end of input.
 
-    Stop characters: $, ', ", newline, #. Handles backslash escaping:
-    - backslash + newline: line continuation (consume both, emit nothing)
-    - backslash + any other char: emit just that char (backslash dropped)
+    Stop characters: $, ', ", newline, #. A backslash escapes the next char, which
+    is emitted without the backslash. The cursor skips line continuations, so a
+    backslash with no char after it can only be at the end of the file, and is kept
+    literally as bash does.
 
-    Whitespace and semicolons are regular characters (not stop chars).
+    Whitespace and semicolons are regular characters (not stop chars). Escaped
+    whitespace is literal: it is never stripped as trailing whitespace, and a #
+    after it doesn't start a comment.
     Cancels if the very first character would cause a stop (empty result).
     """
 
     _STOP_CHARS = frozenset({"\n", "$", "'", '"', "#"})
+    # Length of the leading part of the content that ends with the last escaped char
+    _escaped_len: int = 0
+
+    @property
+    def ends_with_whitespace(self) -> bool:
+        """
+        Whether the content ends with whitespace that wasn't escaped.
+        """
+        return len(self._content) > self._escaped_len and self._content[-1] in " \t"
+
+    def strip_trailing_whitespace(self):
+        """
+        Remove any trailing whitespace that wasn't escaped.
+        """
+        self._content = self._content[: self._escaped_len] + self._content[
+            self._escaped_len :
+        ].rstrip(" \t")
 
     def _parse(self, chars: ParseCursor):
         content: list[str] = []
         for char in chars:
             if char == "\\":
-                next_char = chars.peek()
-                if next_char == "\n":
-                    chars.take()  # consume the newline (continuation)
+                if chars.peek() in ("\n", None):
+                    content.append(char)
+                    self._escaped_len = len(content)
                     continue
-                if next_char is None:
-                    raise ParseError("Unexpected end of input after backslash", chars)
                 content.append(chars.take())  # \X → X
+                self._escaped_len = len(content)
                 continue
             if char in self._STOP_CHARS:
                 chars.pushback(char)
@@ -48,6 +67,51 @@ class EnvFileUnquotedText(ContentNode):
             self._cancelled = True
 
 
+class EnvFileLiteralText(ContentNode):
+    """
+    Reads a single character that is kept literally because it has no special
+    meaning where it appears: a # that doesn't start a comment, or a $ that doesn't
+    start a parameter expansion, i.e. isn't followed by a name or {.
+    """
+
+    def _parse(self, chars: ParseCursor):
+        self._content = chars.take()
+
+
+class EnvFileParamExpansion(ParamExpansion):
+    """
+    A ParamExpansion in an envfile value, which also keeps $$ as written, unlike
+    elsewhere where $$X is a literal $ followed by the value of X. Envfile values are
+    data like passwords, where $$ should never expand anything (and in some other
+    dotenv formats $$ is an escaped $).
+    """
+
+    _SPECIAL_PARAMS = ParamExpansion._SPECIAL_PARAMS | {"$"}
+
+
+class EnvFileWhitespaceText(WhitespaceText):
+    """
+    Whitespace in the argument of a parameter expansion like ${VAR:-a   b}, which is
+    kept as written in an envfile, rather than collapsed to one space as in cmd tasks.
+    """
+
+    def _parse(self, chars: ParseCursor):
+        content: list[str] = []
+        while (char := chars.peek()) is not None and char.isspace():
+            content.append(chars.take())
+        self._content = "".join(content)
+
+
+class EnvFileSingleQuotedText(SingleQuotedText):
+    """
+    Single-quoted text in an envfile value, in which a line continuation is literal.
+    """
+
+    def _parse(self, chars: ParseCursor):
+        with chars.raw():
+            super()._parse(chars)
+
+
 class EnvFileDQText(ContentNode):
     """
     Reads text inside a double-quoted envfile value segment.
@@ -58,14 +122,15 @@ class EnvFileDQText(ContentNode):
     - backslash + \\ → \\
     - backslash + $ → $
     - backslash + ` → `
-    - backslash + newline → line continuation (nothing emitted)
     - backslash + any other char → backslash kept, then char
+
+    The cursor skips line continuations.
 
     Empty content is valid (e.g. the text portion of an empty double-quoted
     string ""), so this node never cancels.
     """
 
-    _DQ_SPECIAL = frozenset('"\\$`\n')
+    _DQ_SPECIAL = frozenset('"\\$`')
 
     def _parse(self, chars: ParseCursor):
         content: list[str] = []
@@ -76,10 +141,7 @@ class EnvFileDQText(ContentNode):
             if char == "\\":
                 next_char = chars.peek()
                 if next_char in self._DQ_SPECIAL:
-                    consumed = chars.take()
-                    if consumed == "\n":
-                        continue  # line continuation
-                    content.append(consumed)
+                    content.append(chars.take())
                 else:
                     content.append(char)  # keep backslash
                     if next_char is not None:
@@ -101,7 +163,8 @@ class EnvFileDQString(SyntaxNode):
         self._children = []
 
         EnvFileDQTextCls = self.get_child_node_cls(EnvFileDQText)
-        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
+        EnvFileLiteralTextCls = self.get_child_node_cls(EnvFileLiteralText)
+        ParamExpansionCls = self.get_child_node_cls(EnvFileParamExpansion)
 
         while True:
             next_char = chars.peek()
@@ -116,13 +179,9 @@ class EnvFileDQString(SyntaxNode):
                 if param_node := ParamExpansionCls(chars, self.config):
                     self._children.append(param_node)
                 else:
-                    # ParamExpansion cancelled and pushed $ back. Force
-                    # EnvFileDQText to accept it by prepending a backslash
-                    # escape so it reads \$ → $.
-                    chars.pushback("\\")
-                    text_node = EnvFileDQTextCls(chars, self.config)
-                    if text_node:
-                        self._children.append(text_node)
+                    # Not an expansion (ParamExpansion pushed the $ back), so
+                    # keep the $ literally
+                    self._children.append(EnvFileLiteralTextCls(chars, self.config))
             else:
                 text_node = EnvFileDQTextCls(chars, self.config)
                 if text_node:
@@ -142,9 +201,10 @@ class EnvFileValue(SyntaxNode):
         self._children = []
 
         EnvFileUnquotedTextCls = self.get_child_node_cls(EnvFileUnquotedText)
-        SingleQuotedTextCls = self.get_child_node_cls(SingleQuotedText)
+        EnvFileLiteralTextCls = self.get_child_node_cls(EnvFileLiteralText)
+        SingleQuotedTextCls = self.get_child_node_cls(EnvFileSingleQuotedText)
         EnvFileDQStringCls = self.get_child_node_cls(EnvFileDQString)
-        ParamExpansionCls = self.get_child_node_cls(ParamExpansion)
+        ParamExpansionCls = self.get_child_node_cls(EnvFileParamExpansion)
 
         # Leading space/tab before content is invalid (bash disallows VAR= value)
         next_char = chars.peek()
@@ -158,7 +218,7 @@ class EnvFileValue(SyntaxNode):
             # Space before comment or EOL: value is empty, return without error
             return
 
-        # Track whether the last emitted character was whitespace (controls
+        # Track whether the value so far ends with unescaped whitespace (controls
         # whether a subsequent # starts a comment or is a literal character).
         last_was_whitespace = True  # True at start so a leading # is a comment
 
@@ -169,49 +229,23 @@ class EnvFileValue(SyntaxNode):
 
             if next_char == "#":
                 if last_was_whitespace:
-                    # Comment: consume to end of line
-                    while chars.peek() not in ("\n", None):
-                        chars.take()
+                    # Comment: consume to end of line (a continuation is literal here)
+                    with chars.raw():
+                        while chars.peek() not in ("\n", None):
+                            chars.take()
                     break
-                # Mid-word hash: consume it and read any following unquoted text
-                chars.take()
-                following = EnvFileUnquotedTextCls(chars, self.config)
-                if following:
-                    following._content = "#" + following._content
-                    self._children.append(following)
-                    last_char = following._content[-1:]
-                    last_was_whitespace = last_char in (" ", "\t")
-                elif self._children and isinstance(
-                    self._children[-1], EnvFileUnquotedText
-                ):
-                    # # immediately before a stop char — append to last child
-                    self._children[-1]._content += "#"
-                    last_was_whitespace = False
-                else:
-                    # No adjacent unquoted text — push back an escaped '#'
-                    # so EnvFileUnquotedText reads it as a literal '#'.
-                    chars.pushback("#")
-                    chars.pushback("\\")
-                    new_node = EnvFileUnquotedTextCls(chars, self.config)
-                    self._children.append(new_node)
-                    last_was_whitespace = False
-                continue
+                # Mid-word hash is a literal character
+                self._children.append(EnvFileLiteralTextCls(chars, self.config))
+                last_was_whitespace = False
 
-            if next_char == "$":
+            elif next_char == "$":
                 if param_node := ParamExpansionCls(chars, self.config):
                     self._children.append(param_node)
-                    last_was_whitespace = False
                 else:
-                    # ParamExpansion cancelled, $ pushed back; read as unquoted
-                    if text_node := EnvFileUnquotedTextCls(chars, self.config):
-                        self._children.append(text_node)
-                        last_char = text_node.content[-1:] if text_node.content else ""
-                        last_was_whitespace = last_char in (" ", "\t")
-                    else:
-                        # bare $ at a stop position — should not happen, but
-                        # consume to avoid an infinite loop
-                        chars.take()
-                        last_was_whitespace = False
+                    # Not an expansion (ParamExpansion pushed the $ back), so
+                    # keep the $ literally
+                    self._children.append(EnvFileLiteralTextCls(chars, self.config))
+                last_was_whitespace = False
 
             elif next_char == "'":
                 chars.take()  # consume opening '
@@ -224,19 +258,18 @@ class EnvFileValue(SyntaxNode):
                 self._children.append(dq_node)
                 last_was_whitespace = False
 
-            else:
-                if text_node := EnvFileUnquotedTextCls(chars, self.config):
-                    self._children.append(text_node)
-                    last_char = text_node.content[-1:] if text_node.content else ""
-                    last_was_whitespace = last_char in (" ", "\t")
-                else:
-                    # Nothing was consumed — stop to avoid infinite loop
-                    break
+            elif text_node := EnvFileUnquotedTextCls(chars, self.config):
+                self._children.append(text_node)
+                last_was_whitespace = text_node.ends_with_whitespace
 
-        # Strip trailing whitespace from the last unquoted child
+            else:
+                # Nothing was consumed — stop to avoid infinite loop
+                break
+
+        # Strip trailing (unescaped) whitespace from the last unquoted child
         if self._children and isinstance(self._children[-1], EnvFileUnquotedText):
-            self._children[-1]._content = self._children[-1]._content.rstrip(" \t")
-            if not self._children[-1]._content:
+            self._children[-1].strip_trailing_whitespace()
+            if not self._children[-1].content:
                 self._children.pop()
 
 
@@ -246,7 +279,8 @@ class EnvAssignment(SyntaxNode):
         [export] IDENTIFIER=value
 
     Leading whitespace is skipped. The 'export' keyword is optional and must
-    be followed by at least one space or tab. The identifier must immediately
+    be followed by at least one space or tab (otherwise it is read as the start
+    of the identifier, e.g. `exports=1`). The identifier must immediately
     precede '=' with no intervening whitespace.
     """
 
@@ -266,15 +300,22 @@ class EnvAssignment(SyntaxNode):
             for expected in "export":
                 ch = chars.peek()
                 if ch != expected:
-                    chars.pushback(*reversed(saved))
+                    chars.pushback(*saved)
                     break
                 saved.append(chars.take())
             else:
-                # 'export' fully matched — require whitespace after it
-                if chars.peek() not in (" ", "\t"):
+                following = chars.peek()
+                if following is not None and (
+                    following.isalnum() or following in ("_", "=")
+                ):
+                    # Not the keyword, just a name that starts with 'export'
+                    chars.pushback(*saved)
+                elif following not in (" ", "\t"):
+                    # 'export' keyword must be followed by whitespace
                     raise ParseError("Expected whitespace after 'export'", chars)
-                while chars.peek() in (" ", "\t"):
-                    chars.take()
+                else:
+                    while chars.peek() in (" ", "\t"):
+                        chars.take()
 
         # Read identifier: [a-zA-Z_][a-zA-Z_0-9]*
         name_chars: list[str] = []
@@ -325,9 +366,10 @@ class EnvFile(SyntaxNode):
                 line_start.append(chars.take())
 
             if chars.peek() == "#":
-                # Comment line: skip to end of line
-                while chars.peek() not in ("\n", None):
-                    chars.take()
+                # Comment line: skip to end of line (a continuation is literal here)
+                with chars.raw():
+                    while chars.peek() not in ("\n", None):
+                        chars.take()
                 continue
 
             if chars.peek() in ("\n", None):

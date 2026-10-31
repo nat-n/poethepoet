@@ -6,6 +6,7 @@ See the sibling command, template, and envfile modules for example usage.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from typing import IO, TYPE_CHECKING, Generic, TypeVar, cast
 
 if TYPE_CHECKING:
@@ -47,8 +48,23 @@ class ParseCursor:
     def from_string(cls, string: str):
         return cls(iter(string))
 
+    @contextmanager
+    def raw(self):
+        """
+        Read the input as is within this block. This cursor never transforms the
+        input, so this only matters for subclasses that do.
+        """
+        yield self
+
     @property
     def position(self):
+        # Peek without any transformation a subclass makes, which could move the cursor
+        if ParseCursor.peek(self) is None:
+            # At the end of input, point just after the last char, and at the end of
+            # the last line rather than at a line that doesn't exist
+            if self._position < 0 and self._line_lengths:
+                return (self._line - 1, self._line_lengths[-1] + 1)
+            return (max(0, self._line), self._position + 1)
         return (max(0, self._line), max(0, self._position))
 
     def peek(self):
@@ -72,7 +88,7 @@ class ParseCursor:
             self._line_lengths.append(self._position)
             self._line += 1
             self._position = -1
-        else:
+        elif result is not None:
             self._position += 1
 
         return result
@@ -81,7 +97,7 @@ class ParseCursor:
         for item in reversed(items):
             self._pushback_stack.append(item)
             if item == "\n":
-                self._position = self._line_lengths.pop(0)
+                self._position = self._line_lengths.pop()
                 self._line = max(0, self._line - 1)
             else:
                 self._position -= 1
@@ -96,6 +112,58 @@ class ParseCursor:
 
     def __bool__(self):
         return bool(self.peek())
+
+
+class LineContinuationParseCursor(ParseCursor):
+    """
+    A ParseCursor that skips over backslash-newline line continuations, as in bash, so
+    that nodes never see them. A backslash escapes the char after it, so that char
+    never starts a continuation. Nodes that read text in which continuations are
+    literal (e.g. single quotes) do so in a raw() block.
+
+    A skipped newline still counts as a line, so positions refer to the original text.
+    """
+
+    _raw_depth: int = 0
+    # Whether the last char taken was an escaping backslash
+    _escape_next: bool = False
+
+    @contextmanager
+    def raw(self):
+        """
+        Read the input as is within this block, without skipping line continuations.
+        """
+        self._raw_depth += 1
+        try:
+            yield self
+        finally:
+            self._raw_depth -= 1
+
+    def peek(self):
+        self._skip_line_continuations()
+        return super().peek()
+
+    def take(self):
+        self._skip_line_continuations()
+        escaped, self._escape_next = self._escape_next, False
+        result = super().take()
+        if result == "\\" and not escaped and not self._raw_depth:
+            self._escape_next = True
+        return result
+
+    def pushback(self, *items: str):
+        self._escape_next = False
+        super().pushback(*items)
+
+    def _skip_line_continuations(self):
+        if self._raw_depth or self._escape_next:
+            return
+        while super().peek() == "\\":
+            backslash = super().take()
+            if super().peek() != "\n":
+                super().pushback(backslash)
+                return
+            super().take()  # The newline, which still counts as a line for positions
 
 
 class ParseConfig:
@@ -270,10 +338,22 @@ class ParseError(RuntimeError):
         self.message = message
         if cursor is not None:
             self.line, self.position = cursor.position
+        else:
+            self.line = self.position = None
 
     @property
     def has_position(self) -> bool:
         return None not in (self.line, self.position)
+
+    @property
+    def location(self) -> str:
+        """
+        Describe the position of the error for users, with 1-based line and position
+        numbers (line and position themselves are 0-based).
+        """
+        if self.line is None or self.position is None:
+            return "unknown location"
+        return f"line {self.line + 1}, position {self.position + 1}"
 
     def __repr__(self):
         details = (

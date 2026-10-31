@@ -65,13 +65,13 @@ class TaskEnv(Mapping[str, str]):
         Create a base TaskEnv
         """
 
-        from ..helpers.git import GitRepo
         from .cache import EnvFileCache
 
         base_env = dict(base_env or {})
         io = io or PoeIO.get_default_io()
         cwd = str(cwd or os.getcwd())
-        git_repo = GitRepo(config.project_dir)
+        # Share the config's GitRepo, so git is run (and missing git warned about) once
+        git_repo = config.git_repo
 
         base_env["POE_ROOT"] = str(config.project_dir)
 
@@ -85,7 +85,7 @@ class TaskEnv(Mapping[str, str]):
         return TaskEnv(
             env=base_env,
             args={},
-            envfiles=EnvFileCache(config.project_dir, io),
+            envfiles=EnvFileCache(config.project_dir, io, git_repo),
             lazy_vars={
                 "POE_GIT_DIR": lambda: str(git_repo.path or ""),
                 "POE_GIT_ROOT": lambda: str(git_repo.main_path or ""),
@@ -236,7 +236,7 @@ class TaskEnv(Mapping[str, str]):
 
     def apply_env_config(
         self,
-        envfile_option: str | Sequence[str] | EnvfileOption,
+        envfile_option: str | EnvfileOption | Sequence[str | EnvfileOption],
         config_env: Mapping[str, str | EnvDefault],
         config_dir: Path,
         config_working_dir: Path,
@@ -252,6 +252,11 @@ class TaskEnv(Mapping[str, str]):
 
         if envfile_option:
             for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
+                if git_var := _find_unset_git_var(envfile_path, scoped_vars):
+                    self._envfiles.skip_outside_git_repo(
+                        envfile_path, git_var, optional=is_optional
+                    )
+                    continue
                 resolved_envfile = config_working_dir.joinpath(
                     parse_template(envfile_path, require_braces=True).resolve(
                         scoped_vars
@@ -282,8 +287,21 @@ class TaskEnv(Mapping[str, str]):
             scoped_vars.set(key, resolved_value)
 
 
+def _find_unset_git_var(path_template: str, env: TaskEnv) -> str | None:
+    """
+    Return the name of a git variable (POE_GIT_DIR or POE_GIT_ROOT) that the given
+    path template references but that is empty, because the project is not inside a
+    git repo. Otherwise such a path would resolve relative to the filesystem root.
+    """
+    for var_name in ("POE_GIT_DIR", "POE_GIT_ROOT"):
+        if f"${{{var_name}}}" in path_template and not env.get(var_name):
+            return var_name
+    return None
+
+
 def _iter_envfile_paths(
-    envfile_option: str | Sequence[str] | EnvfileOption, is_optional: bool = False
+    envfile_option: str | EnvfileOption | Sequence[str | EnvfileOption],
+    is_optional: bool = False,
 ) -> Iterable[tuple[str, bool]]:
     """
     Yield (envfile_path, is_optional) tuples from whatever form of envfile_option is
@@ -294,7 +312,8 @@ def _iter_envfile_paths(
         yield envfile_option, is_optional
     elif isinstance(envfile_option, list | tuple):
         for item in envfile_option:
-            yield item, is_optional
+            # Items may be paths or tables of expected/optional paths
+            yield from _iter_envfile_paths(item, is_optional)
     elif isinstance(envfile_option, dict):
         if (expected := envfile_option.get("expected")) is not None:
             yield from _iter_envfile_paths(expected, False)
