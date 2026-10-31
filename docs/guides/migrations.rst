@@ -3,6 +3,26 @@ Migration Guides
 
 As a rule we avoid making breaking changes to poethepoet. However once in a while it is deemed necessary to make some minor breaking changes, which may impact a small minority of users, in order to make significant improvements overall. This guide details instances when this has occurred and gives advice on how to avoid or mitigate the impacts.
 
+0.50.0
+------
+
+Dollar signs, backslashes and whitespace in env files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A few edge cases in env file values changed:
+
+- A ``$`` that doesn't start an expansion is kept in unquoted values too. From 0.46.0 it was dropped, so ``PRICE=100$`` gave ``100`` and ``DIR=$/tmp`` gave ``/tmp``.
+- Only a ``$`` followed by a variable name or ``{`` starts an expansion. So ``$1``, ``$@``, ``$$``, ``$?`` and other shell special parameters are kept literally, consistent with poe's other templating, also in the argument of an expansion like ``${VAR:-...}``. Previously ``abc$1def`` gave ``abc1def`` unquoted, and ``pa$$word`` gave ``pa`` unquoted and ``pa$`` double-quoted.
+- Whitespace escaped with a backslash is part of the value, as in bash: it is no longer stripped from the end of an unquoted value, and a ``#`` after it no longer starts a comment. So ``A=foo\ #bar`` gives ``foo #bar`` rather than ``foo``, as it did before 0.46.0.
+- Runs of whitespace in the argument of an expansion are kept as written, so ``${VAR:-a   b}`` no longer gives ``a b``.
+- Line continuations (a backslash at the end of a line) are removed before anything else is interpreted, as in bash, except in single quotes and comments. So a continuation no longer splits a variable name from its ``$``, or changes the argument of an expansion.
+- A backslash at the very end of a file is kept, as in bash, rather than dropped.
+
+To keep a value exactly as written, wrap it in single quotes, for example ``PASSWORD='pa$word'``. See :ref:`Parameter expansion in env files` for details.
+
+Errors from parsing env files and cmd tasks now give 1-based line and position numbers, and env file syntax errors include a location.
+
+
 0.49.0
 ------
 
@@ -27,6 +47,7 @@ Square bracket glob patterns in cmd tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Whitespace, backslashes, quotes, and parameter expansions inside a square bracket pattern are now interpreted like in bash, instead of being taken literally. To match a space or a backslash, escape it with a backslash, for example ``[a\ b]``.
+
 
 
 0.47.0
@@ -63,7 +84,17 @@ These options were not available in 0.47.x and 0.48.0, where the workaround is t
 0.46.0
 ------
 
-This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. Two edge-case behaviours changed.
+This release rewrites the envfile parser to align with standard dotenv conventions and bash assignment syntax, and adds support for parameter expansion in env file values. This means that a ``$`` in env file values may now be interpreted differently, and two other edge-case behaviours changed. Some further unintended changes to ``$`` and escaped whitespace handling in 0.46.0 were fixed in :ref:`0.50.0<Dollar signs, backslashes and whitespace in env files>`.
+
+Parameter expansion in unquoted and double-quoted values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously a ``$`` in an env file value was always kept literally. Now ``$VAR`` and ``${VAR}`` references in unquoted or double-quoted values are expanded, so for example ``PASSWORD=abc$def`` now sets ``PASSWORD`` to ``abc`` (if ``def`` is not set). To keep a literal ``$``, wrap the value in single quotes or escape the ``$`` with a backslash:
+
+.. code-block:: bash
+
+   PASSWORD='abc$def'
+   PASSWORD=abc\$def
 
 Whitespace in unquoted values is now preserved
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

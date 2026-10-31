@@ -4,7 +4,12 @@ import pytest
 
 from poethepoet.helpers.parse import parse_poe_cmd
 from poethepoet.helpers.parse.command import Glob, Script
-from poethepoet.helpers.parse.core import ParseConfig, ParseCursor, ParseError
+from poethepoet.helpers.parse.core import (
+    LineContinuationParseCursor,
+    ParseConfig,
+    ParseCursor,
+    ParseError,
+)
 
 
 def test_parse_comments():
@@ -71,12 +76,13 @@ def test_parse_params():
     assert tree.lines[2] == (
         (("a", "x", "?"),),
         (("a", "y", "b"),),
-        (("a", "$", "?"),),
+        (("a", "$?"),),
         (("z",),),
     )
     assert tree.lines[3] == ((("x", "y", "$ z"),),)
     assert tree.lines[4] == ((("x", " ", "y", " ", "$ z"),),)
-    assert tree.lines[5] == ((("a", "x", "? a", "y", "b a", "$? ", "z"),),)
+    # $? is a special parameter, kept as written
+    assert tree.lines[5] == ((("a", "x", "? a", "y", "b a", "$?", " ", "z"),),)
     assert tree.lines[6] == ((("$x${y}$ z",),),)
     assert tree.lines[7] == ((("$x ${y} $ z",),),)
     assert tree.lines[8] == ((("a$x? a${y}b a$? $z",),),)
@@ -99,12 +105,12 @@ def test_parse_params():
     assert tree.lines[11] == (
         (("a", "xx1", "?"),),
         (("a", "yy2", "b"),),
-        (("a", "$", "?"),),
+        (("a", "$?"),),
         (("z",),),
     )
     assert tree.lines[12] == ((("xx1", "yy2", "$ z"),),)
     assert tree.lines[13] == ((("xx1", " ", "yy2", " ", "$ z"),),)
-    assert tree.lines[14] == ((("a", "xx1", "? a", "yy2", "b a", "$? ", "z"),),)
+    assert tree.lines[14] == ((("a", "xx1", "? a", "yy2", "b a", "$?", " ", "z"),),)
 
 
 def test_parse_param_operators():
@@ -404,6 +410,44 @@ def test_parse_unmatched_quotes():
     assert (
         excinfo.value.args[0] == "Unexpected end of input with unmatched single quote"
     )
+
+
+def test_parse_error_position():
+    with pytest.raises(ParseError) as excinfo:
+        parse_poe_cmd("ok\nok'not ok")
+    error = excinfo.value
+    assert error.has_position
+    # At the end of input, the position is just after the last char
+    assert (error.line, error.position) == (1, 9)
+    # location is for users, so it's 1-based
+    assert error.location == "line 2, position 10"
+    assert repr(error) == (
+        'ParseError("Unexpected end of input with unmatched single quote", '
+        "line=1, position=9)"
+    )
+
+
+def test_cursor_position_after_pushing_back_a_newline():
+    cursor = ParseCursor.from_string("a\ncde\nf")
+    for _ in range(6):
+        cursor.take()
+    # Just after a newline with more input to come, the position is the next line
+    assert cursor.position == (2, 0)
+    cursor.pushback("\n")
+    # Back at the end of the second line, not the first
+    assert cursor.position == (1, 2)
+    assert cursor.take() == "\n"
+    assert cursor.take() == "f"
+    # At the end of input, the position is just after the last char
+    assert cursor.position == (2, 1)
+
+
+def test_parse_error_without_position():
+    error = ParseError("no cursor")
+    assert not error.has_position
+    assert error.line is None
+    assert error.position is None
+    assert repr(error) == 'ParseError("no cursor")'
 
 
 def test_invalid_features():
@@ -901,3 +945,21 @@ class TestTemplateParsing:
         assert len(tree) == 2
         assert tree[0] == "\\"
         assert tree[1].param_name == "FOO"
+
+
+def test_cursor_skips_line_continuations():
+    cursor = LineContinuationParseCursor.from_string("a\\\nb\\\\\nc'\\\nd")
+    assert [cursor.take() for _ in range(5)] == ["a", "b", "\\", "\\", "\n"]
+    # A continuation's newline still counts as a line for positions
+    assert cursor.position == (2, 0)
+    assert cursor.take() == "c"
+    assert cursor.take() == "'"
+    # In a raw block a continuation is read as is
+    with cursor.raw():
+        assert [cursor.take() for _ in range(3)] == ["\\", "\n", "d"]
+    assert cursor.take() is None
+
+
+def test_cursor_without_line_continuations_reads_them_as_is():
+    cursor = ParseCursor.from_string("a\\\nb")
+    assert list(cursor) == ["a", "\\", "\n", "b"]

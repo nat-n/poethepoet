@@ -27,14 +27,39 @@ def parse_env_file(
 
 
 def _parse_to_ast(content: str) -> EnvFile:
-    from ..helpers.parse.core import ParseConfig, ParseCursor
+    from ..helpers.parse.command import (
+        ParamExpansion,
+        SingleQuotedText,
+        WhitespaceText,
+    )
+    from ..helpers.parse.core import LineContinuationParseCursor, ParseConfig
     from ..helpers.parse.core import ParseError as AstParseError
-    from ..helpers.parse.envfile import EnvFile
+    from ..helpers.parse.envfile import (
+        EnvFile,
+        EnvFileParamExpansion,
+        EnvFileSingleQuotedText,
+        EnvFileWhitespaceText,
+    )
 
+    # Ignore a leading UTF-8 byte order mark, as written by some Windows editors
+    content = content.removeprefix("\ufeff")
+    # Use the envfile flavours of these nodes everywhere, including in the argument of
+    # ${VAR:-...}, so special parameters like $$, runs of whitespace and continuations
+    # in single quotes are kept as written there too
+    config = ParseConfig(
+        substitute_nodes={
+            ParamExpansion: EnvFileParamExpansion,
+            SingleQuotedText: EnvFileSingleQuotedText,
+            WhitespaceText: EnvFileWhitespaceText,
+        }
+    )
     try:
-        return EnvFile(ParseCursor.from_string(content + "\n"), ParseConfig())
+        return EnvFile(LineContinuationParseCursor.from_string(content), config)
     except AstParseError as error:
-        raise ValueError(str(error)) from error
+        message = error.message
+        if error.has_position:
+            message += f" (near {error.location})"
+        raise ValueError(message) from error
 
 
 def _resolve_ast(tree: EnvFile, base_env: Mapping[str, str]) -> dict[str, str]:

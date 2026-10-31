@@ -19,10 +19,12 @@ from .partition import (
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping, Sequence
 
+    from ..helpers.git import GitRepo
     from ..io import PoeIO
 
 
 class PoeConfig:
+    _git_repo_cache: GitRepo | None = None
     _project_config: ProjectConfig
     _included_config: list[IncludedConfig]
     _packaged_config: list[PackagedConfig]
@@ -393,6 +395,17 @@ class PoeConfig:
         ancestors: Sequence[Path] = (),
         source_config_dir: Path | None = None,
     ):
+        if git_var := self._find_unset_git_var(include["path"]):
+            from ..helpers.git import git_unset_reason
+
+            if self._io:
+                self._io.print_warning(
+                    f"Poe could not include file from {include['path']!r} because "
+                    f"{git_unset_reason(self.git_repo, git_var)}",
+                    message_verbosity=0,
+                )
+            return
+
         include_path = self.resolve_git_path(
             include["path"], source_config_dir=source_config_dir
         )
@@ -462,6 +475,32 @@ class PoeConfig:
                 filename=str(include_path),
             ) from error
 
+    @property
+    def git_repo(self) -> GitRepo:
+        """
+        The git repo of the project, shared so that git is only run once per run,
+        unless the project dir changes.
+        """
+        from ..helpers.git import GitRepo
+
+        if self._git_repo_cache is None or self._git_repo_cache.seed_path != (
+            self._project_dir
+        ):
+            self._git_repo_cache = GitRepo(self._project_dir, self._io)
+        return self._git_repo_cache
+
+    def _find_unset_git_var(self, resource_path: str) -> str | None:
+        """
+        Return the name of a git variable (POE_GIT_DIR or POE_GIT_ROOT) that the given
+        path references but that has no value, because the project is not inside a
+        git repo. Otherwise such a path would resolve relative to the filesystem root.
+        """
+        if "${POE_GIT_DIR}" in resource_path and self.git_repo.path is None:
+            return "POE_GIT_DIR"
+        if "${POE_GIT_ROOT}" in resource_path and self.git_repo.main_path is None:
+            return "POE_GIT_ROOT"
+        return None
+
     def resolve_git_path(
         self, resource_path: str, source_config_dir: Path | None = None
     ):
@@ -482,16 +521,10 @@ class PoeConfig:
             available_vars["POE_CONF_DIR"] = str(source_config_dir)
 
         if "${POE_GIT_DIR}" in resource_path:
-            from ..helpers.git import GitRepo
-
-            git_repo = GitRepo(self._project_dir)
-            available_vars["POE_GIT_DIR"] = str(git_repo.path or "")
+            available_vars["POE_GIT_DIR"] = str(self.git_repo.path or "")
 
         if "${POE_GIT_ROOT}" in resource_path:
-            from ..helpers.git import GitRepo
-
-            git_repo = GitRepo(self._project_dir)
-            available_vars["POE_GIT_ROOT"] = str(git_repo.main_path or "")
+            available_vars["POE_GIT_ROOT"] = str(self.git_repo.main_path or "")
 
         resource_path = parse_template(resource_path, require_braces=True).resolve(
             available_vars
