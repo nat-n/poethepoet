@@ -7,7 +7,7 @@ args = [{ name = "power_level", positional = true, type = "integer", default = 4
 expr = """"power level is " + (f"only {sys.argv[1]}" if int(sys.argv[1]) <= 9000 else 'over nine thousand!') """
 
 [tool.poe.tasks.expr_with_env_vars]
-expr = "[${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + '${NOTHING}'"
+expr = "[${VAR_FOO} * int(${VAR_BAR})][0] + (f'{${VAR_BAZ}}') + ${NOTHING}"
 
 [tool.poe.tasks.expr_with_imports]
 help    = "check if the argument looks like an email address"
@@ -90,3 +90,18 @@ expr = "len(_extra_args)"
 [tool.poe.tasks.label-extra-args]
 expr = "f'{label}: {_extra_args}'"
 args = [{ name = "label", default = "Files" }]
+
+[tool.poe.tasks.method-on-arg]
+expr = "name.upper() + ''.join(part.lower() for part in [name])"
+args = ["name"]
+
+[tool.poe.tasks.dotted-import-call]
+expr = "xml.sax.saxutils.escape('<a>') + alias.escape('&') + alias.__name__ + os.__name__"
+imports = ["xml.sax.saxutils", "xml.sax.saxutils as alias", "os.path"]
+
+[tool.poe.tasks.git-dir]
+expr = "(pathlib.Path(${POE_GIT_DIR}).joinpath('.git').exists(), ${POE_GIT_DIR:+True})"
+imports = ["pathlib"]
+
+[tool.poe.tasks.undefined-call-target]
+expr = "undefined_module.thing()"

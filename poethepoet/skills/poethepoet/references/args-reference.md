@@ -160,8 +160,8 @@ args = [{ name = "_target", positional = true }]
 | `script` (with parens) | Explicitly in call: `"module:fn(_x, y=_y)"`                                        |
 | `script` (module form) | Re-emitted on the module's `sys.argv` (with defaults applied)                      |
 | `expr`                 | As Python variables: `name` is directly accessible                                 |
-| `sequence`/`parallel`  | Inline `cmd`/`expr` items see them like a standalone task (private args included). Referenced tasks only inherit public args as env vars; pass others explicitly: `"sub --flag ${_x}"`. Free args are forwarded via `$POE_EXTRA_ARGS` |
-| `switch`               | Bare name in `control.expr`; each case sees them according to its own type        |
+| `sequence`/`parallel`  | Subtasks, inline or referenced, see them like a standalone task (private args included). To set a referenced task's own args, pass them explicitly: `"sub --flag ${_x}"`. Free args are forwarded via `$POE_EXTRA_ARGS` |
+| `switch`               | Bare name in `control.expr`; each case sees them according to its own type, except that a no-parens `script` case gets no kwargs (name them in the call) |
 
 With declared args, `script` (callable or module form) and `expr` tasks also get them in `sys.argv`: each arg re-emitted from its parsed value with defaults applied (boolean flags only if passed), then any free args given after `--`. Pass `--` twice to forward a literal `--`. Without declared args, `sys.argv` holds the arguments as given.
 

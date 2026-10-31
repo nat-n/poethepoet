@@ -1,5 +1,6 @@
 # ruff: noqa: E501
 import shutil
+import sys
 from pathlib import Path
 
 
@@ -12,7 +13,8 @@ def rm(
     """
     This function is intended for use in a script task to delete files and directories
     matching any of the given patterns, as a platform agnostic alternative to
-    ``rm -rf [patterns]``
+    ``rm -rf [patterns]``. It never deletes the working directory, the ``cwd``
+    directory, or a directory containing either.
 
     Example usage:
 
@@ -35,26 +37,108 @@ def rm(
         function.
     """
     verbosity = int(verbosity)
+    failed = False
+    protected_paths = _get_protected_paths(Path(cwd), Path.cwd())
 
     for pattern in patterns:
-        matches = list(Path(cwd).glob(pattern))
+        matches = _glob(pattern, cwd)
         if verbosity > 0 and not matches:
             print(f"No files or directories to delete matching {pattern!r}")
         elif verbosity >= 0 and len(matches) > 1:
             print(f"Deleting paths matching {pattern!r}")
 
         for match in matches:
-            _delete_path(match, verbosity, dry_run)
+            if not _delete_path(match, verbosity, dry_run, protected_paths):
+                failed = True
+
+    if failed:
+        raise SystemExit(1)
 
 
-def _delete_path(path: Path, verbosity: int, dry_run: bool):
-    if path.is_dir():
-        if verbosity > 0:
-            print(f"Deleting directory '{path}'")
-        if not dry_run:
-            shutil.rmtree(path)
+def _get_protected_paths(*working_dirs: Path) -> set[tuple[int, int] | Path]:
+    """
+    Identify the given directories and all of their parents.
+    """
+    resolved_dirs = [working_dir.resolve() for working_dir in working_dirs]
+    return {
+        _get_path_id(path)
+        for resolved_dir in resolved_dirs
+        for path in (resolved_dir, *resolved_dir.parents)
+        if path.exists()
+    }
+
+
+def _get_path_id(path: Path) -> tuple[int, int] | Path:
+    """
+    Identify an existing path by its device and inode, which is robust to case
+    insensitive file systems, or by its resolved path if there is no inode number.
+    """
+    stat_result = path.stat()
+    if stat_result.st_ino:
+        return (stat_result.st_dev, stat_result.st_ino)
+    return path.resolve()
+
+
+def _glob(pattern: str, cwd: str) -> list[Path]:
+    """
+    Return the paths matching the given pattern, which may be relative to cwd or
+    absolute.
+    """
+    if not pattern:
+        return []
+
+    base_dir = Path(cwd)
+    relative_pattern = pattern
+    if (pattern_path := Path(pattern)).is_absolute():
+        # pathlib only supports globbing with relative patterns
+        base_dir = Path(pattern_path.anchor)
+        relative_pattern = str(pattern_path.relative_to(base_dir))
+        if relative_pattern == ".":
+            # Never delete a filesystem root
+            return []
+
+    try:
+        return list(base_dir.glob(relative_pattern))
+    except (ValueError, NotImplementedError) as error:
+        message = str(error).removeprefix("Invalid pattern: ")
+        raise SystemExit(f"Error: Invalid pattern {pattern!r}: {message}")
+
+
+def _delete_path(
+    path: Path,
+    verbosity: int,
+    dry_run: bool,
+    protected_paths: set[tuple[int, int] | Path],
+) -> bool:
+    """
+    Delete the given path, returning False if this failed.
+    """
+    if path.is_symlink():
+        # Delete the link itself, rather than its target
+        is_dir = False
+    elif path.exists():
+        if _get_path_id(path) in protected_paths:
+            print(f"Error: Refusing to delete '{path}'", file=sys.stderr)
+            return False
+        is_dir = path.is_dir()
     else:
-        if verbosity > 0:
-            print(f"Deleting file '{path}'")
-        if not dry_run:
-            path.unlink()
+        # Already deleted, e.g. as the descendant of a previous match
+        return True
+
+    if verbosity > 0:
+        print(f"Deleting {'directory' if is_dir else 'file'} '{path}'")
+    if dry_run:
+        return True
+
+    try:
+        if is_dir:
+            shutil.rmtree(path)
+        else:
+            path.unlink(missing_ok=True)
+    except OSError as error:
+        print(
+            f"Error: Failed to delete '{path}': {error.strerror or error}",
+            file=sys.stderr,
+        )
+        return False
+    return True

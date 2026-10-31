@@ -274,8 +274,7 @@ control.expr = "sys.platform"
 ```toml
 [tool.poe.tasks.stack-init]
 help = "Create the stack for a project and stage"
-# ✅ Reference the arg by bare variable name. Do NOT write `${_project}` here —
-#    that routes through the environment and silently breaks for private args.
+# ✅ Reference the arg by bare variable name, which gives its typed value
 control.expr = "_project"
 deps = ["_login"]
 uses = { _stack = "_stack-name --family \"${_family}\" --stage ${_stage}" }
@@ -313,12 +312,11 @@ What this shows:
 - `args` declared on the switch task propagate automatically to the control task **and** every case task. Cases may **not** redeclare `args`, `uses`, `uses_env`, or `deps`.
 - A switch's stdout is the selected case's stdout. The control's output is consumed to pick the case and is never printed or captured, so a private switch task is a clean way to compute a value with branches for another task's `uses`.
 
-**Branching on a private (`_`-prefixed) arg**: in an `expr` control, reference it by **bare variable name**, never `${...}`. Private args aren't exported as env vars, so `control.expr = "${_target}"` silently resolves to an empty string and the switch falls through to `default`. Use the bare-variable form:
+**Branching on a private (`_`-prefixed) arg**: in an `expr` control, reference it by **bare variable name**, as for a public arg:
 
 ```toml
 [tool.poe.tasks.deploy]
 control.expr = "_target"          # ✅ bare variable — works for both public and private args
-# control.expr = "${_target}"     # ❌ broken: ${_target} routes through env, silent empty for private args
 args = [{ name = "_target", positional = true, choices = ["dev", "prod"] }]
 
   [[tool.poe.tasks.deploy.switch]]
@@ -345,9 +343,11 @@ Use when: outputting computed values, platform checks, file counts, or lightweig
 >
 > To call a method on the value, do **not** wrap it: `expr = "${STAGE}.upper()"` → `__env.STAGE.upper()` → yields `"STAGING"`. (Writing `"'${STAGE}'.upper()"` would call `.upper()` on the literal string `"__env.STAGE"` and return `"__ENV.STAGE"` — broken.)
 
-**Referencing declared args.** A declared arg is in scope as a **bare Python variable** under its declared name. The canonical form is `expr = "AWS_REGION"`, not `expr = "${AWS_REGION}"`.
+**Referencing declared args.** A declared arg (public or private `_`) is in scope as a **bare Python variable** under its declared name, with its declared type. The canonical form is `expr = "AWS_REGION"`, not `expr = "${AWS_REGION}"`.
 
-> The `${AWS_REGION}` form routes through the *environment* (not the args namespace). For a **public** arg this coincides because public args are also exported to env — but for a **private `_`-prefixed arg it silently breaks**: private args are deliberately not exported, so `${_target}` resolves to an empty/missing env var rather than the arg's value. Always use the bare-variable form when an `expr` references an arg.
+> The `${AWS_REGION}` form is the arg's string form rather than its typed value: `'2'` rather than `2`, and `''` for a false boolean or an unset arg (the bare name gives `False` / `None`).
+
+**Unset env vars.** An unset `${VAR}` is an empty string, so `expr = "${VIRTUAL_ENV}.endswith('.venv')"` gives `False` when no venv is active.
 
 See `args-reference.md` for the full per-task-type table.
 

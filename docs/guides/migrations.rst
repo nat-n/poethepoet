@@ -22,6 +22,11 @@ To keep a value exactly as written, wrap it in single quotes, for example ``PASS
 
 Errors from parsing env files and cmd tasks now give 1-based line and position numbers, and env file syntax errors include a location.
 
+Inherited args are no longer passed as kwargs to script tasks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A script task without parentheses, such as :toml:`script = "myapp:build"`, is now called with only the args it declares itself as keyword arguments. Args inherited from a parent task, including a switch task's args for its control and cases, are no longer passed. To pass an inherited arg to the function, name it in the call, for example :toml:`script = "myapp:build(target=target)"`.
+
 
 0.49.0
 ------
