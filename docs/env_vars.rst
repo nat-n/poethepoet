@@ -8,13 +8,14 @@ How Poe the Poet uses environment variables
 Poe tasks inherit environment variables from the host shell, but tasks also run with additional variables that are provided via the following channels, ordered with ascending precedence. The principle for precedence is that variables closer to the task override those further away.
 
 1. Host environment variables (what poe receives as ``os.environ``)
-2. Project level :ref:`env files<Loading external environment variables>` (in the order listed)
-3. Project level :ref:`env config<Global environment variables>`
-4. Parent task variables
-5. Task level :ref:`env files<envfile_option>`
-6. Output values from tasks configured as dependencies via the :doc:`uses<guides/composition_guide>` and :ref:`uses_env<Sourcing variables from dependency task output>` options
-7. Task level :ref:`env config<Setting task specific environment variables>`
-8. Variables set by task :doc:`args<guides/args_guide>`
+2. Project level env files and env config from :doc:`included<guides/include_guide>` files, which apply to all tasks
+3. Project level :ref:`env files<Loading external environment variables>` (in the order listed)
+4. Project level :ref:`env config<Global environment variables>`
+5. Parent task variables
+6. Task level :ref:`env files<envfile_option>`
+7. Output values from tasks configured as dependencies via the :doc:`uses<guides/composition_guide>` and :ref:`uses_env<Sourcing variables from dependency task output>` options
+8. Task level :ref:`env config<Setting task specific environment variables>`
+9. Variables set by task :doc:`args<guides/args_guide>`
 
 So a task's ``env`` can reference and override values from its ``uses`` and ``uses_env`` options, e.g. ``env = { URL = "s3://${_bucket}" }`` with ``uses = { _bucket = "get-bucket" }``.
 
