@@ -168,6 +168,12 @@ class RefTask(PoeTask):
         else:
             ref_invocation = (*invocation_tokens, *extra_args)
 
+        if self.spec.options.project:
+            await self._run_in_project(
+                self.spec.options.project, ref_invocation, context, env, task_state
+            )
+            return
+
         task_spec = self.ctx.specs.get(ref_invocation[0])
         task = task_spec.create_task(
             invocation=ref_invocation,
@@ -198,13 +204,56 @@ class RefTask(PoeTask):
             else:
                 raise
 
-    def _adopt_target_output(self, context: RunContext, target: PoeTask):
+    async def _run_in_project(
+        self,
+        project: str,
+        ref_invocation: tuple[str, ...],
+        context: RunContext,
+        env: TaskEnv,
+        task_state: PoeTaskRun,
+    ):
+        """
+        Run the referenced task in the project given by the project option, with that
+        project's own config, env and executor, in a child of the given context.
+        """
+        from .project_ref import build_target_context, resolve_project_path, run_target
+
+        project_path = resolve_project_path(project, env, self.ctx.config)
+        loaded_project = await context.get_loaded_project(project_path, self.ctx.io)
+        child_context = context.for_project(
+            loaded_project.config, env.get_subprocess_env_vars()
+        )
+
+        task_spec = loaded_project.specs.get(ref_invocation[0])
+        task = task_spec.create_task(
+            invocation=ref_invocation,
+            ctx=build_target_context(loaded_project, task_spec, self.ctx),
+            capture_stdout=self.capture_stdout,
+        )
+        await run_target(
+            task,
+            child_context,
+            task_state,
+            ignore_fail=self.spec.options.ignore_fail,
+            start_error=lambda error: error,
+        )
+        self._adopt_target_output(context, task, source_context=child_context)
+
+    def _adopt_target_output(
+        self,
+        context: RunContext,
+        target: PoeTask,
+        source_context: RunContext | None = None,
+    ) -> None:
         """
         If this ref is being run as a uses/uses_env dependency, its output is expected
-        under its own invocation but the target's executor saved it under the target's.
+        under its own invocation but the target's executor saved it under the target's,
+        in the source_context if the target ran in another project's context.
         """
         if self.capture_stdout is True:
-            context.adopt_task_output(self.invocation, context, target.invocation)
+            context.adopt_task_output(
+                self.invocation, source_context or context, target.invocation
+            )
 
     async def _run_task_graph(
         self,

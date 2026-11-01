@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .config import PoeConfig
     from .env.task_env import TaskEnv
     from .executor.base import PoeProcess
+    from .task.project_ref import LoadedProject
     from .ui import PoeUi
 
 
@@ -70,7 +71,14 @@ class RunContext:
         multistage: bool = False,
         cwd: Path | str | None = None,
         loop: asyncio.AbstractEventLoop | None = None,
+        *,
+        shutdown_manager: ShutdownManager | None = None,
+        loaded_projects: dict[Path, asyncio.Future[LoadedProject]] | None = None,
     ):
+        """
+        A shutdown_manager and loaded_projects cache may be given to share them with
+        another context, e.g. for running tasks from another project in the same run.
+        """
         from .env.task_env import TaskEnv
 
         self.config = config
@@ -81,7 +89,12 @@ class RunContext:
         self.exec_cache = {}
         self._task_outputs = TaskOutputCache()
         self._loop = loop or asyncio.get_event_loop()
-        self._shutdown_manager = ShutdownManager(self._loop, self.ui.io)
+        self._shutdown_manager = (
+            shutdown_manager
+            if shutdown_manager is not None
+            else ShutdownManager(self._loop, self.ui.io)
+        )
+        self._loaded_projects = loaded_projects if loaded_projects is not None else {}
 
         # Init root TaskEnv
         self.env = TaskEnv.create(
@@ -94,6 +107,49 @@ class RunContext:
                 config_dir=config_part.config_dir,
                 config_working_dir=config_part.cwd,
             )
+
+    def for_project(self, config: PoeConfig, base_env: Mapping[str, str]) -> RunContext:
+        """
+        Create a context for running tasks from another project within this run. It
+        shares this context's ui, shutdown handling and loaded projects, but has its own
+        env built from the given base_env and config, and its own caches.
+        """
+        assert self.ui
+        child = type(self)(
+            config=config,
+            ui=self.ui,
+            env=base_env,
+            dry=self.dry,
+            poe_active=self.poe_active,
+            multistage=self.multistage,
+            loop=self._loop,
+            shutdown_manager=self._shutdown_manager,
+            loaded_projects=self._loaded_projects,
+        )
+        child.enable_output_streaming = self.enable_output_streaming
+        return child
+
+    async def get_loaded_project(self, project_path: Path, io: PoeIO) -> LoadedProject:
+        """
+        Get the project with its config file at or in the given path, loading it on
+        first use in this run. Concurrent first uses of a project share one load, and
+        if loading fails then every use gets the same error.
+        """
+        from .config import PoeConfig
+        from .task import project_ref
+
+        config_file = PoeConfig.find_config_file(project_path)
+        if (loading := self._loaded_projects.get(config_file)) is None:
+            loading = self._loop.create_future()
+            self._loaded_projects[config_file] = loading
+            try:
+                loading.set_result(await project_ref.load_project(config_file, io))
+            except asyncio.CancelledError:
+                loading.cancel()
+                raise
+            except Exception as error:
+                loading.set_exception(error)
+        return await loading
 
     def track_async_task(
         self, coro: Any, *, name: str | None = None

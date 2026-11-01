@@ -1,0 +1,8 @@
+[tool.poe]
+executor = { type = "virtualenv", location = "missing_venv" }
+
+[tool.poe.tasks.hello]
+cmd = "poe_test_echo hello from bar"
+
+[tool.poe.tasks.broken]
+cmd = ""

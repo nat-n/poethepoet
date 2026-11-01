@@ -1,0 +1,51 @@
+[tool.poe.env]
+SHARED      = "from-root"
+ROOT_ONLY   = "root"
+OVERRIDABLE = "from-root"
+
+[tool.poe.tasks._prep]
+cmd = "poe_test_echo root-prep"
+
+[tool.poe.tasks.show-env]
+cmd = "poe_test_echo root show-env"
+
+[tool.poe.tasks.foo-env]
+ref     = "show-env"
+project = "packages/foo"
+env     = { REF_VAR = "from-ref" }
+
+[tool.poe.tasks.foo-env-file]
+ref     = "show-env"
+project = "packages/foo/pyproject.toml"
+
+[tool.poe.tasks.foo-env-abs]
+ref     = "show-env"
+project = "${POE_ROOT}/packages/foo"
+
+[tool.poe.tasks.run-in]
+args    = [{ name = "project_name", positional = true, required = true }]
+project = "packages/${project_name}"
+ref     = "echo-args"
+
+[tool.poe.tasks.foo-paths]
+ref     = "show-paths"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-graph]
+ref     = "graph"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-twice]
+sequence = ["foo-env", "foo-paths", "foo-env-file", "foo-env-abs"]
+
+[tool.poe.tasks.bar-hello]
+ref     = "hello"
+project = "packages/bar"
+
+[tool.poe.tasks.tasksfile-hello]
+ref     = "hello"
+project = "packages/tasksfile"
+
+[tool.poe.tasks.self-show-env]
+ref     = "show-env"
+project = "."

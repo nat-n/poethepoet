@@ -56,12 +56,21 @@ class TaskSpecFactory:
     __cache: dict[str, PoeTask.TaskSpec]
     config: PoeConfig
 
-    def __init__(self, config: PoeConfig):
+    def __init__(self, config: PoeConfig, validate_on_get: bool = False):
+        """
+        If validate_on_get is true then specs are loaded lazily, and each named spec is
+        validated the first time it is looked up, rather than all specs up front.
+        """
         self.__cache = {}
         self.config = config
+        self._validate_on_get = validate_on_get
+        self._validated: set[str] = set()
 
     def __contains__(self, other) -> bool:
-        return other in self.__cache
+        if other in self.__cache:
+            return True
+        # Lazily loaded specs are not all in the cache, so check the config too
+        return self._validate_on_get and self.config.lookup_task(other) is not None
 
     def get(
         self,
@@ -88,7 +97,17 @@ class TaskSpecFactory:
         if task_name not in self.__cache:
             self.load(task_name)
 
-        return self.__cache[task_name]
+        task_spec = self.__cache[task_name]
+        if self._validate_on_get and task_name not in self._validated:
+            # Mark as validated first so that recursive lookups terminate
+            self._validated.add(task_name)
+            try:
+                task_spec.validate(self.config, self)
+            except BaseException:
+                # A failed validation must not count as a pass for later lookups
+                self._validated.discard(task_name)
+                raise
+        return task_spec
 
     def create(
         self,
