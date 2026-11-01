@@ -18,7 +18,7 @@ An example use case for this might be opening some ssh tunnels in the background
 
 .. seealso::
 
-    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. When running on Windows, poe looks for ``sh`` on the PATH and then at the usual location of a |git_bash_link| installation, though this might not always be possible. If the ``bash`` interpreter is specified, poe prefers git bash at its usual location over a ``bash`` on the PATH, which may be the WSL launcher.
+    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. On Windows, poe looks for ``sh`` on the PATH and then in a |git_bash_link| installation, and for the ``bash`` interpreter it prefers git bash over a ``bash`` on the PATH, which may be the WSL launcher.
 
 
 Available task options
@@ -83,7 +83,7 @@ pwsh
 powershell
     Uses the newest version of powershell that can be found.
 python
-    Runs the content as Python code, using the python interpreter of the task's environment (e.g. the project virtualenv).
+    Uses the python interpreter of the task's environment (e.g. the project virtualenv).
 
 The default value can be changed with the global ``shell_interpreter`` option.
 

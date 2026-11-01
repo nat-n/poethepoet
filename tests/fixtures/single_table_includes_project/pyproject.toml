@@ -1,0 +1,11 @@
+[tool.poe]
+executor = "simple"
+
+[tool.poe.include]
+path = "extra_tasks.toml"
+
+[tool.poe.include_script]
+script = "generated_tasks:tasks"
+
+[tool.poe.tasks]
+local = "poe_test_echo local"

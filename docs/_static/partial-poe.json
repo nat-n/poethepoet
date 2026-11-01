@@ -849,6 +849,7 @@
     "include_script": {
       "anyOf": [
         { "type": "string" },
+        { "$ref": "#/definitions/include_script_item" },
         {
           "items": {
             "anyOf": [
@@ -1684,7 +1685,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes the content as a shell scripts inside a new shell interpreter.\nNormally the bash interpreter to used unless specified otherwise.",
+          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a POSIX shell (sh, bash, or zsh) is used.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",
@@ -1803,7 +1804,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes the content as a shell scripts inside a new shell interpreter.\nNormally the bash interpreter to used unless specified otherwise.",
+          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a POSIX shell (sh, bash, or zsh) is used.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",
@@ -2146,6 +2147,26 @@
       "anyOf": [
         { "type": "string" },
         {
+          "additionalProperties": false,
+          "properties": {
+            "cwd": {
+              "description": "Specify the working directory for resolving relative paths referenced by the\nincluded config.",
+              "pattern": "\\S",
+              "type": "string"
+            },
+            "path": {
+              "description": "The path to the toml, yaml, or json config file to include, relative to the\nparent config file.",
+              "type": "string"
+            },
+            "recursive": {
+              "description": "If true, includes declared in the included file will also be loaded.",
+              "type": "boolean"
+            }
+          },
+          "required": ["path"],
+          "type": "object"
+        },
+        {
           "items": {
             "anyOf": [
               { "type": "string" },
@@ -2158,7 +2179,7 @@
                     "type": "string"
                   },
                   "path": {
-                    "description": "The path to the toml or json config file to include, relative to the parent\nconfig file.",
+                    "description": "The path to the toml, yaml, or json config file to include, relative to the\nparent config file.",
                     "type": "string"
                   },
                   "recursive": {
@@ -2174,7 +2195,7 @@
           "type": "array"
         }
       ],
-      "description": "Specify one or more other toml or json files to load tasks from."
+      "description": "Specify one or more other toml, yaml, or json files to load tasks from."
     },
     "include_script": {
       "$ref": "#/definitions/include_script",
@@ -2223,7 +2244,7 @@
         }
       ],
       "default": "posix",
-      "description": "Change the default shell interpreter for executing shell tasks. Normally,\ntasks are executed using a posix shell, but this can be overridden here."
+      "description": "Change the default shell interpreter for executing shell tasks. Normally,\ntasks are executed using a POSIX shell, but this can be overridden here."
     },
     "tasks": {
       "$ref": "#/definitions/tasks_map",
@@ -2231,7 +2252,7 @@
     },
     "verbosity": {
       "default": 0,
-      "description": "Sets the default verbosity level for all commands. '-1' is quieter, '0' is\nthe default level, and '1' is more verbose. The command line arguments are\nincremental, with '--quiet' or '-q' decreasing verbosity, and '--verbose'\nor '-v' increasing it.",
+      "description": "Sets the default verbosity level for all commands, from '-2' (quietest) to\n'2' (most verbose), where '0' is the default level. The command line\narguments are incremental, with '--quiet' or '-q' decreasing verbosity,\nand '--verbose' or '-v' increasing it.",
       "enum": [-2, -1, 0, 1, 2],
       "type": "integer"
     }
