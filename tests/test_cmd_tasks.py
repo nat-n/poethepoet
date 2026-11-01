@@ -219,24 +219,45 @@ def test_cmd_task_with_cwd_option_pwd(run_poe_subproc, poe_project_path):
     assert result.stderr == ""
 
 
-def test_cmd_task_with_cwd_option_pwd_override(run_poe_subproc, poe_project_path):
+@pytest.mark.parametrize(
+    "preset_vars",
+    [("POE_PWD",), ("POE_CWD",), ("POE_PWD", "POE_CWD")],
+)
+def test_cmd_task_with_cwd_option_pwd_override(
+    run_poe_subproc, poe_project_path, preset_vars
+):
+    """
+    A POE_PWD inherited from the environment, e.g. from an outer poe process, is
+    kept, as is its legacy alias POE_CWD
+    """
+    path_parts = ["tests", "fixtures", "cwd_project", "subdir", "bar"]
     result = run_poe_subproc(
         "cwd_poe_pwd",
         project="cwd",
         env={
-            "POE_CWD": str(
-                poe_project_path.joinpath(
-                    "tests", "fixtures", "cwd_project", "subdir", "bar"
-                )
-            )
+            var_name: str(poe_project_path.joinpath(*path_parts))
+            for var_name in preset_vars
         },
         cwd=poe_project_path.joinpath(
             "tests", "fixtures", "cwd_project", "subdir", "foo"
         ),
     )
     assert result.capture == "Poe => poe_test_pwd\n"
-    path_parts = ["tests", "fixtures", "cwd_project", "subdir", "bar"]
     assert result.stdout == f"{poe_project_path.joinpath(*path_parts)}\n"
+    assert result.stderr == ""
+
+
+def test_inherited_poe_pwd_takes_precedence_over_poe_cwd(run_poe_subproc):
+    """
+    POE_PWD and POE_CWD are both set from an inherited POE_PWD, which wins over an
+    inherited POE_CWD
+    """
+    result = run_poe_subproc(
+        "show_poe_pwd",
+        project="cwd",
+        env={"POE_PWD": "/from_pwd", "POE_CWD": "/from_cwd"},
+    )
+    assert result.stdout == "/from_pwd /from_pwd\n"
     assert result.stderr == ""
 
 
