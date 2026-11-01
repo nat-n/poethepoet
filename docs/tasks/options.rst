@@ -35,7 +35,7 @@ The following options can be configured on your tasks and are not specific to an
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.
 
-**executor** : ``str`` | ``dict[str, Any]`` :ref:`📖<Configure the executor for a task>`
+**executor** : ``str`` | ``dict[str, str | bool | list[str]]`` :ref:`📖<Configure the executor for a task>`
   Specify executor type and/or configuration for this task.
 
 **verbosity** : ``int`` :ref:`📖<Configure task level verbosity>`

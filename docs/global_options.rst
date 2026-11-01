@@ -9,13 +9,13 @@ The following options can be set for all tasks in a project directly under ``[to
 **envfile** : ``str`` | ``list[str | dict]`` | ``dict[str, str | list[str]]`` :ref:`📖<Global environment variables>`
   Link to one or more files defining environment variables to be exposed to all tasks.
 
-**executor** : ``str`` | ``dict[str, Any]`` :ref:`📖<Configure the executor>`
+**executor** : ``str`` | ``dict[str, str | bool | list[str]]`` :ref:`📖<Configure the executor>`
   Specify the default executor type and/or configuration for all tasks in this project.
 
-**include** : ``str`` | ``dict[str, Any]`` | ``list[str | dict[str, Any]]`` :doc:`📖<../guides/include_guide>`
+**include** : ``str`` | ``dict`` | ``list[str | dict]`` :doc:`📖<../guides/include_guide>`
   Specify one or more other toml, yaml, or json files to load tasks from. By default includes are followed recursively, unless the ``recursive`` option is set to ``false`` for a specific include.
 
-**include_script** : ``str`` | ``dict[str, Any]`` | ``list[str | dict[str, Any]]`` :doc:`📖<../guides/packaged_tasks>`
+**include_script** : ``str`` | ``dict`` | ``list[str | dict]`` :doc:`📖<../guides/packaged_tasks>`
   Load dynamically generated tasks from one or more python functions. This is similar to the :doc:`include global option<../guides/include_guide>`, except instead of providing paths to config files, one can reference python functions that generate task config, using the same syntax as for :doc:`script tasks<../tasks/task_types/script>`.
 
 **shell_interpreter** : ``str`` | ``list[str]`` :ref:`📖<Change the default shell interpreter>`
