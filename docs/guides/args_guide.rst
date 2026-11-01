@@ -1,7 +1,7 @@
 Configuring CLI arguments
 -------------------------
 
-By default extra arguments passed to the poe CLI following the task name are appended to the end of a :doc:`cmd task<../tasks/task_types/cmd>`, or exposed as ``sys.argv`` in a :doc:`script task<../tasks/task_types/script>`, but will cause an error for other task types. Alternatively it is possible to define named arguments that a task should accept, which will be documented in the help for that task, and exposed to the task in a way that makes the most sense for that task type.
+By default any arguments passed to the poe CLI after the task name are *free arguments*, which are appended to a :doc:`cmd<../tasks/task_types/cmd>` or :doc:`ref<../tasks/task_types/ref>` task, or exposed as ``sys.argv`` in a :doc:`script task<../tasks/task_types/script>`. Every task can also access them via ``$POE_EXTRA_ARGS`` as described :ref:`below<forwarding-free-arguments-via-poe-extra-args>`. Alternatively it is possible to define named arguments that a task should accept, which will be documented in the help for that task, and exposed to the task in a way that makes the most sense for that task type.
 
 In general named arguments can take one of the following three forms:
 
@@ -14,7 +14,7 @@ In general named arguments can take one of the following three forms:
 - **flags** which are either provided or not, but don't accept a value like
    :bash:`poe task-name --flag`
 
-The value for the named argument is then accessible by name within the task content, also in most cases as an environment variable, and sometimes also as a native variable depending on the task type as detailed below.
+The value for the named argument is then accessible by name (with any dashes replaced by underscores) within the task content, also in most cases as an environment variable, and sometimes also as a native variable depending on the task type as detailed below.
 
 .. tip::
 
@@ -73,7 +73,7 @@ Items in the array can also be inline tables to allow for more configuration to 
 .. code-block:: toml
 
    [tool.poe.tasks.serve]
-   cmd = "myapp:run"
+   script = "myapp:run"
    args = [
      { name = "host", default = "localhost" },
      { name = "port", default = "9000" }
@@ -88,7 +88,7 @@ If you want to provide more configuration per argument then the following toml s
 .. code-block:: toml
 
     [tool.poe.tasks.serve]
-    cmd = "myapp:run"
+    script = "myapp:run"
     help = "Run the application server"
 
       [[tool.poe.tasks.serve.args]]
@@ -115,7 +115,7 @@ The following toml syntax structure achieves exactly the same result as the prev
 .. code-block:: toml
 
     [tool.poe.tasks.serve]
-    cmd = "myapp:run"
+    script = "myapp:run"
     help = "Run the application server"
 
       [tool.poe.tasks.serve.args.host]
@@ -136,7 +136,7 @@ Task argument options
 Named arguments support the following configuration options:
 
 - **default** : ``str`` | ``int`` | ``float`` | ``bool``
-   The value to use if the argument is not provided. This option has no significance if the ``required`` option is set to true.
+   The value to use if the argument is not provided. This option has no significance if the ``required`` option is set to true. If an argument with no default is not provided then any environment variable of the same name is unset for the task.
 
    For string values, environment variables can be referenced using the usual templating syntax as in the following example.
 
@@ -164,10 +164,10 @@ Named arguments support the following configuration options:
    The name of the argument. Only applicable when *args* is an array.
 
 - **options** : ``list[str]``
-   A list of options to accept for this argument, similar to `argparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then the name of the argument is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
+   A list of options to accept for this argument, similar to `argparse name or flags <https://docs.python.org/3/library/argparse.html#name-or-flags>`_. If not provided then ``--`` followed by the name of the argument, without any leading underscores, is used. You can use this option to expose a different name to the CLI vs the name that is used inside the task, or to specify long and short forms of the CLI option, e.g. ``["-h", "--help"]``.
 
-- **positional** : ``bool``
-   If set to true then the argument becomes a positional argument instead of an option argument. Note that positional arguments may not have ``type = "boolean"``.
+- **positional** : ``bool`` | ``str``
+   If set to true then the argument becomes a positional argument instead of an option argument. If set to a string then the argument is positional and the string is used as its name in help output. Note that positional arguments may not have ``type = "boolean"``.
 
 - **multiple** : ``bool`` | ``int``
    If the ``multiple`` option is set to true on a positional or option argument then that argument will accept multiple values.
@@ -190,9 +190,9 @@ Named arguments support the following configuration options:
 
    .. code-block:: toml
 
-   [tool.poe.tasks.save]
-   cmd  = "echo ${FILE_PATHS}"
-   args = [{ name = "FILE_PATHS", positional = true, multiple = true }]
+      [tool.poe.tasks.save]
+      cmd  = "echo ${FILE_PATHS}"
+      args = [{ name = "FILE_PATHS", positional = true, multiple = true }]
 
 - **choices** : ``list[str | int | float]``
    Constrain the accepted values for an argument to a fixed set. The choices are shown in task help output. For non-string argument types, the choices must be specified using the same type (e.g. ``integer`` choices should be numbers). This option is not compatible with ``type = "boolean"``.
@@ -229,11 +229,12 @@ You can document and enforce that only specific values should be accepted for an
     [tool.poe.tasks.share]
     help = "Share some personal information"
     cmd = "echo \"My favorite ice cream is ${flavor}\""
-   [[tool.poe.tasks.share.args]]
-   name = "flavor"
-   help = "Favorite ice cream"
-   positional = true
-   choices = ["chocolate", "pistachio", "vanilla"]
+
+      [[tool.poe.tasks.share.args]]
+      name = "flavor"
+      help = "Favorite ice cream"
+      positional = true
+      choices = ["chocolate", "pistachio", "vanilla"]
 
 The resulting help output includes the choices:
 
@@ -242,13 +243,13 @@ The resulting help output includes the choices:
     $ poe --help share
 
     Description:
-      Run Share some personal information
+      Share some personal information
 
     Usage:
-      poe [global options] check [named arguments] -- [free arguments]
+      poe [global options] share [named arguments] -- [free arguments]
 
     Named arguments:
-      flavor               Favorite ice cream [choices: 'chocolate', 'pistachio', 'vanilla']
+      flavor              Favorite ice cream [choices: 'chocolate', 'pistachio', 'vanilla']
 
 Arguments for cmd and shell tasks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -330,7 +331,7 @@ Notice that the argument is accessible like a python variable in the script subt
 Passing free arguments in addition to named arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If no args are defined for a cmd task then any cli arguments that are provided are simply appended to the command. If named arguments are defined then one can still provide additional free arguments to the command by separating them from the defined arguments with a double dash token :sh:`--`.
+If no args are defined for a cmd task then any cli arguments that are provided are simply appended to the command. If named arguments are defined then any arguments that don't match them result in an error, but one can still provide additional free arguments to the command by separating them from the defined arguments with a double dash token :sh:`--`.
 
 For example given a task like:
 
@@ -350,7 +351,7 @@ will result in poe parsing the target_dir cli option, but appending the :sh:`--f
 
 .. note::
 
-   Passing :sh:`--` in the arguments list to any other task type will simply result in any subsequent arguments being ignored.
+   The :sh:`--` token only has this meaning for tasks that declare named arguments. Otherwise all arguments are free arguments, including :sh:`--`, so given :toml:`lint.cmd = "ruff check"`, :sh:`poe lint -- --fix` runs ``ruff check -- --fix``.
 
 
 .. _forwarding-free-arguments-via-poe-extra-args:
@@ -358,7 +359,7 @@ will result in poe parsing the target_dir cli option, but appending the :sh:`--f
 Forwarding free arguments via ``$POE_EXTRA_ARGS``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When a task receives free arguments (i.e. arguments not matched by any named arg definition, or arguments passed after :sh:`--`), poe sets a special environment variable ``$POE_EXTRA_ARGS`` containing those arguments as a shell-quoted, space-delimited string. This variable is inherited by all subtasks and can be referenced explicitly wherever an environment variable can be used.
+When a task receives free arguments (i.e. all arguments if the task declares no named args, or otherwise the arguments passed after :sh:`--`), poe sets a special environment variable ``$POE_EXTRA_ARGS`` containing those arguments as a shell-quoted, space-delimited string. This variable is inherited by all subtasks and can be referenced explicitly wherever an environment variable can be used.
 
 ``$POE_EXTRA_ARGS`` can be used in any task type that supports environment variable expansion: :doc:`cmd<../tasks/task_types/cmd>`, :doc:`ref<../tasks/task_types/ref>`, :doc:`shell<../tasks/task_types/shell>`. In :doc:`script<../tasks/task_types/script>` and :doc:`expr<../tasks/task_types/expr>` tasks free arguments are also accessible as the ``_extra_args`` variable (a ``list[str]``).
 
@@ -366,7 +367,7 @@ When a task receives free arguments (i.e. arguments not matched by any named arg
 Sequence, parallel and switch tasks
 """"""""""""""""""""""""""""""""""""
 
-Free arguments passed to a :doc:`sequence<../tasks/task_types/sequence>`, :doc:`parallel<../tasks/task_types/parallel>`, or :doc:`switch<../tasks/task_types/switch>` task are not forwarded to subtasks automatically. By referencing ``$POE_EXTRA_ARGS`` in individual subtask definitions you can choose which subtasks in the group receive the extra arguments:
+Free arguments passed to a :doc:`sequence<../tasks/task_types/sequence>`, :doc:`parallel<../tasks/task_types/parallel>`, or :doc:`switch<../tasks/task_types/switch>` task are not appended to subtasks automatically. By referencing ``$POE_EXTRA_ARGS`` in individual subtask definitions you can choose which subtasks in the group receive the extra arguments:
 
 .. code-block:: toml
 
