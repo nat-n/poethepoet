@@ -122,3 +122,13 @@ def test_ref_project_loaded_once_per_run(run_poe, project_load_calls):
     result = run_poe("foo-twice", project="project_refs")
     assert result.code == 0
     assert len(project_load_calls) == 1
+
+
+@pytest.mark.parametrize("task", ["foo-nomatch-ok", "quiet-nomatch-ok"])
+def test_ref_project_ignore_fail_warns_at_ref_verbosity(run_poe, task):
+    # The warning belongs to the ref task, so a quiet target project doesn't hide it
+    result = run_poe(task, project="project_refs")
+    assert result.code == 0
+    assert "Warning: Glob pattern '*.nomatch' did not match any files" in (
+        result.capture
+    )

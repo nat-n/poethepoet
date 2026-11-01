@@ -49,3 +49,18 @@ project = "packages/tasksfile"
 [tool.poe.tasks.self-show-env]
 ref     = "show-env"
 project = "."
+
+[tool.poe.tasks.foo-fail-ok]
+ref         = "fail"
+project     = "packages/foo"
+ignore_fail = true
+
+[tool.poe.tasks.foo-nomatch-ok]
+ref         = "nomatch"
+project     = "packages/foo"
+ignore_fail = true
+
+[tool.poe.tasks.quiet-nomatch-ok]
+ref         = "nomatch"
+project     = "packages/quiet"
+ignore_fail = true

@@ -230,14 +230,28 @@ class RefTask(PoeTask):
             ctx=build_target_context(loaded_project, task_spec, self.ctx),
             capture_stdout=self.capture_stdout,
         )
-        await run_target(
-            task,
-            child_context,
-            task_state,
-            ignore_fail=self.spec.options.ignore_fail,
-            start_error=lambda error: error,
-        )
-        self._adopt_target_output(context, task, source_context=child_context)
+
+        start_failure: Exception | None = None
+
+        def start_error(error: Exception) -> Exception:
+            nonlocal start_failure
+            start_failure = error
+            return start_failure
+
+        try:
+            await run_target(task, child_context, task_state, start_error=start_error)
+        except ExecutionError as error:
+            # As for an in-project ref, ignore_fail covers failures of the target's
+            # run, but never a failure to start it
+            if error is start_failure or not self.spec.options.ignore_fail:
+                raise
+            self._warn_subtask_failure(context, error.msg)
+        else:
+            self._adopt_target_output(context, task, source_context=child_context)
+
+        if task.has_deps():
+            # As for the in-project graph path, finalize once the graph has run
+            await task_state.finalize()
 
     def _adopt_target_output(
         self,

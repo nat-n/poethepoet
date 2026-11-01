@@ -18,3 +18,10 @@ cmd = "poe_test_echo ${POE_ROOT} ${POE_CONF_DIR} ${POE_PWD}"
 [tool.poe.tasks.graph]
 cmd  = "poe_test_echo graph ${PREP}"
 uses = { PREP = "_prep" }
+
+[tool.poe.tasks.fail]
+cmd = "poe_test_fail 0 3"
+
+[tool.poe.tasks.nomatch]
+cmd        = "poe_test_echo *.nomatch"
+empty_glob = "fail"

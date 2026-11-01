@@ -94,23 +94,17 @@ async def run_target(
     context: RunContext,
     task_state: PoeTaskRun,
     *,
-    ignore_fail: bool,
     start_error: Callable[[Exception], Exception],
 ) -> None:
     """
     Run the target task, and its task graph if it has deps, in the given context,
     adding its runs to task_state as children. Errors raised while starting the target
-    are passed through start_error and the result raised instead.
+    are passed through start_error and the result raised instead, and failures of its
+    run are raised as they are. Without deps, task_state is finalized once the target
+    has started; with deps, the caller finalizes it once it has handled any failure.
     """
     if task.has_deps():
-        try:
-            await _run_target_graph(task, context, task_state, start_error)
-        except ExecutionError as error:
-            if ignore_fail:
-                task._warn_subtask_failure(context, error.msg)
-            else:
-                raise
-        await task_state.finalize()
+        await _run_target_graph(task, context, task_state, start_error)
         return
 
     try:
@@ -119,13 +113,7 @@ async def run_target(
         raise start_error(error)
     await task_state.add_child(target_run)
     await task_state.finalize()
-    try:
-        await target_run.wait(suppress_errors=False)
-    except ExecutionError as error:
-        if ignore_fail:
-            task._warn_subtask_failure(context, error.msg)
-        else:
-            raise
+    await target_run.wait(suppress_errors=False)
 
 
 async def _run_target_graph(
