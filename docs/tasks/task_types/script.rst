@@ -35,13 +35,13 @@ Update the PYTHONPATH to access scripts
 
 The module containing the function for the ``script`` task to call must be importable by the task subprocess running with whatever environment the PoeExecutor uses (e.g. the uv or poetry managed venv).
 
-This is fine if functions for poe tasks are defined alongside other source in a `./src/tasks` directory for instance, but sometimes it's convenient to place scripts for a project somewhere like ``./scripts/my_script.py``, which will not normally be on the python path. We can still call functions from the ``my_script`` module by setting the standard ``PYTHONPATH`` environment variable on the task like so:
+This is fine if functions for poe tasks are defined alongside other source in a `./src/tasks` directory for instance, but sometimes it's convenient to place scripts for a project somewhere like ``./scripts/my_script.py``, which will not normally be on the python path. We can still call functions from the ``my_script`` module by setting the standard ``PYTHONPATH`` environment variable on the task, using ``POE_ROOT`` so it works from any working directory:
 
 .. code-block:: toml
 
   [tool.poe.tasks.my-task]
   script = "my_script:my_function"
-  env.PYTHONPATH = "scripts"
+  env.PYTHONPATH = "${POE_ROOT}/scripts"
 
 
 Run a ``__main__`` module as a script task
@@ -56,7 +56,7 @@ For example, the following task will run the ``http.server`` module as a script 
   [tool.poe.tasks.serve]
   script = "http.server"
   args = [
-    { name = "port", options = ["-p"], default = "8000" },
+    { name = "port", positional = true, default = "8000" },
     { name = "bind", options = ["-b", "--bind"], default = "127.0.0.1" },
   ]
 
@@ -140,6 +140,6 @@ See :ref:`Arguments for script tasks` for more details and examples.
 Accessing free arguments via ``_extra_args``
 --------------------------------------------
 
-Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside script tasks as the ``_extra_args`` variable — a ``list[str]`` — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
+Free arguments are available inside script tasks as the ``_extra_args`` variable — a ``list[str]`` — in addition to the ``$POE_EXTRA_ARGS`` environment variable.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.

@@ -18,7 +18,7 @@ An example use case for this might be opening some ssh tunnels in the background
 
 .. seealso::
 
-    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. When running on Windows, poe will first look for |git_bash_link| at the usual location, and otherwise attempt to find it via the PATH, though this might not always be possible.
+    By default poe attempts to find a POSIX shell (sh, bash, or zsh in that order) on the system and uses that. On Windows, poe looks for ``sh`` on the PATH and then in a |git_bash_link| installation, and for the ``bash`` interpreter it prefers git bash over a ``bash`` on the PATH, which may be the WSL launcher.
 
 
 Available task options
@@ -82,6 +82,8 @@ pwsh
     Uses powershell version 6 or higher.
 powershell
     Uses the newest version of powershell that can be found.
+python
+    Uses the python interpreter of the task's environment (e.g. the project virtualenv).
 
 The default value can be changed with the global ``shell_interpreter`` option.
 
@@ -118,6 +120,6 @@ See the :doc:`args guide<../../guides/args_guide>` for full details on configuri
 Accessing free arguments via ``$POE_EXTRA_ARGS``
 ------------------------------------------------
 
-Free arguments (arguments not matched by any named arg definition, or arguments passed after :sh:`--`) are available inside shell task scripts as the ``$POE_EXTRA_ARGS`` environment variable. The value is a shell-quoted, space-delimited string, ready to be expanded inline.
+Free arguments are available inside shell task scripts as the ``$POE_EXTRA_ARGS`` environment variable. The value is a shell-quoted, space-delimited string, ready to be expanded inline.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.

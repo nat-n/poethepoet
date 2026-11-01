@@ -21,12 +21,11 @@ For example:
   [tool.poe.tasks.build-image]
   cmd = "docker build"
 
-Imported files may also specify environment variables via
-``tool.poe.envfile`` or entries for ``tool.poe.env``.
+Imported files may also specify environment variables via ``tool.poe.envfile`` or entries for ``tool.poe.env``. These apply to all tasks, not just those from the included file. On conflicts, later includes override earlier ones, and the main config file overrides all includes.
 
 .. warning::
 
-  If a referenced file is missing then poe ignores it without error, though failure to read the contents will result in failure.
+  If a referenced file is missing then poe prints a warning and skips it, but a file that can't be loaded causes an error.
 
 Disabling recursion
 -------------------
@@ -64,7 +63,7 @@ It's also possible to include tasks from multiple files by providing a list like
 
 Files are loaded in the order specified. If an item already exists then the included value is ignored.
 
-Included files can themselves include other files, and these will be loaded before the parent file is loaded. Therefore if there are multiple includes then they are loaded depth first in the order specified.
+Included files can themselves include other files, with paths resolved relative to the including file. These are loaded depth first, each after the file that includes it, so the including file's tasks take precedence.
 
 
 Setting a working directory for included tasks
@@ -93,7 +92,7 @@ You can still specify that an envfile referenced within an included file should 
 Including files relative to the git repo
 ----------------------------------------
 
-Normally include paths are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the file to include relative to the root of the git repository, which can be done by referenceing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
+Normally include paths in the main config file are resolved relative to the project root (that is the parent directory of the pyproject.toml). However when working with a monorepo it can also be useful to specify the file to include relative to the root of the git repository, which can be done by referencing the ``POE_GIT_DIR`` or ``POE_GIT_ROOT`` variables like so:
 
 .. code-block:: toml
 
