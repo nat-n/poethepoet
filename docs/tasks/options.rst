@@ -35,7 +35,7 @@ The following options can be configured on your tasks and are not specific to an
 **capture_stdout** : ``str`` :ref:`📖<Redirect task output to a file>`
   Causes the task output to be redirected to a file with the given path.
 
-**executor** : ``str`` | ``dict[str, str]`` :ref:`📖<Configure the executor for a task>`
+**executor** : ``str`` | ``dict[str, Any]`` :ref:`📖<Configure the executor for a task>`
   Specify executor type and/or configuration for this task.
 
 **verbosity** : ``int`` :ref:`📖<Configure task level verbosity>`
@@ -97,6 +97,10 @@ It is also possible to reference existing environment variables when defining a 
     [tool.poe.tasks.serve]
     cmd = "flask run"
     env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
+
+Only the braced form ``${VAR}`` is expanded in ``env`` values; a bare ``$VAR`` is left as is.
+
+A task's own args are not available when templating its ``env`` or ``envfile``, though args of a parent task are, as in the ``_serve`` example above.
 
 
 .. _envfile_option:
@@ -165,7 +169,7 @@ In this example, the npx executable is executed inside the :sh:`./client` subdir
 
 The ``cwd`` option also accepts absolute paths and resolves environment variables in the format ``${VAR_NAME}``, including the :ref:`default and alternate value operators <parameter-expansion-operators>`.
 
-Poe provides its own :sh:`$POE_PWD` variable that is by default set to the directory, from which poe was executed; this may be overridden by setting the variable to a different value beforehand. Using :sh:`$POE_PWD`, a task's working directory may be set to the one from which it was executed like so:
+Poe provides its own :sh:`$POE_PWD` variable that is set to the directory from which poe was executed. Using :sh:`$POE_PWD`, a task's working directory may be set to the one from which it was executed like so:
 
 .. code-block:: toml
 
@@ -280,7 +284,7 @@ You can specify the verbosity level for a task by providing the :toml:`verbosity
 
 This overrides the project level verbosity setting, which defaults to 0. The verbosity level can be set to an integer from -2 (least verbose) to 2 (most verbose).
 
-Passing the ``-v`` or ``-q`` global options (before the task name on the command line) will override increment or decrement all verbosity levels.
+Passing the ``-v`` or ``-q`` global options (before the task name on the command line) will increment or decrement all verbosity levels.
 
 
 Verbosity levels
@@ -307,7 +311,7 @@ Defining tasks that run via exec instead of a subprocess
 
 Normally tasks are executed as subprocesses of the ``poe`` executable. This makes it possible for poe to run multiple tasks, for example within a sequence task or task graph.
 
-However in certain situations it can be desirable to define a task that is instead executed within the same process via an *exec* call. :doc:`task_types/cmd` and :doc:`task_types/script` tasks can be configured to work this way using the :toml:`use_exec` option like so:
+However in certain situations it can be desirable to define a task that is instead executed within the same process via an *exec* call. :doc:`task_types/cmd`, :doc:`task_types/script`, and :doc:`task_types/expr` tasks can be configured to work this way using the :toml:`use_exec` option like so:
 
 .. code-block:: toml
 

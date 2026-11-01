@@ -65,8 +65,8 @@ IncludeScriptItem.__optional_keys__ = frozenset({"cwd", "executor"})
 class IncludeItem(TypedDict):
     path: str
     """
-    The path to the toml or json config file to include, relative to the parent
-    config file.
+    The path to the toml, yaml or json config file to include, relative to the
+    parent config file.
     """
 
     cwd: Annotated[str, Metadata(pattern=r"\S")]
@@ -308,7 +308,7 @@ class ProjectConfig(ConfigPartition):
 
         include: str | Sequence[str | IncludeItem] = ()
         """
-        Specify one or more other toml or json files to load tasks from.
+        Specify one or more other toml, yaml or json files to load tasks from.
         """
 
         include_script: str | Sequence[str | IncludeScriptItem] = ()
@@ -336,10 +336,10 @@ class ProjectConfig(ConfigPartition):
 
         verbosity: Literal[-2, -1, 0, 1, 2] = 0
         """
-        Sets the default verbosity level for all commands. '-1' is quieter, '0' is
-        the default level, and '1' is more verbose. The command line arguments are
-        incremental, with '--quiet' or '-q' decreasing verbosity, and '--verbose'
-        or '-v' increasing it.
+        Sets the default verbosity level for all commands, from '-2' (quietest) to
+        '2' (most verbose), where '0' is the default level. The command line
+        arguments are incremental, with '--quiet' or '-q' decreasing verbosity,
+        and '--verbose' or '-v' increasing it.
         """
 
         tasks: Mapping[str, Any] = EmptyDict
@@ -506,15 +506,16 @@ class IncludedConfig(ConfigPartition):
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
         """
-        A map of environment variables to be set for all tasks in the included
-        config.
+        A map of environment variables to be set for all tasks, not just those
+        from the included config. Later includes override earlier ones, and the
+        main config overrides all includes.
         """
 
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
-        Provide one or more env files to be loaded before running tasks from this
-        included config. If an array is provided, files will be loaded in the
-        given order.
+        Provide one or more env files to be loaded before running any task, not
+        just those from the included config. If an array is
+        provided, files will be loaded in the given order.
         """
 
         tasks: Mapping[str, Any] = EmptyDict
@@ -530,7 +531,7 @@ class IncludedConfig(ConfigPartition):
 
         include: str | Sequence[str | IncludeItem] = ()
         """
-        Specify one or more other toml or json files to load tasks from.
+        Specify one or more other toml, yaml or json files to load tasks from.
         """
 
         @classmethod
