@@ -380,3 +380,16 @@ def test_ref_to_task_with_deps_fails_like_the_task_itself(
         assert result.stdout == "OK\n"
         if expected_error:
             assert expected_error in result.capture
+
+
+@pytest.mark.parametrize("task", ["use-ref-output", "use-ref-ref-output"])
+def test_uses_output_of_ref_task(run_poe, task):
+    result = run_poe(task, project="refs")
+    assert result.code == 0
+    assert result.stdout == "got hi\n"
+
+
+def test_uses_env_from_ref_task(run_poe):
+    result = run_poe("use-ref-env", project="refs")
+    assert result.code == 0
+    assert result.stdout == "hello\n"

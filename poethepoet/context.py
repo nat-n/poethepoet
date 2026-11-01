@@ -222,6 +222,20 @@ class RunContext:
     ) -> str:
         return self._task_outputs.get_task_output(invocation, collapse_whitespace)
 
+    def adopt_task_output(
+        self,
+        invocation: tuple[str, ...],
+        source_context: RunContext,
+        source_invocation: tuple[str, ...],
+    ) -> None:
+        """
+        Copy the raw captured output stored under source_invocation in source_context
+        to invocation in this context. Does nothing if the source has no output.
+        """
+        self._task_outputs.adopt_task_output(
+            invocation, source_context._task_outputs, source_invocation
+        )
+
     def get_executor(
         self,
         invocation: tuple[str, ...],
@@ -423,6 +437,23 @@ class TaskOutputCache:
         command interpolation works in bash. Pass collapse_whitespace=False to
         retrieve the raw output unmodified, e.g. for parsing as an env file.
         """
+        if (output := self._captured_stdout.get(invocation)) is None:
+            raise ExecutionError(
+                f"No captured output available for task {invocation[0]!r}"
+            )
         if not collapse_whitespace:
-            return self._captured_stdout[invocation]
-        return re.sub(r"\s+", " ", self._captured_stdout[invocation].strip("\r\n"))
+            return output
+        return re.sub(r"\s+", " ", output.strip("\r\n"))
+
+    def adopt_task_output(
+        self,
+        invocation: tuple[str, ...],
+        source: TaskOutputCache,
+        source_invocation: tuple[str, ...],
+    ) -> None:
+        """
+        Copy the raw output stored under source_invocation in the source cache to
+        invocation in this cache. Does nothing if the source has no output.
+        """
+        if (output := source._captured_stdout.get(source_invocation)) is not None:
+            self._captured_stdout[invocation] = output

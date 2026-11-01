@@ -153,6 +153,7 @@ class RefTask(PoeTask):
                     self._warn_subtask_failure(context, error.msg)
                 else:
                     raise
+            self._adopt_target_output(context, task)
             await task_state.finalize()
             return
 
@@ -161,11 +162,20 @@ class RefTask(PoeTask):
         await task_state.finalize()
         try:
             await child_task.wait(suppress_errors=False)
+            self._adopt_target_output(context, task)
         except ExecutionError as error:
             if ignore_fail:
                 self._warn_subtask_failure(context, error.msg)
             else:
                 raise
+
+    def _adopt_target_output(self, context: RunContext, target: PoeTask):
+        """
+        If this ref is being run as a uses/uses_env dependency, its output is expected
+        under its own invocation but the target's executor saved it under the target's.
+        """
+        if self.capture_stdout is True:
+            context.adopt_task_output(self.invocation, context, target.invocation)
 
     async def _run_task_graph(
         self,
@@ -188,6 +198,7 @@ class RefTask(PoeTask):
                     # Errors from child task runs are otherwise suppressed, so they
                     # must be raised here to fail this task
                     await sink_task_run.wait(suppress_errors=False)
+                    self._adopt_target_output(context, task)
                     return
 
                 dep_task = await stage_task.run(context=context)
