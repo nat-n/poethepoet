@@ -119,6 +119,17 @@
         "Response restructures so that `_kms-key` gets the stack name through its own `uses` (nesting), rather than from deploy's sibling entry",
         "Response does not suggest calling `poe` recursively or replacing the tasks with a shell script"
       ]
+    },
+    {
+      "id": 11,
+      "fixture": "monorepo",
+      "prompt": "Add a task to the root project that runs the check task in every package under packages/.",
+      "expected_output": "Agent adds tasks to the root pyproject.toml that use ref tasks with the project option to run each package's own check task, composed with sequence or parallel (inline { ref, project } items, or a generic task taking the package as an arg and referenced by string refs). It does not shell out to poe -C.",
+      "expectations": [
+        "Response defines tasks using `ref` with a `project` option",
+        "Response does not use `poe -C` (or `poe --directory`) inside a `cmd` or `shell` task",
+        "Response composes the per-package refs with `sequence` or `parallel`, either as inline `{ ref, project }` items or as string refs to a generic task with a project arg"
+      ]
     }
   ]
 }
