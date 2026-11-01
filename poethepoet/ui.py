@@ -432,7 +432,9 @@ class PoeUi:
 
     def print_error(self, error: PoeException | ExecutionError):
         error_lines = error.msg.split("\n")
-        if error.cause:
+        if isinstance(error, ExecutionError):
+            error_lines.extend(f"From: {cause}" for cause in error.causes)
+        elif error.cause:
             error_lines.append(f"From: {error.cause}")
         if error.__cause__ and not isinstance(error.__cause__, SystemExit):
             error_lines.append(f"From: {error.__cause__!r}")

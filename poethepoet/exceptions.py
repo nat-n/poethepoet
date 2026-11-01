@@ -55,11 +55,24 @@ class ConfigValidationError(PoeException):
 
 class ExecutionError(RuntimeError):
     cause: str | None
+    causes: tuple[str, ...]
 
     def __init__(self, msg, *args):
         self.msg = msg
-        self.cause = args[0].args[0] if args else None
+        self.causes = self._collect_causes(args[0]) if args else ()
+        self.cause = self.causes[0] if self.causes else None
         self.args = (msg, *args)
+
+    @staticmethod
+    def _collect_causes(cause: BaseException) -> tuple[str, ...]:
+        """
+        Flatten an explicit cause into messages ordered from outermost to innermost.
+        """
+        if isinstance(cause, ExecutionError):
+            return (cause.msg, *cause.causes)
+        if isinstance(cause, PoeException):
+            return (cause.msg, *((cause.cause,) if cause.cause else ()))
+        return (cause.args[0],)
 
 
 class PoePluginException(PoeException):
