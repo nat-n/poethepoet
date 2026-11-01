@@ -73,3 +73,81 @@ def test_negate_assertion_passes_for_labelled_didactic_answer():
         "Response does not recommend wrapping the reference in quotes as a fix",
     )
     assert result["passed"] is True
+
+
+# Eval 11 expectations, verbatim from evals.json.
+EXP_PROJECT_REF = "Response defines tasks using `ref` with a `project` option"
+EXP_NO_POE_C = (
+    "Response does not use `poe -C` (or `poe --directory`) "
+    "inside a `cmd` or `shell` task"
+)
+EXP_COMPOSED = (
+    "Response composes the per-package refs with `sequence` or `parallel`, "
+    "either as inline `{ ref, project }` items or as string refs to a generic "
+    "task with a project arg"
+)
+
+REF_PROJECT_CONFIG = (
+    "# --- pyproject.toml ---\n"
+    "[tool.poe.tasks.check-all]\n"
+    "sequence = [\n"
+    '  { ref = "check", project = "packages/api" },\n'
+    '  { ref = "check", project = "packages/web" },\n'
+    "]\n"
+)
+
+
+def test_composition_passes_for_sequence_only_answer():
+    result = _check("Use a sequence of refs.", EXP_COMPOSED)
+    assert result["passed"] is True
+
+
+def test_composition_passes_for_parallel_only_answer():
+    result = _check("Use a parallel block of refs.", EXP_COMPOSED)
+    assert result["passed"] is True
+
+
+def test_composition_fails_for_answer_with_neither():
+    result = _check("Loop over the packages in a script.", EXP_COMPOSED)
+    assert result["passed"] is False
+
+
+def test_poe_c_in_written_shell_task_fails():
+    text = (
+        "I added a check-all task.\n"
+        "# --- pyproject.toml ---\n"
+        "[tool.poe.tasks.check-all]\n"
+        'shell = """\n'
+        "for pkg in packages/*/; do\n"
+        '  poe -C "$pkg" check\n'
+        "done\n"
+        '"""\n'
+    )
+    result = _check(text, EXP_NO_POE_C)
+    assert result["passed"] is False
+
+
+def test_poe_c_in_prose_only_passes():
+    text = (
+        "Instead of `poe -C packages/api check`, use ref with project.\n"
+        + REF_PROJECT_CONFIG
+    )
+    result = _check(text, EXP_NO_POE_C)
+    assert result["passed"] is True
+
+
+def test_poe_directory_in_written_config_fails():
+    text = '# --- pyproject.toml ---\n[tool.poe.tasks]\nx.cmd = "poe --directory a b"\n'
+    result = _check(text, EXP_NO_POE_C)
+    assert result["passed"] is False
+
+
+def test_project_option_present_passes():
+    result = _check(REF_PROJECT_CONFIG, EXP_PROJECT_REF)
+    assert result["passed"] is True
+
+
+def test_project_option_missing_fails():
+    text = '# --- pyproject.toml ---\n[tool.poe.tasks]\ncheck-all.sequence = ["a"]\n'
+    result = _check(text, EXP_PROJECT_REF)
+    assert result["passed"] is False
