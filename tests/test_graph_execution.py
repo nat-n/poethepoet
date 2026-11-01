@@ -598,3 +598,95 @@ def test_uses_does_not_wait_for_output_held_open_by_a_detached_process(
     assert time.monotonic() - start_time < 20
     assert result.code == 0, result.capture
     assert result.stdout == "value=started\n"
+
+
+@pytest.fixture
+def env_precedence_project(temp_pyproject):
+    """
+    A project where each task sets the same variable from two sources, to pin the
+    precedence of a task's env: parent env < envfile < uses_env/uses < env < args
+    """
+    project_path = temp_pyproject("""
+        [tool.poe]
+        env = { BUCKET = "from_global" }
+
+        [tool.poe.tasks._bucket]
+        cmd = "poe_test_echo from_uses"
+
+        [tool.poe.tasks._bucket_env]
+        cmd = "poe_test_echo_lines BUCKET=from_uses_env"
+
+        [tool.poe.tasks.global_vs_uses]
+        cmd  = "poe_test_echo ${BUCKET}"
+        uses = { BUCKET = "_bucket" }
+
+        [tool.poe.tasks.envfile_vs_uses]
+        cmd     = "poe_test_echo ${BUCKET}"
+        envfile = "task.env"
+        uses    = { BUCKET = "_bucket" }
+
+        [tool.poe.tasks.envfile_vs_uses_env]
+        cmd      = "poe_test_echo ${BUCKET}"
+        envfile  = "task.env"
+        uses_env = "_bucket_env"
+
+        [tool.poe.tasks.env_vs_uses]
+        cmd  = "poe_test_echo ${BUCKET}"
+        env  = { BUCKET = "from_env" }
+        uses = { BUCKET = "_bucket" }
+
+        [tool.poe.tasks.env_default_vs_uses]
+        cmd  = "poe_test_echo ${BUCKET}"
+        env  = { BUCKET.default = "from_env_default" }
+        uses = { BUCKET = "_bucket" }
+
+        [tool.poe.tasks.env_templates_uses]
+        cmd  = "poe_test_echo ${URL}"
+        env  = { URL = "s3://${_bucket}" }
+        uses = { _bucket = "_bucket" }
+
+        [tool.poe.tasks.arg_vs_env]
+        cmd  = "poe_test_echo ${BUCKET}"
+        env  = { BUCKET = "from_env" }
+        args = [{ name = "BUCKET", options = ["--bucket"] }]
+
+        [tool.poe.tasks.envfile_vs_uses_in_sequence]
+        envfile  = "task.env"
+        uses     = { BUCKET = "_bucket" }
+        sequence = [{ cmd = "poe_test_echo ${BUCKET}" }]
+        """)
+    (project_path / "task.env").write_text("BUCKET=from_envfile\n")
+    return project_path
+
+
+@pytest.mark.parametrize(
+    ("task_name", "expected"),
+    [
+        ("global_vs_uses", "from_uses"),
+        ("envfile_vs_uses", "from_uses"),
+        ("envfile_vs_uses_env", "from_uses_env"),
+        ("env_vs_uses", "from_env"),
+        ("env_default_vs_uses", "from_uses"),
+        ("env_templates_uses", "s3://from_uses"),
+        ("envfile_vs_uses_in_sequence", "from_uses"),
+    ],
+)
+def test_task_env_precedence(run_poe, env_precedence_project, task_name, expected):
+    """
+    A task's uses and uses_env values override its envfile and the parent env, and
+    its env overrides (and can template) them in turn
+    """
+    result = run_poe(task_name, cwd=env_precedence_project)
+    assert result.code == 0, result.capture
+    assert result.stdout == f"{expected}\n"
+    assert result.stderr == ""
+
+
+def test_task_args_override_task_env(run_poe, env_precedence_project):
+    """
+    A task's args override its env
+    """
+    result = run_poe("arg_vs_env", "--bucket", "from_arg", cwd=env_precedence_project)
+    assert result.code == 0, result.capture
+    assert result.stdout == "from_arg\n"
+    assert result.stderr == ""

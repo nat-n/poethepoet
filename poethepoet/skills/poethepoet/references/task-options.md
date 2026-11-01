@@ -69,7 +69,7 @@ env.API_URL = "http://localhost:${PORT:-8080}"
 env = { _token = "${SECRET_TOKEN}" }  # use as ${_token} in cmd, invisible to shell tasks
 ```
 
-**Precedence** (lowest to highest): host env → global envfile → global env → task envfile → task env → `uses_env` / `uses` outputs → task args
+**Precedence** (lowest to highest): host env → global envfile → global env → parent task → task envfile → `uses_env` / `uses` outputs → task env → task args. So `env` can reference and override `uses` values, e.g. `env = { URL = "s3://${_bucket}" }` with `uses = { _bucket = "get-bucket" }`
 
 ---
 

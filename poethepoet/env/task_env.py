@@ -246,28 +246,50 @@ class TaskEnv(Mapping[str, str]):
         If a value is provided as a mapping from `"default"` to `str` then it is only
         used if the associated key doesn't already have a value.
         """
+        self.apply_envfiles(envfile_option, config_dir, config_working_dir)
+        self.apply_env_vars(config_env, config_dir)
+
+    def apply_envfiles(
+        self,
+        envfile_option: str | EnvfileOption | Sequence[str | EnvfileOption],
+        config_dir: Path,
+        config_working_dir: Path,
+    ):
+        """
+        Load the env vars from the given envfile option, resolving envfile paths
+        relative to config_working_dir.
+        """
+        if not envfile_option:
+            return
 
         scoped_vars = self.clone()
         scoped_vars.set("POE_CONF_DIR", str(config_dir))
 
-        if envfile_option:
-            for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
-                if git_var := _find_unset_git_var(envfile_path, scoped_vars):
-                    self._envfiles.skip_outside_git_repo(
-                        envfile_path, git_var, optional=is_optional
-                    )
-                    continue
-                resolved_envfile = config_working_dir.joinpath(
-                    parse_template(envfile_path, require_braces=True).resolve(
-                        scoped_vars
-                    )
+        for envfile_path, is_optional in _iter_envfile_paths(envfile_option):
+            if git_var := _find_unset_git_var(envfile_path, scoped_vars):
+                self._envfiles.skip_outside_git_repo(
+                    envfile_path, git_var, optional=is_optional
                 )
-                self.update(
-                    self._envfiles.get(
-                        resolved_envfile, optional=is_optional, base_env=self
-                    )
+                continue
+            resolved_envfile = config_working_dir.joinpath(
+                parse_template(envfile_path, require_braces=True).resolve(scoped_vars)
+            )
+            self.update(
+                self._envfiles.get(
+                    resolved_envfile, optional=is_optional, base_env=self
                 )
+            )
 
+    def apply_env_vars(
+        self,
+        config_env: Mapping[str, str | EnvDefault],
+        config_dir: Path,
+    ):
+        """
+        Set the env vars from the given env option, templating each value with the
+        vars already set. A value given as a mapping from `"default"` to `str` is
+        only used if the associated key doesn't already have a value.
+        """
         scoped_vars = self.clone()
         scoped_vars.set("POE_CONF_DIR", str(config_dir))
 
