@@ -90,15 +90,13 @@ The previous example can be modified to only set the `PORT` variable if it is no
 Templating environment variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It is also possible to reference existing environment variables when defining a new environment variable for a task, including using the :ref:`default and alternate value operators <parameter-expansion-operators>`. This may be useful for aliasing or extending a variable already defined in the host environment, globally in the config, or in a referenced envfile. In the following example the value from $TF_VAR_service_port on the host environment is also made available as $FLASK_RUN_PORT within the task.
+It is also possible to reference existing environment variables as ``${VAR}`` (a bare ``$VAR`` is left as is) when defining a new environment variable for a task, including using the :ref:`default and alternate value operators <parameter-expansion-operators>`. This may be useful for aliasing or extending a variable already defined in the host environment, globally in the config, or in a referenced envfile. In the following example the value from $TF_VAR_service_port on the host environment is also made available as $FLASK_RUN_PORT within the task.
 
 .. code-block:: toml
 
     [tool.poe.tasks.serve]
     cmd = "flask run"
     env = { FLASK_RUN_PORT = "${TF_VAR_service_port}" }
-
-Only the braced form ``${VAR}`` is expanded in ``env`` values; a bare ``$VAR`` is left as is.
 
 A task's own args are not available when templating its ``env`` or ``envfile``, though args of a parent task are, as in the ``_serve`` example above.
 

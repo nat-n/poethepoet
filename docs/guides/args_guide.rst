@@ -136,7 +136,7 @@ Task argument options
 Named arguments support the following configuration options:
 
 - **default** : ``str`` | ``int`` | ``float`` | ``bool``
-   The value to use if the argument is not provided. This option has no significance if the ``required`` option is set to true. If an argument with no default is not provided then any environment variable of the same name is unset for the task.
+   The value to use if the argument is not provided. This option has no significance if the ``required`` option is set to true. If an argument with no default is omitted, any environment variable of the same name is unset for the task.
 
    For string values, environment variables can be referenced using the usual templating syntax as in the following example.
 
@@ -351,7 +351,7 @@ will result in poe parsing the target_dir cli option, but appending the :sh:`--f
 
 .. note::
 
-   The :sh:`--` token only has this meaning for tasks that declare named arguments. Otherwise all arguments are free arguments, including :sh:`--`, so given :toml:`lint.cmd = "ruff check"`, :sh:`poe lint -- --fix` runs ``ruff check -- --fix``.
+   Without named arguments, :sh:`--` is itself a free argument, so given :toml:`lint.cmd = "ruff check"`, :sh:`poe lint -- --fix` runs ``ruff check -- --fix``.
 
 
 .. _forwarding-free-arguments-via-poe-extra-args:

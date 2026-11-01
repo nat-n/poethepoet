@@ -21,12 +21,11 @@ For example:
   [tool.poe.tasks.build-image]
   cmd = "docker build"
 
-Imported files may also specify environment variables via
-``tool.poe.envfile`` or entries for ``tool.poe.env``. These apply to all tasks, not just those from the included file. On conflicts, later includes override earlier ones, and the main config file overrides all includes.
+Imported files may also specify environment variables via ``tool.poe.envfile`` or entries for ``tool.poe.env``. These apply to all tasks, not just those from the included file. On conflicts, later includes override earlier ones, and the main config file overrides all includes.
 
 .. warning::
 
-  If a referenced file is missing then poe prints a warning and ignores it, though failure to read the contents will result in failure.
+  If a referenced file is missing then poe prints a warning and skips it, but a file that can't be loaded causes an error.
 
 Disabling recursion
 -------------------

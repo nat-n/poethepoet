@@ -35,7 +35,7 @@ Update the PYTHONPATH to access scripts
 
 The module containing the function for the ``script`` task to call must be importable by the task subprocess running with whatever environment the PoeExecutor uses (e.g. the uv or poetry managed venv).
 
-This is fine if functions for poe tasks are defined alongside other source in a `./src/tasks` directory for instance, but sometimes it's convenient to place scripts for a project somewhere like ``./scripts/my_script.py``, which will not normally be on the python path. We can still call functions from the ``my_script`` module by setting the standard ``PYTHONPATH`` environment variable on the task, relative to ``POE_ROOT`` so that it doesn't depend on the task's working directory:
+This is fine if functions for poe tasks are defined alongside other source in a `./src/tasks` directory for instance, but sometimes it's convenient to place scripts for a project somewhere like ``./scripts/my_script.py``, which will not normally be on the python path. We can still call functions from the ``my_script`` module by setting the standard ``PYTHONPATH`` environment variable on the task, using ``POE_ROOT`` so it works from any working directory:
 
 .. code-block:: toml
 

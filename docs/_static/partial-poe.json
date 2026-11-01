@@ -1684,7 +1684,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a posix shell (sh, bash or zsh) is used.",
+          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a POSIX shell (sh, bash, or zsh) is used.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",
@@ -1803,7 +1803,7 @@
           "description": "Specify the shell interpreter that this task should execute with, or a list\nof interpreters in order of preference."
         },
         "shell": {
-          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a posix shell (sh, bash or zsh) is used.",
+          "description": "Executes the content as a shell script inside a new shell interpreter.\nBy default a POSIX shell (sh, bash, or zsh) is used.",
           "examples": [
             "echo 'Hello World'",
             "cat foo.txt | grep bar",
@@ -2158,7 +2158,7 @@
                     "type": "string"
                   },
                   "path": {
-                    "description": "The path to the toml, yaml or json config file to include, relative to the\nparent config file.",
+                    "description": "The path to the toml, yaml, or json config file to include, relative to the\nparent config file.",
                     "type": "string"
                   },
                   "recursive": {
@@ -2174,7 +2174,7 @@
           "type": "array"
         }
       ],
-      "description": "Specify one or more other toml, yaml or json files to load tasks from."
+      "description": "Specify one or more other toml, yaml, or json files to load tasks from."
     },
     "include_script": {
       "$ref": "#/definitions/include_script",
@@ -2223,7 +2223,7 @@
         }
       ],
       "default": "posix",
-      "description": "Change the default shell interpreter for executing shell tasks. Normally,\ntasks are executed using a posix shell, but this can be overridden here."
+      "description": "Change the default shell interpreter for executing shell tasks. Normally,\ntasks are executed using a POSIX shell, but this can be overridden here."
     },
     "tasks": {
       "$ref": "#/definitions/tasks_map",

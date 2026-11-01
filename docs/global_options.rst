@@ -266,7 +266,7 @@ If the virtualenv location is a relative path then it is resolved relative to th
 Change the default shell interpreter
 ------------------------------------
 
-Normally shell tasks are executed using a posix shell by default (see section for shell
+Normally shell tasks are executed using a POSIX shell by default (see section for shell
 tasks above). This default can be overridden to something else by setting the
 *shell_interpreter* global option. In the following example we configure all shell tasks
 to use *fish* by default.

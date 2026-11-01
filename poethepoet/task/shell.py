@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class ShellTask(PoeTask):
     """
     Executes the content as a shell script inside a new shell interpreter.
-    By default a posix shell (sh, bash or zsh) is used.
+    By default a POSIX shell (sh, bash, or zsh) is used.
     """
 
     content: str
