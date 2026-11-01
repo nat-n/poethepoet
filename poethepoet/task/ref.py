@@ -3,7 +3,7 @@ from __future__ import annotations
 import shlex
 from typing import TYPE_CHECKING, Any
 
-from ..exceptions import ConfigValidationError, ExecutionError
+from ..exceptions import ConfigValidationError, ExecutionError, PoeException
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
@@ -216,27 +216,64 @@ class RefTask(PoeTask):
         Run the referenced task in the project given by the project option, with that
         project's own config, env and executor, in a child of the given context.
         """
-        from .project_ref import build_target_context, resolve_project_path, run_target
-
-        project_path = resolve_project_path(project, env, self.ctx.config)
-        loaded_project = await context.get_loaded_project(project_path, self.ctx.io)
-        child_context = context.for_project(
-            loaded_project.config, env.get_subprocess_env_vars()
+        from .project_ref import (
+            build_target_context,
+            fill_project_option,
+            resolve_project_path,
+            run_target,
         )
 
-        task_spec = loaded_project.specs.get(ref_invocation[0])
-        task = task_spec.create_task(
-            invocation=ref_invocation,
-            ctx=build_target_context(loaded_project, task_spec, self.ctx),
-            capture_stdout=self.capture_stdout,
-        )
-
+        target_name = ref_invocation[0]
+        project_display = project
         start_failure: Exception | None = None
 
         def start_error(error: Exception) -> Exception:
+            """
+            Stack the given failure to start the target under a headline naming this
+            task and the target's project, and record it so that ignore_fail can't
+            swallow it.
+            """
             nonlocal start_failure
-            start_failure = error
+            start_failure = ExecutionError(
+                f"Task {self.name!r} could not run {target_name!r}"
+                f" in project {project_display}",
+                error,
+            )
             return start_failure
+
+        try:
+            project_display = fill_project_option(project, env)
+            project_path = resolve_project_path(project_display, self.ctx.config)
+            loaded_project = await context.get_loaded_project(project_path, self.ctx.io)
+            child_context = context.for_project(
+                loaded_project.config, env.get_subprocess_env_vars()
+            )
+
+            if target_name not in loaded_project.config.get_tasks():
+                raise ExecutionError(f"Unrecognized task {target_name!r}")
+
+            task_spec = loaded_project.specs.get(target_name)
+            if task_spec.options.get("use_exec", False):
+                raise ExecutionError(
+                    "Illegal reference to task with "
+                    f"'use_exec' set to true: {target_name!r}"
+                )
+            if self.capture_stdout and not task_spec.accepts_option(
+                "capture_stdout", loaded_project.specs
+            ):
+                raise ExecutionError(
+                    "Option 'capture_stdout' cannot be set "
+                    f"on a ref task referencing {task_spec.task_type.__key__!r} task: "
+                    f"{target_name!r}"
+                )
+
+            task = task_spec.create_task(
+                invocation=ref_invocation,
+                ctx=build_target_context(loaded_project, task_spec, self.ctx),
+                capture_stdout=self.capture_stdout,
+            )
+        except (PoeException, ExecutionError) as error:
+            raise start_error(error)
 
         try:
             await run_target(task, child_context, task_state, start_error=start_error)

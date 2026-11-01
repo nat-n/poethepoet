@@ -132,3 +132,94 @@ def test_ref_project_ignore_fail_warns_at_ref_verbosity(run_poe, task):
     assert "Warning: Glob pattern '*.nomatch' did not match any files" in (
         result.capture
     )
+
+
+@pytest.mark.parametrize(
+    ("task", "target", "project_display", "cause_lines"),
+    [
+        (
+            "missing-project",
+            "show-env",
+            "packages/nope",
+            ["No poe configuration found from location"],
+        ),
+        (
+            "unset-var-project",
+            "show-env",
+            "packages/",
+            ["No poe configuration found from location"],
+        ),
+        ("foo-typo", "chekc", "packages/foo", ["Unrecognized task 'chekc'"]),
+        ("bar-broken", "broken", "packages/bar", ["Task has no content"]),
+        (
+            "foo-exec",
+            "exec-task",
+            "packages/foo",
+            ["Illegal reference to task with 'use_exec' set to true: 'exec-task'"],
+        ),
+        (
+            "badconf-task",
+            "anything",
+            "packages/badconf",
+            ["Unrecognized option 'oops_invalid'"],
+        ),
+        (
+            "foo-bad-args",
+            "strict-args",
+            "packages/foo",
+            [
+                "Invalid arguments for task 'strict-args'",
+                "unrecognized arguments: --bogus",
+            ],
+        ),
+        (
+            "foo-bad-args-ignored",
+            "strict-args",
+            "packages/foo",
+            [
+                "Invalid arguments for task 'strict-args'",
+                "unrecognized arguments: --bogus",
+            ],
+        ),
+    ],
+)
+def test_ref_project_errors_are_stacked(
+    run_poe, task, target, project_display, cause_lines
+):
+    # ignore_fail never swallows a failure to start the target
+    result = run_poe(task, project="project_refs")
+    assert result.code == 1
+    assert (
+        f"Error: Task {task!r} could not run {target!r} in project {project_display}\n"
+        in result.capture
+    )
+    for line in cause_lines:
+        assert f"     | From: {line}" in result.capture
+    assert "Usage:" not in result.capture  # no help dump
+    assert "usage:" not in result.capture  # no argparse usage for the child
+
+
+def test_ref_project_capture_stdout_unsupported_by_target(run_poe, temp_pyproject):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.capture]
+        ref = "seq"
+        project = "sub"
+        capture_stdout = "out.txt"
+        """)
+    (project_path / "sub").mkdir()
+    (project_path / "sub" / "pyproject.toml").write_text("""
+        [tool.poe.tasks.seq]
+        sequence = ["seq-step"]
+
+        [tool.poe.tasks.seq-step]
+        cmd = "poe_test_echo step"
+        """)
+    result = run_poe("capture", cwd=project_path)
+    assert result.code == 1
+    assert "Error: Task 'capture' could not run 'seq' in project sub\n" in (
+        result.capture
+    )
+    assert (
+        "     | From: Option 'capture_stdout' cannot be set on a ref task "
+        "referencing 'sequence' task: 'seq'"
+    ) in result.capture

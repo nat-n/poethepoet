@@ -25,3 +25,11 @@ cmd = "poe_test_fail 0 3"
 [tool.poe.tasks.nomatch]
 cmd        = "poe_test_echo *.nomatch"
 empty_glob = "fail"
+
+[tool.poe.tasks.strict-args]
+cmd  = "poe_test_echo mode=${mode}"
+args = ["mode"]
+
+[tool.poe.tasks.exec-task]
+cmd      = "poe_test_echo exec"
+use_exec = true

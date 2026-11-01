@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from contextlib import redirect_stderr
+from io import StringIO
 from typing import IO, TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
@@ -499,11 +500,27 @@ class PoeTaskArgs:
 
         return result
 
-    def parse(self, args: Sequence[str], env: TaskEnv, program_name: str):
-        error_stream = (
-            self._io.error_output
-            if self._io.verbosity > -3
-            else cast("IO[str]", os.devnull)
+    def parse(
+        self,
+        args: Sequence[str],
+        env: TaskEnv,
+        program_name: str,
+        *,
+        quiet_usage: bool = False,
+    ):
+        """
+        Parse the given args. If quiet_usage is true then argparse's usage text is not
+        printed, and its error message is attached to the raised ExecutionError as a
+        cause instead.
+        """
+        quiet_stream = StringIO() if quiet_usage else None
+        error_stream: IO[str] = (
+            quiet_stream
+            if quiet_stream is not None
+            else cast(
+                "IO[str]",
+                self._io.error_output if self._io.verbosity > -3 else os.devnull,
+            )
         )
         parser = self.build_parser(env, program_name)
         with redirect_stderr(error_stream):
@@ -512,6 +529,13 @@ class PoeTaskArgs:
                 self._validate_exact_count(parsed_args, parser)
                 self._normalize_multiple_defaults(parsed_args, env)
             except SystemExit as error:
+                if quiet_stream is not None and (
+                    message := self._extract_argparse_error(quiet_stream.getvalue())
+                ):
+                    raise ExecutionError(
+                        f"Invalid arguments for task {self._task_name!r}",
+                        ExecutionError(message),
+                    ) from error
                 raise ExecutionError(
                     f"Invalid arguments for task {self._task_name!r}"
                 ) from error
@@ -533,6 +557,17 @@ class PoeTaskArgs:
         }
         # args named with dash case are converted to snake case before being exposed
         return {name.replace("-", "_"): value for name, value in parsed_args.items()}
+
+    @staticmethod
+    def _extract_argparse_error(output: str) -> str | None:
+        """
+        Pick the error message out of argparse's output, which is the text after
+        ": error: " on its last non-empty line.
+        """
+        lines = [line for line in output.splitlines() if line.strip()]
+        if lines and (marker_index := lines[-1].find(": error: ")) >= 0:
+            return lines[-1][marker_index + len(": error: ") :]
+        return None
 
     def _validate_exact_count(self, parsed_args: dict, parser: ArgumentParser) -> None:
         """

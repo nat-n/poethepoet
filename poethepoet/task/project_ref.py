@@ -38,16 +38,21 @@ class LoadedProject:
     specs: TaskSpecFactory
 
 
-def resolve_project_path(
-    project_template: str, env: TaskEnv, config: PoeConfig
-) -> Path:
+def fill_project_option(project_template: str, env: TaskEnv) -> str:
     """
-    Resolve the value of a project option to a path, the same way as the cwd option:
-    after templating, a relative path is relative to the project root.
+    Fill the template of a project option from the given env.
     """
     from ..helpers.parse import parse_template
 
-    project_path = Path(env.fill_template(parse_template(project_template)))
+    return env.fill_template(parse_template(project_template))
+
+
+def resolve_project_path(project_option: str, config: PoeConfig) -> Path:
+    """
+    Resolve the filled value of a project option to a path, the same way as the cwd
+    option: a relative path is relative to the project root.
+    """
+    project_path = Path(project_option)
     if not project_path.is_absolute():
         project_path = config.project_dir.joinpath(project_path).resolve()
     return project_path
@@ -86,6 +91,7 @@ def build_target_context(
             ),
         ),
         ui=parent_ctx.ui,
+        quiet_arg_usage=True,
     )
 
 

@@ -64,3 +64,36 @@ ignore_fail = true
 ref         = "nomatch"
 project     = "packages/quiet"
 ignore_fail = true
+
+[tool.poe.tasks.missing-project]
+ref     = "show-env"
+project = "packages/nope"
+
+[tool.poe.tasks.unset-var-project]
+ref     = "show-env"
+project = "packages/${NOPE}"
+
+[tool.poe.tasks.foo-typo]
+ref     = "chekc"
+project = "packages/foo"
+
+[tool.poe.tasks.bar-broken]
+ref     = "broken"
+project = "packages/bar"
+
+[tool.poe.tasks.foo-bad-args]
+ref     = "strict-args --bogus"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-bad-args-ignored]
+ref         = "strict-args --bogus"
+project     = "packages/foo"
+ignore_fail = true
+
+[tool.poe.tasks.foo-exec]
+ref     = "exec-task"
+project = "packages/foo"
+
+[tool.poe.tasks.badconf-task]
+ref     = "anything"
+project = "packages/badconf"

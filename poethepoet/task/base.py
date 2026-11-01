@@ -178,6 +178,12 @@ class TaskContext(NamedTuple):
     io: PoeIO
     ui: PoeUi
     specs: TaskSpecFactory
+    quiet_arg_usage: bool = False
+    """
+    If true, a failure to parse this task's arguments reports argparse's message as a
+    cause of the error, instead of printing its usage text. This applies only to the
+    direct target of a cross-project ref, so it is not inherited by child tasks.
+    """
 
     @property
     def verbosity(self) -> int:
@@ -646,7 +652,12 @@ class PoeTask(metaclass=MetaPoeTask):
                     extra_args = ()
 
                 self._parsed_args = (
-                    task_args.parse(option_args, env, self.ctx.ui.program_name),
+                    task_args.parse(
+                        option_args,
+                        env,
+                        self.ctx.ui.program_name,
+                        quiet_usage=self.ctx.quiet_arg_usage,
+                    ),
                     extra_args,
                 )
 
