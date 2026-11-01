@@ -216,11 +216,16 @@ def test_poe_debug_shows_app_level_tracebacks(temp_pyproject, run_poe_subproc):
         [tool.poe]
         verbosity = -1
 
-        [tool.poe.tasks.missing-binary]
-        cmd = "poe_test_nonexistent_binary"
+        [tool.poe.tasks.greet]
+        cmd = "poe_test_echo hello"
         """)
     result = run_poe_subproc(
-        "-q", "missing-binary", cwd=project_path, env={"POE_DEBUG": "1"}
+        "-q",
+        "-e",
+        "no-such-executor",
+        "greet",
+        cwd=project_path,
+        env={"POE_DEBUG": "1"},
     )
     assert result.code == 1
     assert "Traceback" in result.capture
