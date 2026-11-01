@@ -48,8 +48,7 @@ Internal Environment variables
 The following environment variables are used by Poe the Poet internally, and can be accessed from within configuration and tasks.
 
 - ``POE_ROOT``: path to the parent directory of the main tasks file (e.g. pyproject.toml).
-- ``POE_PWD``: the current working directory of the poe process (unless overridden programmatically).
-- ``POE_CWD``: same as ``POE_PWD``. If ``POE_CWD`` is already set when poe starts, for example because poe is run from within a poe task, then poe sets neither variable and keeps any values it inherited.
+- ``POE_PWD``: the current working directory of the poe process. If ``POE_PWD`` is already set when poe starts, for example because poe is run from within a poe task, then the inherited value is kept.
 - ``POE_CONF_DIR``: the path to the parent directory of the config file that defines the running task or the :ref:`cwd option<Setting a working directory for included tasks>` set when including that config.
 - ``POE_ACTIVE``: identifies the active PoeExecutor, so that Poe the Poet can tell when it is running recursively.
 - ``POE_VERBOSITY``: reflects the current verbosity level. Normally 0 is the default, 1 means more verbose and -1 means less.

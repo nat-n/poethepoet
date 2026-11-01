@@ -75,9 +75,11 @@ class TaskEnv(Mapping[str, str]):
 
         base_env["POE_ROOT"] = str(config.project_dir)
 
-        if "POE_CWD" not in base_env:
-            base_env["POE_CWD"] = cwd
-            base_env["POE_PWD"] = cwd
+        # Inherit POE_PWD if set, e.g. when poe runs within a poe task. POE_CWD is an
+        # undocumented alias kept for backwards compatibility.
+        pwd = base_env.get("POE_PWD") or base_env.get("POE_CWD") or cwd
+        base_env["POE_PWD"] = pwd
+        base_env["POE_CWD"] = pwd
 
         if io:
             base_env["POE_VERBOSITY"] = str(io.verbosity)
