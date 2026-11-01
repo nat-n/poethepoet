@@ -205,3 +205,27 @@ def test_switch_task_with_verbosity(generate_pyproject, run_poe):
     )
     assert result.capture == ""
     assert result.stdout == "task verbosity up\n"
+
+
+def test_poe_debug_shows_app_level_tracebacks(temp_pyproject, run_poe_subproc):
+    """
+    POE_DEBUG=1 pins poe's own verbosity to the debug level, so an app-level error
+    comes with its traceback, even if the project or the CLI sets a lower verbosity
+    """
+    project_path = temp_pyproject("""
+        [tool.poe]
+        verbosity = -1
+
+        [tool.poe.tasks.greet]
+        cmd = "poe_test_echo hello"
+        """)
+    result = run_poe_subproc(
+        "-q",
+        "-e",
+        "no-such-executor",
+        "greet",
+        cwd=project_path,
+        env={"POE_DEBUG": "1"},
+    )
+    assert result.code == 1
+    assert "Traceback" in result.capture

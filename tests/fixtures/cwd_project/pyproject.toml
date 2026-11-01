@@ -11,7 +11,10 @@ cwd = "./subdir/${BAR_ENV}"
 
 [tool.poe.tasks.cwd_poe_pwd]
 cmd = "poe_test_pwd"
-cwd = "${POE_CWD}"
+cwd = "${POE_PWD}"
+
+[tool.poe.tasks.show_poe_pwd]
+cmd = "poe_test_echo ${POE_PWD} ${POE_CWD}"
 
 [tool.poe.tasks.cwd_arg]
 cmd = "poe_test_pwd"
