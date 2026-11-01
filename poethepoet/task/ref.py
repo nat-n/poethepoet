@@ -7,10 +7,13 @@ from ..exceptions import ConfigValidationError, ExecutionError
 from .base import PoeTask, TaskContext
 
 if TYPE_CHECKING:
+    from typing import Annotated
+
     from ..config import PoeConfig
     from ..context import RunContext
     from ..env.task_env import TaskEnv
     from ..executor.task_run import PoeTaskRun
+    from ..options.annotations import Metadata
     from .base import TaskSpecFactory
 
 
@@ -28,6 +31,14 @@ class RefTask(PoeTask):
         will return exit code 0.
         """
 
+        project: Annotated[str, Metadata(pattern=r"\S")] | None = None
+        """
+        Path to another poe project (a directory or a config file) in which to look up
+        and run the referenced task, with that project's own config, env and executor.
+        Relative to the project root unless absolute. Environment variables can be used
+        in the format ${VAR_NAME}.
+        """
+
         def validate(self):
             """
             Validation rules that don't require any extra context go here.
@@ -35,6 +46,11 @@ class RefTask(PoeTask):
             if self.executor:
                 raise ConfigValidationError(
                     "Option 'executor' cannot be set on a ref task"
+                )
+            if self.project and self.cwd:
+                raise ConfigValidationError(
+                    "'project' and 'cwd' options"
+                    " cannot be both provided on the same task."
                 )
 
     @classmethod
@@ -47,6 +63,11 @@ class RefTask(PoeTask):
         """
         fragment = super().__schema_fragment__(ctx)
         fragment["properties"].pop("executor", None)
+        fragment["if"] = {"required": ["project"]}
+        # Encode the forbidden property as `{cwd: false}` rather than
+        # `{not: {required: [cwd]}}`: semantically identical, but the later fails
+        # ajv's strictRequired in schemastore
+        fragment["then"] = {"properties": {"cwd": False}}
         return fragment
 
     class TaskSpec(PoeTask.TaskSpec):
@@ -57,6 +78,11 @@ class RefTask(PoeTask):
             """
             Perform validations on this TaskSpec that apply to a specific task type
             """
+
+            if self.options.project:
+                # The target lives in another project that is not loaded here, so
+                # these checks are deferred to run time
+                return
 
             task_name_ref = shlex.split(self.content)[0]
 
@@ -92,6 +118,10 @@ class RefTask(PoeTask):
             captured only if its target can. Other options use the default.
             """
             if option_name == "capture_stdout":
+                if self.options.project:
+                    # Target is in another project and unknown at load time
+                    return True
+
                 _seen = _seen or set()
                 if id(self) in _seen:
                     # Part of a ref cycle; let graph-build cycle detection report it
