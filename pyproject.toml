@@ -60,7 +60,7 @@ pytest               = "^9.0.1"
 pytest-asyncio       = "^1.3.0"
 pytest-cov           = "^7.0.0"
 pytest-rerunfailures = "^16.7"
-virtualenv           = "^21.14.7"
+virtualenv           = "^21.15.2"
 
 # Sphinx 9 requires python >=3.12, so the docs toolchain is only installable there
 [tool.poetry.group.docs.dependencies]
