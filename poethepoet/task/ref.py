@@ -153,7 +153,6 @@ class RefTask(PoeTask):
                     self._warn_subtask_failure(context, error.msg)
                 else:
                     raise
-            self._adopt_target_output(context, task)
             await task_state.finalize()
             return
 
