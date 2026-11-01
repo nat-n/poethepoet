@@ -33,3 +33,9 @@ args = ["mode"]
 [tool.poe.tasks.exec-task]
 cmd      = "poe_test_echo exec"
 use_exec = true
+
+[tool.poe.tasks.hello]
+cmd = "poe_test_echo hello from foo"
+
+[tool.poe.tasks.emit-env]
+cmd = "poe_test_echo FOO_TOKEN=abc123"

@@ -97,3 +97,51 @@ project = "packages/foo"
 [tool.poe.tasks.badconf-task]
 ref     = "anything"
 project = "packages/badconf"
+
+[tool.poe.tasks.foo-hello]
+ref     = "hello"
+project = "packages/foo"
+
+[tool.poe.tasks.use-foo-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "foo-hello" }
+
+[tool.poe.tasks.foo-emit-env]
+ref     = "emit-env"
+project = "packages/foo"
+
+[tool.poe.tasks.use-foo-env]
+cmd      = "poe_test_echo token=${FOO_TOKEN}"
+uses_env = ["foo-emit-env"]
+
+[tool.poe.tasks.foo-hello-file]
+ref            = "hello"
+project        = "packages/foo"
+capture_stdout = "hello.txt"
+
+[tool.poe.tasks.para]
+parallel = ["foo-hello", "show-env"]
+
+[tool.poe.tasks.para-same-project]
+parallel = ["foo-hello", "foo-env"]
+
+[tool.poe.tasks.quiet-hello]
+ref     = "hello"
+project = "packages/quiet"
+
+[tool.poe.tasks.quiet-between]
+sequence = ["show-env", "quiet-hello", "show-env"]
+
+[tool.poe.tasks.hello-all-inline]
+sequence = [
+  { ref = "hello", project = "packages/foo" },
+  { ref = "hello", project = "packages/tasksfile" },
+]
+
+[tool.poe.tasks.hello-in]
+args    = [{ name = "package", positional = true, required = true }]
+project = "packages/${package}"
+ref     = "hello"
+
+[tool.poe.tasks.hello-all-generic]
+sequence = ["hello-in foo", "hello-in tasksfile"]

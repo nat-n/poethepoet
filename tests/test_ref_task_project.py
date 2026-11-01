@@ -223,3 +223,69 @@ def test_ref_project_capture_stdout_unsupported_by_target(run_poe, temp_pyprojec
         "     | From: Option 'capture_stdout' cannot be set on a ref task "
         "referencing 'sequence' task: 'seq'"
     ) in result.capture
+
+
+def test_ref_project_as_uses_source(run_poe):
+    result = run_poe("use-foo-output", project="project_refs")
+    assert result.code == 0
+    assert result.stdout == "got hello from foo\n"
+
+
+def test_ref_project_as_uses_env_source(run_poe):
+    result = run_poe("use-foo-env", project="project_refs")
+    assert result.stdout == "token=abc123\n"
+
+
+def test_ref_project_capture_stdout_file(run_poe, root_dir):
+    output_file = root_dir / "packages" / "foo" / "hello.txt"
+    output_file.unlink(missing_ok=True)
+    try:
+        result = run_poe("foo-hello-file", project="project_refs")
+        assert result.code == 0
+        assert output_file.read_text() == "hello from foo\n"
+    finally:
+        output_file.unlink(missing_ok=True)
+
+
+def test_ref_project_ignore_fail(run_poe):
+    assert run_poe("foo-fail-ok", project="project_refs").code == 0
+
+
+def test_ref_project_dry_run(run_poe):
+    result = run_poe("-d", "foo-env", project="project_refs")
+    assert result.code == 0
+    assert result.capture == (
+        "Poe => poe_test_echo SHARED=from-foo OVERRIDABLE=from-root "
+        "ROOT_ONLY=root FOO_ONLY=foo REF_VAR=from-ref\n"
+    )
+    assert result.stdout == ""
+
+
+def test_ref_project_inside_parallel_keeps_prefixes(run_poe):
+    result = run_poe("para", project="project_refs")
+    assert result.code == 0
+    # As for a same-project ref, the prefix names the task the ref resolves to
+    assert sorted(result.stdout.splitlines()) == [
+        "hello | hello from foo",
+        "show-env | root show-env",
+    ]
+
+
+def test_ref_project_concurrent_first_load_once(run_poe, project_load_calls):
+    result = run_poe("para-same-project", project="project_refs")
+    assert result.code == 0
+    assert len(project_load_calls) == 1
+
+
+@pytest.mark.parametrize("task", ["hello-all-inline", "hello-all-generic"])
+def test_ref_project_fan_out_shapes(run_poe, task):
+    result = run_poe(task, project="project_refs")
+    assert result.code == 0
+    assert result.stdout == "hello from foo\nhello from tasksfile\n"
+
+
+def test_ref_project_child_verbosity_is_scoped(run_poe):
+    result = run_poe("quiet-between", project="project_refs")
+    assert result.stdout == "root show-env\nquiet hello\nroot show-env\n"
+    assert result.capture.count("Poe => poe_test_echo root show-env") == 2
+    assert "Poe => poe_test_echo quiet hello" not in result.capture
