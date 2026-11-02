@@ -209,8 +209,8 @@ def test_switch_task_with_verbosity(generate_pyproject, run_poe):
 
 def test_poe_debug_shows_app_level_tracebacks(temp_pyproject, run_poe_subproc):
     """
-    POE_DEBUG=1 pins poe's own verbosity to the debug level, so an app-level error
-    comes with its traceback, even if the project or the CLI sets a lower verbosity
+    With POE_DEBUG=1 an app-level error comes with its traceback, even if the
+    project config sets a lower verbosity
     """
     project_path = temp_pyproject("""
         [tool.poe]
@@ -228,4 +228,18 @@ def test_poe_debug_shows_app_level_tracebacks(temp_pyproject, run_poe_subproc):
         env={"POE_DEBUG": "1"},
     )
     assert result.code == 1
+    assert "Cannot instantiate unknown executor 'no-such-executor'" in result.capture
     assert "Traceback" in result.capture
+
+
+def test_poe_debug_pins_verbosity(monkeypatch):
+    """
+    With POE_DEBUG set, configuring a baseline or offset doesn't lower the debug
+    verbosity, as the app and its plugin API do
+    """
+    import poethepoet.io
+
+    monkeypatch.setattr(poethepoet.io, "POE_DEBUG", True)
+    io = poethepoet.io.PoeIO()
+    io.configure(baseline=-1, offset=-2)
+    assert io.verbosity == 3
