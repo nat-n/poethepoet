@@ -130,6 +130,9 @@ class PoeIO:
         may_override = not dont_override
         if ansi_enabled is not None and may_override:
             self.style.ansi_enabled = ansi_enabled
+        if POE_DEBUG:
+            # POE_DEBUG pins the verbosity to the debug level set in __init__
+            return
         if baseline is not None and (self._baseline_verbosity is None or may_override):
             self._baseline_verbosity = baseline
         if offset is not None and (self._verbosity_offset is None or may_override):

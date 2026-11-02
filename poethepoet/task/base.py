@@ -330,17 +330,19 @@ class PoeTask(metaclass=MetaPoeTask):
             """
 
             result = parent_env.clone(io=io)
-
-            # Include env vars contributed by this task's uses and uses_env options
-            if dependency_values:
-                result.update(dependency_values)
-
             result.set("POE_CONF_DIR", str(self.source.config_dir))
-            result.apply_env_config(
+
+            # Precedence, lowest first: parent env, envfile, uses/uses_env, env
+            result.apply_envfiles(
                 envfile_option=self.options.get("envfile"),
-                config_env=self.options.get("env"),
                 config_dir=self.source.config_dir,
                 config_working_dir=self.source.cwd,
+            )
+            if dependency_values:
+                result.update(dependency_values)
+            result.apply_env_vars(
+                config_env=self.options.get("env"),
+                config_dir=self.source.config_dir,
             )
 
             return result

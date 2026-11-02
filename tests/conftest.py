@@ -142,7 +142,13 @@ def build_poe_test_env(env: Mapping[str, str] | None = None) -> dict[str, str]:
     """
 
     base_env = dict(os.environ)
-    for var_name in ("VIRTUAL_ENV", "POE_CWD", "POE_PWD", "POE_PROJECT_DIR"):
+    for var_name in (
+        "VIRTUAL_ENV",
+        "POE_CWD",
+        "POE_PWD",
+        "POE_PROJECT_DIR",
+        "POE_DEBUG",
+    ):
         base_env.pop(var_name, None)
 
     xdg_cache = PROJECT_ROOT / "tests" / "temp" / "xdg_cache"
