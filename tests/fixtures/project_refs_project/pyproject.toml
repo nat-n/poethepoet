@@ -14,6 +14,11 @@ ref     = "show-env"
 project = "packages/foo"
 env     = { REF_VAR = "from-ref" }
 
+[tool.poe.tasks.foo-env-ref-shared]
+ref     = "show-env"
+project = "packages/foo"
+env     = { SHARED = "from-ref", OVERRIDABLE = "from-ref" }
+
 [tool.poe.tasks.foo-env-file]
 ref     = "show-env"
 project = "packages/foo/pyproject.toml"

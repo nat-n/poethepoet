@@ -68,6 +68,15 @@ def test_ref_project_env_layering(run_poe):
     )
 
 
+def test_ref_project_child_config_env_beats_ref_env(run_poe):
+    # Only a child config var declared with a default can be set by the ref's own env
+    result = run_poe("foo-env-ref-shared", project="project_refs")
+    assert result.code == 0
+    assert result.stdout == (
+        "SHARED=from-foo OVERRIDABLE=from-ref ROOT_ONLY=root FOO_ONLY=foo REF_VAR=\n"
+    )
+
+
 @pytest.mark.parametrize("task", ["foo-env-file", "foo-env-abs"])
 def test_ref_project_file_and_absolute_paths(run_poe, task):
     result = run_poe(task, project="project_refs")
