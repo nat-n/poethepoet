@@ -34,6 +34,11 @@ class ConfigValidationError(PoeException):
     index: int | None
     global_option: str | None
     filename: str | None
+    task_name_is_final: bool
+    """
+    Set if task_name names a task that was found invalid when another task looked it
+    up, so that the looking up task doesn't replace it with its own name.
+    """
 
     def __init__(
         self,
@@ -51,6 +56,25 @@ class ConfigValidationError(PoeException):
         self.index = index
         self.global_option = global_option
         self.filename = filename
+        self.task_name_is_final = False
+
+    def describe_context(self) -> str | None:
+        """
+        Describe where in the config this error was found, e.g. which task or global
+        option, if known.
+        """
+        if self.task_name:
+            if self.context:
+                description = f"{self.context} in task {self.task_name!r}"
+            else:
+                description = f"Invalid task {self.task_name!r}"
+        elif self.global_option:
+            description = f"Invalid global option {self.global_option!r}"
+        else:
+            return None
+        if self.filename:
+            description += f" in file {self.filename}"
+        return description
 
 
 class ExecutionError(RuntimeError):
@@ -71,7 +95,12 @@ class ExecutionError(RuntimeError):
         if isinstance(cause, ExecutionError):
             return (cause.msg, *cause.causes)
         if isinstance(cause, PoeException):
-            return (cause.msg, *((cause.cause,) if cause.cause else ()))
+            msg = cause.msg
+            if isinstance(cause, ConfigValidationError) and (
+                context := cause.describe_context()
+            ):
+                msg = f"{context}: {msg}"
+            return (msg, *((cause.cause,) if cause.cause else ()))
         return (cause.args[0],)
 
 

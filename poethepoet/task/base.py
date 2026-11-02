@@ -94,19 +94,26 @@ class TaskSpecFactory:
                 task_name, task_type, task_def, source=parent.source, parent=parent
             )
 
-        if task_name not in self.__cache:
-            self.load(task_name)
+        try:
+            if task_name not in self.__cache:
+                self.load(task_name)
 
-        task_spec = self.__cache[task_name]
-        if self._validate_on_get and task_name not in self._validated:
-            # Mark as validated first so that recursive lookups terminate
-            self._validated.add(task_name)
-            try:
-                task_spec.validate(self.config, self)
-            except BaseException:
-                # A failed validation must not count as a pass for later lookups
-                self._validated.discard(task_name)
-                raise
+            task_spec = self.__cache[task_name]
+            if self._validate_on_get and task_name not in self._validated:
+                # Mark as validated first so that recursive lookups terminate
+                self._validated.add(task_name)
+                try:
+                    task_spec.validate(self.config, self)
+                except BaseException:
+                    # A failed validation must not count as a pass for later lookups
+                    self._validated.discard(task_name)
+                    raise
+        except ConfigValidationError as error:
+            if self._validate_on_get:
+                # The looked up task is invalid, so the task whose validation looked
+                # it up must not claim the error
+                error.task_name_is_final = True
+            raise
         return task_spec
 
     def create(
@@ -402,7 +409,8 @@ class PoeTask(metaclass=MetaPoeTask):
                 self._base_validations(config, task_specs)
                 self._task_validations(config, task_specs)
             except ConfigValidationError as error:
-                error.task_name = self.name
+                if not error.task_name_is_final:
+                    error.task_name = self.name
                 raise
 
         def _base_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):

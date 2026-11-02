@@ -94,6 +94,10 @@ ref         = "bad-cwd"
 project     = "packages/foo"
 ignore_fail = true
 
+[tool.poe.tasks.foo-seq-broken]
+ref     = "seq-broken"
+project = "packages/foo"
+
 [tool.poe.tasks.foo-typo]
 ref     = "chekc"
 project = "packages/foo"
@@ -118,6 +122,10 @@ project = "packages/foo"
 [tool.poe.tasks.badconf-task]
 ref     = "anything"
 project = "packages/badconf"
+
+[tool.poe.tasks.badexec-task]
+ref     = "anything"
+project = "packages/badexec"
 
 [tool.poe.tasks.foo-hello]
 ref     = "hello"

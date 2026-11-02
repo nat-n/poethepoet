@@ -150,7 +150,18 @@ def test_ref_project_ignore_fail_warns_at_ref_verbosity(run_poe, task):
             ["No poe configuration found from location"],
         ),
         ("foo-typo", "chekc", "packages/foo", ["Unrecognized task 'chekc'"]),
-        ("bar-broken", "broken", "packages/bar", ["Task has no content"]),
+        (
+            "bar-broken",
+            "broken",
+            "packages/bar",
+            ["Invalid task 'broken': Task has no content"],
+        ),
+        (
+            "foo-seq-broken",
+            "seq-broken",
+            "packages/foo",
+            ["Invalid task 'broken': Task has no content"],
+        ),
         (
             "foo-exec",
             "exec-task",
@@ -162,6 +173,12 @@ def test_ref_project_ignore_fail_warns_at_ref_verbosity(run_poe, task):
             "anything",
             "packages/badconf",
             ["Unrecognized option 'oops_invalid'"],
+        ),
+        (
+            "badexec-task",
+            "anything",
+            "packages/badexec",
+            ["Invalid global option 'executor.type': Unknown executor type: 'nope'"],
         ),
         (
             "foo-bad-args",

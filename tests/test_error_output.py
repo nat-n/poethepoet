@@ -1,6 +1,8 @@
 from io import StringIO
 
-from poethepoet.exceptions import ExecutionError, PoeException
+import pytest
+
+from poethepoet.exceptions import ConfigValidationError, ExecutionError, PoeException
 from poethepoet.io import PoeIO
 from poethepoet.ui import PoeUi
 
@@ -29,4 +31,26 @@ def test_multi_level_causes_render_one_line_each():
 def test_poe_exception_cause_in_chain():
     assert render_error(ExecutionError("Outer", PoeException("Config broke"))) == (
         "Error: Outer\n     | From: Config broke\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("cause", "line"),
+    [
+        (ConfigValidationError("Bad"), "Bad"),
+        (ConfigValidationError("Bad", task_name="t"), "Invalid task 't': Bad"),
+        (
+            ConfigValidationError("Bad", task_name="t", context="Invalid arg"),
+            "Invalid arg in task 't': Bad",
+        ),
+        (
+            ConfigValidationError("Bad", global_option="env", filename="x.toml"),
+            "Invalid global option 'env' in file x.toml: Bad",
+        ),
+    ],
+)
+def test_config_validation_cause_keeps_its_context(cause, line):
+    # The same context as when the error is printed as the main error
+    assert render_error(ExecutionError("Outer", cause)) == (
+        f"Error: Outer\n     | From: {line}\n"
     )

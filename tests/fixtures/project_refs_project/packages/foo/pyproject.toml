@@ -48,3 +48,9 @@ cwd = "does-not-exist"
 cmd  = "poe_test_echo bad-cwd ${PREP}"
 cwd  = "does-not-exist"
 uses = { PREP = "_prep" }
+
+[tool.poe.tasks.broken]
+cmd = ""
+
+[tool.poe.tasks.seq-broken]
+sequence = ["hello", "broken"]
