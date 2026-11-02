@@ -45,7 +45,8 @@ class PoeConfig:
     """
     _project_dir: Path
     """
-    A global cache of raw configs derived from task packages
+    A global cache of raw configs derived from task packages, keyed by project dir and
+    script, since the same script may load different modules in different projects
     """
     _packaged_config_cache: dict[tuple[str, ...], dict] = {}
     _tasks: Mapping[str, TaskConfig] = {}
@@ -297,8 +298,9 @@ class PoeConfig:
             raise PoeException("Invalid configuration for include_script") from error
 
         invocation = ("$include_script$", include_script["script"])
+        cache_key = (str(self._project_dir), *invocation)
 
-        if invocation not in self._packaged_config_cache:
+        if cache_key not in self._packaged_config_cache:
             from ..context import InitializationContext
             from ..env.task_env import TaskEnv
             from ..io import PoeIO
@@ -382,10 +384,10 @@ class PoeConfig:
                 )
                 return
 
-            self._packaged_config_cache[invocation] = parsed_result
+            self._packaged_config_cache[cache_key] = parsed_result
 
         try:
-            config_json = dict(self._packaged_config_cache[invocation])
+            config_json = dict(self._packaged_config_cache[cache_key])
             config_path = Path(
                 config_json.pop("config_path", self._project_config.path)
             )

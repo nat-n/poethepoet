@@ -1,0 +1,2 @@
+[tool.poe]
+include_script = { script = "tasks:get_tasks()", executor = "simple" }

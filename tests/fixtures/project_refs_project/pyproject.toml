@@ -145,3 +145,9 @@ ref     = "hello"
 
 [tool.poe.tasks.hello-all-generic]
 sequence = ["hello-in foo", "hello-in tasksfile"]
+
+[tool.poe.tasks.scripted-hellos]
+sequence = [
+  { ref = "hello", project = "packages/scripted_a" },
+  { ref = "hello", project = "packages/scripted_b" },
+]

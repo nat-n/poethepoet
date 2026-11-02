@@ -247,6 +247,13 @@ def test_ref_project_capture_stdout_file(run_poe, root_dir):
         output_file.unlink(missing_ok=True)
 
 
+def test_ref_project_include_script_is_per_project(run_poe):
+    # Both projects include tasks from the same script string, each from its own module
+    result = run_poe("scripted-hellos", project="project_refs")
+    assert result.code == 0
+    assert result.stdout == "hello from scripted_a\nhello from scripted_b\n"
+
+
 def test_ref_project_ignore_fail(run_poe):
     assert run_poe("foo-fail-ok", project="project_refs").code == 0
 
