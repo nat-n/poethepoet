@@ -654,8 +654,28 @@ def env_precedence_project(temp_pyproject):
         envfile  = "task.env"
         uses     = { BUCKET = "_bucket" }
         sequence = [{ cmd = "poe_test_echo ${BUCKET}" }]
+
+        [tool.poe.tasks._echo_bucket]
+        cmd = "poe_test_echo ${BUCKET}"
+
+        [tool.poe.tasks.envfile_vs_uses_in_ref]
+        ref     = "_echo_bucket"
+        envfile = "task.env"
+        uses    = { BUCKET = "_bucket" }
+
+        [tool.poe.tasks.envfile_vs_uses_in_switch]
+        control = "poe_test_echo any"
+        switch  = [{ cmd = "poe_test_echo ${BUCKET}" }]
+        envfile = "task.env"
+        uses    = { BUCKET = "_bucket" }
+
+        [tool.poe.tasks.envfile_cannot_template_uses]
+        cmd     = "poe_test_echo ${URL}"
+        envfile = "template.env"
+        uses    = { _bucket = "_bucket" }
         """)
     (project_path / "task.env").write_text("BUCKET=from_envfile\n")
+    (project_path / "template.env").write_text("URL=s3://${_bucket}\n")
     return project_path
 
 
@@ -669,6 +689,10 @@ def env_precedence_project(temp_pyproject):
         ("env_default_vs_uses", "from_uses"),
         ("env_templates_uses", "s3://from_uses"),
         ("envfile_vs_uses_in_sequence", "from_uses"),
+        ("envfile_vs_uses_in_ref", "from_uses"),
+        ("envfile_vs_uses_in_switch", "from_uses"),
+        # The envfile is loaded before uses values are set, so can't reference them
+        ("envfile_cannot_template_uses", "s3://"),
     ],
 )
 def test_task_env_precedence(run_poe, env_precedence_project, task_name, expected):

@@ -222,6 +222,7 @@ def test_cmd_task_with_cwd_option_pwd(run_poe_subproc, poe_project_path):
 @pytest.mark.parametrize(
     "preset_vars",
     [("POE_PWD",), ("POE_CWD",), ("POE_PWD", "POE_CWD")],
+    ids=["pwd", "cwd", "both"],
 )
 def test_cmd_task_with_cwd_option_pwd_override(
     run_poe_subproc, poe_project_path, preset_vars
@@ -247,16 +248,17 @@ def test_cmd_task_with_cwd_option_pwd_override(
     assert result.stderr == ""
 
 
-def test_inherited_poe_pwd_takes_precedence_over_poe_cwd(run_poe_subproc):
+def test_inherited_poe_pwd_takes_precedence_over_poe_cwd(run_poe):
     """
     POE_PWD and POE_CWD are both set from an inherited POE_PWD, which wins over an
     inherited POE_CWD
     """
-    result = run_poe_subproc(
+    result = run_poe(
         "show_poe_pwd",
         project="cwd",
         env={"POE_PWD": "/from_pwd", "POE_CWD": "/from_cwd"},
     )
+    assert result.capture == "Poe => poe_test_echo /from_pwd /from_pwd\n"
     assert result.stdout == "/from_pwd /from_pwd\n"
     assert result.stderr == ""
 
