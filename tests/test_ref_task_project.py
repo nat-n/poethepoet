@@ -199,6 +199,30 @@ def test_ref_project_errors_are_stacked(
     assert "usage:" not in result.capture  # no argparse usage for the child
 
 
+@pytest.mark.parametrize(
+    ("task", "headline", "cause"),
+    [
+        (
+            "blank-project",
+            "Task 'blank-project' could not run 'show-env' in project ${NOPE}",
+            "Project path is empty after templating",
+        ),
+        (
+            "foo-empty-ref",
+            "Task 'foo-empty-ref' could not run its referenced task"
+            " in project packages/foo",
+            "Task reference is empty after templating",
+        ),
+    ],
+)
+def test_ref_project_empty_after_templating(run_poe, task, headline, cause):
+    result = run_poe(task, project="project_refs")
+    assert result.code == 1
+    assert f"Error: {headline}\n     | From: {cause}\n" in result.capture
+    assert "root show-env" not in result.capture
+    assert "Usage:" not in result.capture
+
+
 def test_ref_project_capture_stdout_unsupported_by_target(run_poe, temp_pyproject):
     project_path = temp_pyproject("""
         [tool.poe.tasks.capture]

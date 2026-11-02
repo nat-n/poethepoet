@@ -73,6 +73,14 @@ project = "packages/nope"
 ref     = "show-env"
 project = "packages/${NOPE}"
 
+[tool.poe.tasks.blank-project]
+ref     = "show-env"
+project = "${NOPE}"
+
+[tool.poe.tasks.foo-empty-ref]
+ref     = "${NOPE}"
+project = "packages/foo"
+
 [tool.poe.tasks.foo-typo]
 ref     = "chekc"
 project = "packages/foo"

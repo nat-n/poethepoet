@@ -223,7 +223,7 @@ class RefTask(PoeTask):
             run_target,
         )
 
-        target_name = ref_invocation[0]
+        target_name = ref_invocation[0] if ref_invocation else ""
         project_display = project
         start_failure: Exception | None = None
 
@@ -234,15 +234,21 @@ class RefTask(PoeTask):
             swallow it.
             """
             nonlocal start_failure
+            target_display = repr(target_name) if target_name else "its referenced task"
             start_failure = ExecutionError(
-                f"Task {self.name!r} could not run {target_name!r}"
+                f"Task {self.name!r} could not run {target_display}"
                 f" in project {project_display}",
                 error,
             )
             return start_failure
 
         try:
-            project_display = fill_project_option(project, env)
+            if not (filled_project := fill_project_option(project, env)).strip():
+                # Resolving a blank path would silently run the task in this project
+                raise ExecutionError("Project path is empty after templating")
+            project_display = filled_project
+            if not target_name:
+                raise ExecutionError("Task reference is empty after templating")
             project_path = resolve_project_path(project_display, self.ctx.config)
             loaded_project = await context.get_loaded_project(project_path, self.ctx.io)
             child_context = context.for_project(
