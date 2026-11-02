@@ -101,16 +101,19 @@ async def run_target(
     task_state: PoeTaskRun,
     *,
     start_error: Callable[[Exception], Exception],
+    run_error: Callable[[Exception], Exception],
 ) -> None:
     """
     Run the target task, and its task graph if it has deps, in the given context,
     adding its runs to task_state as children. Errors raised while starting the target
-    are passed through start_error and the result raised instead, and failures of its
-    run are raised as they are. Without deps, task_state is finalized once the target
-    has started; with deps, the caller finalizes it once it has handled any failure.
+    are passed through start_error and the result raised instead. Poe errors raised
+    while running it are passed through run_error, so that they don't reach the app as
+    errors of the calling project, and other failures of its run are raised as they
+    are. Without deps, task_state is finalized once the target has started; with deps,
+    the caller finalizes it once it has handled any failure.
     """
     if task.has_deps():
-        await _run_target_graph(task, context, task_state, start_error)
+        await _run_target_graph(task, context, task_state, start_error, run_error)
         return
 
     try:
@@ -119,7 +122,10 @@ async def run_target(
         raise start_error(error)
     await task_state.add_child(target_run)
     await task_state.finalize()
-    await target_run.wait(suppress_errors=False)
+    try:
+        await target_run.wait(suppress_errors=False)
+    except PoeException as error:
+        raise run_error(error)
 
 
 async def _run_target_graph(
@@ -127,6 +133,7 @@ async def _run_target_graph(
     context: RunContext,
     task_state: PoeTaskRun,
     start_error: Callable[[Exception], Exception],
+    run_error: Callable[[Exception], Exception],
 ) -> None:
     """
     Run the stages of the target's task graph in order, with the target last.
@@ -149,10 +156,16 @@ async def _run_target_graph(
                 await task_state.add_child(sink_task_run)
                 # Errors from child task runs are otherwise suppressed, so they must
                 # be raised here to fail this task
-                await sink_task_run.wait(suppress_errors=False)
+                try:
+                    await sink_task_run.wait(suppress_errors=False)
+                except PoeException as error:
+                    raise run_error(error)
                 return
 
-            dep_task = await stage_task.run(context=context)
+            try:
+                dep_task = await stage_task.run(context=context)
+            except PoeException as error:
+                raise run_error(error)
             await task_state.add_child(dep_task)
             await dep_task.wait()
             if dep_task.has_failure:

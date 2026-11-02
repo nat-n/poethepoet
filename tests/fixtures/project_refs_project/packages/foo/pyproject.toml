@@ -39,3 +39,12 @@ cmd = "poe_test_echo hello from foo"
 
 [tool.poe.tasks.emit-env]
 cmd = "poe_test_echo FOO_TOKEN=abc123"
+
+[tool.poe.tasks.bad-cwd]
+cmd = "poe_test_echo bad-cwd"
+cwd = "does-not-exist"
+
+[tool.poe.tasks.bad-cwd-graph]
+cmd  = "poe_test_echo bad-cwd ${PREP}"
+cwd  = "does-not-exist"
+uses = { PREP = "_prep" }

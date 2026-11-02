@@ -223,6 +223,33 @@ def test_ref_project_empty_after_templating(run_poe, task, headline, cause):
     assert "Usage:" not in result.capture
 
 
+@pytest.mark.parametrize(
+    ("task", "target"),
+    [("foo-bad-cwd", "bad-cwd"), ("foo-bad-cwd-graph", "bad-cwd-graph")],
+)
+def test_ref_project_poe_error_while_running_is_stacked(
+    run_poe, root_dir, task, target
+):
+    result = run_poe(task, project="project_refs")
+    assert result.code == 1
+    missing_dir = root_dir / "packages" / "foo" / "does-not-exist"
+    assert (
+        f"Error: Task {task!r} could not run {target!r} in project packages/foo\n"
+        f"     | From: Working directory {missing_dir} could not be found.\n"
+    ) in result.capture
+    assert "Usage:" not in result.capture  # no help dump
+
+
+def test_ref_project_poe_error_while_running_can_be_ignored(run_poe):
+    result = run_poe("foo-bad-cwd-ok", project="project_refs")
+    assert result.code == 0
+    assert (
+        "Warning: Task 'foo-bad-cwd-ok' could not run 'bad-cwd' in project packages/foo"
+        in result.capture
+    )
+    assert "Usage:" not in result.capture
+
+
 def test_ref_project_capture_stdout_unsupported_by_target(run_poe, temp_pyproject):
     project_path = temp_pyproject("""
         [tool.poe.tasks.capture]

@@ -81,6 +81,19 @@ project = "${NOPE}"
 ref     = "${NOPE}"
 project = "packages/foo"
 
+[tool.poe.tasks.foo-bad-cwd]
+ref     = "bad-cwd"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-bad-cwd-graph]
+ref     = "bad-cwd-graph"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-bad-cwd-ok]
+ref         = "bad-cwd"
+project     = "packages/foo"
+ignore_fail = true
+
 [tool.poe.tasks.foo-typo]
 ref     = "chekc"
 project = "packages/foo"

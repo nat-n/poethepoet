@@ -227,19 +227,25 @@ class RefTask(PoeTask):
         project_display = project
         start_failure: Exception | None = None
 
-        def start_error(error: Exception) -> Exception:
+        def stacked_error(error: Exception) -> ExecutionError:
             """
-            Stack the given failure to start the target under a headline naming this
-            task and the target's project, and record it so that ignore_fail can't
-            swallow it.
+            Stack the given failure of the target under a headline naming this task and
+            the target's project.
             """
-            nonlocal start_failure
             target_display = repr(target_name) if target_name else "its referenced task"
-            start_failure = ExecutionError(
+            return ExecutionError(
                 f"Task {self.name!r} could not run {target_display}"
                 f" in project {project_display}",
                 error,
             )
+
+        def start_error(error: Exception) -> Exception:
+            """
+            Stack the given failure to start the target, and record it so that
+            ignore_fail can't swallow it.
+            """
+            nonlocal start_failure
+            start_failure = stacked_error(error)
             return start_failure
 
         try:
@@ -292,10 +298,17 @@ class RefTask(PoeTask):
             raise start_error(error)
 
         try:
-            await run_target(task, child_context, task_state, start_error=start_error)
+            await run_target(
+                task,
+                child_context,
+                task_state,
+                start_error=start_error,
+                run_error=stacked_error,
+            )
         except ExecutionError as error:
             # As for an in-project ref, ignore_fail covers failures of the target's
-            # run, but never a failure to start it
+            # run (including poe errors stacked by run_error), but never a failure to
+            # start it
             if error is start_failure or not self.spec.options.ignore_fail:
                 raise
             self._warn_subtask_failure(context, error.msg)
