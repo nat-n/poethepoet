@@ -8,7 +8,7 @@ How Poe the Poet uses environment variables
 Poe tasks inherit environment variables from the host shell, but tasks also run with additional variables that are provided via the following channels, ordered with ascending precedence. The principle for precedence is that variables closer to the task override those further away.
 
 1. Host environment variables (what poe receives as ``os.environ``)
-2. Project level env files and env config from :doc:`included<guides/include_guide>` files, which apply to all tasks
+2. Env files and env config from :doc:`included<guides/include_guide>` files and :doc:`task packages<guides/packaged_tasks>`, which apply to all tasks
 3. Project level :ref:`env files<Loading external environment variables>` (in the order listed)
 4. Project level :ref:`env config<Global environment variables>`
 5. Parent task variables
@@ -17,7 +17,7 @@ Poe tasks inherit environment variables from the host shell, but tasks also run 
 8. Task level :ref:`env config<Setting task specific environment variables>`
 9. Variables set by task :doc:`args<guides/args_guide>`
 
-So a task's ``env`` can reference and override values from its ``uses`` and ``uses_env`` options, e.g. ``env = { URL = "s3://${_bucket}" }`` with ``uses = { _bucket = "get-bucket" }``.
+This means a task's ``env`` can reference and override values from its ``uses`` and ``uses_env`` options, e.g. ``env = { URL = "s3://${_bucket}" }`` with ``uses = { _bucket = "_get-bucket" }``.
 
 As well as being exposed to the task at runtime, environment variables can also be templated into some other task configuration fields.
 
@@ -48,7 +48,7 @@ Internal Environment variables
 The following environment variables are used by Poe the Poet internally, and can be accessed from within configuration and tasks.
 
 - ``POE_ROOT``: path to the parent directory of the main tasks file (e.g. pyproject.toml).
-- ``POE_PWD``: the current working directory of the poe process. If ``POE_PWD`` is already set when poe starts, for example because poe is run from within a poe task, then the inherited value is kept.
+- ``POE_PWD``: the current working directory of the poe process, or the inherited value if ``POE_PWD`` is already set (e.g. when poe runs within a poe task).
 - ``POE_CONF_DIR``: the path to the parent directory of the config file that defines the running task or the :ref:`cwd option<Setting a working directory for included tasks>` set when including that config.
 - ``POE_ACTIVE``: identifies the active PoeExecutor, so that Poe the Poet can tell when it is running recursively.
 - ``POE_VERBOSITY``: reflects the current verbosity level. Normally 0 is the default, 1 means more verbose and -1 means less.
