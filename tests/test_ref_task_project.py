@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 
@@ -15,6 +17,8 @@ def project_load_calls(monkeypatch):
 
     async def counting_load(config_file, io):
         calls.append(config_file)
+        # Yield as a real load would, so that concurrent first uses can overlap
+        await asyncio.sleep(0.01)
         return await original(config_file, io)
 
     monkeypatch.setattr(project_ref, "load_project", counting_load)
@@ -372,3 +376,36 @@ def test_ref_project_child_verbosity_is_scoped(run_poe):
     assert result.stdout == "root show-env\nquiet hello\nroot show-env\n"
     assert result.capture.count("Poe => poe_test_echo root show-env") == 2
     assert "Poe => poe_test_echo quiet hello" not in result.capture
+
+
+@pytest.mark.asyncio
+async def test_ref_project_cancelled_load_is_not_shared(root_dir, project_load_calls):
+    from poethepoet.config import PoeConfig
+    from poethepoet.context import RunContext
+    from poethepoet.io import PoeIO
+    from poethepoet.ui import PoeUi
+
+    io = PoeIO(make_default=False)
+    config = PoeConfig(cwd=root_dir, io=io)
+    await config.load()
+    context = RunContext(
+        config=config,
+        ui=PoeUi(io=io),
+        env={},
+        dry=False,
+        poe_active=None,
+        loop=asyncio.get_running_loop(),
+    )
+    foo_dir = root_dir / "packages" / "foo"
+
+    first = asyncio.create_task(context.get_loaded_project(foo_dir, io))
+    second = asyncio.create_task(context.get_loaded_project(foo_dir, io))
+    await asyncio.sleep(0)  # both are now waiting on the one load
+    first.cancel()
+
+    # Cancelling one caller doesn't cancel the load for the others, or later ones
+    loaded = await second
+    assert loaded.config.project_dir == foo_dir
+    assert await context.get_loaded_project(foo_dir, io) is loaded
+    assert first.cancelled()
+    assert len(project_load_calls) == 1

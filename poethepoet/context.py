@@ -73,7 +73,7 @@ class RunContext:
         loop: asyncio.AbstractEventLoop | None = None,
         *,
         shutdown_manager: ShutdownManager | None = None,
-        loaded_projects: dict[Path, asyncio.Future[LoadedProject]] | None = None,
+        loaded_projects: dict[Path, asyncio.Task[LoadedProject]] | None = None,
     ):
         """
         A shutdown_manager and loaded_projects cache may be given to share them with
@@ -133,23 +133,20 @@ class RunContext:
         """
         Get the project with its config file at or in the given path, loading it on
         first use in this run. Concurrent first uses of a project share one load, and
-        if loading fails then every use gets the same error.
+        if loading fails then every use gets the same error. The load runs as a task
+        of its own, so cancelling one use doesn't cancel it for the others.
         """
         from .config import PoeConfig
         from .task import project_ref
 
         config_file = PoeConfig.find_config_file(project_path)
         if (loading := self._loaded_projects.get(config_file)) is None:
-            loading = self._loop.create_future()
+            loading = self.track_async_task(
+                project_ref.load_project(config_file, io),
+                name=f"LoadProject:{config_file}",
+            )
             self._loaded_projects[config_file] = loading
-            try:
-                loading.set_result(await project_ref.load_project(config_file, io))
-            except asyncio.CancelledError:
-                loading.cancel()
-                raise
-            except Exception as error:
-                loading.set_exception(error)
-        return await loading
+        return await asyncio.shield(loading)
 
     def track_async_task(
         self, coro: Any, *, name: str | None = None
