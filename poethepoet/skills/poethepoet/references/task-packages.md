@@ -205,7 +205,7 @@ base_tasks.add(
 
 ## Environment variables for a task package
 
-Set env vars (and optionally envfile) on the collection itself — they're included alongside the tasks:
+Set env vars (and optionally envfile) on the collection itself — they apply to all tasks in the project, and the project's own `env`/`envfile` override them:
 
 ```python
 tasks = TaskCollection(

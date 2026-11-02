@@ -107,13 +107,14 @@ differently by different task types.
 Task environment state is built by layering values in roughly this order:
 
 1. Host environment
-2. Project-level `envfile`
-3. Project-level `env`
-4. Parent task state
-5. Task-level `envfile`
-6. `uses_env` and `uses` outputs
-7. Task-level `env`
-8. Task args
+2. Included and packaged config `envfile` and `env`
+3. Project-level `envfile`
+4. Project-level `env`
+5. Parent task state
+6. Task-level `envfile`
+7. `uses_env` and `uses` outputs
+8. Task-level `env`
+9. Task args
 
 The principle is: values closer to the running task override values further away.
 Task-level `env` is applied after `uses` outputs so that it can template them.
