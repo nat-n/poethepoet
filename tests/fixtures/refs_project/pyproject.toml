@@ -160,3 +160,25 @@ ref = "_emit-greeting"
 [tool.poe.tasks.use-ref-env]
 cmd      = "poe_test_echo ${GREETING}"
 uses_env = ["emit-greeting-ref"]
+
+[tool.poe.tasks._greet-with-uses]
+cmd  = "poe_test_echo hi ${PREP}"
+uses = { PREP = "_say-hi" }
+
+[tool.poe.tasks._greet-with-deps]
+cmd  = "poe_test_echo hey"
+deps = ["_say-hi"]
+
+[tool.poe.tasks.greet-with-uses-ref]
+ref = "_greet-with-uses"
+
+[tool.poe.tasks.greet-with-deps-ref]
+ref = "_greet-with-deps"
+
+[tool.poe.tasks.use-graph-ref-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "greet-with-uses-ref" }
+
+[tool.poe.tasks.use-deps-ref-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "greet-with-deps-ref" }

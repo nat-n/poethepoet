@@ -389,6 +389,20 @@ def test_uses_output_of_ref_task(run_poe, task):
     assert result.stdout == "got hi\n"
 
 
+@pytest.mark.parametrize(
+    ("task", "expected_stdout"),
+    [
+        ("use-graph-ref-output", "got hi hi\n"),
+        # The dep's output isn't captured, only the ref target's
+        ("use-deps-ref-output", "hi\ngot hey\n"),
+    ],
+)
+def test_uses_output_of_ref_task_whose_target_has_deps(run_poe, task, expected_stdout):
+    result = run_poe(task, project="refs")
+    assert result.code == 0
+    assert result.stdout == expected_stdout
+
+
 def test_uses_env_from_ref_task(run_poe):
     result = run_poe("use-ref-env", project="refs")
     assert result.code == 0
