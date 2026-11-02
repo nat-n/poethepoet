@@ -133,3 +133,52 @@ args = [
 [tool.poe.tasks.ref-with-custom-var-not-extra-args]
 ref = "greet $POE_EXTRA_ARGS_CUSTOM"
 env = { POE_EXTRA_ARGS_CUSTOM = "world" }
+
+[tool.poe.tasks._say-hi]
+cmd = "poe_test_echo hi"
+
+[tool.poe.tasks.say-hi-ref]
+ref = "_say-hi"
+
+[tool.poe.tasks.say-hi-ref-ref]
+ref = "say-hi-ref"
+
+[tool.poe.tasks.use-ref-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "say-hi-ref" }
+
+[tool.poe.tasks.use-ref-ref-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "say-hi-ref-ref" }
+
+[tool.poe.tasks._emit-greeting]
+cmd = "poe_test_echo GREETING=hello"
+
+[tool.poe.tasks.emit-greeting-ref]
+ref = "_emit-greeting"
+
+[tool.poe.tasks.use-ref-env]
+cmd      = "poe_test_echo ${GREETING}"
+uses_env = ["emit-greeting-ref"]
+
+[tool.poe.tasks._greet-with-uses]
+cmd  = "poe_test_echo hi ${PREP}"
+uses = { PREP = "_say-hi" }
+
+[tool.poe.tasks._greet-with-deps]
+cmd  = "poe_test_echo hey"
+deps = ["_say-hi"]
+
+[tool.poe.tasks.greet-with-uses-ref]
+ref = "_greet-with-uses"
+
+[tool.poe.tasks.greet-with-deps-ref]
+ref = "_greet-with-deps"
+
+[tool.poe.tasks.use-graph-ref-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "greet-with-uses-ref" }
+
+[tool.poe.tasks.use-deps-ref-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "greet-with-deps-ref" }

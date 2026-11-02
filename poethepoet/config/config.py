@@ -45,7 +45,8 @@ class PoeConfig:
     """
     _project_dir: Path
     """
-    A global cache of raw configs derived from task packages
+    A global cache of raw configs derived from task packages, keyed by project dir and
+    script, since the same script may load different modules in different projects
     """
     _packaged_config_cache: dict[tuple[str, ...], dict] = {}
     _tasks: Mapping[str, TaskConfig] = {}
@@ -209,10 +210,63 @@ class PoeConfig:
         If strict is false then some errors in the config structure are tolerated
         """
 
-        for config_file in PoeConfigFile.find_config_files(
-            target_path=Path(target_path or self._project_dir),
+        config_file = self._find_config_file(
+            target_path or self._project_dir,
             filenames=self._config_filenames,
             search_parent=not target_path,
+        )
+        self._project_dir = config_file.path.parent
+
+        config_content = config_file.load()
+        if not config_content:
+            raise ConfigValidationError(
+                f"Config file at {config_file.path} is empty or invalid",
+                filename=str(config_file.path),
+            ) from config_file.error
+
+        try:
+            self._project_config = ProjectConfig(
+                config_content,
+                path=config_file.path,
+                project_dir=self._project_dir,
+                strict=strict,
+            )
+        except ConfigValidationError:
+            # Try again to load Config with minimal validation so we can still
+            # display the task list alongside the error
+            self._project_config = ProjectConfig(
+                config_content,
+                path=config_file.path,
+                project_dir=self._project_dir,
+                strict=False,
+            )
+            raise
+
+        self._load_includes(strict=strict)
+        await self._load_packages(strict=strict)
+
+    @classmethod
+    def find_config_file(cls, target_path: Path) -> Path:
+        """
+        Get the resolved path of the poe config file at the given path, which may be a
+        config file or a directory containing one. Parent directories are not searched.
+        """
+        return cls._find_config_file(
+            target_path, filenames=cls._config_filenames, search_parent=False
+        ).path.resolve()
+
+    @staticmethod
+    def _find_config_file(
+        target_path: Path | str, filenames: Sequence[str], search_parent: bool
+    ) -> PoeConfigFile:
+        """
+        Get the first valid config file found from the target_path, raising the error
+        from a config file that fails to parse, or if no config file is found.
+        """
+        for config_file in PoeConfigFile.find_config_files(
+            target_path=Path(target_path),
+            filenames=filenames,
+            search_parent=search_parent,
         ):
             config_file.load()
 
@@ -220,46 +274,9 @@ class PoeConfig:
                 raise config_file.error
 
             if config_file.is_valid:
-                self._project_dir = config_file.path.parent
+                return config_file
 
-                config_content = config_file.load()
-                if not config_content:
-                    raise ConfigValidationError(
-                        f"Config file at {config_file.path} is empty or invalid",
-                        filename=str(config_file.path),
-                    ) from config_file.error
-
-                try:
-                    self._project_config = ProjectConfig(
-                        config_content,
-                        path=config_file.path,
-                        project_dir=self._project_dir,
-                        strict=strict,
-                    )
-                except ConfigValidationError:
-                    # Try again to load Config with minimal validation so we can still
-                    # display the task list alongside the error
-                    self._project_config = ProjectConfig(
-                        config_content,
-                        path=config_file.path,
-                        project_dir=self._project_dir,
-                        strict=False,
-                    )
-                    raise
-
-                break
-
-        else:
-            if target_path is not None:
-                raise PoeException(
-                    f"No poe configuration found from location {target_path}"
-                )
-            raise PoeException(
-                f"No poe configuration found from location {self._project_dir}"
-            )
-
-        self._load_includes(strict=strict)
-        await self._load_packages(strict=strict)
+        raise PoeException(f"No poe configuration found from location {target_path}")
 
     async def _load_packages(self, strict: bool = True):
         if not self._project_config.options.include_script:
@@ -281,8 +298,9 @@ class PoeConfig:
             raise PoeException("Invalid configuration for include_script") from error
 
         invocation = ("$include_script$", include_script["script"])
+        cache_key = (str(self._project_dir), *invocation)
 
-        if invocation not in self._packaged_config_cache:
+        if cache_key not in self._packaged_config_cache:
             from ..context import InitializationContext
             from ..env.task_env import TaskEnv
             from ..io import PoeIO
@@ -366,10 +384,10 @@ class PoeConfig:
                 )
                 return
 
-            self._packaged_config_cache[invocation] = parsed_result
+            self._packaged_config_cache[cache_key] = parsed_result
 
         try:
-            config_json = dict(self._packaged_config_cache[invocation])
+            config_json = dict(self._packaged_config_cache[cache_key])
             config_path = Path(
                 config_json.pop("config_path", self._project_config.path)
             )

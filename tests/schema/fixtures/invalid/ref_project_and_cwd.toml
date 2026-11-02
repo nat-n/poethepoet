@@ -1,0 +1,5 @@
+# expected_error: 'project' and 'cwd' options cannot be both provided
+[tool.poe.tasks.bad]
+ref = "x"
+project = "sub"
+cwd = "sub"

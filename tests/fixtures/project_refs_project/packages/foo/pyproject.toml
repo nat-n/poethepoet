@@ -1,0 +1,50 @@
+[tool.poe.env]
+SHARED      = "from-foo"
+OVERRIDABLE = { default = "from-foo" }
+FOO_ONLY    = "foo"
+
+[tool.poe.tasks._prep]
+cmd = "poe_test_echo foo-prep"
+
+[tool.poe.tasks.show-env]
+cmd = "poe_test_echo SHARED=${SHARED} OVERRIDABLE=${OVERRIDABLE} ROOT_ONLY=${ROOT_ONLY} FOO_ONLY=${FOO_ONLY} REF_VAR=${REF_VAR}"
+
+[tool.poe.tasks.echo-args]
+cmd = "poe_test_echo foo got"
+
+[tool.poe.tasks.show-paths]
+cmd = "poe_test_echo ${POE_ROOT} ${POE_CONF_DIR} ${POE_PWD}"
+
+[tool.poe.tasks.graph]
+cmd  = "poe_test_echo graph ${PREP}"
+uses = { PREP = "_prep" }
+
+[tool.poe.tasks.fail]
+cmd = "poe_test_fail 0 3"
+
+[tool.poe.tasks.nomatch]
+cmd        = "poe_test_echo *.nomatch"
+empty_glob = "fail"
+
+[tool.poe.tasks.strict-args]
+cmd  = "poe_test_echo mode=${mode}"
+args = ["mode"]
+
+[tool.poe.tasks.exec-task]
+cmd      = "poe_test_echo exec"
+use_exec = true
+
+[tool.poe.tasks.hello]
+cmd = "poe_test_echo hello from foo"
+
+[tool.poe.tasks.emit-env]
+cmd = "poe_test_echo FOO_TOKEN=abc123"
+
+[tool.poe.tasks.bad-cwd]
+cmd = "poe_test_echo bad-cwd"
+cwd = "does-not-exist"
+
+[tool.poe.tasks.bad-cwd-graph]
+cmd  = "poe_test_echo bad-cwd ${PREP}"
+cwd  = "does-not-exist"
+uses = { PREP = "_prep" }

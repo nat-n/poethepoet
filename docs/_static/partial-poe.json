@@ -1107,6 +1107,7 @@
     },
     "ref_task": {
       "additionalProperties": false,
+      "if": { "required": ["project"] },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -1134,6 +1135,11 @@
           "description": "If true the failure of the referenced task will be ignored and the ref task\nwill return exit code 0.",
           "type": "boolean"
         },
+        "project": {
+          "description": "Path to another poe project (a directory or a config file) in which to look up\nand run the referenced task, with that project's own config, env and executor.\nRelative to the project root unless absolute. Environment variables can be used\nin the format ${VAR_NAME}.",
+          "pattern": "\\S",
+          "type": "string"
+        },
         "ref": {
           "description": "Invokes another task by name, with or without arguments.",
           "type": "string"
@@ -1157,10 +1163,12 @@
         }
       },
       "required": ["ref"],
+      "then": { "properties": { "cwd": false } },
       "type": "object"
     },
     "ref_task_with_case": {
       "additionalProperties": false,
+      "if": { "required": ["project"] },
       "properties": {
         "args": { "$ref": "#/definitions/args_option" },
         "capture_stdout": {
@@ -1209,6 +1217,11 @@
           "description": "If true the failure of the referenced task will be ignored and the ref task\nwill return exit code 0.",
           "type": "boolean"
         },
+        "project": {
+          "description": "Path to another poe project (a directory or a config file) in which to look up\nand run the referenced task, with that project's own config, env and executor.\nRelative to the project root unless absolute. Environment variables can be used\nin the format ${VAR_NAME}.",
+          "pattern": "\\S",
+          "type": "string"
+        },
         "ref": {
           "description": "Invokes another task by name, with or without arguments.",
           "type": "string"
@@ -1232,6 +1245,7 @@
         }
       },
       "required": ["ref"],
+      "then": { "properties": { "cwd": false } },
       "type": "object"
     },
     "script_task": {

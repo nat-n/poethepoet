@@ -56,12 +56,21 @@ class TaskSpecFactory:
     __cache: dict[str, PoeTask.TaskSpec]
     config: PoeConfig
 
-    def __init__(self, config: PoeConfig):
+    def __init__(self, config: PoeConfig, validate_on_get: bool = False):
+        """
+        If validate_on_get is true then specs are loaded lazily, and each named spec is
+        validated the first time it is looked up, rather than all specs up front.
+        """
         self.__cache = {}
         self.config = config
+        self._validate_on_get = validate_on_get
+        self._validated: set[str] = set()
 
     def __contains__(self, other) -> bool:
-        return other in self.__cache
+        if other in self.__cache:
+            return True
+        # Lazily loaded specs are not all in the cache, so check the config too
+        return self._validate_on_get and self.config.lookup_task(other) is not None
 
     def get(
         self,
@@ -85,10 +94,27 @@ class TaskSpecFactory:
                 task_name, task_type, task_def, source=parent.source, parent=parent
             )
 
-        if task_name not in self.__cache:
-            self.load(task_name)
+        try:
+            if task_name not in self.__cache:
+                self.load(task_name)
 
-        return self.__cache[task_name]
+            task_spec = self.__cache[task_name]
+            if self._validate_on_get and task_name not in self._validated:
+                # Mark as validated first so that recursive lookups terminate
+                self._validated.add(task_name)
+                try:
+                    task_spec.validate(self.config, self)
+                except BaseException:
+                    # A failed validation must not count as a pass for later lookups
+                    self._validated.discard(task_name)
+                    raise
+        except ConfigValidationError as error:
+            if self._validate_on_get:
+                # The looked up task is invalid, so the task whose validation looked
+                # it up must not claim the error
+                error.task_name_is_final = True
+            raise
+        return task_spec
 
     def create(
         self,
@@ -159,6 +185,12 @@ class TaskContext(NamedTuple):
     io: PoeIO
     ui: PoeUi
     specs: TaskSpecFactory
+    quiet_arg_usage: bool = False
+    """
+    If true, a failure to parse this task's arguments reports argparse's message as a
+    cause of the error, instead of printing its usage text. This applies only to the
+    direct target of a cross-project ref, so it is not inherited by child tasks.
+    """
 
     @property
     def verbosity(self) -> int:
@@ -377,7 +409,8 @@ class PoeTask(metaclass=MetaPoeTask):
                 self._base_validations(config, task_specs)
                 self._task_validations(config, task_specs)
             except ConfigValidationError as error:
-                error.task_name = self.name
+                if not error.task_name_is_final:
+                    error.task_name = self.name
                 raise
 
         def _base_validations(self, config: PoeConfig, task_specs: TaskSpecFactory):
@@ -627,7 +660,12 @@ class PoeTask(metaclass=MetaPoeTask):
                     extra_args = ()
 
                 self._parsed_args = (
-                    task_args.parse(option_args, env, self.ctx.ui.program_name),
+                    task_args.parse(
+                        option_args,
+                        env,
+                        self.ctx.ui.program_name,
+                        quiet_usage=self.ctx.quiet_arg_usage,
+                    ),
                     extra_args,
                 )
 

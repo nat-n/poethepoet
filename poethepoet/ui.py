@@ -347,18 +347,10 @@ class PoeUi:
 
     def _format_poe_error(self, error: PoeException) -> tuple[str, ...]:
         error_lines = []
-        if isinstance(error, ConfigValidationError):
-            if error.task_name:
-                if error.context:
-                    error_lines.append(f"{error.context} in task {error.task_name!r}")
-                else:
-                    error_lines.append(f"Invalid task {error.task_name!r}")
-                if error.filename:
-                    error_lines[-1] += f" in file {error.filename}"
-            elif error.global_option:
-                error_lines.append(f"Invalid global option {error.global_option!r}")
-                if error.filename:
-                    error_lines[-1] += f" in file {error.filename}"
+        if isinstance(error, ConfigValidationError) and (
+            context := error.describe_context()
+        ):
+            error_lines.append(context)
         error_lines.extend(error.msg.split("\n"))
         if error.cause:
             error_lines.append(error.cause)
@@ -432,7 +424,9 @@ class PoeUi:
 
     def print_error(self, error: PoeException | ExecutionError):
         error_lines = error.msg.split("\n")
-        if error.cause:
+        if isinstance(error, ExecutionError):
+            error_lines.extend(f"From: {cause}" for cause in error.causes)
+        elif error.cause:
             error_lines.append(f"From: {error.cause}")
         if error.__cause__ and not isinstance(error.__cause__, SystemExit):
             error_lines.append(f"From: {error.__cause__!r}")
