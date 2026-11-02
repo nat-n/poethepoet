@@ -1,1 +1,2 @@
-packages/foo/hello.txt
+/hello.txt
+/hello-templated.txt

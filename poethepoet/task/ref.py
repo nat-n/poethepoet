@@ -264,7 +264,17 @@ class RefTask(PoeTask):
                     "Illegal reference to task with "
                     f"'use_exec' set to true: {target_name!r}"
                 )
-            if self.capture_stdout and not task_spec.accepts_option(
+            if (capture_stdout := self.capture_stdout) and isinstance(
+                capture_stdout, str
+            ):
+                # The file path belongs to this ref, so fill it from this ref's env and
+                # resolve it against this project, as for an in-project ref
+                capture_stdout = str(
+                    self.ctx.config.project_dir.joinpath(
+                        env.fill_template(capture_stdout)
+                    )
+                )
+            if capture_stdout and not task_spec.accepts_option(
                 "capture_stdout", loaded_project.specs
             ):
                 raise ExecutionError(
@@ -276,7 +286,7 @@ class RefTask(PoeTask):
             task = task_spec.create_task(
                 invocation=ref_invocation,
                 ctx=build_target_context(loaded_project, task_spec, self.ctx),
-                capture_stdout=self.capture_stdout,
+                capture_stdout=capture_stdout,
             )
         except (PoeException, ExecutionError) as error:
             raise start_error(error)

@@ -260,11 +260,19 @@ def test_ref_project_as_uses_env_source(run_poe):
     assert result.stdout == "token=abc123\n"
 
 
-def test_ref_project_capture_stdout_file(run_poe, root_dir):
-    output_file = root_dir / "packages" / "foo" / "hello.txt"
+@pytest.mark.parametrize(
+    ("task", "file_name"),
+    [
+        ("foo-hello-file", "hello.txt"),
+        ("foo-hello-file-templated", "hello-templated.txt"),
+    ],
+)
+def test_ref_project_capture_stdout_file(run_poe, root_dir, task, file_name):
+    # The path is the ref's, so it is templated and resolved in the calling project
+    output_file = root_dir / file_name
     output_file.unlink(missing_ok=True)
     try:
-        result = run_poe("foo-hello-file", project="project_refs")
+        result = run_poe(task, project="project_refs")
         assert result.code == 0
         assert output_file.read_text() == "hello from foo\n"
     finally:

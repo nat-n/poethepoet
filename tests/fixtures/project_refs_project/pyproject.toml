@@ -127,6 +127,11 @@ ref            = "hello"
 project        = "packages/foo"
 capture_stdout = "hello.txt"
 
+[tool.poe.tasks.foo-hello-file-templated]
+ref            = "hello"
+project        = "packages/foo"
+capture_stdout = "${POE_ROOT}/hello-templated.txt"
+
 [tool.poe.tasks.para]
 parallel = ["foo-hello", "show-env"]
 
