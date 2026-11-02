@@ -6,3 +6,6 @@ cmd = "poe_test_echo hello from bar"
 
 [tool.poe.tasks.broken]
 cmd = ""
+
+[tool.poe.tasks.seq-broken]
+sequence = ["hello", "broken"]

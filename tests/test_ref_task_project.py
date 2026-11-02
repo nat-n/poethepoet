@@ -170,9 +170,9 @@ def test_ref_project_ignore_fail_warns_at_ref_verbosity(run_poe, task):
             ["Invalid task 'broken': Task has no content"],
         ),
         (
-            "foo-seq-broken",
+            "bar-seq-broken",
             "seq-broken",
-            "packages/foo",
+            "packages/bar",
             ["Invalid task 'broken': Task has no content"],
         ),
         (

@@ -99,9 +99,9 @@ ref         = "bad-cwd"
 project     = "packages/foo"
 ignore_fail = true
 
-[tool.poe.tasks.foo-seq-broken]
+[tool.poe.tasks.bar-seq-broken]
 ref     = "seq-broken"
-project = "packages/foo"
+project = "packages/bar"
 
 [tool.poe.tasks.foo-typo]
 ref     = "chekc"
