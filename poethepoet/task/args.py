@@ -236,6 +236,7 @@ class ArgSpec(PoeOptions):
                 "if": {
                     "properties": {"type": {"const": "boolean"}},
                     "required": ["type"],
+                    "additionalProperties": True,
                 },
                 "then": {
                     "properties": {
@@ -252,9 +253,13 @@ class ArgSpec(PoeOptions):
                                 },
                             ]
                         }
-                    }
+                    },
+                    "additionalProperties": True,
                 },
-                "else": {"properties": {"true_string": False, "false_string": False}},
+                "else": {
+                    "properties": {"true_string": False, "false_string": False},
+                    "additionalProperties": True,
+                },
             }
         ]
         return fragment
