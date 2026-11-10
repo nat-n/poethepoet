@@ -257,6 +257,9 @@ markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
   "schema: schema validation tests (slow; require jsonschema; auto-applied to parity tests in tests/schema/)",
 ]
+# pytest's defaults, plus the uv cache and other scratch that tests write
+# under tests/temp, which can contain third-party packages' own tests.
+norecursedirs = ["*.egg", ".*", "_darcs", "build", "CVS", "dist", "node_modules", "venv", "{arch}", "tests/temp"]
 
 
 [tool.ruff.format]
