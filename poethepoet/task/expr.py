@@ -85,11 +85,15 @@ class ExprTask(PoeTask):
         fragment["if"] = {
             "properties": {"use_exec": {"const": True}},
             "required": ["use_exec"],
+            "additionalProperties": True,
         }
         # Encode the forbidden property as `{capture_stdout: false}`
         # rather than `{not: {required: [capture_stdout]}}`: semantically
         # identical, but the later fails ajv's strictRequired in schemastore
-        fragment["then"] = {"properties": {"capture_stdout": False}}
+        fragment["then"] = {
+            "properties": {"capture_stdout": False},
+            "additionalProperties": True,
+        }
         return fragment
 
     spec: TaskSpec
