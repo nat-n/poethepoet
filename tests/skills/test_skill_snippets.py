@@ -110,7 +110,7 @@ def _extract_toml_blocks() -> list[tuple[str, int, str]]:
     """
     blocks = []
     for path in SKILL_FILES:
-        lines = path.read_text().splitlines()
+        lines = path.read_text(encoding="utf-8").splitlines()
         index = 0
         while index < len(lines):
             if lines[index].strip() == "```toml":
@@ -174,7 +174,7 @@ def _build_project(content: str, project_dir: Path) -> Path:
             tasks[name] = f"echo {name}"
 
     config_path = project_dir / "poe_tasks.json"
-    config_path.write_text(json.dumps(poe_table, indent=2))
+    config_path.write_text(json.dumps(poe_table, indent=2), encoding="utf-8")
     return config_path
 
 
@@ -236,7 +236,9 @@ def test_skill_toml_snippet_is_valid_poe_config(
         spec.validate(config, factory)
         _check_python_content(spec)
 
-    assert config.task_names, f"No tasks loaded from:\n{config_path.read_text()}"
+    assert config.task_names, (
+        f"No tasks loaded from:\n{config_path.read_text(encoding='utf-8')}"
+    )
 
 
 def test_skipped_snippets_each_match_one_block():
