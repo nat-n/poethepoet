@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 import sys
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, NamedTuple
@@ -323,10 +323,15 @@ class PoeTask(metaclass=MetaPoeTask):
             self,
             parent_env: TaskEnv,
             io: PoeIO,
-            dependency_values: Mapping[str, str] | None = None,
+            resolve_dependency_values: (
+                Callable[[TaskEnv], Mapping[str, str]] | None
+            ) = None,
         ) -> TaskEnv:
             """
-            Resolve the TaskEnv for this task, relative to the given parent_env
+            Resolve the TaskEnv for this task, relative to the given parent_env.
+
+            resolve_dependency_values is called with the env as it is after the task's
+            envfiles are applied, so values from uses_env output can reference them.
             """
 
             result = parent_env.clone(io=io)
@@ -338,7 +343,9 @@ class PoeTask(metaclass=MetaPoeTask):
                 config_dir=self.source.config_dir,
                 config_working_dir=self.source.cwd,
             )
-            if dependency_values:
+            if resolve_dependency_values and (
+                dependency_values := resolve_dependency_values(result)
+            ):
                 result.update(dependency_values)
             result.apply_env_vars(
                 config_env=self.options.get("env"),
@@ -703,14 +710,13 @@ class PoeTask(metaclass=MetaPoeTask):
                 )
             return await PoeTaskRun(self.name).finalize()
 
-        base_env = parent_env or context.env
         task_env = self.spec.get_task_env(
-            base_env,
+            parent_env or context.env,
             io=self.ctx.io,
-            dependency_values=context._get_dependency_values(
+            resolve_dependency_values=partial(
+                context._get_dependency_values,
                 upstream_invocations["uses"],
                 upstream_invocations["uses_env"],
-                base_env=base_env,
             ),
         )
 

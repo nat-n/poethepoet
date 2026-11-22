@@ -190,8 +190,9 @@ class RunContext:
         options.
 
         uses_env tasks have their stdout parsed as env files (in declaration order,
-        expanded against base_env plus the variables from earlier entries); uses
-        values are applied on top so an explicit uses entry wins on a collision.
+        expanded against base_env, i.e. the task's env as it is after its envfiles
+        are applied, plus the variables from earlier entries); uses values are
+        applied on top so an explicit uses entry wins on a collision.
         """
         from .env.parse import parse_env_file
 

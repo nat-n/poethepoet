@@ -673,9 +673,44 @@ def env_precedence_project(temp_pyproject):
         cmd     = "poe_test_echo ${URL}"
         envfile = "template.env"
         uses    = { _bucket = "_bucket" }
+
+        [tool.poe.tasks._emit_first]
+        cmd = "poe_test_echo_lines FIRST=from_first_uses_env"
+
+        [tool.poe.tasks._emit_refs]
+        cmd = 'poe_test_echo_lines "REFS=\\${BUCKET}|\\${FIRST}|\\${TASK_ENV}|\\${ARG}"'
+
+        [tool.poe.tasks.uses_env_sees_layers_below]
+        cmd      = "poe_test_echo ${REFS}"
+        uses_env = ["_emit_first", "_emit_refs"]
+        env      = { TASK_ENV = "from_env" }
+        args     = [{ name = "ARG", default = "from_arg" }]
+
+        [tool.poe.tasks.uses_env_sees_envfile]
+        cmd      = "poe_test_echo ${REFS}"
+        envfile  = "task.env"
+        uses_env = "_emit_refs"
+
+        [tool.poe.tasks.uses_env_sees_parent_env]
+        env      = { BUCKET = "from_parent" }
+        sequence = ["_echo_refs"]
+
+        [tool.poe.tasks._echo_refs]
+        cmd      = "poe_test_echo ${REFS}"
+        uses_env = "_emit_refs"
+
+        [tool.poe.tasks._echo_refs_with_other_envfile]
+        cmd      = "poe_test_echo ${REFS}"
+        envfile  = "other.env"
+        uses_env = "_emit_refs"
+
+        [tool.poe.tasks.uses_env_output_per_consumer]
+        cmd  = "poe_test_echo done"
+        deps = ["uses_env_sees_envfile", "_echo_refs_with_other_envfile"]
         """)
     (project_path / "task.env").write_text("BUCKET=from_envfile\n")
     (project_path / "template.env").write_text("URL=s3://${_bucket}\n")
+    (project_path / "other.env").write_text("BUCKET=from_other_envfile\n")
     return project_path
 
 
@@ -693,6 +728,10 @@ def env_precedence_project(temp_pyproject):
         ("envfile_vs_uses_in_switch", "from_uses"),
         # The envfile is loaded before uses values are set, so can't reference them
         ("envfile_cannot_template_uses", "s3://"),
+        # uses_env output can reference the layers below it but not those above it
+        ("uses_env_sees_layers_below", "from_global|from_first_uses_env||"),
+        ("uses_env_sees_envfile", "from_envfile|||"),
+        ("uses_env_sees_parent_env", "from_parent|||"),
     ],
 )
 def test_task_env_precedence(run_poe, env_precedence_project, task_name, expected):
@@ -713,4 +752,20 @@ def test_task_args_override_task_env(run_poe, env_precedence_project):
     result = run_poe("arg_vs_env", "--bucket", "from_arg", cwd=env_precedence_project)
     assert result.code == 0, result.capture
     assert result.stdout == "from_arg\n"
+    assert result.stderr == ""
+
+
+def test_uses_env_output_is_expanded_for_each_consumer(run_poe, env_precedence_project):
+    """
+    Within one task graph a uses_env task's output is captured once, but expanded
+    against the env of each task that uses it
+    """
+    result = run_poe("uses_env_output_per_consumer", cwd=env_precedence_project)
+    assert result.code == 0, result.capture
+    assert sorted(result.stdout.splitlines()) == [
+        "done",
+        "from_envfile|||",
+        "from_other_envfile|||",
+    ]
+    assert result.capture.count("Poe <= poe_test_echo_lines") == 1
     assert result.stderr == ""
