@@ -120,6 +120,6 @@ See the :doc:`args guide<../../guides/args_guide>` for full details on configuri
 Accessing free arguments via ``$POE_EXTRA_ARGS``
 ------------------------------------------------
 
-Free arguments are available inside shell task scripts as the ``$POE_EXTRA_ARGS`` environment variable. The value is a shell-quoted, space-delimited string, ready to be expanded inline.
+Free arguments are available inside shell task scripts as the ``$POE_EXTRA_ARGS`` environment variable. The value is a shell-quoted, space-delimited string, so expanding it unquoted word-splits it but keeps any quote characters; in sh or bash, :sh:`eval "set -- $POE_EXTRA_ARGS"` recovers the original arguments as ``"$@"``.
 
 See the :ref:`forwarding-free-arguments-via-poe-extra-args` section of the args guide for details and examples.
