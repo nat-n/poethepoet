@@ -99,15 +99,23 @@ class ScriptTask(PoeTask):
                 "if": {
                     "properties": {"use_exec": {"const": True}},
                     "required": ["use_exec"],
+                    "additionalProperties": True,
                 },
-                "then": {"properties": {"capture_stdout": False}},
+                "then": {
+                    "properties": {"capture_stdout": False},
+                    "additionalProperties": True,
+                },
             },
             {
                 "if": {
                     "properties": {"script": {"pattern": "^[^:]*$", "type": "string"}},
                     "required": ["script"],
+                    "additionalProperties": True,
                 },
-                "then": {"properties": {"print_result": False}},
+                "then": {
+                    "properties": {"print_result": False},
+                    "additionalProperties": True,
+                },
             },
         ]
         return fragment

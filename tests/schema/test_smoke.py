@@ -144,8 +144,12 @@ def test_build_schema_subtask_options_blocklist() -> None:
         branches = items["allOf"]
         for opt in blocklist:
             assert {
-                "if": {"type": "object"},
-                "then": {"type": "object", "properties": {opt: False}},
+                "if": {"type": "object", "additionalProperties": True},
+                "then": {
+                    "type": "object",
+                    "properties": {opt: False},
+                    "additionalProperties": True,
+                },
             } in branches, f"missing forbidden-property for {opt!r}"
 
     assert_items_forbid(
@@ -176,8 +180,12 @@ def test_build_schema_use_exec_and_capture_stdout_are_mutex() -> None:
         "if": {
             "properties": {"use_exec": {"const": True}},
             "required": ["use_exec"],
+            "additionalProperties": True,
         },
-        "then": {"properties": {"capture_stdout": False}},
+        "then": {
+            "properties": {"capture_stdout": False},
+            "additionalProperties": True,
+        },
     }
     for key in ("cmd", "script", "expr"):
         variant = schema["definitions"][f"{key}_task"]
@@ -204,12 +212,43 @@ def test_build_schema_script_module_forbids_print_result() -> None:
         "if": {
             "properties": {"script": {"pattern": "^[^:]*$", "type": "string"}},
             "required": ["script"],
+            "additionalProperties": True,
         },
-        "then": {"properties": {"print_result": False}},
+        "then": {
+            "properties": {"print_result": False},
+            "additionalProperties": True,
+        },
     }
     assert expected_clause in variant.get("allOf", []), (
         "script_task missing module/print_result clause"
     )
+
+
+def test_build_schema_conditional_branches_allow_other_keys() -> None:
+    """
+    Every ``if``/``then``/``else`` branch only tests or constrains the object
+    its sibling schema describes, so each sets ``additionalProperties: true``.
+    Validators with a strict mode that treats an omitted
+    ``additionalProperties`` as ``false`` (e.g. tombi) otherwise reject keys
+    the sibling schema allows.
+    """
+    schema = build_schema()
+    branches: list[tuple[str, dict]] = []
+
+    def collect(node: object, path: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in ("if", "then", "else") and isinstance(value, dict):
+                    branches.append((f"{path}/{key}", value))
+                collect(value, f"{path}/{key}")
+        elif isinstance(node, list):
+            for index, item in enumerate(node):
+                collect(item, f"{path}/{index}")
+
+    collect(schema, "#")
+    assert branches
+    for path, branch in branches:
+        assert branch.get("additionalProperties") is True, path
 
 
 def test_build_schema_ref_task_forbids_executor() -> None:

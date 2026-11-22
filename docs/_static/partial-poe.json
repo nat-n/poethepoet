@@ -9,13 +9,16 @@
       "allOf": [
         {
           "else": {
+            "additionalProperties": true,
             "properties": { "false_string": false, "true_string": false }
           },
           "if": {
+            "additionalProperties": true,
             "properties": { "type": { "const": "boolean" } },
             "required": ["type"]
           },
           "then": {
+            "additionalProperties": true,
             "properties": {
               "default": {
                 "anyOf": [
@@ -100,13 +103,16 @@
       "allOf": [
         {
           "else": {
+            "additionalProperties": true,
             "properties": { "false_string": false, "true_string": false }
           },
           "if": {
+            "additionalProperties": true,
             "properties": { "type": { "const": "boolean" } },
             "required": ["type"]
           },
           "then": {
+            "additionalProperties": true,
             "properties": {
               "default": {
                 "anyOf": [
@@ -202,6 +208,7 @@
     "cmd_task": {
       "additionalProperties": false,
       "if": {
+        "additionalProperties": true,
         "properties": { "use_exec": { "const": true } },
         "required": ["use_exec"]
       },
@@ -276,12 +283,16 @@
         }
       },
       "required": ["cmd"],
-      "then": { "properties": { "capture_stdout": false } },
+      "then": {
+        "additionalProperties": true,
+        "properties": { "capture_stdout": false }
+      },
       "type": "object"
     },
     "cmd_task_with_case": {
       "additionalProperties": false,
       "if": {
+        "additionalProperties": true,
         "properties": { "use_exec": { "const": true } },
         "required": ["use_exec"]
       },
@@ -377,7 +388,10 @@
         }
       },
       "required": ["cmd"],
-      "then": { "properties": { "capture_stdout": false } },
+      "then": {
+        "additionalProperties": true,
+        "properties": { "capture_stdout": false }
+      },
       "type": "object"
     },
     "env_default": {
@@ -665,6 +679,7 @@
     "expr_task": {
       "additionalProperties": false,
       "if": {
+        "additionalProperties": true,
         "properties": { "use_exec": { "const": true } },
         "required": ["use_exec"]
       },
@@ -737,12 +752,16 @@
         }
       },
       "required": ["expr"],
-      "then": { "properties": { "capture_stdout": false } },
+      "then": {
+        "additionalProperties": true,
+        "properties": { "capture_stdout": false }
+      },
       "type": "object"
     },
     "expr_task_with_case": {
       "additionalProperties": false,
       "if": {
+        "additionalProperties": true,
         "properties": { "use_exec": { "const": true } },
         "required": ["use_exec"]
       },
@@ -836,7 +855,10 @@
         }
       },
       "required": ["expr"],
-      "then": { "properties": { "capture_stdout": false } },
+      "then": {
+        "additionalProperties": true,
+        "properties": { "capture_stdout": false }
+      },
       "type": "object"
     },
     "groups_map": {
@@ -920,20 +942,33 @@
             "allOf": [
               { "$ref": "#/definitions/task_def" },
               {
-                "if": { "type": "object" },
-                "then": { "properties": { "args": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "deps": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "uses": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
+                "if": { "additionalProperties": true, "type": "object" },
                 "then": {
+                  "additionalProperties": true,
+                  "properties": { "args": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "deps": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "uses": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
@@ -1044,20 +1079,33 @@
             "allOf": [
               { "$ref": "#/definitions/task_def" },
               {
-                "if": { "type": "object" },
-                "then": { "properties": { "args": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "deps": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "uses": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
+                "if": { "additionalProperties": true, "type": "object" },
                 "then": {
+                  "additionalProperties": true,
+                  "properties": { "args": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "deps": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "uses": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
@@ -1239,19 +1287,27 @@
       "allOf": [
         {
           "if": {
+            "additionalProperties": true,
             "properties": { "use_exec": { "const": true } },
             "required": ["use_exec"]
           },
-          "then": { "properties": { "capture_stdout": false } }
+          "then": {
+            "additionalProperties": true,
+            "properties": { "capture_stdout": false }
+          }
         },
         {
           "if": {
+            "additionalProperties": true,
             "properties": {
               "script": { "pattern": "^[^:]*$", "type": "string" }
             },
             "required": ["script"]
           },
-          "then": { "properties": { "print_result": false } }
+          "then": {
+            "additionalProperties": true,
+            "properties": { "print_result": false }
+          }
         }
       ],
       "properties": {
@@ -1330,19 +1386,27 @@
       "allOf": [
         {
           "if": {
+            "additionalProperties": true,
             "properties": { "use_exec": { "const": true } },
             "required": ["use_exec"]
           },
-          "then": { "properties": { "capture_stdout": false } }
+          "then": {
+            "additionalProperties": true,
+            "properties": { "capture_stdout": false }
+          }
         },
         {
           "if": {
+            "additionalProperties": true,
             "properties": {
               "script": { "pattern": "^[^:]*$", "type": "string" }
             },
             "required": ["script"]
           },
-          "then": { "properties": { "print_result": false } }
+          "then": {
+            "additionalProperties": true,
+            "properties": { "print_result": false }
+          }
         }
       ],
       "properties": {
@@ -1473,20 +1537,33 @@
             "allOf": [
               { "$ref": "#/definitions/task_def" },
               {
-                "if": { "type": "object" },
-                "then": { "properties": { "args": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "deps": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "uses": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
+                "if": { "additionalProperties": true, "type": "object" },
                 "then": {
+                  "additionalProperties": true,
+                  "properties": { "args": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "deps": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "uses": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
@@ -1573,20 +1650,33 @@
             "allOf": [
               { "$ref": "#/definitions/task_def" },
               {
-                "if": { "type": "object" },
-                "then": { "properties": { "args": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "deps": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "uses": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
+                "if": { "additionalProperties": true, "type": "object" },
                 "then": {
+                  "additionalProperties": true,
+                  "properties": { "args": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "deps": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "uses": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
@@ -1879,20 +1969,33 @@
             "allOf": [
               { "$ref": "#/definitions/task_def_with_case" },
               {
-                "if": { "type": "object" },
-                "then": { "properties": { "args": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "deps": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "uses": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
+                "if": { "additionalProperties": true, "type": "object" },
                 "then": {
+                  "additionalProperties": true,
+                  "properties": { "args": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "deps": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "uses": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
@@ -1989,20 +2092,33 @@
             "allOf": [
               { "$ref": "#/definitions/task_def_with_case" },
               {
-                "if": { "type": "object" },
-                "then": { "properties": { "args": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "deps": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
-                "then": { "properties": { "uses": false }, "type": "object" }
-              },
-              {
-                "if": { "type": "object" },
+                "if": { "additionalProperties": true, "type": "object" },
                 "then": {
+                  "additionalProperties": true,
+                  "properties": { "args": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "deps": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
+                  "properties": { "uses": false },
+                  "type": "object"
+                }
+              },
+              {
+                "if": { "additionalProperties": true, "type": "object" },
+                "then": {
+                  "additionalProperties": true,
                   "properties": { "uses_env": false },
                   "type": "object"
                 }
