@@ -26,6 +26,10 @@ from poethepoet.virtualenv import Virtualenv
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROJECT_TOML = PROJECT_ROOT / "pyproject.toml"
 
+# Tests write scratch files under tests/temp (including a uv cache, which can
+# contain third-party packages' own tests), so don't collect from there.
+collect_ignore = ["temp"]
+
 
 @pytest.fixture(scope="session")
 def is_windows():
