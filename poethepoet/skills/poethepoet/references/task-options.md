@@ -1,6 +1,19 @@
 # Task Options Reference
 
-All options are available on any task type unless noted.
+These options are available on every task type: `help`, `args`, `env`, `envfile`, `deps`, `uses`, `uses_env`, `cwd`, `executor`, `verbosity`. The rest are type-specific:
+
+| Option | Task types |
+| --- | --- |
+| `capture_stdout` | all except `sequence` and `parallel` |
+| `ignore_fail` | all except `switch` (`ref`: `true`/`false` only) |
+| `use_exec` | `cmd`, `script`, `expr` |
+| `empty_glob` | `cmd` |
+| `print_result` | `script` |
+| `interpreter` | `shell` |
+| `imports`, `assert` | `expr` |
+| `default_item_type` | `sequence`, `parallel` |
+| `output_mode`, `prefix`, `prefix_max`, `prefix_template` | `parallel` |
+| `control`, `default` | `switch` |
 
 ---
 
@@ -115,6 +128,7 @@ Capture the stdout of other tasks as variables available during this task.
 ```toml
 [tool.poe.tasks._get-version]
 script = "version:get()"
+print_result = true
 
 [tool.poe.tasks.tag]
 help = "Tag the current commit with the package version"
@@ -125,6 +139,7 @@ uses = { _version = "_get-version" }
 - Key is the variable name; value is a task invocation
 - Variables are available in parameter expansion (`${_version}`)
 - Prefix all lowercase variables with `_` to keep the value out of the subprocess environment
+- Only stdout is captured, so a `script` task must print its value (`print_result = true` prints the return value)
 
 ---
 
@@ -144,7 +159,7 @@ uses_env = "_aws-creds"   # or a list: uses_env = ["_aws-creds", "_other-creds"]
 - Value is a task invocation, or a list of them (applied in order; later wins)
 - Each task's stdout is parsed as an env file: `KEY=value` lines, optional leading `export`, `#` comments and blank lines ignored, `${VAR}` expanded against the current env
 - Output is **not** whitespace-collapsed (unlike `uses`) — newlines separate assignments
-- Loaded `_`-prefixed lowercase names stay private to the subprocess, like `uses`
+- Loaded `_`-prefixed lowercase names are private (usable in config, not exported to the subprocess), like `uses`
 - On a name collision, explicit `uses` entries take precedence over variables loaded via `uses_env`
 
 ---
@@ -240,7 +255,11 @@ Valid types: `auto` (detect automatically), `poetry`, `uv`, `virtualenv`, `simpl
 - These map onto `uv run` cli options, and can be used to force tasks to run with different a venv managed by uv
 - To see how the uv executor can be configured to manage task specific envs see this guide: https://poethepoet.natn.io/guides/tox_replacement_guide.html
 
-**virtualenv executor options**: `location` (path to venv; default: `.venv` or `venv`)
+**virtualenv executor options**: `location` (path to venv; default: `venv`, else `.venv`)
+
+A task-level executor table without `type` (or with the same `type`) extends the project or group executor, overriding it key by key.
+
+**At runtime**: `poe -e simple <task>` overrides the executor type, and `-X KEY[=VALUE]` (repeatable) sets executor options, e.g. `poe -X python=3.12 test`. Both go before the task name.
 
 **Global default** (in `[tool.poe]`):
 
@@ -261,13 +280,13 @@ cmd = "python --version"
 capture_stdout = "build_info.txt"
 ```
 
-Use `/dev/null` to discard output entirely.
+Relative paths resolve against the project root (not `cwd`), and an existing file is overwritten. Use `/dev/null` to discard output entirely. A task with `capture_stdout` can't be used via `uses`, and can't set `use_exec`.
 
 ---
 
 ## verbosity
 
-Override poe's own output verbosity for this specific task (-3 to 3).
+Override poe's own output verbosity for this specific task (-2 to 2).
 
 ```toml
 [tool.poe.tasks.credentials]
@@ -281,7 +300,7 @@ verbosity = -1   # suppress poe's output header for this task
 
 Allow the task to fail without aborting the parent sequence/parallel.
 
-For `cmd`/`shell`/`script`/`expr` tasks:
+For `cmd`/`shell`/`script`/`expr` tasks (`ref` accepts only `true`/`false`):
 
 ```toml
 ignore_fail = true       # ignore any non-zero exit code
@@ -290,16 +309,15 @@ ignore_fail = [1, 2]     # ignore specific exit codes only
 
 For `sequence`/`parallel` tasks:
 
-- `true` — continue running; return 0 if remaining tasks succeed
-- `"return_zero"` — always return 0 regardless of failures
-- `"return_non_zero"` — continue but propagate failure in exit code
+- `true` or `"return_zero"` — run every subtask and exit 0
+- `"return_non_zero"` — run every subtask, then fail with the exit code of the first failure
 
 ---
 
 ## use_exec
 
 Replace the poe process with the task's process (Unix only, has no effect on Windows).
-The task cannot be referenced by other tasks or use `deps`.
+Only for `cmd`, `script` and `expr` tasks. The task can have `deps`, but can't itself be referenced by other tasks (sequence, parallel, ref, `deps`, `uses`), and can't set `capture_stdout`.
 
 ```toml
 [tool.poe.tasks.serve]
@@ -315,7 +333,7 @@ Set these under `[tool.poe]` to apply project-wide defaults:
 
 ```toml
 [tool.poe]
-verbosity = 0                           # -1 quiet, 0 normal, 1 verbose
+verbosity = 0                           # -2 (quietest) to 2 (most verbose)
 default_task_type = "cmd"               # type for string task definitions
 default_array_task_type = "sequence"    # type for array task definitions
 default_array_item_task_type = "ref"    # type for items in task arrays
