@@ -278,7 +278,12 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self.env = env
         self.capture_stdout = (
             Path(project_dir or self.working_dir or ".").joinpath(
-                self.env.fill_template(capture_stdout)
+                self.env.fill_option_template(
+                    capture_stdout,
+                    option="capture_stdout",
+                    task_name=invocation[0],
+                    io=io,
+                )
             )
             if capture_stdout and isinstance(capture_stdout, str)
             else bool(capture_stdout)

@@ -97,6 +97,23 @@ def test_subtasks_inherit_cwd_option_as_default(run_poe, is_windows):
     assert result.stderr == ""
 
 
+def test_subtasks_warn_about_unset_var_in_inherited_cwd(run_poe, temp_pyproject):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.seq]
+        sequence = [{ cmd = "poe_test_pwd" }, { cmd = "poe_test_pwd", cwd = "." }]
+        cwd = "${UNSET_DIR}"
+        """)
+    result = run_poe("seq", cwd=project_path)
+    assert result.capture == (
+        "Warning: Variable $UNSET_DIR referenced in the cwd option of task 'seq' "
+        "is not set\n"
+        "Poe => poe_test_pwd\n"
+        "Poe => poe_test_pwd\n"
+    )
+    assert result.stdout == f"{project_path}\n{project_path}\n"
+    assert result.stderr == ""
+
+
 @pytest.mark.parametrize(
     ("cli_args", "cmd_shell_lines", "expr_dict"),
     [

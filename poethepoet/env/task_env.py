@@ -181,6 +181,24 @@ class TaskEnv(Mapping[str, str]):
             template = parse_template(template)
         return template.resolve(self)
 
+    def fill_option_template(
+        self, template: str, *, option: str, task_name: str, io: PoeIO
+    ) -> str:
+        """
+        Resolve the template value of a task option, warning about any variables it
+        references that are not set. Task args are exempt, since leaving an optional
+        arg unset is deliberate.
+        """
+        parsed_template = parse_template(template)
+        for var_name in dict.fromkeys(parsed_template.iter_unset_params(self)):
+            if var_name in self._arg_vars:
+                continue
+            io.print_warning(
+                f"Variable ${var_name} referenced in the {option} option of task "
+                f"{task_name!r} is not set"
+            )
+        return parsed_template.resolve(self)
+
     def set(self, key: str, value: str):
         """
         Set environment variables

@@ -115,12 +115,13 @@ class CmdTask(PoeTask):
 
         extra_args = self._parse_and_register_args(env)
 
-        executor = self._get_executor(context, env)
+        working_dir = self.get_working_dir(env)
+        executor = self._get_executor(context, env, working_dir=working_dir)
 
         if self._content_uses_extra_args():
-            cmd = tuple(self._resolve_commandline(context, env))
+            cmd = tuple(self._resolve_commandline(working_dir, env))
         else:
-            cmd = (*self._resolve_commandline(context, env), *extra_args)
+            cmd = (*self._resolve_commandline(working_dir, env), *extra_args)
 
         if not cmd:
             raise ExecutionError(
@@ -160,7 +161,7 @@ class CmdTask(PoeTask):
                 )
         return self._parsed_content
 
-    def _resolve_commandline(self, context: RunContext, env: TaskEnv):
+    def _resolve_commandline(self, working_dir: Path, env: TaskEnv):
         self.__passed_unmatched_glob = False
 
         command_lines = self._parse_content().command_lines
@@ -174,8 +175,6 @@ class CmdTask(PoeTask):
             raise PoeException(
                 f"Invalid cmd task {self.name!r} includes multiple command lines"
             )
-
-        working_dir = self.get_working_dir(env)
 
         result = []
         for line in command_lines:

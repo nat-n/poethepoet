@@ -360,6 +360,19 @@ class ParamExpansion(AnnotatedContentNode["ParamOperation"]):
             return argument.flatten(env)
         return env.get(self.param_name, "")
 
+    def iter_unset_params(self, env: Mapping[str, str]) -> Iterator[str]:
+        """
+        Yield the name of each unset variable that this expansion would resolve to
+        nothing for, i.e. not counting ones handled by a :- or :+ operator, but
+        including unset variables referenced by the active operator argument.
+        """
+        if self._is_special:
+            return
+        if argument := self.active_argument(env):
+            yield from argument.iter_unset_params(env)
+        elif not self.operation and env.get(self.param_name) is None:
+            yield self.param_name
+
     def _parse(self, chars: ParseCursor):
         assert chars.take() == "$"
 
@@ -612,6 +625,16 @@ class ParamArgument(SyntaxNode[ParamArgumentSegment]):
             for segment in self.segments
             for element in segment
         )
+
+    def iter_unset_params(self, env: Mapping[str, str]) -> Iterator[str]:
+        """
+        Yield the name of each unset variable that this argument would resolve to
+        nothing for.
+        """
+        for segment in self.segments:
+            for element in segment:
+                if isinstance(element, ParamExpansion):
+                    yield from element.iter_unset_params(env)
 
     def _parse(self, chars: ParseCursor):
         SegmentCls = self.get_child_node_cls(ParamArgumentSegment)

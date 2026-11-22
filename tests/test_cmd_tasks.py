@@ -192,6 +192,31 @@ def test_cmd_task_with_cwd_option_env(run_poe, poe_project_path):
     assert result.stderr == ""
 
 
+@pytest.mark.parametrize(
+    ("task", "env", "expected_dir", "warning"),
+    [
+        (
+            "cwd_env",
+            {},
+            "subdir",
+            "Warning: Variable $BAR_ENV referenced in the cwd option of task "
+            "'cwd_env' is not set\n",
+        ),
+        ("cwd_env", {"BAR_ENV": ""}, "subdir", ""),
+        ("cwd_env", {"BAR_ENV": "bar"}, "subdir/bar", ""),
+        ("cwd_env_default", {}, "subdir/foo", ""),
+    ],
+    ids=["unset", "empty", "set", "default"],
+)
+def test_cmd_task_with_cwd_option_warns_about_unset_var(
+    run_poe, projects, task, env, expected_dir, warning
+):
+    result = run_poe(task, project="cwd", env=env)
+    assert result.capture == f"{warning}Poe => poe_test_pwd\n"
+    assert result.stdout == f"{projects['cwd'].joinpath(*expected_dir.split('/'))}\n"
+    assert result.stderr == ""
+
+
 def test_cmd_task_runs_in_project_root_by_default(run_poe, poe_project_path, projects):
     result = run_poe(
         "default_pwd",
@@ -331,6 +356,50 @@ def test_cmd_with_capture_stdout(run_poe_subproc, projects, poe_project_path):
             assert output_file.read() == "I'm Mr. Meeseeks! Look at me!\n"
     finally:
         output_path.unlink()
+
+
+@pytest.mark.parametrize(
+    ("env", "output_file", "warning"),
+    [
+        (
+            {},
+            "out.txt",
+            "Warning: Variable $OUT_PREFIX referenced in the capture_stdout option "
+            "of task 'capture' is not set\n",
+        ),
+        ({"OUT_PREFIX": ""}, "out.txt", ""),
+        ({"OUT_PREFIX": "pre-"}, "pre-out.txt", ""),
+    ],
+    ids=["unset", "empty", "set"],
+)
+def test_cmd_with_capture_stdout_warns_about_unset_var(
+    run_poe, temp_pyproject, env, output_file, warning
+):
+    project_path = temp_pyproject(
+        """
+        [tool.poe.tasks.capture]
+        cmd = "poe_test_echo hi"
+        capture_stdout = "${OUT_PREFIX}out.txt"
+
+        [tool.poe.tasks.capture_default]
+        cmd = "poe_test_echo hi"
+        capture_stdout = "${OUT_PREFIX:-default-}out.txt"
+        """
+    )
+    result = run_poe("capture", cwd=project_path, env=env)
+    assert result.capture == f"{warning}Poe <= poe_test_echo hi\n"
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert project_path.joinpath(output_file).read_text() == "hi\n"
+
+    result = run_poe("capture_default", cwd=project_path, env=env)
+    assert result.capture == "Poe <= poe_test_echo hi\n"
+    assert (
+        project_path.joinpath(
+            f"{env.get('OUT_PREFIX') or 'default-'}out.txt"
+        ).read_text()
+        == "hi\n"
+    )
 
 
 @pytest.mark.parametrize(
