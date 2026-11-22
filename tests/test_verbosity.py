@@ -234,8 +234,8 @@ def test_poe_debug_shows_app_level_tracebacks(temp_pyproject, run_poe_subproc):
 
 def test_poe_debug_pins_verbosity(monkeypatch):
     """
-    With POE_DEBUG set, configuring a baseline or offset doesn't lower the debug
-    verbosity, as the app and its plugin API do
+    With POE_DEBUG set, the debug verbosity can't be lowered by configuring a
+    baseline or offset, which the app and its plugin API both do
     """
     import poethepoet.io
 

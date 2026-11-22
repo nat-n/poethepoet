@@ -603,8 +603,9 @@ def test_uses_does_not_wait_for_output_held_open_by_a_detached_process(
 @pytest.fixture
 def env_precedence_project(temp_pyproject):
     """
-    A project where each task sets the same variable from two sources, to pin the
-    precedence of a task's env: parent env < envfile < uses_env/uses < env < args
+    A project to pin the layering of a task's env, parent env < envfile <
+    uses_env/uses < env < args: which source wins when two set the same variable, and
+    which sources uses_env output can reference
     """
     project_path = temp_pyproject("""
         [tool.poe]
@@ -737,7 +738,8 @@ def env_precedence_project(temp_pyproject):
 def test_task_env_precedence(run_poe, env_precedence_project, task_name, expected):
     """
     A task's uses and uses_env values override its envfile and the parent env, and
-    its env overrides (and can template) them in turn
+    its env overrides (and can template) them in turn. uses_env output can reference
+    only the sources below it.
     """
     result = run_poe(task_name, cwd=env_precedence_project)
     assert result.code == 0, result.capture
