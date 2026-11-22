@@ -15,7 +15,7 @@ Poe tasks inherit environment variables from the host shell, but tasks also run 
 6. Task level :ref:`env files<envfile_option>`
 7. Output values from tasks configured as dependencies via the :doc:`uses<guides/composition_guide>` and :ref:`uses_env<Sourcing variables from dependency task output>` options
 8. Task level :ref:`env config<Setting task specific environment variables>`
-9. Variables set by task :doc:`args<guides/args_guide>`
+9. Variables set by task :doc:`args<guides/args_guide>` (arg defaults can't reference ``uses`` or ``uses_env`` values, since args are parsed before those tasks run)
 
 This means a task's ``env`` can reference and override values from its ``uses`` and ``uses_env`` options, e.g. ``env = { URL = "s3://${_bucket}" }`` with ``uses = { _bucket = "_get-bucket" }``.
 
