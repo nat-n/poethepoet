@@ -16,16 +16,11 @@ from __future__ import annotations
 
 import json
 import re
-import sys
+import tomllib
 from pathlib import Path
 from typing import Any
 
 import pytest
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
 
 SKILL_DIR = Path(__file__).parents[2] / "poethepoet" / "skills" / "poethepoet"
 SKILL_FILES = [SKILL_DIR / "SKILL.md", *sorted((SKILL_DIR / "references").glob("*.md"))]
@@ -71,6 +66,9 @@ SKIPPED_SNIPPETS: dict[tuple[str, str], str] = {
     ("creating-tasks.md", 'path = "frontend/pyproject.toml"'): (
         "needs the included subproject"
     ),
+    ("task-options.md", "# ❌ ${_stack} is still empty"): (
+        "contrasts a wrong and a right form of the same option"
+    ),
 }
 
 # Tasks that snippets commonly reference without defining. A stub is added for
@@ -87,7 +85,9 @@ STUB_TASK_NAMES = (
     "test-py310",
     "test-py311",
     "types",
+    "_login",
     "_publish",
+    "_stack-name",
 )
 
 # A task table with none of these keys only shows options for a task, so it is
@@ -200,7 +200,7 @@ def _check_python_content(spec: Any, inherited_args: set[str] = frozenset()) -> 
         parse_script_reference(
             spec.content,
             dict.fromkeys(arg_names),
-            allowed_vars={"sys", "os", "environ", "_dry_run"},
+            allowed_vars={"sys", "os", "environ"},
         )
     elif task_key == "expr":
         source = re.sub(r"\$\{(\w+)[^}]*\}", r"__env.\1", spec.content.strip())

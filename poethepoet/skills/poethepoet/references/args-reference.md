@@ -57,7 +57,7 @@ help = "Host to bind"
 | `default`    | str/int/float/bool | Default value; supports `${VAR}` parameter expansion including :- :+ operators |
 | `help`       | string             | Help text in `poe --help <task>`                                               |
 | `type`       | string             | `"string"` (default), `"integer"`, `"float"`, `"boolean"`                      |
-| `true_string` / `false_string` | string | Boolean args only: literal string for the true / false value in expansion and the environment |
+| `true_string` / `false_string` | string | Boolean args only (poe 0.49.0+): literal string for the true / false value in expansion and the environment |
 | `positional` | bool               | Positional arg — no flag needed                                                |
 | `required`   | bool               | Fail if not provided                                                           |
 | `choices`    | list               | Restrict to these values (enforced)                                            |
@@ -82,7 +82,7 @@ help = "Target environment"
 
 Usage: `poe deploy production`
 
-Only one positional arg can have `multiple = true`, and it must be last.
+Only one positional arg can have `multiple = true`, and it must be last. Positional args can't be `type = "boolean"`.
 
 ---
 
@@ -167,21 +167,21 @@ With declared args, `script` (callable or module form) and `expr` tasks also get
 
 ---
 
-## Free arguments (after --)
+## Free arguments
 
-Args passed after `--` on the command line are "free args" — not matched to any defined arg:
+"Free args" are the CLI arguments that a task's declared args don't consume:
 
-```bash
-poe test -- -x -k "my_test"    # -x and -k "my_test" are free args
-```
+- **Task without `args`**: every argument after the task name is a free arg, so `poe test -x -k "my_test"` just works. Don't add `--`: it is a free arg too, and forwarded literally (`pytest -- -x`).
+- **Task with `args`**: unknown arguments are an error, so free args go after `--`: `poe test -m slow -- -x`.
 
 How they're available:
 
 - **`cmd` tasks**: Auto-appended to the command. Use `$POE_EXTRA_ARGS` for explicit placement
-- **`shell` tasks**: Available as `$POE_EXTRA_ARGS`
+- **`shell` tasks**: Only via `$POE_EXTRA_ARGS`; a script that doesn't reference it drops them. It's a shell-quoted string, so `pytest $POE_EXTRA_ARGS` splits quoted args apart; use `eval "pytest $POE_EXTRA_ARGS"` to pass them intact
 - **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`)
+- **`ref` tasks**: Auto-appended to the referenced task's invocation
 
-**Forwarding to subtasks** — only subtasks that explicitly reference `$POE_EXTRA_ARGS` receive free args:
+**Forwarding to subtasks** — only subtasks that explicitly reference `$POE_EXTRA_ARGS`, in the item or in their own definition, receive free args:
 
 ```toml
 [tool.poe.tasks.check]
@@ -191,10 +191,6 @@ sequence = [
   "build"                   # does NOT receive free args
 ]
 ```
-
-The following task types have subtasks: sequence, parallel, switch, ref
-
-If no args are declared then all cli arguments are captured as "free args", so a task declared as simply `test.cmd = "pytest"` for example will forward any arguments passed on the CLI to pytest.
 
 ---
 
@@ -213,8 +209,8 @@ args = [
 
 `poe serve` uses port 8080 and `$LOG_LEVEL` if set, otherwise `info`. No `shell` task and no `${PORT:-8080}` in the body are needed. The default is appended to the help message automatically.
 
-- A default is expanded against the environment only. It **cannot reference another arg**: `default = "app-${_stage}"` resolves `${_stage}` to an empty string. Compose args in the task body instead (`cmd = "… app-${_stage}"`).
-- A public arg is exported as an environment variable under its name, so naming an arg `AWS_REGION` sets that variable for the task's subprocesses.
+- A default is expanded against the environment only. It **cannot reference another arg or a `uses` value**: `default = "app-${_stage}"` resolves `${_stage}` to an empty string. Compose them in the task body instead (`cmd = "… app-${_stage}"`).
+- A public arg is exported as an environment variable under its name, so naming an arg `AWS_REGION` sets that variable for the task's subprocesses. If it isn't passed and has no default, it **unsets** that variable, even when the host or the task's `env` set it; `default = "${AWS_REGION}"` keeps the inherited value.
 
 ---
 

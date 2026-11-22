@@ -19,6 +19,7 @@ help = "Build distribution packages"
 **Parameter expansion** (bash-like operators):
 
 ```toml
+[tool.poe.tasks]
 # Default value if VAR is unset:
 tables = "aws dynamodb list-tables --region ${AWS_REGION:-us-east-1}"
 
@@ -28,11 +29,11 @@ debug_flag = "server ${DEBUG:+--debug}"
 
 **Glob expansion**: Patterns like `*.py`, `**/*.txt` are expanded via Python's `pathlib.Path.glob` (so wildcards also match dotfiles), relative to the task's working directory.
 
-- `empty_glob = "null"` — treat no-match as empty string (like shell nullglob)
+- `empty_glob = "null"` — drop a pattern that matches nothing (like shell nullglob)
 - `empty_glob = "fail"` — fail the task if pattern matches nothing
 - `empty_glob = "pass"` — pass pattern through unchanged (default)
 
-**Extra args**: Free args (after `--`) are auto-appended. Use `$POE_EXTRA_ARGS` for explicit placement:
+**Extra args**: Free args are auto-appended (see `args-reference.md` for when `--` is needed). Use `$POE_EXTRA_ARGS` for explicit placement:
 
 ```toml
 cmd = "pytest $POE_EXTRA_ARGS --cov=src"  # extra args before --cov, not after
@@ -52,7 +53,7 @@ script = "myapp:run"                             # calls myapp.run()
 help = "Start the development server"
 
 [tool.poe.tasks.deploy]
-script = "my_pkg.deploy:run(env, dry_run=True)"  # with inline args
+script = "my_pkg.deploy:run('staging', dry_run=True)"  # with literal args
 
 [tool.poe.tasks.http-server]
 script = "http.server"                           # runs module's __main__
@@ -119,7 +120,7 @@ interpreter = "pwsh"
 shell_interpreter = "bash"
 ```
 
-Valid values: `posix` (default — tries sh, bash, zsh), `sh`, `bash`, `zsh`, `fish`, `pwsh`, `powershell`, `python`
+Valid values: `posix` (default — tries sh, bash, zsh), `sh`, `bash`, `zsh`, `fish`, `pwsh`, `powershell`, `python`, or a list of these to use the first one available
 
 ---
 
@@ -155,9 +156,8 @@ Tasks defined inline within a `sequence` or `parallel` may **not** declare `args
 
 **ignore_fail options**:
 
-- `true` — continue on failure; return 0 if all other tasks succeed
-- `"return_zero"` — always return 0 regardless of failures
-- `"return_non_zero"` — continue but return non-zero if any task failed
+- `true` or `"return_zero"` — run every subtask and exit 0
+- `"return_non_zero"` — run every subtask, then fail with the exit code of the first failure
 
 **Forwarding extra args to subtasks**:
 
@@ -185,11 +185,14 @@ help = "Run all checks in parallel"
 ```toml
 [tool.poe.tasks.check]
 parallel = ["lint", "test"]
+prefix = "{name}#{index}"
 prefix_template = "{color_start}[{prefix}]{color_end} "
 prefix_max = 12
 ```
 
-Available tags: `{name}`, `{index}`, `{color_start}`, `{color_end}`
+- `prefix` — the label for each subtask's lines, with tags `{name}` and `{index}` (default `"{name}"`; `false` disables prefixing)
+- `prefix_max` — truncate the label to this width (default 16)
+- `prefix_template` — how the label is rendered, with tags `{prefix}`, `{color_start}`, `{color_end}` (default `"{color_start}{prefix}{color_end} | "`)
 
 **output_mode**: by default each subtask's output is streamed line-by-line as it arrives, so lines from different tasks interleave. Set `output_mode = "buffer"` to hold each subtask's stdout and print it as one contiguous block when that subtask finishes:
 

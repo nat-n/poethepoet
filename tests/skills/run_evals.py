@@ -373,8 +373,8 @@ def run_one(
         grades = grade(grade_text, expectations)
         # Expectations without a programmatic check (passed is None) need manual
         # review and are left out of the pass rate.
-        checked = [g for g in grades if g["passed"] is not None]
-        n_passed = sum(1 for g in checked if g["passed"])
+        checked = [item for item in grades if item["passed"] is not None]
+        n_passed = sum(1 for item in checked if item["passed"])
 
         grading: dict[str, Any] = {
             "expectations": grades,
