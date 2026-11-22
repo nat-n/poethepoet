@@ -678,6 +678,7 @@ def env_precedence_project(temp_pyproject):
         [tool.poe.tasks._emit_first]
         cmd = "poe_test_echo_lines FIRST=from_first_uses_env"
 
+        # Escaped so the output holds literal ${VAR} refs for uses_env to expand
         [tool.poe.tasks._emit_refs]
         cmd = 'poe_test_echo_lines "REFS=\\${BUCKET}|\\${FIRST}|\\${TASK_ENV}|\\${ARG}"'
 
