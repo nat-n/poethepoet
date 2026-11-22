@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -198,6 +199,22 @@ def _is_labeled_counter_example(text: str, search: str) -> bool:
     return found_any
 
 
+_WRITTEN_FILE_HEADER = re.compile(
+    r"^# --- (?:pyproject\.toml|poe_tasks\.(?:toml|yaml|json)) ---$", re.MULTILINE
+)
+
+
+def _written_files_text(text: str) -> str:
+    """
+    Return the part of *text* that came from the config files written during the
+    eval, i.e. everything from the first "# --- <file> ---" header produced by
+    ``read_project_files`` onwards, or an empty string if there is none.
+    """
+    if match := _WRITTEN_FILE_HEADER.search(text):
+        return text[match.start() :]
+    return ""
+
+
 def _check(text: str, expectation: str) -> dict[str, Any]:
     exp_lower = expectation.lower()
 
@@ -205,7 +222,23 @@ def _check(text: str, expectation: str) -> dict[str, Any]:
     # or (trigger, search, "negate") — passes when `search` is NOT found
     # (catches "Response does not X" style expectations by detecting the
     # forbidden pattern). First matching trigger wins.
+    #
+    # `search` may be a tuple of alternatives: a positive check passes if any
+    # alternative is present, a negate check fails if any is present. A trailing
+    # "files" flag scopes the search to the written config files (the text after
+    # the "# --- <file> ---" headers from `read_project_files`) rather than the
+    # whole response, so prose that mentions a pattern is not penalised.
     heuristics: list[tuple] = [
+        # Eval 11: ref tasks with `project`, composed without shelling out to poe.
+        # These must precede the generic "parallel"/"sequence" triggers below.
+        ("with a `project` option", ("project =", "project=")),
+        (
+            "inside a `cmd` or `shell` task",
+            ("poe -C", "poe --directory"),
+            "negate",
+            "files",
+        ),
+        ("composes the per-package refs", ("sequence", "parallel")),
         ("$poe_extra_args", "$POE_EXTRA_ARGS"),
         ("parallel", "parallel"),
         ("sequence", "sequence"),
@@ -242,10 +275,19 @@ def _check(text: str, expectation: str) -> dict[str, Any]:
 
     for entry in heuristics:
         trigger, search = entry[0], entry[1]
-        negate = len(entry) > 2 and entry[2] == "negate"
+        negate = "negate" in entry[2:]
+        files_only = "files" in entry[2:]
         if trigger in exp_lower:
-            found = search in text
-            if negate and found and _is_labeled_counter_example(text, search):
+            haystack = _written_files_text(text) if files_only else text
+            alternatives = (search,) if isinstance(search, str) else search
+            present = [alt for alt in alternatives if alt in haystack]
+            found = bool(present)
+            if (
+                negate
+                and found
+                and not files_only
+                and all(_is_labeled_counter_example(text, alt) for alt in present)
+            ):
                 # The forbidden pattern appears as an explicit ❌/broken/wrong
                 # counter-example (often shown next to the ✅ form to teach the
                 # contrast). That's the gold-standard didactic answer, not a

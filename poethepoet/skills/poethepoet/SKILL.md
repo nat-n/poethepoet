@@ -75,7 +75,7 @@ If `poe`'s output isn't enough (e.g. you need a task's implementation or args), 
 | `shell` | shell scripts (pipes, redirects, loops, multi-step scripting) | `task.shell = "cmd1 \| cmd2"` |
 | `sequence` | run tasks in order | `task = ["a", "b"]` |
 | `parallel` | run tasks concurrently | `task.parallel = ["a", "b"]` |
-| `ref` | reference another task | `task.ref = "other"` |
+| `ref` | reference another task (also in another project) | `task.ref = "other"` |
 | `expr` | Python expression output | `task.expr = "sys.platform"` |
 | `switch` | different steps depending on an arg, env var, or platform | `task.switch = [...]` |
 

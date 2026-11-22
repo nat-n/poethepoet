@@ -1,0 +1,5 @@
+[project]
+name = "monorepo"
+version = "0.1.0"
+
+[tool.poe]

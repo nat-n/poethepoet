@@ -37,6 +37,9 @@ Available task options
 **ignore_fail** : ``bool`` :ref:`📖<Ignore reference task failure>`
   If true the failure of the referenced task will be ignored and the ref task will return exit code 0.
 
+**project** : ``str``
+  Path to another poe project (a directory or config file) in which to run the referenced task. :ref:`📖<Referencing a task in another project>`
+
 .. warning::
 
   A ref task that references a :doc:`sequence<../task_types/sequence>` or :doc:`parallel<../task_types/parallel>` task cannot use the ``capture_stdout`` option.
@@ -54,6 +57,27 @@ Ref tasks support parameter expansion just like cmd tasks, including the :ref:`d
   [tool.poe.tasks.deploy]
   ref = "build ${_target:-production}"
   args = [{ name = "_target", positional = true, default = "" }]
+
+
+Referencing a task in another project
+-------------------------------------
+
+The :toml:`project` option runs the referenced task from another poe project, for example in a monorepo. The path may be a directory or a config file, is relative to the project root unless absolute, and supports ``${VAR}`` templating, including the ref task's arguments.
+
+.. code-block:: toml
+
+  [tool.poe.tasks.check-api]
+  ref = "check"
+  project = "packages/api"
+
+  [tool.poe.tasks.check-project]
+  args = [{ name = "package", positional = true, required = true }]
+  project = "packages/${package}"
+  ref = "check"
+
+Here ``poe check-project web -- --strict`` runs the ``check`` task of ``packages/web`` with the extra argument ``--strict``.
+
+The referenced task runs with that project's own config, env and executor, like ``poe -C packages/web check`` would, but in the same process. The subproject's ``env`` takes precedence over the calling project's, unless the variable is declared there as ``{ default = "…" }``, which lets callers override it.
 
 
 Ignore reference task failure

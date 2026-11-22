@@ -363,6 +363,22 @@ sequence = ["test", "build"]
 help = "Test then build"
 ```
 
+```toml
+# ❌ Don't: run a subproject's task by shelling out to poe -C
+[tool.poe.tasks.check-all]
+shell = """
+poe -C packages/foo check
+poe -C packages/bar check
+"""
+
+# ✅ Do: ref the subproject's task with the project option
+[tool.poe.tasks.check-all]
+sequence = [
+  { ref = "check", project = "packages/foo" },
+  { ref = "check", project = "packages/bar" },
+]
+```
+
 Invoking poe from inside a task body starts a fresh poe process that re-reads config and re-resolves the executor/venv, and the dependency is invisible to poe's own graph — so you lose dependency dedup, ordering guarantees, dry-run visibility (`poe -d`), and completion. It also can't reach a private `_`-task at all, since those refuse direct invocation.
 
 ---
@@ -441,3 +457,39 @@ Use the `cwd` option when including a subproject's tasks:
 path = "frontend/pyproject.toml"
 cwd = "frontend"
 ```
+
+---
+
+## Monorepos
+
+Two tools, for two different jobs:
+
+- `include` (+ `cwd`) pulls a subproject's task *definitions* into this project. They run with this project's venv and env.
+- `ref` + `project` runs a subproject's task *as that subproject would*, using its own venv, env and config. Never write `poe -C <dir> <task>` in a `cmd` or `shell` task for this.
+
+Inline refs. Use when: a one-off fan-out over a few known packages.
+
+```toml
+# Inline refs: a one-off fan-out over a few known packages
+[tool.poe.tasks.check-all]
+sequence = [
+  { ref = "check", project = "packages/api" },
+  { ref = "check", project = "packages/web" },
+]
+```
+
+A generic task. Use when: there are many packages, or the task should be callable on its own.
+
+```toml
+# A generic task, reused by plain string refs: many packages, or callable alone
+[tool.poe.tasks.check-project]
+args    = [{ name = "package", positional = true, required = true }]
+project = "packages/${package}"
+ref     = "check"
+help    = "Run a package's check task"
+
+[tool.poe.tasks.check-all]
+parallel = ["check-project api", "check-project web"]
+```
+
+Extra args reach the package task after `--`, e.g. `poe check-project api -- --strict`.

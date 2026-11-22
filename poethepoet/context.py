@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .config import PoeConfig
     from .env.task_env import TaskEnv
     from .executor.base import PoeProcess
+    from .task.project_ref import LoadedProject
     from .ui import PoeUi
 
 
@@ -70,7 +71,14 @@ class RunContext:
         multistage: bool = False,
         cwd: Path | str | None = None,
         loop: asyncio.AbstractEventLoop | None = None,
+        *,
+        shutdown_manager: ShutdownManager | None = None,
+        loaded_projects: dict[Path, asyncio.Task[LoadedProject]] | None = None,
     ):
+        """
+        A shutdown_manager and loaded_projects cache may be given to share them with
+        another context, e.g. for running tasks from another project in the same run.
+        """
         from .env.task_env import TaskEnv
 
         self.config = config
@@ -81,7 +89,12 @@ class RunContext:
         self.exec_cache = {}
         self._task_outputs = TaskOutputCache()
         self._loop = loop or asyncio.get_event_loop()
-        self._shutdown_manager = ShutdownManager(self._loop, self.ui.io)
+        self._shutdown_manager = (
+            shutdown_manager
+            if shutdown_manager is not None
+            else ShutdownManager(self._loop, self.ui.io)
+        )
+        self._loaded_projects = loaded_projects if loaded_projects is not None else {}
 
         # Init root TaskEnv
         self.env = TaskEnv.create(
@@ -94,6 +107,46 @@ class RunContext:
                 config_dir=config_part.config_dir,
                 config_working_dir=config_part.cwd,
             )
+
+    def for_project(self, config: PoeConfig, base_env: Mapping[str, str]) -> RunContext:
+        """
+        Create a context for running tasks from another project within this run. It
+        shares this context's ui, shutdown handling and loaded projects, but has its own
+        env built from the given base_env and config, and its own caches.
+        """
+        assert self.ui
+        child = type(self)(
+            config=config,
+            ui=self.ui,
+            env=base_env,
+            dry=self.dry,
+            poe_active=self.poe_active,
+            multistage=self.multistage,
+            loop=self._loop,
+            shutdown_manager=self._shutdown_manager,
+            loaded_projects=self._loaded_projects,
+        )
+        child.enable_output_streaming = self.enable_output_streaming
+        return child
+
+    async def get_loaded_project(self, project_path: Path, io: PoeIO) -> LoadedProject:
+        """
+        Get the project with its config file at or in the given path, loading it on
+        first use in this run. Concurrent first uses of a project share one load, and
+        if loading fails then every use gets the same error. The load runs as a task
+        of its own, so cancelling one use doesn't cancel it for the others.
+        """
+        from .config import PoeConfig
+        from .task import project_ref
+
+        config_file = PoeConfig.find_config_file(project_path)
+        if (loading := self._loaded_projects.get(config_file)) is None:
+            loading = self.track_async_task(
+                project_ref.load_project(config_file, io),
+                name=f"LoadProject:{config_file}",
+            )
+            self._loaded_projects[config_file] = loading
+        return await asyncio.shield(loading)
 
     def track_async_task(
         self, coro: Any, *, name: str | None = None
@@ -221,6 +274,20 @@ class RunContext:
         self, invocation: tuple[str, ...], collapse_whitespace: bool = True
     ) -> str:
         return self._task_outputs.get_task_output(invocation, collapse_whitespace)
+
+    def adopt_task_output(
+        self,
+        invocation: tuple[str, ...],
+        source_context: RunContext,
+        source_invocation: tuple[str, ...],
+    ) -> None:
+        """
+        Copy the raw captured output stored under source_invocation in source_context
+        to invocation in this context. Does nothing if the source has no output.
+        """
+        self._task_outputs.adopt_task_output(
+            invocation, source_context._task_outputs, source_invocation
+        )
 
     def get_executor(
         self,
@@ -423,6 +490,23 @@ class TaskOutputCache:
         command interpolation works in bash. Pass collapse_whitespace=False to
         retrieve the raw output unmodified, e.g. for parsing as an env file.
         """
+        if (output := self._captured_stdout.get(invocation)) is None:
+            raise ExecutionError(
+                f"No captured output available for task {invocation[0]!r}"
+            )
         if not collapse_whitespace:
-            return self._captured_stdout[invocation]
-        return re.sub(r"\s+", " ", self._captured_stdout[invocation].strip("\r\n"))
+            return output
+        return re.sub(r"\s+", " ", output.strip("\r\n"))
+
+    def adopt_task_output(
+        self,
+        invocation: tuple[str, ...],
+        source: TaskOutputCache,
+        source_invocation: tuple[str, ...],
+    ) -> None:
+        """
+        Copy the raw output stored under source_invocation in the source cache to
+        invocation in this cache. Does nothing if the source has no output.
+        """
+        if (output := source._captured_stdout.get(source_invocation)) is not None:
+            self._captured_stdout[invocation] = output

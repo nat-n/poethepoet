@@ -3,6 +3,8 @@ Loading tasks from another file
 
 There are some scenarios where one might wish to define tasks outside of pyproject.toml, or to collect tasks from multiple projects into one. For example, if you want to share tasks between projects via git modules, generate tasks definitions dynamically, organize your code in a monorepo, or simply have a lot of tasks and don't want the pyproject.toml to get too large. This can be achieved by creating a toml, yaml, or json file including the same structure for tasks as used in pyproject.toml
 
+In a monorepo, to run a subproject's task with that subproject's own config and venv, rather than pulling its definitions into this project, use a :doc:`ref task <../tasks/task_types/ref>` with the ``project`` option.
+
 .. tip::
 
   Imported toml, yaml, or json files are not required to namespace config under ``tool.poe``. However if config exists under this structure then it will be used.

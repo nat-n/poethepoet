@@ -1,0 +1,7 @@
+[project]
+name = "api"
+version = "0.1.0"
+
+[tool.poe.tasks.check]
+help = "Run api checks"
+cmd  = "ruff check ."

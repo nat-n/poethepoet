@@ -6,6 +6,8 @@ Runs a command as a subprocess without a shell. Supports `${VAR}` parameter expa
 
 Use when: running any CLI tool. This is the right default for most tasks.
 
+To run a task from a subproject, don't write `cmd = "poe -C sub check"`. Use a `ref` with `project` instead (see `## ref`).
+
 ```toml
 [tool.poe.tasks]
 test = "pytest --cov=src"                       # string shorthand — defaults to cmd
@@ -242,6 +244,20 @@ sequence = [
 ref = "build ${_target:-production}"
 args = [{ name = "_target", positional = true, default = "" }]
 ```
+
+### Tasks in another project (monorepos)
+
+Add `project` (a directory or config file path, relative to the project root, supporting `${VAR}` templating) to run the referenced task from another poe project, with that project's own config, executor/venv and `env`. This replaces `cmd = "poe -C <dir> <task>"`.
+
+```toml
+[tool.poe.tasks.check-project]
+args    = [{ name = "package", positional = true, required = true }]
+project = "packages/${package}"
+ref     = "check"
+help    = "Run a package's check task"
+```
+
+`poe check-project api -- --strict` passes `--strict` to the package's task. The subproject's `env` wins over the caller's; a var declared there as `{ default = "…" }` can be overridden by the caller. `project` can't be combined with `cwd`. For the inline `{ ref, project }` form and fan-out over several packages, see "Monorepos" in `creating-tasks.md`.
 
 ---
 

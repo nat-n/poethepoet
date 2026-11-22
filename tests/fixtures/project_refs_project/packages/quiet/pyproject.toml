@@ -1,0 +1,9 @@
+[tool.poe]
+verbosity = -1
+
+[tool.poe.tasks.hello]
+cmd = "poe_test_echo quiet hello"
+
+[tool.poe.tasks.nomatch]
+cmd        = "poe_test_echo *.nomatch"
+empty_glob = "fail"

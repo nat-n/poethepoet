@@ -1,0 +1,192 @@
+[tool.poe.env]
+SHARED      = "from-root"
+ROOT_ONLY   = "root"
+OVERRIDABLE = "from-root"
+
+[tool.poe.tasks._prep]
+cmd = "poe_test_echo root-prep"
+
+[tool.poe.tasks.show-env]
+cmd = "poe_test_echo root show-env"
+
+[tool.poe.tasks.foo-env]
+ref     = "show-env"
+project = "packages/foo"
+env     = { REF_VAR = "from-ref" }
+
+[tool.poe.tasks.foo-env-ref-shared]
+ref     = "show-env"
+project = "packages/foo"
+env     = { SHARED = "from-ref", OVERRIDABLE = "from-ref" }
+
+[tool.poe.tasks.foo-env-file]
+ref     = "show-env"
+project = "packages/foo/pyproject.toml"
+
+[tool.poe.tasks.foo-env-abs]
+ref     = "show-env"
+project = "${POE_ROOT}/packages/foo"
+
+[tool.poe.tasks.run-in]
+args    = [{ name = "project_name", positional = true, required = true }]
+project = "packages/${project_name}"
+ref     = "echo-args"
+
+[tool.poe.tasks.foo-paths]
+ref     = "show-paths"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-graph]
+ref     = "graph"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-twice]
+sequence = ["foo-env", "foo-paths", "foo-env-file", "foo-env-abs"]
+
+[tool.poe.tasks.bar-hello]
+ref     = "hello"
+project = "packages/bar"
+
+[tool.poe.tasks.tasksfile-hello]
+ref     = "hello"
+project = "packages/tasksfile"
+
+[tool.poe.tasks.self-show-env]
+ref     = "show-env"
+project = "."
+
+[tool.poe.tasks.foo-fail-ok]
+ref         = "fail"
+project     = "packages/foo"
+ignore_fail = true
+
+[tool.poe.tasks.foo-nomatch-ok]
+ref         = "nomatch"
+project     = "packages/foo"
+ignore_fail = true
+
+[tool.poe.tasks.quiet-nomatch-ok]
+ref         = "nomatch"
+project     = "packages/quiet"
+ignore_fail = true
+
+[tool.poe.tasks.missing-project]
+ref     = "show-env"
+project = "packages/nope"
+
+[tool.poe.tasks.unset-var-project]
+ref     = "show-env"
+project = "packages/${NOPE}"
+
+[tool.poe.tasks.blank-project]
+ref     = "show-env"
+project = "${NOPE}"
+
+[tool.poe.tasks.foo-empty-ref]
+ref     = "${NOPE}"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-bad-cwd]
+ref     = "bad-cwd"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-bad-cwd-graph]
+ref     = "bad-cwd-graph"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-bad-cwd-ok]
+ref         = "bad-cwd"
+project     = "packages/foo"
+ignore_fail = true
+
+[tool.poe.tasks.bar-seq-broken]
+ref     = "seq-broken"
+project = "packages/bar"
+
+[tool.poe.tasks.foo-typo]
+ref     = "chekc"
+project = "packages/foo"
+
+[tool.poe.tasks.bar-broken]
+ref     = "broken"
+project = "packages/bar"
+
+[tool.poe.tasks.foo-bad-args]
+ref     = "strict-args --bogus"
+project = "packages/foo"
+
+[tool.poe.tasks.foo-bad-args-ignored]
+ref         = "strict-args --bogus"
+project     = "packages/foo"
+ignore_fail = true
+
+[tool.poe.tasks.foo-exec]
+ref     = "exec-task"
+project = "packages/foo"
+
+[tool.poe.tasks.badconf-task]
+ref     = "anything"
+project = "packages/badconf"
+
+[tool.poe.tasks.badexec-task]
+ref     = "anything"
+project = "packages/badexec"
+
+[tool.poe.tasks.foo-hello]
+ref     = "hello"
+project = "packages/foo"
+
+[tool.poe.tasks.use-foo-output]
+cmd  = "poe_test_echo got ${OUT}"
+uses = { OUT = "foo-hello" }
+
+[tool.poe.tasks.foo-emit-env]
+ref     = "emit-env"
+project = "packages/foo"
+
+[tool.poe.tasks.use-foo-env]
+cmd      = "poe_test_echo token=${FOO_TOKEN}"
+uses_env = ["foo-emit-env"]
+
+[tool.poe.tasks.foo-hello-file]
+ref            = "hello"
+project        = "packages/foo"
+capture_stdout = "hello.txt"
+
+[tool.poe.tasks.foo-hello-file-templated]
+ref            = "hello"
+project        = "packages/foo"
+capture_stdout = "${POE_ROOT}/hello-templated.txt"
+
+[tool.poe.tasks.para]
+parallel = ["foo-hello", "show-env"]
+
+[tool.poe.tasks.para-same-project]
+parallel = ["foo-hello", "foo-env"]
+
+[tool.poe.tasks.quiet-hello]
+ref     = "hello"
+project = "packages/quiet"
+
+[tool.poe.tasks.quiet-between]
+sequence = ["show-env", "quiet-hello", "show-env"]
+
+[tool.poe.tasks.hello-all-inline]
+sequence = [
+  { ref = "hello", project = "packages/foo" },
+  { ref = "hello", project = "packages/tasksfile" },
+]
+
+[tool.poe.tasks.hello-in]
+args    = [{ name = "package", positional = true, required = true }]
+project = "packages/${package}"
+ref     = "hello"
+
+[tool.poe.tasks.hello-all-generic]
+sequence = ["hello-in foo", "hello-in tasksfile"]
+
+[tool.poe.tasks.scripted-hellos]
+sequence = [
+  { ref = "hello", project = "packages/scripted_a" },
+  { ref = "hello", project = "packages/scripted_b" },
+]

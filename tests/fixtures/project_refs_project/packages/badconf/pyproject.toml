@@ -1,0 +1,5 @@
+[tool.poe]
+oops_invalid = "bad"
+
+[tool.poe.tasks.anything]
+cmd = "poe_test_echo anything"
