@@ -14,7 +14,7 @@ from .command import ParamExpansion
 from .core import ContentNode, ParseCursor, SyntaxNode
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterator, Mapping
 
 
 class TemplateText(ContentNode):
@@ -69,6 +69,15 @@ class Template(SyntaxNode[ContentNode]):
             child.expand(env) if isinstance(child, ParamExpansion) else child.content
             for child in self
         )
+
+    def iter_unset_params(self, env: Mapping[str, str]) -> Iterator[str]:
+        """
+        Yield the name of each unset variable that this template would resolve to
+        nothing for. Variables with a default, e.g. `${X:-default}`, count as handled.
+        """
+        for child in self:
+            if isinstance(child, ParamExpansion):
+                yield from child.iter_unset_params(env)
 
     def _parse(self, chars: ParseCursor):
         ParamExpansionCls = self.get_child_node_cls(ParamExpansion)

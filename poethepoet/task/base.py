@@ -159,6 +159,10 @@ class TaskContext(NamedTuple):
     io: PoeIO
     ui: PoeUi
     specs: TaskSpecFactory
+    cwd_task: str | None = None
+    """
+    The name of the task whose cwd option cwd comes from, if any
+    """
 
     @property
     def verbosity(self) -> int:
@@ -169,6 +173,11 @@ class TaskContext(NamedTuple):
         return cls(
             config=parent_task.ctx.config,
             cwd=str(parent_task.spec.options.get("cwd", parent_task.ctx.cwd)),
+            cwd_task=(
+                parent_task.name
+                if parent_task.spec.options.get("cwd") is not None
+                else parent_task.ctx.cwd_task
+            ),
             specs=parent_task.ctx.specs,
             io=PoeIO(
                 parent=parent_task.ctx.io,
@@ -755,11 +764,12 @@ class PoeTask(metaclass=MetaPoeTask):
         *,
         resolve_python: bool = False,
         delegate_dry_run: bool = False,
+        working_dir: Path | None = None,
     ):
         executor = context.get_executor(
             self.invocation,
             env,
-            working_dir=self.get_working_dir(env),
+            working_dir=working_dir or self.get_working_dir(env),
             executor_config=self.spec.options.get("executor"),
             group_executor_config=(
                 self.spec.group.executor if self.spec.group else None
@@ -778,8 +788,19 @@ class PoeTask(metaclass=MetaPoeTask):
         self,
         env: TaskEnv,
     ) -> Path:
-        cwd_option = env.fill_template(self.spec.options.get("cwd", self.ctx.cwd))
-        working_dir = Path(cwd_option)
+        if (cwd_option := self.spec.options.get("cwd")) is not None:
+            cwd, cwd_task = cwd_option, self.name
+        else:
+            cwd, cwd_task = self.ctx.cwd, self.ctx.cwd_task
+
+        if cwd_task is not None:
+            working_dir = Path(
+                env.fill_option_template(
+                    cwd, option="cwd", task_name=cwd_task, io=self.ctx.io
+                )
+            )
+        else:
+            working_dir = Path(env.fill_template(cwd))
 
         if not working_dir.is_absolute():
             working_dir = self.ctx.config.project_dir.joinpath(working_dir).resolve()

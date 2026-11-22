@@ -181,7 +181,7 @@ How they're available:
 - **`shell` tasks**: Available as `$POE_EXTRA_ARGS`
 - **`script`/`expr` tasks**: Available as `_extra_args` (a `list[str]`)
 
-**Forwarding to subtasks** — only subtasks that explicitly reference `$POE_EXTRA_ARGS` receive free args:
+**Forwarding to subtasks** — only subtasks that explicitly reference `$POE_EXTRA_ARGS` (or `_extra_args` in script/expr tasks) receive free args:
 
 ```toml
 [tool.poe.tasks.check]

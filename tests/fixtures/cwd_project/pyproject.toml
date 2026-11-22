@@ -26,3 +26,7 @@ cmd = "ls ${path_arg}"
 cwd = "${cwd_arg}"
 env = {VIRTUAL_ENV = ""}
 args = ["cwd-arg", "path-arg"]
+
+[tool.poe.tasks.cwd_env_default]
+cmd = "poe_test_pwd"
+cwd = "./subdir/${BAR_ENV:-foo}"

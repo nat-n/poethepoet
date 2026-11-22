@@ -474,3 +474,24 @@ class TestParseTemplateAndResolve:
         tree = parse_template("$BARE ${BRACED}", require_braces=True)
         result = tree.resolve({"BARE": "x", "BRACED": "y"})
         assert result == "$BARE y"
+
+
+@pytest.mark.parametrize(
+    ("source", "env", "expected"),
+    [
+        ("$A/${B}", {}, ["A", "B"]),
+        ("$A/$A", {}, ["A", "A"]),
+        ("$A/${B}", {"A": "", "B": "b"}, []),
+        ("${A:-default}", {}, []),
+        ("${A:+alt}", {}, []),
+        ("${A:-$B}", {}, ["B"]),
+        ("${A:-$B}", {"A": "a"}, []),
+        ("${A:+$B}", {"A": "a"}, ["B"]),
+        ("$? $#", {}, []),
+        ("\\$A", {}, []),
+    ],
+)
+def test_template_iter_unset_params(source, env, expected):
+    from poethepoet.helpers.parse import parse_template
+
+    assert list(parse_template(source).iter_unset_params(env)) == expected
