@@ -52,7 +52,7 @@ The following environment variables are used by Poe the Poet internally, and can
 - ``POE_CONF_DIR``: the path to the parent directory of the config file that defines the running task or the :ref:`cwd option<Setting a working directory for included tasks>` set when including that config.
 - ``POE_ACTIVE``: identifies the active PoeExecutor, so that Poe the Poet can tell when it is running recursively.
 - ``POE_VERBOSITY``: reflects the current verbosity level. Normally 0 is the default, 1 means more verbose and -1 means less.
-- ``POE_EXTRA_ARGS``: the :ref:`free arguments<Passing free arguments in addition to named arguments>` passed to the task as a shell-quoted, space-delimited string. It is only set if there are free arguments.
+- ``POE_EXTRA_ARGS``: the :ref:`free arguments<forwarding-free-arguments-via-poe-extra-args>` passed to the task as a shell-quoted, space-delimited string. It is only set if there are free arguments.
 
 Special variables
 ~~~~~~~~~~~~~~~~~
