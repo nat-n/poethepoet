@@ -562,15 +562,15 @@ class PackagedConfig(ConfigPartition):
 
         env: Mapping[str, str | EnvDefault] = EmptyDict
         """
-        A map of environment variables to be set for all tasks in the packaged
-        config.
+        A map of environment variables to be set for all tasks, not just those
+        from the packaged config.
         """
 
         envfile: str | EnvfileOption | Sequence[str | EnvfileOption] = ()
         """
-        Provide one or more env files to be loaded before running tasks from this
-        packaged config. If an array is provided, files will be loaded in the
-        given order.
+        Provide one or more env files to be loaded before running any task, not
+        just those from the packaged config. If an array is provided, files will
+        be loaded in the given order.
         """
 
         tasks: Mapping[str, Any] = EmptyDict
