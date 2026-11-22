@@ -263,6 +263,17 @@ def test_inherited_poe_pwd_takes_precedence_over_poe_cwd(run_poe):
     assert result.stderr == ""
 
 
+def test_empty_inherited_poe_pwd_falls_back_to_poe_cwd(run_poe):
+    """
+    An empty inherited POE_PWD counts as unset, so an inherited POE_CWD is used
+    """
+    result = run_poe(
+        "show_poe_pwd", project="cwd", env={"POE_PWD": "", "POE_CWD": "/from_cwd"}
+    )
+    assert result.stdout == "/from_cwd /from_cwd\n"
+    assert result.stderr == ""
+
+
 def test_cmd_task_with_cwd_option_arg(run_poe, poe_project_path):
     result = run_poe("cwd_arg", "--foo_var", "foo", project="cwd")
     assert result.capture == "Poe => poe_test_pwd\n"

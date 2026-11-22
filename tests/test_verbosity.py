@@ -235,11 +235,13 @@ def test_poe_debug_shows_app_level_tracebacks(temp_pyproject, run_poe_subproc):
 def test_poe_debug_pins_verbosity(monkeypatch):
     """
     With POE_DEBUG set, the debug verbosity can't be lowered by configuring a
-    baseline or offset, which the app and its plugin API both do
+    baseline or offset, which the app and its plugin API both do, while ansi
+    settings still apply
     """
     import poethepoet.io
 
     monkeypatch.setattr(poethepoet.io, "POE_DEBUG", True)
-    io = poethepoet.io.PoeIO(make_default=False)
-    io.configure(baseline=-1, offset=-2)
+    io = poethepoet.io.PoeIO(ansi=False, make_default=False)
+    io.configure(ansi_enabled=True, baseline=-1, offset=-2)
     assert io.verbosity == 3
+    assert io.ansi_enabled
