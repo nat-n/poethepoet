@@ -240,6 +240,6 @@ def test_poe_debug_pins_verbosity(monkeypatch):
     import poethepoet.io
 
     monkeypatch.setattr(poethepoet.io, "POE_DEBUG", True)
-    io = poethepoet.io.PoeIO()
+    io = poethepoet.io.PoeIO(make_default=False)
     io.configure(baseline=-1, offset=-2)
     assert io.verbosity == 3

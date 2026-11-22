@@ -244,7 +244,8 @@ class TaskEnv(Mapping[str, str]):
         config_working_dir: Path,
     ):
         """
-        Used for including env vars from global or task config.
+        Used for including env vars from global config, i.e. the envfile option then
+        the env option of the project, an included file or a task package.
         If a value is provided as a mapping from `"default"` to `str` then it is only
         used if the associated key doesn't already have a value.
         """
