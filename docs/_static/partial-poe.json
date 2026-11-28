@@ -900,6 +900,197 @@
       "required": ["script"],
       "type": "object"
     },
+    "matrix_task": {
+      "additionalProperties": false,
+      "properties": {
+        "args": { "$ref": "#/definitions/args_option" },
+        "cwd": {
+          "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "deps": {
+          "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
+          "items": { "type": "string" },
+          "type": "array"
+        },
+        "env": { "$ref": "#/definitions/env_option" },
+        "envfile": { "$ref": "#/definitions/envfile_option" },
+        "executor": { "$ref": "#/definitions/executor_task_option" },
+        "help": {
+          "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
+          "type": "string"
+        },
+        "matrix": {
+          "additionalProperties": { "type": "array" },
+          "description": "Runs a subtask once for each combination of matrix variable values, with each\nvariable exposed to the subtask as an environment variable.\n\nA matrix task is an orchestration task: the task option provides an inline\ndefinition that is called once per combination, and each combination also\ngets a generated task name such as test-py3.11 so that a single combination\ncan be run on its own.",
+          "type": "object"
+        },
+        "task": {
+          "allOf": [
+            { "$ref": "#/definitions/task_def" },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "args": false },
+                "type": "object"
+              }
+            },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "deps": false },
+                "type": "object"
+              }
+            },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "uses": false },
+                "type": "object"
+              }
+            },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "uses_env": false },
+                "type": "object"
+              }
+            }
+          ],
+          "description": "An inline definition for the task to run for each combination of matrix\nvariable values. The matrix variables are available to the task as\nenvironment variables, e.g. as ${py} in the task content or executor\nconfig."
+        },
+        "uses": {
+          "additionalProperties": { "type": "string" },
+          "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
+          "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
+        },
+        "verbosity": {
+          "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
+          "enum": [-2, -1, 0, 1, 2],
+          "type": "integer"
+        }
+      },
+      "required": ["matrix", "task"],
+      "type": "object"
+    },
+    "matrix_task_with_case": {
+      "additionalProperties": false,
+      "properties": {
+        "args": { "$ref": "#/definitions/args_option" },
+        "case": {
+          "anyOf": [
+            {
+              "anyOf": [
+                { "type": "string" },
+                { "type": "integer" },
+                { "type": "boolean" }
+              ]
+            },
+            {
+              "items": {
+                "anyOf": [
+                  { "type": "string" },
+                  { "type": "integer" },
+                  { "type": "boolean" }
+                ]
+              },
+              "type": "array"
+            }
+          ]
+        },
+        "cwd": {
+          "description": "Specify the current working directory that this task should run with. This\ncan be a relative path from the project root or an absolute path, and\nenvironment variables can be used in the format ${VAR_NAME}.",
+          "pattern": "\\S",
+          "type": "string"
+        },
+        "deps": {
+          "description": "A list of task invocations that will be executed before this one. Each item\nin the list is a reference to another task defined within the tasks object.",
+          "items": { "type": "string" },
+          "type": "array"
+        },
+        "env": { "$ref": "#/definitions/env_option" },
+        "envfile": { "$ref": "#/definitions/envfile_option" },
+        "executor": { "$ref": "#/definitions/executor_task_option" },
+        "help": {
+          "description": "Help text to be displayed next to the task name in the documentation when\npoe is run without specifying a task.",
+          "type": "string"
+        },
+        "matrix": {
+          "additionalProperties": { "type": "array" },
+          "description": "Runs a subtask once for each combination of matrix variable values, with each\nvariable exposed to the subtask as an environment variable.\n\nA matrix task is an orchestration task: the task option provides an inline\ndefinition that is called once per combination, and each combination also\ngets a generated task name such as test-py3.11 so that a single combination\ncan be run on its own.",
+          "type": "object"
+        },
+        "task": {
+          "allOf": [
+            { "$ref": "#/definitions/task_def" },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "args": false },
+                "type": "object"
+              }
+            },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "deps": false },
+                "type": "object"
+              }
+            },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "uses": false },
+                "type": "object"
+              }
+            },
+            {
+              "if": { "additionalProperties": true, "type": "object" },
+              "then": {
+                "additionalProperties": true,
+                "properties": { "uses_env": false },
+                "type": "object"
+              }
+            }
+          ],
+          "description": "An inline definition for the task to run for each combination of matrix\nvariable values. The matrix variables are available to the task as\nenvironment variables, e.g. as ${py} in the task content or executor\nconfig."
+        },
+        "uses": {
+          "additionalProperties": { "type": "string" },
+          "description": "Allows this task to use the output of other tasks which are executed first.\nThe values are references to the names of the tasks, and the keys are\nenvironment variables by which the results of those tasks will be\naccessible in this task.",
+          "type": "object"
+        },
+        "uses_env": {
+          "anyOf": [
+            { "type": "string" },
+            { "items": { "type": "string" }, "type": "array" }
+          ],
+          "description": "Allows this task to use the output of other tasks which are executed first,\nand their output is parsed like an env file to get zero or more environment\nvariables which will be accessible in this task.\nThe referenced task(s) determine(s) which variables (if any) are set."
+        },
+        "verbosity": {
+          "description": "Specify the verbosity level for this task, from -2 (least verbose) to 2\n(most verbose), overriding the project level verbosity setting, which\ndefaults to 0.",
+          "enum": [-2, -1, 0, 1, 2],
+          "type": "integer"
+        }
+      },
+      "required": ["matrix", "task"],
+      "type": "object"
+    },
     "parallel_task": {
       "additionalProperties": false,
       "properties": {
@@ -2154,6 +2345,7 @@
         { "items": { "$ref": "#/definitions/task_def" }, "type": "array" },
         { "$ref": "#/definitions/cmd_task" },
         { "$ref": "#/definitions/expr_task" },
+        { "$ref": "#/definitions/matrix_task" },
         { "$ref": "#/definitions/parallel_task" },
         { "$ref": "#/definitions/ref_task" },
         { "$ref": "#/definitions/script_task" },
@@ -2165,6 +2357,7 @@
           "properties": {
             "cmd": false,
             "expr": false,
+            "matrix": false,
             "parallel": false,
             "ref": false,
             "script": false,
@@ -2180,6 +2373,7 @@
       "oneOf": [
         { "$ref": "#/definitions/cmd_task_with_case" },
         { "$ref": "#/definitions/expr_task_with_case" },
+        { "$ref": "#/definitions/matrix_task_with_case" },
         { "$ref": "#/definitions/parallel_task_with_case" },
         { "$ref": "#/definitions/ref_task_with_case" },
         { "$ref": "#/definitions/script_task_with_case" },
@@ -2191,6 +2385,7 @@
           "properties": {
             "cmd": false,
             "expr": false,
+            "matrix": false,
             "parallel": false,
             "ref": false,
             "script": false,

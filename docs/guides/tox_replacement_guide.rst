@@ -91,6 +91,10 @@ Or run tests for a specific version:
 
   See the :ref:`uv executor documentation <Uv Executor>` for a full explanation of these and other available executor options.
 
+.. tip::
+
+  Rather than declaring a task per python version, a :doc:`matrix task<../tasks/task_types/matrix>` runs a single task definition once per python version.
+
 
 Advanced configurations
 -----------------------
@@ -154,6 +158,20 @@ Or define a DAG of tasks with task ``deps``:
     deps = ["lint"]
 
 See the :doc:`guide on task composition<../guides/composition_guide>` for more examples.
+
+Testing across multiple python versions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of declaring a task per python version, a :doc:`matrix task<../tasks/task_types/matrix>` expands one task definition into a task per combination of variable values:
+
+.. code-block:: toml
+
+    [tool.poe.tasks.test]
+    matrix = { "py" = ["3.11", "3.12", "3.13"] }
+    task.cmd = "pytest tests --cov=mypackage"
+    task.executor = { isolated = true, python = "${py}" }
+
+Run ``poe test`` to run the tests for every python version, or ``poe test-py3.12`` to run just one of them. Passing an argument that shares its name with a matrix variable narrows the matrix, so ``poe test --python-versions 3.12 3.13`` runs a subset.
 
 Parallel execution
 ~~~~~~~~~~~~~~~~~~
