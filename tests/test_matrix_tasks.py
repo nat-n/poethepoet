@@ -402,3 +402,71 @@ def test_matrix_generated_name_conflicts_with_another_task(temp_pyproject, run_p
     assert result.code == 1, result.capture
     assert "conflicts with" in result.capture
     assert "test-py3.11" in result.capture
+
+
+def test_matrix_definition_inline_in_a_sequence(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.all]
+        sequence = [
+            { matrix = { "py" = ["3.11", "3.12"] }, task = "poe_test_echo py=${py}" },
+        ]
+        """)
+    result = run_poe("all", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "py=3.11\npy=3.12\n"
+
+
+def test_matrix_task_option_can_be_an_inline_ref(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.check]
+        cmd = "poe_test_echo checking ${py}"
+
+        [tool.poe.tasks.test]
+        matrix = { "py" = ["3.11", "3.12"] }
+        task.ref = "check"
+        """)
+    result = run_poe("test", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "checking 3.11\nchecking 3.12\n"
+
+
+def test_matrix_task_cannot_be_referenced_by_uses(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.test]
+        matrix = { "py" = ["3.11"] }
+        task.cmd = "poe_test_echo py=${py}"
+
+        [tool.poe.tasks.consumer]
+        cmd = "poe_test_echo ${OUT}"
+        uses = { OUT = "test" }
+        """)
+    result = run_poe("consumer", cwd=project_path)
+    assert result.code == 1, result.capture
+    assert "Error: Invalid task 'consumer'" in result.capture
+    assert (
+        "'uses' option references task that does not support output capture: 'test'"
+        in result.capture
+    )
+
+
+def test_matrix_narrows_to_a_single_valued_arg(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.test]
+        matrix = { "py" = ["3.11", "3.12"] }
+        args = [{ name = "py", options = ["--python-version"] }]
+        task.cmd = "poe_test_echo py=${py}"
+        """)
+    result = run_poe("test", "--python-version", "3.12", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "py=3.12\n"
+
+
+def test_matrix_forwards_free_args_via_poe_extra_args(temp_pyproject, run_poe):
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.test]
+        matrix = { "py" = ["3.11", "3.12"] }
+        task.cmd = "poe_test_echo py=${py} $POE_EXTRA_ARGS"
+        """)
+    result = run_poe("test", "--flag", cwd=project_path)
+    assert result.code == 0, result.capture
+    assert result.stdout == "py=3.11 --flag\npy=3.12 --flag\n"

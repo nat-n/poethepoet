@@ -273,9 +273,9 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
     ):
         self.invocation = invocation
         self.context = context
-        self.options = options
         self.working_dir = working_dir.resolve() if working_dir else None
         self.env = env
+        self.options = self._interpolate_options(options)
         self.capture_stdout = (
             Path(project_dir or self.working_dir or ".").joinpath(
                 self.env.fill_template(capture_stdout)
@@ -288,6 +288,29 @@ class PoeExecutor(metaclass=MetaPoeExecutor):
         self._is_windows = sys.platform == "win32"
         self._io = io
         io.print_debug(f" . Initializing {self.__class__.__name__}")
+
+    def _interpolate_options(
+        self, options: PoeExecutor.ExecutorOptions
+    ) -> PoeExecutor.ExecutorOptions:
+        """
+        Resolve environment variable templates in string option values, so that
+        options such as the python version can reference variables from the task
+        env, for example those set by a matrix task. Values that contain no
+        template are returned unchanged.
+        """
+        resolved: dict[str, Any] = {}
+        for key in type(options).get_fields():
+            value = options.get(key)
+            if isinstance(value, str):
+                resolved[key] = self.env.fill_template(value)
+            elif isinstance(value, list):
+                resolved[key] = [
+                    self.env.fill_template(item) if isinstance(item, str) else item
+                    for item in value
+                ]
+            else:
+                resolved[key] = value
+        return type(options)(**resolved)
 
     @classmethod
     def works_with_context(cls, context: ContextProtocol) -> bool:
