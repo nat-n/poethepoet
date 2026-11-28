@@ -237,3 +237,25 @@ def test_uv_executor_passes_uv_run_options_from_cli(
     _assert_uv_options_present(lines)
     assert lines.count("--group=ci") == 1
     assert lines.count("--group=docs") == 1
+
+
+def test_uv_executor_interpolates_env_vars_in_options(
+    run_poe, mock_uv_path, temp_pyproject
+):
+    """
+    Executor option values support env var templating, so options such as the
+    python version can be set from the task env, e.g. by a matrix task.
+    """
+    project_path = temp_pyproject("""
+        [tool.poe.tasks.test]
+        cmd = "poe_test_echo hello"
+        env = { py = "3.13" }
+        executor = { type = "uv", python = "${py}" }
+        """)
+    env = {"PATH": f"{mock_uv_path}{os.pathsep}{os.environ.get('PATH', '')}"}
+    result = run_poe("test", cwd=project_path, env=env)
+    assert result.code == 0, result.capture
+    raw_lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    lines = _normalize_uv_lines(raw_lines)
+    assert "--python=3.13" in lines
+    assert not any("${" in line for line in lines)

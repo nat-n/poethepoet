@@ -47,7 +47,7 @@ This implies that you can also define tasks of other types on a single line, lik
 Types of task
 -------------
 
-There are two categories of task each including four types: *Execution tasks* that run task content in a subprocess, and *Orchestration tasks* that run other tasks.
+There are two categories of task: *Execution tasks* that run task content in a subprocess, and *Orchestration tasks* that run other tasks.
 
 Execution tasks
 ~~~~~~~~~~~~~~~
@@ -67,6 +67,8 @@ Orchestration tasks
 
 - :doc:`Parallel tasks<task_types/parallel>` :code:`parallel` : for running multiple tasks concurrently
 
+- :doc:`Matrix tasks<task_types/matrix>` :code:`matrix` : for running a task once for each combination of matrix variable values
+
 - :doc:`Switch tasks<task_types/switch>` :code:`switch` : for running different tasks depending on the output of a *control* task
 
 - :doc:`Reference tasks<task_types/ref>` :code:`ref` : for defining a task as an alias of another task, such as in a sequence task
@@ -81,6 +83,7 @@ Orchestration tasks
    Shell tasks<task_types/shell>
    Sequence tasks<task_types/sequence>
    Parallel tasks<task_types/parallel>
+   Matrix tasks<task_types/matrix>
    Expression tasks<task_types/expr>
    Switch tasks<task_types/switch>
    Reference tasks<task_types/ref>
